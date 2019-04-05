@@ -28,11 +28,9 @@ public class RiodejaneiroDrogariavenancioRatingReviewCrawler extends RatingRevie
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      VTEXCrawlersUtils vtexUtil =
-          new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);

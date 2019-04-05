@@ -1,12 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.test.Test;
@@ -23,21 +21,10 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void processBeforeFetch() {
-    JSONObject fetcherPayload = new JSONObject();
-    fetcherPayload.put("request_type", "GET");
-    fetcherPayload.put("retrieve_statistics", false);
-    fetcherPayload.put("use_proxy_by_moving_average", true);
-    fetcherPayload.put("request_parameters", new JSONObject().put("follow_redirect", false));
-    fetcherPayload.put("url", "http://superentucasa.soriana.com/default.aspx");
+    Request request =
+        RequestBuilder.create().setCookies(cookies).setUrl("http://superentucasa.soriana.com/default.aspx").setFollowRedirects(false).build();
 
-    Map<String, String> cookiesMap = POSTFetcher.fetchCookiesWithFetcher(fetcherPayload, session);
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-      cookie.setDomain(DOMAIN);
-      cookie.setPath("/");
-
-      this.cookies.add(cookie);
-    }
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, DOMAIN, "/", null, session, new FetcherDataFetcher());
   }
 
   @Override

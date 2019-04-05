@@ -15,7 +15,6 @@ import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
@@ -104,24 +103,17 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("ar condicionado", market);
+        session = SessionFactory.createTestRankingKeywordsSession("nestle", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
-        session = SessionFactory.createTestRankingCategoriesSession(
-            "https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p", market,
-            "Aparelhos");
+        session = SessionFactory.createTestRankingCategoriesSession("https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p",
+            market, "Aparelhos");
       } else {
-        session = SessionFactory
-            .createTestSession("http://www.servnutri.com.br/produto/nutren-1-5-200ml/", market);
+        session = SessionFactory.createTestSession("https://www.savegnago.com.br/alimento-infantil-nestle-120g-maca/p", market);
       }
 
       Task task = TaskFactory.createTask(session);
 
       task.process();
-      try {
-        GlobalConfigurations.dbManager.connectionPostgreSQL.closeConnection();
-      } catch (Exception e) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
-      }
     } else {
       System.err.println("Market não encontrado no banco!");
     }

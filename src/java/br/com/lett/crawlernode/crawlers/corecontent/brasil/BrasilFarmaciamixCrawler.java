@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -60,18 +62,21 @@ public class BrasilFarmaciamixCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+
       String ean = crawlEan(doc);
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -109,8 +114,8 @@ public class BrasilFarmaciamixCrawler extends Crawler {
 
   private Float crawlPrice(Document document) {
     Float price = null;
-    Element salePriceElement = document.select("p[itemprop=price]").first();
-    Element lowPrice = document.select("span[itemprop=lowPrice]").first();
+    Element salePriceElement = document.select("[itemprop=price]").first();
+    Element lowPrice = document.select("[itemprop=lowPrice]").first();
 
     if (salePriceElement != null) {
       price = Float.parseFloat(salePriceElement.attr("content"));
@@ -203,7 +208,8 @@ public class BrasilFarmaciamixCrawler extends Crawler {
     if (bula != null) {
       String url = bula.attr("href");
 
-      Document docBula = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document docBula = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Element bulaShort = docBula.select(".informacoes-bula").last();
 

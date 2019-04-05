@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -78,19 +80,22 @@ public class BrasilCassolCrawler extends Crawler {
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(productAPI, ".produto_foto #divImagemPrincipalZoom > a", Arrays.asList("href"),
             "https:", "www.cassol.com.br");
         String secondaryImages = crawlSecondaryImages(doc);
+
         String ean = crawlEan(jsonSku);
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setMarketplace(new Marketplace()).setEan(ean).build();
+            .setMarketplace(new Marketplace()).setEans(eans).build();
 
         products.add(product);
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -186,8 +191,11 @@ public class BrasilCassolCrawler extends Crawler {
           "https://www.cassol.com.br/ImagensProduto/CodVariante/" + internalId + "/produto_id/" + internalPid + "/exibicao/produto/t/32";
       String pricesUrl = "https://www.cassol.com.br/ParcelamentoVariante/CodVariante/" + internalId + "/produto_id/" + internalPid + "/t/32";
 
-      doc.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, imagesUrl, null, cookies).toString());
-      doc.append(DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, pricesUrl, null, cookies).toString());
+      Request requestImages = RequestBuilder.create().setUrl(imagesUrl).setCookies(cookies).build();
+      doc.append(Jsoup.parse(this.dataFetcher.get(session, requestImages).getBody()).toString());
+
+      Request requestPrices = RequestBuilder.create().setUrl(pricesUrl).setCookies(cookies).build();
+      doc.append(Jsoup.parse(this.dataFetcher.get(session, requestPrices).getBody()).toString());
     }
 
     return doc;

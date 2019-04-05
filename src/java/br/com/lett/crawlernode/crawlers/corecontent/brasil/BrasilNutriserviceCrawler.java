@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -102,7 +104,7 @@ public class BrasilNutriserviceCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -210,13 +212,15 @@ public class BrasilNutriserviceCrawler extends Crawler {
   private Document crawlPriceDocument(String internalId, String internalPid) {
     String url = "http://www.nutriservice.com.br/ParcelamentoVariante/CodVariante/" + internalId + "/produto_id/" + internalPid + "/t/1";
 
-    return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   private Document crawlImagesDocument(String internalId, String internalPid) {
     String url = "http://www.nutriservice.com.br/ImagensProduto/CodVariante/" + internalId + "/produto_id/" + internalPid + "/exibicao/produto/t/1";
 
-    return DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   private Marketplace crawlMarketplace() {

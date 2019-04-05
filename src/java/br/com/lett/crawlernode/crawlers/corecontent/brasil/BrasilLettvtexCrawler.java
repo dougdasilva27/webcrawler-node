@@ -43,7 +43,7 @@ public class BrasilLettvtexCrawler extends Crawler {
     doc = Jsoup.parse(CommonMethods.readFile("/home/gabriel/htmls/LETTVTEX.html"));
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "lett", HOME_PAGE_HTTPS, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "lett", HOME_PAGE_HTTPS, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -76,7 +76,7 @@ public class BrasilLettvtexCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

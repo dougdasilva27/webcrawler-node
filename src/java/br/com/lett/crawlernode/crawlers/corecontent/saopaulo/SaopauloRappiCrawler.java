@@ -7,8 +7,8 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -75,7 +76,7 @@ public class SaopauloRappiCrawler extends Crawler {
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -284,8 +285,9 @@ public class SaopauloRappiCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
 
-      String page = POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL + "?page=1", session, payload, cookies, 1, headers,
-          DataFetcher.randUserAgent(), null);
+      Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL + "?page=1").setCookies(cookies).setHeaders(headers).setPayload(payload)
+          .mustSendContentEncoding(false).build();
+      String page = this.dataFetcher.post(session, request).getBody();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
@@ -299,7 +301,7 @@ public class SaopauloRappiCrawler extends Crawler {
             }
           }
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }
@@ -309,7 +311,8 @@ public class SaopauloRappiCrawler extends Crawler {
 
   private Map<String, String> crawlStores() {
     Map<String, String> stores = new HashMap<>();
-    JSONArray options = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, STORES_API_URL, null, cookies);
+    Request request = RequestBuilder.create().setUrl(STORES_API_URL).setCookies(cookies).build();
+    JSONArray options = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     for (Object o : options) {
       JSONObject option = (JSONObject) o;

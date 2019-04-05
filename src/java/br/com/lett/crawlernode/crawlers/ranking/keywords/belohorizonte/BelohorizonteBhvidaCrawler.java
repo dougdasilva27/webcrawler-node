@@ -106,7 +106,7 @@ public class BelohorizonteBhvidaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapTotalProductsForRanking(this.currentDoc,
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc,
         "#paginacao .texto strong:first-child", false);
     this.log("Total da busca: " + this.totalProducts);
 

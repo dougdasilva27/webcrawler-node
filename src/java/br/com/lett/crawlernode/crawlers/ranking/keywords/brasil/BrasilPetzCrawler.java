@@ -1,17 +1,21 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -19,19 +23,28 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
 
   public BrasilPetzCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   private static final String HOME_PAGE = "https://www.petz.com.br/";
   private String userAgent;
+  private LettProxy proxyUsed;
   private List<Cookie> cookies = new ArrayList<>();
 
   @Override
   public void processBeforeFetch() {
-    this.userAgent = DataFetcher.randUserAgent();
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, null, 1);
+    this.userAgent = FetchUtilities.randUserAgent();
 
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+    Response response = this.dataFetcher.get(session, request);
+
+    this.proxyUsed = response.getProxyUsed();
+
+    for (Cookie cookieResponse : response.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.petz.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
@@ -48,8 +61,11 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
     String url = "https://www.petz.com.br/busca_Loja.html?q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    LettProxy proxy = session.getRequestProxy(HOME_PAGE);
-    this.currentDoc = Jsoup.parse(GETFetcher.fetchPageGET(session, url, cookies, this.userAgent, proxy, 1));
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+    this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
     Elements products = this.currentDoc.select(".liProduct > div");
 

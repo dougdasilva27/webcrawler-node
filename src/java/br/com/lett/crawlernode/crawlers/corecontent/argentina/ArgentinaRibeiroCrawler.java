@@ -10,7 +10,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -74,7 +75,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -105,26 +106,26 @@ public class ArgentinaRibeiroCrawler extends Crawler {
     description.append(CrawlerUtils.scrapSimpleDescription(doc,
         Arrays.asList(".atg_store_productDescription", "#detallesTecnicos", "#ContenedorDescripciones", ".template-aires")));
 
-      description.append(crawlDescriptionFromFlixMedia(doc, session));
+    description.append(crawlDescriptionFromFlixMedia(doc, session));
 
     return description.toString();
   }
 
-  public static String crawlDescriptionFromFlixMedia(Document doc, Session session) {
+  public String crawlDescriptionFromFlixMedia(Document doc, Session session) {
     StringBuilder description = new StringBuilder();
 
     Element ean = doc.selectFirst("script[data-flix-ean]");
     if (ean != null) {
 
-      String url = "https://media.flixcar.com/delivery/js/inpage/4782/f4/40/ean/" + ean.attr("data-flix-ean") 
-      	+ "?&=4782&=f4&ean=" + ean.attr("data-flix-ean") + "&ssl=1&ext=.js";
+      String url = "https://media.flixcar.com/delivery/js/inpage/4782/f4/40/ean/" + ean.attr("data-flix-ean") + "?&=4782&=f4&ean="
+          + ean.attr("data-flix-ean") + "&ssl=1&ext=.js";
 
-      if(!ean.attr("data-flix-mpn").isEmpty()) {
-    	  url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") 
-    			  + "&mpn=" +ean.attr("data-flix-mpn");
+      if (!ean.attr("data-flix-mpn").isEmpty()) {
+        url = url.replace("/40/", "/mpn/" + ean.attr("data-flix-mpn") + "/") + "&mpn=" + ean.attr("data-flix-mpn");
       }
-      
-      String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      String script = this.dataFetcher.get(session, request).getBody();
       final String token = "$(\"#flixinpage_\"+i).inPage";
 
       JSONObject productInfo = new JSONObject();
@@ -138,7 +139,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
         try {
           productInfo = new JSONObject(json);
         } catch (JSONException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
 
@@ -147,7 +148,9 @@ public class ArgentinaRibeiroCrawler extends Crawler {
 
         String urlDesc =
             "https://media.flixcar.com/delivery/inpage/show/4782/f4/" + id + "/json?c=jsonpcar4782f4" + id + "&complimentary=0&type=.html";
-        String scriptDesc = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
+
+        Request requestDesc = RequestBuilder.create().setUrl(urlDesc).setCookies(cookies).build();
+        String scriptDesc = this.dataFetcher.get(session, requestDesc).getBody();
 
         if (scriptDesc.contains("({")) {
           int x = scriptDesc.indexOf("({") + 1;
@@ -166,7 +169,7 @@ public class ArgentinaRibeiroCrawler extends Crawler {
               description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
             }
           } catch (JSONException e) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
           }
         }
       }

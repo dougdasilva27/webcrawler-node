@@ -1,142 +1,108 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 
-	public BrasilKabumCrawler(Session session) {
-		super(session);
-	}
+  public BrasilKabumCrawler(Session session) {
+    super(session);
+  }
 
-	private List<Cookie> cookies = new ArrayList<>();
+  @Override
+  protected void processBeforeFetch() {
+    super.processBeforeFetch();
 
-	@Override
-	protected void processBeforeFetch() {
-		super.processBeforeFetch();
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.kabum.com.br/", null, ".kabum.com.br", "/", cookies, session, null, dataFetcher);
+  }
 
-		Map<String, String> cookiesMap =
-				DataFetcher.fetchCookies(session, "https://www.kabum.com.br/", cookies, 1);
+  private String baseUrl;
+  private boolean isCategory;
 
-		for (Entry<String, String> entry : cookiesMap.entrySet()) {
-			BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-			cookie.setDomain(".kabum.com.br");
-			cookie.setPath("/");
-			this.cookies.add(cookie);
-		}
-	}
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.log("Página " + this.currentPage);
 
-	private String baseUrl;
-	private boolean isCategory;
+    String url;
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		this.log("Página " + this.currentPage);
+    // monta a url com a keyword e a página
+    if (this.currentPage > 1) {
+      if (!isCategory) {
+        url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+      } else {
+        url = this.baseUrl + "&pagina=" + this.currentPage;
+      }
+    } else {
+      url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+    }
 
-		String url;
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		// monta a url com a keyword e a página
-		if (this.currentPage > 1) {
-			if (!isCategory) {
-				url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string="
-						+ this.keywordEncoded + "&pagina=" + this.currentPage;
-			} else {
-				url = this.baseUrl + "&pagina=" + this.currentPage;
-			}
-		} else {
-			url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string="
-					+ this.keywordEncoded + "&pagina=" + this.currentPage;
-		}
+    // número de produtos or página
+    this.pageSize = 30;
 
-		this.log("Link onde são feitos os crawlers: " + url);
+    this.currentDoc = fetchDocument(url);
 
-		// número de produtos or página
-		this.pageSize = 30;
+    if (this.currentPage == 1) {
+      this.baseUrl = this.session.getRedirectedToURL(url);
 
-		if (this.currentPage == 1) {
-			this.currentDoc = fetchDocumentWithWebDriver(url, 9000);
-		} else {
-			this.currentDoc = fetchDocumentWithWebDriver(url);
-		}
+      if (baseUrl != null) {
 
-		if (this.currentPage == 1) {
-			this.baseUrl = this.session.getRedirectedToURL(url);
+        if (!baseUrl.startsWith("http")) {
+          baseUrl = "http:" + baseUrl;
+        }
 
-			if (baseUrl != null) {
+        if (url.equals(baseUrl)) {
+          isCategory = false;
+        } else {
+          isCategory = true;
+        }
+      } else {
+        isCategory = false;
+      }
+    }
 
-				if (!baseUrl.startsWith("http")) {
-					baseUrl = "http:" + baseUrl;
-				}
+    Elements products = this.currentDoc.select("div.listagem-titulo_descr span.H-titulo a[href]");
 
-				if (url.equals(baseUrl)) {
-					isCategory = false;
-				} else {
-					isCategory = true;
-				}
-			} else {
-				isCategory = false;
-			}
-		}
+    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+    if (!products.isEmpty()) {
+      for (Element e : products) {
+        // seta o id da classe pai com o id retirado do elements this.id
+        String[] tokens = e.attr("href").split("/");
 
-		Elements products = this.currentDoc.select("div.listagem-titulo_descr span.H-titulo a[href]");
+        String internalPid = null;
+        String internalId;
+        String urlProduct = e.attr("href");
 
-		// se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if (products.size() >= 1) {
-			for (Element e : products) {
-				// seta o id da classe pai com o id retirado do elements this.id
-				String[] tokens = e.attr("href").split("/");
+        if (urlProduct.contains("?tag")) {
+          internalId = tokens[tokens.length - 3];
+          urlProduct = urlProduct.split("\\?")[0];
+        } else {
+          internalId = tokens[tokens.length - 2];
+        }
 
-				String internalPid = null;
-				String internalId;
-				String urlProduct = e.attr("href");
+        saveDataProduct(internalId, internalPid, urlProduct);
 
-				if (urlProduct.contains("?tag")) {
-					internalId = tokens[tokens.length - 3];
-					urlProduct = urlProduct.split("\\?")[0];
-				} else {
-					internalId = tokens[tokens.length - 2];
-				}
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
 
-				saveDataProduct(internalId, internalPid, urlProduct);
+      }
+    } else {
+      setTotalProducts();
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit) {
-					break;
-				}
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-			}
-		} else {
-			setTotalProducts();
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-
-		if (!(hasNextPage())) {
-			setTotalProducts();
-		}
-	}
-
-	@Override
-	protected boolean hasNextPage() {
-		Elements products = this.currentDoc.select("div.listagem-titulo_descr span.H-titulo a[href]");
-
-		if (products.size() < 30) {
-			return false;
-		}
-
-		return true;
-	}
+  @Override
+  protected boolean hasNextPage() {
+    return this.currentDoc.select("div.listagem-titulo_descr span.H-titulo a[href]").size() >= 30;
+  }
 }

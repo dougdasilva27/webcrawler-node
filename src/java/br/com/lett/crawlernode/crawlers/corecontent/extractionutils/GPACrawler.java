@@ -11,7 +11,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -33,6 +35,7 @@ public class GPACrawler {
   private String storeId;
   private String store;
   private List<Cookie> cookies = new ArrayList<>();
+  private DataFetcher dataFetcher;
 
   public static final String RIO_DE_JANEIRO_STORE_ID = "1266";
   public static final String RIO_DE_JANEIRO_STORE_ID_EXTRA = "42";
@@ -54,7 +57,8 @@ public class GPACrawler {
    * @param cookies
    * @param store - "ex" to extra and "pa" to paodeacucar
    */
-  public GPACrawler(Logger logger, Session session, String homePage, String homePageHttp, String storeId, List<Cookie> cookies, String store) {
+  public GPACrawler(Logger logger, Session session, String homePage, String homePageHttp, String storeId, List<Cookie> cookies, String store,
+      DataFetcher dataFetcher) {
     this.logger = logger;
     this.session = session;
     this.homePage = homePage;
@@ -62,6 +66,7 @@ public class GPACrawler {
     this.storeId = storeId;
     this.store = store;
     this.cookies = cookies;
+    this.dataFetcher = dataFetcher;
   }
 
   public List<Product> extractInformation() throws Exception {
@@ -74,7 +79,7 @@ public class GPACrawler {
       String productUrl = session.getOriginalURL();
 
       JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
-      
+
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
@@ -103,7 +108,7 @@ public class GPACrawler {
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -302,8 +307,9 @@ public class GPACrawler {
       JSONArray shelfList = json.getJSONArray("shelfList");
 
       Set<String> listCategories = new HashSet<>(); // It is a "set" because it has been noticed that there are repeated categories
-      
-      // The category fetched by crawler can be in a different ordination than showed on the website and its depends of each product.
+
+      // The category fetched by crawler can be in a different ordination than showed on the website and
+      // its depends of each product.
       if (shelfList.length() > 0) {
         JSONObject cat1 = shelfList.getJSONObject(0);
         JSONObject cat2 = shelfList.getJSONObject(shelfList.length() - 1);
@@ -386,6 +392,8 @@ public class GPACrawler {
 
       description.append(str.toString());
     }
+
+    description.append(CrawlerUtils.scrapStandoutDescription("gpa", session, cookies, dataFetcher));
 
     return description.toString();
   }
@@ -479,7 +487,8 @@ public class GPACrawler {
 
     String url = "https://api.gpa.digital/" + this.store + "/products/" + id + "?storeId=" + storeId + "&isClienteMais=false";
 
-    String res = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String res = this.dataFetcher.get(session, request).getBody();
 
     try {
       JSONObject apiGPA = new JSONObject(res);

@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,8 +9,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -40,8 +41,7 @@ public class BrasilEfacilCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (session.getOriginalURL().startsWith("https://www.efacil.com.br/loja/produto/")
-        || session.getOriginalURL().startsWith("http://www.efacil.com.br/loja/produto/")) {
+    if (!doc.select("h1.product-name").isEmpty()) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       Element variationSelector = doc.select(".options_attributes").first();
@@ -57,36 +57,11 @@ public class BrasilEfacilCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#widget_breadcrumb ul li a", true);
 
       // Imagem primária
-      Element elementPrimaryImage = doc.select("div.product-photo a").first();
-      String primaryImage = null;
-      if (elementPrimaryImage != null) {
-        primaryImage = "http:" + elementPrimaryImage.attr("href").trim();
-      }
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div.product-photo a", Arrays.asList("href"), "https:", "www.efacil.com.br");
 
       // Imagem secundária
-      Elements elementImages = doc.select("div.thumbnails a");
-      JSONArray secondaryImagesArray = new JSONArray();
-      String secondaryImages = null;
-      if (elementImages.size() > 1) {
-        for (int i = 1; i < elementImages.size(); i++) { // primeira imagem eh primaria
-          String image = elementImages.get(i).attr("data-original").trim();
-
-          if (image.isEmpty()) {
-            image = elementImages.get(i).attr("href").trim();
-          }
-
-          if (!image.isEmpty()) {
-            if (!image.startsWith("http")) {
-              image = "http:" + image;
-            }
-
-            secondaryImagesArray.put(image);
-          }
-        }
-      }
-      if (secondaryImagesArray.length() > 0) {
-        secondaryImages = secondaryImagesArray.toString();
-      }
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "div.thumbnails a", Arrays.asList("data-original", "href"), "https:",
+          "www.efacil.com.br", primaryImage);
 
       // Descrição
       String description = "";
@@ -159,7 +134,7 @@ public class BrasilEfacilCrawler extends Crawler {
           JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank, doc);
 
           // Prices
-          prices = crawlPrices(priceBank, jsonPrices);
+          prices = crawlPrices(priceBank, internalId, internalPid, jsonPrices);
 
           // Price
           price = crawlPrice(jsonPrices);
@@ -259,7 +234,7 @@ public class BrasilEfacilCrawler extends Crawler {
               JSONArray jsonPrices = crawlPriceFromApi(internalId, priceBank, doc);
 
               // Prices
-              prices = crawlPrices(priceBank, jsonPrices);
+              prices = crawlPrices(priceBank, internalId, internalPid, jsonPrices);
 
               // Price
               price = crawlPrice(jsonPrices);
@@ -290,12 +265,12 @@ public class BrasilEfacilCrawler extends Crawler {
 
           }
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       } // fim do caso de múltiplas variacoes
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -348,12 +323,15 @@ public class BrasilEfacilCrawler extends Crawler {
     return price;
   }
 
-  private Prices crawlPrices(Float price, JSONArray jsonPrices) {
+  private Prices crawlPrices(Float price, String internalId, String internalPid, JSONArray jsonPrices) {
     Prices prices = new Prices();
 
     if (price != null) {
 
-      prices.setBankTicketPrice(price);
+      JSONObject priceSimpleJson = crawlPriceFromApi(internalId, internalPid);
+
+      prices.setBankTicketPrice(CrawlerUtils.getDoubleValueFromJSON(priceSimpleJson, "offerPriceAV", false, true));
+      prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(priceSimpleJson, "listPrice", false, true));
 
       try {
         for (int i = 0; i < jsonPrices.length(); i++) {
@@ -432,26 +410,44 @@ public class BrasilEfacilCrawler extends Crawler {
       priceApi = Float.parseFloat(priceOffer.val());
     }
 
-    String url = "http://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10154&langId=-6&catalogId=10051"
+    String url = "https://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryInstallmentPrice?storeId=10154&langId=-6&catalogId=10051"
         + "&catalogEntryId=" + internalId + "&nonInstallmentPrice=" + priceApi;
 
-    String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String json = this.dataFetcher.get(session, request).getBody();
 
-    int x = json.indexOf("/*");
-    int y = json.indexOf("*/", x + 2);
+    if (json.contains("/*") && json.contains("*/")) {
+      int x = json.indexOf("/*");
+      int y = json.indexOf("*/", x + 2);
 
-    json = json.substring(x + 2, y);
-
-
-    JSONArray jsonPrice;
-    try {
-      jsonPrice = new JSONArray(json);
-    } catch (Exception e) {
-      jsonPrice = new JSONArray();
-      e.printStackTrace();
+      json = json.substring(x + 2, y);
     }
 
+    return CrawlerUtils.stringToJsonArray(json);
+  }
 
-    return jsonPrice;
+  private JSONObject crawlPriceFromApi(String internalId, String internalPid) {
+    JSONObject priceJson = new JSONObject();
+
+    String url = "https://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView?storeId=10154&langId=-6&catalogId=10051"
+        + "&catalogEntryId=" + internalId + "&productId=" + internalPid + "&parcelaEmDestaque=";
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String json = this.dataFetcher.get(session, request).getBody();
+
+    if (json.contains("/*") && json.contains("*/")) {
+      int x = json.indexOf("/*");
+      int y = json.lastIndexOf("*/");
+
+      json = json.substring(x + 2, y);
+    }
+
+    JSONObject catalog = CrawlerUtils.stringToJson(json);
+
+    if (catalog.has("catalogEntry")) {
+      priceJson = catalog.getJSONObject("catalogEntry");
+    }
+
+    return priceJson;
   }
 }

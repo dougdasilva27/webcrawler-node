@@ -13,7 +13,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -43,6 +45,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
   public BrasilCarrefourCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   @Override
@@ -60,7 +63,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       cookie.setPath("/");
       cookies.add(cookie);
     } catch (UnsupportedEncodingException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
   }
 
@@ -75,7 +78,8 @@ public class BrasilCarrefourCrawler extends Crawler {
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("upgrade-insecure-requests", "1");
 
-    return GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    return this.dataFetcher.get(session, request).getBody();
   }
 
   @Override
@@ -86,21 +90,21 @@ public class BrasilCarrefourCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalPid = crawlInternalPid(session.getOriginalURL());
+      String internalId = crawlInternalId(session.getOriginalURL());
       String name = crawlName(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
       String description = crawlDescription(doc);
       Integer stock = null;
-      String internalId = crawlInternalId(doc);
+      String internalPid = crawlInternalPid(doc);
       Elements marketplacesElements = doc.select(".list-group-item");
       Map<String, Prices> marketplaceMap;
 
       Double priceFrom = crawlPriceFrom(doc);
 
       if (marketplacesElements.isEmpty()) {
-        marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalId);
+        marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalPid);
       } else {
         marketplaceMap = crawlMarketplaceForMutipleSellers(marketplacesElements);
       }
@@ -121,7 +125,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     } else
 
     {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -142,7 +146,7 @@ public class BrasilCarrefourCrawler extends Crawler {
    * General methods *
    *******************/
 
-  private String crawlInternalId(Document document) {
+  private String crawlInternalPid(Document document) {
     String internalId = null;
     Element internalIdElement = document.select("#productCod").first();
 
@@ -153,7 +157,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     return internalId;
   }
 
-  private String crawlInternalPid(String url) {
+  private String crawlInternalId(String url) {
     String internalPid = null;
 
     if (url.contains("?")) {
@@ -161,7 +165,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     }
 
     if (url.contains("/p/")) {
-      String[] tokens = url.split("p/");
+      String[] tokens = url.split("/p/");
 
       if (tokens.length > 1 && tokens[1].contains("/")) {
         internalPid = tokens[1].split("/")[0];
@@ -194,10 +198,10 @@ public class BrasilCarrefourCrawler extends Crawler {
     return price;
   }
 
-  private Map<String, Prices> crawlMarketplaceForSingleSeller(Document document, String internalId) {
+  private Map<String, Prices> crawlMarketplaceForSingleSeller(Document document, String internalPid) {
     Map<String, Prices> marketplaces = new HashMap<>();
 
-    Element oneMarketplaceInfo = document.select(".block-add-cart #moreInformation" + internalId).first();
+    Element oneMarketplaceInfo = document.select(".block-add-cart #moreInformation" + internalPid).first();
     Element oneMarketplace = document.select(".block-add-cart > span").first();
     Element notifyMeElement = document.select(".text-not-product-avisme").first();
 

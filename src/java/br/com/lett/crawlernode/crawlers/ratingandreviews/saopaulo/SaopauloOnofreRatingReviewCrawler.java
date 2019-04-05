@@ -36,7 +36,7 @@ public class SaopauloOnofreRatingReviewCrawler extends RatingReviewCrawler {
 
     YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
 
-    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063");
+    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063", dataFetcher);
     Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
     Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
 

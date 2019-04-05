@@ -2,12 +2,17 @@ package br.com.lett.crawlernode.core.task.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.imgprocessing.ImageConverter;
 import br.com.lett.crawlernode.core.imgprocessing.ImageDownloadResult;
 import br.com.lett.crawlernode.core.session.Session;
@@ -38,7 +43,8 @@ public class ImageCrawler extends Task {
       Logging.printLogInfo(LOGGER, session, "Image file format: " + simpleDownloadResult.imageFormat);
 
       if (simpleDownloadResult.imageFile == null) {
-        Logging.printLogError(LOGGER, session, "Failed to download image....returning from image processTask()....");
+        Logging.printLogError(LOGGER, session,
+            "Failed to download image " + session.getOriginalURL() + " ....returning from image processTask()....");
         session.registerError(new SessionError(SessionError.BUSINESS_LOGIC, "Download image failed."));
         return;
       }
@@ -108,7 +114,7 @@ public class ImageCrawler extends Task {
     List<SessionError> errors = session.getErrors();
 
     if (!errors.isEmpty()) {
-      Logging.printLogError(LOGGER, session, "Task failed!");
+      Logging.printLogWarn(LOGGER, session, "Task failed!");
       session.setTaskStatus(Task.STATUS_FAILED);
     } else { // only remove the task from queue if it was flawless
       Logging.printLogDebug(LOGGER, session, "Task completed.");
@@ -228,8 +234,43 @@ public class ImageCrawler extends Task {
    */
   private File downloadImage() throws IOException {
     Logging.printLogDebug(LOGGER, session, "Downloading image from market...");
-    return DataFetcher.fetchImage(session);
+
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).build();
+
+    int marketId = session.getMarket().getNumber();
+    Map<String, String> headers = new HashMap<>();
+
+    if (marketId == 63 || marketId == 62 || marketId == 73) {
+      request.setSendContentEncoding(false);
+
+      headers.put(HttpHeaders.CONNECTION, "keep-alive");
+      headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+      headers.put(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br");
+      headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+
+      switch (marketId) {
+        case 63:
+          headers.put(HttpHeaders.HOST, "www.pontofrio-imagens.com.br");
+          break;
+        case 62:
+          headers.put(HttpHeaders.HOST, "www.casasbahia-imagens.com.br");
+          break;
+        case 73:
+          headers.put(HttpHeaders.HOST, "www.extra-imagens.com.br");
+          break;
+        default:
+          break;
+      }
+    } else if (marketId == 307) {
+      headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
+      request.setSendContentEncoding(false);
+    }
+
+    request.setHeaders(headers);
+
+    return new ApacheDataFetcher().fetchImage(session, request);
   }
+
 
   /**
    * 

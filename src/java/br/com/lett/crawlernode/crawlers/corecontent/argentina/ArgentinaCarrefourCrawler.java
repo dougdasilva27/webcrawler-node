@@ -68,7 +68,7 @@ public class ArgentinaCarrefourCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -182,8 +182,8 @@ public class ArgentinaCarrefourCrawler extends Crawler {
       try {
         price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
       } catch (NumberFormatException numberFormatException) {
-        Logging.printLogError(logger, session, "Error parsing price String to float.");
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(numberFormatException));
+        Logging.printLogWarn(logger, session, "Error parsing price String to float.");
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(numberFormatException));
       }
     } else {
       priceElement = doc.select("div.price-info span.regular-price span[itemprop=price]").first();
@@ -192,8 +192,8 @@ public class ArgentinaCarrefourCrawler extends Crawler {
         try {
           price = Float.parseFloat(priceString);
         } catch (NumberFormatException numberFormatException) {
-          Logging.printLogError(logger, session, "Error parsing price String to float.");
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(numberFormatException));
+          Logging.printLogWarn(logger, session, "Error parsing price String to float.");
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(numberFormatException));
         }
       }
     }
@@ -252,7 +252,7 @@ public class ArgentinaCarrefourCrawler extends Crawler {
         try {
           dataBanking = new JSONObject(dataLayer.substring(x, y + 1));
         } catch (JsonException jsonException) {
-          Logging.printLogError(logger, session, "Error parsing dataBanking json object [" + jsonException.getMessage() + "]");
+          Logging.printLogWarn(logger, session, "Error parsing dataBanking json object [" + jsonException.getMessage() + "]");
         }
       }
     }

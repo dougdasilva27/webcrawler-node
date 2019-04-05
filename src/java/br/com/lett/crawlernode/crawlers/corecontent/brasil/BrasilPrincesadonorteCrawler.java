@@ -7,9 +7,13 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -32,8 +36,15 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
   public BrasilPrincesadonorteCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
+
+  @Override
+  protected Object fetch() {
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+  }
 
   @Override
   public boolean shouldVisit() {
@@ -58,30 +69,28 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
       for (Element script : scripts) {
         JSONObject json = extractJsonFromScriptTag(script);
-        if (json.has("@type")) {
-          if (json.getString("@type").equalsIgnoreCase("product")) {
-            String internalId = crawlInternalId(json);
-            String name = crawlName(json);
-            Float price = crawlPrice(json);
-            Prices prices = crawlPrices(price, doc);
-            boolean available = price != null;
-            String primaryImage = crawlPrimaryImage(json);
+        if (json.has("@type") && json.getString("@type").equalsIgnoreCase("product")) {
+          String internalId = crawlInternalId(json);
+          String name = crawlName(json);
+          Float price = crawlPrice(json);
+          Prices prices = crawlPrices(price, doc);
+          boolean available = crawlAvailability(json);
+          String primaryImage = crawlPrimaryImage(json);
 
-            // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(null).setName(name)
-                .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-                .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-                .setSecondaryImages(null).setDescription(description).setStock(null).setMarketplace(null).build();
+          // Creating the product
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(null).setName(name)
+              .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null)
+              .setDescription(description).setStock(null).setMarketplace(null).build();
 
-            products.add(product);
-          }
+          products.add(product);
         }
       }
 
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -123,14 +132,12 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
   private Float crawlPrice(JSONObject json) {
     Float price = null;
-    JSONArray prices = new JSONArray();
-    JSONObject value = new JSONObject();
 
     if (json.has("offers")) {
-      prices = json.getJSONArray("offers");
+      JSONArray prices = json.getJSONArray("offers");
       for (Object offer : prices) {
         if (offer instanceof JSONObject) {
-          value = (JSONObject) offer;
+          JSONObject value = (JSONObject) offer;
           if (value.has("@type") && value.getString("@type").equalsIgnoreCase("offer")) {
             price = value.getFloat("price");
           }
@@ -142,6 +149,30 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     return price;
   }
 
+
+  private boolean crawlAvailability(JSONObject json) {
+    boolean available = false;
+
+    if (json.has("offers")) {
+      JSONArray offers = json.getJSONArray("offers");
+
+      for (Object o : offers) {
+        JSONObject offer = o instanceof JSONObject ? (JSONObject) o : new JSONObject();
+        if (offer.has("availability")) {
+          String availability = offer.get("availability").toString().toLowerCase();
+
+          if (availability.endsWith("outofstock")) {
+            available = false;
+          } else {
+            available = true;
+          }
+          break;
+        }
+      }
+    }
+
+    return available;
+  }
 
   private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;

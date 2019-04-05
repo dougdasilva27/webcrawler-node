@@ -12,11 +12,13 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -223,7 +225,7 @@ public class BrasilMoblyCrawler extends Crawler {
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -313,15 +315,11 @@ public class BrasilMoblyCrawler extends Crawler {
    *******************/
 
   private JSONObject fetchSkuInformation(String internalIDS) {
-    String url = "https://secure.mobly.com.br/api/catalog/price/hash/34ad996ba25a3c5b5c352406f932a3e31e0a45b7/?skus=" + internalIDS;
+    String url =
+        "https://secure.mobly.com.br/api/catalog/price/hash/92b1f91a6df23cfc5e00a6fc26bcb27d2b2d9128/?skus=" + internalIDS + "&_=1550515484107";
 
-    String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
-
-    if (json.startsWith("{") && json.endsWith("}")) {
-      return new JSONObject(json);
-    }
-
-    return new JSONObject();
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 
   private JSONObject assembleJsonProduct(String internalID, String internalPid, JSONObject jsonPage, JSONObject jsonProduct) {
@@ -367,9 +365,18 @@ public class BrasilMoblyCrawler extends Crawler {
     if (jsonInformation.has("finalPrice")) {
       jsonSku.put("Price", jsonInformation.getString("finalPrice"));
     }
-    if (jsonInformation.has("stock_available")) {
-      jsonSku.put("Available", jsonInformation.getBoolean("stock_available"));
+
+    if (jsonPage.has("stockStore")) {
+      JSONObject stockStore = jsonPage.getJSONObject("stockStore");
+
+      if (stockStore.has(internalID)) {
+        Integer stock = stockStore.getInt(internalID);
+
+        jsonSku.put("Available", stock > 0);
+        jsonSku.put("Stock", stock);
+      }
     }
+
     if (jsonInformation.has("option")) {
       jsonSku.put("NameVariation", jsonInformation.getString("option"));
     }

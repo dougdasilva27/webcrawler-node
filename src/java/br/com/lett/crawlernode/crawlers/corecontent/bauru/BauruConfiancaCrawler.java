@@ -10,9 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -67,6 +66,8 @@ public class BauruConfiancaCrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       JSONObject json = crawlProductApi(internalPid);
 
+      System.err.println(json);
+
       String internalId = crawlInternalId(json);
       String name = crawlName(json);
       Integer stock = crawlStock(json);
@@ -86,7 +87,7 @@ public class BauruConfiancaCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -105,7 +106,9 @@ public class BauruConfiancaCrawler extends Crawler {
       headers.put("Referer", session.getOriginalURL());
 
       String url = "https://www.confianca.com.br/bizrest/action/product/id/" + internalPid;
-      json = CrawlerUtils.stringToJson(GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1));
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+      json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
     }
 
     return json;
@@ -202,11 +205,11 @@ public class BauruConfiancaCrawler extends Crawler {
   private String crawlDescription(JSONObject json) {
     StringBuilder description = new StringBuilder();
 
-    if (json.has("short_description")) {
+    if (json.has("short_description") && !json.isNull("short_description")) {
       description.append(json.get("short_description"));
     }
 
-    if (json.has("description")) {
+    if (json.has("description") && !json.isNull("description")) {
       description.append(json.get("description"));
     }
 

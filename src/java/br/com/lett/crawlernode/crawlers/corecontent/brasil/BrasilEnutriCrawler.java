@@ -81,7 +81,7 @@ public class BrasilEnutriCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -237,6 +237,10 @@ public class BrasilEnutriCrawler extends Crawler {
       for (Element e : installmentsElements) {
         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false);
         installmentPriceMap.put(pair.getFirst(), pair.getSecond());
+      }
+
+      if (installmentPriceMap.isEmpty()) {
+        installmentPriceMap.put(1, price);
       }
 
       if (!installmentPriceMap.isEmpty()) {

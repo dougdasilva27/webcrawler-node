@@ -12,7 +12,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -96,7 +97,7 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -118,7 +119,8 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
       String dataValue = e.attr("data-value");
       String url =
           originalUrl + (originalUrl.contains("?") ? "&" : "?") + "attribute=COLOR_SECONDARY_COLOR%7C" + dataValue + "&quantity=1&noIndex=true";
-      Document docColor = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document docColor = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       variations.putAll(getSizeVariationsHmtls(docColor, url));
     }
 
@@ -141,7 +143,8 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
       }
 
       String url = urlColor + (urlColor.contains("?") ? "&" : "?") + attribute;
-      Document docSize = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document docSize = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       variations.put(url, docSize);
     }
@@ -181,7 +184,7 @@ public class BrasilMercadolivrecotyCrawler extends Crawler {
         try {
           sellerName = URLDecoder.decode(CommonMethods.getLast(sellerNameElement.attr("href").split("/")), "UTF-8").toLowerCase();
         } catch (UnsupportedEncodingException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

@@ -56,7 +56,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
-      JSONArray images = crawlArrayImages(doc);
+      JSONObject images = crawlArrayImages(doc);
       String primaryImage = crawlPrimaryImage(images);
       String secondaryImages = crawlSecondaryImages(images);
       String description = crawlDescription(doc);
@@ -72,7 +72,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -142,10 +142,11 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     return new Marketplace();
   }
 
-  private JSONArray crawlArrayImages(Document doc) {
+  private JSONObject crawlArrayImages(Document doc) {
+    JSONObject imagesJson = new JSONObject();
     JSONArray images = new JSONArray();
 
-    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true);
+    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
 
     if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
       JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
@@ -159,26 +160,38 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
           for (Object o : arrayImages) {
             JSONObject imageJson = (JSONObject) o;
 
+            String image = null;
+
             if (imageJson.has("full")) {
-              images.put(imageJson.get("full"));
+              image = imageJson.get("full").toString();
             } else if (imageJson.has("img")) {
-              images.put(imageJson.get("img"));
+              image = imageJson.get("img").toString();
             } else if (imageJson.has("thumb")) {
-              images.put(imageJson.get("thumb"));
+              image = imageJson.get("thumb").toString();
+            }
+
+            if (imageJson.has("isMain") && imageJson.getBoolean("isMain")) {
+              imagesJson.put("primary", image);
+            } else {
+              images.put(image);
             }
           }
         }
       }
     }
 
-    return images;
+    if (images.length() > 0) {
+      imagesJson.put("secondary", images);
+    }
+
+    return imagesJson;
   }
 
-  private String crawlPrimaryImage(JSONArray images) {
+  private String crawlPrimaryImage(JSONObject images) {
     String primaryImage = null;
 
-    if (images.length() > 0) {
-      primaryImage = images.getString(0);
+    if (images.has("primary")) {
+      primaryImage = images.get("primary").toString();
     }
 
     return primaryImage;
@@ -188,13 +201,12 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    * @param doc
    * @return
    */
-  private String crawlSecondaryImages(JSONArray images) {
+  private String crawlSecondaryImages(JSONObject images) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    if (images.length() > 1) {
-      images.remove(0);
-      secondaryImagesArray = images;
+    if (images.has("secondary")) {
+      secondaryImagesArray = images.getJSONArray("secondary");
     }
 
     if (secondaryImagesArray.length() > 0) {

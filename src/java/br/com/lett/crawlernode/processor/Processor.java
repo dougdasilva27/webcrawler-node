@@ -1,7 +1,12 @@
 package br.com.lett.crawlernode.processor;
 
+import java.sql.Array;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -12,9 +17,9 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DBSlack;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.database.JdbcConnectionFactory;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateConstants;
+import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.IllegalBehaviorElementValueException;
@@ -44,7 +49,7 @@ public class Processor {
 
     Logging.printLogInfo(logger, session, "Creating processed product ...");
 
-    String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    String nowISO = new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     Processed newProcessedProduct = null;
 
@@ -65,6 +70,18 @@ public class Processor {
     Marketplace marketplace = product.getMarketplace();
     Integer stock = product.getStock();
     String ean = product.getEan();
+    List<String> eans = null;
+
+    List<String> crawledEans = product.getEans();
+    if (crawledEans != null) {
+      for (String eanTmp : crawledEans) {
+        if (eanTmp != null && !eanTmp.isEmpty()) {
+          if (eans == null)
+            eans = new ArrayList<>();
+          eans.add(eanTmp);
+        }
+      }
+    }
 
     // checking fields
     boolean checkResult = checkFields(price, available, internalId, url, name, session);
@@ -116,6 +133,7 @@ public class Processor {
         newProcessedProduct.setOriginalDescription(description);
         newProcessedProduct.setInternalPid(internalPid);
         newProcessedProduct.setEan(ean);
+        newProcessedProduct.setEans(eans);
 
       }
 
@@ -124,7 +142,7 @@ public class Processor {
         newProcessedProduct = new Processed(null, internalId, internalPid, name, null, null, null, null, null, null, null, foto, secondaryPics, cat1,
             cat2, cat3, url, session.getMarket().getNumber(), nowISO, nowISO, null, nowISO, nowISO, null, null, description, price, prices, null,
             null, null, false, false, stock, new Behavior(), // behavior - will be update in the updateBehavior method just below
-            marketplace, ean);
+            marketplace, ean, eans);
       }
 
       // run the processor for the new model
@@ -209,8 +227,8 @@ public class Processor {
   public void updateBehaviorTest(Processed newProcessedProduct, String nowISO, Integer stock, boolean available, String status, Float price,
       Prices prices, Marketplace marketplace, Session session) {
 
-    DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
-    String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    DateTime startOfDay = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay();
+    String startOfDayISO = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     // Get the previous behavior object
     Behavior oldBehaviour;
@@ -276,8 +294,8 @@ public class Processor {
   public static void updateBehavior(Processed newProcessedProduct, String nowISO, Integer stock, boolean available, String status, Float price,
       Prices prices, Marketplace marketplace, Session session) {
 
-    DateTime startOfDay = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay();
-    String startOfDayISO = new DateTime(DateConstants.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
+    DateTime startOfDay = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay();
+    String startOfDayISO = new DateTime(DateUtils.timeZone).withTimeAtStartOfDay().plusSeconds(1).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
     // Get the previous behavior object
     Behavior oldBehaviour;
@@ -427,7 +445,7 @@ public class Processor {
         && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
       Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
-      if (discount > 20 && (newProcessedProduct.getPrice() > 50 || discount > 80)) {
+      if ((discount > 75 && newProcessedProduct.getPrice() > 50) || discount > 90) {
         DBSlack.reportPriceChanges(session,
             "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
                 + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
@@ -491,25 +509,22 @@ public class Processor {
 
     if (internalId != null && !internalId.isEmpty()) {
 
+      StringBuilder query = new StringBuilder();
+      query.append("SELECT * FROM processed WHERE market = ");
+      query.append(session.getMarket().getNumber());
+      query.append(" AND internal_id = '");
+      query.append(internalId);
+      query.append("' LIMIT 1");
+
+      Connection conn = null;
+      Statement sta = null;
+      ResultSet rs = null;
+
       try {
-        // Processed processedTable = Tables.PROCESSED;
-        //
-        // List<Condition> conditions = new ArrayList<>();
-        // conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber())
-        // .and(processedTable.INTERNAL_ID.equal(internalId)));
 
-        // TODO hotfix for query
-        // estava falhando aqui
-        // voltei do jeito antigo pra apagar o fogo
-        StringBuilder query = new StringBuilder();
-        query.append("SELECT * FROM processed WHERE market = ");
-        query.append(session.getMarket().getNumber());
-        query.append(" AND internal_id = '");
-        query.append(internalId);
-        query.append("' LIMIT 1");
-
-        // ResultSet rs = Main.dbManager.runSelectJooq(processedTable, null, conditions);
-        ResultSet rs = GlobalConfigurations.dbManager.connectionPostgreSQL.runSqlConsult(query.toString());
+        conn = JdbcConnectionFactory.getInstance().getConnection();
+        sta = conn.createStatement();
+        rs = sta.executeQuery(query.toString());
 
         while (rs.next()) {
 
@@ -639,6 +654,15 @@ public class Processor {
           }
 
           /*
+           * Array of eans
+           */
+          List<String> eans = null;
+          Array eansArray = rs.getArray("eans");
+          if (eansArray != null) {
+            eans = Arrays.asList((String[]) eansArray.getArray());
+          }
+
+          /*
            * Create the Processed model
            */
           actualProcessedProduct = new Processed(rs.getLong("id"), rs.getString("internal_id"), rs.getString("internal_pid"),
@@ -646,8 +670,10 @@ public class Processor {
               rs.getInt("multiplier"), rs.getString("unit"), rs.getString("extra"), rs.getString("pic"), rs.getString("secondary_pics"),
               rs.getString("cat1"), rs.getString("cat2"), rs.getString("cat3"), rs.getString("url"), rs.getInt("market"), rs.getString("ect"),
               rs.getString("lmt"), rs.getString("lat"), rs.getString("lrt"), rs.getString("lms"), rs.getString("status"), changes,
-              rs.getString("original_description"), actualPrice, actualPrices, digitalContent, rs.getLong("lett_id"), similars,
-              rs.getBoolean("available"), rs.getBoolean("void"), actualStock, behavior, actualMarketplace, rs.getString("ean"));
+              rs.getString("original_description"), actualPrice, actualPrices, digitalContent,
+              rs.getObject("lett_id") instanceof Long ? rs.getLong("lett_id") : null,
+              rs.getObject("master_id") instanceof Long ? rs.getLong("master_id") : null, similars, rs.getBoolean("available"), rs.getBoolean("void"),
+              actualStock, behavior, actualMarketplace, rs.getString("ean"), eans);
 
           return actualProcessedProduct;
 
@@ -655,6 +681,10 @@ public class Processor {
 
       } catch (SQLException e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      } finally {
+        JdbcConnectionFactory.closeResource(rs);
+        JdbcConnectionFactory.closeResource(sta);
+        JdbcConnectionFactory.closeResource(conn);
       }
     }
 

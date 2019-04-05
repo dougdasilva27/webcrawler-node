@@ -10,7 +10,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
@@ -39,13 +41,13 @@ public class VtexRatingCrawler {
    * @param document - html
    * @return
    */
-  public RatingReviewsCollection extractRatingAndReviewsForVtex(Document document) {
+  public RatingReviewsCollection extractRatingAndReviewsForVtex(Document document, DataFetcher dataFetcher) {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
 
     if (skuJson.has("productId")) {
-      RatingsReviews ratingReviews = extractRatingAndReviews(skuJson.get("productId").toString(), document);
+      RatingsReviews ratingReviews = extractRatingAndReviews(skuJson.get("productId").toString(), document, dataFetcher);
 
       List<String> idList = VTEXCrawlersUtils.crawlIdList(skuJson);
       for (String internalId : idList) {
@@ -65,9 +67,9 @@ public class VtexRatingCrawler {
    * @param doc - html
    * @return
    */
-  public RatingsReviews extractRatingAndReviews(String id, Document doc) {
+  public RatingsReviews extractRatingAndReviews(String id, Document doc, DataFetcher dataFetcher) {
     RatingsReviews ratingReviews = new RatingsReviews();
-    Document docRating = crawlApiRatings(session.getOriginalURL(), id);
+    Document docRating = crawlApiRatings(session.getOriginalURL(), id, dataFetcher);
 
     Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
     Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
@@ -90,7 +92,7 @@ public class VtexRatingCrawler {
    * @param internalPid
    * @return document
    */
-  private Document crawlApiRatings(String url, String internalPid) {
+  private Document crawlApiRatings(String url, String internalPid, DataFetcher dataFetcher) {
     Document doc = new Document(url);
 
     // Parameter in url for request POST ex: "led-32-ilo-hd-smart-d300032-" IN URL
@@ -104,13 +106,9 @@ public class VtexRatingCrawler {
     headers.put("Content-Type", "application/x-www-form-urlencoded");
     headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
 
-    String response = POSTFetcher.fetchPagePOSTWithHeaders(this.homePage + "userreview", session, payload, cookies, 1, headers);
-
-    if (response != null) {
-      doc = Jsoup.parse(response);
-    }
-
-    return doc;
+    Request request =
+        RequestBuilder.create().setUrl(this.homePage + "userreview").setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    return Jsoup.parse(dataFetcher.post(session, request).getBody());
   }
 
   /**

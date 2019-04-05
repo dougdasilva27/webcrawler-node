@@ -13,10 +13,12 @@ import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -78,7 +80,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -396,7 +398,8 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
         URI uri = new URIBuilder().setScheme("https").setHost(rawUrl.getHost()).setPath(rawUrl.getPath()).setParameter(name, value).build();
 
-        return DataFetcher.fetchDocument("GET", session, uri.toString(), null, null);
+        Request request = RequestBuilder.create().setUrl(uri.toString()).setCookies(cookies).build();
+        return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       } catch (MalformedURLException malformedUrlException) {
         Logging.printLogDebug(logger, session, "Not a valid payment popup url");

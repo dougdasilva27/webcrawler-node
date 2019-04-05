@@ -4,10 +4,12 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -33,7 +35,8 @@ public class BrasilLivrariaculturaRatingReviewCrawler extends RatingReviewCrawle
       String ratingApi = "https://comments.us1.gigya.com/comments.getComments?categoryID=ProductsRatingReview&streamID=" + internalId
           + "&includeStreamInfo=true&APIKey=3_3Mez5cLsMYm3EyiqY7w8i7fsPMonWe3pXEf29pFJTmxgG7pHbKZd0ytLh4KeenVe";
 
-      JSONObject ratingJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, ratingApi, null, cookies);
+      Request request = RequestBuilder.create().setUrl(ratingApi).setCookies(cookies).build();
+      JSONObject ratingJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
       ratingReviews.setAverageOverallRating(crawlRatingAvg(ratingJson));
 
@@ -44,7 +47,7 @@ public class BrasilLivrariaculturaRatingReviewCrawler extends RatingReviewCrawle
       ratingReviewsCollection.addRatingReviews(ratingReviews);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return ratingReviewsCollection;

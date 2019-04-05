@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -61,8 +63,7 @@ import models.prices.Prices;
 public class BrasilClimarioCrawler extends Crawler {
 
   private static final String HOME_PAGE = "http://www.climario.com.br/";
-  private static final List<String> MAIN_SELLER_NAME_LOWER_LIST =
-      Arrays.asList("climario.com.br", "climario");
+  private static final List<String> MAIN_SELLER_NAME_LOWER_LIST = Arrays.asList("climario.com.br", "climario");
 
   public BrasilClimarioCrawler(Session session) {
     super(session);
@@ -81,8 +82,7 @@ public class BrasilClimarioCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -91,8 +91,7 @@ public class BrasilClimarioCrawler extends Crawler {
       String description = crawlDescription(doc);
 
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       // ean data in json
       JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
@@ -103,8 +102,7 @@ public class BrasilClimarioCrawler extends Crawler {
         String internalId = crawlInternalId(jsonSku);
         String name = crawlName(jsonSku, skuJson);
         Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
-        Marketplace marketplace =
-            assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, doc);
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, doc);
         Float price = crawlMainPagePrice(marketplaceMap);
         boolean available = price != null;
 
@@ -115,20 +113,20 @@ public class BrasilClimarioCrawler extends Crawler {
         Integer stock = crawlStock(jsonProduct);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
-            .build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -296,8 +294,7 @@ public class BrasilClimarioCrawler extends Crawler {
     return marketplace;
   }
 
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap,
-      String internalId, JSONObject jsonSku, Document doc) {
+  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap, String internalId, JSONObject jsonSku, Document doc) {
     Marketplace marketplace = new Marketplace();
 
     for (String seller : marketplaceMap.keySet()) {
@@ -354,21 +351,20 @@ public class BrasilClimarioCrawler extends Crawler {
   }
 
   /**
-   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this:
-   * Visa à vista R$ 1.790,00
+   * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
+   * à vista R$ 1.790,00
    * 
    * @param internalId
    * @param price
    * @return
    */
-  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku,
-      Document docPrincipal) {
+  private Prices crawlPrices(String internalId, Float price, JSONObject jsonSku, Document docPrincipal) {
     Prices prices = new Prices();
 
     if (price != null) {
       String url = "https://www.climario.com.br/productotherpaymentsystems/" + internalId;
-      Document doc =
-          DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
 
@@ -474,8 +470,7 @@ public class BrasilClimarioCrawler extends Crawler {
         Element valueElement = i.select("td:not(.parcelas)").first();
 
         if (valueElement != null) {
-          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "")
-              .replaceAll("\\.", "").replaceAll(",", ".").trim());
+          Float value = Float.parseFloat(valueElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
 
           mapInstallments.put(installment, value);
         }
@@ -488,8 +483,8 @@ public class BrasilClimarioCrawler extends Crawler {
   private JSONObject crawlApi(String internalId) {
     String url = "https://www.climario.com.br/produto/sku/" + internalId;
 
-    JSONArray jsonArray =
-        DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);

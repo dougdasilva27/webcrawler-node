@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -58,7 +57,8 @@ public class BrasilNutriiCrawler extends Crawler {
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
+      String secondaryImages =
+          CrawlerUtils.scrapSimpleSecondaryImages(doc, "#slider img", Arrays.asList("src"), "https", "www.nutrii.com.br", primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
@@ -72,7 +72,7 @@ public class BrasilNutriiCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -159,27 +159,6 @@ public class BrasilNutriiCrawler extends Crawler {
     }
 
     return primaryImage;
-  }
-
-  /**
-   * @param doc
-   * @return
-   */
-  private String crawlSecondaryImages(Document doc) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements images = doc.select(".more-views li a");
-
-    for (int i = 1; i < images.size(); i++) { // primeira imagem é a imagem primaria
-      secondaryImagesArray.put(images.get(i).attr("href"));
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
   }
 
   /**

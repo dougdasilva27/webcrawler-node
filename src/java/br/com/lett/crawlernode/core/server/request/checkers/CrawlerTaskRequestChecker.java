@@ -30,7 +30,7 @@ public class CrawlerTaskRequestChecker {
       return checkImageTaskRequest(request);
     }
 
-    if (QueueName.INSIGHTS.equals(request.getQueueName())) {
+    if (QueueName.INSIGHTS.equals(request.getQueueName()) || QueueName.CORE_WEBSCRAPER_DEV.equals(request.getQueueName())) {
       if (request.getProcessedId() == null) {
         Logging.printLogError(logger, "Request is missing processedId");
         return false;

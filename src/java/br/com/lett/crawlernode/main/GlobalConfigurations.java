@@ -42,7 +42,7 @@ public class GlobalConfigurations {
     dbManager = new DatabaseManager(dbCredentials);
 
     // fetch all markets information from database
-    markets = new Markets(dbManager);
+    markets = new Markets();
 
     // initialize temporary folder for images download
     Persistence.initializeImagesDirectories(markets);

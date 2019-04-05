@@ -1,29 +1,29 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -49,90 +49,40 @@ import models.prices.Prices;
 
 public class BrasilDufrioCrawler extends Crawler {
 
-  private static final String HOME_PAGE_HTTP = "http://www.dufrio.com.br/";
   private static final String HOME_PAGE_HTTPS = "https://www.dufrio.com.br/";
-
-  private static final String USER_AGENT = DataFetcher.randUserAgent();
-  private LettProxy proxyToBeUsed = null;
 
   public BrasilDufrioCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.WEBDRIVER);
   }
 
   @Override
   protected Object fetch() {
-    return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, this.proxyToBeUsed, 1));
-  }
+    Document doc = new Document("");
+    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 
-  /**
-   * Esse market possui um verificador de javascript Esse verificador é uma função que monta o cookie
-   * e da um reload na página Com isso pegamos este script, trocamos o reload da página pelo retorno
-   * do cookie Para isso usamos o ScriptEngineManager para rodar o código javascript.
-   * 
-   * Para acessar o site deve se usar o cookie pego aqui e usar o mesmo user agent.
-   */
-  @Override
-  public void handleCookiesBeforeFetch() {
-    Document doc = Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, null, 1));
+    if (this.webdriver != null) {
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+      String requestHash = FetchUtilities.generateRequestHash(session);
 
-    this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
+      if (!isProductPage(doc)) {
+        this.webdriver.waitLoad(10000);
+        doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-    if (!isProductPage(doc)) {
-      Element script = doc.select("script").first();
-
-      if (script != null) {
-        String eval = script.html().trim();
-
-        if (eval.endsWith(";")) {
-          int y = eval.indexOf(";}}") + 3;
-          int x = eval.indexOf(';', y) + 1;
-
-          String b = eval.substring(y, x);
-
-          if (b.contains("(")) {
-            int z = b.indexOf('(') + 1;
-            int u = b.indexOf(')', z);
-
-            String result = b.substring(z, u);
-
-            eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result + ".replace(\"location.reload();\", \"\"); " + b;
-          }
-        }
-
-        ScriptEngineManager factory = new ScriptEngineManager();
-        ScriptEngine engine = factory.getEngineByName("js");
-        try {
-          String cookieString = engine.eval(eval).toString();
-          if (cookieString != null && cookieString.contains("=")) {
-            String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
-
-            String[] tokens = cookieValues.split("=");
-
-            if (tokens.length > 1) {
-
-              BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
-              cookie.setDomain("www.dufrio.com.br");
-              cookie.setPath("/");
-              this.cookies.add(cookie);
-
-              BasicClientCookie cookie2 = new BasicClientCookie("newsletter", "Visitante");
-              cookie2.setDomain("www.dufrio.com.br");
-              cookie2.setPath("/");
-              this.cookies.add(cookie2);
-            }
-          }
-
-        } catch (ScriptException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-        }
+        CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DUFRIO.html");
       }
+      // saving request content result on Amazon
+      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
+
     }
+
+    return doc;
   }
 
   @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && ((href.startsWith(HOME_PAGE_HTTPS)) || (href.startsWith(HOME_PAGE_HTTP)));
+    return !FILTERS.matcher(href).matches() && ((href.startsWith(HOME_PAGE_HTTPS)));
   }
 
   @Override
@@ -170,7 +120,7 @@ public class BrasilDufrioCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -214,7 +164,7 @@ public class BrasilDufrioCrawler extends Crawler {
             }
           }
         } catch (Exception e1) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
         }
 
         break;
@@ -314,30 +264,12 @@ public class BrasilDufrioCrawler extends Crawler {
 
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
-    Element descriptionElement = document.select("section.linha-01").first();
-    Element descriptionLGElement = document.select(".linha-bigLG").first();
-    Element caracteristicas = document.select(".caracteristicasDetalhe").first();
-    Element dimensoes = document.select(".dimensoes").first();
+    description.append(CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("section.linha-01",
+        "main > section:not([class]):not([id]) .small-12.columns", ".linha-bigLG", ".caracteristicasDetalhe", ".dimensoes")));
 
     Elements specialDescriptions = document.select("section[class^=linha-], div[class^=row box], .font-ubuntu-l");
     for (Element e : specialDescriptions) {
       description.append(e.html());
-    }
-
-    if (descriptionElement != null) {
-      description.append(descriptionElement.html());
-    }
-
-    if (descriptionLGElement != null) {
-      description.append(descriptionLGElement.html());
-    }
-
-    if (caracteristicas != null) {
-      description.append(caracteristicas.html());
-    }
-
-    if (dimensoes != null) {
-      description.append(dimensoes.html());
     }
 
     return description.toString();

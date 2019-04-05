@@ -5,8 +5,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,10 +15,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -49,14 +51,22 @@ public class BrasilNetshoesCrawler extends Crawler {
   }
 
   private String userAgent;
+  private LettProxy proxyUsed;
 
   @Override
   public void handleCookiesBeforeFetch() {
-    this.userAgent = DataFetcher.randUserAgent();
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, null, 1);
+    this.userAgent = FetchUtilities.randUserAgent();
 
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+    Response response = this.dataFetcher.get(session, request);
+
+    this.proxyUsed = response.getProxyUsed();
+
+    for (Cookie cookieResponse : response.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain(".netshoes.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
@@ -65,10 +75,11 @@ public class BrasilNetshoesCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
-    LettProxy proxy = session.getRequestProxy(HOME_PAGE);
-    String page = GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, this.userAgent, proxy, 1);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    return Jsoup.parse(page);
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
@@ -121,7 +132,7 @@ public class BrasilNetshoesCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -193,9 +204,10 @@ public class BrasilNetshoesCrawler extends Crawler {
 
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", "application/x-www-form-urlencoded");
+        headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-        String body =
-            POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers, this.userAgent, session.getRequestProxy(HOME_PAGE));
+        Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setPayload(payload).setProxy(proxyUsed).build();
+        String body = this.dataFetcher.get(session, request).getBody();
 
         if (body != null) {
           docSku = Jsoup.parse(body);
@@ -406,7 +418,7 @@ public class BrasilNetshoesCrawler extends Crawler {
               skuJson = chaordic.getJSONObject("product");
             }
           } catch (Exception e1) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
           }
         }
 

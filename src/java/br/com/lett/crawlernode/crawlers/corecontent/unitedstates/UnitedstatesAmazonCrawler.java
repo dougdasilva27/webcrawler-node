@@ -11,7 +11,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -84,7 +85,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -227,7 +228,8 @@ public class UnitedstatesAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document docMarketplace = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, urlMarketPlace, cookies, headers, 1));
+      Request request = RequestBuilder.create().setUrl(urlMarketPlace).setCookies(cookies).setHeaders(headers).build();
+      Document docMarketplace = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -238,9 +240,10 @@ public class UnitedstatesAmazonCrawler extends Crawler {
       while (nextPage != null) {
         String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Document nextDocMarketPlace = Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, nextUrl, cookies, headers, 1));
-        docs.add(nextDocMarketPlace);
-        nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
+        Request nextRequest = RequestBuilder.create().setUrl(nextUrl).setCookies(cookies).setHeaders(headers).build();
+        Document nextDoc = Jsoup.parse(this.dataFetcher.get(session, nextRequest).getBody());
+        docs.add(nextDoc);
+        nextPage = nextDoc.select(".a-last:not(.a-disabled)").first();
         headers.put("referer", nextUrl);
 
         page++;

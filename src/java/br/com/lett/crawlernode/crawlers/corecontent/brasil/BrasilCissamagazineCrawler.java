@@ -11,7 +11,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -78,7 +79,7 @@ public class BrasilCissamagazineCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -165,11 +166,12 @@ public class BrasilCissamagazineCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-    JSONObject json = CrawlerUtils.stringToJson(POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers));
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
     if (json.has("formasPagamento")) {
       Document doc = Jsoup.parse(json.get("formasPagamento").toString());
 
-      Elements parcels = doc.select(".price-formas-list li:not(.coluna)");
+      Elements parcels = doc.select(".price-formas-list tr td:first-child");
       for (Element e : parcels) {
         Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(null, e, true, "x");
 

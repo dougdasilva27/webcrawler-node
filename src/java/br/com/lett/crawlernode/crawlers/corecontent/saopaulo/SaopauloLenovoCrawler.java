@@ -12,7 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -41,7 +41,7 @@ public class SaopauloLenovoCrawler extends Crawler {
 
 	public SaopauloLenovoCrawler(Session session) {
 		super(session);
-		this.config.setFetcher(Fetcher.WEBDRIVER);
+		this.config.setFetcher(FetchMode.WEBDRIVER);
 	}
 
 	@Override
@@ -132,7 +132,7 @@ public class SaopauloLenovoCrawler extends Crawler {
 
 
 		} else {
-			Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
 		}
 
 		return products;

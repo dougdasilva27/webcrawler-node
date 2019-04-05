@@ -8,11 +8,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -131,6 +133,9 @@ public class BrasilFriopecasCrawler extends Crawler {
       JSONArray arr = CrawlerUtils.scrapEanFromVTEX(doc);
       String ean = 0 < arr.length() ? arr.getString(0) : null;
 
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
+
       // Creating the product
       Product product = new Product();
       product.setUrl(this.session.getOriginalURL());
@@ -148,7 +153,7 @@ public class BrasilFriopecasCrawler extends Crawler {
       product.setDescription(description);
       product.setStock(stock);
       product.setMarketplace(marketplace);
-      product.setEan(ean);
+      product.setEans(eans);
 
       products.add(product);
 
@@ -308,7 +313,8 @@ public class BrasilFriopecasCrawler extends Crawler {
     if (price != null) {
       String url = "http://www.friopecas.com.br/productotherpaymentsystems/" + internalId;
 
-      Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document docPrices = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       // O preço no boleto não aparece com javascript desligado, mas aparece a porcentagem de
       // desconto

@@ -43,7 +43,7 @@ public class FetcherRequestBuilder {
   }
 
   public FetcherRequestBuilder setForcedProxies(FetcherRequestForcedProxies forcedProxies) {
-    this.forcedProxies = forcedProxies;
+    this.forcedProxies = forcedProxies != null && forcedProxies.isEmpty() ? null : forcedProxies;
     return this;
   }
 

@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -41,6 +46,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
@@ -49,14 +55,35 @@ public class BrasilAmazonCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
+
+  @Override
+  protected Document fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>()));
+  }
+
+  public String fetchPage(String url, Map<String, String> headers) {
+    headers.put("Accept-Encoding", "no");
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
+        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU)).build();
+
+    String content = this.dataFetcher.get(session, request).getBody();
+
+    if (content == null || content.isEmpty()) {
+      Request requestApache = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      content = new ApacheDataFetcher().get(session, requestApache).getBody();
+    }
+
+    return content;
+  }
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
       String internalPid = internalId;
@@ -79,19 +106,19 @@ public class BrasilAmazonCrawler extends Crawler {
       boolean available = crawlAvailability(marketplaceMap) && price != null;
       String ean = crawlEan(doc);
 
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
+
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
-          .build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -142,8 +169,7 @@ public class BrasilAmazonCrawler extends Crawler {
   private JSONArray crawlImages(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]",
-        "vardata=", ";", true, false);
+    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", ";", true, false);
 
     if (data.has("imageGalleryData")) {
       images = data.getJSONArray("imageGalleryData");
@@ -167,8 +193,7 @@ public class BrasilAmazonCrawler extends Crawler {
       prices = marketplaces.get(SELLER_NAME_LOWER);
     }
 
-    if (prices != null && !prices.isEmpty()
-        && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+    if (prices != null && !prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
       Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
       price = priceDouble.floatValue();
     }
@@ -191,8 +216,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   private Float crawlPriceForPrincipalSeller(Document document) {
     Float price = null;
-    Element salePriceElement =
-        document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
+    Element salePriceElement = document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
     Element specialPrice = document.select("#priceblock_dealprice").first();
     Element foodPrice = document.select("#priceblock_ourprice").first();
 
@@ -224,13 +248,10 @@ public class BrasilAmazonCrawler extends Crawler {
   private List<Document> fetchDocumentMarketPlace(Document doc, String internalId) {
     List<Document> docs = new ArrayList<>();
 
-    Element marketplaceUrl =
-        doc.select("#moreBuyingChoices_feature_div .a-box .a-padding-base .a-size-small a[href]")
-            .first();
+    Element marketplaceUrl = doc.select("#moreBuyingChoices_feature_div .a-box .a-padding-base .a-size-small a[href]").first();
 
     if (marketplaceUrl != null) {
-      String urlMarketPlace = HOME_PAGE + "/gp/offer-listing/" + internalId
-          + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=0";
+      String urlMarketPlace = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=0";
 
       if (!urlMarketPlace.contains("amazon.com")) {
         urlMarketPlace = HOME_PAGE + urlMarketPlace;
@@ -240,8 +261,7 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document docMarketplace = Jsoup
-          .parse(GETFetcher.fetchPageGETWithHeaders(session, urlMarketPlace, cookies, headers, 1));
+      Document docMarketplace = Jsoup.parse(fetchPage(urlMarketPlace, headers));
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -250,11 +270,9 @@ public class BrasilAmazonCrawler extends Crawler {
       int page = 1;
 
       while (nextPage != null) {
-        String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId
-            + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
+        String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Document nextDocMarketPlace =
-            Jsoup.parse(GETFetcher.fetchPageGETWithHeaders(session, nextUrl, cookies, headers, 1));
+        Document nextDocMarketPlace = Jsoup.parse(fetchPage(nextUrl, headers));
         docs.add(nextDocMarketPlace);
         nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
         headers.put("referer", nextUrl);
@@ -313,8 +331,7 @@ public class BrasilAmazonCrawler extends Crawler {
         Element priceS = linePartner.select(".olpOfferPrice").first();
 
         if ((name != null || nameImg != null) && priceS != null) {
-          String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase()
-              : name.text().trim().toLowerCase();
+          String partnerName = nameImg != null ? nameImg.attr("alt").trim().toLowerCase() : name.text().trim().toLowerCase();
           Float partnerPrice = MathUtils.parseFloatWithComma(priceS.ownText());
 
           if (partnerName.equals(principalSellerFrontPage)) {
@@ -345,8 +362,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
         Prices prices = marketplaceEntry.getValue();
 
-        if (!prices.isEmpty()
-            && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+        if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
           // Pegando o preço de uma vez no cartão
           Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
           Float priceFloat = price.floatValue();
@@ -444,8 +460,7 @@ public class BrasilAmazonCrawler extends Crawler {
    */
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories =
-        document.select("#wayfinding-breadcrumbs_feature_div ul li:not([class]) a");
+    Elements elementCategories = document.select("#wayfinding-breadcrumbs_feature_div ul li:not([class]) a");
 
     for (Element e : elementCategories) {
       String cat = e.ownText().trim();
@@ -460,9 +475,10 @@ public class BrasilAmazonCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
+    Element prodInfoElement = doc.selectFirst("#prodDetails");
 
-    Elements elementsDescription = doc.select(
-        "#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
+    Elements elementsDescription =
+        doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
 
     for (Element e : elementsDescription) {
       description.append(e.html().replace("noscript", "div"));
@@ -500,6 +516,10 @@ public class BrasilAmazonCrawler extends Crawler {
 
         break;
       }
+    }
+
+    if (prodInfoElement != null) {
+      description.append(prodInfoElement.toString());
     }
 
     return description.toString();
@@ -540,8 +560,7 @@ public class BrasilAmazonCrawler extends Crawler {
         installments.put(1, frontPagePrice);
       }
 
-      Elements pricesElement =
-          doc.select("div.a-popover-preload[id^=a-popover] > div > table:not([border]) tr");
+      Elements pricesElement = doc.select("div.a-popover-preload[id^=a-popover] > div > table:not([border]) tr");
 
       if (pricesElement.isEmpty()) {
         pricesElement = doc.select("div.a-popover-preload[id^=a-popover] > table:not([border]) tr");

@@ -5,9 +5,10 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -17,6 +18,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
 
   public BrasilCarrefourCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override
@@ -45,8 +47,8 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String productUrl = crawlProductUrl(e);
-        String internalPid = crawlInternalPid(productUrl);
-        String internalId = crawlInternalId(e);
+        String internalPid = crawlInternalPid(e);
+        String internalId = crawlInternalId(productUrl);
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -94,7 +96,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  private String crawlInternalId(Element e) {
+  private String crawlInternalPid(Element e) {
     String internalId = null;
 
     Element id = e.select("input[name=productCodePost]").first();
@@ -106,7 +108,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     return internalId;
   }
 
-  private String crawlInternalPid(String url) {
+  private String crawlInternalId(String url) {
     String internalPid = null;
 
     if (url.contains("?")) {
@@ -136,10 +138,12 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("upgrade-insecure-requests", "1");
-    String response = GETFetcher.fetchPageGETWithHeaders(session, url, cookies, headers, 1);
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    String response = this.dataFetcher.get(session, request).getBody();
 
     if (response == null || response.isEmpty()) {
-      response = POSTFetcher.requestStringUsingFetcher(url, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
+      response = new FetcherDataFetcher().get(session, request).getBody();
     }
 
     return response;

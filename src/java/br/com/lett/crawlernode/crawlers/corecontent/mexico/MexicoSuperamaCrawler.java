@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -76,7 +75,7 @@ public class MexicoSuperamaCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -137,19 +136,20 @@ public class MexicoSuperamaCrawler extends Crawler {
   private String crawlDescription(Document document) {
     StringBuilder description = new StringBuilder();
 
-    Element descriptionElement = document.select(".detail-description-content").first();
-    Elements moreInfoElements = document.select("div.detail-moreinfo");
-
-    if (document.select(".moreinfo__ingredientes").first() != null)
+    if (document.select(".moreinfo__ingredientes").first() != null) {
       description.append(" Ingredientes ");
-    if (document.select(".moreinfo__nutricional").first() != null)
+    }
+
+    if (document.select(".moreinfo__nutricional").first() != null) {
       description.append(" Información Nutricional ");
-    if (document.select(".moreinfo__caracteristicas").first() != null)
+    }
+
+    if (document.select(".moreinfo__caracteristicas").first() != null) {
       description.append(" Características ");
-    if (descriptionElement != null)
-      description.append(descriptionElement.html());
-    if (!moreInfoElements.isEmpty())
-      description.append(moreInfoElements.html());
+    }
+
+    description.append(CrawlerUtils.scrapSimpleDescription(document,
+        Arrays.asList(".detail-description-content", "#tab_descripcion", ".content__caracteristicas", ".content__ingredientes")));
 
     return description.toString();
   }

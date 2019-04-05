@@ -1,22 +1,28 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -25,36 +31,60 @@ import models.Seller;
 import models.Util;
 import models.prices.Prices;
 
-public class B2WCrawler {
+public class B2WCrawler extends Crawler {
 
-  private static final String MAIN_B2W_NAME_LOWER = "b2w";
-  private Logger logger;
-  private Session session;
-  private String sellerNameLower;
-  private List<String> subSellers;
-  private String homePage;
-  private List<Cookie> cookies;
-
-  public B2WCrawler(Session session, Logger logger2, String store, String homePage, List<Cookie> cookies, List<String> subSellers) {
-    this.session = session;
-    this.logger = logger2;
-    this.sellerNameLower = store;
-    this.subSellers = subSellers;
-    this.homePage = homePage;
-    this.cookies = cookies;
+  public B2WCrawler(Session session) {
+    super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
-  public List<Product> extractProducts(Document doc) {
+  private static final String MAIN_B2W_NAME_LOWER = "b2w";
+  protected String sellerNameLower;
+  protected List<String> subSellers;
+  protected String homePage;
+
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(homePage));
+  }
+
+  @Override
+  protected Document fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), session));
+  }
+
+  public String fetchPage(String url, Session session) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Accept-Encoding", "");
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
+        .setSendUserAgent(false).setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
+        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY)).build();
+
+    String content = this.dataFetcher.get(session, request).getBody();
+
+    if (content == null || content.isEmpty()) {
+      content = new ApacheDataFetcher().get(session, request).getBody();
+    }
+
+    return content;
+  }
+
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    // Json da pagina principal
+    JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
+
+    // Pega só o que interessa do json da api
+    JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
+
+    if (infoProductJson.has("skus")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-      // Json da pagina principal
-      JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
-
-      // Pega só o que interessa do json da api
-      JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
       String internalPid = this.crawlInternalPid(infoProductJson);
       CategoryCollection categories = crawlCategories(infoProductJson);
@@ -85,7 +115,7 @@ public class B2WCrawler {
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -94,10 +124,6 @@ public class B2WCrawler {
   /*******************************
    * Product page identification *
    *******************************/
-
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".product-info-area").isEmpty() || !doc.select(".product-page").isEmpty();
-  }
 
   private String crawlInternalPid(JSONObject assembleJsonProduct) {
     String internalPid = null;
@@ -112,7 +138,7 @@ public class B2WCrawler {
   private Map<String, String> crawlSkuOptions(JSONObject infoProductJson, Document doc) {
     Map<String, String> skuMap = new HashMap<>();
 
-    boolean unnavailablePage = !doc.select(".unavailable-informer").isEmpty();
+    boolean unnavailablePage = !doc.select("#title-stock").isEmpty();
 
     if (infoProductJson.has("skus")) {
       JSONArray skus = infoProductJson.getJSONArray("skus");
@@ -382,7 +408,7 @@ public class B2WCrawler {
       Element iframe = datasheet.selectFirst("iframe");
 
       if (iframe != null) {
-        Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, iframe.attr("src"), null, cookies);
+        Document docDescriptionFrame = Jsoup.parse(fetchPage(iframe.attr("src"), session));
         if (docDescriptionFrame != null) {
           alreadyCapturedHtmlSlide = true;
           description.append(docDescriptionFrame.html());
@@ -398,7 +424,7 @@ public class B2WCrawler {
 
       if (desc2 != null && !alreadyCapturedHtmlSlide) {
         String urlDesc2 = homePage + "product-description/acom/" + internalPid;
-        Document docDescriptionFrame = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, urlDesc2, null, cookies);
+        Document docDescriptionFrame = Jsoup.parse(fetchPage(urlDesc2, session));
         if (docDescriptionFrame != null) {
           description.append(docDescriptionFrame.html());
         }

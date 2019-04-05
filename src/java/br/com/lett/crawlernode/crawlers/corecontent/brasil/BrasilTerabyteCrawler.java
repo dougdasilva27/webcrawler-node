@@ -5,10 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -53,7 +55,7 @@ public class BrasilTerabyteCrawler extends Crawler {
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.tit-prod", false);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".val-prod", true);
+      Float price = crawlPrice(doc);
       Prices prices = crawlPrices(doc, price);
       boolean available = !doc.select(".product-payment .buy").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a strong");
@@ -72,11 +74,21 @@ public class BrasilTerabyteCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
 
+  }
+
+  private Float crawlPrice(Document doc) {
+    Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".val-prod", true);
+
+    if (price == null) {
+      price = CrawlerUtils.scrapSimplePriceFloat(doc, ".p3", false);
+    }
+
+    return price;
   }
 
   private boolean isProductPage(Document doc) {
@@ -142,7 +154,9 @@ public class BrasilTerabyteCrawler extends Crawler {
       Element parcelUrl = doc.selectFirst("a.parc-pro");
       if (parcelUrl != null) {
         String url = CrawlerUtils.sanitizeUrl(parcelUrl, "href", "https:", "www.terabyteshop.com.br");
-        Document parcelsDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+        Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+        Document parcelsDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
         Elements parcels = parcelsDoc.select("#verparcelamento ul li");
         for (Element e : parcels) {

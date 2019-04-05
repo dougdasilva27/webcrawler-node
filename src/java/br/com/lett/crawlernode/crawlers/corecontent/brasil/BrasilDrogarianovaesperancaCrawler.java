@@ -9,14 +9,15 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -62,13 +63,16 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+
       String ean = crawlEan(doc);
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
@@ -229,28 +233,23 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
 
-      String json = POSTFetcher.fetchPagePOSTWithHeaders(pricesUrl, session, payload, cookies, 1, headers);
+      Request request = RequestBuilder.create().setUrl(pricesUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+      JSONObject pricesJson = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
-      try {
-        JSONObject pricesJson = new JSONObject(json);
+      if (pricesJson.has("d")) {
+        JSONArray cards = pricesJson.getJSONArray("d");
 
-        if (pricesJson.has("d")) {
-          JSONArray cards = pricesJson.getJSONArray("d");
+        for (int i = 0; i < cards.length() - 1; i++) {
+          JSONObject card = cards.getJSONObject(i);
+          String cardName = crawlCardName(card);
 
-          for (int i = 0; i < cards.length() - 1; i++) {
-            JSONObject card = cards.getJSONObject(i);
-            String cardName = crawlCardName(card);
-
-            if (cardName != null && card.has("Itens")) {
-              setInstallments(cardName, card, prices);
-            }
+          if (cardName != null && card.has("Itens")) {
+            setInstallments(cardName, card, prices);
           }
-
         }
 
-      } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
+
 
     }
 

@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -83,7 +85,7 @@ public class BrasilAmbientairCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -186,37 +188,6 @@ public class BrasilAmbientairCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlSecondaryImages(JSONObject apiInfo) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    if (apiInfo.has("Images")) {
-      JSONArray jsonArrayImages = apiInfo.getJSONArray("Images");
-
-      for (int i = 0; i < jsonArrayImages.length(); i++) {
-        JSONArray arrayImage = jsonArrayImages.getJSONArray(i);
-        JSONObject jsonImage = arrayImage.getJSONObject(0);
-
-        // jump primary image
-        if (jsonImage.has("IsMain") && jsonImage.getBoolean("IsMain")) {
-          continue;
-        }
-
-        if (jsonImage.has("Path")) {
-          String urlImage = changeImageSizeOnURL(jsonImage.getString("Path"));
-          secondaryImagesArray.put(urlImage);
-        }
-
-      }
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
   /**
    * Get the image url and change it size
    * 
@@ -312,7 +283,9 @@ public class BrasilAmbientairCrawler extends Crawler {
 
     if (price != null) {
       String url = "https://www.ambientair.com.br/productotherpaymentsystems/" + internalId;
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       prices.setPriceFrom(crawlPriceFrom(jsonSku));
       Float discountPrice = MathUtils.normalizeTwoDecimalPlaces(price - (price * 0.05f));
@@ -410,7 +383,8 @@ public class BrasilAmbientairCrawler extends Crawler {
   private JSONObject crawlApi(String internalId) {
     String url = "https://www.ambientair.com.br/produto/sku/" + internalId;
 
-    JSONArray jsonArray = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session, url, null, cookies);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
     if (jsonArray.length() > 0) {
       return jsonArray.getJSONObject(0);

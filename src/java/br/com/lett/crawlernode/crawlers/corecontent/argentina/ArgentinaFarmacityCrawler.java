@@ -45,27 +45,23 @@ public class ArgentinaFarmacityCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
       vtexUtil.setHasBankTicket(false);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc,
-          ".bread-crumb li" + CrawlerUtils.CSS_SELECTOR_IGNORE_FIRST_CHILD);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li" + CrawlerUtils.CSS_SELECTOR_IGNORE_FIRST_CHILD);
       String description = crawlDescription(doc);
 
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
-        String newUrl =
-            internalId != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session)
-                : session.getOriginalURL();
+        String newUrl = internalId != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".brand", false);
 
@@ -77,25 +73,21 @@ public class ArgentinaFarmacityCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)
-            ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER)
-            : new Prices();
+        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(newUrl).setInternalId(internalId)
-            .setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-            .setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create().setUrl(newUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
         products.add(product);
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -106,11 +98,13 @@ public class ArgentinaFarmacityCrawler extends Crawler {
 
     if (skuJson.has("name")) {
       name.append(skuJson.getString("name"));
-      String nameVariation = jsonSku.has("skuname") ? jsonSku.getString("skuname") : null;
+      // The lines below are commented because there are not name with variation in this site
 
-      if (nameVariation != null) {
-        name.append(" ").append(nameVariation);
-      }
+      // String nameVariation = jsonSku.has("skuname") ? jsonSku.getString("skuname") : null;
+      //
+      // if (nameVariation != null) {
+      // name.append(" ").append(nameVariation);
+      // }
     }
 
     if (brand != null) {

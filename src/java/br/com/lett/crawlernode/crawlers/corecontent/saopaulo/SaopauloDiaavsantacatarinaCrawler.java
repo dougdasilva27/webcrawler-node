@@ -45,7 +45,7 @@ public class SaopauloDiaavsantacatarinaCrawler extends Crawler {
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
     String url = "https://www.dia.com.br/api/checkout/pub/postal-code/BRA/" + CEP;
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(url, null, "www.dia.com.br", "/", session);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(url, null, "www.dia.com.br", "/", cookies, session, null, dataFetcher);
   }
 
   @Override
@@ -54,7 +54,7 @@ public class SaopauloDiaavsantacatarinaCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -90,7 +90,7 @@ public class SaopauloDiaavsantacatarinaCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

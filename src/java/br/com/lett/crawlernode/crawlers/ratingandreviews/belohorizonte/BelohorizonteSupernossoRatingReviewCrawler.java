@@ -1,16 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.belohorizonte;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -26,13 +27,8 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
-    // performing request to get cookie
-    String cookieValue = DataFetcher.fetchCookie(session, HOME_PAGE, "JSESSIONID", null, 1);
-
-    BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", cookieValue);
-    cookie.setDomain("www.supernossoemcasa.com.br");
-    cookie.setPath("/e-commerce/");
-    this.cookies.add(cookie);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, Arrays.asList("JSESSIONID"), "www.supernossoemcasa.com.br", "/e-commerce/", cookies,
+        session, new HashMap<>(), dataFetcher);
   }
 
   @Override
@@ -45,7 +41,7 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      JSONObject api = crawlProductInformatioFromApi(session.getOriginalURL());
+      JSONObject api = crawlProductInformatioFromApi();
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(api);
       Double avgRating = getTotalAvgRating(api);
@@ -114,39 +110,27 @@ public class BelohorizonteSupernossoRatingReviewCrawler extends RatingReviewCraw
     return url.startsWith(HOME_PAGE + "p/");
   }
 
-  private JSONObject crawlProductInformatioFromApi(String productUrl) {
+  private JSONObject crawlProductInformatioFromApi() {
     JSONObject api = new JSONObject();
 
-    if (productUrl.contains("/p/")) {
-      String id = productUrl.split("/p/")[1].split("/")[0];
+    String url = session.getOriginalURL();
+
+    if (url.contains("/p/")) {
+      String id = url.split("/p/")[1].split("/")[0];
       String apiUrl = "https://www.supernossoemcasa.com.br/e-commerce/api/products/" + id;
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
 
       // request with fetcher
-      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(apiUrl, cookies, headers, null, DataFetcher.GET_REQUEST, session, false);
-      String page = null;
+      Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).build();
+      String page = this.dataFetcher.get(session, request).getBody();
 
-      if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
-          && fetcherResponse.getInt("request_status_code") < 400) {
-        JSONObject response = fetcherResponse.getJSONObject("response");
-
-        if (response.has("body")) {
-          page = response.get("body").toString();
-        }
-      } else {
-        // normal request
-        page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+      if (page == null || page.isEmpty()) {
+        page = new ApacheDataFetcher().get(session, request).getBody();
       }
 
-      if (page != null && page.startsWith("{") && page.endsWith("}")) {
-        try {
-          api = new JSONObject(page);
-        } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-        }
-      }
+      api = CrawlerUtils.stringToJson(page);
     }
 
     return api;

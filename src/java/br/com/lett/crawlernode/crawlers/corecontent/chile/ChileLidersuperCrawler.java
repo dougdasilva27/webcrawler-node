@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -51,7 +53,7 @@ public class ChileLidersuperCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=productID]", true);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info h1", false);
+      String name = scrapName(doc);
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#productPrice .price", true);
       Prices prices = crawlPrices(price, doc);
       Integer stock = crawlStock(internalId);
@@ -71,7 +73,7 @@ public class ChileLidersuperCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -82,11 +84,22 @@ public class ChileLidersuperCrawler extends Crawler {
     return !doc.select(".product-info").isEmpty();
   }
 
+  private String scrapName(Document doc) {
+    StringBuilder name = new StringBuilder();
+
+    Elements names = doc.select(".product-info h1 span, .product-profile h1 span");
+    for (Element e : names) {
+      name.append(e.ownText().trim()).append(" ");
+    }
+
+    return name.toString().trim();
+  }
+
   private List<String> crawlImages(String id) {
     List<String> images = new ArrayList<>();
 
-    Document docXml = DataFetcher.fetchDocumentXml(DataFetcher.GET_REQUEST, session,
-        "https://wlmstatic.lider.cl/contentassets/galleries/" + id + ".xml", null, cookies);
+    Request request = RequestBuilder.create().setUrl("https://wlmstatic.lider.cl/contentassets/galleries/" + id + ".xml").setCookies(cookies).build();
+    Document docXml = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
     Elements items = docXml.getElementsByTag("image");
     for (Element e : items) {
@@ -121,12 +134,14 @@ public class ChileLidersuperCrawler extends Crawler {
   private Integer crawlStock(String id) {
     Integer stock = 0;
 
-    JSONArray json = DataFetcher.fetchJSONArray(DataFetcher.GET_REQUEST, session,
-        "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp?productNumber=" + id + "&useProfile=true&consolidate=true",
-        null, cookies);
+    Request request = RequestBuilder.create()
+        .setUrl(
+            "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp?productNumber=" + id + "&useProfile=true&consolidate=true")
+        .setCookies(cookies).build();
+    JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
-    if (json.length() > 0) {
-      JSONObject skuJson = json.getJSONObject(0);
+    if (array.length() > 0) {
+      JSONObject skuJson = array.getJSONObject(0);
 
       if (skuJson.has("stockLevel")) {
         String text = skuJson.get("stockLevel").toString().replaceAll("[^0-9]", "");

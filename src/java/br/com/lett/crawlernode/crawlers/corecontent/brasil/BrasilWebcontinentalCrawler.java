@@ -10,8 +10,9 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -19,6 +20,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -82,7 +84,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -144,7 +146,7 @@ public class BrasilWebcontinentalCrawler extends Crawler {
           }
 
         } catch (JSONException ex) {
-          Logging.printLogError(logger, CommonMethods.getStackTrace(ex));
+          Logging.printLogWarn(logger, CommonMethods.getStackTrace(ex));
         }
 
         break;
@@ -253,13 +255,9 @@ public class BrasilWebcontinentalCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-    JSONObject json = new JSONObject();
-    String page = POSTFetcher
-        .fetchPagePOSTWithHeaders("https://mid.webcontinental.com.br/webservice/pricesOfSkus.json", session, payload, cookies, 1, headers).trim();
-
-    if (page.startsWith("{") && page.endsWith("}")) {
-      json = new JSONObject(page);
-    }
+    Request request = RequestBuilder.create().setUrl("https://mid.webcontinental.com.br/webservice/pricesOfSkus.json").setCookies(cookies)
+        .setHeaders(headers).setPayload(payload).build();
+    JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
     if (json.has("response")) {
       JSONArray response = json.getJSONArray("response");
@@ -407,28 +405,15 @@ public class BrasilWebcontinentalCrawler extends Crawler {
       String url = "https://www.webcontinental.com.br/ccstoreui/v1/pages/product?" + "pageParam=" + internalPid
           + "&dataOnly=false&pageId=product&cacheableDataOnly=true";
 
-      JSONObject fetcherResponse = POSTFetcher.fetcherRequest(url, cookies, null, null, DataFetcher.GET_REQUEST, session, false);
-      String page = null;
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      String content = new FetcherDataFetcher().get(session, request).getBody();
 
-      if (fetcherResponse.has("response") && fetcherResponse.has("request_status_code") && fetcherResponse.getInt("request_status_code") >= 200
-          && fetcherResponse.getInt("request_status_code") < 400) {
-        JSONObject response = fetcherResponse.getJSONObject("response");
-
-        if (response.has("body")) {
-          page = response.get("body").toString();
-        }
-      } else {
-        // normal request
-        page = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      if (content == null || content.isEmpty()) {
+        Request requestApache = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+        content = this.dataFetcher.get(session, requestApache).getBody();
       }
 
-      try {
-        JSONObject api = page != null ? new JSONObject(page) : new JSONObject();
-
-        return sanityzeJsonAPI(api);
-      } catch (JSONException e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
+      return sanityzeJsonAPI(CrawlerUtils.stringToJson(content));
     }
 
     return new JSONObject();
@@ -475,8 +460,8 @@ public class BrasilWebcontinentalCrawler extends Crawler {
           child.put("skuId", sku.getString("repositoryId"));
         }
 
-        if (sku.has("voltagem")) {
-          child.put("skuName", sku.getString("voltagem"));
+        if (sku.has("voltagem") && !sku.isNull("voltagem")) {
+          child.put("skuName", sku.get("voltagem").toString().replace("[", "").replace("]", "").replace("\"", ""));
         }
 
         if (sku.has("salePrices")) {

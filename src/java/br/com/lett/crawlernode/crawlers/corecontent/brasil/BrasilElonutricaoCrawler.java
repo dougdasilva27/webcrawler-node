@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -71,7 +73,7 @@ public class BrasilElonutricaoCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -225,7 +227,8 @@ public class BrasilElonutricaoCrawler extends Crawler {
     if (pricesUrl != null) {
       String url = HOME_PAGE + pricesUrl.attr("data-ajax-post-url");
 
-      Document pricesDoc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document pricesDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       Elements cards = pricesDoc.select(".produto_list_pagamento li");
 
       for (Element e : cards) {

@@ -6,7 +6,7 @@ public class FetcherReponseStatistics {
 
   private String requestId;
   private String url;
-  private List<FetcherReponseStatisticsRequest> requests;
+  private List<RequestsStatistics> requests;
 
   public String getRequestId() {
     return requestId;
@@ -24,11 +24,11 @@ public class FetcherReponseStatistics {
     this.url = url;
   }
 
-  public List<FetcherReponseStatisticsRequest> getRequests() {
+  public List<RequestsStatistics> getRequests() {
     return requests;
   }
 
-  public void setRequests(List<FetcherReponseStatisticsRequest> requests) {
+  public void setRequests(List<RequestsStatistics> requests) {
     this.requests = requests;
   }
 

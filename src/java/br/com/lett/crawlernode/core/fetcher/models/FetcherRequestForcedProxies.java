@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
 
 public class FetcherRequestForcedProxies {
 
@@ -27,6 +26,10 @@ public class FetcherRequestForcedProxies {
     }
 
     return forcedProxies;
+  }
+
+  public boolean isEmpty() {
+    return this.specific == null && (this.any == null || this.any.isEmpty());
   }
 
   public LettProxy getSpecific() {

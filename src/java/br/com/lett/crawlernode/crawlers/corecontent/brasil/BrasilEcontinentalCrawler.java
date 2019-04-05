@@ -10,11 +10,13 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -231,7 +233,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
 
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -267,9 +269,8 @@ public class BrasilEcontinentalCrawler extends Crawler {
     headers.put("Content-Type", "application/json");
     headers.put("X-Requested-With", "XMLHttpRequest");
 
-    JSONObject jsonPrice = new JSONObject(POSTFetcher.fetchPagePOSTWithHeaders(urlVariation, session, "", null, 1, headers));
-
-    return jsonPrice;
+    Request request = RequestBuilder.create().setUrl(urlVariation).setCookies(cookies).setHeaders(headers).setPayload("").build();
+    return CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
   }
 
   private Float crawlPriceVariation(JSONObject jsonPrice) {

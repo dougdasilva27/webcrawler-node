@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
@@ -57,7 +56,7 @@ public class BrasilPichauCrawler extends Crawler {
       boolean available = !doc.select(".stock.available").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .item:not(.home):not(.product) a");
       JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-      String primaryImage = crawlPrimaryImage(images);
+      String primaryImage = crawlPrimaryImage(images, doc);
       String secondaryImages = crawlSecondaryImages(images);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".form-pichau-product .product.info")).replace("hidemobile", "");
 
@@ -70,7 +69,7 @@ public class BrasilPichauCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -92,11 +91,21 @@ public class BrasilPichauCrawler extends Crawler {
     return internalId;
   }
 
-  private String crawlPrimaryImage(JSONArray images) {
+  private String crawlPrimaryImage(JSONArray images, Document doc) {
+    Element metaImage = doc.selectFirst("meta[property=\"og:image\"]");
+    String token = null;
     String primaryImage = null;
 
-    if (images.length() > 0) {
-      primaryImage = images.getString(0);
+    if (metaImage != null) {
+      String attr = metaImage.attr("content");
+      token = attr.substring(attr.lastIndexOf("/"), attr.length());
+    }
+    for (Object object : images) {
+      String image = (String) object;
+
+      if (image.endsWith(token)) {
+        primaryImage = image;
+      }
     }
 
     return primaryImage;

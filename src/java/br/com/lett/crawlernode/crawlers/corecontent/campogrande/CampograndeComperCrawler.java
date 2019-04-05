@@ -2,20 +2,23 @@
 package br.com.lett.crawlernode.crawlers.corecontent.campogrande;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -44,28 +47,33 @@ public class CampograndeComperCrawler extends Crawler {
   }
 
   private String userAgent;
+  private LettProxy proxyUsed;
 
   @Override
   public void handleCookiesBeforeFetch() {
-    Logging.printLogDebug(logger, session, "Adding cookie...");
+    this.userAgent = FetchUtilities.randUserAgent();
 
-    this.userAgent = DataFetcher.randUserAgent();
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    Map<String, String> cookiesMap =
-        DataFetcher.fetchCookies(session, HOME_PAGE, cookies, this.userAgent, 1);
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+    Response response = this.dataFetcher.get(session, request);
 
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    this.proxyUsed = response.getProxyUsed();
+
+    for (Cookie cookieResponse : response.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.comperdelivery.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
     }
 
-    Map<String, String> cookiesMap2 = DataFetcher.fetchCookies(session,
-        "https://www.comperdelivery.com.br/store/SetStore?storeId=6602", cookies, this.userAgent,
-        1);
-    for (Entry<String, String> entry : cookiesMap2.entrySet()) {
-      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+    Request request2 = RequestBuilder.create().setUrl("https://www.comperdelivery.com.br/store/SetStore?storeId=6602").setCookies(cookies)
+        .setHeaders(headers).build();
+    Response response2 = this.dataFetcher.get(session, request2);
+
+    for (Cookie cookieResponse : response2.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.comperdelivery.com.br");
       cookie.setPath("/");
       this.cookies.add(cookie);
@@ -74,12 +82,11 @@ public class CampograndeComperCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
-    LettProxy proxy =
-        session.getRequestProxy("https://www.comperdelivery.com.br/store/SetStore?storeId=6602");
-    String page = GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies,
-        this.userAgent, proxy, 1);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    return Jsoup.parse(page);
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
@@ -88,11 +95,9 @@ public class CampograndeComperCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject productJson =
-          CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", false, false);
+      JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", false, false);
 
       String internalId = crawlInternalId(productJson);
       String internalPid = crawlInternalPid(productJson);
@@ -102,26 +107,26 @@ public class CampograndeComperCrawler extends Crawler {
       Prices prices = available ? crawlPrices(price, doc) : new Prices();
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".images .thumbs li[style~=block] img", Arrays.asList("src"), "https",
+          "www.comperdelivery.com.br", primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
-      String ean =
-          productJson.has("RKProductEan13") ? productJson.getString("RKProductEan13") : null;
+      String ean = productJson.has("RKProductEan13") ? productJson.getString("RKProductEan13") : null;
+
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-          .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-          .setDescription(description).setStock(stock).setMarketplace(marketplace).setEan(ean)
-          .build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -166,11 +171,11 @@ public class CampograndeComperCrawler extends Crawler {
     Float price = null;
 
     try {
-      if (price == null && product.has("RKProductPrice")) {
+      if (product.has("RKProductPrice")) {
         price = Float.parseFloat(product.get("RKProductPrice").toString());
       }
     } catch (NumberFormatException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
     }
 
     return price;
@@ -202,23 +207,6 @@ public class CampograndeComperCrawler extends Crawler {
     }
 
     return primaryImage;
-  }
-
-  /**
-   * at the time this crawler was made,there was no secondary images
-   * 
-   * @param doc
-   * @return
-   */
-  private String crawlSecondaryImages(Document doc) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
   }
 
   /**
@@ -259,8 +247,7 @@ public class CampograndeComperCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(JSONObject product) {
-    return product.has("RKProductAvailable")
-        && product.get("RKProductAvailable").toString().equals("1");
+    return product.has("RKProductAvailable") && product.get("RKProductAvailable").toString().equals("1");
   }
 
   /**

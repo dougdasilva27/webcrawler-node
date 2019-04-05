@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.database;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,14 +12,14 @@ import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
+import org.jooq.conf.ParamType;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.FindIterable;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import dbmodels.Tables;
@@ -49,23 +52,33 @@ public class DatabaseDataFetcher {
    * @return
    */
   public Market fetchMarket(String marketCity, String marketName) {
+    dbmodels.tables.Market marketTable = Tables.MARKET;
+
+    List<Field<?>> fields = new ArrayList<>();
+    fields.add(marketTable.ID);
+    fields.add(marketTable.CITY);
+    fields.add(marketTable.NAME);
+    fields.add(marketTable.PROXIES);
+    fields.add(marketTable.PROXIES_IMAGES);
+
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
+
+    Connection conn = null;
+    Statement sta = null;
+    ResultSet rs = null;
+
     try {
 
-      dbmodels.tables.Market marketTable = Tables.MARKET;
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(this.databaseManager.jooqPostgres.select(fields).from(marketTable).where(conditions).getSQL(ParamType.INLINED));
 
-      List<Field<?>> fields = new ArrayList<>();
-      fields.add(marketTable.ID);
-      fields.add(marketTable.CITY);
-      fields.add(marketTable.NAME);
-      fields.add(marketTable.PROXIES);
-      fields.add(marketTable.PROXIES_IMAGES);
+      Result<Record> records = this.databaseManager.jooqPostgres.fetch(rs);
 
-      List<Condition> conditions = new ArrayList<>();
-      conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
+      if (!records.isEmpty()) {
+        Record r = records.get(0);
 
-      Result<Record> records = (Result<Record>) databaseManager.connectionPostgreSQL.runSelect(marketTable, fields, conditions);
-
-      for (Record r : records) {
         // get the proxies used in this market
         ArrayList<String> proxies = new ArrayList<>();
         JSONArray proxiesJSONArray = new JSONArray(r.getValue(marketTable.PROXIES));
@@ -86,7 +99,12 @@ public class DatabaseDataFetcher {
 
     } catch (Exception e) {
       Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
+
     return null;
   }
 
@@ -101,15 +119,29 @@ public class DatabaseDataFetcher {
   public static Long fetchCountOfProcessedsFromCrawlerRanking(String location, int market, String today, String yesterday) {
     Long count = 0l;
 
-    try {
-      String sql = "SELECT COUNT(crawler_ranking.id) AS count FROM crawler_ranking, processed " + "WHERE crawler_ranking.processed_id = processed_id "
-          + "AND processed.market = " + market + " " + "AND crawler_ranking.location = '" + location + "' " + "AND crawler_ranking.date BETWEEN '"
-          + yesterday + "' AND '" + today + "'";
+    StringBuilder sql = new StringBuilder();
 
-      count = (Long) GlobalConfigurations.dbManager.connectionPostgreSQL.runSqlSelectJooq(sql).get(0).get("count");
+    sql.append("SELECT COUNT(crawler_ranking.id) AS count FROM crawler_ranking, processed ")
+        .append("WHERE crawler_ranking.processed_id = processed_id ").append("AND processed.market = ").append(market)
+        .append(" AND crawler_ranking.location = '").append(location).append("' AND crawler_ranking.date BETWEEN '").append(yesterday)
+        .append("' AND '").append(today).append("'");
+
+    Connection conn = null;
+    ResultSet rs = null;
+    Statement sta = null;
+    try {
+      conn = JdbcConnectionFactory.getInstance().getConnection();
+      sta = conn.createStatement();
+      rs = sta.executeQuery(sql.toString());
+
+      count = (Long) rs.getObject("count");
 
     } catch (Exception e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+    } finally {
+      JdbcConnectionFactory.closeResource(rs);
+      JdbcConnectionFactory.closeResource(sta);
+      JdbcConnectionFactory.closeResource(conn);
     }
 
     return count;

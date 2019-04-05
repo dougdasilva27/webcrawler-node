@@ -11,13 +11,20 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -39,8 +46,7 @@ public class CrawlerUtils {
    * @param sellerList
    * @return
    */
-  public static List<String> getMainSellers(Map<String, Prices> marketplaceMap,
-      List<String> sellerList) {
+  public static List<String> getMainSellers(Map<String, Prices> marketplaceMap, List<String> sellerList) {
     List<String> mainSellersList = new ArrayList<>();
 
     for (String seller : sellerList) {
@@ -61,8 +67,7 @@ public class CrawlerUtils {
    * @param List<String> sellers
    * @return
    */
-  public static boolean getAvailabilityFromMarketplaceMap(Map<String, Prices> marketplaceMap,
-      List<String> sellerList) {
+  public static boolean getAvailabilityFromMarketplaceMap(Map<String, Prices> marketplaceMap, List<String> sellerList) {
     boolean availability = false;
 
     for (String seller : sellerList) {
@@ -101,14 +106,14 @@ public class CrawlerUtils {
    * Scrap simple string from html
    * 
    * @param doc
-   * @param cssSelector
+   * @param cssSelector - if null will scrap info from doc
    * @param ownText - if must use element.ownText(), if false will be used element.text()
    * @return
    */
   public static String scrapStringSimpleInfo(Element doc, String cssSelector, boolean ownText) {
     String info = null;
 
-    Element infoElement = doc.selectFirst(cssSelector);
+    Element infoElement = cssSelector != null ? doc.selectFirst(cssSelector) : doc;
     if (infoElement != null) {
       info = ownText ? infoElement.ownText().trim() : infoElement.text().trim();
     }
@@ -119,16 +124,21 @@ public class CrawlerUtils {
   /**
    * Scrap simple string from html
    * 
+   * Element: <div class="name">
+   * 
+   * Att: class
+   * 
+   * Return: name
+   * 
    * @param doc
-   * @param cssSelector
-   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @param cssSelector - if null will scrap info from doc
+   * @param att - ex: class, id, value, content
    * @return
    */
-  public static String scrapStringSimpleInfoByAttribute(Element doc, String cssSelector,
-      String att) {
+  public static String scrapStringSimpleInfoByAttribute(Element doc, String cssSelector, String att) {
     String info = null;
 
-    Element infoElement = doc.selectFirst(cssSelector);
+    Element infoElement = cssSelector != null ? doc.selectFirst(cssSelector) : doc;
     if (infoElement != null) {
       info = infoElement.hasAttr(att) ? infoElement.attr(att) : null;
     }
@@ -138,11 +148,58 @@ public class CrawlerUtils {
 
 
   /**
+   * 
+   * Scrap simple price from html
+   * 
+   * @param doc - html
+   * @param cssSelector - cssSelector for scrap info (cssSelector != null ?
+   *        doc.selectFirst(cssSelector) : doc)
+   * @param att - ex: class, id, value, content
+   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+   * @return
+   */
+  public static Float scrapFloatPriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat) {
+    Float price = null;
+
+    String priceStr = att != null ? scrapStringSimpleInfoByAttribute(doc, cssSelector, att) : scrapStringSimpleInfo(doc, cssSelector, ownText);
+    if (priceStr != null) {
+      if (priceFormat == '.') {
+        price = MathUtils.parseFloatWithDots(priceStr);
+      } else if (priceFormat == ',') {
+        price = MathUtils.parseFloatWithComma(priceStr);
+      }
+    }
+
+    return price;
+  }
+
+  /**
+   * 
+   * Scrap simple price from html
+   * 
+   * @param doc - html
+   * @param cssSelector - cssSelector for scrap info (cssSelector != null ?
+   *        doc.selectFirst(cssSelector) : doc)
+   * @param att - ex: class, id, value, content
+   * @param ownText - if must use element.ownText(), if false will be used element.text()
+   * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+   * @return
+   */
+  public static Double scrapDoublePriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat) {
+    Float price = scrapFloatPriceFromHtml(doc, cssSelector, att, ownText, priceFormat);
+    return price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
+  }
+
+  /**
    * Scrap simple price from html
    * 
    * @param document
    * @param cssSelector
    * @param ownText
+   * 
+   * @deprecated use scrapFloatPriceFromHtml
+   * 
    * @return Float
    */
   public static Float scrapSimplePriceFloat(Element document, String cssSelector, boolean ownText) {
@@ -150,8 +207,7 @@ public class CrawlerUtils {
 
     Element priceElement = document.selectFirst(cssSelector);
     if (priceElement != null) {
-      price = MathUtils.parseFloatWithComma(
-          ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+      price = MathUtils.parseFloatWithComma(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
     }
 
     return price;
@@ -159,69 +215,91 @@ public class CrawlerUtils {
 
   /**
    * Scrap simple price from html
+   * 
+   * @param document
+   * @param cssSelector
+   * @param ownText
+   * 
+   * @deprecated use scrapFloatPriceFromHtml
+   * 
+   * @return Float
+   */
+  public static Float scrapSimplePriceFloatWithDots(Element document, String cssSelector, boolean ownText) {
+    Float price = null;
+
+    Element priceElement = document.selectFirst(cssSelector);
+    if (priceElement != null) {
+      price = MathUtils.parseFloatWithDots(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+    }
+
+    return price;
+  }
+
+  /**
+   * Scrap simple price from html
+   * 
+   * @param document
+   * @param cssSelector
+   * @param ownText
+   * 
+   * @deprecated use scrapDoublePriceFromHtml
+   * 
+   * @return Double
+   */
+  public static Double scrapSimplePriceDouble(Element document, String cssSelector, boolean ownText) {
+    Double price = null;
+
+    Element priceElement = document.selectFirst(cssSelector);
+    if (priceElement != null) {
+      price = MathUtils.parseDoubleWithComma(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+    }
+
+    return price;
+  }
+
+  /**
+   * Scrap simple price from html
+   * 
+   * @param document
+   * @param cssSelector
+   * @param ownText
+   * 
+   * @deprecated use scrapDoublePriceFromHtml
+   * 
+   * @return Double
+   */
+  public static Double scrapSimplePriceDoubleWithDots(Document document, String cssSelector, boolean ownText) {
+    Double price = null;
+
+    Element priceElement = document.selectFirst(cssSelector);
+    if (priceElement != null) {
+      price = MathUtils.parseDoubleWithDot(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+    }
+
+    return price;
+  }
+
+  /**
+   * Scrap simple number integer from html
    * 
    * @param document
    * @param cssSelector
    * @param ownText
    * @return Float
    */
-  public static Float scrapSimplePriceFloatWithDots(Element document, String cssSelector,
-      boolean ownText) {
-    Float price = null;
+  public static Integer scrapSimpleInteger(Element document, String cssSelector, boolean ownText) {
+    Integer number = null;
 
     Element priceElement = document.selectFirst(cssSelector);
     if (priceElement != null) {
-      price = MathUtils
-          .parseFloatWithDots(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
+      number = MathUtils.parseInt(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
     }
 
-    return price;
+    return number;
   }
 
   /**
-   * Scrap simple price from html
-   * 
-   * @param document
-   * @param cssSelector
-   * @param ownText
-   * @return Double
-   */
-  public static Double scrapSimplePriceDouble(Element document, String cssSelector,
-      boolean ownText) {
-    Double price = null;
-
-    Element priceElement = document.selectFirst(cssSelector);
-    if (priceElement != null) {
-      price = MathUtils.parseDoubleWithComma(
-          ownText ? priceElement.ownText().trim() : priceElement.text().trim());
-    }
-
-    return price;
-  }
-
-  /**
-   * Scrap simple price from html
-   * 
-   * @param document
-   * @param cssSelector
-   * @param ownText
-   * @return Double
-   */
-  public static Double scrapSimplePriceDoubleWithDots(Document document, String cssSelector,
-      boolean ownText) {
-    Double price = null;
-
-    Element priceElement = document.selectFirst(cssSelector);
-    if (priceElement != null) {
-      price = MathUtils
-          .parseDoubleWithDot(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
-    }
-
-    return price;
-  }
-
-  /**
-   * Scrap simple description from html
+   * Scrap simple description from html for the first result based on selectors
    * 
    * @param doc
    * @param selectors - description css selectors list
@@ -242,7 +320,7 @@ public class CrawlerUtils {
   }
 
   /**
-   * Scrap simple description from html
+   * Scrap simple description from html for all results based on selectors
    * 
    * @param doc
    * @param selectors - description css selectors list
@@ -271,8 +349,7 @@ public class CrawlerUtils {
    * @param host - www.hostname.com.br
    * @return
    */
-  public static String scrapSimplePrimaryImage(Element doc, String cssSelector,
-      List<String> attributes, String protocol, String host) {
+  public static String scrapSimplePrimaryImage(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
     String image = null;
 
     Element elementPrimaryImage = doc.selectFirst(cssSelector);
@@ -293,8 +370,8 @@ public class CrawlerUtils {
    * @param primaryImage - if null, all images will be in secondary images
    * @return
    */
-  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector,
-      List<String> attributes, String protocol, String host, String primaryImage) {
+  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
+      String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -315,8 +392,8 @@ public class CrawlerUtils {
   }
 
   /**
-   * Select url from html - Append host and protocol if url needs Scroll through all the attributes
-   * in the list sent in sequence to find a url
+   * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
+   * the list sent in sequence to find a url
    * 
    * @param doc - html
    * @param cssSelector - Ex: "a.url"
@@ -325,14 +402,13 @@ public class CrawlerUtils {
    * @param host - send host in this format: "www.hostname.com.br"
    * @return Url with protocol and host
    */
-  public static String scrapUrl(Element doc, String cssSelector, String attribute, String protocol,
-      String host) {
+  public static String scrapUrl(Element doc, String cssSelector, String attribute, String protocol, String host) {
     return scrapUrl(doc, cssSelector, Arrays.asList(attribute), protocol, host);
   }
 
   /**
-   * Select url from html - Append host and protocol if url needs Scroll through all the attributes
-   * in the list sent in sequence to find a url
+   * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
+   * the list sent in sequence to find a url
    * 
    * @param doc - html
    * @param cssSelector - Ex: "a.url"
@@ -341,8 +417,7 @@ public class CrawlerUtils {
    * @param host - send host in this format: "www.hostname.com.br"
    * @return Url with protocol and host
    */
-  public static String scrapUrl(Element doc, String cssSelector, List<String> attributes,
-      String protocol, String host) {
+  public static String scrapUrl(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
     String url = null;
 
     Element urlElement = doc.selectFirst(cssSelector);
@@ -363,8 +438,7 @@ public class CrawlerUtils {
    * @param host - send host in this format: "www.hostname.com.br"
    * @return Url with protocol and host
    */
-  public static String sanitizeUrl(Element element, List<String> attributes, String protocol,
-      String host) {
+  public static String sanitizeUrl(Element element, List<String> attributes, String protocol, String host) {
     String sanitizedUrl = null;
 
     for (String att : attributes) {
@@ -390,15 +464,18 @@ public class CrawlerUtils {
   public static String completeUrl(String url, String protocol, String host) {
     StringBuilder sanitizedUrl = new StringBuilder();
 
-    if(!protocol.endsWith(":") && !protocol.endsWith("//")) {
-    	protocol += ":";
+    if (url.startsWith("../")) {
+      url = CommonMethods.getLast(url.split("\\.\\.\\/"));
     }
-    
+
+    if (!protocol.endsWith(":") && !protocol.endsWith("//")) {
+      protocol += ":";
+    }
+
     if (!url.startsWith("http") && url.contains(host)) {
-      sanitizedUrl.append(protocol).append(url);
+      sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(url);
     } else if (!url.contains(host) && !url.startsWith("http")) {
-      sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host)
-          .append(url);
+      sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host).append(url.startsWith("/") ? url : "/" + url);
     } else {
       sanitizedUrl.append(url);
     }
@@ -432,11 +509,6 @@ public class CrawlerUtils {
     return sanitizedUrl.toString();
   }
 
-  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled,
-      String domain, String path, Session session) {
-    return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, new ArrayList<>(), session);
-  }
-
   /**
    * Crawl cookies from a page
    * 
@@ -448,22 +520,70 @@ public class CrawlerUtils {
    * @param session - crawler session
    * @return List<Cookie>
    */
-  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled,
-      String domain, String path, List<Cookie> cookiesClient, Session session) {
+  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
+      List<Cookie> cookiesClient, Session session, DataFetcher dataFetcher) {
+
+    return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, cookiesClient, session, null, dataFetcher);
+  }
+
+  /**
+   * Crawl cookies from a page
+   * 
+   * @param url - page where are cookies
+   * @param cookiesToBeCrawled - list(string) of cookies to be crawled
+   * @param domain - domain to set in cookie
+   * @param path - path to set in cookie
+   * @param cookiesClient
+   * @param session - crawler session
+   * @param headers - request headers
+   * @return List<Cookie>
+   */
+  public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
+      List<Cookie> cookiesClient, Session session, Map<String, String> headers, DataFetcher dataFetcher) {
     List<Cookie> cookies = new ArrayList<>();
 
-    Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, url, cookiesClient, 1);
-    for (Entry<String, String> entry : cookiesMap.entrySet()) {
-      String cookieName = entry.getKey().trim();
+    Request request = RequestBuilder.create().setCookies(cookiesClient).setUrl(url).setHeaders(headers).build();
+    Response response = dataFetcher.get(session, request);
 
-      if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty()
-          || cookiesToBeCrawled.contains(cookieName)) {
-        BasicClientCookie cookie = new BasicClientCookie(cookieName, entry.getValue());
+    List<Cookie> cookiesResponse = response.getCookies();
+    for (Cookie cookieResponse : cookiesResponse) {
+      if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieResponse.getName())) {
+        BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
         cookie.setDomain(domain);
         cookie.setPath(path);
         cookies.add(cookie);
       }
+    }
 
+    return cookies;
+  }
+
+  /**
+   * Crawl cookies from a page
+   * 
+   * @param url - page where are cookies
+   * @param cookiesToBeCrawled - list(string) of cookies to be crawled
+   * @param domain - domain to set in cookie
+   * @param path - path to set in cookie
+   * @param cookiesClient
+   * @param session - crawler session
+   * @param headers - request headers
+   * @return List<Cookie>
+   */
+  public static List<Cookie> fetchCookiesFromAPage(Request request, String domain, String path, List<String> cookiesToBeCrawled, Session session,
+      DataFetcher dataFetcher) {
+    List<Cookie> cookies = new ArrayList<>();
+
+    Response response = dataFetcher.get(session, request);
+
+    List<Cookie> cookiesResponse = response.getCookies();
+    for (Cookie cookieResponse : cookiesResponse) {
+      if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieResponse.getName())) {
+        BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+        cookie.setDomain(domain);
+        cookie.setPath(path);
+        cookies.add(cookie);
+      }
     }
 
     return cookies;
@@ -486,8 +606,7 @@ public class CrawlerUtils {
       for (DataNode node : tag.dataNodes()) {
         if (tag.html().trim().startsWith(scriptVariableName)) {
           skuJsonString = node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
-              + node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
-                  .split(Pattern.quote("};"))[0];
+              + node.getWholeData().split(Pattern.quote(scriptVariableName))[1].split(Pattern.quote("};"))[0];
           break;
         }
       }
@@ -498,8 +617,8 @@ public class CrawlerUtils {
         skuJson = new JSONObject(skuJsonString);
 
       } catch (JSONException e) {
-        Logging.printLogError(LOGGER, session, "Error creating JSONObject from var skuJson_0");
-        Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
+        Logging.printLogWarn(LOGGER, session, "Error creating JSONObject from var skuJson_0");
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTraceString(e));
       }
     }
 
@@ -518,8 +637,7 @@ public class CrawlerUtils {
    * @throws IllegalArgumentException
    * @deprecated
    */
-  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token,
-      String finalIndex)
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
     return selectJsonFromHtml(doc, cssElement, token, finalIndex, true);
   }
@@ -537,8 +655,7 @@ public class CrawlerUtils {
    * @throws IllegalArgumentException
    * @deprecated
    */
-  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token,
-      String finalIndex, boolean withoutSpaces)
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
       throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
     return selectJsonFromHtml(doc, cssElement, token, finalIndex, withoutSpaces, false);
   }
@@ -563,9 +680,8 @@ public class CrawlerUtils {
    * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
    * @throws IllegalArgumentException if doc is null
    */
-  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token,
-      String finalIndex, boolean withoutSpaces, boolean lastFinalIndex)
-      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+  public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
+      boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
     if (doc == null)
       throw new IllegalArgumentException("Argument doc cannot be null");
@@ -584,8 +700,7 @@ public class CrawlerUtils {
         object = stringToJson(script.trim());
         break;
       } else if (script.contains(token) && (finalIndex == null || script.contains(finalIndex))) {
-        object = stringToJson(
-            extractSpecificStringFromScript(script, token, finalIndex, lastFinalIndex));
+        object = stringToJson(extractSpecificStringFromScript(script, token, finalIndex, lastFinalIndex));
         break;
       }
     }
@@ -613,9 +728,8 @@ public class CrawlerUtils {
    * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
    * @throws IllegalArgumentException if doc is null
    */
-  public static JSONArray selectJsonArrayFromHtml(Document doc, String cssElement, String token,
-      String finalIndex, boolean withoutSpaces, boolean lastFinalIndex)
-      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+  public static JSONArray selectJsonArrayFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
+      boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
     if (doc == null)
       throw new IllegalArgumentException("Argument doc cannot be null");
@@ -634,8 +748,7 @@ public class CrawlerUtils {
         object = stringToJsonArray(script.trim());
         break;
       } else if (script.contains(token) && (finalIndex == null || script.contains(finalIndex))) {
-        object = stringToJsonArray(
-            extractSpecificStringFromScript(script, token, finalIndex, lastFinalIndex));
+        object = stringToJsonArray(extractSpecificStringFromScript(script, token, finalIndex, lastFinalIndex));
         break;
       }
     }
@@ -656,8 +769,7 @@ public class CrawlerUtils {
    * @param lastFinalIndex if true, the substring will find last index of finalIndex
    * @return
    */
-  public static String extractSpecificStringFromScript(String script, String token,
-      String finalIndex, boolean lastFinalIndex) {
+  public static String extractSpecificStringFromScript(String script, String token, String finalIndex, boolean lastFinalIndex) {
     String json = null;
 
     int x = script.indexOf(token) + token.length();
@@ -673,7 +785,7 @@ public class CrawlerUtils {
 
       int plusIndex = 0;
 
-      if (finalIndex.equals("};")) {
+      if (finalIndex.equals("};") || finalIndex.equals("},")) {
         plusIndex = 1;
       }
 
@@ -688,11 +800,11 @@ public class CrawlerUtils {
   public static JSONObject stringToJson(String str) {
     JSONObject json = new JSONObject();
 
-    if (str.startsWith("{") && str.endsWith("}")) {
+    if (str.trim().startsWith("{") && str.trim().endsWith("}")) {
       try {
-        json = new JSONObject(str);
+        json = new JSONObject(str.trim());
       } catch (Exception e1) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+        Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
     }
 
@@ -702,11 +814,11 @@ public class CrawlerUtils {
   public static JSONArray stringToJsonArray(String str) {
     JSONArray json = new JSONArray();
 
-    if (str.startsWith("[") && str.endsWith("]")) {
+    if (str.trim().startsWith("[") && str.trim().endsWith("]")) {
       try {
-        json = new JSONArray(str);
+        json = new JSONArray(str.trim());
       } catch (Exception e1) {
-        Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e1));
+        Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
     }
 
@@ -721,13 +833,15 @@ public class CrawlerUtils {
    * @param session -> session of tasks
    * @return
    */
-  public static String crawlDescriptionFromFlixMedia(String storeId, String ean, Session session) {
+  public static String crawlDescriptionFromFlixMedia(String storeId, String ean, DataFetcher dataFetcher, Session session) {
     StringBuilder description = new StringBuilder();
 
-    String url = "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean
-        + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
+    String url =
+        "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
 
-    String script = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+    Response response = dataFetcher.get(session, RequestBuilder.create().setUrl(url).build());
+
+    String script = response.getBody();
     final String token = "$(\"#flixinpage_\"+i).inPage";
 
     JSONObject productInfo = new JSONObject();
@@ -741,17 +855,19 @@ public class CrawlerUtils {
       try {
         productInfo = new JSONObject(json);
       } catch (JSONException e) {
-        Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
       }
     }
 
     if (productInfo.has("product")) {
       String id = productInfo.getString("product");
 
-      String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id
-          + "/json?c=jsonpcar" + storeId + "r" + id + "&complimentary=0&type=.html";
-      String scriptDesc =
-          DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, urlDesc, null, null);
+      String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id + "/json?c=jsonpcar" + storeId + "r" + id
+          + "&complimentary=0&type=.html";
+
+      Response response2 = dataFetcher.get(session, RequestBuilder.create().setUrl(urlDesc).build());
+
+      String scriptDesc = response2.getBody();
 
       if (scriptDesc.contains("({")) {
         int x = scriptDesc.indexOf("({") + 1;
@@ -764,14 +880,13 @@ public class CrawlerUtils {
 
           if (jsonInfo.has("html")) {
             if (jsonInfo.has("css")) {
-              description.append("<link href=\"" + jsonInfo.getString("css")
-                  + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
+              description.append("<link href=\"" + jsonInfo.getString("css") + "\" media=\"screen\" rel=\"stylesheet\" type=\"text/css\">");
             }
 
             description.append(jsonInfo.get("html").toString().replace("//media", "https://media"));
           }
         } catch (JSONException e) {
-          Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
         }
       }
     }
@@ -782,8 +897,7 @@ public class CrawlerUtils {
   /**
    * @deprecated Because you need to send paramater card after sellerNameLowerList
    * 
-   *             AssembleMarketplaceFromMap Return object Marketplaces only with sellers of the
-   *             market
+   *             AssembleMarketplaceFromMap Return object Marketplaces only with sellers of the market
    * 
    * @param marketplaceMap -> map of sellerName - Prices
    * @param sellerNameLowerList -> list of principal sellers
@@ -791,15 +905,13 @@ public class CrawlerUtils {
    * 
    * @return Marketplace
    */
-  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap,
-      List<String> sellerNameLowerList, Session session) {
+  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Session session) {
     return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Card.VISA, session);
   }
 
-  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap,
-      List<String> sellerNameLowerList, Card card, Session session) {
-    return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Arrays.asList(card),
-        session);
+  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Card card,
+      Session session) {
+    return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Arrays.asList(card), session);
   }
 
   /**
@@ -814,8 +926,8 @@ public class CrawlerUtils {
    * 
    * @return Marketplace
    */
-  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap,
-      List<String> sellerNameLowerList, List<Card> cards, Session session) {
+  public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, List<Card> cards,
+      Session session) {
     Marketplace marketplace = new Marketplace();
 
     for (Entry<String, Prices> entry : marketplaceMap.entrySet()) {
@@ -834,7 +946,7 @@ public class CrawlerUtils {
             Seller seller = new Seller(sellerJSON);
             marketplace.add(seller);
           } catch (Exception e) {
-            Logging.printLogError(LOGGER, session, Util.getStackTraceString(e));
+            Logging.printLogWarn(LOGGER, session, Util.getStackTraceString(e));
           }
         }
       }
@@ -922,8 +1034,7 @@ public class CrawlerUtils {
    * @param ignoreFirstChild - ignore first element from cssSelector
    * @return
    */
-  public static CategoryCollection crawlCategories(Document document, String selector,
-      boolean ignoreFirstChild) {
+  public static CategoryCollection crawlCategories(Document document, String selector, boolean ignoreFirstChild) {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = document.select(selector);
 
@@ -934,13 +1045,19 @@ public class CrawlerUtils {
     return categories;
   }
 
+  public static Float getFloatValueFromJSON(JSONObject json, String key) {
+    return getFloatValueFromJSON(json, key, true, null);
+  }
+
   /**
    * 
    * @param json
    * @param key
+   * @param stringWithFloatLayout -> if price string is a float in a string format like "23.99"
+   * @param priceWithComma -> e.g: R$ 2.779,20 returns the Float 2779.2
    * @return
    */
-  public static Float getFloatValueFromJSON(JSONObject json, String key) {
+  public static Float getFloatValueFromJSON(JSONObject json, String key, boolean stringWithFloatLayout, Boolean priceWithComma) {
     Float price = null;
 
     if (json.has(key)) {
@@ -951,10 +1068,19 @@ public class CrawlerUtils {
       } else if (priceObj instanceof Double) {
         price = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
       } else {
-        String text = priceObj.toString().replaceAll("[^0-9.]", "");
+        if (stringWithFloatLayout) {
+          String text = priceObj.toString().replaceAll("[^0-9.]", "");
 
-        if (!text.isEmpty()) {
-          price = Float.parseFloat(text);
+          if (!text.isEmpty()) {
+            price = Float.parseFloat(text);
+          }
+        } else {
+
+          if (priceWithComma) {
+            price = MathUtils.parseFloatWithComma(priceObj.toString());
+          } else {
+            price = MathUtils.parseFloatWithDots(priceObj.toString());
+          }
         }
       }
     }
@@ -969,25 +1095,74 @@ public class CrawlerUtils {
    * @return
    */
   public static Double getDoubleValueFromJSON(JSONObject json, String key) {
-    Double price = null;
+    return getDoubleValueFromJSON(json, key, true, null);
+  }
+
+  /**
+   * 
+   * @param json
+   * @param key
+   * @param stringWithDoubleLayout -> if price string is a double in a string format like "23.99"
+   * @param doubleWithComma -> e.g: R$ 2.779,20 returns the Double 2779.2
+   * @return
+   */
+  public static Double getDoubleValueFromJSON(JSONObject json, String key, boolean stringWithDoubleLayout, Boolean doubleWithComma) {
+    Double doubleValue = null;
 
     if (json.has(key)) {
-      Object priceObj = json.get(key);
+      Object obj = json.get(key);
 
-      if (priceObj instanceof Integer) {
-        price = ((Integer) priceObj).doubleValue();
-      } else if (priceObj instanceof Double) {
-        price = (Double) priceObj;
+      if (obj instanceof Integer) {
+        doubleValue = ((Integer) obj).doubleValue();
+      } else if (obj instanceof Double) {
+        doubleValue = (Double) obj;
       } else {
-        String text = priceObj.toString().replaceAll("[^0-9.]", "");
 
-        if (!text.isEmpty()) {
-          price = Double.parseDouble(text);
+        if (stringWithDoubleLayout) {
+          String text = obj.toString().replaceAll("[^0-9.]", "");
+
+          if (!text.isEmpty()) {
+            doubleValue = Double.parseDouble(text);
+          }
+        } else {
+
+          if (doubleWithComma) {
+            doubleValue = MathUtils.parseDoubleWithComma(obj.toString());
+          } else {
+            doubleValue = MathUtils.parseDoubleWithDot(obj.toString());
+          }
         }
       }
     }
 
-    return price;
+    return doubleValue;
+  }
+
+  /**
+   * 
+   * @param json
+   * @param key
+   * @param defaultValue - return this value if key not exists
+   * @return
+   */
+  public static Integer getIntegerValueFromJSON(JSONObject json, String key, Integer defaultValue) {
+    Integer value = defaultValue;
+
+    if (json.has(key)) {
+      Object valueObj = json.get(key);
+
+      if (valueObj instanceof Integer) {
+        value = (Integer) valueObj;
+      } else {
+        String text = valueObj.toString().replaceAll("[^0-9]", "");
+
+        if (!text.isEmpty()) {
+          value = Integer.parseInt(text);
+        }
+      }
+    }
+
+    return value;
   }
 
   /**
@@ -1000,8 +1175,7 @@ public class CrawlerUtils {
    * @param ownText - if the returned text of the element is taken from the first child
    * @return Pair<Integer, Float>
    */
-  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html,
-      boolean ownText) {
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText) {
     return crawlSimpleInstallment(cssSelector, html, ownText, "x");
   }
 
@@ -1015,8 +1189,7 @@ public class CrawlerUtils {
    * @param ownText - if the returned text of the element is taken from the first child
    * @return Pair<Integer, Float>
    */
-  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html,
-      boolean ownText, String firstDelimiter) {
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String firstDelimiter) {
     return crawlSimpleInstallment(cssSelector, html, ownText, firstDelimiter, "", true);
   }
 
@@ -1028,23 +1201,21 @@ public class CrawlerUtils {
    * @param cssSelector - if null, you must pass the specific element in the html parameter
    * @param html - document html or element html
    * @param ownText - if the returned text of the element is taken from the first child
-   * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros
-   *        de (2.8%)" delimiter will be "x"
-   * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de
-   *        (2.8%)" lastDelimiter will be "com"
+   * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros de
+   *        (2.8%)" delimiter will be "x"
+   * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
+   *        lastDelimiter will be "com"
    * @param lastOccurrenceForLastDelimiter - if lastDelimiter will be last ocurrence on text
    * @return Pair<Integer, Float>
    */
-  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html,
-      boolean ownText, String delimiter, String lastDelimiter,
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter, String lastDelimiter,
       boolean lastOccurrenceForLastDelimiter) {
     Pair<Integer, Float> pair = new Pair<>();
 
     Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
 
     if (installment != null) {
-      String text =
-          ownText ? installment.ownText().toLowerCase() : installment.text().toLowerCase();
+      String text = ownText ? installment.ownText().toLowerCase() : installment.text().toLowerCase();
       if (text.contains(delimiter) && text.contains(lastDelimiter)) {
         int x = text.indexOf(delimiter);
         int y;
@@ -1082,8 +1253,7 @@ public class CrawlerUtils {
   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc,
-        ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
+    JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
 
     if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
       JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
@@ -1120,16 +1290,70 @@ public class CrawlerUtils {
    * @parm owntext - if true this function will use element.ownText(), if false will be used
    *       element.text()
    * @return default value is 0
+   * @deprecated
    */
-  public static Integer scrapTotalProductsForRanking(Document doc, String selector,
-      boolean ownText) {
+  public static Integer scrapIntegerFromHtml(Element doc, String selector, boolean ownText) {
     Integer total = 0;
 
-    Element totalElement = doc.select(selector).first();
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
 
     if (totalElement != null) {
-      String text =
-          (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param selector
+   * @param ownText - if true this function will use element.ownText(), if false will be used
+   *        element.text()
+   * @param defaultValue - return value if condition == null
+   * @return
+   */
+  public static Integer scrapIntegerFromHtml(Element doc, String selector, boolean ownText, Integer defaultValue) {
+    Integer total = defaultValue;
+
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
+
+    if (totalElement != null) {
+      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param selector
+   * @param ownText - if true this function will use element.ownText(), if false will be used
+   *        element.text()
+   * @param defaultValue - return value if condition == null
+   * @return
+   */
+  public static Integer scrapIntegerFromHtml(Element doc, String selector, String delimiter, boolean ownText, Integer defaultValue) {
+    Integer total = defaultValue;
+
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
+
+    if (totalElement != null) {
+      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+
+      if (delimiter != null && text.contains(delimiter)) {
+        int x = text.indexOf(delimiter);
+        text = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+      }
 
       if (!text.isEmpty()) {
         total = Integer.parseInt(text);
@@ -1148,13 +1372,78 @@ public class CrawlerUtils {
   public static JSONArray scrapEanFromVTEX(Document doc) {
     JSONArray arr = new JSONArray();
 
-    JSONObject json =
-        CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", true, false);
 
     if (json.has("productEans")) {
       arr = json.getJSONArray("productEans");
     }
 
     return arr;
+  }
+
+
+  /**
+   * This function scrap standout html for markets descriptions
+   * 
+   * @param slugMarket - Ex: gpa, ikesaki (you need analyse the site to find this slug)
+   * @param session
+   * @param cookies
+   * @return
+   */
+  public static String scrapStandoutDescription(String slugMarket, Session session, List<Cookie> cookies, DataFetcher dataFetcher) {
+    StringBuilder str = new StringBuilder();
+
+    String url = "https://standout.com.br/" + slugMarket + "/catchtag.php?distributor=" + slugMarket + "sku=&url=" + session.getOriginalURL();
+
+    Response response = dataFetcher.get(session, RequestBuilder.create().setUrl(url).setCookies(cookies).build());
+    JSONObject specialDesc = CrawlerUtils.stringToJson(response.getBody());
+
+    if (specialDesc.has("div")) {
+      Element e = Jsoup.parse(specialDesc.get("div").toString()).selectFirst("[id^=standout]");
+
+      if (e != null) {
+        StringBuilder descriptionUrl = new StringBuilder();
+        descriptionUrl.append("https://www.standout.com.br/");
+        descriptionUrl.append(e.attr("i")).append("/");
+        descriptionUrl.append("p/").append("WmZEhtkrUJQ,/");
+        descriptionUrl.append(e.attr("x")).append("/");
+        descriptionUrl.append(e.attr("y"));
+
+        Response response2 = dataFetcher.get(session, RequestBuilder.create().setUrl(descriptionUrl.toString()).setCookies(cookies).build());
+        str.append(response2.getBody());
+      }
+    }
+
+    return str.toString();
+  }
+
+  /**
+   * This function scrap our html on ecommerce's
+   * 
+   * Using fetcher because there is no need of use proxy.
+   * 
+   * @param internalId
+   * @param session
+   * @return
+   */
+  public static Document scrapLettHtml(String internalId, Session session) {
+    Document doc = new Document("");
+    DataFetcher dataFetcher = new FetcherDataFetcher();
+
+    String url = "https://api-building-block.placeholder.com.br/v2/skumap?marketId=" + session.getMarket().getNumber();
+    FetcherOptions options = new FetcherOptions();
+    options.setMustUseMovingAverage(false);
+    options.setRetrieveStatistics(true);
+
+    Request request = RequestBuilder.create().setUrl(url).setProxyservice(Arrays.asList(ProxyCollection.NO_PROXY)).setFetcheroptions(options).build();
+
+    JSONObject skuMap = CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
+    if (skuMap.has(internalId)) {
+      Request requestSkuMap = RequestBuilder.create().setUrl(skuMap.get(internalId).toString())
+          .setProxyservice(Arrays.asList(ProxyCollection.NO_PROXY)).setFetcheroptions(options).build();
+      doc = Jsoup.parse(dataFetcher.get(session, requestSkuMap).getBody());
+    }
+
+    return doc;
   }
 }

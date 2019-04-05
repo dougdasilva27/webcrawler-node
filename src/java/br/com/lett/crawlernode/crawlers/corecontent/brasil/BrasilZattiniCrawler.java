@@ -86,8 +86,7 @@ public class BrasilZattiniCrawler extends Crawler {
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
         Prices prices = available ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".photo-figure > img", Arrays.asList("data-large-img-url", "src"), PROTOCOL,
-            "static.zattini.com.br");
+        String primaryImage = crawlPrimaryImage(doc);
         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".swiper-slide:not(.active) img",
             Arrays.asList("data-src-large", "src"), PROTOCOL, "static.zattini.com.br", primaryImage);
 
@@ -101,10 +100,22 @@ public class BrasilZattiniCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
+  }
+
+  private String crawlPrimaryImage(Document doc) {
+    String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".photo-figure > img", Arrays.asList("data-large-img-url", "src"), PROTOCOL,
+        "static.zattini.com.br");
+    if (primaryImage == null) {
+      primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div[class=\"text-not-avaliable\"] figure img", Arrays.asList("src"), PROTOCOL,
+          "static.zattini.com.br");
+
+    }
+
+    return primaryImage;
   }
 
   /*******************
@@ -243,7 +254,7 @@ public class BrasilZattiniCrawler extends Crawler {
               skuJson = chaordic.getJSONObject("product");
             }
           } catch (Exception e1) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
           }
         }
 

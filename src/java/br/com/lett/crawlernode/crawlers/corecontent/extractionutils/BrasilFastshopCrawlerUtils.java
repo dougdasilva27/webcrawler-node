@@ -8,7 +8,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -166,13 +168,14 @@ public class BrasilFastshopCrawlerUtils {
    * @param cookies
    * @return
    */
-  public static JSONObject crawlApiJSON(String partnerId, Session session, List<Cookie> cookies) {
+  public static JSONObject crawlApiJSON(String partnerId, Session session, List<Cookie> cookies, DataFetcher dataFetcher) {
     JSONObject apiJson = new JSONObject();
 
     if (partnerId != null) {
       String apiUrl = "https://www.fastshop.com.br/wcs/resources/v1/products/byPartNumber/" + partnerId;
 
-      apiJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+      Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
+      apiJson = CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
     }
 
     return apiJson;
@@ -186,14 +189,15 @@ public class BrasilFastshopCrawlerUtils {
    * "displayLinkWhyInterest":"" } }
    */
 
-  public static JSONObject fetchPrices(String internalId, boolean available, Session session, Logger logger) {
+  public static JSONObject fetchPrices(String internalId, boolean available, Session session, Logger logger, DataFetcher dataFetcher) {
     JSONObject jsonPrice = new JSONObject();
 
     if (available) {
       String url = "https://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" + internalId
           + "&hotsite=fastshop&fromWishList=false&" + "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
 
-      String json = DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, url, null, null);
+      Request request = RequestBuilder.create().setUrl(url).build();
+      String json = dataFetcher.get(session, request).getBody();
 
       try {
         int x = json.indexOf("/*");
@@ -203,7 +207,7 @@ public class BrasilFastshopCrawlerUtils {
 
         jsonPrice = new JSONObject(json);
       } catch (Exception e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
     return jsonPrice;

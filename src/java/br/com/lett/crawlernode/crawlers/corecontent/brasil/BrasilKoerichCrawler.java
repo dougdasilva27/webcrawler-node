@@ -8,11 +8,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -134,17 +136,20 @@ public class BrasilKoerichCrawler extends Crawler {
         // Ean
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(category1).setCategory2(category2).setCategory3(category3)
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace)
-            .setEan(ean).build();
+            .setEans(eans).build();
 
         products.add(product);
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -336,7 +341,8 @@ public class BrasilKoerichCrawler extends Crawler {
     if (price != null) {
       String url = "http://www.koerich.com.br/productotherpaymentsystems/" + internalId;
 
-      Document doc = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Element bank = doc.select("#ltlPrecoWrapper em").first();
 

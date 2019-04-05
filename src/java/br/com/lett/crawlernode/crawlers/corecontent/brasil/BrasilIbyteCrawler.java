@@ -1,26 +1,32 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import org.apache.http.HttpHeaders;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -40,12 +46,17 @@ public class BrasilIbyteCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-  private static final String USER_AGENT = DataFetcher.randUserAgent();
+  private static final String USER_AGENT = FetchUtilities.randUserAgent();
   private LettProxy proxyToBeUsed = null;
 
   @Override
   protected Object fetch() {
-    return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, this.proxyToBeUsed, 1));
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+
+    Request request =
+        RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyToBeUsed).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   /**
@@ -57,9 +68,14 @@ public class BrasilIbyteCrawler extends Crawler {
    */
   @Override
   public void handleCookiesBeforeFetch() {
-    Document doc = Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies, USER_AGENT, null, 1));
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).build();
+    Response response = this.dataFetcher.get(session, request);
 
-    this.proxyToBeUsed = session.getRequestProxy(session.getOriginalURL());
+    Document doc = Jsoup.parse(response.getBody());
+
+    this.proxyToBeUsed = response.getProxyUsed();
 
     if (!isProductPage(doc)) {
       Element script = doc.select("script").first();
@@ -194,15 +210,7 @@ public class BrasilIbyteCrawler extends Crawler {
       }
 
       // Descrição
-      String description = "";
-      Element elementDescription = doc.select("#descricao").first();
-      Element elementAdditionalContents = doc.select("#atributos").first();
-      if (elementDescription != null) {
-        description = description + elementDescription.html();
-      }
-      if (elementAdditionalContents != null) {
-        description = description + elementAdditionalContents.html();
-      }
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#descricao", "#atributos", ".infoEanGarantia"));
 
       // Estoque
       Integer stock = null;
@@ -215,29 +223,18 @@ public class BrasilIbyteCrawler extends Crawler {
 
       // Ean
       String ean = crawlEan(doc);
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
-      Product product = new Product();
-      product.setUrl(this.session.getOriginalURL());
-      product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
-      product.setAvailable(available);
-      product.setEan(ean);
+      Product product = ProductBuilder.create().setUrl(this.session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+          .setName(name).setPrice(price).setPrices(prices).setCategory1(category1).setCategory2(category2).setCategory3(category3)
+          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace)
+          .setAvailable(available).setEans(eans).build();
 
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

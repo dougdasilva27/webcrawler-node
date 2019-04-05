@@ -6,7 +6,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -14,6 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -62,7 +64,8 @@ public class MexicoWalmartsuperCrawler extends Crawler {
         "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
             + finalParameter + "&skuId=" + finalParameter;
 
-    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, apiUrl, null, cookies);
+    Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
@@ -93,7 +96,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

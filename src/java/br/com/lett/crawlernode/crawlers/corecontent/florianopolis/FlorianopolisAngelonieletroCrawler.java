@@ -6,20 +6,23 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.WebElement;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.AngelonieletroUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -46,14 +49,8 @@ import models.prices.Prices;
 
 public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
-  /**
-   * Shared attribute between sku variations
-   */
-  private SharedData sharedData = new SharedData();
-
   public FlorianopolisAngelonieletroCrawler(Session session) {
     super(session);
-    super.config.setFetcher(Fetcher.WEBDRIVER);
   }
 
   @Override
@@ -72,108 +69,27 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
-      if (hasVariations(doc)) {
-        Logging.printLogDebug(logger, "Multiple variations...");
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
+      String mainId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-sku]", "data-sku");
 
-        Document variationDocument = doc;
+      Document voltageAPi = AngelonieletroUtils.fetchVoltageApi(internalPid, mainId, session, cookies, dataFetcher);
+      Elements voltageVariation = voltageAPi.select("#formGroupVoltage input[name=voltagem]");
 
-        // get all sku options through the webdriver
-        List<WebElement> options = this.webdriver.findElementsByCssSelector("div.col-sm-9 input[name=voltagem]");
+      if (!voltageVariation.isEmpty()) {
+        for (Element e : voltageVariation) {
+          Product p = crawlProduct(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies, dataFetcher));
+          String variationName = CrawlerUtils.scrapStringSimpleInfo(voltageAPi, "label[for=" + e.attr("id") + "]", true);
 
-        if (options.size() == 2) {
-          WebElement first = options.get(0);
-          String firstVariation = first.getAttribute("id");
-
-          // if the element is loaded we crawl it and append variation on the name
-          if (!isLoaded(variationDocument, first)) {
-
-            // click
-            Logging.printLogDebug(logger, session, "Clicking on option...");
-            this.webdriver.clickOnElementViaJavascript(first);
-
-            // give some time for safety
-            Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
-            this.webdriver.waitLoad(2000);
-
-            // get the new html and parse
-            String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
-            variationDocument = Jsoup.parse(html);
+          if (!p.getName().toLowerCase().contains(variationName.toLowerCase())) {
+            p.setName(p.getName() + " " + variationName);
           }
-
-          // crawl sku
-          Product firstProduct = crawlProduct(variationDocument);
-          String firstProductCompleteName = firstProduct.getName() + " " + firstVariation + "v";
-          firstProduct.setName(firstProductCompleteName);
-          products.add(firstProduct);
-
-          List<WebElement> options2 = this.webdriver.findElementsByCssSelector("div.col-sm-9 input[name=voltagem]");
-          if (options2.size() > 1) {
-            WebElement second = options2.get(1);
-            String secondVariation = second.getAttribute("id");
-
-            // if the element is loaded we crawl it and append variation on the name
-            if (!isLoaded(variationDocument, second)) {
-
-              // click
-              Logging.printLogDebug(logger, session, "Clicking on option...");
-              this.webdriver.clickOnElementViaJavascript(second);
-
-              // give some time for safety
-              Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
-              this.webdriver.waitLoad(2000);
-
-              // get the new html and parse
-              String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
-              variationDocument = Jsoup.parse(html);
-            }
-
-            // crawl sku
-            Product secondProduct = crawlProduct(variationDocument);
-            String secondProductCompleteName = secondProduct.getName() + " " + secondVariation + "v";
-            secondProduct.setName(secondProductCompleteName);
-            products.add(secondProduct);
-          }
+          products.add(p);
         }
-
-        // Iterator<WebElement> it = options.iterator();
-        // while (it.hasNext()) {
-        // WebElement option = it.next();
-        // String variation = option.getAttribute("id"); // 220 or 110
-        //
-        // // if the element is loaded we crawl it and append variation on the name
-        // if (!isLoaded(variationDocument, option)) {
-        //
-        // // click
-        // Logging.printLogDebug(logger, session, "Clicking on option...");
-        // this.webdriver.clickOnElementViaJavascript(option);
-        //
-        // // give some time for safety
-        // Logging.printLogDebug(logger, session, "Waiting 2 seconds...");
-        // this.webdriver.waitLoad(2000);
-        //
-        // // get the new html and parse
-        // String html = this.webdriver.findElementByCssSelector("html").getAttribute("innerHTML");
-        // variationDocument = Jsoup.parse(html);
-        // }
-        //
-        // // crawl sku
-        // Product product = crawlProduct(variationDocument);
-        //
-        // // append variation on sku name
-        // String completeName = product.getName() + " " + variation + "v";
-        //
-        // product.setName(completeName);
-        //
-        // products.add(product);
-        // }
-
-
       } else {
-        Product product = crawlProduct(doc);
-        products.add(product);
+        products.add(crawlProduct(doc));
       }
 
     } else {
@@ -187,58 +103,30 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url) {
-    return url.contains("http://www.angeloni.com.br/eletro/p/") || url.contains("https://www.angeloni.com.br/eletro/");
+  private boolean isProductPage(Document doc) {
+    return !doc.select("#titulo").isEmpty();
   }
 
-  private Product crawlProduct(Document document) {
-    Product product = new Product();
-
-    String internalId = crawlInternalId(document);
-    String internalPid = crawlInternalPid(document);
-
-    String name = crawlName(document);
-    if (sharedData.baseName == null) {
-      sharedData.baseName = name;
-    } else {
-      name = sharedData.baseName;
-    }
-
-    Float price = crawlPrice(document);
-    Prices prices = crawlPrices(document);
-    boolean available = crawlAvailability(document);
-    String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "#imagem-grande > div[data-zoom-image]", Arrays.asList("data-zoom-image"),
+  private Product crawlProduct(Document doc) {
+    String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
+    String internalId = AngelonieletroUtils.crawlInternalId(doc);
+    String name = crawlName(doc);
+    Float price = crawlPrice(doc);
+    Prices prices = crawlPrices(doc, internalPid);
+    boolean available = crawlAvailability(doc);
+    String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-grande > div[data-zoom-image]", Arrays.asList("data-zoom-image"),
         "https:", "dy3cxdqdg9dx0.cloudfront.net");
-    String secondaryImages = crawlSecondaryImages(document, primaryImage);
+    String secondaryImages = crawlSecondaryImages(doc, primaryImage);
     Integer stock = null;
-    String description = crawlDescription(document);
-    Marketplace marketplace = new Marketplace();
+    String description = crawlDescription(doc);
+    CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) a span");
 
-    ArrayList<String> categories = crawlCategories(document);
-    String category1 = getCategory(categories, 0);
-    String category2 = getCategory(categories, 1);
-    String category3 = getCategory(categories, 2);
+    List<String> eans = crawlEan(doc);
 
-    String ean = crawlEan(document);
-
-    product.setUrl(session.getOriginalURL());
-    product.setInternalId(internalId);
-    product.setInternalPid(internalPid);
-    product.setName(name);
-    product.setPrice(price);
-    product.setPrices(prices);
-    product.setCategory1(category1);
-    product.setCategory2(category2);
-    product.setCategory3(category3);
-    product.setPrimaryImage(primaryImage);
-    product.setSecondaryImages(secondaryImages);
-    product.setDescription(description);
-    product.setStock(stock);
-    product.setMarketplace(marketplace);
-    product.setAvailable(available);
-    product.setEan(ean);
-
-    return product;
+    return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+        .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+        .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+        .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
   }
 
   /**
@@ -252,7 +140,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
    * @param document
    * @return
    */
-  private Prices crawlPrices(Document document) {
+  private Prices crawlPrices(Document document, String internalPid) {
     Prices prices = new Prices();
 
     boolean isAvailable = crawlAvailability(document);
@@ -262,12 +150,9 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
       Float price = crawlPrice(document);
       prices.setBankTicketPrice(price);
 
-      if (this.sharedData.cardInstallmentsMap == null) {
-        this.sharedData.cardInstallmentsMap = crawlCardInstallmentsMap(document);
-      }
-
-      for (String cardBrand : this.sharedData.cardInstallmentsMap.keySet()) {
-        prices.insertCardInstallment(cardBrand, this.sharedData.cardInstallmentsMap.get(cardBrand));
+      Map<String, Map<Integer, Float>> cardsInstallments = crawlCardInstallmentsMap(document, internalPid);
+      for (Entry<String, Map<Integer, Float>> entry : cardsInstallments.entrySet()) {
+        prices.insertCardInstallment(entry.getKey(), entry.getValue());
       }
     }
 
@@ -278,29 +163,26 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
    * 
    * @param document
    */
-  private Map<String, Map<Integer, Float>> crawlCardInstallmentsMap(Document document) {
+  private Map<String, Map<Integer, Float>> crawlCardInstallmentsMap(Document document, String internalPid) {
     Map<String, Map<Integer, Float>> cardInstallmentsMap = new HashMap<>();
 
-    Set<Card> cards = crawlSetOfCards(document);
-
+    Set<Card> cards = crawlSetOfCards(internalPid);
     Float price = crawlPrice(document);
 
     for (Card card : cards) {
       String compatibleCardName = createCompatibleName(card);
       if (compatibleCardName != null) {
 
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/x-www-form-urlencoded");
+        StringBuilder url = new StringBuilder();
+        url.append("https://www.angeloni.com.br/eletro/modais/installmentsRender.jsp").append("?");
+        url.append("cardTypeKey=").append(compatibleCardName);
+        url.append("&totalValue=").append(price);
+        url.append("&useTheBestInstallment=false");
 
-        // assemble POST parameters
-        String parameters = "cardTypeKey=" + compatibleCardName + "&totalValue=" + price + "&useTheBestInstallment=false";
-
-        // perform request
-        Document response = Jsoup.parse(POSTFetcher.fetchPagePOSTWithHeaders("https://www.angeloni.com.br/eletro/modais/installmentsRender.jsp",
-            session, parameters, null, 1, headers));
+        Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
+        Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
         Map<Integer, Float> installments = crawlInstallmentsFromPaymentRequestResponse(response);
-
         cardInstallmentsMap.put(card.toString(), installments);
       }
     }
@@ -360,13 +242,15 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
     return compatibleName;
   }
 
-  private Set<Card> crawlSetOfCards(Document document) {
+  private Set<Card> crawlSetOfCards(String internalId) {
     Set<Card> cards = new HashSet<>();
 
-    // fetch list of cards through a POST request
-    String internalId = crawlInternalId(document);
-    Document response = DataFetcher.fetchDocument(DataFetcher.POST_REQUEST, session, "https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp",
-        "productId=" + internalId, null);
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+
+    Request request = RequestBuilder.create().setUrl("https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp").setCookies(cookies)
+        .setHeaders(headers).setPayload("productId=" + internalId).build();
+    Document response = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
 
     Elements cardsElements = response.select("div.box-cartao h2");
 
@@ -382,78 +266,18 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
         cards.add(Card.AMEX);
       } else if (text.contains(Card.HIPERCARD.toString())) {
         cards.add(Card.HIPERCARD);
+      } else if (text.contains("angeloni")) {
+        cards.add(Card.SHOP_CARD);
       }
     }
 
     return cards;
   }
 
-
-  /**
-   * It looks for voltage variations on the radio buttons.
-   * 
-   * @param document
-   * @return
-   */
-  private boolean hasVariations(Document document) {
-    Elements skuOptions = document.select("#formGroupVoltage input[type=radio]");
-    if (skuOptions.size() > 1) {
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * See if the current loaded informations are from the skuOption.
-   * 
-   * @param skuOption
-   * @return
-   */
-  private boolean isLoaded(Document document, WebElement skuOption) {
-    String currentLoadedInternalId = crawlInternalId(document);
-    String optionInternalId = getInternalIdFromOption(skuOption);
-
-    return currentLoadedInternalId.equals(optionInternalId);
-  }
-
-  /**
-   * The internalId of the current loaded corresponds to the first parameter of the updateInformations
-   * method call.
-   * 
-   * e.g: updateInformations('3520962','3520917', '/cartridges/DetalhesProduto/DetalhesProduto.jsp',
-   * 'product-details','true', '', '');
-   * 
-   * @return
-   */
-  private String getInternalIdFromOption(WebElement skuOption) {
-    String onclickAttr = skuOption.getAttribute("onclick");
-
-    int firstQuotationMarkIndex = onclickAttr.indexOf("\'") + 1;
-    String firstPartExcluded = onclickAttr.substring(firstQuotationMarkIndex, onclickAttr.length()); // 3520962','3520917',
-                                                                                                     // '/cartridges/DetalhesProduto/DetalhesProduto.jsp',
-                                                                                                     // 'product-details','true', '', '');
-
-    int secondQuotationMarkIndex = firstPartExcluded.indexOf("\'");
-    String firstParameter = firstPartExcluded.substring(0, secondQuotationMarkIndex); // 3520962
-
-    return firstParameter;
-  }
-
-  private String crawlInternalId(Document document) {
-    String internalId = null;
-
-    Element elementInternalId = document.select(".codigo span[itemprop=sku]").first();
-    if (elementInternalId != null) {
-      internalId = elementInternalId.text().trim();
-    }
-
-    return internalId;
-  }
-
   private String crawlName(Document document) {
     String name = null;
 
-    Element elementName = document.select("#titulo h1[itemprop=name]").first();
+    Element elementName = document.select("#titulo [itemprop=name]").first();
     if (elementName != null) {
       name = elementName.text();
     }
@@ -519,55 +343,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
     return description;
   }
 
-  private ArrayList<String> crawlCategories(Document document) {
-    ArrayList<String> categories = new ArrayList<String>();
-    Elements elementCategories = document.select("ol.breadcrumb li a[title]:not([title=home]) span[itemprop=title]");
-
-    for (int i = 0; i < elementCategories.size(); i++) { // starting from index 1, because the first is the market name
-      categories.add(elementCategories.get(i).text().trim());
-    }
-
-    return categories;
-  }
-
-  private String getCategory(ArrayList<String> categories, int n) {
-    if (n < categories.size()) {
-      return categories.get(n);
-    }
-
-    return "";
-  }
-
-  /**
-   * There is no internalPid.
-   * 
-   * @param document
-   * @return
-   */
-  private String crawlInternalPid(Document document) {
-    String internalPid = null;
-    return internalPid;
-  }
-
-  /**
-   * Auxiliar class to hold shared information between sku variations.
-   * 
-   * @author Samir Leao
-   *
-   */
-  private class SharedData {
-
-    public String baseName;
-    public Map<String, Map<Integer, Float>> cardInstallmentsMap;
-
-    public SharedData() {
-      this.baseName = null;
-      this.cardInstallmentsMap = null;
-    }
-
-  }
-
-  private String crawlEan(Document doc) {
+  private List<String> crawlEan(Document doc) {
     String ean = null;
     Elements elmnts = doc.select(".tab-content .tab-pane .caracteristicas tbody tr");
 
@@ -583,7 +359,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
       }
     }
 
-    return ean;
+    return Arrays.asList(ean);
   }
 }
 

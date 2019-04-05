@@ -6,12 +6,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -50,8 +51,8 @@ public class BrasilBemolCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".reference [itemprop=productID]", true);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h2.name", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".buy-box .sale-price", false);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".information .name", true);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".buy-box .sale-price", null, false, ',');
       Prices prices = crawlPrices(price, internalId, doc);
       boolean available = doc.selectFirst(".wd-buy-button  > div:not([style$=none])") != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrum-product li:not(.first) a span");
@@ -64,8 +65,7 @@ public class BrasilBemolCrawler extends Crawler {
       }
 
       String secondaryImages = scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img",
-          Arrays.asList("data-image-large", "data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net",
-          primaryImage);
+          Arrays.asList("data-image-large", "data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".wrapper-detalhe-produto .descriptions", ".wrapper-detalhe-produto .caracteristicas"));
 
@@ -78,7 +78,7 @@ public class BrasilBemolCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -99,9 +99,9 @@ public class BrasilBemolCrawler extends Crawler {
 
     return internalId;
   }
-  
-  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector,
-	      List<String> attributes, String protocol, String host, String primaryImage) {
+
+  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
+      String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -135,7 +135,7 @@ public class BrasilBemolCrawler extends Crawler {
 
     return sanitizedUrl;
   }
-  
+
   /**
    * @param doc
    * @param price
@@ -145,10 +145,10 @@ public class BrasilBemolCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session,
-          "https://www.bemol.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
-              + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true&nocache=1108472214",
-          null, cookies);
+      Request request =
+          RequestBuilder.create().setUrl("https://www.bemol.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
+              + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true&nocache=1108472214").setCookies(cookies).build();
+      Document docPrices = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Elements cards = docPrices.select(".modal-wd-product-payment-options .grid table");
       for (Element e : cards) {

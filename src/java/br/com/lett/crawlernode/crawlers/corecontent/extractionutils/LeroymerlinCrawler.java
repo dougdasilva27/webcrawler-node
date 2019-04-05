@@ -62,7 +62,9 @@ public class LeroymerlinCrawler extends Crawler {
       List<String> images = crawlImages(doc);
       String primaryImage = images.isEmpty() ? null : images.get(0);
       String secondaryImages = crawlSecondaryImages(images);
-      String description = crawlDescription(doc);
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service)",
+              "[name=descricao-do-produto]", ".product-info-details"));
       Integer stock = null;
 
       // Creating the product
@@ -74,7 +76,7 @@ public class LeroymerlinCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -168,14 +170,6 @@ public class LeroymerlinCrawler extends Crawler {
     }
 
     return secondaryImages;
-  }
-
-  private String crawlDescription(Document doc) {
-    String description = CrawlerUtils.scrapSimpleDescription(doc,
-        Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service), .characteristics-container",
-            "[name=descricao-do-produto]"));
-
-    return description;
   }
 
   private boolean crawlAvailability(Document doc) {

@@ -1,15 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.Fetcher;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -21,121 +17,110 @@ import models.RatingsReviews;
  */
 public class BrasilKabumRatingReviewCrawler extends RatingReviewCrawler {
 
-	public BrasilKabumRatingReviewCrawler(Session session) {
-		super(session);
-		super.config.setFetcher(Fetcher.WEBDRIVER);
-	}
+  public BrasilKabumRatingReviewCrawler(Session session) {
+    super(session);
+  }
 
-	private final String HOME_PAGE = "http://www.kabum.com.br";
+  private static final String HOME_PAGE = "http://www.kabum.com.br";
 
-	@Override
-	public void handleCookiesBeforeFetch() {
-		Logging.printLogDebug(logger, session, "Adding cookie...");
+  @Override
+  public void handleCookiesBeforeFetch() {
+    Logging.printLogDebug(logger, session, "Adding cookie...");
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, ".kabum.com.br", "/", cookies, session, null, dataFetcher);
+  }
 
-		Map<String, String> cookiesMap = DataFetcher.fetchCookies(session, HOME_PAGE, cookies, 1);
+  @Override
+  protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
+    RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-		for (Entry<String, String> entry : cookiesMap.entrySet()) {
-			BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-			cookie.setDomain(".kabum.com.br");
-			cookie.setPath("/");
-			this.cookies.add(cookie);
-		}
-	}
+    if (isProductPage(session.getOriginalURL())) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-	@Override
-	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-		RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
 
-		if (isProductPage(session.getOriginalURL())) {
-			Logging.printLogDebug(logger, session,
-					"Product page identified: " + this.session.getOriginalURL());
+      String internalId = crawlInternalId(document);
 
-			RatingsReviews ratingReviews = new RatingsReviews();
-			ratingReviews.setDate(session.getDate());
+      Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+      Double avgRating = getTotalAvgRating(document);
 
-			String internalId = crawlInternalId(document);
+      ratingReviews.setInternalId(internalId);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
 
-			Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
-			Double avgRating = getTotalAvgRating(document);
+      ratingReviewsCollection.addRatingReviews(ratingReviews);
+    }
 
-			ratingReviews.setInternalId(internalId);
-			ratingReviews.setTotalRating(totalNumOfEvaluations);
-			ratingReviews.setAverageOverallRating(avgRating);
+    return ratingReviewsCollection;
 
-			ratingReviewsCollection.addRatingReviews(ratingReviews);
-		}
+  }
 
-		return ratingReviewsCollection;
+  private String crawlInternalId(Document doc) {
+    String internalId = null;
+    Element elementInternalID = doc.select(".boxs .links_det").first();
 
-	}
+    if (elementInternalID != null) {
+      String text = elementInternalID.ownText();
+      internalId = text.substring(text.indexOf(':') + 1).trim();
 
-	private String crawlInternalId(Document doc) {
-		String internalId = null;
-		Element elementInternalID = doc.select(".boxs .links_det").first();
+      if (internalId.isEmpty()) {
+        Element e = elementInternalID.select("span[itemprop=sku]").first();
 
-		if (elementInternalID != null) {
-			String text = elementInternalID.ownText();
-			internalId = text.substring(text.indexOf(':') + 1).trim();
+        if (e != null) {
+          internalId = e.ownText().trim();
+        }
+      }
+    }
 
-			if (internalId.isEmpty()) {
-				Element e = elementInternalID.select("span[itemprop=sku]").first();
+    return internalId;
+  }
 
-				if (e != null) {
-					internalId = e.ownText().trim();
-				}
-			}
-		}
+  /**
+   * Avg appear in html element
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(Document doc) {
+    Double avgRating = null;
+    Element rating = doc.select(".avaliacao table tr td div.H-estrelas").first();
 
-		return internalId;
-	}
+    if (rating != null) {
+      String text = rating.attr("class").replaceAll("[^0-9]", "").trim();
 
-	/**
-	 * Avg appear in html element
-	 * 
-	 * @param document
-	 * @return
-	 */
-	private Double getTotalAvgRating(Document doc) {
-		Double avgRating = null;
-		Element rating = doc.select(".avaliacao table tr td div.H-estrelas").first();
+      if (!text.isEmpty()) {
+        avgRating = Double.parseDouble(text);
+      }
+    }
 
-		if (rating != null) {
-			String text = rating.attr("class").replaceAll("[^0-9]", "").trim();
+    return avgRating;
+  }
 
-			if (!text.isEmpty()) {
-				avgRating = Double.parseDouble(text);
-			}
-		}
+  /**
+   * Number of ratings appear in html element
+   * 
+   * @param doc
+   * @return
+   */
+  private Integer getTotalNumOfRatings(Document doc) {
+    Integer number = null;
 
-		return avgRating;
-	}
+    Element rating = doc.select(".avaliacao table tr td").first();
 
-	/**
-	 * Number of ratings appear in html element
-	 * 
-	 * @param doc
-	 * @return
-	 */
-	private Integer getTotalNumOfRatings(Document doc) {
-		Integer number = null;
+    if (rating != null) {
+      String text = rating.ownText().replaceAll("[^0-9]", "").trim();
 
-		Element rating = doc.select(".avaliacao table tr td").first();
+      if (!text.isEmpty()) {
+        number = Integer.parseInt(text);
+      }
+    }
 
-		if (rating != null) {
-			String text = rating.ownText().replaceAll("[^0-9]", "").trim();
-
-			if (!text.isEmpty()) {
-				number = Integer.parseInt(text);
-			}
-		}
-
-		return number;
-	}
+    return number;
+  }
 
 
-	private boolean isProductPage(String url) {
-		return url.startsWith("https://www.kabum.com.br/produto/")
-				|| url.startsWith("http://www.kabum.com.br/produto/") || url.contains("blackfriday");
-	}
+  private boolean isProductPage(String url) {
+    return url.startsWith("https://www.kabum.com.br/produto/") || url.startsWith("http://www.kabum.com.br/produto/") || url.contains("blackfriday");
+  }
 
 }

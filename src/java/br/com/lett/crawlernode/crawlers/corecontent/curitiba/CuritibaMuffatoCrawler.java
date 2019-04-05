@@ -17,7 +17,8 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -110,8 +111,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
-      VTEXCrawlersUtils vtexUtil =
-          new VTEXCrawlersUtils(session, "supermuffato", HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, "supermuffato", HOME_PAGE, cookies, dataFetcher);
 
       // InternalId
       String internalId = crawlInternalId(doc);
@@ -148,6 +148,9 @@ public class CuritibaMuffatoCrawler extends Crawler {
       JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
       String ean = 0 < arrayEan.length() ? arrayEan.getString(0) : null;
 
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
+
       // create the product
       Product product = new Product();
       product.setUrl(session.getOriginalURL());
@@ -165,7 +168,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
-      product.setEan(ean);
+      product.setEans(eans);
 
       products.add(product);
 
@@ -182,12 +185,12 @@ public class CuritibaMuffatoCrawler extends Crawler {
     String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
     JSONArray apiResponse = new JSONArray();
     try {
-      String apiString =
-          DataFetcher.fetchString(DataFetcher.GET_REQUEST, session, getUrl, null, null).trim();
+      Request request = RequestBuilder.create().setUrl(getUrl).setCookies(cookies).build();
+      String apiString = this.dataFetcher.get(session, request).getBody().trim();
 
       if (apiString.isEmpty()) {
-        apiString = DataFetcher
-            .fetchString(DataFetcher.GET_REQUEST, session, getUrl + "?sc=13", null, null).trim();
+        request.setUrl(getUrl + "?sc=13");
+        apiString = this.dataFetcher.get(session, request).getBody().trim();
       }
 
       apiResponse = new JSONArray(apiString);
@@ -257,8 +260,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
     Float price = null;
     Element elementPrice = document.select(".plugin-preco .preco-a-vista .skuPrice").first();
     if (elementPrice != null) {
-      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "")
-          .replaceAll(",", "."));
+      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
@@ -317,8 +319,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
   private ArrayList<String> crawlCategories(Document document) {
     ArrayList<String> categories = new ArrayList<>();
-    Elements elementCategories =
-        document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
+    Elements elementCategories = document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
 
     for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first
                                                          // is the market name
@@ -413,8 +414,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
         if (tag.html().trim().startsWith("var skuJson_0 = ")) {
 
           skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-                  .split(Pattern.quote("}]};"))[0]);
+              + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
 
         }
       }

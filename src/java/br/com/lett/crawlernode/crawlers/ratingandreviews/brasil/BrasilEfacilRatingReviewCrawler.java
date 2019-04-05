@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.GETFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -29,7 +30,7 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(document)) {
 
       String trustVoxId = crawlTrustVoxId(document);
       JSONObject trustVoxResponse = requestTrustVoxEndpoint(trustVoxId);
@@ -103,17 +104,18 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
     requestURL.append(session.getOriginalURL());
 
     Map<String, String> headerMap = new HashMap<>();
-    headerMap.put(DataFetcher.HTTP_HEADER_ACCEPT, "application/vnd.trustvox-v2+json");
-    headerMap.put(DataFetcher.HTTP_HEADER_CONTENT_TYPE, "application/json; charset=utf-8");
+    headerMap.put(HttpHeaders.ACCEPT, "application/vnd.trustvox-v2+json");
+    headerMap.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8");
 
-    String response = GETFetcher.fetchPageGETWithHeaders(session, requestURL.toString(), null, headerMap, 1);
+    Request request = RequestBuilder.create().setUrl(requestURL.toString()).setCookies(cookies).setHeaders(headerMap).build();
+    String response = this.dataFetcher.get(session, request).getBody();
 
     JSONObject trustVoxResponse;
     try {
       trustVoxResponse = new JSONObject(response);
     } catch (JSONException e) {
-      Logging.printLogError(logger, session, "Error creating JSONObject from trustvox response.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
+      Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
 
       trustVoxResponse = new JSONObject();
     }
@@ -121,8 +123,8 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
     return trustVoxResponse;
   }
 
-  private boolean isProductPage(String url) {
-    return url.startsWith("https://www.efacil.com.br/loja/produto/") || url.startsWith("https://www.efacil.com.br/loja/produto/");
+  private boolean isProductPage(Document doc) {
+    return !doc.select("h1.product-name").isEmpty();
   }
 
   private String crawlTrustVoxId(Document doc) {
@@ -190,7 +192,7 @@ public class BrasilEfacilRatingReviewCrawler extends RatingReviewCrawler {
             idList.add(variationJsonObject.getString("catentry_id").trim());
           }
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

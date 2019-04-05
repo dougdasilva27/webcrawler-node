@@ -55,8 +55,13 @@ public class BrasilMercadolivrecotyCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
+  protected boolean hasNextPage() {
+    return super.hasNextPage() && this.nextUrl != null;
+  }
+
+  @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapTotalProductsForRanking(currentDoc, ".quantity-results", true);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".quantity-results", true);
     this.log("Total da busca: " + this.totalProducts);
   }
 }

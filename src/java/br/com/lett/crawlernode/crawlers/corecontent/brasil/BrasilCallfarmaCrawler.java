@@ -37,7 +37,7 @@ public class BrasilCallfarmaCrawler extends Crawler {
 
   @Override
   public void handleCookiesBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, new ArrayList<>(), "www.callfarma.com.br", "/", session);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, new ArrayList<>(), "www.callfarma", "/", cookies, session, null, dataFetcher);
   }
 
   @Override
@@ -76,7 +76,7 @@ public class BrasilCallfarmaCrawler extends Crawler {
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

@@ -40,7 +40,7 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies);
+      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -74,11 +74,14 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
 
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
+
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEan(ean).build();
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -86,7 +89,7 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
     } else
 
     {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;

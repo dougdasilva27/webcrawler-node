@@ -10,6 +10,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 
 /**
@@ -28,7 +29,7 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document doc) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
@@ -78,14 +79,24 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
    * @return
    */
   private Double getTotalAvgRating(Document doc) {
-    Double avgRating = null;
-    Element rating = doc.select("#product-review .content-panel .section-title strong").first();
+    Double avgRating = 0d;
+    Element rating = doc.selectFirst("#product-review .content-panel .section-title strong");
 
     if (rating != null) {
       String avgText = rating.text().replace(",", ".").trim();
 
       if (!avgText.isEmpty()) {
         avgRating = Double.parseDouble(avgText);
+      }
+    } else {
+      String att = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#rating[data-rating]", "data-rating");
+
+      if (att != null) {
+        att = att.replaceAll("[^0-9.]", "");
+
+        if (!att.isEmpty()) {
+          avgRating = Double.parseDouble(att);
+        }
       }
     }
 
@@ -134,11 +145,8 @@ public class SaopauloWalmartRatingReviewCrawler extends RatingReviewCrawler {
     return totalReviews;
   }
 
-  private boolean isProductPage(String url) {
-    if (url.contains("walmart.com.br/produto/") || url.endsWith("/pr")) {
-      return true;
-    }
-    return false;
+  private boolean isProductPage(Document doc) {
+    return doc.selectFirst(".product-name") != null;
   }
 
   /**

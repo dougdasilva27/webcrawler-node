@@ -79,7 +79,7 @@ public class BrasilSephoraRatingReviewCrawler extends RatingReviewCrawler {
             skuJson = array.getJSONObject(0);
           }
         } catch (Exception e1) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
         }
 
         break;

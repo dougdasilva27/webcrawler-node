@@ -84,7 +84,7 @@ public class ChileTottusCrawler extends CrawlerRankingKeywords {
 
     Element eUrl = e.selectFirst(".title a");
     if (eUrl != null) {
-      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "http:", "www.tottus.cl");
+      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "https:", "www.tottus.cl");
     }
 
     return url;

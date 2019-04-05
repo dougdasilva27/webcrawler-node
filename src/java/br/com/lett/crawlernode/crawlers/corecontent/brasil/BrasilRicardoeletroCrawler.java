@@ -8,10 +8,13 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -29,6 +32,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
   public BrasilRicardoeletroCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   @Override
@@ -146,6 +150,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
       String ean = crawlEan(doc);
 
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
+
       Product product = new Product();
 
       product.setUrl(this.session.getOriginalURL());
@@ -163,12 +170,13 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       product.setStock(stock);
       product.setMarketplace(marketplace);
       product.setAvailable(available);
-      product.setEan(ean);
+      product.setEans(eans);
+
 
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -188,7 +196,8 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     if (internalPid != null) {
       String url = "https://www.ricardoeletro.com.br/Produto/VejaMaisParceiros/1/" + internalPid;
 
-      docMarketplace = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      docMarketplace = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
     }
 
     return docMarketplace;
@@ -345,7 +354,8 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         }
 
         String url = "https://www.ricardoeletro.com.br/Pagamento/ExibeFormasPagamento/" + internalPid;
-        Document docPrices = DataFetcher.fetchDocument(DataFetcher.GET_REQUEST, session, url, null, cookies);
+        Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+        Document docPrices = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
         Elements installmentsElements = docPrices.select(".lista-parcelas tr");
 

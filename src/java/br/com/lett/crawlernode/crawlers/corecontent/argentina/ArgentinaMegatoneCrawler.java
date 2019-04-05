@@ -10,7 +10,8 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -67,18 +68,21 @@ public class ArgentinaMegatoneCrawler extends Crawler {
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#gal1 a", Arrays.asList("data-zoom-image", "data-image"), "https:",
           "www.megatone.net", primaryImage);
       String description = crawlDescription(doc, internalId);
+
       String ean = crawlEan(doc);
+      List<String> eans = new ArrayList<>();
+      eans.add(ean);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).setEan(ean).build();
+          .setMarketplace(new Marketplace()).setEans(eans).build();
 
       products.add(product);
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -100,7 +104,8 @@ public class ArgentinaMegatoneCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json; charset=UTF-8");
 
-    JSONObject d = CrawlerUtils.stringToJson(POSTFetcher.fetchPagePOSTWithHeaders(url, session, payload, cookies, 1, headers));
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    JSONObject d = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
     if (d.has("d")) {
       str.append(Jsoup.parse(d.get("d").toString()));

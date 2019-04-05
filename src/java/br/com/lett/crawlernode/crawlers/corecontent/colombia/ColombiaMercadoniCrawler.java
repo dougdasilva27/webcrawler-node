@@ -6,10 +6,9 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.POSTFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -79,7 +78,7 @@ public class ColombiaMercadoniCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page" + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
@@ -208,8 +207,10 @@ public class ColombiaMercadoniCrawler extends Crawler {
 
     String productId = null;
 
-    if (productUrl.contains("?")) {
-      String[] parameters = (productUrl.split("\\?")[1]).split("&");
+    if (productUrl.contains("?") && productUrl.contains("&")) {
+      String parametersUrl = productUrl.split("\\?")[1];
+
+      String[] parameters = parametersUrl.split("&");
 
       for (String parameter : parameters) {
         if (parameter.contains("product_simple=")) {
@@ -227,17 +228,15 @@ public class ColombiaMercadoniCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
 
-      String page =
-          POSTFetcher.fetchPagePOSTWithHeaders(PRODUCTS_API_URL, session, payload, cookies, 1, headers, DataFetcher.randUserAgent(), null).trim();
+      Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+      String page = this.dataFetcher.post(session, request).getBody().trim();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
           // Using google JsonObject to get a JSONObject because this json can have a duplicate key.
-          JsonObject JsonParser = new JsonParser().parse(page).getAsJsonObject();
-
-          products = new JSONObject(JsonParser.toString());
+          products = new JSONObject(new JsonParser().parse(page).getAsJsonObject().toString());
         } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
       }
     }

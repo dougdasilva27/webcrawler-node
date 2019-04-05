@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.io.Resources;
 import br.com.lett.crawlernode.core.session.Session;
 
@@ -50,11 +52,9 @@ public class TestHtmlBuilder {
 
     Mustache mustache = null;
     try {
-      mustache = mustacheFactory.compile(
-          new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")),
-          file.getName());
+      mustache = mustacheFactory.compile(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")), file.getName());
     } catch (FileNotFoundException e) {
-      Logging.printLogError(logger, CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
     }
 
     if (mustache != null) {
@@ -110,11 +110,10 @@ public class TestHtmlBuilder {
       StringWriter writer = new StringWriter();
       mustache.execute(writer, scopes);
 
-      try (PrintWriter out = new PrintWriter(
-          pathWrite + session.getMarket().getName() + "-" + scopes.get(INTERNAL_ID) + ".html")) {
+      try (PrintWriter out = new PrintWriter(pathWrite + session.getMarket().getName() + "-" + scopes.get(INTERNAL_ID) + ".html")) {
         out.println(writer.toString());
       } catch (FileNotFoundException e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
       return writer.toString();
@@ -210,7 +209,7 @@ public class TestHtmlBuilder {
 
   private static void putMarketplaces(JSONObject productJson, Map<String, Object> scopes) {
     if (productJson.has(MARKETPLACE) && !productJson.isNull(MARKETPLACE)) {
-      Map<String, Object> marketPlaces = new HashMap<>();
+      Multimap<String, Object> marketplaces = ArrayListMultimap.create();
       JSONArray arrayMarketplaces = new JSONArray(productJson.getString(MARKETPLACE));
 
       for (int i = 0; i < arrayMarketplaces.length(); i++) {
@@ -238,11 +237,11 @@ public class TestHtmlBuilder {
             prices.put("1'", jsonMarketplace.get(PRICE));
           }
 
-          marketPlaces.put(name, prices.entrySet());
+          marketplaces.put(name, prices.entrySet());
         }
       }
 
-      scopes.put(MARKETPLACE, marketPlaces.entrySet());
+      scopes.put(MARKETPLACE, marketplaces.entries());
     }
   }
 
@@ -268,7 +267,6 @@ public class TestHtmlBuilder {
   }
 
 
-  @SuppressWarnings("unchecked")
   private static Map<Object, Object> getMapPricesFromJson(JSONObject prices) {
     Map<Object, Object> pricesMap = new HashMap<>();
 

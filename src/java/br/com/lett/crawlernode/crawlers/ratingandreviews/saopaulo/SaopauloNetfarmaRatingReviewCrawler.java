@@ -7,11 +7,13 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
@@ -124,7 +126,7 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
           try {
             object = new JSONObject(json);
           } catch (Exception e1) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
           }
         }
 
@@ -161,7 +163,9 @@ public class SaopauloNetfarmaRatingReviewCrawler extends RatingReviewCrawler {
 
   private JSONObject requestReviewPage(String skuId, Integer pageNumber) {
     String url = "https://www.netfarma.com.br/api/produto/" + skuId + "/avaliacoes/" + pageNumber;
-    return DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, null);
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 
   /**
