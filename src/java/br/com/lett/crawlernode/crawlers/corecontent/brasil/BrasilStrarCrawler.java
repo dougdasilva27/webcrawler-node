@@ -5,11 +5,9 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.DataFetcher;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -23,7 +21,7 @@ import models.prices.Prices;
 
 public class BrasilStrarCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.strar.com.br/";
+  private static final String HOME_PAGE = "https://www.strar.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "str ar condicionado";
 
   public BrasilStrarCrawler(Session session) {
@@ -36,6 +34,24 @@ public class BrasilStrarCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
+  /**
+   * Installments Problem:
+   * 
+   * <div class="is-hidden" id="installments-qty"> <span>
+   * 
+   * 5,5
+   * 
+   * </span>
+   * 
+   * Obs: não tirar esse <span></span> apenas alterar a quantidade de parcelas e porcentagem máxima de
+   * Desconto
+   * 
+   * Explicação rápida: Porcentagem máxima de Desconto, Quantidade de Parcelas com Desconto Exemplo:
+   * quero que em 1x seja 5% de desconto o primeiro valor será 5, após isso separe esse 5 com virgula
+   * '5,' e informe até quantas vezes ainda terá desconto tendo em mente que cada parcela tirará 1% do
+   * desconto. Se você colocar 5,5 ficará assim: 1x 5% 2x 4% 3x 3% ... até ficar 5x 1% e parar, se
+   * você colocar 5,3 ficara apenas até o 3x 3%</div>
+   */
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -44,6 +60,8 @@ public class BrasilStrarCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
+      vtexUtil.setCardDiscount(getDiscount(doc, "p[class~=--desconto-no-cartao-de-credito]"));
+      vtexUtil.setBankTicketDiscount(getDiscount(doc, "p[class~=--desconto-boleto]"));
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -62,12 +80,12 @@ public class BrasilStrarCrawler extends Crawler {
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson);
-        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = scrapPrices(marketplaceMap, internalId);
+        Prices prices = scrapPrices(marketplaceMap, internalId, doc);
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String finalUrl =
@@ -96,29 +114,29 @@ public class BrasilStrarCrawler extends Crawler {
     return products;
   }
 
+  private Integer getDiscount(Document doc, String selector) {
+    Integer discount = 0;
 
-  private Prices scrapPrices(Map<String, Prices> marketplaceMap, String internalId) {
-    Prices prices = new Prices();
-    String url =
-        "https://service.smarthint.co/box/GetInitialData?callback=jQuery183017903389537648629_1554390035009&key=SH-940097&pageType=product&_="
-            + internalId;
-    Float spotPriceValue = null;
-    prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-    JSONObject spotPriceJson = DataFetcher.fetchJSONObject(DataFetcher.GET_REQUEST, session, url, null, cookies);
-    System.err.println(spotPriceJson);
-    if (spotPriceJson.has("Templates")) {
-      System.err.println("1");
-      JSONArray templates = spotPriceJson.getJSONArray("Templates");
-      JSONObject template = templates.getJSONObject(0);
-      if (template.has("Html")) {
-        System.err.println("2");
-        Document spotPriceDocument = Jsoup.parse(template.getString("Html"));
-        spotPriceValue = CrawlerUtils.scrapFloatPriceFromHtml(spotPriceDocument, ".in-cash", null, false, ',');
+    Element d = doc.selectFirst(selector);
+    if (d != null) {
+      String text = d.text();
+
+      if (!text.isEmpty()) {
+        discount = Integer.parseInt(text.replaceAll("[^0-9]", ""));
       }
     }
+    System.err.println(discount);
+    return discount;
+  }
 
-    prices.setBankTicketPrice(spotPriceValue);
+  private Prices scrapPrices(Map<String, Prices> marketplaceMap, String internalId, Document doc) {
+    Prices prices = new Prices();
+
+    prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+
+
     return prices;
+
   }
 
   private boolean isProductPage(Document document) {
