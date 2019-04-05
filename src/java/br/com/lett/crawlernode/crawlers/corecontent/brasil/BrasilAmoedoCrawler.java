@@ -48,7 +48,7 @@ import models.prices.Prices;
 
 public class BrasilAmoedoCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.amoedo.com.br/";
+  private static final String HOME_PAGE = "http://www.amoedo.com.br/";
 
   public BrasilAmoedoCrawler(Session session) {
     super(session);

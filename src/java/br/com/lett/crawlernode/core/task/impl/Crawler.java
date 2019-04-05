@@ -505,7 +505,7 @@ public class Crawler extends Task {
         products = extractInformation((JSONArray) obj);
       }
     } catch (Exception e) {
-      Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
 
     return products;
