@@ -101,8 +101,6 @@ public class UnitedstatesWalmartCrawlerUtils {
     if (initialState.has("product")) {
       JSONObject product = initialState.getJSONObject("product");
 
-      CommonMethods.saveDataToAFile(product, "/home/gabriel/htmls/WALMART.txt");
-
       JSONObject images = crawlJsonImages(product);
       JSONObject offers = crawlJsonOffers(product);
       JSONObject rating = crawlRating(product);

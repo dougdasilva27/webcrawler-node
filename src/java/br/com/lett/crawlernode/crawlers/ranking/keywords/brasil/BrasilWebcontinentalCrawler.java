@@ -5,7 +5,6 @@ import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
 
@@ -30,8 +29,6 @@ public class BrasilWebcontinentalCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
 
     JSONObject resultsAPI = fetchApi(url);
-
-    CommonMethods.saveDataToAFile(resultsAPI, "/home/gabriel/htmls/WEBCONTINENTAL.json");
 
     if (resultsAPI.has("resultsList")) {
       crawlShareWithSearch(resultsAPI);

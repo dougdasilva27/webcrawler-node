@@ -25,7 +25,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -140,7 +139,6 @@ public class BrasilPetzCrawler extends Crawler {
       }
 
     } else {
-      CommonMethods.saveDataToAFile(doc, "/home/gabriel/htmls/PETZ.html");
       Logging.printLogDebug(logger, session, "Not a product page: " + this.session.getOriginalURL());
     }
 

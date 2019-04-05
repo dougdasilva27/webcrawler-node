@@ -7,8 +7,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
@@ -35,8 +33,6 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, cookies);
-
-    CommonMethods.saveDataToAFile(currentDoc, Test.pathWrite + "/SORIANA2.html");
 
     Elements products = this.currentDoc.select(".product-item");
 

@@ -4,8 +4,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilMartinsCrawler extends CrawlerRankingKeywords {
@@ -32,8 +30,6 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords {
     this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select(".products .product[data-sku]");
-
-    CommonMethods.saveDataToAFile(this.currentDoc, Test.pathWrite + "MARTINS.html");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
