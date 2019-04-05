@@ -31,7 +31,7 @@ public class BrasilLojasredeRatingReviewCrawler extends RatingReviewCrawler {
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
 
-        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "9c0aa0e9-37a2-4b03-93d7-41c964268161");
+        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "9c0aa0e9-37a2-4b03-93d7-41c964268161", this.dataFetcher);
         Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = getTotalAvgRatingFromYourViews(docRating);
 
