@@ -7,20 +7,19 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
 
 /**
- * Date: 13/12/16
+ * Date: 17/09/18
  * 
  * @author gabriel
  *
  */
-public class BrasilCompracertaRatingReviewCrawler extends RatingReviewCrawler {
+public class BrasilKitchenaidRatingReviewCrawler extends RatingReviewCrawler {
 
-  public BrasilCompracertaRatingReviewCrawler(Session session) {
+  public BrasilKitchenaidRatingReviewCrawler(Session session) {
     super(session);
   }
 
-
   @Override
   protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-    return new TrustvoxRatingCrawler(session, "1756", logger).extractRatingAndReviewsForVtex(document, dataFetcher);
+    return new TrustvoxRatingCrawler(session, "105322", logger).extractRatingAndReviewsForVtex(document, dataFetcher);
   }
 }
