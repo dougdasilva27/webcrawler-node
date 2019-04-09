@@ -301,7 +301,7 @@ public class VTEXCrawlersUtils {
    * @param url
    * @return
    */
-  public String changeImageSizeOnURL(String url) {
+  public static String changeImageSizeOnURL(String url) {
     String[] tokens = url.trim().split("/");
     String dimensionImage = tokens[tokens.length - 2]; // to get dimension image and the image id
 

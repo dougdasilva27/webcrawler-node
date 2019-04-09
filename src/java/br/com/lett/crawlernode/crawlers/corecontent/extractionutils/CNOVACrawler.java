@@ -422,10 +422,10 @@ public abstract class CNOVACrawler extends Crawler {
           partnerName2 = partnerName2.trim().toLowerCase();
 
           Prices prices = new Prices();
-          prices.setBankTicketPrice(partnerPrice);
+          prices.setBankTicketPrice(partnerPrice2);
 
           Map<Integer, Float> installmentPriceMap = new HashMap<>();
-          installmentPriceMap.put(1, partnerPrice);
+          installmentPriceMap.put(1, partnerPrice2);
 
           Elements installments = linePartner.select(".valorTotal span strong");
 

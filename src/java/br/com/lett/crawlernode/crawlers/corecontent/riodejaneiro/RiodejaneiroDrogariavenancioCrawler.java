@@ -57,8 +57,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+        String primaryImage = crawlPrimaryImage(apiJSON);
+        String secondaryImages = crawlSecondaryImages(apiJSON, primaryImage);
         String description = scrapDescription(vtexUtil, internalId);
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
@@ -119,6 +119,54 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
   private boolean isProductPage(Document document) {
     return document.select(".productName").first() != null;
+  }
+
+  public String crawlPrimaryImage(JSONObject json) {
+    String primaryImage = null;
+
+    if (json.has("Images")) {
+      JSONArray jsonArrayImages = json.getJSONArray("Images");
+
+      if (jsonArrayImages.length() > 0) {
+        JSONArray arrayImage = jsonArrayImages.getJSONArray(0);
+        JSONObject jsonImage = arrayImage.getJSONObject(0);
+
+        if (jsonImage.has("Path")) {
+          primaryImage = VTEXCrawlersUtils.changeImageSizeOnURL(jsonImage.getString("Path"));
+        }
+      }
+    }
+
+    return primaryImage;
+  }
+
+  public String crawlSecondaryImages(JSONObject apiInfo, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    if (apiInfo.has("Images")) {
+      JSONArray jsonArrayImages = apiInfo.getJSONArray("Images");
+
+      for (int i = 0; i < jsonArrayImages.length(); i++) {
+        JSONArray arrayImage = jsonArrayImages.getJSONArray(i);
+        JSONObject jsonImage = arrayImage.getJSONObject(0);
+
+        if (jsonImage.has("Path")) {
+          String urlImage = VTEXCrawlersUtils.changeImageSizeOnURL(jsonImage.getString("Path"));
+
+          if (!urlImage.equalsIgnoreCase(primaryImage)) {
+            secondaryImagesArray.put(urlImage);
+          }
+        }
+
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
   }
 
   private String scrapDescription(VTEXCrawlersUtils vtexUtil, String internalId) {

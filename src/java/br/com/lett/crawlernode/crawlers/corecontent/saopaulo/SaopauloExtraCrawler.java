@@ -14,8 +14,8 @@ public class SaopauloExtraCrawler extends Crawler {
     super(session);
   }
 
-  private static final String HOME_PAGE = "https://www.deliveryextra.com.br";
-  private static final String HOME_PAGE_HTTP = "http://www.deliveryextra.com.br";
+  private static final String HOME_PAGE = "https://www.clubeextra.com.br";
+  private static final String HOME_PAGE_HTTP = "http://www.clubeextra.com.br";
 
 
   @Override
@@ -29,7 +29,7 @@ public class SaopauloExtraCrawler extends Crawler {
 
     // Criando cookie da loja 501 = São Paulo capital
     BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", GPACrawler.SAO_PAULO_STORE_ID_EXTRA);
-    cookie.setDomain(".deliveryextra.com.br");
+    cookie.setDomain(".clubeextra.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
 
