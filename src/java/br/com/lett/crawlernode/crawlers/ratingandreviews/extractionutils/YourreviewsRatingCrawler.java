@@ -44,8 +44,6 @@ public class YourreviewsRatingCrawler {
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     String response = dataFetcher.get(session, request).getBody().trim();
 
-    CommonMethods.saveDataToAFile(response, Test.pathWrite + "exemple.html");
-
     if (response.startsWith("<")) {
       doc = Jsoup.parse(response);
     } else if (response.contains("({")) {
