@@ -125,7 +125,7 @@ public class BrasilStrarCrawler extends Crawler {
         discount = Integer.parseInt(text);
       }
     }
-    System.err.println(discount);
+
     return discount;
   }
 
