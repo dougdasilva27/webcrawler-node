@@ -11,6 +11,9 @@ import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class YourreviewsRatingCrawler {
 
@@ -41,19 +44,19 @@ public class YourreviewsRatingCrawler {
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     String response = dataFetcher.get(session, request).getBody().trim();
 
-    if (response != null && response.contains("({")) {
+    if (response.startsWith("<")) {
+      doc = Jsoup.parse(response);
+    } else if (response.contains("({")) {
       int x = response.indexOf("({") + 1;
-      int y = response.lastIndexOf(");");
+      int y = response.lastIndexOf("})");
 
-      String responseJson = response.substring(x, y).trim();
+      String responseJson = response.substring(x, y + 1).trim();
+      JSONObject json = CrawlerUtils.stringToJson(responseJson);
 
-      if (responseJson.startsWith("{") && responseJson.endsWith("}")) {
-
-        JSONObject json = new JSONObject(responseJson);
-
-        if (json.has("html")) {
-          doc = Jsoup.parse(json.get("html").toString());
-        }
+      if (json.has("html")) {
+        doc = Jsoup.parse(json.get("html").toString());
+      } else {
+        doc = Jsoup.parse(response);
       }
     }
 
