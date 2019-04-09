@@ -85,7 +85,7 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
     String url = null;
 
     if (slug != null) {
-      url = "https://www.mercadoni.com.co/buscar?q=" + slug + "l&retailer=jumbo-colombia&product_simple=" + internalId;
+      url = "https://www.mercadoni.com.co/buscar?q=" + slug.replace("&", "") + "&retailer=jumbo-colombia&product_simple=" + internalId;
     }
 
     return url;
