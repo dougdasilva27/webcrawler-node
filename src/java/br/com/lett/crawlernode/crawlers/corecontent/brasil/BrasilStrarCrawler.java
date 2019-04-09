@@ -119,10 +119,10 @@ public class BrasilStrarCrawler extends Crawler {
 
     Element d = doc.selectFirst(selector);
     if (d != null) {
-      String text = d.text();
+      String text = d.text().replaceAll("[^0-9]", "");
 
       if (!text.isEmpty()) {
-        discount = Integer.parseInt(text.replaceAll("[^0-9]", ""));
+        discount = Integer.parseInt(text);
       }
     }
     System.err.println(discount);
