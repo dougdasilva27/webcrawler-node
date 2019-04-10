@@ -218,6 +218,11 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
 
+      Float priceBank = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-shop .boleto", null, true, ',', session);
+      if (priceBank != null) {
+        prices.setBankTicketPrice(priceBank);
+      }
+
       Element priceFrom = doc.selectFirst(".old-price .price");
       if (priceFrom != null) {
         prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));

@@ -192,11 +192,7 @@ public class MexicoAmazonCrawler extends Crawler {
     if (salePriceElement != null) {
       price = MathUtils.parseFloatWithDots(salePriceElement.text().trim());
     } else {
-      salePriceElement = document.select("#buybox .a-color-price").first();
-
-      if (salePriceElement != null) {
-        price = MathUtils.parseFloatWithDots(salePriceElement.ownText().trim());
-      }
+      price = CrawlerUtils.scrapFloatPriceFromHtml(document, "#buybox .a-color-price", null, true, '.', session);
     }
 
     if (price == null && specialPrice != null) {
@@ -401,15 +397,15 @@ public class MexicoAmazonCrawler extends Crawler {
 
       String image = null;
 
-      if (imageJson.has("mainUrl")) {
+      if (imageJson.has("mainUrl") && !imageJson.isNull("mainUrl")) {
         image = imageJson.get("mainUrl").toString().trim();
-      } else if (imageJson.has("thumbUrl")) {
+      } else if (imageJson.has("thumbUrl") && !imageJson.isNull("thumbUrl")) {
         image = imageJson.get("thumbUrl").toString().trim();
-      } else if (imageJson.has("hiRes")) {
+      } else if (imageJson.has("hiRes") && !imageJson.isNull("hiRes")) {
         image = imageJson.get("hiRes").toString().trim();
-      } else if (imageJson.has("large")) {
+      } else if (imageJson.has("large") && !imageJson.isNull("large")) {
         image = imageJson.get("large").toString().trim();
-      } else if (imageJson.has("thumb")) {
+      } else if (imageJson.has("thumb") && !imageJson.isNull("thumb")) {
         image = imageJson.get("thumb").toString().trim();
       }
 

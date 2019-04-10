@@ -189,7 +189,7 @@ public class BrasilGazinCrawler extends Crawler {
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, "#navpa .Menupa .bcaa b", null, true, ','));
+      prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, "#navpa .Menupa .bcaa b", null, true, ',', session));
 
       Elements parcels = doc.select("#navpa .Menupa .med > p.p1b");
       Elements parcelsValues = doc.select("#navpa .Menupa .med > p.p2b");
@@ -197,7 +197,7 @@ public class BrasilGazinCrawler extends Crawler {
       if (parcels.size() == parcelsValues.size()) {
         for (int i = 0; i < parcels.size(); i++) {
           Integer parcel = CrawlerUtils.scrapIntegerFromHtml(parcels.get(i), null, true, null);
-          Float value = CrawlerUtils.scrapFloatPriceFromHtml(parcelsValues.get(i), null, null, true, ',');
+          Float value = CrawlerUtils.scrapFloatPriceFromHtml(parcelsValues.get(i), null, null, true, ',', session);
 
           if (parcel != null && value != null) {
             installmentPriceMap.put(parcel, value);

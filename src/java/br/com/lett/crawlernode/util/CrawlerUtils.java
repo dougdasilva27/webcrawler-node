@@ -159,15 +159,19 @@ public class CrawlerUtils {
    * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
    * @return
    */
-  public static Float scrapFloatPriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat) {
+  public static Float scrapFloatPriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat, Session session) {
     Float price = null;
 
     String priceStr = att != null ? scrapStringSimpleInfoByAttribute(doc, cssSelector, att) : scrapStringSimpleInfo(doc, cssSelector, ownText);
     if (priceStr != null) {
-      if (priceFormat == '.') {
-        price = MathUtils.parseFloatWithDots(priceStr);
-      } else if (priceFormat == ',') {
-        price = MathUtils.parseFloatWithComma(priceStr);
+      try {
+        if (priceFormat == '.') {
+          price = MathUtils.parseFloatWithDots(priceStr);
+        } else if (priceFormat == ',') {
+          price = MathUtils.parseFloatWithComma(priceStr);
+        }
+      } catch (NumberFormatException e) {
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
       }
     }
 
@@ -186,8 +190,8 @@ public class CrawlerUtils {
    * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
    * @return
    */
-  public static Double scrapDoublePriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat) {
-    Float price = scrapFloatPriceFromHtml(doc, cssSelector, att, ownText, priceFormat);
+  public static Double scrapDoublePriceFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat, Session session) {
+    Float price = scrapFloatPriceFromHtml(doc, cssSelector, att, ownText, priceFormat, session);
     return price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
   }
 

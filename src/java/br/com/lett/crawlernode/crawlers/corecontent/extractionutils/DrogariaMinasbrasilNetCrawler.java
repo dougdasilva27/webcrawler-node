@@ -135,7 +135,8 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
 
     if (price != null) {
       prices.setBankTicketPrice(price);
-      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productForm .product-price-regular span[id^=old-price-]", null, true, ','));
+      prices.setPriceFrom(
+          CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productForm .product-price-regular span[id^=old-price-]", null, true, ',', session));
 
       Elements cards = doc.select("#productForm .installment-options .card-option");
 
