@@ -264,24 +264,27 @@ public class CommonMethods {
    *         the original string if any problem occurred during rebuild
    */
   public static String sanitizeUrl(String url) {
-    try {
-      URL urlObject = new URL(url.replaceAll("\\u00e2\\u0080\\u0093", "–"));
+    if (url != null) {
+      try {
+        URL urlObject = new URL(url.replaceAll("\\u00e2\\u0080\\u0093", "–"));
 
-      URIBuilder uriBuilder =
-          new URIBuilder().setHost(urlObject.getHost()).setPath(urlObject.getPath()).setScheme(urlObject.getProtocol()).setPort(urlObject.getPort());
+        URIBuilder uriBuilder = new URIBuilder().setHost(urlObject.getHost()).setPath(urlObject.getPath()).setScheme(urlObject.getProtocol())
+            .setPort(urlObject.getPort());
 
-      List<NameValuePair> params = getQueryMap(urlObject);
+        List<NameValuePair> params = getQueryMap(urlObject);
 
-      if (!params.isEmpty()) {
-        uriBuilder.setParameters(params);
+        if (!params.isEmpty()) {
+          uriBuilder.setParameters(params);
+        }
+
+        // replace porque tem casos que a url tem um – e o apache não interpreta esse caracter
+        return replaceSpecialCharacterDash(uriBuilder.build().toString());
+      } catch (MalformedURLException | URISyntaxException e) {
+        Logging.printLogWarn(LOGGER, getStackTraceString(e));
       }
-
-      // replace porque tem casos que a url tem um – e o apache não interpreta esse caracter
-      return replaceSpecialCharacterDash(uriBuilder.build().toString());
-    } catch (MalformedURLException | URISyntaxException e) {
-      Logging.printLogWarn(LOGGER, getStackTraceString(e));
-      return url;
     }
+
+    return url;
   }
 
   /**
