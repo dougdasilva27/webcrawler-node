@@ -3,11 +3,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -16,6 +18,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -60,8 +63,8 @@ public class BrasilStrarCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
-      vtexUtil.setCardDiscount(getDiscount(doc, "p[class~=--desconto-no-cartao-de-credito]"));
-      vtexUtil.setBankTicketDiscount(getDiscount(doc, "p[class~=--desconto-boleto]"));
+      // vtexUtil.setCardDiscount(getDiscount(doc, "p[class~=--desconto-no-cartao-de-credito]"));
+      // vtexUtil.setBankTicketDiscount(getDiscount(doc, "p[class~=--desconto-boleto]"));
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
@@ -85,7 +88,7 @@ public class BrasilStrarCrawler extends Crawler {
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = scrapPrices(marketplaceMap, internalId, doc);
+        Prices prices = scrapPrices(apiJSON, doc);
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String finalUrl =
@@ -114,29 +117,82 @@ public class BrasilStrarCrawler extends Crawler {
     return products;
   }
 
-  private Integer getDiscount(Document doc, String selector) {
-    Integer discount = 0;
 
-    Element d = doc.selectFirst(selector);
-    if (d != null) {
-      String text = d.text().replaceAll("[^0-9]", "");
+  private List<Integer> getDiscount(Document doc) {
+    List<Integer> discount = new ArrayList<>();
+    Element installmentDiscount = doc.selectFirst("#installments-qty span");
 
-      if (!text.isEmpty()) {
-        discount = Integer.parseInt(text);
+    if (installmentDiscount != null && !installmentDiscount.text().isEmpty()) {
+      String installmentDiscountString = installmentDiscount.text();
+
+      if (installmentDiscountString.contains(",")) {
+        String[] separatedDiscount = installmentDiscountString.split(",");
+
+        for (String string : separatedDiscount) {
+          string = string.replaceAll("[^0-9]", "");
+          discount.add(Integer.parseInt(string));
+
+        }
       }
     }
 
     return discount;
   }
 
-  private Prices scrapPrices(Map<String, Prices> marketplaceMap, String internalId, Document doc) {
+  private Prices scrapPrices(JSONObject apiJSON, Document doc) {
     Prices prices = new Prices();
+    Integer installmentNumber = null;
+    Double price = null;
+    Double priceFrom = null;
+    Map<Integer, Float> installmentMap = new TreeMap<>();
+    List<Integer> discount = getDiscount(doc);
 
-    prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+    if (apiJSON.has("BestInstallmentNumber")) {
+      installmentNumber = apiJSON.getInt("BestInstallmentNumber");
+    }
 
+    if (apiJSON.has("Price")) {
+      price = apiJSON.getDouble("Price");
+    }
+
+    if (apiJSON.has("ListPrice")) {
+      priceFrom = apiJSON.getDouble("ListPrice");
+      prices.setPriceFrom(priceFrom);
+    }
+
+    for (int i = 1; i <= installmentNumber; i++) {
+
+      Integer discountPrice = discount.get(0);
+      Integer numberInstallmentWithDiscount = discount.get(1);
+
+      if (discountPrice != null && numberInstallmentWithDiscount != null) {
+        if (i <= numberInstallmentWithDiscount) {
+          Float priceWithDiscount = MathUtils.normalizeTwoDecimalPlaces((float) ((price - (price * (discountPrice - (i - 1)) / 100f)) / i));
+
+          installmentMap.put(i, priceWithDiscount);
+
+          if (i == 1) {
+            prices.setBankTicketPrice(priceWithDiscount);
+
+          }
+        } else {
+          installmentMap.put(i, (float) (price / i));
+
+          if (i == 1) {
+            prices.setBankTicketPrice(price);
+
+          }
+        }
+      }
+    }
+
+    prices.insertCardInstallment(Card.VISA.toString(), installmentMap);
+    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMap);
+    prices.insertCardInstallment(Card.AMEX.toString(), installmentMap);
+    prices.insertCardInstallment(Card.DINERS.toString(), installmentMap);
+    prices.insertCardInstallment(Card.ELO.toString(), installmentMap);
 
     return prices;
-
   }
 
   private boolean isProductPage(Document document) {
