@@ -61,7 +61,7 @@ public class BrasilGazinCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#brd-crumbs li:not(:first-child) > a");
       String description = crawlDescription(doc);
-      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco .FotoMenor a[href]", Arrays.asList("href"), PROTOCOL, HOST);
+      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoomprincipal img", Arrays.asList("src"), PROTOCOL, HOST);
       String secondaryImagesMain =
           CrawlerUtils.scrapSimpleSecondaryImages(doc, ".conteudopreco .FotoMenor a", Arrays.asList("href"), PROTOCOL, HOST, primaryImageMain);
       List<String> eans = scrapEans(jsonInfo);
@@ -85,8 +85,8 @@ public class BrasilGazinCrawler extends Crawler {
           String variationId = entry.getKey();
           String variationName = entry.getValue() != null ? (name + " " + entry.getValue()).trim() : name;
           String internalId = internalPid + "-" + variationId;
-          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] .FotoMenor a",
-              Arrays.asList("href"), PROTOCOL, HOST);
+          String primaryImage =
+              CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] > a", Arrays.asList("href"), PROTOCOL, HOST);
 
           if (primaryImage == null) {
             primaryImage = primaryImageMain;
