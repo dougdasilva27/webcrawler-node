@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlers
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -115,8 +116,56 @@ public class BrasilPoloarCrawler extends Crawler {
   }
 
 
-  private List<Integer> getDiscount(Document doc) {
-    List<Integer> discount = new ArrayList<>();
+  private Prices scrapPrices(JSONObject apiJSON, Document doc) {
+    Prices prices = new Prices();
+
+    Float price = CrawlerUtils.getFloatValueFromJSON(apiJSON, "Price");
+
+    if (price != null) {
+      Map<Integer, Float> installmentMap = new TreeMap<>();
+      installmentMap.put(1, price);
+
+      prices.setBankTicketPrice(price);
+      prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(apiJSON, "ListPrice"));
+
+      Integer installmentNumber = CrawlerUtils.getIntegerValueFromJSON(apiJSON, "BestInstallmentNumber", null);
+
+      Pair<Integer, Integer> discount = scrapDiscountWithParcels(doc);
+      if (!discount.isAnyValueNull()) {
+
+        for (int i = 1; i <= installmentNumber; i++) {
+          Integer discountPrice = discount.getFirst();
+          Integer numberInstallmentWithDiscount = discount.getSecond();
+
+          if (i <= numberInstallmentWithDiscount) {
+            Float priceWithDiscount = MathUtils.normalizeTwoDecimalPlaces(((price - (price * (discountPrice - (i - 1)) / 100f)) / i));
+
+            installmentMap.put(i, priceWithDiscount);
+
+            if (i == 1) {
+              prices.setBankTicketPrice(priceWithDiscount);
+
+            }
+          } else {
+            installmentMap.put(i, MathUtils.normalizeTwoDecimalPlaces(price / i));
+          }
+        }
+      } else {
+        installmentMap.put(installmentNumber, MathUtils.normalizeTwoDecimalPlaces(price / installmentNumber));
+      }
+
+      prices.insertCardInstallment(Card.VISA.toString(), installmentMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMap);
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentMap);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentMap);
+    }
+
+    return prices;
+  }
+
+  private Pair<Integer, Integer> scrapDiscountWithParcels(Document doc) {
+    Pair<Integer, Integer> discount = new Pair<>();
     Element installmentDiscount = doc.selectFirst("#installments-qty span");
 
     if (installmentDiscount != null && !installmentDiscount.text().isEmpty()) {
@@ -125,71 +174,18 @@ public class BrasilPoloarCrawler extends Crawler {
       if (installmentDiscountString.contains(",")) {
         String[] separatedDiscount = installmentDiscountString.split(",");
 
-        for (String string : separatedDiscount) {
-          string = string.replaceAll("[^0-9]", "");
-          discount.add(Integer.parseInt(string));
+        if (separatedDiscount.length > 1) {
+          String discountNumber = separatedDiscount[0].replaceAll("[^0-9]", "");
+          String discountParcels = separatedDiscount[1].replaceAll("[^0-9]", "");
 
+          if (!discountParcels.isEmpty() && !discountNumber.isEmpty()) {
+            discount.set(Integer.parseInt(discountNumber), Integer.parseInt(discountParcels));
+          }
         }
       }
     }
 
     return discount;
-  }
-
-  private Prices scrapPrices(JSONObject apiJSON, Document doc) {
-    Prices prices = new Prices();
-    Integer installmentNumber = null;
-    Double price = null;
-    Double priceFrom = null;
-    Map<Integer, Float> installmentMap = new TreeMap<>();
-    List<Integer> discount = getDiscount(doc);
-
-    if (apiJSON.has("BestInstallmentNumber")) {
-      installmentNumber = apiJSON.getInt("BestInstallmentNumber");
-    }
-
-    if (apiJSON.has("Price")) {
-      price = apiJSON.getDouble("Price");
-    }
-
-    if (apiJSON.has("ListPrice")) {
-      priceFrom = apiJSON.getDouble("ListPrice");
-      prices.setPriceFrom(priceFrom);
-    }
-
-    for (int i = 1; i <= installmentNumber; i++) {
-
-      Integer discountPrice = discount.get(0);
-      Integer numberInstallmentWithDiscount = discount.get(1);
-
-      if (discountPrice != null && numberInstallmentWithDiscount != null) {
-        if (i <= numberInstallmentWithDiscount) {
-          Float priceWithDiscount = MathUtils.normalizeTwoDecimalPlaces((float) ((price - (price * (discountPrice - (i - 1)) / 100f)) / i));
-
-          installmentMap.put(i, priceWithDiscount);
-
-          if (i == 1) {
-            prices.setBankTicketPrice(priceWithDiscount);
-
-          }
-        } else {
-          installmentMap.put(i, (float) (price / i));
-
-          if (i == 1) {
-            prices.setBankTicketPrice(price);
-
-          }
-        }
-      }
-    }
-
-    prices.insertCardInstallment(Card.VISA.toString(), installmentMap);
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMap);
-    prices.insertCardInstallment(Card.AMEX.toString(), installmentMap);
-    prices.insertCardInstallment(Card.DINERS.toString(), installmentMap);
-    prices.insertCardInstallment(Card.ELO.toString(), installmentMap);
-
-    return prices;
   }
 
   private boolean isProductPage(Document document) {
