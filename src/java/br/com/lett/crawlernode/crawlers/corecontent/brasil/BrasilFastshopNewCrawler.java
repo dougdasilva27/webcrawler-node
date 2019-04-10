@@ -66,7 +66,7 @@ public class BrasilFastshopNewCrawler {
         String internalId = crawlInternalId(variationJson);
         JSONObject skuAPIJSON = productAPIJSON;
 
-        if (arraySkus.length() > 1) { // In case the array only has 1 sku.
+        if (arraySkus.length() > 1 && productAPIJSON.has("buyable") && productAPIJSON.getBoolean("buyable")) { // In case the array only has 1 sku.
           skuAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(variationJson.has("partNumber") ? variationJson.getString("partNumber") : null,
               session, cookies, dataFetcher);
 
@@ -285,7 +285,7 @@ public class BrasilFastshopNewCrawler {
     Request request = RequestBuilder.create().setUrl(url).build();
     Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
-    String urlDESC = "https://www.fastshop.com.br/wcs/resources/v1/spots/ProductDetail_" + partnerId;
+    String urlDESC = "https://www.fastshop.com.br/wcs/resources/v2/spots/ProductDetail_" + partnerId;
     Request requestDesc = RequestBuilder.create().setUrl(urlDESC).build();
     Document docDesc = Jsoup.parse(this.dataFetcher.get(session, requestDesc).getBody());
 
