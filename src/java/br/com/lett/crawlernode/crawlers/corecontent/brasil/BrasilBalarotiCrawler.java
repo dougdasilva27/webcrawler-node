@@ -52,7 +52,6 @@ public class BrasilBalarotiCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER_2, HOME_PAGE, cookies, dataFetcher);
-      vtexUtil.setBankTicketDiscount(5);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 

@@ -57,8 +57,9 @@ public class BrasilNutriiCrawler extends Crawler {
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, "#slider img", Arrays.asList("src"), "https", "www.nutrii.com.br", primaryImage);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#slider img, .more-views ul a", Arrays.asList("src", "href"), "https",
+          "www.nutrii.com.br", primaryImage);
+
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
