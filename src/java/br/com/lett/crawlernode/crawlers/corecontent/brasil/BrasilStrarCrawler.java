@@ -63,9 +63,6 @@ public class BrasilStrarCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
-      // vtexUtil.setCardDiscount(getDiscount(doc, "p[class~=--desconto-no-cartao-de-credito]"));
-      // vtexUtil.setBankTicketDiscount(getDiscount(doc, "p[class~=--desconto-boleto]"));
-
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
