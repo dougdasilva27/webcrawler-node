@@ -33,12 +33,12 @@ public class DiaCrawlerRanking extends CrawlerRankingKeywords {
       for (int i = 0; i < products.length(); i++) {
         JSONObject product = products.getJSONObject(i);
 
-        String internalId = crawlInternalId(product);
+        String internalPid = crawlInternalPid(product);
         String productUrl = crawlProductUrl(product);
 
-        saveDataProduct(internalId, null, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -64,7 +64,7 @@ public class DiaCrawlerRanking extends CrawlerRankingKeywords {
     }
   }
 
-  private String crawlInternalId(JSONObject product) {
+  private String crawlInternalPid(JSONObject product) {
     String internalPid = null;
 
     if (product.has("id")) {
