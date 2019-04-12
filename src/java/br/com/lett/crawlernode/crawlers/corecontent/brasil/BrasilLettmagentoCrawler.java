@@ -45,7 +45,7 @@ public class BrasilLettmagentoCrawler extends Crawler {
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-shop .short-description .std"));
       Integer stock = 40;
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price-info .price-box .price", null, true, ',', session);
-      Prices prices = null;
+      Prices prices = new Prices();
       boolean available = doc.selectFirst(".add-to-box .add-to-cart-buttons .btn-cart") != null;
   
       // Creating the product
