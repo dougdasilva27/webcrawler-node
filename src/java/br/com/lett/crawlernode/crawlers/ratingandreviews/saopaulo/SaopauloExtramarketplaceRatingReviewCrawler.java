@@ -74,6 +74,7 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
 
       List<String> idList = crawlInternalIds(document);
       for (String internalId : idList) {
@@ -94,22 +95,15 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
    */
   private Integer getTotalRating(Document doc) {
     Integer total = 0;
-
     Element finalElement = null;
-    Element rating = doc.select(".pr-snapshot-average-based-on-text .count").first();
-    Element ratingOneEvaluation = doc.select(".pr-snapshot-average-based-on-text").first();
-    Element specialEvaluation = doc.select(".rating-count[itemprop=\"reviewCount\"]").first();
+    Element specialEvaluation = doc.selectFirst(".nota.yv-itens .avaliacoes");
 
-    if (rating != null) {
-      finalElement = rating;
-    } else if (ratingOneEvaluation != null) {
-      finalElement = ratingOneEvaluation;
-    } else if (specialEvaluation != null) {
+    if (specialEvaluation != null) {
       finalElement = specialEvaluation;
     }
 
     if (finalElement != null) {
-      total = Integer.parseInt(finalElement.ownText().replaceAll("[^0-9]", ""));
+      total = Integer.parseInt(finalElement.text().replaceAll("[^0-9]", ""));
     }
 
     return total;
@@ -122,14 +116,10 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
   private Double getTotalAvgRating(Document doc) {
     Double avgRating = 0d;
 
-    Element avg = doc.select(".pr-snapshot-rating.rating .pr-rounded.average").first();
-
-    if (avg == null) {
-      avg = doc.select(".rating .rating-value").first();
-    }
+    Element avg = doc.selectFirst(".nota.yv-itens label");
 
     if (avg != null) {
-      avgRating = Double.parseDouble(avg.ownText().replace(",", "."));
+      avgRating = Double.parseDouble(avg.text().replace(",", "."));
     }
 
     return avgRating;
