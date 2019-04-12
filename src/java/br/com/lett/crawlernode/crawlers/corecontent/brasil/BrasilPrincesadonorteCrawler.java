@@ -23,6 +23,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.Marketplace;
 import models.prices.Prices;
 
 /**
@@ -81,7 +82,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(null).setName(name)
               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
               .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null)
-              .setDescription(description).setStock(null).setMarketplace(null).build();
+              .setDescription(description).setStock(null).setMarketplace(new Marketplace()).build();
 
           products.add(product);
         }

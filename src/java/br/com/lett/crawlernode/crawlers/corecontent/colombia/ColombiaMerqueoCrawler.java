@@ -34,19 +34,19 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", true);
-      name += (" " + CrawlerUtils.scrapStringSimpleInfo(doc, "h3.product-quantity", true)).trim();
+      name += (" " + CrawlerUtils.scrapStringSimpleInfo(doc, "h3.product-quantity", true));
       Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".product-price.product-special-price, .product-price:not(.text-strike)", false);
       boolean available = doc.select(".product-disabled").isEmpty();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb [itemprop=item]");
       Prices prices = crawlPrices(price, doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img.modal-product-image", Arrays.asList("data-zoom-image", "src"), "https:",
-          "d50xhnwqnrbqk.cloudfront.net");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img.modal-product-image", Arrays.asList("data-zoom-image", "src"),
-          "https:", "d50xhnwqnrbqk.cloudfront.net", primaryImage);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img.modal-product-image, .modal-product-image-gallery img",
+          Arrays.asList("data-zoom-image", "src"), "https:", "d50xhnwqnrbqk.cloudfront.net");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img.modal-product-image, .modal-product-image-gallery img",
+          Arrays.asList("data-zoom-image", "src"), "https:", "d50xhnwqnrbqk.cloudfront.net", primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".product-description"));
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name.trim()).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
           .setMarketplace(new Marketplace()).build();

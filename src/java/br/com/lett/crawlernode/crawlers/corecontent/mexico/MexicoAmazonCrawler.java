@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -446,7 +448,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
     Elements elementsDescription = doc.select("#bookDescription_feature_div, #prodDetails, #descriptionAndDetails,#product-description-iframe,"
         + "#feature-bullets,#bookDescription_feature_div,#productDetails_feature_div,#aplus3p_feature_div,#importantInformation,"
-        + "#descriptionAndDetails,#aplus_feature_div");
+        + "#descriptionAndDetails,#aplus_feature_div,#detail-bullets_feature_div,#product-description_feature_div");
 
     for (Element e : elementsDescription) {
       description.append(e.html());
@@ -459,6 +461,30 @@ public class MexicoAmazonCrawler extends Crawler {
 
       if (compare == null) {
         description.append(e.html());
+      }
+    }
+
+    Elements scripts = doc.select("script[type=\"text/javascript\"]");
+    String token = "var iframeContent =";
+
+    for (Element e : scripts) {
+      String script = e.html();
+
+      if (script.contains(token)) {
+
+        if (script.contains("iframeDocument.getElementById")) {
+          continue;
+        }
+
+        String iframeDesc = CrawlerUtils.extractSpecificStringFromScript(script, token, ";", false);
+
+        try {
+          description.append(URLDecoder.decode(iframeDesc, "UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(ex));
+        }
+
+        break;
       }
     }
 

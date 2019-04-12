@@ -79,7 +79,6 @@ public class BrasilAgilmedCrawler extends Crawler {
 
     if (price != null) {
       installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
 
       Element priceFromElement = doc.selectFirst(".com-promocao .preco-venda");
       if (priceFromElement != null) {
