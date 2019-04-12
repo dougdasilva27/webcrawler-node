@@ -22,6 +22,8 @@ public class Session {
 
   protected DateTime date = new DateTime(DateUtils.timeZone);
 
+  protected List<String> responseBodiesPath = new ArrayList<>();
+
   protected String taskStaus;
 
   /** Id of current crawling session. It's the same id of the message from Amazon SQS */
@@ -153,6 +155,18 @@ public class Session {
   public Long getProcessedId() {
     /* by default returns a null object */
     return null;
+  }
+
+  public List<String> getResponseBodiesPath() {
+    return responseBodiesPath;
+  }
+
+  public void setResponseBodiesPath(List<String> responseBodiesPath) {
+    this.responseBodiesPath = responseBodiesPath;
+  }
+
+  public void addResponseBodyPath(String path) {
+    this.responseBodiesPath.add(path);
   }
 
   public String getOriginalURL() {

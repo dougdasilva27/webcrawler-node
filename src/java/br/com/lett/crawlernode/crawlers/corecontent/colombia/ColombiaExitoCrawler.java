@@ -69,7 +69,7 @@ public class ColombiaExitoCrawler extends Crawler {
         this.webdriver.terminate();
 
         // saving request content result on Amazon
-        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
+        S3Service.saveResponseContent(session, requestHash, doc.toString());
       }
     }
 

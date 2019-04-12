@@ -99,7 +99,7 @@ public class DynamicDataFetcher {
       webdriver.loadUrl(url);
 
       // saving request content result on Amazon
-      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, webdriver.getCurrentPageSource());
+      S3Service.saveResponseContent(session, requestHash, webdriver.getCurrentPageSource());
 
       return webdriver;
     } catch (Exception e) {
@@ -155,7 +155,7 @@ public class DynamicDataFetcher {
       }
 
       // saving request content result on Amazon
-      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, docString);
+      S3Service.saveResponseContent(session, requestHash, docString);
 
       return doc;
     } catch (Exception e) {
