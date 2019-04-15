@@ -407,11 +407,14 @@ public class B2WCrawler extends Crawler {
       if (iframe != null) {
         Document docDescriptionFrame = Jsoup.parse(fetchPage(iframe.attr("src"), session));
         if (docDescriptionFrame != null) {
-          alreadyCapturedHtmlSlide = true;
           description.append(docDescriptionFrame.html());
         }
       }
 
+      // https://www.shoptime.com.br/produto/8421276/mini-system-mx-hs6500-zd-bluetooth-e-funcao-karaoke-bivolt-preto-samsung
+      // alreadyCapturedHtmlSlide as been moved here because of links like these.
+
+      alreadyCapturedHtmlSlide = true;
       datasheet.select("iframe, h1.sc-hgHYgh").remove();
       description.append(datasheet.html().replace("hidden", ""));
     }

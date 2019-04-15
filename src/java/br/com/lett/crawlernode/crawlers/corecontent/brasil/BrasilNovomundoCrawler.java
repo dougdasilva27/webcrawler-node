@@ -62,7 +62,6 @@ public class BrasilNovomundoCrawler extends Crawler {
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
-
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         Integer discount = productsDiscount.containsKey(internalId) ? productsDiscount.get(internalId) : 0;
         vtexUtil.setBankTicketDiscount(discount);
@@ -100,9 +99,15 @@ public class BrasilNovomundoCrawler extends Crawler {
   }
 
 
+
+  /*******************************
+   * Product page identification *
+   *******************************/
+
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
   }
+
 
   private Map<String, Integer> scrapSkusDiscount(String internalPid) {
     Map<String, Integer> skuDiscount = new HashMap<>();

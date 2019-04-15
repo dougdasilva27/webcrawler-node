@@ -188,7 +188,7 @@ public class ColombiaExitoCrawler extends Crawler {
         }
 
         if (e.hasClass("before")) {
-          prices.setPriceFrom(MathUtils.parseFloatWithDots(e.text().trim()).doubleValue());
+          prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloatWithDots(e.text().trim()).doubleValue()));
         }
       }
 

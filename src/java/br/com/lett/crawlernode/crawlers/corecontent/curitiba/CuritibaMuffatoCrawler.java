@@ -139,7 +139,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
       String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
       String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
 
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalId);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
       Prices prices = crawlPrices(doc, price);
@@ -337,7 +337,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
     return "";
   }
 
-  private String crawlDescription(Document document) {
+  private String crawlDescription(Document document, String internalId) {
     StringBuilder description = new StringBuilder();
     Element elementDescription = document.select("#prd-description #prd-accordion-c-one").first();
     if (elementDescription != null) {
@@ -349,6 +349,9 @@ public class CuritibaMuffatoCrawler extends Crawler {
     if (specificDescription != null) {
       description.append(specificDescription.html());
     }
+
+    description.append(CrawlerUtils.scrapLettHtml(internalId, session));
+
 
     return description.toString();
   }
