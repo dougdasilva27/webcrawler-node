@@ -159,9 +159,6 @@ public class B2WCrawler extends Crawler {
 
           if (unnavailablePage || (variationName.isEmpty() && skus.length() < 2) && infoProductJson.has("name")) {
             name.append(infoProductJson.getString("name"));
-            if (!name.toString().toLowerCase().contains(varationNameWithoutVolts.toLowerCase())) {
-              name.append(" " + variationName);
-            }
           } else if (sku.has("name")) {
             name.append(sku.getString("name"));
 
