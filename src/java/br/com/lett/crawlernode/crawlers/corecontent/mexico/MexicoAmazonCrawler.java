@@ -78,7 +78,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
       Float price = crawlPrice(marketplaceMap);
       Prices prices = crawlPrices(marketplaceMap);
-      boolean available = crawlAvailability(marketplaceMap);
+      boolean available = price != null;
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -170,19 +170,6 @@ public class MexicoAmazonCrawler extends Crawler {
     }
 
     return price;
-  }
-
-  private boolean crawlAvailability(Map<String, Prices> marketplaces) {
-    boolean available = false;
-
-    for (String seller : marketplaces.keySet()) {
-      if (seller.equalsIgnoreCase(SELLER_NAME_LOWER)) {
-        available = true;
-        break;
-      }
-    }
-
-    return available;
   }
 
   private Float crawlPriceForPrincipalSeller(Document document) {
