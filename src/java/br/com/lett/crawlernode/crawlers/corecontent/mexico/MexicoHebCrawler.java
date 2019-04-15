@@ -18,7 +18,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -57,15 +56,11 @@ public class MexicoHebCrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product)");
       boolean available = !doc.select(".availability.in-stock").isEmpty();
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img#image-main",
-          Arrays.asList("data-zoom-image", "src"), "https:", "www.heb.com.mx/");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img#image-0", Arrays.asList("data-zoom-image", "src"),
+          "https:", "www.heb.com.mx/");
 
-      // we need to do this because of this link:
-      // https://www.heb.com.mx/bimbo-pan-barra-blanco-grande-680-gr-49326.html
-      String primaryImageIndetification = CommonMethods.getLast(primaryImage.split("_"));
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-gallery img:not(#image-main):not([src~=" + primaryImageIndetification + "])",
-              Arrays.asList("data-zoom-image", "src"), "https:", "www.heb.com.mx/", primaryImage);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-gallery img:not(#image-main):not(#image-0)",
+          Arrays.asList("data-zoom-image", "src"), "https:", "www.heb.com.mx/", primaryImage);
       String description = crawlDescription(doc);
 
       String ean = scrapEan(doc, ".extra-info span span[data-upc]");

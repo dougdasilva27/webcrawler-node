@@ -161,6 +161,14 @@ public class VTEXCrawlersUtils {
     return internalPid;
   }
 
+  /**
+   * Use crawlName(JSONObject jsonSku, JSONObject skuJson, String separator)
+   * 
+   * @param jsonSku
+   * @param skuJson
+   * @return
+   */
+  @Deprecated
   public String crawlName(JSONObject jsonSku, JSONObject skuJson) {
     String name = null;
 
@@ -179,6 +187,26 @@ public class VTEXCrawlersUtils {
     }
 
     return name;
+  }
+
+  public String crawlName(JSONObject jsonSku, JSONObject skuJson, String separator) {
+    StringBuilder name = new StringBuilder();
+
+    String nameVariation = jsonSku.has(SKU_NAME) ? jsonSku.getString(SKU_NAME) : null;
+
+    if (skuJson.has(PRODUCT_NAME)) {
+      name.append(skuJson.getString(PRODUCT_NAME));
+
+      if (nameVariation != null) {
+        if (name.length() > nameVariation.length()) {
+          name.append(separator).append(nameVariation);
+        } else {
+          name = new StringBuilder().append(nameVariation);
+        }
+      }
+    }
+
+    return name.toString();
   }
 
   /**
@@ -301,7 +329,7 @@ public class VTEXCrawlersUtils {
    * @param url
    * @return
    */
-  public String changeImageSizeOnURL(String url) {
+  public static String changeImageSizeOnURL(String url) {
     String[] tokens = url.trim().split("/");
     String dimensionImage = tokens[tokens.length - 2]; // to get dimension image and the image id
 

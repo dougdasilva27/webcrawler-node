@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -14,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -27,7 +29,7 @@ import models.prices.Prices;
  */
 public class BrasilRamsonsCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.ramsons.com.br/";
+  private static final String HOME_PAGE = "http://www.ramsons.com.br/";
 
   public BrasilRamsonsCrawler(Session session) {
     super(session);
@@ -54,7 +56,8 @@ public class BrasilRamsonsCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       boolean available = price != null;
       CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = crawlPrimaryImage(doc);
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(doc, "a#Zoom1[href], a#Zoom1 img", Arrays.asList("href", "src"), "https", "www.ramsons.com.br");
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
@@ -117,13 +120,14 @@ public class BrasilRamsonsCrawler extends Crawler {
     Float price = null;
 
     String priceText;
-    Element salePriceElement = document.select(".price.sale strong[itemprop=price]").first();
+    Element salePriceElement = document.selectFirst("#info-product .price.sale strong");
 
     if (salePriceElement != null) {
       priceText = salePriceElement.ownText();
       price = MathUtils.parseFloatWithComma(priceText);
     } else {
-      salePriceElement = document.select("#lblPreco.regular").first();
+      salePriceElement = document.selectFirst("#lblPreco.regular");
+
       if (salePriceElement != null) {
         priceText = salePriceElement.ownText();
         price = MathUtils.parseFloatWithComma(priceText);
@@ -137,36 +141,15 @@ public class BrasilRamsonsCrawler extends Crawler {
     return new Marketplace();
   }
 
-
-  private String crawlPrimaryImage(Document doc) {
-    String primaryImage = null;
-    Element elementPrimaryImage = doc.select("a#Zoom1").first();
-
-    if (elementPrimaryImage != null) {
-      primaryImage = elementPrimaryImage.attr("href");
-    }
-
-    if ((primaryImage == null || primaryImage.isEmpty()) && elementPrimaryImage != null) {
-      Element elementPrimaryImage2 = elementPrimaryImage.select("img").first();
-
-      if (elementPrimaryImage2 != null) {
-        primaryImage = elementPrimaryImage2.attr("src").trim();
-      }
-    }
-
-    return primaryImage;
-  }
-
   private String crawlSecondaryImages(Document document, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
     Elements imagesElement = document.select(".thumbs li > a > img");
-
     for (Element e : imagesElement) {
-      String image = e.attr("src").trim();
+      String image = CrawlerUtils.completeUrl(e.attr("src").trim(), "https", "www.ramsons.com.br").replace("/Detalhes2/", "/Ampliada2/");
 
-      if (!image.isEmpty() && !image.equals(primaryImage)) {
+      if (!image.isEmpty() && !image.equalsIgnoreCase(primaryImage) && !image.endsWith("gif")) {
         secondaryImagesArray.put(image);
       }
     }

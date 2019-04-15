@@ -63,33 +63,34 @@ public class PageContent {
   private TextParseData textParseData;
 
   public PageContent(HttpEntity entity) throws IOException {
-
-    // setting content type
-    setContentType(null);
-    Header type = entity.getContentType();
-    if (type != null) {
-      setContentType(type.getValue());
-    }
-
-    // setting content encoding
-    setContentEncoding(null);
-    Header encoding = entity.getContentEncoding();
-    if (encoding != null) {
-      setContentEncoding(encoding.getValue());
-    }
-
-    String contentTypeString = type != null ? type.getValue() : null;
-
-    if (contentTypeString != null && !contentTypeString.contains("charset=none")) {
-      // setting charset
-      Charset charset = ContentType.getOrDefault(entity).getCharset();
-      if (charset != null) {
-        setContentCharset(charset.displayName());
+    if (entity != null) {
+      // setting content type
+      setContentType(null);
+      Header type = entity.getContentType();
+      if (type != null) {
+        setContentType(type.getValue());
       }
-    }
 
-    // setting content data
-    setContentData(EntityUtils.toByteArray(entity));
+      // setting content encoding
+      setContentEncoding(null);
+      Header encoding = entity.getContentEncoding();
+      if (encoding != null) {
+        setContentEncoding(encoding.getValue());
+      }
+
+      String contentTypeString = type != null ? type.getValue() : null;
+
+      if (contentTypeString != null && !contentTypeString.contains("charset=none")) {
+        // setting charset
+        Charset charset = ContentType.getOrDefault(entity).getCharset();
+        if (charset != null) {
+          setContentCharset(charset.displayName());
+        }
+      }
+
+      // setting content data
+      setContentData(EntityUtils.toByteArray(entity));
+    }
 
   }
 

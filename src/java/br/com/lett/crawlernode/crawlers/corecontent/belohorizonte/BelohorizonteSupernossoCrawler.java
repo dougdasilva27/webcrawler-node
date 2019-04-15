@@ -90,10 +90,10 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
     super.extractInformation(json);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (json.has("sku")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(json);
+      String internalId = json.get("sku").toString();
       String internalPid = crawlInternalPid(json);
       String name = crawlName(json);
       Float price = crawlPrice(json);
@@ -120,20 +120,6 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
     return products;
 
-  }
-
-  private boolean isProductPage(String url) {
-    return url.startsWith(HOME_PAGE + "p/");
-  }
-
-  private String crawlInternalId(JSONObject json) {
-    String internalId = null;
-
-    if (json.has("sku")) {
-      internalId = json.getString("sku");
-    }
-
-    return internalId;
   }
 
   private String crawlInternalPid(JSONObject json) {

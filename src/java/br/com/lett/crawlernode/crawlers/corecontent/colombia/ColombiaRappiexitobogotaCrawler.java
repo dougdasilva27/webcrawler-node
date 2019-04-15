@@ -160,7 +160,15 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
 
     if (json.has("description") && json.get("description") instanceof String) {
-      description.append(json.getString("description"));
+      String desc = json.getString("description");
+
+      // Because of this link: https://www.rappi.com.co/search?store_type=hiper&query=900187
+      if (desc.replace(" ", "").contains("-PLU")) {
+        String descFinal = desc.replace(CommonMethods.getLast(desc.split("-")), "").trim();
+        description.append(descFinal.substring(0, descFinal.length() - 2).trim());
+      } else {
+        description.append(desc);
+      }
     }
 
 

@@ -110,7 +110,8 @@ public class BrasilBenoitCrawler extends Crawler {
           prices.insertCardInstallment(scrapCardName(element), installments);
         }
 
-        prices.setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(fetchPage, ".wd-content > div > .grid:last-child", null, false, ','));
+        prices
+            .setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(fetchPage, ".wd-content > div > .grid:last-child", null, false, ',', session));
       } else {
         Map<Integer, Float> installments = new HashMap<>();
         installments.put(1, price);

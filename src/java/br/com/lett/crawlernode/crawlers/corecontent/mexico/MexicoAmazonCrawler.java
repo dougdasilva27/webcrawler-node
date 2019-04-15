@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +78,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
       Float price = crawlPrice(marketplaceMap);
       Prices prices = crawlPrices(marketplaceMap);
-      boolean available = crawlAvailability(marketplaceMap);
+      boolean available = price != null;
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -170,19 +172,6 @@ public class MexicoAmazonCrawler extends Crawler {
     return price;
   }
 
-  private boolean crawlAvailability(Map<String, Prices> marketplaces) {
-    boolean available = false;
-
-    for (String seller : marketplaces.keySet()) {
-      if (seller.equalsIgnoreCase(SELLER_NAME_LOWER)) {
-        available = true;
-        break;
-      }
-    }
-
-    return available;
-  }
-
   private Float crawlPriceForPrincipalSeller(Document document) {
     Float price = null;
     Element salePriceElement = document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
@@ -192,11 +181,7 @@ public class MexicoAmazonCrawler extends Crawler {
     if (salePriceElement != null) {
       price = MathUtils.parseFloatWithDots(salePriceElement.text().trim());
     } else {
-      salePriceElement = document.select("#buybox .a-color-price").first();
-
-      if (salePriceElement != null) {
-        price = MathUtils.parseFloatWithDots(salePriceElement.ownText().trim());
-      }
+      price = CrawlerUtils.scrapFloatPriceFromHtml(document, "#buybox .a-color-price", null, true, '.', session);
     }
 
     if (price == null && specialPrice != null) {
@@ -401,15 +386,15 @@ public class MexicoAmazonCrawler extends Crawler {
 
       String image = null;
 
-      if (imageJson.has("mainUrl")) {
+      if (imageJson.has("mainUrl") && !imageJson.isNull("mainUrl")) {
         image = imageJson.get("mainUrl").toString().trim();
-      } else if (imageJson.has("thumbUrl")) {
+      } else if (imageJson.has("thumbUrl") && !imageJson.isNull("thumbUrl")) {
         image = imageJson.get("thumbUrl").toString().trim();
-      } else if (imageJson.has("hiRes")) {
+      } else if (imageJson.has("hiRes") && !imageJson.isNull("hiRes")) {
         image = imageJson.get("hiRes").toString().trim();
-      } else if (imageJson.has("large")) {
+      } else if (imageJson.has("large") && !imageJson.isNull("large")) {
         image = imageJson.get("large").toString().trim();
-      } else if (imageJson.has("thumb")) {
+      } else if (imageJson.has("thumb") && !imageJson.isNull("thumb")) {
         image = imageJson.get("thumb").toString().trim();
       }
 
@@ -450,7 +435,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
     Elements elementsDescription = doc.select("#bookDescription_feature_div, #prodDetails, #descriptionAndDetails,#product-description-iframe,"
         + "#feature-bullets,#bookDescription_feature_div,#productDetails_feature_div,#aplus3p_feature_div,#importantInformation,"
-        + "#descriptionAndDetails,#aplus_feature_div");
+        + "#descriptionAndDetails,#aplus_feature_div,#detail-bullets_feature_div,#product-description_feature_div");
 
     for (Element e : elementsDescription) {
       description.append(e.html());
@@ -463,6 +448,30 @@ public class MexicoAmazonCrawler extends Crawler {
 
       if (compare == null) {
         description.append(e.html());
+      }
+    }
+
+    Elements scripts = doc.select("script[type=\"text/javascript\"]");
+    String token = "var iframeContent =";
+
+    for (Element e : scripts) {
+      String script = e.html();
+
+      if (script.contains(token)) {
+
+        if (script.contains("iframeDocument.getElementById")) {
+          continue;
+        }
+
+        String iframeDesc = CrawlerUtils.extractSpecificStringFromScript(script, token, ";", false);
+
+        try {
+          description.append(URLDecoder.decode(iframeDesc, "UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(ex));
+        }
+
+        break;
       }
     }
 

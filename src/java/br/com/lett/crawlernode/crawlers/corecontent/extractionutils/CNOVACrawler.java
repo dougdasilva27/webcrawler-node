@@ -373,12 +373,12 @@ public abstract class CNOVACrawler extends Crawler {
   private Map<String, Prices> crawlMarketplaces(Document docMarketplaceInfo, Document doc) {
     Map<String, Prices> marketplace = new HashMap<>();
 
-    Float principalSellerPrice = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".sale.price", null, true, ',');
+    Float principalSellerPrice = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".sale.price", null, true, ',', session);
 
     Element principalSeller = docMarketplaceInfo.selectFirst("table#sellerList tbody tr:first-child");
     if (principalSeller != null) {
       String partnerName = CrawlerUtils.scrapStringSimpleInfo(principalSeller, "a.seller", false);
-      Float partnerPrice = CrawlerUtils.scrapFloatPriceFromHtml(principalSeller, ".valor", null, false, ',');
+      Float partnerPrice = CrawlerUtils.scrapFloatPriceFromHtml(principalSeller, ".valor", null, false, ',', session);
 
       if (partnerName != null && partnerPrice != null) {
         partnerName = partnerName.trim().toLowerCase();
@@ -416,16 +416,16 @@ public abstract class CNOVACrawler extends Crawler {
       Elements lines = docMarketplaceInfo.select("table#sellerList tbody tr:not(:first-child)");
       for (Element linePartner : lines) {
         String partnerName2 = CrawlerUtils.scrapStringSimpleInfo(linePartner, "a.seller", false);
-        Float partnerPrice2 = CrawlerUtils.scrapFloatPriceFromHtml(linePartner, ".valor", null, false, ',');
+        Float partnerPrice2 = CrawlerUtils.scrapFloatPriceFromHtml(linePartner, ".valor", null, false, ',', session);
 
         if (partnerName2 != null && partnerPrice2 != null) {
           partnerName2 = partnerName2.trim().toLowerCase();
 
           Prices prices = new Prices();
-          prices.setBankTicketPrice(partnerPrice);
+          prices.setBankTicketPrice(partnerPrice2);
 
           Map<Integer, Float> installmentPriceMap = new HashMap<>();
-          installmentPriceMap.put(1, partnerPrice);
+          installmentPriceMap.put(1, partnerPrice2);
 
           Elements installments = linePartner.select(".valorTotal span strong");
 
@@ -529,7 +529,7 @@ public abstract class CNOVACrawler extends Crawler {
       installmentPriceMap.put(1, price);
       installmentPriceShopMap.put(1, price);
 
-      Float discountPrice = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price.discount", null, false, ',');
+      Float discountPrice = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price.discount", null, false, ',', session);
       if (discountPrice != null) {
         prices.setBankTicketPrice(discountPrice);
         installmentPriceMap.put(1, discountPrice);
@@ -570,7 +570,7 @@ public abstract class CNOVACrawler extends Crawler {
         installment = Integer.parseInt(parcelaText.substring(0, x).replaceAll("[^0-9]", "").trim());
       }
 
-      Float value = CrawlerUtils.scrapFloatPriceFromHtml(e, "> td", null, true, ',');
+      Float value = CrawlerUtils.scrapFloatPriceFromHtml(e, "> td", null, true, ',', session);
       if (value != null && installment != null) {
         installmentPriceMap.put(installment, value);
       }

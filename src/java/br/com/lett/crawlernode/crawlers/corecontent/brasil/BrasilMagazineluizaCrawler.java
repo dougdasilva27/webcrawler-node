@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -489,10 +490,12 @@ public class BrasilMagazineluizaCrawler extends Crawler {
         int x = html.indexOf(token) + token.length();
         int y = html.indexOf("};", x) + 1;
 
-        String json = html.substring(x, y).replace("window.location.host", "''").replace("window.location.protocol", "''")
-            .replace("window.location.pathname", "''").replace("document.referrer", "''").replace("encodeURIComponent(", "").replace("'),", "',");
+        String json = html.substring(x, y).replace(" ", "").replaceAll("\n", "").replace("':{", "\":{").replace("':'", "\":\"").replace("',", "\",")
+            .replace(",'", ",\"").replace("'}", "\"}").replace("{'", "{\"").replace("window.location.host", "\"\"")
+            .replace("window.location.protocol", "\"\"").replace("window.location.pathname", "\"\"").replace("document.referrer", "\"\"")
+            .replace("encodeURIComponent('", "\"").replace("'),", "\",").replace("':", "\":");
 
-        skuJson = new JSONObject(json);
+        skuJson = CrawlerUtils.stringToJson(json);
       }
     }
 

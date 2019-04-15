@@ -166,7 +166,7 @@ public class ApacheDataFetcher implements DataFetcher {
         // try again
         int responseCode = closeableHttpResponse != null ? closeableHttpResponse.getStatusLine().getStatusCode() : 0;
         requestStats.setStatusCode(responseCode);
-        if (responseCode == 404) {
+        if (responseCode == 404 || responseCode == 204) {
           FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, responseCode, requestHash);
           break;
         } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
@@ -180,10 +180,12 @@ public class ApacheDataFetcher implements DataFetcher {
 
         // saving request content result on Amazon
         String content = "";
-        if (pageContent.getContentCharset() == null) {
-          content = new String(pageContent.getContentData()).trim();
-        } else {
-          content = new String(pageContent.getContentData(), pageContent.getContentCharset()).trim();
+        if (pageContent.getContentData() != null) {
+          if (pageContent.getContentCharset() == null) {
+            content = new String(pageContent.getContentData()).trim();
+          } else {
+            content = new String(pageContent.getContentData(), pageContent.getContentCharset()).trim();
+          }
         }
 
         S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);

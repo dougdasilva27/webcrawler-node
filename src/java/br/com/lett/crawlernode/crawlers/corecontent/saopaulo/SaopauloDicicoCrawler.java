@@ -57,7 +57,7 @@ public class SaopauloDicicoCrawler extends Crawler {
           // fetchedData = isProductPage(fetchedData) ? fetchedData : doc;
 
           String name = crawlName(fetchedData);
-          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',');
+          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',', session);
           Prices prices = crawlPrices(price);
           boolean available = crawlAvailability(fetchedData) && price != null;
           Marketplace marketplace = crawlMarketplace();
@@ -235,15 +235,19 @@ public class SaopauloDicicoCrawler extends Crawler {
   }
 
   private String crawlSecondaryImages(List<String> images) {
+    String secondaryImages = null;
+
     JSONArray secondaryImagesArray = new JSONArray();
 
     if (!images.isEmpty()) {
       for (int i = 1; i < images.size(); i++) {
         secondaryImagesArray.put(images.get(i));
       }
+
+      secondaryImages = secondaryImagesArray.toString();
     }
 
-    return secondaryImagesArray.toString();
+    return secondaryImages;
   }
 
 }

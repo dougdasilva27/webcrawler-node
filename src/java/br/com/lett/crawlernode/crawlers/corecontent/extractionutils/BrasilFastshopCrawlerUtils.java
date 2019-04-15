@@ -172,7 +172,7 @@ public class BrasilFastshopCrawlerUtils {
     JSONObject apiJson = new JSONObject();
 
     if (partnerId != null) {
-      String apiUrl = "https://www.fastshop.com.br/wcs/resources/v1/products/byPartNumber/" + partnerId;
+      String apiUrl = "https://www.fastshop.com.br/wcs/resources/v2/products/byPartNumber/" + partnerId;
 
       Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
       apiJson = CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());

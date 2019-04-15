@@ -36,45 +36,37 @@ public class BrasilServnutriCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = getIdFromUrl(doc, ".product-information button");
       String internalPid = crawlAttrString(doc, ".product-information button", "data-product_sku");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-information h2", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc,
-          ".product-information .woocommerce-Price-amount", true);
+      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".product-information .woocommerce-Price-amount", true);
       Prices prices = crawlPrices(doc, price);
       boolean available = checkAvaliability(doc);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".product-information p a[href]");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".view-product img",
-          Arrays.asList("src", "srcset"), "http//", "www.servnutri.com.br");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-information p a[href]");
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(doc, ".view-product img", Arrays.asList("src", "srcset"), "http//", "www.servnutri.com.br");
       String secondaryImages = null; // Didnt have secondary images when it was made
-      String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".single-blog-post", ".shop_attributes"));
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".single-blog-post", ".shop_attributes"));
 
       List<String> variations = getVariations(doc);
 
       if (!variations.isEmpty()) {
         for (String s : variations) {
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-              .setInternalId(internalId + "-" + s).setInternalPid(internalPid)
-              .setName(name + " - " + s.toUpperCase()).setPrice(price).setPrices(prices)
-              .setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-              .setDescription(description).setMarketplace(new Marketplace()).build();
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId + "-" + s).setInternalPid(internalPid)
+              .setName(name + " - " + s.toUpperCase()).setPrice(price).setPrices(prices).setAvailable(available)
+              .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace())
+              .build();
 
           products.add(product);
         }
       } else {
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description).setMarketplace(new Marketplace()).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setMarketplace(new Marketplace()).build();
 
         products.add(product);
       }
@@ -135,9 +127,21 @@ public class BrasilServnutriCrawler extends Crawler {
       String aux = infoElement.attr("onclick");
       String search = "add-to-cart=";
 
+      if (!aux.contains(search)) {
+        search = "post_id_loja=";;
+      }
+
       if (aux.contains(search)) {
-        int ini_index = aux.indexOf(search) + search.length();
-        internalId = aux.substring(ini_index, ini_index + 3);
+        int x = aux.indexOf(search) + search.length();
+        String finalIndex = "'";
+
+        if (aux.endsWith(finalIndex)) {
+          int y = aux.indexOf(finalIndex, x);
+
+          internalId = aux.substring(x, y).trim();
+        } else {
+          internalId = aux.substring(x).trim();
+        }
       }
     }
 

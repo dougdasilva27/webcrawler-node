@@ -143,8 +143,8 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
   private Float crawlPrice(Document doc) {
     Float price = null;
 
-    Element salePriceElement = doc.select(".regular-price .price").first();
-    Element specialPrice = doc.select(".special-price .price").first();
+    Element salePriceElement = doc.select(".product-essential .regular-price .price").first();
+    Element specialPrice = doc.select(".product-essential .special-price .price").first();
 
     if (specialPrice != null) {
       price = MathUtils.parseFloatWithComma(specialPrice.ownText());
@@ -230,7 +230,7 @@ public class ArgentinaGpsfarmaCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      Element priceOld = doc.select(".old-price").first();
+      Element priceOld = doc.select(".product-essential .old-price").first();
       if (priceOld != null) {
         prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceOld.text()));
       }

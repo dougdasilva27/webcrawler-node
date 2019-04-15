@@ -43,9 +43,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
       String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-shop .sku", true);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name h1", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li[class^=category]");
-      String primaryImage =
-          CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
-              Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productImage", Arrays.asList("src"), "https", "www.nutricaototal.com.br");
       String secondaryImages =
           CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
               Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br", primaryImage);

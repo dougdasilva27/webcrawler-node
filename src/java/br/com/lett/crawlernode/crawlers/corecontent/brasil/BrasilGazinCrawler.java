@@ -61,7 +61,7 @@ public class BrasilGazinCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#brd-crumbs li:not(:first-child) > a");
       String description = crawlDescription(doc);
-      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco .FotoMenor a[href]", Arrays.asList("href"), PROTOCOL, HOST);
+      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoomprincipal img", Arrays.asList("src"), PROTOCOL, HOST);
       String secondaryImagesMain =
           CrawlerUtils.scrapSimpleSecondaryImages(doc, ".conteudopreco .FotoMenor a", Arrays.asList("href"), PROTOCOL, HOST, primaryImageMain);
       List<String> eans = scrapEans(jsonInfo);
@@ -85,8 +85,8 @@ public class BrasilGazinCrawler extends Crawler {
           String variationId = entry.getKey();
           String variationName = entry.getValue() != null ? (name + " " + entry.getValue()).trim() : name;
           String internalId = internalPid + "-" + variationId;
-          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] .FotoMenor a",
-              Arrays.asList("href"), PROTOCOL, HOST);
+          String primaryImage =
+              CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] > a", Arrays.asList("href"), PROTOCOL, HOST);
 
           if (primaryImage == null) {
             primaryImage = primaryImageMain;
@@ -189,7 +189,7 @@ public class BrasilGazinCrawler extends Crawler {
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, "#navpa .Menupa .bcaa b", null, true, ','));
+      prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, "#navpa .Menupa .bcaa b", null, true, ',', session));
 
       Elements parcels = doc.select("#navpa .Menupa .med > p.p1b");
       Elements parcelsValues = doc.select("#navpa .Menupa .med > p.p2b");
@@ -197,7 +197,7 @@ public class BrasilGazinCrawler extends Crawler {
       if (parcels.size() == parcelsValues.size()) {
         for (int i = 0; i < parcels.size(); i++) {
           Integer parcel = CrawlerUtils.scrapIntegerFromHtml(parcels.get(i), null, true, null);
-          Float value = CrawlerUtils.scrapFloatPriceFromHtml(parcelsValues.get(i), null, null, true, ',');
+          Float value = CrawlerUtils.scrapFloatPriceFromHtml(parcelsValues.get(i), null, null, true, ',', session);
 
           if (parcel != null && value != null) {
             installmentPriceMap.put(parcel, value);

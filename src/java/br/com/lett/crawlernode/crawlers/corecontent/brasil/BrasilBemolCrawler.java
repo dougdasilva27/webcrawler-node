@@ -52,7 +52,7 @@ public class BrasilBemolCrawler extends Crawler {
       String internalId = crawlInternalId(doc);
       String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".reference [itemprop=productID]", true);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".information .name", true);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".buy-box .sale-price", null, false, ',');
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".buy-box .sale-price", null, false, ',', session);
       Prices prices = crawlPrices(price, internalId, doc);
       boolean available = doc.selectFirst(".wd-buy-button  > div:not([style$=none])") != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrum-product li:not(.first) a span");
