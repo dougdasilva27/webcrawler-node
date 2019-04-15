@@ -549,7 +549,7 @@ public abstract class CrawlerRanking extends Task {
       this.log(string.toString());
     }
 
-    Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
     Response response = dataFetcher.get(session, request);
 
     Document doc = Jsoup.parse(response.getBody());
