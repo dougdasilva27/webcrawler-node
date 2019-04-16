@@ -43,9 +43,7 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
 
       // sku data in json
@@ -62,7 +60,7 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
         JSONObject descriptionArray = vtexUtil.crawlDescriptionAPI(internalId, "skuId");
         String description = crawlDescription(descriptionArray);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -235,6 +233,12 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
     if (json.has("Fórmula")) {
       description.append("<div>Fórmula:");
       description.append(json.getJSONArray("Fórmula").get(0).toString());
+      description.append("</div>");
+    }
+
+    if (json.has("Efeito")) {
+      description.append("<div>Efeito:");
+      description.append(json.getJSONArray("Efeito").get(0).toString());
       description.append("</div>");
     }
 

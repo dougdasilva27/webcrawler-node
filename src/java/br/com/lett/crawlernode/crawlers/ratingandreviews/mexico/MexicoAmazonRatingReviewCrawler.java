@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -34,7 +35,8 @@ public class MexicoAmazonRatingReviewCrawler extends RatingReviewCrawler {
 
       String internalId = crawlInternalId(document);
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
+          "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
       Double avgRating = getTotalAvgRating(document);
 
       ratingReviews.setInternalId(internalId);
@@ -71,7 +73,8 @@ public class MexicoAmazonRatingReviewCrawler extends RatingReviewCrawler {
    */
   private Double getTotalAvgRating(Document doc) {
     Double avgRating = 0d;
-    Element reviews = doc.select("#reviewsMedley .arp-rating-out-of-text").first();
+    Element reviews =
+        doc.select("#reviewsMedley .arp-rating-out-of-text, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt").first();
 
     if (reviews != null) {
       String text = reviews.ownText().trim();
@@ -86,27 +89,6 @@ public class MexicoAmazonRatingReviewCrawler extends RatingReviewCrawler {
     }
 
     return avgRating;
-  }
-
-  /**
-   * Number of ratings appear in html element
-   * 
-   * @param doc
-   * @return
-   */
-  private Integer getTotalNumOfRatings(Document doc) {
-    Integer ratingNumber = 0;
-    Element reviews = doc.select("#acrCustomerReviewText").first();
-
-    if (reviews != null) {
-      String text = reviews.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        ratingNumber = Integer.parseInt(text);
-      }
-    }
-
-    return ratingNumber;
   }
 
 

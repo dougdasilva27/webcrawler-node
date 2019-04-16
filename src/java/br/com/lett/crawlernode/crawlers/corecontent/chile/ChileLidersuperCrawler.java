@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -99,7 +100,7 @@ public class ChileLidersuperCrawler extends Crawler {
     List<String> images = new ArrayList<>();
 
     Request request = RequestBuilder.create().setUrl("https://wlmstatic.lider.cl/contentassets/galleries/" + id + ".xml").setCookies(cookies).build();
-    Document docXml = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+    Document docXml = Jsoup.parse(this.dataFetcher.get(session, request).getBody(), "", Parser.xmlParser());
 
     Elements items = docXml.getElementsByTag("image");
     for (Element e : items) {

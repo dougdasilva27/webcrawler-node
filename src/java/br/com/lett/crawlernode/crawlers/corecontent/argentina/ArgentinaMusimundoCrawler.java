@@ -72,7 +72,7 @@ public class ArgentinaMusimundoCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.select(".main-content > .product").first() != null;
+    return !doc.select(".main-content > .product, .mus-pro-name").isEmpty();
   }
 
   private String crawlInternalId(Document doc) {
@@ -198,7 +198,7 @@ public class ArgentinaMusimundoCrawler extends Crawler {
 
   private String crawlName(Document doc) {
     String name = null;
-    Element nameElement = doc.selectFirst(".product > hgroup > h1.name");
+    Element nameElement = doc.selectFirst(".product > hgroup > h1.name, .mus-pro-name.strong");
 
     if (nameElement != null) {
       name = nameElement.text().trim();

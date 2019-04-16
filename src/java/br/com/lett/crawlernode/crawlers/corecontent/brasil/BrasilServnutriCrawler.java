@@ -128,7 +128,7 @@ public class BrasilServnutriCrawler extends Crawler {
       String search = "add-to-cart=";
 
       if (!aux.contains(search)) {
-        search = "post_id_loja=";;
+        search = "post_id_loja=";
       }
 
       if (aux.contains(search)) {

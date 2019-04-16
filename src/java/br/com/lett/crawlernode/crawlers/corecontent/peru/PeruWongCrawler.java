@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -44,9 +44,7 @@ public class PeruWongCrawler extends Crawler {
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
-      String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".productDescription", ".title[data-destec=\"descp\"]", ".content-description .value-field.Descripcion",
-              ".title[data-destec=\"tech\"]", ".content-description table.group.Especificaciones-Tecnicas"));
+      String description = crawlDescription(doc);
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -58,7 +56,7 @@ public class PeruWongCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -90,5 +88,52 @@ public class PeruWongCrawler extends Crawler {
 
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
+  }
+
+  private String crawlDescription(Document doc) {
+    StringBuilder description = new StringBuilder();
+
+    Element descriptionElement = doc.selectFirst(".description");
+    if (descriptionElement != null) {
+      Element descriptionContent = descriptionElement.selectFirst(".productDescription");
+
+      if (descriptionContent != null && !descriptionContent.html().trim().isEmpty()) {
+        description.append(descriptionElement.html());
+      }
+    }
+
+    Element descriptionTitle = doc.selectFirst(".title[data-destec=\"descp\"]");
+    Element descriptionElement2 = doc.selectFirst(".content-description .value-field.Descripcion");
+
+    if (descriptionElement2 != null) {
+      if (descriptionTitle != null) {
+        description.append(descriptionTitle.outerHtml());
+      }
+
+      description.append(descriptionElement2.html());
+    }
+
+    Element specsTitle = doc.selectFirst(".title[data-destec=\"tech\"]");
+    Element specsElement = doc.selectFirst(".content-description table.group.Especificaciones-Tecnicas");
+
+    if (specsElement != null) {
+      if (specsTitle != null) {
+        description.append(specsTitle.outerHtml());
+      }
+
+      description.append(specsElement.outerHtml());
+    }
+
+    Element caracElement = doc.selectFirst(".content-description table.group.Caracteristicas");
+
+    if (caracElement != null) {
+      if (specsTitle != null) {
+        description.append(specsTitle.outerHtml());
+      }
+
+      description.append(caracElement.outerHtml());
+    }
+
+    return description.toString();
   }
 }

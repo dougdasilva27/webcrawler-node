@@ -424,7 +424,7 @@ public class CrawlerUtils {
   public static String scrapUrl(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
     String url = null;
 
-    Element urlElement = doc.selectFirst(cssSelector);
+    Element urlElement = cssSelector != null ? doc.selectFirst(cssSelector) : doc;
     if (urlElement != null) {
       url = sanitizeUrl(urlElement, attributes, protocol, host);
     }

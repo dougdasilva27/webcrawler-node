@@ -63,7 +63,7 @@ public class BrasilBrastempCrawler extends Crawler {
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String description = crawlDescription(doc, apiJSON, vtexUtil, internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
-        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, SELLERS, Arrays.asList(Card.VISA), session);
         boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, SELLERS);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);

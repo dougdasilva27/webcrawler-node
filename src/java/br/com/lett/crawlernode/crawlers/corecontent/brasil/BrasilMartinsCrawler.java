@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -133,7 +134,7 @@ public class BrasilMartinsCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (!doc.select("input#id").isEmpty()) {
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value");
+      String internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagePrincipal img", Arrays.asList("src"), "https", "imgprd.martins.com.br");

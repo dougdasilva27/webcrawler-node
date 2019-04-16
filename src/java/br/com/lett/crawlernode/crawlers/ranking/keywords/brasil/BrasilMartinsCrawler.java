@@ -4,6 +4,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilMartinsCrawler extends CrawlerRankingKeywords {
@@ -29,7 +30,7 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".products .product[data-sku]");
+    Elements products = this.currentDoc.select(".product[data-sku]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -37,7 +38,7 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalId = e.attr("data-sku");
+        String internalId = CommonMethods.getLast(e.attr("data-sku").split("_"));
         String urlProduct = CrawlerUtils.scrapUrl(e, "a", "href", "https", "www.martinsatacado.com.br");
 
         saveDataProduct(internalId, null, urlProduct);

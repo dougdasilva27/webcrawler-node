@@ -16,7 +16,9 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
@@ -67,30 +69,25 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String specialKeywrod = this.keywordWithoutAccents.replace(" ", "-");
-    String url = "https://www.comperdelivery.com.br/busca/3/0/0/MaisVendidos/Decrescente/20/" + this.currentPage + "/0/0/" + specialKeywrod
-        + ".aspx?q=" + specialKeywrod;
+    String specialKeywrod = this.keywordWithoutAccents.replace(" ", "%20");
+    String url = "https://busca.comperdelivery.com.br/" + specialKeywrod + "?pagina=" + this.currentPage;
 
     Map<String, String> headers = new HashMap<>();
     headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
     this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
     this.log("Link onde são feitos os crawlers: " + url);
 
-    Elements products = this.currentDoc.select("ul#listProduct > li .url[title]");
+    Elements products = this.currentDoc.select("ul#listProduct > li .details .url[rel]");
 
-    // se essa página tiver resultado faça:
     if (!products.isEmpty()) {
-      // se o total de busca não foi setado ainda, chama a função para setar
-      if (this.totalProducts == 0)
+      if (this.totalProducts == 0) {
         setTotalProducts();
+      }
 
       for (Element e : products) {
-        // Url do produto
-        String productUrl = crawlProductUrl(e);
-
-        // InternalId
+        String productUrl = CrawlerUtils.scrapUrl(e, null, "href", "https", "www.comper.com.br");
         String internalId = crawlInternalId(productUrl);
 
         saveDataProduct(internalId, null, productUrl);
@@ -110,14 +107,8 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".filter-details p strong").last();
-
-    try {
-      this.totalProducts = Integer.parseInt(totalElement.text());
-    } catch (Exception e) {
-      this.logError(e.getMessage());
-    }
-
+    CommonMethods.saveDataToAFile(currentDoc, Test.pathWrite + "COMPER.html");
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".list-results strong:last-child", true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 
@@ -127,17 +118,10 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
     internalId = CommonMethods.getLast(tokens).split("/")[0];
 
-    return internalId;
-  }
-
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = e.attr("href");
-
-    if (!productUrl.startsWith(HOME_PAGE)) {
-      productUrl = (HOME_PAGE + productUrl).replace("br//", "br/");
+    if (internalId.contains(".")) {
+      internalId = internalId.split("\\.")[0];
     }
 
-    return productUrl;
+    return internalId;
   }
 }
