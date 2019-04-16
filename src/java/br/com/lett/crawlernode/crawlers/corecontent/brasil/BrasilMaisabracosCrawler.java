@@ -23,7 +23,7 @@ public class BrasilMaisabracosCrawler extends Crawler {
     super(session);
   }
 
-  private static final String HOME_PAGE = "https://loja.maisabracos.com.br/";
+  private static final String HOME_PAGE = "https://www.maisabracos.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "mais abraços";
 
   @Override
@@ -56,7 +56,7 @@ public class BrasilMaisabracosCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
