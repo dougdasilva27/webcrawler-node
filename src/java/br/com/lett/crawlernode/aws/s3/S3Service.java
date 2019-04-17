@@ -184,8 +184,11 @@ public class S3Service {
       FileCompression.compressToTar(tarPath, session.getResponseBodiesPath());
       FileCompression.compressFileToGZIP(tarPath, tarGzPath, true, session);
 
-      String amazonLocation = new StringBuilder().append(crawlerSessionsPrefix).append("/").append("testesGabriel/").append(session.getSessionId())
-          .append(".tar.gz").toString();
+      DateTime time = new DateTime();
+
+      String amazonLocation = new StringBuilder().append(crawlerSessionsPrefix).append("/").append(session.getClass().getSimpleName())
+          .append("/year=").append(time.getYear()).append("/month=").append(time.getMonthOfYear()).append("/day=").append(time.getDayOfMonth())
+          .append("/").append(session.getSessionId()).append(".tar.gz").toString();
 
       File compressedFile = null;
 
