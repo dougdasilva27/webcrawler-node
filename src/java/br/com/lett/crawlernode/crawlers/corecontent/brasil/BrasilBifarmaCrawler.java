@@ -68,7 +68,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
       // saving request content result on Amazon
-      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, doc.toString());
+      S3Service.saveResponseContent(session, requestHash, doc.toString());
     }
 
     return doc;

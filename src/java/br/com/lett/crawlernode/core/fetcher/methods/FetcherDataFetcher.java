@@ -154,7 +154,7 @@ public class FetcherDataFetcher implements DataFetcher {
       }
 
       response = responseBuilder(responseJson);
-      S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, response.getBody());
+      S3Service.saveResponseContent(session, requestHash, response.getBody());
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Fetcher did not returned the expected response: " + CommonMethods.getStackTrace(e));
     }
