@@ -7,6 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -141,10 +142,11 @@ public class RatingReviewCrawler extends Task {
         if (ratingReviews != null) {
           printRatingsReviews(ratingReviews);
           Persistence.updateRating(ratingReviews, session.getInternalId(), session);
-
         } else {
           Logging.printLogWarn(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
         }
+
+        // sendToKinesis(ratingReviews);
       } else {
         for (RatingsReviews rating : ratingReviewsCollection.getRatingReviewsList()) {
           printRatingsReviews(rating);
@@ -183,8 +185,18 @@ public class RatingReviewCrawler extends Task {
 
   private void sendToKinesis(RatingsReviews rating) {
     if (GlobalConfigurations.executionParameters.mustSendToKinesis()) {
-      rating.setUrl(session.getOriginalURL());
-      rating.setMarketId(session.getMarket().getNumber());
+      RatingsReviews r = new RatingsReviews();
+      r.setInternalId(session.getInternalId());
+      r.setUrl(session.getOriginalURL());
+      r.setMarketId(session.getMarket().getNumber());
+
+      if (rating != null) {
+        r.setAverageOverallRating(rating.getAverageOverallRating());
+        r.setTotalRating(rating.getTotalReviews());
+        r.setTotalWrittenReviews(rating.getTotalWrittenReviews());
+      }
+
+      KPLProducer.getInstance().put(r, session);
     }
   }
 
