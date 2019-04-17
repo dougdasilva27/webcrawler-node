@@ -82,7 +82,7 @@ public class JavanetDataFetcher implements DataFetcher {
         rd.close();
         content = response.toString();
 
-        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+        S3Service.saveResponseContent(session, requestHash, content);
 
 
         response = new ResponseBuilder().setBody(content).setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null).build();

@@ -188,7 +188,7 @@ public class ApacheDataFetcher implements DataFetcher {
           }
         }
 
-        S3Service.uploadCrawlerSessionContentToAmazon(session, requestHash, content);
+        S3Service.saveResponseContent(session, requestHash, content);
 
         // see if some code error occured
         // sometimes the remote server doesn't send the http error code on the headers
