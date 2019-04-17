@@ -30,7 +30,6 @@ import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -168,8 +167,7 @@ public class Persistence {
     }
   }
 
-
-  public static void updateRating(RatingsReviews ratingReviews, Session session) {
+  public static void updateRating(RatingsReviews ratingReviews, String internalId, Session session) {
     dbmodels.tables.Processed processedTable = Tables.PROCESSED;
 
     Map<Field<?>, Object> updateSets = new HashMap<>();
@@ -180,29 +178,31 @@ public class Persistence {
       updateSets.put(processedTable.RATING, null);
     }
 
-    List<Condition> conditions = new ArrayList<>();
-    conditions.add(processedTable.ID.equal(((RatingReviewsCrawlerSession) session).getProcessedId()));
+    if (internalId != null) {
+      List<Condition> conditions = new ArrayList<>();
+      conditions.add(processedTable.INTERNAL_ID.equal(internalId));
+      conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
-    Connection conn = null;
-    PreparedStatement pstmt = null;
-    try {
-      conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(
-          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+      Connection conn = null;
+      PreparedStatement pstmt = null;
+      try {
+        conn = JdbcConnectionFactory.getInstance().getConnection();
+        pstmt = conn.prepareStatement(
+            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
-      pstmt.executeUpdate();
-      Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
+        pstmt.executeUpdate();
+        Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
 
-    } catch (Exception e) {
-      Logging.printLogError(logger, session, "Error updating processed product rating.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      } catch (Exception e) {
+        Logging.printLogError(logger, session, "Error updating processed product rating.");
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
-      session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
-    } finally {
-      JdbcConnectionFactory.closeResource(pstmt);
-      JdbcConnectionFactory.closeResource(conn);
+        session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+      } finally {
+        JdbcConnectionFactory.closeResource(pstmt);
+        JdbcConnectionFactory.closeResource(conn);
+      }
     }
-
   }
 
   /**

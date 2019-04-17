@@ -131,15 +131,22 @@ public class RatingReviewCrawler extends Task {
     try {
       RatingReviewsCollection ratingReviewsCollection = extractRatingAndReviews(document);
 
-      // get only the desired rating and review, according to the internal id
-      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(session.getInternalId());
+      if (session.getInternalId() != null) {
+        // get only the desired rating and review, according to the internal id
+        RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(session.getInternalId());
 
-      if (ratingReviews != null) {
-        printRatingsReviews(ratingReviews);
-        Persistence.updateRating(ratingReviews, session);
+        if (ratingReviews != null) {
+          printRatingsReviews(ratingReviews);
+          Persistence.updateRating(ratingReviews, session.getInternalId(), session);
 
+        } else {
+          Logging.printLogWarn(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
+        }
       } else {
-        Logging.printLogWarn(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
+        for (RatingsReviews rating : ratingReviewsCollection.getRatingReviewsList()) {
+          printRatingsReviews(rating);
+          Persistence.updateRating(rating, rating.getInternalId(), session);
+        }
       }
 
     } catch (Exception e) {
@@ -168,6 +175,13 @@ public class RatingReviewCrawler extends Task {
     } catch (Exception e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
+    }
+  }
+
+  private void sendToKinesis(RatingsReviews rating) {
+    if (GlobalConfigurations.executionParameters.mustSendToKinesis()) {
+      rating.setUrl(session.getOriginalURL());
+      rating.setMarketId(session.getMarket().getNumber());
     }
   }
 
