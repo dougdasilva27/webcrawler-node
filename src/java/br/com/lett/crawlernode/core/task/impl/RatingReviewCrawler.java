@@ -146,7 +146,7 @@ public class RatingReviewCrawler extends Task {
 					Logging.printLogWarn(logger, session, "Rating and reviews for internalId " + session.getInternalId() + " was not crawled.");
 				}
 
-				// sendToKinesis(ratingReviews);
+				sendToKinesis(ratingReviews);
 			} else {
 				for (RatingsReviews rating : ratingReviewsCollection.getRatingReviewsList()) {
 					printRatingsReviews(rating);
