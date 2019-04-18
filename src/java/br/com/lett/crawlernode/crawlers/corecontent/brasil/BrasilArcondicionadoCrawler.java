@@ -3,21 +3,24 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -48,8 +51,8 @@ import models.prices.Prices;
  ************************************************************************************************************************************************************************************/
 public class BrasilArcondicionadoCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.arcondicionado.com.br/";
-  private final String HOME_PAGE_ADIAS = "https://www.adias.com.br/";
+  private static final String HOME_PAGE = "https://www.arcondicionado.com.br/";
+  private static final String HOME_PAGE_ADIAS = "https://www.adias.com.br/";
 
   public BrasilArcondicionadoCrawler(Session session) {
     super(session);
@@ -70,52 +73,21 @@ public class BrasilArcondicionadoCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      /*
-       * *********************************** crawling data of only one product *
-       *************************************/
+      JSONArray productsLista = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "AddProdutos(eval(", "))", true, false);
 
-      // InternalId
-      String internalId = crawlInternalId(doc);
-
-      // Pid
-      String internalPid = crawlInternalPid(doc);
-
-      // Name
+      String internalId = crawlInternalId(doc, productsLista);
+      String internalPid = crawlInternalPid(doc, productsLista);
       String name = crawlName(doc);
-
-      // Availability
       boolean available = crawlAvailability(doc);
-
-      // Price
       Float price = crawlMainPagePrice(doc, available);
-
-      // prices
       Prices prices = crawlPrices(doc, available);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#fbits-breadcrumb span[itemprop=name]", true);
 
-      // Categories
-      ArrayList<String> categories = crawlCategories(doc);
-      String category1 = getCategory(categories, 0);
-      String category2 = getCategory(categories, 1);
-      String category3 = getCategory(categories, 2);
-
-      // Primary image
-      String primaryImage = crawlPrimaryImage(doc);
-
-      // Secondary images
-      String secondaryImages = crawlSecondaryImages(doc);
-
-      // Description
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".infoProd"));
-
-      // Stock
-      Integer stock = null;
-
-      // Marketplace map
-      Map<String, Float> marketplaceMap = crawlMarketplace(doc);
-
-      // Marketplace
-      Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
-
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#galeria li > a", Arrays.asList("data-zoom-image", "data-image"), "https",
+          "arcondicionado.fbitsstatic.net");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeria li > a", Arrays.asList("data-zoom-image", "data-image"),
+          "https", "arcondicionado.fbitsstatic.net", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".infoProd", ".listacompra-descricao"));
 
       String url = session.getOriginalURL();
       if (this.session.getRedirectedToURL(url) != null && name != null) {
@@ -123,22 +95,10 @@ public class BrasilArcondicionadoCrawler extends Crawler {
       }
 
       // Creating the product
-      Product product = new Product();
-      product.setUrl(url);
-      product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setAvailable(available);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
+      Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
+          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setMarketplace(new Marketplace()).build();
 
       products.add(product);
 
@@ -157,7 +117,7 @@ public class BrasilArcondicionadoCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document doc) {
-    return !doc.select("#hdnProdutoVarianteId").isEmpty();
+    return !doc.select(".detalhe-produto").isEmpty();
   }
 
 
@@ -165,24 +125,59 @@ public class BrasilArcondicionadoCrawler extends Crawler {
    * General methods *
    *******************/
 
-  private String crawlInternalId(Document document) {
+  private String crawlInternalId(Document doc, JSONArray products) {
     String internalId = null;
-    Element internalIdElement = document.select("#hdnProdutoVarianteId").first();
+    Element internalIdElement = doc.select("#hdnProdutoVarianteId").first();
 
     if (internalIdElement != null) {
-      internalId = internalIdElement.attr("value").toString().trim();
+      internalId = internalIdElement.val().trim();
+    } else {
+      StringBuilder ids = new StringBuilder();
+      for (Object o : products) {
+        JSONObject product = (JSONObject) o;
+
+        if (product.has("variante") && !product.isNull("variante")) {
+          if (ids.toString().isEmpty()) {
+            ids.append(product.get("variante").toString());
+          } else {
+            ids.append("-").append(product.get("variante").toString());
+          }
+        }
+      }
+
+      if (!ids.toString().isEmpty()) {
+        internalId = ids.toString();
+      }
     }
 
     return internalId;
   }
 
-  private String crawlInternalPid(Document document) {
+  private String crawlInternalPid(Document doc, JSONArray products) {
     String internalPid = null;
 
-    Element internalPidElement = document.select("#hdnProdutoId").first();
+    Element internalPidElement = doc.select("#hdnProdutoId").first();
 
     if (internalPidElement != null) {
-      internalPid = internalPidElement.attr("value").toString().trim();
+      internalPid = internalPidElement.val().trim();
+    } else {
+      StringBuilder ids = new StringBuilder();
+      for (Object o : products) {
+        JSONObject product = (JSONObject) o;
+
+        if (product.has("id") && !product.isNull("id")) {
+          if (ids.toString().isEmpty()) {
+            ids.append(product.get("id").toString());
+          } else {
+            ids.append("-").append(product.get("id").toString());
+          }
+        }
+      }
+
+
+      if (!ids.toString().isEmpty()) {
+        internalPid = ids.toString();
+      }
     }
 
     return internalPid;
@@ -193,24 +188,28 @@ public class BrasilArcondicionadoCrawler extends Crawler {
     Element nameElement = document.select(".prodTitle").first();
 
     if (nameElement != null) {
-      name = nameElement.text().toString().trim();
+      name = nameElement.text().trim();
     }
 
     return name;
   }
 
-  private Float crawlMainPagePrice(Document document, boolean available) {
+  private Float crawlMainPagePrice(Document doc, boolean available) {
     Float price = null;
 
     if (available) {
-      Element specialPrice = document.select(".produtoInfo .precoPor").first();
+      Element specialPrice = doc.select(".produtoInfo .precoPor").first();
 
       if (specialPrice == null) {
-        specialPrice = document.select("#fbits-forma-pagamento .precoPor").first();
+        specialPrice = doc.select("#fbits-forma-pagamento .precoPor").first();
       }
 
       if (specialPrice != null) {
-        price = Float.parseFloat(specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+        price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      }
+
+      if (price == null) {
+        price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".detalhe-produto .fbits-boleto-preco", null, true, ',', session);
       }
     }
 
@@ -225,41 +224,40 @@ public class BrasilArcondicionadoCrawler extends Crawler {
       Map<Integer, Float> installments = new TreeMap<>();
 
       // bank ticket
-      Element bankTicketPriceElement = document.select("#divFormaPagamento .precoVista .fbits-boleto-preco").last();
+      Element bankTicketPriceElement = document.select(".detalhe-produto .fbits-boleto-preco").last();
       if (bankTicketPriceElement != null) {
         bankTicketPrice = MathUtils.parseFloatWithComma(bankTicketPriceElement.text());
       }
 
-      // card payment options
-      // the payment options are the same across all the card brands
       Elements installmentsElements = document.select(".fbits-parcelamento-padrao .details .details-content p");
-      for (Element installmentElement : installmentsElements) {
-        Integer installmentNumber = null;
-        Float installmentPrice = null;
+      if (!installmentsElements.isEmpty()) {
+        for (Element installmentElement : installmentsElements) {
+          Integer installmentNumber = null;
+          Float installmentPrice = null;
 
-        // installmentElement is the <p></p> html element
-        // <p>
-        // <b>1</b>
-        // x sem juros de
-        // <b>R$ 1.931,58</b>
-        // </p>
+          Element installmentNumberElement = installmentElement.select("b").first();
+          if (installmentNumberElement != null) {
+            installmentNumber = Integer.parseInt(installmentNumberElement.text().trim());
+          }
 
-        // installment number is the first <b></b> child element
-        Element installmentNumberElement = installmentElement.select("b").first();
-        if (installmentNumberElement != null) {
-          installmentNumber = Integer.parseInt(installmentNumberElement.text().trim());
+          Element installmentPriceElement = installmentElement.select("b").last();
+          if (installmentPriceElement != null) {
+            installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
+          }
+
+          installments.put(installmentNumber, installmentPrice);
         }
+      } else {
+        Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".fbits-parcelamento .precoParcela", document, true, "x", "", true);
+        if (!pair.isAnyValueNull()) {
+          Integer installmentNumber = pair.getFirst();
+          Float installmentValue = pair.getSecond();
 
-        // installment price is the last <b></b> child element
-        Element installmentPriceElement = installmentElement.select("b").last();
-        if (installmentPriceElement != null) {
-          installmentPrice = MathUtils.parseFloatWithComma(installmentPriceElement.text());
+          installments.put(1, MathUtils.normalizeTwoDecimalPlaces(installmentNumber * installmentValue));
+          installments.put(installmentNumber, installmentValue);
         }
-
-        installments.put(installmentNumber, installmentPrice);
       }
 
-      // insert the prices on the Prices object
       prices.setBankTicketPrice(bankTicketPrice);
 
       prices.insertCardInstallment(Card.VISA.toString(), installments);
@@ -275,90 +273,6 @@ public class BrasilArcondicionadoCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document document) {
-    Element notifyMeElement = document.select(".avisoIndisponivel:not([style])").first();
-
-    if (notifyMeElement != null) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private Map<String, Float> crawlMarketplace(Document document) {
-    return new HashMap<>();
-  }
-
-  private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-    return new Marketplace();
-  }
-
-  private String crawlPrimaryImage(Document document) {
-    String primaryImage = null;
-    Element primaryImageElement = document.select(".fbits-componente-imagem img").first();
-
-    if (primaryImageElement != null) {
-      String image = primaryImageElement.attr("data-zoom-image").trim();
-
-      if (!image.startsWith("http")) {
-        image = primaryImageElement.attr("src").trim();
-      }
-
-      if (image.contains("?")) {
-        image = image.split("\\?")[0];
-      }
-
-      primaryImage = image;
-    }
-
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(Document document) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements imagesElement = document.select(".fbits-produto-imagens a");
-
-    for (int i = 1; i < imagesElement.size(); i++) { // start with index 1 because the first image
-                                                     // is the primary image
-      String image = imagesElement.get(i).attr("data-zoom-image").trim();
-
-      if (image.startsWith("http")) {
-        image = imagesElement.get(i).attr("data-image").trim();
-      }
-
-      if (image.contains("?")) {
-        image = image.split("\\?")[0];
-      }
-
-      secondaryImagesArray.put(image);
-
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
-  private ArrayList<String> crawlCategories(Document document) {
-    ArrayList<String> categories = new ArrayList<String>();
-    Elements elementCategories = document.select("#fbits-breadcrumb span[itemprop=name]");
-
-    for (int i = 1; i < elementCategories.size(); i++) { // starting from index 1, because the first
-                                                         // is the market name
-      categories.add(elementCategories.get(i).text().trim());
-    }
-
-    return categories;
-  }
-
-  private String getCategory(ArrayList<String> categories, int n) {
-    if (n < categories.size()) {
-      return categories.get(n);
-    }
-
-    return "";
+    return document.selectFirst(".avisoIndisponivel:not([style])") == null;
   }
 }
