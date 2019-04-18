@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
@@ -107,7 +106,6 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    CommonMethods.saveDataToAFile(currentDoc, Test.pathWrite + "COMPER.html");
     this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".list-results strong:last-child", true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
