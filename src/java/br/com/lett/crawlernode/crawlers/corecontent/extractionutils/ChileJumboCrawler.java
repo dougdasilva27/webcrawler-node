@@ -32,11 +32,6 @@ public class ChileJumboCrawler extends Crawler {
   public static final String JUMBO_LASCONDES_ID = "12";
   public static final String JUMBO_VINA_ID = "16";
 
-  public static final String RANKING_SELECTOR = "li[layout] .product-item";
-  public static final String RANKING_SELECTOR_URL = ".product-item__info a";
-  public static final String RANKING_SELECTOR_TOTAL = ".resultado-busca-numero";
-  public static final String RANKING_ATTRIBUTE_ID = "data-id";
-
   private static final String MAIN_SELLER_NAME_LOWER = "jumbo";
   public static final String HOME_PAGE = "https://www2.jumbo.cl/";
   public static final String HOST = "www2.jumbo.cl";
