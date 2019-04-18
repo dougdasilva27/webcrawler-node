@@ -23,6 +23,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -58,7 +60,7 @@ public class B2WCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
     headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-    headers.put("Accept-Encoding", "");
+    headers.put("Accept-Encoding", "no");
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
         .setSendUserAgent(false).setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
@@ -76,6 +78,8 @@ public class B2WCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "AMERICANAS.html");
 
     // Json da pagina principal
     JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
