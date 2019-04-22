@@ -42,7 +42,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject jsonIdSkuPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta=", ";", true, false);
-      JSONObject jsonNameDesc = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
+      JSONObject jsonNameDesc = CrawlerUtils.selectJsonFromHtml(doc, ".container script[type=\"application/ld+json\"]", "", null, false, false);
 
       String internalId = jsonIdSkuPrice.has("pid") ? jsonIdSkuPrice.getString("pid") : null;
       String internalPid = jsonIdSkuPrice.has("sku") ? jsonIdSkuPrice.getString("sku") : null;
