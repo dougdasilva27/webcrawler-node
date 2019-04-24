@@ -88,8 +88,8 @@ public class JavanetDataFetcher implements DataFetcher {
         response = new ResponseBuilder().setBody(content).setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null).build();
         requestStats.setHasPassedValidation(true);
 
-        FetchUtilities.sendRequestInfoLog(request, response, FetchUtilities.GET_REQUEST, randUserAgent, session, connection.getResponseCode(),
-            requestHash);
+        FetchUtilities.sendRequestInfoLog(request, response, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            connection.getResponseCode(), requestHash);
       } catch (Exception e) {
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request for header: " + targetURL);
         Logging.printLogWarn(logger, session, e.getMessage());

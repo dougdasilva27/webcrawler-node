@@ -237,7 +237,7 @@ public class S3Service {
     session.addResponseBodyPath(path);
 
     try {
-      Logging.printLogDebug(logger, session, "Uploading content to Amazon");
+      Logging.printLogDebug(logger, session, "Save content to upload to Amazon");
       File htmlFile = new File(path);
       FileUtils.writeStringToFile(htmlFile, html);
 

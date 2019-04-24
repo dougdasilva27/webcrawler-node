@@ -83,7 +83,7 @@ public class GPACrawler {
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
-      String description = crawlDescription(jsonSku);
+      String description = crawlDescription(jsonSku, internalId);
       boolean available = crawlAvailability(jsonSku);
       Float price = available ? crawlPrice(jsonSku) : null;
       Double priceFrom = available ? crawlPriceFrom(jsonSku) : null;
@@ -332,7 +332,7 @@ public class GPACrawler {
   }
 
 
-  private String crawlDescription(JSONObject json) {
+  private String crawlDescription(JSONObject json, String internalId) {
     StringBuilder description = new StringBuilder();
 
     if (json.has("shortDescription") && json.get("shortDescription") instanceof String) {
@@ -394,6 +394,7 @@ public class GPACrawler {
     }
 
     description.append(CrawlerUtils.scrapStandoutDescription("gpa", session, cookies, dataFetcher));
+    description.append(CrawlerUtils.scrapLettHtml(internalId, session, store.equals("pa") ? 4 : 5));
 
     return description.toString();
   }

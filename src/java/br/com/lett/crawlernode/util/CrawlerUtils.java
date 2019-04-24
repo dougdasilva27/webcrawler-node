@@ -1431,11 +1431,11 @@ public class CrawlerUtils {
    * @param session
    * @return
    */
-  public static Document scrapLettHtml(String internalId, Session session) {
+  public static Document scrapLettHtml(String internalId, Session session, Integer marketId) {
     Document doc = new Document("");
     DataFetcher dataFetcher = new FetcherDataFetcher();
 
-    String url = "https://api-building-block.placeholder.com.br/v2/skumap?marketId=" + session.getMarket().getNumber();
+    String url = "https://api-building-block.placeholder.com.br/v2/skumap?marketId=" + marketId;
     FetcherOptions options = new FetcherOptions();
     options.setMustUseMovingAverage(false);
     options.setRetrieveStatistics(true);

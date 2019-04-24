@@ -344,14 +344,23 @@ public class FetchUtilities {
    * @param status
    * @param requestHash
    */
-  public static void sendRequestInfoLog(Request request, Response response, String method, String userAgent, Session session, int status,
-      String requestHash) {
-    LettProxy proxy = response != null ? response.getProxyUsed() : null;
+  public static void sendRequestInfoLog(Request request, Response response, LettProxy proxy, String method, String userAgent, Session session,
+      int status, String requestHash) {
 
     JSONObject requestMetadata =
         new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()))
             .put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress())).put("user_agent", userAgent).put("req_method", method)
             .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status);
+
+    Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
+  }
+
+  public static void sendRequestInfoLog(Request request, Response response, String proxy, String method, String userAgent, Session session,
+      int status, String requestHash) {
+
+    JSONObject requestMetadata = new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy))
+        .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
+        .put("res_http_code", status);
 
     Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
   }

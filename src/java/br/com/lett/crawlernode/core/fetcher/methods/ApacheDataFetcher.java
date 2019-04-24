@@ -167,7 +167,7 @@ public class ApacheDataFetcher implements DataFetcher {
         int responseCode = closeableHttpResponse != null ? closeableHttpResponse.getStatusLine().getStatusCode() : 0;
         requestStats.setStatusCode(responseCode);
         if (responseCode == 404 || responseCode == 204) {
-          FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, responseCode, requestHash);
+          FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
           break;
         } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
           throw new ResponseCodeException(responseCode);
@@ -212,11 +212,11 @@ public class ApacheDataFetcher implements DataFetcher {
             .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE))).build();
         requestStats.setHasPassedValidation(true);
 
-        FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, responseCode, requestHash);
+        FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
       } catch (IOException | ResponseCodeException e) {
         int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 
-        FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, code, requestHash);
+        FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, code, requestHash);
         requestStats.setHasPassedValidation(false);
 
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url);
@@ -224,7 +224,7 @@ public class ApacheDataFetcher implements DataFetcher {
       } catch (Exception e) {
         int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 
-        FetchUtilities.sendRequestInfoLog(request, response, method, randUserAgent, session, code, requestHash);
+        FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, code, requestHash);
         requestStats.setHasPassedValidation(false);
 
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url);
@@ -317,10 +317,10 @@ public class ApacheDataFetcher implements DataFetcher {
         file.close();
         is.close();
 
-        FetchUtilities.sendRequestInfoLog(request, null, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
+        FetchUtilities.sendRequestInfoLog(request, null, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
       } catch (Exception e) {
         int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
-        FetchUtilities.sendRequestInfoLog(request, null, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
+        FetchUtilities.sendRequestInfoLog(request, null, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
 
         if (localFile != null && localFile.exists()) {
           localFile.delete();

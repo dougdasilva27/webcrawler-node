@@ -17,14 +17,11 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -179,39 +176,6 @@ public class CuritibaMuffatoCrawler extends Crawler {
     return products;
   }
 
-
-
-  private JSONObject crawlSkuJsonFromCatalogApi(String internalId) {
-    String getUrl = "http://delivery.supermuffato.com.br/produto/sku/" + internalId;
-    JSONArray apiResponse = new JSONArray();
-    try {
-      Request request = RequestBuilder.create().setUrl(getUrl).setCookies(cookies).build();
-      String apiString = this.dataFetcher.get(session, request).getBody().trim();
-
-      if (apiString.isEmpty()) {
-        request.setUrl(getUrl + "?sc=13");
-        apiString = this.dataFetcher.get(session, request).getBody().trim();
-      }
-
-      apiResponse = new JSONArray(apiString);
-    } catch (Exception e) {
-      Logging.printLogWarn(logger, session, "Error trying to fetch sku JSON from Catalog API.");
-      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
-      apiResponse = new JSONArray();
-    }
-
-    for (int i = 0; i < apiResponse.length(); i++) {
-      JSONObject sku = apiResponse.getJSONObject(i);
-      if (sku.has("Id")) {
-        String skuId = String.valueOf(sku.getInt("Id"));
-        if (internalId != null && internalId.equals(skuId)) {
-          return sku;
-        }
-      }
-    }
-    return new JSONObject();
-  }
-
   /*******************************
    * Product page identification *
    *******************************/
@@ -273,50 +237,6 @@ public class CuritibaMuffatoCrawler extends Crawler {
     return false;
   }
 
-  private String crawlPrimaryImage(JSONObject skuJson) {
-    String primaryImage = null;
-
-    if (skuJson != null && skuJson.has("skus")) {
-      JSONArray skus = skuJson.getJSONArray("skus");
-      if (skus.length() > 0) {
-        JSONObject sku = skus.getJSONObject(0);
-        if (sku.has("image")) {
-          String image = sku.getString("image");
-          primaryImage = image.replace("-400-400", "-1000-1000");
-        }
-      }
-    }
-
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(JSONObject skuJsonFromCatalogAPI) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    if (skuJsonFromCatalogAPI.has("Images")) {
-      JSONArray images = skuJsonFromCatalogAPI.getJSONArray("Images");
-
-      for (int i = 0; i < images.length(); i++) {
-        JSONArray imageVersions = images.getJSONArray(i);
-
-        for (int j = 0; j < imageVersions.length(); j++) {
-          JSONObject version = imageVersions.getJSONObject(j);
-
-          if (!version.getBoolean("IsMain") && version.getString("Path").contains("-1000-1000")) {
-            secondaryImagesArray.put(version.getString("Path"));
-          }
-        }
-      }
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
   private ArrayList<String> crawlCategories(Document document) {
     ArrayList<String> categories = new ArrayList<>();
     Elements elementCategories = document.select(".breadcrumb-holder .container .row .bread-crumb ul li a");
@@ -350,7 +270,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
       description.append(specificDescription.html());
     }
 
-    description.append(CrawlerUtils.scrapLettHtml(internalId, session));
+    description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
 
 
     return description.toString();
