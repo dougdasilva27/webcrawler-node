@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -18,6 +19,8 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.Seller;
+import models.Util;
 import models.prices.Prices;
 
 
@@ -69,12 +72,14 @@ public class MexicoWalmartCrawler extends Crawler {
         List<String> eans = new ArrayList<>();
         eans.add(ean);
 
+        Map<String, Prices> marketplaceMap = crawlMarketplace(sku);
+        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
             .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -86,6 +91,69 @@ public class MexicoWalmartCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
+    Marketplace marketplace = new Marketplace();
+
+    for (String partnerName : marketplaceMap.keySet()) {
+      JSONObject sellerJSON = new JSONObject();
+      sellerJSON.put("name", partnerName);
+      sellerJSON.put("price", marketplaceMap.get(partnerName).getCardInstallmentValue(Card.AMEX.toString(), 1));
+
+      sellerJSON.put("prices", marketplaceMap.get(partnerName).toJSON());
+
+      try {
+        Seller seller = new Seller(sellerJSON);
+        marketplace.add(seller);
+      } catch (Exception e) {
+        Logging.printLogError(logger, session, Util.getStackTraceString(e));
+      }
+    }
+
+    return marketplace;
+
+  }
+
+  private Map<String, Prices> crawlMarketplace(JSONObject sku) {
+
+    Map<String, Prices> map = new HashMap<>();
+    String name = null;
+    Float price = null;
+
+    if (sku.has("offerList")) {
+      JSONArray offerList = sku.getJSONArray("offerList");
+
+      for (Object object2 : offerList) {
+        Prices prices = new Prices();
+        JSONObject list = (JSONObject) object2;
+
+        if (list.has("sellerName")) {
+          name = list.getString("sellerName");
+
+          if (!name.equals("Walmart")) {
+            if (list.has("priceInfo")) {
+              JSONObject priceInfo = list.getJSONObject("priceInfo");
+              price = priceInfo.getFloat("specialPrice");
+
+              if (price != null) {
+                Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+                installmentPriceMap.put(1, price);
+                prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+
+              }
+
+              if (priceInfo.has("originalPrice")) {
+                prices.setPriceFrom(priceInfo.getDouble("originalPrice"));
+              }
+
+            }
+          }
+        }
+        map.put(name, prices);
+      }
+    }
+    return map;
   }
 
   private String scrapEan(JSONObject sku) {
@@ -131,13 +199,15 @@ public class MexicoWalmartCrawler extends Crawler {
 
       for (Object object2 : offerList) {
         JSONObject list = (JSONObject) object2;
+        if (list.has("sellerName") && list.getString("sellerName").equals("Walmart")) {
 
-        if (list.has("priceInfo")) {
-          JSONObject priceInfo = list.getJSONObject("priceInfo");
+          if (list.has("priceInfo")) {
+            JSONObject priceInfo = list.getJSONObject("priceInfo");
 
-          if (priceInfo.has("specialPrice")) {
-            price = priceInfo.getFloat("specialPrice");
+            if (priceInfo.has("specialPrice")) {
+              price = priceInfo.getFloat("specialPrice");
 
+            }
           }
         }
       }
@@ -164,12 +234,14 @@ public class MexicoWalmartCrawler extends Crawler {
 
       for (Object object2 : offerList) {
         JSONObject list = (JSONObject) object2;
+        if (list.has("sellerName") && list.getString("sellerName").equals("Walmart")) {
 
-        if (list.has("priceInfo")) {
-          JSONObject priceInfo = list.getJSONObject("priceInfo");
+          if (list.has("priceInfo")) {
+            JSONObject priceInfo = list.getJSONObject("priceInfo");
 
-          if (priceInfo.has("originalPrice")) {
-            prices.setPriceFrom(priceInfo.getDouble("originalPrice"));
+            if (priceInfo.has("originalPrice")) {
+              prices.setPriceFrom(priceInfo.getDouble("originalPrice"));
+            }
           }
         }
       }
