@@ -441,6 +441,16 @@ public class B2WCrawler extends Crawler {
       }
     }
 
+    // If has rich content we have to access the page with them
+    Element iframe = doc.selectFirst("iframe[src]");
+
+    if (iframe != null) {
+      String url = "https://www.americanas.com.br/product-description/acom/";
+      Request request = RequestBuilder.create().setUrl(url.concat("119757799?")).setCookies(cookies).build();
+      Document richContent = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      description.append(richContent.html());
+    }
+
     return description.toString();
   }
 
