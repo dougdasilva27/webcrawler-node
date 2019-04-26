@@ -1435,7 +1435,7 @@ public class CrawlerUtils {
     Document doc = new Document("");
     DataFetcher dataFetcher = new FetcherDataFetcher();
 
-    String url = "https://api-building-block.placeholder.com.br/v2/skumap?marketId=" + marketId;
+    String url = "https://api.lettcdn.com/api/v3/" + marketId.toString() + "/skumap.json";
     FetcherOptions options = new FetcherOptions();
     options.setMustUseMovingAverage(false);
     options.setRetrieveStatistics(true);
