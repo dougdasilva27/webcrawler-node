@@ -26,7 +26,7 @@ import models.prices.Prices;
 
 public class MexicoWalmartCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://super.walmart.com.mx";
+  private static final String HOME_PAGE = "https://www.walmart.com.mx";
 
   public MexicoWalmartCrawler(Session session) {
     super(session);
@@ -316,7 +316,7 @@ public class MexicoWalmartCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
 
     if (sku.has("longDescription")) {
-      description.append("<div id=\"desc\"> <h3> DescripciÃ³n </h3>");
+      description.append("<div id=\"desc\"> <h3> Descripción </h3>");
       description.append(sku.get("longDescription") + "</div>");
     }
 
