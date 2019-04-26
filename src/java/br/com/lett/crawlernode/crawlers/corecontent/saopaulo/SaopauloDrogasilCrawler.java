@@ -100,7 +100,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       }
 
       // Descrição
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalId);
 
       // Estoque
       Integer stock = null;
@@ -225,7 +225,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
     return name;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc, String internalId) {
     StringBuilder description = new StringBuilder();
 
     Element shortDescription = doc.select(".product-short-description").first();
@@ -238,6 +238,13 @@ public class SaopauloDrogasilCrawler extends Crawler {
       description.append(elementDescription.html());
     }
 
+    Element iframe = doc.selectFirst("iframe[src]");
+
+
+    if (iframe != null) {
+      Document richContent = CrawlerUtils.scrapLettHtml(internalId, session, 71);
+      description.append(richContent.html());
+    }
     return description.toString();
   }
 
