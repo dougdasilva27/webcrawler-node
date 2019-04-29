@@ -82,7 +82,7 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".product-page") != null;
+    return doc.selectFirst(".product-section") != null;
   }
 
   private Float crawlPrice(Document document, String internalId) {
