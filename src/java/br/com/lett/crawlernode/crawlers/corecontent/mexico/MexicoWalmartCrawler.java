@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import models.prices.Prices;
 public class MexicoWalmartCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.walmart.com.mx";
+  private static final String SELLER = "walmart";
 
   public MexicoWalmartCrawler(Session session) {
     super(session);
@@ -61,9 +63,6 @@ public class MexicoWalmartCrawler extends Crawler {
         JSONObject sku = (JSONObject) object;
 
         String name = crawlName(sku);
-        Float price = crawlPrice(sku);
-        Prices prices = crawlPrices(price, sku);
-        boolean available = crawlAvailability(sku);
         String primaryImage = crawlPrimaryImage(internalId);
         String secondaryImages = crawlSecondaryImages(sku);
         String description = crawlDescription(sku);
@@ -73,7 +72,10 @@ public class MexicoWalmartCrawler extends Crawler {
         eans.add(ean);
 
         Map<String, Prices> marketplaceMap = crawlMarketplace(sku);
-        Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER), Arrays.asList(Card.AMEX), session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(SELLER));
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER));
+        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.AMEX);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
@@ -131,23 +133,21 @@ public class MexicoWalmartCrawler extends Crawler {
         if (list.has("sellerName")) {
           name = list.getString("sellerName");
 
-          if (!name.equals("Walmart")) {
-            if (list.has("priceInfo")) {
-              JSONObject priceInfo = list.getJSONObject("priceInfo");
-              price = priceInfo.getFloat("specialPrice");
+          if (list.has("priceInfo")) {
+            JSONObject priceInfo = list.getJSONObject("priceInfo");
+            price = priceInfo.getFloat("specialPrice");
 
-              if (price != null) {
-                Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-                installmentPriceMap.put(1, price);
-                prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-
-              }
-
-              if (priceInfo.has("originalPrice")) {
-                prices.setPriceFrom(priceInfo.getDouble("originalPrice"));
-              }
+            if (price != null) {
+              Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+              installmentPriceMap.put(1, price);
+              prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
 
             }
+
+            if (priceInfo.has("originalPrice")) {
+              prices.setPriceFrom(priceInfo.getDouble("originalPrice"));
+            }
+
           }
         }
         map.put(name, prices);
@@ -316,7 +316,7 @@ public class MexicoWalmartCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
 
     if (sku.has("longDescription")) {
-      description.append("<div id=\"desc\"> <h3> Descripción </h3>");
+      description.append("<div id=\"desc\"> <h3> Descripciï¿½n </h3>");
       description.append(sku.get("longDescription") + "</div>");
     }
 
