@@ -20,8 +20,6 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
-import models.Seller;
-import models.Util;
 import models.prices.Prices;
 
 
@@ -92,28 +90,6 @@ public class MexicoWalmartCrawler extends Crawler {
     }
 
     return products;
-
-  }
-
-  private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
-    Marketplace marketplace = new Marketplace();
-
-    for (String partnerName : marketplaceMap.keySet()) {
-      JSONObject sellerJSON = new JSONObject();
-      sellerJSON.put("name", partnerName);
-      sellerJSON.put("price", marketplaceMap.get(partnerName).getCardInstallmentValue(Card.AMEX.toString(), 1));
-
-      sellerJSON.put("prices", marketplaceMap.get(partnerName).toJSON());
-
-      try {
-        Seller seller = new Seller(sellerJSON);
-        marketplace.add(seller);
-      } catch (Exception e) {
-        Logging.printLogError(logger, session, Util.getStackTraceString(e));
-      }
-    }
-
-    return marketplace;
 
   }
 
@@ -189,82 +165,6 @@ public class MexicoWalmartCrawler extends Crawler {
     }
 
     return name;
-  }
-
-  private Float crawlPrice(JSONObject sku) {
-    Float price = null;
-
-    if (sku.has("offerList")) {
-      JSONArray offerList = sku.getJSONArray("offerList");
-
-      for (Object object2 : offerList) {
-        JSONObject list = (JSONObject) object2;
-        if (list.has("sellerName") && list.getString("sellerName").equals("Walmart")) {
-
-          if (list.has("priceInfo")) {
-            JSONObject priceInfo = list.getJSONObject("priceInfo");
-
-            if (priceInfo.has("specialPrice")) {
-              price = priceInfo.getFloat("specialPrice");
-
-            }
-          }
-        }
-      }
-    }
-
-    return price;
-  }
-
-  private Prices crawlPrices(Float price, JSONObject sku) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-
-    }
-
-    if (sku.has("offerList")) {
-      JSONArray offerList = sku.getJSONArray("offerList");
-
-      for (Object object2 : offerList) {
-        JSONObject list = (JSONObject) object2;
-        if (list.has("sellerName") && list.getString("sellerName").equals("Walmart")) {
-
-          if (list.has("priceInfo")) {
-            JSONObject priceInfo = list.getJSONObject("priceInfo");
-
-            if (priceInfo.has("originalPrice")) {
-              prices.setPriceFrom(priceInfo.getDouble("originalPrice"));
-            }
-          }
-        }
-      }
-    }
-
-    return prices;
-  }
-
-  private boolean crawlAvailability(JSONObject sku) {
-    boolean available = false;
-
-    if (sku.has("offerList")) {
-      JSONArray offerList = sku.getJSONArray("offerList");
-
-      for (Object object2 : offerList) {
-        JSONObject list = (JSONObject) object2;
-
-        if (list.has("isInvAvailable")) {
-          available = list.getBoolean("isInvAvailable");
-        }
-      }
-    }
-    return available;
   }
 
   private String crawlPrimaryImage(String id) {
