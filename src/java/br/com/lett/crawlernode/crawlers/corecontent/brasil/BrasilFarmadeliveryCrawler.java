@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -96,17 +97,8 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
 
       // Descrição
-      Element elementDescription = doc.select("div.product-collateral .box-description").first();
-      Element elementAdditional = doc.select("div.product-collateral .box-additional").first();
-      String description = "";
+      String description = scrapDescription(doc, internalId);
 
-      if (elementDescription != null) {
-        description += elementDescription.html();
-      }
-
-      if (elementAdditional != null) {
-        description += elementAdditional.html();
-      }
 
       // Estoque
       Integer stock = null;
@@ -149,6 +141,25 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
     return products;
   }
 
+
+  private String scrapDescription(Document doc, String internalId) {
+    String description = "";
+    Element elementDescription = doc.select("div.product-collateral .box-description").first();
+    Element elementAdditional = doc.select("div.product-collateral .box-additional").first();
+    if (elementDescription != null) {
+      description += elementDescription.html();
+    }
+
+    if (elementAdditional != null) {
+      description += elementAdditional.html();
+    }
+
+
+    Document richContent = CrawlerUtils.scrapLettHtml(internalId, session, 103);
+    description += richContent.html();
+
+    return description;
+  }
 
   /*******************************
    * Product page identification *
