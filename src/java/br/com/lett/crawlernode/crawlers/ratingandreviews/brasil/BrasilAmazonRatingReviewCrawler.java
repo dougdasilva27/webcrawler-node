@@ -5,8 +5,8 @@ import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
@@ -34,8 +34,9 @@ public class BrasilAmazonRatingReviewCrawler extends RatingReviewCrawler {
       String internalId = crawlInternalId(document);
 
       if (internalId != null) {
-        Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
-        Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
+        Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
+            "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
+        Double avgRating = getTotalAvgRating(document);
 
         ratingReviews.setInternalId(internalId);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -73,50 +74,25 @@ public class BrasilAmazonRatingReviewCrawler extends RatingReviewCrawler {
    * @param document
    * @return
    */
-  private Double getTotalAvgRating(Document doc, Integer ratingCount) {
+  private Double getTotalAvgRating(Document doc) {
     Double avgRating = 0d;
+    Element reviews =
+        doc.select("#reviewsMedley .arp-rating-out-of-text, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt").first();
 
-    if (ratingCount > 0) {
-      Element avg = doc.selectFirst(".arp-rating-out-of-text");
+    if (reviews != null) {
+      String text = reviews.ownText().trim();
 
-      if (avg != null) {
-        String text = avg.ownText();
+      if (text.contains("de")) {
+        String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
 
-        if (text.contains("de")) {
-          text = text.split("de")[0];
-        }
-
-        Double avgDouble = MathUtils.parseDoubleWithComma(text);
-        if (avgDouble != null) {
-          avgRating = avgDouble;
+        if (!avgText.isEmpty()) {
+          avgRating = Double.parseDouble(avgText);
         }
       }
     }
 
     return avgRating;
   }
-
-  /**
-   * Number of ratings appear in html
-   * 
-   * @param docRating
-   * @return
-   */
-  private Integer getTotalNumOfRatings(Document docRating) {
-    Integer totalRating = 0;
-    Element totalRatingElement = docRating.selectFirst(".totalReviewCount");
-
-    if (totalRatingElement != null) {
-      String text = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        totalRating = Integer.parseInt(text);
-      }
-    }
-
-    return totalRating;
-  }
-
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst("#dp") != null;
