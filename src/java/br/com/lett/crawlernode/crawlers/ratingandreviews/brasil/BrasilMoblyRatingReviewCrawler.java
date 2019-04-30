@@ -53,27 +53,22 @@ public class BrasilMoblyRatingReviewCrawler extends RatingReviewCrawler {
       // Cehcking multiple skus in the page
       Elements skus = doc.select(".product-option .custom-select option[data-js-function]");
       
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      
       if (!skus.isEmpty()) {        
         for (Element sku : skus) {
           String internalID = scrapInternalIdForMutipleVariations(sku);
-          
           RatingsReviews ratingsReviewsClone = ratingReviews.clone();
           
           ratingsReviewsClone.setInternalId(internalID);
-          ratingsReviewsClone.setTotalRating(totalNumOfEvaluations);
-          ratingsReviewsClone.setTotalWrittenReviews(totalNumOfEvaluations);
-          ratingsReviewsClone.setAverageOverallRating(avgRating);
-
           ratingReviewsCollection.addRatingReviews(ratingsReviewsClone);
         }
       } else {
         String internalID = scrapInternalIdSingleProduct(doc);
         
         ratingReviews.setInternalId(internalID);
-        ratingReviews.setTotalRating(totalNumOfEvaluations);
-        ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-        ratingReviews.setAverageOverallRating(avgRating);
-
         ratingReviewsCollection.addRatingReviews(ratingReviews);
       }
     }
