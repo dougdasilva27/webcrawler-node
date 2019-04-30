@@ -334,8 +334,8 @@ public class Product implements Serializable {
     sb.append("stock: " + this.stock + "\n");
     sb.append("ean: " + this.ean + "\n");
     sb.append("eans: " + (this.eans == null ? this.eans : this.eans.toString()) + "\n");
-    sb.append("main buybox: " + (this.buyBox == null ? this.buyBox : this.buyBox.size()) + "\n");
-    sb.append("all sellers: " + (this.sellers == null ? this.sellers : this.sellers.size()) + "\n");
+    sb.append("buybox: " + (this.buyBox == null ? this.buyBox : this.buyBox.size()) + "\n");
+    sb.append("sellers: " + (this.sellers == null ? this.sellers : this.sellers.size()) + "\n");
 
     return sb.toString();
   }
@@ -350,8 +350,10 @@ public class Product implements Serializable {
         .put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
         .put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", (description != null ? description : JSONObject.NULL)).put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
-        .put("mainBuyBox", (buyBox != null ? getBuyBoxJSONArray() : Collections.EMPTY_LIST))
-        .put("allSellers", (sellers != null ? getSellersJSONArray() : Collections.EMPTY_LIST)).put("timestamp", timestamp).toString();
+        /*
+         * .put("buyBox", (buyBox != null ? getBuyBoxJSONArray() : Collections.EMPTY_LIST)) .put("sellers",
+         * (sellers != null ? getSellersJSONArray() : Collections.EMPTY_LIST))
+         */.put("timestamp", timestamp).toString();
   }
 
   public String serializeToKinesis() {
@@ -369,8 +371,8 @@ public class Product implements Serializable {
         .put("category2", (category2 != null ? category2 : JSONObject.NULL)).put("category3", (category3 != null ? category3 : JSONObject.NULL))
         .put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL)).put("secondaryImages", secondaryImagesArray)
         .put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
-        .put("mainBuyBox", (buyBox != null ? getBuyBoxJSONArray() : new JSONArray().toString()))
-        .put("allSellers", (sellers != null ? getSellersJSONArray() : new JSONArray().toString()))
+        // .put("buyBox", (buyBox != null ? getBuyBoxJSONArray() : new JSONArray().toString()))
+        // .put("sellers", (sellers != null ? getSellersJSONArray() : new JSONArray().toString()))
         .put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
         .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp).toString();
