@@ -57,12 +57,14 @@ public class BrasilMoblyRatingReviewCrawler extends RatingReviewCrawler {
         for (Element sku : skus) {
           String internalID = scrapInternalIdForMutipleVariations(sku);
           
-          ratingReviews.setInternalId(internalID);
-          ratingReviews.setTotalRating(totalNumOfEvaluations);
-          ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-          ratingReviews.setAverageOverallRating(avgRating);
+          RatingsReviews ratingsReviewsClone = ratingReviews.clone();
+          
+          ratingsReviewsClone.setInternalId(internalID);
+          ratingsReviewsClone.setTotalRating(totalNumOfEvaluations);
+          ratingsReviewsClone.setTotalWrittenReviews(totalNumOfEvaluations);
+          ratingsReviewsClone.setAverageOverallRating(avgRating);
 
-          ratingReviewsCollection.addRatingReviews(ratingReviews);
+          ratingReviewsCollection.addRatingReviews(ratingsReviewsClone);
         }
       } else {
         String internalID = scrapInternalIdSingleProduct(doc);
