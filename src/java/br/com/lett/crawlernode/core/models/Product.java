@@ -41,8 +41,8 @@ public class Product implements Serializable {
   private String timestamp;
   private Integer marketId;
   private SkuStatus status;
-  private List<BuyBoxSeller> mainBuyBox;
-  private List<BuyBoxSeller> allSellers;
+  private List<BuyBoxSeller> buyBox;
+  private List<SellerV2> sellers;
 
   public Product() {
     this.description = "";
@@ -238,16 +238,16 @@ public class Product implements Serializable {
     this.status = status;
   }
 
-  public List<BuyBoxSeller> getMainBuyBox() {
-    return mainBuyBox;
+  public List<BuyBoxSeller> getBuyBox() {
+    return buyBox;
   }
 
-  public JSONArray getMainBuyBoxJSONArray() {
+  public JSONArray getBuyBoxJSONArray() {
     JSONArray mainBuyBoxJSONArray = null;
 
-    if (mainBuyBox != null) {
+    if (buyBox != null) {
       mainBuyBoxJSONArray = new JSONArray();
-      for (BuyBoxSeller seller : mainBuyBox) {
+      for (BuyBoxSeller seller : buyBox) {
         mainBuyBoxJSONArray.put(seller.toJson());
       }
     }
@@ -255,20 +255,20 @@ public class Product implements Serializable {
     return mainBuyBoxJSONArray;
   }
 
-  public void setMainBuyBox(List<BuyBoxSeller> mainBuyBox) {
-    this.mainBuyBox = mainBuyBox;
+  public void setBuyBox(List<BuyBoxSeller> mainBuyBox) {
+    this.buyBox = mainBuyBox;
   }
 
-  public List<BuyBoxSeller> getAllSellers() {
-    return allSellers;
+  public List<SellerV2> getSellers() {
+    return sellers;
   }
 
-  public JSONArray getAllSellersJSONArray() {
+  public JSONArray getSellersJSONArray() {
     JSONArray allSellersJSONArray = null;
 
-    if (allSellers != null) {
+    if (sellers != null) {
       allSellersJSONArray = new JSONArray();
-      for (BuyBoxSeller seller : allSellers) {
+      for (SellerV2 seller : sellers) {
         allSellersJSONArray.put(seller.toJson());
       }
     }
@@ -276,8 +276,8 @@ public class Product implements Serializable {
     return allSellersJSONArray;
   }
 
-  public void setAllSellers(List<BuyBoxSeller> allSellers) {
-    this.allSellers = allSellers;
+  public void setSellers(List<SellerV2> allSellers) {
+    this.sellers = allSellers;
   }
 
   /**
@@ -334,8 +334,8 @@ public class Product implements Serializable {
     sb.append("stock: " + this.stock + "\n");
     sb.append("ean: " + this.ean + "\n");
     sb.append("eans: " + (this.eans == null ? this.eans : this.eans.toString()) + "\n");
-    sb.append("main buybox: " + (this.mainBuyBox == null ? this.mainBuyBox : this.mainBuyBox.size()) + "\n");
-    sb.append("all sellers: " + (this.allSellers == null ? this.allSellers : this.allSellers.size()) + "\n");
+    sb.append("main buybox: " + (this.buyBox == null ? this.buyBox : this.buyBox.size()) + "\n");
+    sb.append("all sellers: " + (this.sellers == null ? this.sellers : this.sellers.size()) + "\n");
 
     return sb.toString();
   }
@@ -350,8 +350,8 @@ public class Product implements Serializable {
         .put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
         .put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", (description != null ? description : JSONObject.NULL)).put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
-        .put("mainBuyBox", (mainBuyBox != null ? getMainBuyBoxJSONArray() : Collections.EMPTY_LIST))
-        .put("allSellers", (allSellers != null ? getAllSellersJSONArray() : Collections.EMPTY_LIST)).put("timestamp", timestamp).toString();
+        .put("mainBuyBox", (buyBox != null ? getBuyBoxJSONArray() : Collections.EMPTY_LIST))
+        .put("allSellers", (sellers != null ? getSellersJSONArray() : Collections.EMPTY_LIST)).put("timestamp", timestamp).toString();
   }
 
   public String serializeToKinesis() {
@@ -369,8 +369,9 @@ public class Product implements Serializable {
         .put("category2", (category2 != null ? category2 : JSONObject.NULL)).put("category3", (category3 != null ? category3 : JSONObject.NULL))
         .put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL)).put("secondaryImages", secondaryImagesArray)
         .put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
-        .put("mainBuyBox", (mainBuyBox != null ? getMainBuyBoxJSONArray() : JSONObject.NULL))
-        .put("allSellers", (allSellers != null ? getAllSellersJSONArray() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
+        .put("mainBuyBox", (buyBox != null ? getBuyBoxJSONArray() : new JSONArray().toString()))
+        .put("allSellers", (sellers != null ? getSellersJSONArray() : new JSONArray().toString()))
+        .put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
         .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp).toString();
   }

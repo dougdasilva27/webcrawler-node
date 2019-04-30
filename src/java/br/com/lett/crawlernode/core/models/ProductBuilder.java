@@ -24,8 +24,8 @@ public class ProductBuilder {
   private Integer stock;
   private String ean;
   private List<String> eans;
-  private List<BuyBoxSeller> mainBuyBox;
-  private List<BuyBoxSeller> allSellers;
+  private List<BuyBoxSeller> buyBox;
+  private List<SellerV2> sellers;
 
   public static ProductBuilder create() {
     return new ProductBuilder();
@@ -116,13 +116,13 @@ public class ProductBuilder {
     return this;
   }
 
-  public ProductBuilder setMainBuyBox(List<BuyBoxSeller> mainBuyBox) {
-    this.mainBuyBox = mainBuyBox;
+  public ProductBuilder setBuyBox(List<BuyBoxSeller> mainBuyBox) {
+    this.buyBox = mainBuyBox;
     return this;
   }
 
-  public ProductBuilder setAllSellers(List<BuyBoxSeller> allSellers) {
-    this.allSellers = allSellers;
+  public ProductBuilder setSellers(List<SellerV2> allSellers) {
+    this.sellers = allSellers;
     return this;
   }
 
@@ -146,8 +146,8 @@ public class ProductBuilder {
     product.setMarketplace(this.marketplace);
     product.setEan(this.ean);
     product.setEans(this.eans);
-    product.setMainBuyBox(this.mainBuyBox);
-    product.setAllSellers(this.allSellers);
+    product.setBuyBox(this.buyBox);
+    product.setSellers(this.sellers);
 
     // Timestamp is only created here, there is no public method to set timestamp
     product.setTimestamp(DateUtils.newTimestamp());
