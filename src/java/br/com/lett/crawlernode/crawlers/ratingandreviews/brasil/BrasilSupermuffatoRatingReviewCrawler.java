@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ratingandreviews.curitiba;
+package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,9 +17,9 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
-public class CuritibaMuffatoRatingReviewCrawler extends RatingReviewCrawler {
+public class BrasilSupermuffatoRatingReviewCrawler extends RatingReviewCrawler {
 
-  public CuritibaMuffatoRatingReviewCrawler(Session session) {
+  public BrasilSupermuffatoRatingReviewCrawler(Session session) {
     super(session);
   }
 
