@@ -96,16 +96,20 @@ public class UnitedstatesWalmartCrawlerUtils {
    */
   public static JSONArray sanitizeINITIALSTATEJson(Document doc) {
     JSONArray products = new JSONArray();
-    JSONObject initialState = CrawlerUtils.selectJsonFromHtml(doc, "script ", "window.__WML_REDUX_INITIAL_STATE__ =", ";};", false);
+    JSONObject initialState = CrawlerUtils.selectJsonFromHtml(doc, "script#item[type=\"application/json\"]", null, "", false, true);
 
-    if (initialState.has("product")) {
-      JSONObject product = initialState.getJSONObject("product");
+    if (initialState.has("item")) {
+      JSONObject item = initialState.getJSONObject("item");
 
-      JSONObject images = crawlJsonImages(product);
-      JSONObject offers = crawlJsonOffers(product);
-      JSONObject rating = crawlRating(product);
+      if (item.has("product")) {
+        JSONObject product = item.getJSONObject("product");
 
-      products = crawlProductsInfo(product, images, offers, rating);
+        JSONObject images = crawlJsonImages(product);
+        JSONObject offers = crawlJsonOffers(product);
+        JSONObject rating = crawlRating(product);
+
+        products = crawlProductsInfo(product, images, offers, rating);
+      }
     }
 
     return products;

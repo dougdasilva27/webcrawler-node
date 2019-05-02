@@ -18,6 +18,8 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.UnitedstatesWalmartCrawlerUtils;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -63,6 +65,8 @@ public class UnitedstatesWalmartCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
     JSONArray skus = UnitedstatesWalmartCrawlerUtils.sanitizeINITIALSTATEJson(doc);
 
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "WALMART.html");
+
     if (skus.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -78,8 +82,8 @@ public class UnitedstatesWalmartCrawler extends Crawler {
         String secondaryImages = crawlSecondaryImages(skuJson);
         String description = crawlDescription(skuJson);
         Map<String, Prices> marketplaceMap = crawlMarketplaces(skuJson);
-        Marketplace marketplace =
-            CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(UnitedstatesWalmartCrawlerUtils.SELLER_NAME_LOWER), session);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+            Arrays.asList(UnitedstatesWalmartCrawlerUtils.SELLER_NAME_LOWER), Card.SHOP_CARD, session);
         Float price = crawlPrice(marketplaceMap);
         Prices prices = crawlPrices(marketplaceMap);
         boolean available = crawlAvailability(marketplaceMap);
