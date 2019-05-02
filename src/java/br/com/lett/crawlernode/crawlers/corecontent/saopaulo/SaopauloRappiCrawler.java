@@ -87,7 +87,7 @@ public class SaopauloRappiCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    return url.contains("store_type") && url.contains("query");
+    return (url.contains("store_type") && url.contains("query")) || url.contains("product/");
   }
 
   /*******************
@@ -256,8 +256,8 @@ public class SaopauloRappiCrawler extends Crawler {
     JSONObject productsInfo = new JSONObject();
     Map<String, String> stores = crawlStores();
 
-    String storeType = null;
-    String storeId = null;
+    String storeType = "hiper";
+    String storeId = stores.containsKey(storeType) ? stores.get(storeType) : null;
     String productId = null;
 
     if (productUrl.contains("?")) {
@@ -275,6 +275,8 @@ public class SaopauloRappiCrawler extends Crawler {
           productId = parameter.split("=")[1];
         }
       }
+    } else if (productUrl.contains("_")) {
+      productId = CommonMethods.getLast(productUrl.split("_"));
     }
 
     if (productId != null && storeType != null && storeId != null) {
