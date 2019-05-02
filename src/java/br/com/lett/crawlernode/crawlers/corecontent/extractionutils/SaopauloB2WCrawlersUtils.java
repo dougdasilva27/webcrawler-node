@@ -250,7 +250,7 @@ public class SaopauloB2WCrawlersUtils {
 
     JSONArray offersJsonArray = new JSONArray();
 
-    if (initialJson.has("offers")) {
+    if (initialJson.has("offers") && initialJson.get("offers") instanceof JSONArray) {
       offersJsonArray = initialJson.getJSONArray("offers");
     } else if (initialJson.has("entities")) {
       JSONObject entities = initialJson.getJSONObject("entities");
