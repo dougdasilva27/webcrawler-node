@@ -31,6 +31,7 @@ public class BrasilGazinRatingReviewCrawler extends RatingReviewCrawler {
 
       JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
       JSONObject ratingJson = jsonInfo.has("aggregateRating") ? jsonInfo.getJSONObject("aggregateRating") : new JSONObject();
+      String internalPid = jsonInfo.has("sku") ? jsonInfo.get("sku").toString() : null;
 
       Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(ratingJson, "reviewCount", 0);
       Double avgRating = CrawlerUtils.getDoubleValueFromJSON(ratingJson, "ratingValue", true, false);
@@ -42,7 +43,7 @@ public class BrasilGazinRatingReviewCrawler extends RatingReviewCrawler {
       List<String> idList = scrapVariations(doc, jsonInfo);
       for (String internalId : idList) {
         RatingsReviews clonedRatingReviews = ratingReviews.clone();
-        clonedRatingReviews.setInternalId(internalId);
+        clonedRatingReviews.setInternalId(internalPid + "-" + internalId);
         ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
       }
 

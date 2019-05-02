@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -34,19 +35,28 @@ public class BrasilBenoitRatingReviewCrawler extends RatingReviewCrawler {
 
       if (json.has("Model") && !json.isNull("Model")) {
         JSONObject model = json.getJSONObject("Model");
-        String internalId = model.has("ProductID") ? model.get("ProductID").toString() : null;
 
-        if (internalId != null) {
-          Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(json, "RatingCount", 0);
-          Double avgRating = CrawlerUtils.getDoubleValueFromJSON(model, "RatingAverage");
+        Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(json, "RatingCount", 0);
+        Double avgRating = CrawlerUtils.getDoubleValueFromJSON(model, "RatingAverage");
 
-          ratingReviews.setInternalId(internalId);
-          ratingReviews.setTotalRating(totalNumOfEvaluations);
-          ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-          ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0d);
+        ratingReviews.setTotalRating(totalNumOfEvaluations);
+        ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+        ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0d);
+
+        JSONArray items = model.has("Items") ? model.getJSONArray("Items") : new JSONArray();
+
+        for (Object obj : items) {
+          JSONObject sku = (JSONObject) obj;
+
+          // This verification exists to the json don't return the empty object.
+          if (sku.has("Items") && sku.getJSONArray("Items").length() < 1) {
+            String internalId = sku.has("ProductID") ? sku.get("ProductID").toString() : null;
+            ratingReviews.setInternalId(internalId);
+            RatingsReviews clonedRatingReviews = ratingReviews.clone();
+            clonedRatingReviews.setInternalId(internalId);
+            ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+          }
         }
-
-        ratingReviewsCollection.addRatingReviews(ratingReviews);
       }
 
     } else {
