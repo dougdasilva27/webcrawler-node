@@ -14,6 +14,7 @@ public class QueueName {
   public static final String RANKING_CATEGORIES = "crawler-ranking-categories";
   public static final String DISCOVER_CATEGORIES = "crawler-discover-categories";
   public static final String INTEREST_PROCESSED = "interest-processed";
+  public static final String INTEREST_PROCESSED_RATING = "interest-processed-rating";
   public static final String TEST_PHANTOMJS = "crawler-insights-webdriver";
 
   public static final String RATING_WEBDRIVER = "crawler-rating-webdriver";

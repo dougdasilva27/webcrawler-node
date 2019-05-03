@@ -151,13 +151,14 @@ public class Persistence {
 
     Connection conn = null;
     PreparedStatement pstmt = null;
+    String query = GlobalConfigurations.dbManager.jooqPostgres.insertInto(crawler).set(insertMapCrawler).getSQL(ParamType.INLINED);
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.insertInto(crawler).set(insertMapCrawler).getSQL(ParamType.INLINED));
+      pstmt = conn.prepareStatement(query);
 
       pstmt.executeUpdate();
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Error inserting product on database!");
+      Logging.printLogError(logger, session, "Error inserting product on database on query: " + query);
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
@@ -187,8 +188,7 @@ public class Persistence {
       PreparedStatement pstmt = null;
       try {
         conn = JdbcConnectionFactory.getInstance().getConnection();
-        pstmt = conn.prepareStatement(
-            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+        pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
         pstmt.executeUpdate();
         Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
@@ -295,10 +295,10 @@ public class Persistence {
 
       Connection conn = null;
       PreparedStatement pstmt = null;
+      String query = GlobalConfigurations.dbManager.jooqPostgres.insertInto(processedTable).set(insertMap).returning(processedTable.ID).getSQL(ParamType.INLINED);
       try {
         conn = JdbcConnectionFactory.getInstance().getConnection();
-        pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.insertInto(processedTable).set(insertMap)
-            .returning(processedTable.ID).getSQL(ParamType.INLINED));
+        pstmt = conn.prepareStatement(query);
         ResultSet rs = pstmt.executeQuery();
         Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -320,7 +320,7 @@ public class Persistence {
           }
         }
       } catch (Exception e) {
-        Logging.printLogError(logger, session, "Error updating processed product.");
+        Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
         session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
@@ -415,14 +415,14 @@ public class Persistence {
 
       Connection conn = null;
       PreparedStatement pstmt = null;
+      String query = GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateMap).where(conditions).getSQL(ParamType.INLINED);
       try {
         conn = JdbcConnectionFactory.getInstance().getConnection();
-        pstmt = conn.prepareStatement(
-            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateMap).where(conditions).getSQL(ParamType.INLINED));
+        pstmt = conn.prepareStatement(query);
 
         pstmt.executeUpdate();
       } catch (Exception e) {
-        Logging.printLogError(logger, session, "Error updating processed product.");
+        Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
         session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
@@ -472,12 +472,11 @@ public class Persistence {
     PreparedStatement pstmt = null;
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(
-          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
-      Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. " + "(InternalId: "
-          + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
+      Logging.printLogDebug(logger, session,
+          "Processed product with id " + id + " behaviour updated with success. " + "(InternalId: " + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
 
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Error updating processed product behaviour.");
@@ -527,8 +526,7 @@ public class Persistence {
     PreparedStatement pstmt = null;
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(
-          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
@@ -565,8 +563,7 @@ public class Persistence {
     PreparedStatement pstmt = null;
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(
-          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
@@ -603,8 +600,7 @@ public class Persistence {
     PreparedStatement pstmt = null;
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(
-          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
@@ -641,8 +637,7 @@ public class Persistence {
     PreparedStatement pstmt = null;
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(
-          GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
       pstmt.executeUpdate();
       Logging.printLogDebug(logger, session, "Processed product LMS updated with success.");
@@ -734,8 +729,7 @@ public class Persistence {
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
       sta = conn.createStatement();
-      rs = sta.executeQuery(
-          GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(crawlerCategories).where(conditions).getSQL(ParamType.INLINED));
+      rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(crawlerCategories).where(conditions).getSQL(ParamType.INLINED));
 
       Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -972,8 +966,7 @@ public class Persistence {
 
     // se não conseguir inserir tenta atualizar
     try {
-      Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", r.getRankType())
-          .append("date", ft.format(new Date()));
+      Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", r.getRankType()).append("date", ft.format(new Date()));
 
       if (GlobalConfigurations.dbManager.connectionFrozen.countFind(filter, MONGO_COLLECTION_DISCOVER_STATS) > 0) {
 
@@ -1007,14 +1000,12 @@ public class Persistence {
     if (taskId != null) {
       Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
 
-      Document result = new Document().append("processedId", newProcessedProduct.getId())
-          .append("originalName", newProcessedProduct.getOriginalName()).append("internalId", newProcessedProduct.getInternalId())
-          .append("url", newProcessedProduct.getUrl()).append("status", newProcessedProduct.getStatus());
+      Document result = new Document().append("processedId", newProcessedProduct.getId()).append("originalName", newProcessedProduct.getOriginalName())
+          .append("internalId", newProcessedProduct.getInternalId()).append("url", newProcessedProduct.getUrl()).append("status", newProcessedProduct.getStatus());
 
       if (previousProcessedProduct != null) {
-        result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId())
-            .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
-            .append("isNew", false);
+        result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId()).append("masterId", previousProcessedProduct.getMasterId())
+            .append("oldName", previousProcessedProduct.getOriginalName()).append("isNew", false);
       } else {
         result.append("ect", new Date()).append("lettId", null).append("masterId", null).append("oldName", null).append("isNew", true);
       }
@@ -1022,8 +1013,7 @@ public class Persistence {
       taskDocument.append("result", result);
 
       try {
-        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
-            MONGO_COLLECTION_SERVER_TASK);
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
       } catch (Exception e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
@@ -1056,8 +1046,7 @@ public class Persistence {
       taskDocument.append("result", new Document().append("error", errors.toString()));
 
       try {
-        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
-            MONGO_COLLECTION_SERVER_TASK);
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
       } catch (Exception e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
@@ -1082,8 +1071,7 @@ public class Persistence {
       taskDocument.append("result", new Document().append("error", errors.toString()));
 
       try {
-        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
-            MONGO_COLLECTION_SERVER_TASK);
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument), MONGO_COLLECTION_SERVER_TASK);
       } catch (Exception e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
@@ -1102,8 +1090,7 @@ public class Persistence {
     if (taskId != null) {
       Document taskDocument = new Document("$set", new Document().append("updated", new Date()).append("progress", progress));
       try {
-        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), taskDocument,
-            MONGO_COLLECTION_SERVER_TASK);
+        GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), taskDocument, MONGO_COLLECTION_SERVER_TASK);
       } catch (Exception e) {
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
