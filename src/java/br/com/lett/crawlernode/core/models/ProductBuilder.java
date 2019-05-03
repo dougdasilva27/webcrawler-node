@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.core.models;
 import java.util.List;
 import br.com.lett.crawlernode.util.DateUtils;
 import models.Marketplace;
+import models.Offers;
 import models.prices.Prices;
 
 public class ProductBuilder {
@@ -24,8 +25,7 @@ public class ProductBuilder {
   private Integer stock;
   private String ean;
   private List<String> eans;
-  private List<BuyBoxSeller> buyBox;
-  private List<SellerV2> sellers;
+  private Offers offers;
 
   public static ProductBuilder create() {
     return new ProductBuilder();
@@ -116,13 +116,8 @@ public class ProductBuilder {
     return this;
   }
 
-  public ProductBuilder setBuyBox(List<BuyBoxSeller> mainBuyBox) {
-    this.buyBox = mainBuyBox;
-    return this;
-  }
-
-  public ProductBuilder setSellers(List<SellerV2> allSellers) {
-    this.sellers = allSellers;
+  public ProductBuilder setOffers(Offers offers) {
+    this.offers = offers;
     return this;
   }
 
@@ -146,8 +141,7 @@ public class ProductBuilder {
     product.setMarketplace(this.marketplace);
     product.setEan(this.ean);
     product.setEans(this.eans);
-    product.setBuyBox(this.buyBox);
-    product.setSellers(this.sellers);
+    product.setOffers(this.offers);
 
     // Timestamp is only created here, there is no public method to set timestamp
     product.setTimestamp(DateUtils.newTimestamp());
