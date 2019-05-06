@@ -92,7 +92,7 @@ public class SaopauloB2WCrawlersUtils {
         jsonForPrices = initialJson;
       }
 
-      JSONObject jsonPrices = getJsonPrices(jsonForPrices, internalPid);
+      JSONObject jsonPrices = extractJsonOffers(jsonForPrices, internalPid);
       jsonProduct.put("prices", jsonPrices);
 
       JSONObject jsonImages = getJSONImages(productJson);
@@ -144,7 +144,7 @@ public class SaopauloB2WCrawlersUtils {
         jsonProduct.put("name", productJson.get("name"));
       }
 
-      JSONObject jsonPrices = getJsonPrices(productJson, internalPid);
+      JSONObject jsonPrices = extractJsonOffers(productJson, internalPid);
       jsonProduct.put("prices", jsonPrices);
 
       JSONObject jsonImages = getJSONImages(productJson);
@@ -245,7 +245,7 @@ public class SaopauloB2WCrawlersUtils {
     return jsonImages;
   }
 
-  private static JSONObject getJsonPrices(JSONObject initialJson, String internalPid) {
+  public static JSONObject extractJsonOffers(JSONObject initialJson, String internalPid) {
     JSONObject jsonPrices = new JSONObject();
 
     JSONArray offersJsonArray = new JSONArray();
@@ -279,22 +279,6 @@ public class SaopauloB2WCrawlersUtils {
 
         if (idProduct != null) {
           manageEmbedded(jsonOffer, jsonSeller, moreQuantityOfInstallments);
-
-          if (jsonOffer.has("availability")) {
-            JSONObject availability = jsonOffer.getJSONObject("availability");
-
-            if (availability.has("_embedded")) {
-              JSONObject embedded = availability.getJSONObject("_embedded");
-
-              if (embedded.has("stock")) {
-                JSONObject stock = embedded.getJSONObject("stock");
-
-                if (stock.has("quantity")) {
-                  jsonSeller.put("stock", stock.getInt("quantity"));
-                }
-              }
-            }
-          }
 
           if (jsonOffer.has("paymentOptions")) {
             JSONObject payment = jsonOffer.getJSONObject("paymentOptions");
@@ -351,7 +335,11 @@ public class SaopauloB2WCrawlersUtils {
         setStock(seller, jsonSeller);
 
         if (seller.has("name")) {
-          jsonSeller.put("sellerName", seller.get("name").toString().toLowerCase());
+          jsonSeller.put("sellerName", seller.get("name").toString().toLowerCase().trim());
+        }
+
+        if (seller.has("id")) {
+          jsonSeller.put("id", seller.get("id"));
         }
       }
     }
