@@ -18,8 +18,6 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.UnitedstatesWalmartCrawlerUtils;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -59,18 +57,18 @@ public class UnitedstatesWalmartCrawler extends Crawler {
     this.cookies.add(cookie2);
   }
 
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
     JSONArray skus = UnitedstatesWalmartCrawlerUtils.sanitizeINITIALSTATEJson(doc);
 
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "WALMART.html");
-
     if (skus.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       CategoryCollection categories = crawlCategories(doc);
+      String description = crawlDescription(doc);
 
       for (Object sku : skus) {
         JSONObject skuJson = (JSONObject) sku;
@@ -80,7 +78,6 @@ public class UnitedstatesWalmartCrawler extends Crawler {
         String name = crawlName(skuJson, doc);
         String primaryImage = crawlPrimaryImage(skuJson);
         String secondaryImages = crawlSecondaryImages(skuJson);
-        String description = crawlDescription(skuJson);
         Map<String, Prices> marketplaceMap = crawlMarketplaces(skuJson);
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
             Arrays.asList(UnitedstatesWalmartCrawlerUtils.SELLER_NAME_LOWER), Card.SHOP_CARD, session);
@@ -254,11 +251,12 @@ public class UnitedstatesWalmartCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(JSONObject skuJson) {
+  private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    if (skuJson.has(UnitedstatesWalmartCrawlerUtils.DESCRIPTION)) {
-      description.append(skuJson.get(UnitedstatesWalmartCrawlerUtils.DESCRIPTION));
+    Element desc = doc.selectFirst(".Grid-col.ads-margin-top");
+    if (desc != null) {
+      description.append(desc.html());
     }
 
     return description.toString();
