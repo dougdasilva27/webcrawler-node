@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -441,7 +442,7 @@ public class B2WCrawler extends Crawler {
       }
     }
 
-    return description.toString();
+    return Normalizer.normalize(description.toString(), Normalizer.Form.NFD).replaceAll("[^\n\t\r\\p{Print}]", "");
   }
 
   private Prices crawlPrices(Map<String, Prices> marketplaceMap) {

@@ -14,9 +14,8 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
 
-  public static final String PRODUCTS_API_URL = "https://j9xfhdwtje-3.algolianet.com/1/indexes/live_products_boost_desc/query"
-      + "?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%203.30.0&x-algolia-application-id=J9XFHDWTJE"
-      + "&x-algolia-api-key=2065b01208843995dbf34b4c58e8b7be";
+  public static final String PRODUCTS_API_URL = "https://j9xfhdwtje-2.algolianet.com/1/indexes/live_products_boost_desc/query?x-algolia-agent="
+      + "Algolia%20for%20vanilla%20JavaScript%203.32.0&x-algolia-application-id=J9XFHDWTJE&x-algolia-api-key=2065b01208843995dbf34b4c58e8b7be";
 
   public ColombiaMercadoniCrawler(Session session) {
     super(session);
@@ -104,9 +103,9 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
   private JSONObject fetchProductsFromAPI() {
     JSONObject products = new JSONObject();
 
-
-    String payload = "{\"params\":\"query=" + this.keywordEncoded + "s&hitsPerPage=15&page=" + this.currentPage
-        + "&facets=&facetFilters=%5B%5B%22location%3A%20557b4c374e1d3b1f00793e12%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22product_simple_active%3A%20true%22%2C%22visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict&restrictSearchableAttributes=%5B%22name%22%5D\"}";
+    String payload = "{\"params\":\"query=" + this.keywordWithoutAccents.replace(" ", "%20") + "&hitsPerPage=15&page=0&facets="
+        + "&facetFilters=%5B%5B%22location%3A%20557b4c374e1d3b1f00793e12%22%5D%2C%5B%5D%2C%22active%3A%20true%22%2C%22product_simple_active%3A%20true%22%2C%22"
+        + "visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict&restrictSearchableAttributes=%5B%22name%22%5D&clickAnalytics=true\"}";
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
 
