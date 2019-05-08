@@ -5,10 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -42,10 +40,6 @@ import models.Util;
 import models.prices.Prices;
 
 public class B2WCrawler extends Crawler {
-  private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
-  private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
-  private static final Pattern EDGESDHASHES = Pattern.compile("(^-|-$)");
-
   public B2WCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.FETCHER);
@@ -116,16 +110,14 @@ public class B2WCrawler extends Crawler {
         boolean available = this.crawlAvailability(marketplaceMap);
         Float variationPrice = this.crawlPrice(marketplaceMap);
         Prices prices = crawlPrices(marketplaceMap);
-        Integer stock = null; // stock só tem na api
-        List<JSONObject> buyBox = scrapBuyBox(doc, infoProductJson, internalId, internalPid);
+        List<JSONObject> buyBox = scrapBuyBox(doc, internalId, internalPid);
         Offers offers = assembleOffers(buyBox);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(variationPrice).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(variationMarketplace).setOffers(offers)
-            .build();
+            .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(variationMarketplace).setOffers(offers).build();
 
         products.add(product);
       }
@@ -147,87 +139,75 @@ public class B2WCrawler extends Crawler {
         Offer offer = new Offer(jsonObject);
         offers.add(offer);
       } catch (OfferException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
     }
 
     return offers;
   }
 
-  public static String toSlug(String input) {
-    String nowhitespace = WHITESPACE.matcher(input).replaceAll("-");
-    String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
-    String slug = NONLATIN.matcher(normalized).replaceAll("");
-    slug = EDGESDHASHES.matcher(slug).replaceAll("");
-    return slug.toLowerCase(Locale.ENGLISH);
-  }
-
-  private List<JSONObject> scrapBuyBox(Document doc, JSONObject infoProductJson, String internalId, String internalPid) {
-    Element moreOptions = doc.selectFirst("a[class=\"TouchableA-sc-9v9alh-0 bCFQWo\"][href]");
+  private List<JSONObject> scrapBuyBox(Document doc, String internalId, String internalPid) {
     List<JSONObject> listBuyBox = new ArrayList<>();
 
-    if (moreOptions != null) {
+    JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
+    JSONObject offers = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
 
-      if (doc != null) {
-        JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
-        JSONObject offers = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
+    boolean isBuyBox = !doc.select(".buybox-b .seller-name-container input[type=radio]").isEmpty();
 
-        // Getting informations from sellers.
-        if (offers.has(internalId)) {
-          JSONArray sellerInfo = offers.getJSONArray(internalId);
+    // Getting informations from sellers.
+    if (offers.has(internalId)) {
+      JSONArray sellerInfo = offers.getJSONArray(internalId);
 
-          for (int i = 0; i < sellerInfo.length(); i++) {
-            JSONObject buyBoxJson = new JSONObject();
+      for (int i = 0; i < sellerInfo.length(); i++) {
+        JSONObject buyBoxJson = new JSONObject();
 
-            JSONObject info = (JSONObject) sellerInfo.get(i);
+        JSONObject info = (JSONObject) sellerInfo.get(i);
+        buyBoxJson.put(OfferField.IS_BUYBOX.toString(), isBuyBox);
+        buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), JSONObject.NULL);
 
-            if (i + 1 <= 3) {
-              buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), i + 1);
-              buyBoxJson.put(OfferField.IS_BUYBOX.toString(), true);
-            } else {
-              buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), JSONObject.NULL);
-              buyBoxJson.put(OfferField.IS_BUYBOX.toString(), false);
-            }
-
-            if (info.has("sellerName")) {
-              String name = info.get("sellerName").toString();
-              buyBoxJson.put(OfferField.SELLER_FULL_NAME.toString(), name);
-              buyBoxJson.put(OfferField.SLUG_SELLER_NAME.toString(), toSlug(name));
-            }
-
-            if (info.has("id")) {
-              buyBoxJson.put(OfferField.INTERNAL_SELLER_ID.toString(), info.get("id").toString());
-            }
-
-            if (info.has("bankTicket")) {
-              buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
-            }
-
-            if (info.has("bankTicket")) {
-              buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
-            }
-
-            listBuyBox.add(buyBoxJson);
-          }
+        if (i + 1 <= 3) {
+          buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), i + 1);
+        } else {
+          buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), JSONObject.NULL);
         }
 
-        // Getting position from main page (buybox)
-        Elements moreOffers = doc.select(".more-offers-table tbody tr .seller-info-cell .seller-info a");
+        if (info.has("sellerName")) {
+          String name = info.get("sellerName").toString();
+          buyBoxJson.put(OfferField.SELLER_FULL_NAME.toString(), name);
+          buyBoxJson.put(OfferField.SLUG_SELLER_NAME.toString(), CommonMethods.toSlug(name));
+        }
 
-        for (int j = 0; j < moreOffers.size(); j++) {
-          Element element = moreOffers.get(j);
-          String href = element.attr("href");
+        if (info.has("id")) {
+          buyBoxJson.put(OfferField.INTERNAL_SELLER_ID.toString(), info.get("id").toString());
+        }
 
-          if (href.contains("/")) {
-            String sellerId = CommonMethods.getLast(href.split("/"));
+        if (info.has("bankTicket")) {
+          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
+        }
 
-            for (int k = 0; k < listBuyBox.size(); k++) {
-              JSONObject buyBoxJson = listBuyBox.get(k);
+        if (info.has("bankTicket")) {
+          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
+        }
 
-              if (buyBoxJson.has("internalSellerId") && buyBoxJson.get("internalSellerId").toString().equals(sellerId)) {
-                buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), j + 1);
-              }
+        listBuyBox.add(buyBoxJson);
+      }
+    }
+
+    if (!doc.select(".buybox-b-nav-item.is-link").isEmpty()) {
+      Document docSellers = Jsoup.parse(fetchPage("https://www.americanas.com.br/parceiros/" + internalPid + "?productSku=" + internalId, session));
+      Elements moreOffers = docSellers.select(".more-offers-table tbody tr .seller-info-cell .seller-info a");
+
+      for (int j = 0; j < moreOffers.size(); j++) {
+        Element element = moreOffers.get(j);
+        String href = element.attr("href");
+
+        if (href.contains("/")) {
+          String sellerId = CommonMethods.getLast(href.split("/")).trim();
+
+          for (JSONObject buyBoxJson : listBuyBox) {
+            if (buyBoxJson.has(OfferField.INTERNAL_SELLER_ID.toString())
+                && buyBoxJson.get(OfferField.INTERNAL_SELLER_ID.toString()).toString().equals(sellerId)) {
+              buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), j + 1);
             }
           }
         }
