@@ -57,8 +57,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        String primaryImage = crawlPrimaryImage(apiJSON);
-        String secondaryImages = crawlSecondaryImages(apiJSON, primaryImage);
+        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         String description = scrapDescription(vtexUtil, internalId);
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
