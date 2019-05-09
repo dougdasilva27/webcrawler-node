@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.Offers;
 import models.prices.Prices;
 
 public class BrasilBrastempCrawler extends Crawler {
@@ -71,12 +72,13 @@ public class BrasilBrastempCrawler extends Crawler {
         Prices prices = CrawlerUtils.getPrices(marketplaceMap, SELLERS);
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        Offers offers = vtexUtil.scrapBuyBox(jsonSku);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+            .setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
 
         products.add(product);
       }

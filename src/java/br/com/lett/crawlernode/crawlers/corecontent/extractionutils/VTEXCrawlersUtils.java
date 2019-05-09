@@ -19,7 +19,11 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.prices.Prices;
 
 public class VTEXCrawlersUtils {
@@ -52,6 +56,8 @@ public class VTEXCrawlersUtils {
   private boolean hasBankTicket = true;
   private boolean isPriceBasePriceFrom = false;
   private DataFetcher dataFetcher;
+  private boolean isBuyBox = false;
+
 
   public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies, DataFetcher dataFetcher) {
     this.session = session;
@@ -665,4 +671,43 @@ public class VTEXCrawlersUtils {
 
     return idList;
   }
+
+  public void setBuyBox(boolean isBuyBox) {
+    this.isBuyBox = isBuyBox;
+  }
+
+  public Offers scrapBuyBox(JSONObject jsonSku) {
+    Offers offers = new Offers();
+
+    try {
+      String sellerFullName = null;
+      String slugSellerName = null;
+      String internalSellerId = null;
+      Double mainPrice = null;
+
+      if (jsonSku.has("seller")) {
+        sellerFullName = jsonSku.getString("seller");
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      }
+
+      if (jsonSku.has("sellerId")) {
+        internalSellerId = jsonSku.getString("sellerId");
+      }
+
+
+      if (jsonSku.has("bestPriceFormated")) {
+        mainPrice = CrawlerUtils.getDoubleValueFromJSON(jsonSku, "bestPriceFormated", true, true);
+      }
+
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPagePosition(1).setIsBuybox(this.isBuyBox).setMainPrice(mainPrice).build();
+
+      offers.add(offer);
+
+    } catch (OfferException e) {
+      e.printStackTrace();
+    }
+    return offers;
+  }
+
 }

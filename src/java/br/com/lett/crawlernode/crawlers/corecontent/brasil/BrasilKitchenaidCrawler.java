@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlers
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.Offers;
 import models.prices.Prices;
 
 public class BrasilKitchenaidCrawler extends Crawler {
@@ -68,7 +69,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-
+        Offers offers = vtexUtil.scrapBuyBox(jsonSku);
         List<String> eans = new ArrayList<>();
         eans.add(ean);
 
@@ -76,7 +77,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
 
         products.add(product);
       }
