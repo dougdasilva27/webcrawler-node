@@ -23,7 +23,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
@@ -182,7 +186,6 @@ public abstract class CNOVACrawler extends Crawler {
             Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
             marketplaceMap = crawlMarketplaces(docMarketplace, doc);
           }
-
           Marketplace marketplace =
               unnavailable ? new Marketplace() : CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, sellersNameList, Card.VISA, session);
           boolean available = !unnavailable && CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, sellersNameList);
@@ -190,17 +193,19 @@ public abstract class CNOVACrawler extends Crawler {
           Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
 
           List<String> eans = new ArrayList<>();
-          String ean =
-              scrapEan(sku.hasAttr("selected") ? doc : Jsoup.parse(fetchPage(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost))));
+          Document variationDocument =
+              sku.hasAttr("selected") ? doc : Jsoup.parse(fetchPage(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost)));
+          String ean = scrapEan(variationDocument);
           if (ean != null) {
             eans.add(ean);
           }
+          Offers offers = scrapBuyBox(variationDocument);
 
           // Creating the product
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(variationInternalID).setInternalPid(internalPid)
               .setName(variationName).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
               .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).setEans(eans).build();
+              .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
 
           products.add(product);
         }
@@ -218,7 +223,7 @@ public abstract class CNOVACrawler extends Crawler {
         boolean available = !unnavailableForAll && CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, sellersNameList);
         Prices prices = CrawlerUtils.getPrices(marketplaceMap, sellersNameList);
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
-
+        Offers offers = scrapBuyBox(doc);
         List<String> eans = new ArrayList<>();
         String ean = scrapEan(doc);
         if (ean != null) {
@@ -229,7 +234,7 @@ public abstract class CNOVACrawler extends Crawler {
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setMarketplace(marketplace).setEans(eans).build();
+            .setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
 
         products.add(product);
       }
@@ -240,6 +245,80 @@ public abstract class CNOVACrawler extends Crawler {
     }
 
     return products;
+  }
+
+
+  private Offers scrapBuyBox(Document doc) {
+    try {
+      int mainPagePosition = 2;
+      Offers offers = new Offers();
+
+      offers.add(scrapPrincipalOffer(doc));
+
+      Elements sellers = doc.select(".listaLojistas .buying");
+      boolean isBuyBoxPage = doc.selectFirst(".sellerList") != null;
+
+      for (Element element : sellers) {
+        String sellerFullName = null;
+        String slugSellerName = null;
+        String internalSellerId = null;
+        Double mainPrice = null;
+
+        Element sellerFullNameElement = element.selectFirst(".seller");
+        Element mainPriceElement = element.selectFirst(".sale");
+
+        if (sellerFullNameElement != null) {
+          sellerFullName = sellerFullNameElement.text();
+          slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+          internalSellerId = sellerFullNameElement.attr("data-tooltiplojista-id");
+        }
+
+        if (mainPriceElement != null) {
+          mainPrice = MathUtils.parseDoubleWithComma(mainPriceElement.text());
+        }
+        Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+            .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+
+        offers.add(offer);
+
+        mainPagePosition++;
+      }
+
+      return offers;
+    } catch (OfferException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  private Offer scrapPrincipalOffer(Document doc) throws OfferException {
+    String sellerFullName = null;
+    String slugSellerName = null;
+    String internalSellerId = null;
+    Double mainPrice = null;
+
+    Element elementMainSeller = doc.selectFirst(".buying > a");
+    Element elementPrice = doc.selectFirst(".productDetails .sale.price");
+    Element elementInternalSellerId = doc.selectFirst("input[name=\"ctl00$Conteudo$ctl33$hdnIdLojista\"]");
+
+    if (elementMainSeller != null) {
+      sellerFullName = elementMainSeller.text();
+      slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+    }
+
+    if (elementInternalSellerId != null) {
+      internalSellerId = elementInternalSellerId.attr("value");
+    }
+
+    if (elementPrice != null) {
+      mainPrice = MathUtils.parseDoubleWithComma(elementPrice.text());
+    }
+
+    Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+        .setMainPrice(mainPrice).setIsBuybox(true).setMainPagePosition(1).build();
+
+    return offer;
   }
 
   private boolean isProductPage(Document doc) {
