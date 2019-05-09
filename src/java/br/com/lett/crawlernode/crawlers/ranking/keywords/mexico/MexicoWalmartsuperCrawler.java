@@ -22,7 +22,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
 
     this.log("Página " + this.currentPage);
-    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded + "&Nrpp=20&No=" + this.arrayProducts.size()
+    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded + "&Nrpp=20&offSet=" + this.arrayProducts.size()
         + "&storeId=0000009999";
     this.log("Link onde são feitos os crawlers: " + url);
 
@@ -125,8 +125,13 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
         if (content.has("mainArea")) {
           JSONArray mainArea = content.getJSONArray("mainArea");
 
-          if (mainArea.length() > 0) {
-            api = mainArea.getJSONObject(0);
+          for (Object o : mainArea) {
+            JSONObject object = (JSONObject) o;
+
+            if (object.has("records")) {
+              api = object;
+              break;
+            }
           }
         }
       }
