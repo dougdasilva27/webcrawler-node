@@ -249,9 +249,9 @@ public abstract class CNOVACrawler extends Crawler {
 
 
   private Offers scrapBuyBox(Document doc) {
+    Offers offers = new Offers();
     try {
       int mainPagePosition = 2;
-      Offers offers = new Offers();
 
       if (doc.selectFirst(".descricaoAnuncio .productDetails") != null) {
         offers.add(scrapPrincipalOffer(doc));
@@ -288,12 +288,11 @@ public abstract class CNOVACrawler extends Crawler {
         }
       }
 
-      return offers;
     } catch (OfferException e) {
-      // TODO Auto-generated catch block
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
-    return null;
+
+    return offers;
   }
 
   private Offer scrapPrincipalOffer(Document doc) throws OfferException {
