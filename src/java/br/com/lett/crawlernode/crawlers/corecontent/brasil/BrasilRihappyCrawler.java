@@ -22,7 +22,7 @@ import models.prices.Prices;
 public class BrasilRihappyCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.rihappy.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "rihappy";
+  private static final String MAIN_SELLER_NAME_LOWER = "ri happy";
 
   public BrasilRihappyCrawler(Session session) {
     super(session);
@@ -47,8 +47,7 @@ public class BrasilRihappyCrawler extends Crawler {
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
-      String description =
-          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-qd-v1-description", ".product-qd-v1-description", "#caracteristicas"));
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-information"));
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();

@@ -4,7 +4,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilRihappyCrawler extends CrawlerRankingKeywords {
 
@@ -14,14 +14,14 @@ public class BrasilRihappyCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 24;
+    this.pageSize = 36;
     this.log("Página " + this.currentPage);
 
-    String url = "http://www.havan.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "?PageNumber=" + this.currentPage + "&PS=50";
+    String url = "http://www.rihappy.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "?PageNumber=" + this.currentPage + "&PS=50";
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select("div.prateleira ul > li[layout]");
+    Elements products = this.currentDoc.select("div.vitrine ul > li[layout] > a");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -29,14 +29,12 @@ public class BrasilRihappyCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        Element pid = e.select("> input.qd_cpProdId").first();
-        String internalPid = pid.attr("value");
-        String internalId = null;
-        String productUrl = e.selectFirst("h3.shelf-qd-v1-product-name > a").attr("href");
+        String internalPid = e.attr("rel");
+        String productUrl = CrawlerUtils.completeUrl(e.attr("href"), "https", "www.rihappy.com.br");
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -50,28 +48,8 @@ public class BrasilRihappyCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected boolean hasNextPage() {
-    if (this.arrayProducts.size() < this.totalProducts) {
-      // tem próxima página
-      return true;
-    }
-
-    return false;
-
-  }
-
-  @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("span.resultado-busca-numero > span.value").first();
-
-    if (totalElement != null) {
-      try {
-        this.totalProducts = Integer.parseInt(totalElement.text().trim());
-      } catch (Exception e) {
-        this.logError(CommonMethods.getStackTraceString(e));
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, "span.resultado-busca-numero > span.value", null, true, 0);
+    this.log("Total da busca: " + this.totalProducts);
   }
 }
