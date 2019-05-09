@@ -11,12 +11,14 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -62,7 +64,7 @@ public class MexicoWalmartCrawler extends Crawler {
 
         String name = crawlName(sku);
         String primaryImage = crawlPrimaryImage(internalId);
-        String secondaryImages = crawlSecondaryImages(sku);
+        String secondaryImages = crawlSecondaryImages(internalId);
         String description = crawlDescription(sku);
         Integer stock = null;
         String ean = scrapEan(sku);
@@ -107,7 +109,7 @@ public class MexicoWalmartCrawler extends Crawler {
         JSONObject list = (JSONObject) object2;
 
         if (list.has("sellerName")) {
-          name = list.getString("sellerName");
+          name = list.getString("sellerName").toLowerCase().trim();
 
           if (list.has("priceInfo")) {
             JSONObject priceInfo = list.getJSONObject("priceInfo");
@@ -172,16 +174,20 @@ public class MexicoWalmartCrawler extends Crawler {
     return "https://www.walmart.com.mx/images/product-images/img_large/" + id + "L.jpg";
   }
 
-  /**
-   * Secondary images are still not available to scrap
-   * 
-   * @param document
-   * @return
-   */
-
-  private String crawlSecondaryImages(JSONObject sku) {
+  private String crawlSecondaryImages(String id) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
+
+    for (int i = 1; i < 4; i++) {
+      String img = "https://super.walmart.com.mx/images/product-images/img_large/" + id + "L" + i + ".jpg";
+      Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
+      RequestsStatistics resp = CommonMethods.getLast(this.dataFetcher.get(session, request).getRequests());
+
+      if (resp.getStatusCode() > 0 && resp.getStatusCode() < 400) {
+        secondaryImagesArray.put(img);
+      }
+    }
+
 
     if (secondaryImagesArray.length() > 0) {
       secondaryImages = secondaryImagesArray.toString();
@@ -189,6 +195,7 @@ public class MexicoWalmartCrawler extends Crawler {
 
     return secondaryImages;
   }
+
 
   private CategoryCollection crawlCategories(JSONObject sku) {
     CategoryCollection categories = new CategoryCollection();
