@@ -1,133 +1,86 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.florianopolis;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
+import java.util.HashMap;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class FlorianopolisBistekCrawler extends CrawlerRankingKeywords {
 
-	public FlorianopolisBistekCrawler(Session session) {
-		super(session);
-	}
+  public FlorianopolisBistekCrawler(Session session) {
+    super(session);
+  }
 
-	private static final String COOKIE_ESTADO = "StoreCodeBistek";
-	private static final String COOKIE_VALUE = "12";
-	private static List<Cookie> cookies = new ArrayList<>();
+  private static final String HOST = "www.bistekonline.com.br";
 
-	@Override
-	protected void processBeforeFetch() {
-		// Criando cookie da loja 437 = São Paulo capital
-		BasicClientCookie cookie = new BasicClientCookie(COOKIE_ESTADO, COOKIE_VALUE);
-		cookie.setDomain("loja.paguemenos.com.br");
-		cookie.setPath("/");
+  @Override
+  protected void processBeforeFetch() {
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.bistekonline.com.br/store/SetStoreByZipCode?zipCode=88066-000", null, HOST, "/",
+        cookies, session, new HashMap<>(), dataFetcher);
+  }
 
-		cookies.add(cookie);
-	}
-	
-	@Override
-	public void extractProductsFromCurrentPage() {
-		// número de produtos por página do market
-		this.pageSize = 20;
+  @Override
+  public void extractProductsFromCurrentPage() {
+    this.pageSize = 24;
+    this.log("Página " + this.currentPage);
 
-		this.log("Página " + this.currentPage);
+    String keyword = this.keywordWithoutAccents.replace(" ", "%20");
+    String url =
+        "https://www.bistekonline.com.br/busca/3/0/0/MaisVendidos/Decrescente/24/" + this.currentPage + "/0/0/" + keyword + ".aspx?q=" + keyword;
+    this.log("Link onde são feitos os crawlers: " + url);
 
-		String key = this.keywordWithoutAccents.replace(" ", "%20");
+    this.currentDoc = fetchDocument(url, cookies);
+    Elements products = this.currentDoc.select("#listProduct > li");
 
-		// monta a url com a keyword e a página
-		String url = "http://www.bistekonline.com.br/busca/3/0/0/MaisVendidos/Decrescente/24/" + this.currentPage + "////" + key
-				+ ".aspx";
-		
-		this.log("Link onde são feitos os crawlers: " + url);
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+      for (Element e : products) {
+        String internalPid = crawlInternalPid(e);
+        String urlProduct = crawlProductUrl(e);
 
-		// chama função de pegar a url
-		this.currentDoc = fetchDocument(url, cookies);
+        saveDataProduct(null, internalPid, urlProduct);
 
-		Elements products = this.currentDoc.select("#listProduct > li");
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        if (this.arrayProducts.size() == productsLimit)
+          break;
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-		// se essa página tiver resultado faça:
-		if (products.size() >= 1) {
-			for (Element e : products) {
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-				// InternalId
-				String internalId = crawlInternalId(e);
+  @Override
+  protected void setTotalProducts() {
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".filter-details p strong:last-child", null, true, 0);
+    this.log("Total da busca: " + this.totalProducts);
+  }
 
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
+  private String crawlInternalPid(Element e) {
+    String internalPid = null;
+    Element pid = e.selectFirst("input");
 
-				saveDataProduct(internalId, internalPid, urlProduct);
+    if (pid != null) {
+      internalPid = pid.attr("value");
+    }
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-						+ internalPid + " - Url: " + urlProduct);
-				if (this.arrayProducts.size() == productsLimit)
-					break;
-			}
-		} else {
-			setTotalProducts();
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+    return internalPid;
+  }
 
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-		if (!(hasNextPage()))
-			setTotalProducts();
-	}
+  private String crawlProductUrl(Element e) {
+    String urlProduct = null;
+    Element eUrl = e.select(" a.link.url[title]").first();
 
-	@Override
-	protected boolean hasNextPage() {
-		Element page = this.currentDoc.select(".set-next.off").first();
+    if (eUrl != null) {
+      urlProduct = CrawlerUtils.completeUrl(eUrl.attr("href"), "https", HOST);
+    }
 
-		if (page != null) {
-			return false;
-		}
-
-		return true;
-
-	}
-	
-	private String crawlInternalId(Element e) {
-		String internalId = null;
-
-		Element inid = e.select("div.figure a > img.photo").first();
-
-		if (inid != null) {
-			if (!inid.attr("src").contains("indisponivel")) {
-				String[] tokens2 = inid.attr("src").split("/");
-				internalId = tokens2[tokens2.length - 2];
-			}
-		}
-
-		return internalId;
-	}
-
-	private String crawlInternalPid(Element e) {
-		String internalPid = null;
-		Element pid = e.select("input").first();
-
-		if (pid != null) {
-			internalPid = pid.attr("value");
-		}
-
-		return internalPid;
-	}
-
-	private String crawlProductUrl(Element e) {
-		String urlProduct = null;
-		Element eUrl = e.select(" a.link.url[title]").first();
-
-		if (eUrl != null) {
-			urlProduct = eUrl.attr("href");
-		}
-
-		return urlProduct;
-	}
+    return urlProduct;
+  }
 }
