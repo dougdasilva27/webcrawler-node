@@ -11,8 +11,8 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilMercad
  */
 public class BrasilMercadolivrecotyCrawler extends BrasilMercadolivreCrawler {
 
-  private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/melitta";
-  private static final String MAIN_SELLER_NAME_LOWER = "melitta";
+  private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/coty";
+  private static final String MAIN_SELLER_NAME_LOWER = "coty";
 
   public BrasilMercadolivrecotyCrawler(Session session) {
     super(session);
