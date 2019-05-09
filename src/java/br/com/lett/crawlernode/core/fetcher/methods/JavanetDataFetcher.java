@@ -36,7 +36,7 @@ public class JavanetDataFetcher implements DataFetcher {
     String targetURL = request.getUrl();
     int attempt = 1;
 
-    while (attempt < 4 && response.getBody() == null) {
+    while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
       try {
         Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
         List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_US);
@@ -80,7 +80,7 @@ public class JavanetDataFetcher implements DataFetcher {
           responseStr.append('\r');
         }
         rd.close();
-        content = response.toString();
+        content = responseStr.toString();
 
         S3Service.saveResponseContent(session, requestHash, content);
 

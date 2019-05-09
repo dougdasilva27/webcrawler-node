@@ -10,5 +10,7 @@ public class UnitedstatesNikeRatingReviewCrawler extends NikeRatingReviewCrawler
 
   public UnitedstatesNikeRatingReviewCrawler(Session session) {
     super(session);
+    super.HOME_PAGE = HOME_PAGE;
+    super.COUNTRY_URL = COUNTRY_URL;
   }
 }
