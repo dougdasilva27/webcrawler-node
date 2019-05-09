@@ -18,7 +18,7 @@
 		<s3.version>1.11.194</s3.version>
 		<sqs.version>1.11.194</sqs.version>
 		<kinesis.version>0.12.11</kinesis.version>
-		<db.version>5.2.1</db.version>
+		<db.version>6.0.0-dev</db.version>
 		<jsoup.version>1.11.3</jsoup.version>
 		<models.version>2.3.1</models.version>
 		<logback.version>1.2.3</logback.version>
