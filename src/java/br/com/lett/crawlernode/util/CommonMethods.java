@@ -60,6 +60,18 @@ public class CommonMethods {
   }
 
   /**
+   * Get last position of array
+   * 
+   * @param <E>
+   * 
+   * @param array
+   * @return
+   */
+  public static <E> E getLast(List<E> array) {
+    return array.get(array.size() - 1);
+  }
+
+  /**
    * Strip string if cross the limit and append '...'
    * 
    * @param value - string
