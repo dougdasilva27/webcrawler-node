@@ -10,5 +10,7 @@ public class MexicoNikeRatingReviewCrawler extends NikeRatingReviewCrawler {
 
   public MexicoNikeRatingReviewCrawler(Session session) {
     super(session);
+    super.HOME_PAGE = HOME_PAGE;
+    super.COUNTRY_URL = COUNTRY_URL;
   }
 }

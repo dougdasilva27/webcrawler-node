@@ -18,8 +18,8 @@ import models.RatingsReviews;
 public class NikeRatingReviewCrawler extends RatingReviewCrawler {
 
   // Must be changed for each child (default: USA)
-  protected static final String HOME_PAGE = null;
-  protected static final String COUNTRY_URL = null;
+  protected static String HOME_PAGE = null;
+  protected static String COUNTRY_URL = null;
   protected final Map<String, String> defaultHeaders;
 
   public NikeRatingReviewCrawler(Session session) {
@@ -36,7 +36,7 @@ public class NikeRatingReviewCrawler extends RatingReviewCrawler {
 
   @Override
   public void handleCookiesBeforeFetch() {
-    CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + COUNTRY_URL, null, ".nike.com", "/", null, session, defaultHeaders, dataFetcher);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + COUNTRY_URL, null, ".nike.com", "/", null, session, defaultHeaders, dataFetcher);
   }
 
   @Override

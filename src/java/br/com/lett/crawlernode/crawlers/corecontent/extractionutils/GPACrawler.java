@@ -43,6 +43,7 @@ public class GPACrawler {
   public static final String SAO_PAULO_STORE_ID_EXTRA = "241";
   public static final String CURITIBA_STORE_ID = "1";
   public static final String BRASILIA_STORE_ID = "1141";
+  public static final String FORTALEZA_STORE_ID = "521";
 
   /**
    * Cep's gpa

@@ -315,9 +315,7 @@ public class Product implements Serializable {
         .put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
         .put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", (description != null ? description : JSONObject.NULL)).put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
-        /*
-         * .put("offers", (offers != null ? offers.toString() : Collections.EMPTY_LIST))
-         */.put("timestamp", timestamp).toString();
+        .put("offers", (offers != null ? offers.toString() : Collections.EMPTY_LIST)).put("timestamp", timestamp).toString();
   }
 
   public String serializeToKinesis() {
@@ -331,12 +329,13 @@ public class Product implements Serializable {
     return new JSONObject().put("url", (url != null ? url : JSONObject.NULL)).put("internalId", (internalId != null ? internalId : JSONObject.NULL))
         .put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL)).put("marketId", marketId)
         .put("name", (name != null ? name : JSONObject.NULL)).put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
-        .put("status", status.toString()).put("available", available).put("category1", (category1 != null ? category1 : JSONObject.NULL))
-        .put("category2", (category2 != null ? category2 : JSONObject.NULL)).put("category3", (category3 != null ? category3 : JSONObject.NULL))
+        .put("status", status.toString()).put("available", available)
+        .put("category1", (category1 != null && !category1.isEmpty() ? category1 : JSONObject.NULL))
+        .put("category2", (category2 != null && !category2.isEmpty() ? category2 : JSONObject.NULL))
+        .put("category3", (category3 != null && !category3.isEmpty() ? category3 : JSONObject.NULL))
         .put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL)).put("secondaryImages", secondaryImagesArray)
         .put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
-        // .put("offers", (offers != null ? offers.toString() : new JSONArray().toString()))
-        .put("stock", (stock != null ? stock : JSONObject.NULL))
+        .put("offers", (offers != null ? offers.toString() : new JSONArray().toString())).put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
         .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp).toString();
   }
