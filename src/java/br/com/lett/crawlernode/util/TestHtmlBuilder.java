@@ -23,6 +23,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Resources;
 import br.com.lett.crawlernode.core.session.Session;
+import enums.OfferField;
 
 public class TestHtmlBuilder {
 
@@ -42,9 +43,11 @@ public class TestHtmlBuilder {
   private static final String PRIMARY_IMAGE = "primaryImage";
   private static final String SECONDARY_IMAGES = "secondaryImages";
   private static final String MARKETPLACE = "marketplace";
+  private static final String OFFERS = "offers";
   private static final String PRICES = "prices";
   private static final String BANK_TICKET = "bank_ticket";
   private static final String FROM = "from";
+  private static final String EANS = "eans";
 
   public static String buildProductHtml(JSONObject productJson, String pathWrite, Session session) {
     MustacheFactory mustacheFactory = new DefaultMustacheFactory();
@@ -63,6 +66,9 @@ public class TestHtmlBuilder {
 
       // Put url in map
       putProductUrl(productJson, scopes);
+
+      // Put eans on map
+      putProductEans(productJson, scopes);
 
       // Put internalId in map
       putInternalId(productJson, scopes);
@@ -103,6 +109,9 @@ public class TestHtmlBuilder {
       // Put marketplace in map
       putMarketplaces(productJson, scopes);
 
+      // Put offers on map
+      putOffers(productJson, scopes);
+
       // Put prices in map
       putPrices(productJson, scopes);
 
@@ -125,6 +134,12 @@ public class TestHtmlBuilder {
   private static void putProductUrl(JSONObject productJson, Map<String, Object> scopes) {
     if (productJson.has(PRODUCT_URL) && !productJson.isNull(PRODUCT_URL)) {
       scopes.put(PRODUCT_URL, productJson.getString(PRODUCT_URL));
+    }
+  }
+
+  private static void putProductEans(JSONObject productJson, Map<String, Object> scopes) {
+    if (productJson.has(EANS) && !productJson.isNull(EANS)) {
+      scopes.put(EANS, productJson.get(EANS).toString().replace("[", "").replace("]", ""));
     }
   }
 
@@ -242,6 +257,30 @@ public class TestHtmlBuilder {
       }
 
       scopes.put(MARKETPLACE, marketplaces.entries());
+    }
+  }
+
+  private static void putOffers(JSONObject productJson, Map<String, Object> scopes) {
+    if (productJson.has(OFFERS) && !productJson.isNull(OFFERS)) {
+      Multimap<String, Object> offers = ArrayListMultimap.create();
+      JSONArray arrayOffers = new JSONArray(productJson.getString(OFFERS));
+
+      for (int i = 0; i < arrayOffers.length(); i++) {
+        JSONObject jsonMarketplace = arrayOffers.getJSONObject(i);
+
+        if (jsonMarketplace.has(OfferField.SELLER_FULL_NAME.toString())) {
+          String name = jsonMarketplace.getString(OfferField.SELLER_FULL_NAME.toString());
+          Map<Object, Object> fields = new HashMap<>();
+
+          for (String key : jsonMarketplace.keySet()) {
+            fields.put(key, jsonMarketplace.get(key));
+          }
+
+          offers.put(name, fields.entrySet());
+        }
+      }
+
+      scopes.put(OFFERS, offers.entries());
     }
   }
 
