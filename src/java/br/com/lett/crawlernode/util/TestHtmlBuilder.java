@@ -263,7 +263,7 @@ public class TestHtmlBuilder {
   private static void putOffers(JSONObject productJson, Map<String, Object> scopes) {
     if (productJson.has(OFFERS) && !productJson.isNull(OFFERS)) {
       Multimap<String, Object> offers = ArrayListMultimap.create();
-      JSONArray arrayOffers = new JSONArray(productJson.getString(OFFERS));
+      JSONArray arrayOffers = new JSONArray(productJson.get(OFFERS).toString());
 
       for (int i = 0; i < arrayOffers.length(); i++) {
         JSONObject jsonMarketplace = arrayOffers.getJSONObject(i);
