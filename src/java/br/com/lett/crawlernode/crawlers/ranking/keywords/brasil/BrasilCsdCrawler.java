@@ -5,11 +5,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilCsdCrawler extends CrawlerRankingKeywords {
 
@@ -19,7 +21,6 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
 
   private static final String HOME_PAGE =
       "https://www.sitemercado.com.br/supermercadoscidadecancao/londrina-loja-londrina-19-rodocentro-avenida-tiradentes/";
-  private String apiVersion = "true";
 
   @Override
   public void extractProductsFromCurrentPage() {
@@ -106,33 +107,46 @@ public class BrasilCsdCrawler extends CrawlerRankingKeywords {
   }
 
   private JSONObject crawlProductInfo() {
-    JSONObject products = new JSONObject();
-    String payload = "{phrase: \"" + this.keywordWithoutAccents + "\"}";
+    String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
+    String smmc = "2019.03.28-0";
+
+    String payload = "{\"lojaUrl\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeUrl\":\"supermercadoscidadecancao\"}";
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("referer", HOME_PAGE);
-    headers.put("sm-b2c",
-        "{\"platform\":1,\"type\":2,\"lojaName\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeName\":\"supermercadoscidadecancao\"}");
-    headers.put("sm-mmc", this.apiVersion);
+    headers.put("referer", "https://www.sitemercado.com.br/supermercadoscidadecancao/londrina-loja-londrina-19-rodocentro-avenida-tiradentes/");
+    headers.put("sm-mmc", smmc);
     headers.put("accept", "application/json, text/plain, */*");
-    headers.put("Content-Type", "application/json");
+    headers.put("content-type", "application/json");
 
-    String page = fetchStringPOST("https://www.sitemercado.com.br/core/api/v1/b2c/product/loadSearch", payload, headers, null);
+    Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
 
-    if (page == null || page.trim().isEmpty()) {
-      this.apiVersion = new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0";
-      headers.put("sm-mmc", this.apiVersion);
-      page = fetchStringPOST("https://www.sitemercado.com.br/core/api/v1/b2c/product/loadSearch", payload, headers, null);
-    }
+    if (responseHeaders.containsKey("sm-token")) {
+      headers.put("sm-token", responseHeaders.get("sm-token"));
+    } else {
+      smmc = new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0";
+      headers.put("sm-mmc", smmc);
+      request.setHeaders(headers);
 
-    if (page != null && page.startsWith("{") && page.endsWith("}")) {
-      try {
-        products = new JSONObject(page);
-      } catch (JSONException e) {
-        logError(CommonMethods.getStackTrace(e));
+      responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
+
+      if (responseHeaders.containsKey("sm-token")) {
+        headers.put("sm-token", responseHeaders.get("sm-token"));
       }
     }
 
-    return products;
+
+    String payloadSearch = "{phrase: \"" + this.keywordWithoutAccents + "\"}";
+    Request requestApi = RequestBuilder.create().setUrl("https://www.sitemercado.com.br/core/api/v1/b2c/product/loadSearch").setCookies(cookies)
+        .setHeaders(headers).setPayload(payloadSearch).build();
+    String res = this.dataFetcher.post(session, requestApi).getBody();
+
+    if (res.isEmpty()) {
+      headers.put("sm-mmc", new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0");
+      requestApi.setHeaders(headers);
+      res = this.dataFetcher.get(session, requestApi).getBody();
+    }
+
+    return CrawlerUtils.stringToJson(res);
   }
 }
