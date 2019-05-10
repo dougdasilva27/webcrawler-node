@@ -136,6 +136,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       if (sellerInfo != null) {
         sellerFullName = sellerInfo.text();
         slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+        // This market hasn't seller id, then the slug must be this.
+        // I don't think that cnpj can be a good seller id.
         internalSellerId = slugSellerName;
         isBuyBoxPage = doc.selectFirst(".seller__indentifier") != null;
       }
