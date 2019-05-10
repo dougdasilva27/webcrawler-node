@@ -180,10 +180,16 @@ public abstract class CNOVACrawler extends Crawler {
           String variationInternalID = internalPid + "-" + sku.val();
           boolean unnavailable = sku.text().contains("Esgotado");
           String variationName = assembleVariationName(name, sku);
+
+          Document variationDocument =
+              sku.hasAttr("selected") ? doc : Jsoup.parse(fetchPage(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost)));
+
           Map<String, Prices> marketplaceMap = new HashMap<>();
+          Offers offers = new Offers();
 
           if (!unnavailable) {
             Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
+            offers = scrapBuyBox(variationDocument, docMarketplace);
             marketplaceMap = crawlMarketplaces(docMarketplace, doc);
           }
           Marketplace marketplace =
@@ -193,13 +199,10 @@ public abstract class CNOVACrawler extends Crawler {
           Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
 
           List<String> eans = new ArrayList<>();
-          Document variationDocument =
-              sku.hasAttr("selected") ? doc : Jsoup.parse(fetchPage(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost)));
           String ean = scrapEan(variationDocument);
           if (ean != null) {
             eans.add(ean);
           }
-          Offers offers = scrapBuyBox(variationDocument);
 
           // Creating the product
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(variationInternalID).setInternalPid(internalPid)
@@ -223,7 +226,7 @@ public abstract class CNOVACrawler extends Crawler {
         boolean available = !unnavailableForAll && CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, sellersNameList);
         Prices prices = CrawlerUtils.getPrices(marketplaceMap, sellersNameList);
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
-        Offers offers = scrapBuyBox(doc);
+        Offers offers = scrapBuyBox(doc, docMarketplace);
         List<String> eans = new ArrayList<>();
         String ean = scrapEan(doc);
         if (ean != null) {
@@ -248,10 +251,9 @@ public abstract class CNOVACrawler extends Crawler {
   }
 
 
-  private Offers scrapBuyBox(Document doc) {
+  private Offers scrapBuyBox(Document doc, Document docMarketplace) {
     Offers offers = new Offers();
     try {
-      int mainPagePosition = 2;
 
       if (doc.selectFirst(".descricaoAnuncio .productDetails") != null) {
         offers.add(scrapPrincipalOffer(doc));
@@ -259,34 +261,55 @@ public abstract class CNOVACrawler extends Crawler {
 
       Elements sellers = doc.select(".listaLojistas .buying");
       boolean isBuyBoxPage = doc.selectFirst(".sellerList") != null;
+
       if (isBuyBoxPage) {
-
+        int mainPagePosition = 2; // because first position is the principal seller
         for (Element element : sellers) {
-          String sellerFullName = null;
-          String slugSellerName = null;
-          String internalSellerId = null;
-          Double mainPrice = null;
-
           Element sellerFullNameElement = element.selectFirst(".seller");
           Element mainPriceElement = element.selectFirst(".sale");
 
-          if (sellerFullNameElement != null) {
-            sellerFullName = sellerFullNameElement.text();
-            slugSellerName = CrawlerUtils.toSlug(sellerFullName);
-            internalSellerId = sellerFullNameElement.attr("data-tooltiplojista-id");
+          if (sellerFullNameElement != null && mainPriceElement != null) {
+            String sellerFullName = sellerFullNameElement.text();
+            String slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+            String internalSellerId = sellerFullNameElement.attr("data-tooltiplojista-id");
+            Double mainPrice = MathUtils.parseDoubleWithComma(mainPriceElement.text());
+
+            Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+                .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+
+            offers.add(offer);
+
+            mainPagePosition++;
           }
-
-          if (mainPriceElement != null) {
-            mainPrice = MathUtils.parseDoubleWithComma(mainPriceElement.text());
-          }
-          Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-              .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
-
-          offers.add(offer);
-
-          mainPagePosition++;
         }
       }
+
+      Elements sellersElements = docMarketplace.select("#sellerList tr[data-id-lojista]");
+      int position = 1;
+      for (Element e : sellersElements) {
+        String internalSellerId = e.attr("data-id-lojista");
+
+        if (offers.contains(internalSellerId)) {
+          Offer offer = offers.get(internalSellerId);
+          offer.setSellersPagePosition(position);
+        } else {
+          Element sellerFullNameElement = e.selectFirst(".lojista > a[title]");
+          Element mainPriceElement = e.selectFirst(".valor");
+
+          if (sellerFullNameElement != null && mainPriceElement != null) {
+            String sellerFullName = sellerFullNameElement.attr("title");
+            String slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+            Double mainPrice = MathUtils.parseDoubleWithComma(mainPriceElement.text());
+
+            Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+                .setSellersPagePosition(position).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+
+            offers.add(offer);
+          }
+        }
+        position++;
+      }
+
 
     } catch (OfferException e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
