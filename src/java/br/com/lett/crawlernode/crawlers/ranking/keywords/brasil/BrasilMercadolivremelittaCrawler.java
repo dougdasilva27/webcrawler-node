@@ -7,6 +7,6 @@ public class BrasilMercadolivremelittaCrawler extends BrasilMercadolivreCrawler 
 
   public BrasilMercadolivremelittaCrawler(Session session) {
     super(session);
-    super.setStoreName("coty");
+    super.setStoreName("melitta");
   }
 }
