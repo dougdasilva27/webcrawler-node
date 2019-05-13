@@ -69,7 +69,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-        Offers offers = vtexUtil.scrapBuyBox(jsonSku);
+        Offers offers = vtexUtil.scrapBuyBox(apiJSON);
         List<String> eans = new ArrayList<>();
         eans.add(ean);
 

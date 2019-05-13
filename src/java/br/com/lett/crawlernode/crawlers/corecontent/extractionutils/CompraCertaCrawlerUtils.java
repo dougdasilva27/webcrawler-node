@@ -48,9 +48,6 @@ public class CompraCertaCrawlerUtils {
     JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
     // ean data in json
-    JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
-
-    // ean data in json
     JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
 
     for (int i = 0; i < arraySkus.length(); i++) {
@@ -59,7 +56,7 @@ public class CompraCertaCrawlerUtils {
       String internalId = vtexUtil.crawlInternalId(jsonSku);
       JSONObject apiJSON = vtexUtil.crawlApi(internalId);
       String description = crawlDescription(doc, apiJSON);
-      String name = vtexUtil.crawlName(jsonSku, skuJson);
+      String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
       Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
       Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
       boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -68,9 +65,9 @@ public class CompraCertaCrawlerUtils {
       Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
       Float price = vtexUtil.crawlMainPagePrice(prices);
       Integer stock = vtexUtil.crawlStock(apiJSON);
-      Offers offers = vtexUtil.scrapBuyBox(jsonSku);
-      String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
+      Offers offers = vtexUtil.scrapBuyBox(apiJSON);
 
+      String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
       List<String> eans = new ArrayList<>();
       eans.add(ean);
 

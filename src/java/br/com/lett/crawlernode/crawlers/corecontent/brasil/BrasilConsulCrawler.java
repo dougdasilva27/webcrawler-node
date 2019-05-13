@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -71,7 +72,12 @@ public class BrasilConsulCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-        Offers offers = vtexUtil.scrapBuyBox(jsonSku);
+        Offers offers = new Offers();
+        try {
+          offers = vtexUtil.scrapBuyBox(apiJSON);
+        } catch (Exception e) {
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        }
         List<String> eans = new ArrayList<>();
         eans.add(ean);
 

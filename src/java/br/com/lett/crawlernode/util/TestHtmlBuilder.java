@@ -266,14 +266,14 @@ public class TestHtmlBuilder {
       JSONArray arrayOffers = new JSONArray(productJson.get(OFFERS).toString());
 
       for (int i = 0; i < arrayOffers.length(); i++) {
-        JSONObject jsonMarketplace = arrayOffers.getJSONObject(i);
+        JSONObject jsonOffer = arrayOffers.getJSONObject(i);
 
-        if (jsonMarketplace.has(OfferField.SELLER_FULL_NAME.toString())) {
-          String name = jsonMarketplace.getString(OfferField.SELLER_FULL_NAME.toString());
+        if (jsonOffer.has(OfferField.SELLER_FULL_NAME.toString())) {
+          String name = jsonOffer.getString(OfferField.SELLER_FULL_NAME.toString());
           Map<Object, Object> fields = new HashMap<>();
 
-          for (String key : jsonMarketplace.keySet()) {
-            fields.put(key, jsonMarketplace.get(key));
+          for (String key : jsonOffer.keySet()) {
+            fields.put(key, jsonOffer.get(key).toString());
           }
 
           offers.put(name, fields.entrySet());

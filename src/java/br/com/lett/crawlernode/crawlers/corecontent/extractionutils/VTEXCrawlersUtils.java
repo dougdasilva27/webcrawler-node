@@ -12,14 +12,17 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import exceptions.OfferException;
 import models.Marketplace;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -58,6 +61,7 @@ public class VTEXCrawlersUtils {
   private DataFetcher dataFetcher;
   private boolean isBuyBox = false;
 
+  protected static final Logger logger = LoggerFactory.getLogger(VTEXCrawlersUtils.class);
 
   public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies, DataFetcher dataFetcher) {
     this.session = session;
@@ -679,34 +683,44 @@ public class VTEXCrawlersUtils {
   public Offers scrapBuyBox(JSONObject jsonSku) {
     Offers offers = new Offers();
 
-    try {
-      String sellerFullName = null;
-      String slugSellerName = null;
-      String internalSellerId = null;
-      Double mainPrice = null;
+    if (jsonSku.has("SkuSellersInformation")) {
+      JSONArray sellers = jsonSku.getJSONArray("SkuSellersInformation");
 
-      if (jsonSku.has("seller")) {
-        sellerFullName = jsonSku.getString("seller");
-        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      int position = 1;
+      for (Object o : sellers) {
+        JSONObject seller = (JSONObject) o;
+
+        String sellerFullName = null;
+        String slugSellerName = null;
+        String internalSellerId = null;
+        Double mainPrice = null;
+
+        if (seller.has("Name")) {
+          sellerFullName = seller.get("Name").toString();
+          slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+        }
+
+        if (seller.has("SellerId")) {
+          internalSellerId = seller.get("SellerId").toString();
+        }
+
+
+        if (seller.has("Price")) {
+          mainPrice = CrawlerUtils.getDoubleValueFromJSON(seller, "Price", true, true);
+        }
+
+        try {
+          Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+              .setMainPagePosition(position).setIsBuybox(this.isBuyBox).setMainPrice(mainPrice).build();
+
+          offers.add(offer);
+        } catch (Exception e) {
+          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+        }
+        position++;
       }
-
-      if (jsonSku.has("sellerId")) {
-        internalSellerId = jsonSku.getString("sellerId");
-      }
-
-
-      if (jsonSku.has("bestPriceFormated")) {
-        mainPrice = CrawlerUtils.getDoubleValueFromJSON(jsonSku, "bestPriceFormated", true, true);
-      }
-
-      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-          .setMainPagePosition(1).setIsBuybox(this.isBuyBox).setMainPrice(mainPrice).build();
-
-      offers.add(offer);
-
-    } catch (OfferException e) {
-      e.printStackTrace();
     }
+
     return offers;
   }
 

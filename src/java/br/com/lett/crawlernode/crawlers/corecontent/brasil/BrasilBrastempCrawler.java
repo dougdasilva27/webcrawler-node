@@ -72,7 +72,7 @@ public class BrasilBrastempCrawler extends Crawler {
         Prices prices = CrawlerUtils.getPrices(marketplaceMap, SELLERS);
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
         Integer stock = vtexUtil.crawlStock(apiJSON);
-        Offers offers = vtexUtil.scrapBuyBox(jsonSku);
+        Offers offers = vtexUtil.scrapBuyBox(apiJSON);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)

@@ -51,7 +51,7 @@ public class BrasilColomboCrawler extends Crawler {
     if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && (productElement != null)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      Elements selections = doc.select(".dados-itens-table tr[data-item]");
+      Elements selections = doc.select(".dados-itens-table tr[id]");
 
       // Pid
       String internalPid = null;
@@ -89,7 +89,6 @@ public class BrasilColomboCrawler extends Crawler {
         price = MathUtils.parseFloatWithComma(elementPrice.ownText());
       }
 
-      // Prices
       Prices prices = crawlPrices(doc, price);
 
       // Categoria
@@ -152,6 +151,7 @@ public class BrasilColomboCrawler extends Crawler {
       }
 
       if (selections.size() <= 1) { // sem variações
+        Offers offers = available ? scrapBuyBox(doc, price) : new Offers();
 
         if (!available) {
           price = null;
@@ -163,8 +163,6 @@ public class BrasilColomboCrawler extends Crawler {
         if (!available && (internalId == null || internalId.isEmpty())) {
           internalId = internalPid + "-i";
         }
-
-        Offers offers = scrapBuyBox(doc);
 
         Product product = new Product();
         product.setUrl(session.getOriginalURL());
@@ -190,20 +188,18 @@ public class BrasilColomboCrawler extends Crawler {
 
       else { // múltiplas variações
 
-        Offers offers = scrapBuyBox(doc);
-
         for (Element e : selections) {
 
           // ID interno
           String variationInternalId = null;
-          Element variationElementInternalID = e.select("input").first();
+          Element variationElementInternalID = e.selectFirst("input[name=item]");
           if (variationElementInternalID != null) {
-            variationInternalId = e.attr("data-item").trim();
+            variationInternalId = variationElementInternalID.val();
           }
 
           // Nome
           String variationName = null;
-          Element variationElementName = e.select(".dados-itens-table-caracteristicas > label").first();
+          Element variationElementName = e.selectFirst(".caracteristicasdados-itens-table-caracteristicas > label");
           if (variationElementName != null) {
             variationName = name + " " + variationElementName.ownText().split("- R")[0];
           }
@@ -217,6 +213,8 @@ public class BrasilColomboCrawler extends Crawler {
               variationAvailable = false;
             }
           }
+
+          Offers offers = available ? scrapBuyBox(e, price) : new Offers();
 
           if (!variationAvailable) {
             price = null;
@@ -254,14 +252,13 @@ public class BrasilColomboCrawler extends Crawler {
     return products;
   }
 
-  private Offers scrapBuyBox(Document doc) {
+  private Offers scrapBuyBox(Element doc, Float price) {
     Offers offers = new Offers();
     try {
       Element nameElement = doc.selectFirst(".dados-itens-table-estoque .label-linha-item .btn-show-info-seller");
       Element sellerIdElement = doc.selectFirst(".item-codigo-seller");
-      boolean isBuyBoxPage = false;
-      Element elementPrice = doc.select(".parcelas-produto-table .parcelas-produto-table-valor").first();
-      Double mainPrice = null;
+      Element elementPrice = doc.selectFirst(".label-preco-item");
+      Double mainPrice = price.doubleValue();
       String sellerFullName = null;
       String slugSellerName = null;
       String internalSellerId = null;
@@ -281,7 +278,7 @@ public class BrasilColomboCrawler extends Crawler {
       }
 
       Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-          .setMainPagePosition(1).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
 
       offers.add(offer);
 
