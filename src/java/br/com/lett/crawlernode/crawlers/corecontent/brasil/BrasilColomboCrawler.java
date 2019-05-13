@@ -20,7 +20,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.prices.Prices;
 
 public class BrasilColomboCrawler extends Crawler {
@@ -160,6 +164,8 @@ public class BrasilColomboCrawler extends Crawler {
           internalId = internalPid + "-i";
         }
 
+        Offers offers = scrapBuyBox(doc);
+
         Product product = new Product();
         product.setUrl(session.getOriginalURL());
         product.setInternalId(internalId);
@@ -176,6 +182,7 @@ public class BrasilColomboCrawler extends Crawler {
         product.setStock(stock);
         product.setMarketplace(marketplace);
         product.setAvailable(available);
+        product.setOffers(offers);
 
         products.add(product);
 
@@ -183,6 +190,7 @@ public class BrasilColomboCrawler extends Crawler {
 
       else { // múltiplas variações
 
+        Offers offers = scrapBuyBox(doc);
 
         for (Element e : selections) {
 
@@ -210,7 +218,6 @@ public class BrasilColomboCrawler extends Crawler {
             }
           }
 
-
           if (!variationAvailable) {
             price = null;
             prices = new Prices();
@@ -232,6 +239,7 @@ public class BrasilColomboCrawler extends Crawler {
           product.setStock(stock);
           product.setMarketplace(marketplace);
           product.setAvailable(variationAvailable);
+          product.setOffers(offers);
 
           products.add(product);
 
@@ -245,6 +253,45 @@ public class BrasilColomboCrawler extends Crawler {
 
     return products;
   }
+
+  private Offers scrapBuyBox(Document doc) {
+    Offers offers = new Offers();
+    try {
+      Element nameElement = doc.selectFirst(".dados-itens-table-estoque .label-linha-item .btn-show-info-seller");
+      Element sellerIdElement = doc.selectFirst(".item-codigo-seller");
+      boolean isBuyBoxPage = false;
+      Element elementPrice = doc.select(".parcelas-produto-table .parcelas-produto-table-valor").first();
+      Double mainPrice = null;
+      String sellerFullName = null;
+      String slugSellerName = null;
+      String internalSellerId = null;
+
+      if (nameElement != null) {
+        sellerFullName = nameElement.text();
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      }
+
+      if (sellerIdElement != null) {
+        internalSellerId = sellerIdElement.attr("value");
+      }
+
+
+      if (elementPrice != null) {
+        mainPrice = MathUtils.parseDoubleWithComma(elementPrice.ownText());
+      }
+
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPagePosition(1).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+
+      offers.add(offer);
+
+    } catch (OfferException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return offers;
+  }
+
 
   private String sanitizeImageURL(String imageURL) {
     String sanitizedURL = imageURL;
