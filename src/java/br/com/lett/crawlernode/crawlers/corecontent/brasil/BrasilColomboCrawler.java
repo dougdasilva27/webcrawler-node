@@ -20,7 +20,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.prices.Prices;
 
 public class BrasilColomboCrawler extends Crawler {
@@ -47,7 +51,7 @@ public class BrasilColomboCrawler extends Crawler {
     if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && (productElement != null)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      Elements selections = doc.select(".dados-itens-table tr[data-item]");
+      Elements selections = doc.select(".dados-itens-table tr[id]");
 
       // Pid
       String internalPid = null;
@@ -85,7 +89,6 @@ public class BrasilColomboCrawler extends Crawler {
         price = MathUtils.parseFloatWithComma(elementPrice.ownText());
       }
 
-      // Prices
       Prices prices = crawlPrices(doc, price);
 
       // Categoria
@@ -148,6 +151,7 @@ public class BrasilColomboCrawler extends Crawler {
       }
 
       if (selections.size() <= 1) { // sem variações
+        Offers offers = available ? scrapBuyBox(doc, price) : new Offers();
 
         if (!available) {
           price = null;
@@ -176,6 +180,7 @@ public class BrasilColomboCrawler extends Crawler {
         product.setStock(stock);
         product.setMarketplace(marketplace);
         product.setAvailable(available);
+        product.setOffers(offers);
 
         products.add(product);
 
@@ -183,19 +188,18 @@ public class BrasilColomboCrawler extends Crawler {
 
       else { // múltiplas variações
 
-
         for (Element e : selections) {
 
           // ID interno
           String variationInternalId = null;
-          Element variationElementInternalID = e.select("input").first();
+          Element variationElementInternalID = e.selectFirst("input[name=item]");
           if (variationElementInternalID != null) {
-            variationInternalId = e.attr("data-item").trim();
+            variationInternalId = variationElementInternalID.val();
           }
 
           // Nome
           String variationName = null;
-          Element variationElementName = e.select(".dados-itens-table-caracteristicas > label").first();
+          Element variationElementName = e.selectFirst(".caracteristicasdados-itens-table-caracteristicas > label");
           if (variationElementName != null) {
             variationName = name + " " + variationElementName.ownText().split("- R")[0];
           }
@@ -210,6 +214,7 @@ public class BrasilColomboCrawler extends Crawler {
             }
           }
 
+          Offers offers = available ? scrapBuyBox(e, price) : new Offers();
 
           if (!variationAvailable) {
             price = null;
@@ -232,6 +237,7 @@ public class BrasilColomboCrawler extends Crawler {
           product.setStock(stock);
           product.setMarketplace(marketplace);
           product.setAvailable(variationAvailable);
+          product.setOffers(offers);
 
           products.add(product);
 
@@ -245,6 +251,44 @@ public class BrasilColomboCrawler extends Crawler {
 
     return products;
   }
+
+  private Offers scrapBuyBox(Element doc, Float price) {
+    Offers offers = new Offers();
+    try {
+      Element nameElement = doc.selectFirst(".dados-itens-table-estoque .label-linha-item .btn-show-info-seller");
+      Element sellerIdElement = doc.selectFirst(".item-codigo-seller");
+      Element elementPrice = doc.selectFirst(".label-preco-item");
+      Double mainPrice = price.doubleValue();
+      String sellerFullName = null;
+      String slugSellerName = null;
+      String internalSellerId = null;
+
+      if (nameElement != null) {
+        sellerFullName = nameElement.text();
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      }
+
+      if (sellerIdElement != null) {
+        internalSellerId = sellerIdElement.attr("value");
+      }
+
+
+      if (elementPrice != null) {
+        mainPrice = MathUtils.parseDoubleWithComma(elementPrice.ownText());
+      }
+
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
+
+      offers.add(offer);
+
+    } catch (OfferException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return offers;
+  }
+
 
   private String sanitizeImageURL(String imageURL) {
     String sanitizedURL = imageURL;
