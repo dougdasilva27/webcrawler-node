@@ -152,10 +152,9 @@ public class BrasilKabumCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalID).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalID).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -170,7 +169,7 @@ public class BrasilKabumCrawler extends Crawler {
   private Float crawlPrice(Prices prices) {
     Float price = null;
 
-    if (prices != null && prices.getCardPaymentOptions(Card.MASTERCARD.toString()).containsKey(1)) {
+    if (prices != null && !prices.isEmpty() && prices.getCardPaymentOptions(Card.MASTERCARD.toString()).containsKey(1)) {
       Double priceDouble = prices.getCardPaymentOptions(Card.MASTERCARD.toString()).get(1);
       price = priceDouble.floatValue();
     }

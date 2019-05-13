@@ -56,24 +56,22 @@ public class BrasilBemolCrawler extends Crawler {
       Prices prices = crawlPrices(price, internalId, doc);
       boolean available = doc.selectFirst(".wd-buy-button  > div:not([style$=none])") != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrum-product li:not(.first) a span");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".wd-product-media-selector .image.selected img",
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".wd-product-media-selector .image.selected img, .wd-product-media-selector .image:not(.selected) img",
           Arrays.asList("data-image-large", "data-small", "data-image-big", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net");
 
-      if (primaryImage.endsWith("/Custom/Content")) {
-        primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".wd-product-media-selector .image.selected img",
+      if (primaryImage != null && primaryImage.endsWith("/Custom/Content")) {
+        primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".wd-product-media-selector .image.selected img, .wd-product-media-selector .image:not(.selected) img",
             Arrays.asList("data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net");
       }
 
-      String secondaryImages = scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img",
-          Arrays.asList("data-image-large", "data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".wrapper-detalhe-produto .descriptions", ".wrapper-detalhe-produto .caracteristicas"));
+      String secondaryImages = scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img", Arrays.asList("data-image-large", "data-image-big", "data-small", "src"),
+          "https:", "d3ddx6b2p2pevg.cloudfront.net", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrapper-detalhe-produto .descriptions", ".wrapper-detalhe-produto .caracteristicas"));
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
 
       products.add(product);
 
@@ -100,8 +98,7 @@ public class BrasilBemolCrawler extends Crawler {
     return internalId;
   }
 
-  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
-      String primaryImage) {
+  public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -145,9 +142,8 @@ public class BrasilBemolCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      Request request =
-          RequestBuilder.create().setUrl("https://www.bemol.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
-              + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true&nocache=1108472214").setCookies(cookies).build();
+      Request request = RequestBuilder.create().setUrl("https://www.bemol.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
+          + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true&nocache=1108472214").setCookies(cookies).build();
       Document docPrices = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       Elements cards = docPrices.select(".modal-wd-product-payment-options .grid table");
