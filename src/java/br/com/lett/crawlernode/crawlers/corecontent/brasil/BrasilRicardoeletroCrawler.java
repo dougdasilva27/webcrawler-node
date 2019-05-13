@@ -19,10 +19,15 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.prices.Prices;
 
 public class BrasilRicardoeletroCrawler extends Crawler {
@@ -148,6 +153,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       // Estoque
       Integer stock = crawlStock(doc);
 
+      // Offers
+      Offers offers = scrapBuyBox(internalPid, doc);
+      System.err.println(offers);
       String ean = crawlEan(doc);
 
       List<String> eans = new ArrayList<>();
@@ -171,6 +179,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       product.setMarketplace(marketplace);
       product.setAvailable(available);
       product.setEans(eans);
+      product.setOffers(offers);
 
 
       products.add(product);
@@ -180,6 +189,107 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private Offers scrapBuyBox(String internalPid, Document doc) {
+    Offers offers = new Offers();
+
+    try {
+      boolean isBuyBoxPage = doc.selectFirst("#ModalVejaMaisParceirosProduto") != null;
+
+      if (isBuyBoxPage) {
+        offers = scrapSellerPage(internalPid, isBuyBoxPage);
+
+      } else {
+        offers = scrapMainPage(isBuyBoxPage, doc);
+
+      }
+
+    } catch (OfferException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return offers;
+  }
+
+  private Offers scrapMainPage(boolean isBuyBoxPage, Document doc) throws OfferException {
+    Offers offers = new Offers();
+
+    String sellerFullName = null;
+    String slugSellerName = null;
+    String internalSellerId = null;
+    Double mainPrice = null;
+    Integer mainPagePosition = 1;
+    Integer sellersPagePosition = null;
+
+    JSONArray jsonArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
+    JSONObject jsonInfo = jsonArray.getJSONObject(0);
+
+    if (jsonInfo.has("productMarketplace")) {
+      JSONObject productMarketplace = jsonInfo.getJSONObject("productMarketplace");
+
+      if (productMarketplace.has("nomeLoja")) {
+        sellerFullName = productMarketplace.getString("nomeLoja");
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      }
+
+      if (productMarketplace.has("siteId")) {
+        internalSellerId = productMarketplace.getString("siteId");
+      }
+    }
+
+    if (jsonInfo.has("productPrice")) {
+      mainPrice = MathUtils.parseDoubleWithDot(jsonInfo.get("productPrice").toString());
+    }
+
+    Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+        .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).setSellersPagePosition(sellersPagePosition).build();
+
+    offers.add(offer);
+
+    return offers;
+  }
+
+  private Offers scrapSellerPage(String internalPid, boolean isBuyBoxPage) throws OfferException {
+    Offers offers = new Offers();
+
+    String sellerFullName = null;
+    String slugSellerName = null;
+    String internalSellerId = null;
+    Double mainPrice = null;
+    Integer mainPagePosition = 1;
+    Integer sellersPagePosition = 1;
+
+    Document docMarketplace = crawlDocMarketplaces(internalPid);
+
+    Elements lines = docMarketplace.select(".modal-linha-parceiro");
+
+    for (Element linePartner : lines) {
+      Element priceElement = linePartner.selectFirst(".valor-unitario");
+      Element nameElement = linePartner.selectFirst(".nome-loja > a");
+
+      if (priceElement != null) {
+        mainPrice = MathUtils.parseDoubleWithComma(priceElement.ownText());
+      }
+
+      if (nameElement != null) {
+        sellerFullName = nameElement.text().trim();
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      }
+
+      internalSellerId = linePartner.attr("parceiroid");
+
+      if (mainPrice != null) {
+        Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+            .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).setSellersPagePosition(sellersPagePosition)
+            .build();
+
+        offers.add(offer);
+      }
+      sellersPagePosition++;
+    }
+
+    return offers;
   }
 
   /*******************************
@@ -237,8 +347,8 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     Elements lines = docMarketplaceInfo.select(".modal-linha-parceiro");
 
     for (Element linePartner : lines) {
-      Element priceElement = linePartner.select(".valor-unitario").first();
-      Element nameElement = linePartner.select(".nome-loja > a").first();
+      Element priceElement = linePartner.selectFirst(".valor-unitario");
+      Element nameElement = linePartner.selectFirst(".nome-loja > a");
 
       if (priceElement != null && nameElement != null) {
         String partnerName = nameElement.text().trim().toLowerCase();
@@ -247,6 +357,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         if (!partnerName.isEmpty() && partnerPrice != null) {
           marketplace.put(partnerName, crawlPrices(doc, partnerPrice, partnerName.equals(principalSeller), internalPid));
         }
+
       }
     }
 
