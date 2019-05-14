@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -76,7 +77,7 @@ public class SaopauloSondaCrawler extends Crawler {
   }
 
   private String crawlInternalId(String url) {
-    return Integer.toString(Integer.parseInt(this.session.getOriginalURL().split("/")[this.session.getOriginalURL().split("/").length - 1]));
+    return CommonMethods.getLast(url.split("/"));
   }
 
   private String crawlInternalPid() {

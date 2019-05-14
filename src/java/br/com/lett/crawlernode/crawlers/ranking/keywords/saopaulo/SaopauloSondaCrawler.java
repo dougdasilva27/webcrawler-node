@@ -72,7 +72,7 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlInternalId(String url) {
-    return Integer.toString(Integer.parseInt(url.split("/")[url.split("/").length - 1]));
+    return CommonMethods.getLast(url.split("/"));
   }
 
   private String crawlInternalPid(Element e) {
