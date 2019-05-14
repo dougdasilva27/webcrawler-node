@@ -9,8 +9,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ColombiaRappiexitobogotaCrawler extends CrawlerRankingKeywords {
 
@@ -24,7 +23,7 @@ public class ColombiaRappiexitobogotaCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     JSONObject search = fetchProductsFromAPI(br.com.lett.crawlernode.crawlers.corecontent.colombia.ColombiaRappiexitobogotaCrawler.STORES);
-
+    
     if (search.has("hits") && search.getJSONArray("hits").length() > 0) {
       JSONArray products = search.getJSONArray("hits");
 
@@ -100,8 +99,6 @@ public class ColombiaRappiexitobogotaCrawler extends CrawlerRankingKeywords {
   }
 
   private JSONObject fetchProductsFromAPI(List<String> storeIds) {
-    JSONObject obj = new JSONObject();
-
     String payload =
         "{\"query\":\"" + this.location + "\",\"stores\":" + storeIds.toString() + ",\"store_type\":\"hiper\",\"page\":" + this.currentPage
             + ",\"size\":40,\"options\":{},\"helpers\":{\"home_type\":\"by_categories\",\"store_type_group\":\"market\",\"type\":\"by_categories\"}}";
@@ -110,18 +107,8 @@ public class ColombiaRappiexitobogotaCrawler extends CrawlerRankingKeywords {
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
-
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
-    String page = this.dataFetcher.post(session, request).getBody();
-
-    if (page.startsWith("{") && page.endsWith("}")) {
-      try {
-        obj = new JSONObject(page);
-      } catch (Exception e) {
-        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-      }
-    }
-
-    return obj;
+    Request request =
+        RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
+    return CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
   }
 }
