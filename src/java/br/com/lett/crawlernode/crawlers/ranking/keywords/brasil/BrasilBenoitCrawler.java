@@ -10,7 +10,6 @@ public class BrasilBenoitCrawler extends CrawlerRankingKeywords {
 
   public BrasilBenoitCrawler(Session session) {
     super(session);
-    // TODO Auto-generated constructor stub
   }
 
   @Override
@@ -34,14 +33,13 @@ public class BrasilBenoitCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
 
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[data-product-id]", "data-product-id");
         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[data-pid]", "data-pid");
         String productUrl = CrawlerUtils.scrapUrl(e, "h3[class=\"name\"] a", "href", "https:", "www.benoit.com.br");
 
-        saveDataProduct(internalId, null, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
