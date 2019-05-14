@@ -23,7 +23,7 @@ public class ColombiaRappiexitobogotaCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     JSONObject search = fetchProductsFromAPI(br.com.lett.crawlernode.crawlers.corecontent.colombia.ColombiaRappiexitobogotaCrawler.STORES);
-    System.err.println(search);
+    
     if (search.has("hits") && search.getJSONArray("hits").length() > 0) {
       JSONArray products = search.getJSONArray("hits");
 
