@@ -14,40 +14,31 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 10;
 
     this.log("Página " + this.currentPage);
 
     String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
-    // monta a url com a keyword e a página
     String url = "http://busca.sondadelivery.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar a url
     this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select(".neemu-products-container .nm-product-item");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado
-    // faça:
     if (!products.isEmpty()) {
-      for (Element e : products) {
-        // se o total de busca não foi setado ainda, chama a função para
-        // setar
-        if (this.totalProducts == 0) {
-          setTotalProducts();
-        }
 
-        // Url do produto
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+
+      for (Element e : products) {
+
         String urlProduct = crawlProductUrl(e);
 
-        // InternalPid
         String internalPid = crawlInternalPid(e);
 
-        // InternalId
-        String internalId = crawlInternalId(e);
+        String internalId = crawlInternalId(urlProduct);
 
         saveDataProduct(internalId, internalPid, urlProduct);
 
@@ -80,8 +71,8 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
     this.log("Total da busca: " + this.totalProducts);
   }
 
-  private String crawlInternalId(Element e) {
-    return e.attr("data-id");
+  private String crawlInternalId(String url) {
+    return Integer.toString(Integer.parseInt(url.split("/")[url.split("/").length - 1]));
   }
 
   private String crawlInternalPid(Element e) {
@@ -90,7 +81,7 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
   private String crawlProductUrl(Element e) {
     String urlProduct = null;
-    Element url = e.select(".nm-name-container > a").first();
+    Element url = e.select(".nm-product-name > a").first();
 
     if (url != null) {
       urlProduct = url.attr("href");
