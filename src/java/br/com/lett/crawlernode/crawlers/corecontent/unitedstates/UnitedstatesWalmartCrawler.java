@@ -238,7 +238,7 @@ public class UnitedstatesWalmartCrawler extends Crawler {
    */
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumb-slash a");
+    Elements elementCategories = document.select(".breadcrumb a span");
 
     for (int i = 1; i < elementCategories.size(); i++) {
       String cat = elementCategories.get(i).ownText().trim();
