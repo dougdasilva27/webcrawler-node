@@ -6,7 +6,8 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.RappiCrawler
 public class SaopauloRappiCrawler extends RappiCrawler {
 
   public SaopauloRappiCrawler(Session session) {
-    super(session);
+    // I will not change this crawler because it was just a test;
+    super(session, "");
   }
 
 }

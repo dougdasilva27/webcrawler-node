@@ -4,10 +4,10 @@ import java.util.Arrays;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.RappiCrawler;
 
-public class SaopauloRappiCrawler extends RappiCrawler {
+public class SaopauloRappicarrefourCrawler extends RappiCrawler {
 
-  public SaopauloRappiCrawler(Session session) {
-    super(session, Arrays.asList("700001704", "700001341"));
+  public SaopauloRappicarrefourCrawler(Session session) {
+    super(session, Arrays.asList("900020401"));
   }
 
 }

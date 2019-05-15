@@ -29,10 +29,13 @@ public class RappiCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.rappi.com";
   private static final String STORES_API_URL = "https://services.rappi.com.br/api/base-crack/principal?lat=-23.584&lng=-46.671&device=2";
-  public static final String PRODUCTS_API_URL = "https://services.rappi.com.br/chewbacca/search/v2/products";
+  public static final String PRODUCTS_API_URL = "https://services.rappi.com.br/api/search-client/search/v2/products";
 
-  public RappiCrawler(Session session) {
+  private final String storeType;
+
+  public RappiCrawler(Session session, String storeType) {
     super(session);
+    this.storeType = storeType;
   }
 
   @Override
@@ -55,7 +58,7 @@ public class RappiCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String productUrl = session.getOriginalURL();
-      JSONObject jsonSku = crawlProductInformatioFromApi(productUrl);
+      JSONObject jsonSku = crawlProductInformatioFromApi(productUrl, storeType);
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
@@ -251,32 +254,18 @@ public class RappiCrawler extends Crawler {
    * - Get the json of api, this api has all info of product - Spected url like this
    * https://www.rappi.com.br/search?store_type=market&query=2089952206
    * 
+   * @param storeType2
+   * 
    * @return
    */
-  private JSONObject crawlProductInformatioFromApi(String productUrl) {
+  private JSONObject crawlProductInformatioFromApi(String productUrl, String storeType) {
     JSONObject productsInfo = new JSONObject();
     Map<String, String> stores = crawlStores();
 
-    String storeType = "hiper";
     String storeId = stores.containsKey(storeType) ? stores.get(storeType) : null;
     String productId = null;
 
-    if (productUrl.contains("?")) {
-      String[] parameters = (productUrl.split("\\?")[1]).split("&");
-
-      for (String parameter : parameters) {
-        if (parameter.contains("store_type=")) {
-          storeType = parameter.split("=")[1];
-
-          if (stores.containsKey(storeType)) {
-            storeId = stores.get(storeType);
-          }
-
-        } else if (parameter.contains("query=")) {
-          productId = parameter.split("=")[1];
-        }
-      }
-    } else if (productUrl.contains("_")) {
+    if (productUrl.contains("_")) {
       productId = CommonMethods.getLast(productUrl.split("_"));
     }
 
@@ -290,6 +279,7 @@ public class RappiCrawler extends Crawler {
 
       Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL + "?page=1").setCookies(cookies).setHeaders(headers).setPayload(payload)
           .mustSendContentEncoding(false).build();
+
       String page = this.dataFetcher.post(session, request).getBody();
 
       if (page.startsWith("{") && page.endsWith("}")) {
@@ -298,7 +288,6 @@ public class RappiCrawler extends Crawler {
 
           if (apiResponse.has("hits") && apiResponse.get("hits") instanceof JSONArray) {
             JSONArray hits = apiResponse.getJSONArray("hits");
-
             if (hits.length() > 0) {
               productsInfo = hits.getJSONObject(0);
             }
