@@ -76,7 +76,6 @@ public class PaguemenosCrawler extends Crawler {
         String secondaryImages = crawlSecondaryImages(jsonProduct);
         Prices prices = crawlPrices(internalId, price, jsonSku, session);
         Integer stock = null;
-        String descriptionV = description + CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber());
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
         List<String> eans = new ArrayList<>();
         eans.add(ean);
@@ -84,7 +83,7 @@ public class PaguemenosCrawler extends Crawler {
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(descriptionV)
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
             .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
@@ -295,8 +294,9 @@ public class PaguemenosCrawler extends Crawler {
   private String crawlDescription(Document doc, String internalPid) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.select(".productDescription").first();
+    Element shortDescription = doc.selectFirst(".productDescription");
     if (shortDescription != null) {
+      shortDescription.select("iframe").remove();
       description.append(shortDescription.html());
     }
 
@@ -321,6 +321,15 @@ public class PaguemenosCrawler extends Crawler {
 
       if (aplus.has("html")) {
         description.append(aplus.get("html"));
+      }
+    }
+
+    Elements iframes = doc.select(".productDescription iframe");
+    for (Element iframe : iframes) {
+      String url = iframe.attr("src");
+      if (!url.contains("youtube")) {
+        description
+            .append(Jsoup.parse(this.dataFetcher.get(session, RequestBuilder.create().setUrl(url).setCookies(cookies).build()).getBody()).html());
       }
     }
 
