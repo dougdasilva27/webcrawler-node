@@ -136,7 +136,7 @@ public class UnitedstatesWalmartCrawlerUtils {
         santizedProductInfo.put(DESCRIPTION, crawlDescription(product));
         santizedProductInfo.put(NAME, crawlName(productJson));
         santizedProductInfo.put(OFFERS, crawlOffers(productJson, offers));
-        santizedProductInfo.put(IMAGES, crawlImages(productJson, images));
+        santizedProductInfo.put(IMAGES, crawlImages(productJson, product, images));
         products.put(santizedProductInfo);
       }
     }
@@ -279,12 +279,12 @@ public class UnitedstatesWalmartCrawlerUtils {
     return rating;
   }
 
-  private static JSONObject crawlImages(JSONObject productJson, JSONObject images) {
+  private static JSONObject crawlImages(JSONObject skuJson, JSONObject prodInfo, JSONObject images) {
     JSONObject productImages = new JSONObject();
 
-    if (productJson.has("images")) {
+    if (skuJson.has("images")) {
       JSONArray secondaryImages = new JSONArray();
-      JSONArray imagesIds = productJson.getJSONArray("images");
+      JSONArray imagesIds = skuJson.getJSONArray("images");
 
       for (Object imageId : imagesIds) {
         if (images.has(imageId.toString())) {
@@ -317,6 +317,37 @@ public class UnitedstatesWalmartCrawlerUtils {
       }
 
       productImages.put(IMAGES_SECONDARY, secondaryImages);
+    } else if (prodInfo.has("images")) {
+      JSONObject imagesMain = prodInfo.getJSONObject("images");
+
+      JSONArray secondaryImages = new JSONArray();
+      for (String imageId : imagesMain.keySet()) {
+        JSONObject imageJson = imagesMain.getJSONObject(imageId);
+
+        if (imageJson.has("type") && imageJson.has("assetSizeUrls")) {
+          String image = null;
+          JSONObject assetSizeUrls = imageJson.getJSONObject("assetSizeUrls");
+
+          if (assetSizeUrls.has("zoom")) {
+            image = assetSizeUrls.get("zoom").toString();
+          } else if (assetSizeUrls.has("main")) {
+            image = assetSizeUrls.get("main").toString();
+          } else if (assetSizeUrls.has("inspiration")) {
+            image = assetSizeUrls.get("inspiration").toString();
+          } else if (assetSizeUrls.has("tile")) {
+            image = assetSizeUrls.get("tile").toString();
+          } else if (assetSizeUrls.has("thumb")) {
+            image = assetSizeUrls.get("thumb").toString();
+          }
+
+          String type = imageJson.get("type").toString();
+          if (type.equalsIgnoreCase("PRIMARY") && !productImages.has(IMAGES_PRIMARY)) {
+            productImages.put(IMAGES_PRIMARY, image);
+          } else {
+            secondaryImages.put(image);
+          }
+        }
+      }
     }
 
     return productImages;
