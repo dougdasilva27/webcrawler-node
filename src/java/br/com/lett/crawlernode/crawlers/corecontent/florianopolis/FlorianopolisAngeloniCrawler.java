@@ -59,7 +59,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalId);
       Prices prices = crawlPrices(doc, price);
 
       Product product = ProductBuilder.create().setUrl(newUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
@@ -121,13 +121,15 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     return price;
   }
 
-  private String crawlDescription(Document doc) {
+  private String crawlDescription(Document doc, String internalId) {
     StringBuilder description = new StringBuilder();
 
     Elements descs = doc.select(".div__box-info-produto");
     for (Element e : descs) {
       description.append(e.html());
     }
+
+    description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
 
     return description.toString();
   }
