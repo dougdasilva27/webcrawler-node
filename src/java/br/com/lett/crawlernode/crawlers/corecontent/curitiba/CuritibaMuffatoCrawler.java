@@ -272,7 +272,6 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
     description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
 
-
     return description.toString();
   }
 

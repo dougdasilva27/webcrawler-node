@@ -214,6 +214,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
       }
     }
 
+    sb.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+
     return sb.toString();
   }
 }
