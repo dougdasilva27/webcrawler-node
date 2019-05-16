@@ -323,21 +323,15 @@ public abstract class CNOVACrawler extends Crawler {
 
     String sellerFullName = null;
     String slugSellerName = null;
-    String internalSellerId = null;
+    String internalSellerId = scrapSellerIdFromButton(doc);
     Double mainPrice = null;
     boolean isBuyBoxPage = doc.selectFirst(".sellerList") != null;
     Element elementMainSeller = doc.selectFirst(".buying > a");
     Element elementPrice = doc.selectFirst(".productDetails .sale.price");
-    Element elementInternalSellerId = doc.selectFirst("a[class=\"seller\"]");
-    String urlInternalSellerId = elementInternalSellerId.attr("href");
 
     if (elementMainSeller != null) {
       sellerFullName = elementMainSeller.text();
       slugSellerName = CrawlerUtils.toSlug(sellerFullName);
-    }
-
-    if (elementInternalSellerId != null) {
-      internalSellerId = CommonMethods.getLast(urlInternalSellerId.split("Lojista/")).replaceAll("[^0-9]", "");
     }
 
     if (elementPrice != null) {
@@ -348,6 +342,24 @@ public abstract class CNOVACrawler extends Crawler {
         .setMainPrice(mainPrice).setIsBuybox(isBuyBoxPage).setMainPagePosition(1).build();
 
     return offer;
+  }
+
+  private String scrapSellerIdFromButton(Document doc) {
+    String internalSellerId = null;
+
+    Element button = doc.selectFirst("#btnAdicionarCarrinho, .retirar-eleito > a");
+    if (button != null) {
+      String[] params = button.attr("href").split("&");
+
+      for (String param : params) {
+        if (param.toLowerCase().startsWith("idlojista")) {
+          internalSellerId = CommonMethods.getLast(param.split("="));
+          break;
+        }
+      }
+    }
+
+    return internalSellerId;
   }
 
   private boolean isProductPage(Document doc) {
