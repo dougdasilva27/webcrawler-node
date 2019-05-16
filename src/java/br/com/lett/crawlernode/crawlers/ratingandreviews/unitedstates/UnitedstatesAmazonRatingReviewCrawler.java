@@ -79,7 +79,7 @@ public class UnitedstatesAmazonRatingReviewCrawler extends RatingReviewCrawler {
       String text = reviews.ownText().trim();
 
       if (text.contains("of")) {
-        String avgText = text.split("of")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
+        String avgText = text.split("of")[0].replaceAll("[^0-9.]", "").trim();
 
         if (!avgText.isEmpty()) {
           avgRating = Double.parseDouble(avgText);
