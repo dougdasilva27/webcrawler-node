@@ -11,7 +11,6 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -20,7 +19,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -61,7 +64,6 @@ public class RappiCrawler extends Crawler {
       JSONObject jsonSku = crawlProductInformatioFromApi(productUrl, storeType);
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
-      CategoryCollection categories = crawlCategories(jsonSku);
       String description = crawlDescription(jsonSku);
       boolean available = crawlAvailability(jsonSku);
       Float price = available ? crawlPrice(jsonSku) : null;
@@ -70,11 +72,13 @@ public class RappiCrawler extends Crawler {
       String name = crawlName(jsonSku);
       Prices prices = crawlPrices(price, priceFrom);
       Marketplace marketplace = crawlMarketplace(price, prices, jsonSku);
+      List<String> eans = scrapEan(jsonSku);
+      Offers offers = scrapBuyBox(jsonSku);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrices(new Prices()).setAvailable(false).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setMarketplace(marketplace).build();
+          .setPrices(prices).setPrice(price).setAvailable(available).setPrimaryImage(primaryImage).setDescription(description)
+          .setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
 
       products.add(product);
 
@@ -84,6 +88,49 @@ public class RappiCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private Offers scrapBuyBox(JSONObject jsonSku) {
+    Offers offers = new Offers();
+    try {
+      String sellerFullName = null;
+      String slugSellerName = null;
+      String internalSellerId = null;
+      Double mainPrice = null;
+
+      if (jsonSku.has("store_type")) {
+        sellerFullName = jsonSku.getString("store_type");
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      }
+
+      if (jsonSku.has("store_id")) {
+        internalSellerId = jsonSku.get("store_id").toString();
+      }
+
+      if (jsonSku.has("price")) {
+        mainPrice = jsonSku.getDouble("price");
+      }
+
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
+
+      offers.add(offer);
+
+    } catch (OfferException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return offers;
+  }
+
+  private List<String> scrapEan(JSONObject jsonSku) {
+    List<String> eans = new ArrayList<>();
+
+    if (jsonSku.has("ean")) {
+      eans.add(jsonSku.getString("ean"));
+    }
+
+    return eans;
   }
 
   /*******************************
@@ -147,46 +194,25 @@ public class RappiCrawler extends Crawler {
     Float price = null;
 
     if (json.has("price")) {
-      Object pObj = json.get("price");
-
-      if (pObj instanceof Double) {
-        price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
-      }
+      String pObj = json.get("price").toString();
+      price = MathUtils.parseFloatWithDots(pObj);
     }
 
     return price;
   }
 
   private boolean crawlAvailability(JSONObject json) {
-    return json.has("is_available") && json.getBoolean("is_available");
+    return json.has("available") && json.getBoolean("available");
   }
 
   private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;
 
     if (json.has("image")) {
-      primaryImage = "https://img.rappi.com.br/products/high/" + json.get("image");
+      primaryImage = "https://images.rappi.com.br/products/" + json.get("image");
     }
 
     return primaryImage;
-  }
-
-  private CategoryCollection crawlCategories(JSONObject json) {
-    CategoryCollection categories = new CategoryCollection();
-
-    if (json.has("categories")) {
-      JSONArray shelfList = json.getJSONArray("categories");
-
-      for (Object o : shelfList) {
-        JSONObject cat = (JSONObject) o;
-
-        if (cat.has("category_name")) {
-          categories.add(cat.getString("category_name"));
-        }
-      }
-    }
-
-    return categories;
   }
 
 
@@ -271,26 +297,25 @@ public class RappiCrawler extends Crawler {
 
     if (productId != null && storeType != null && storeId != null) {
 
-      String payload = "{\"query\":\"" + productId + "\",\"stores\":[\"" + storeId + "\"]," + "\"helpers\":{\"type\":\"by_products\",\"storeType\":\""
-          + storeType + "\"},\"page\":1,\"store_type\":\"" + storeType + "\",\"options\":{}}";
+      // String payload = "{\"query\":\"" + productId + "\",\"stores\":[\"" + storeId + "\"]," +
+      // "\"helpers\":{\"type\":\"by_products\",\"storeType\":\""
+      // + storeType + "\"},\"page\":1,\"store_type\":\"" + storeType + "\",\"options\":{}}";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
 
-      Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL + "?page=1").setCookies(cookies).setHeaders(headers).setPayload(payload)
-          .mustSendContentEncoding(false).build();
+      String url = "https://services.rappi.com.br/windu/products/store/" + storeId + "/product/" + productId;
 
-      String page = this.dataFetcher.post(session, request).getBody();
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
+
+      String page = this.dataFetcher.get(session, request).getBody();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
           JSONObject apiResponse = new JSONObject(page);
 
-          if (apiResponse.has("hits") && apiResponse.get("hits") instanceof JSONArray) {
-            JSONArray hits = apiResponse.getJSONArray("hits");
-            if (hits.length() > 0) {
-              productsInfo = hits.getJSONObject(0);
-            }
+          if (apiResponse.has("product") && apiResponse.get("product") instanceof JSONObject) {
+            productsInfo = apiResponse.getJSONObject("product");
+            System.err.println(productsInfo);
           }
         } catch (Exception e) {
           Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
