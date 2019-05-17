@@ -108,8 +108,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     String description = crawlDescription(doc, internalId);
 
     // Offers
-    Offers offers = scrapBuyBox(doc);
-    System.err.println(offers);
+    Offers offers = available || !marketplace.isEmpty() ? scrapBuyBox(doc) : new Offers();
 
     // Creating the product
     return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(frontPageName)
@@ -126,7 +125,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String sellerFullName = null;
       String slugSellerName = null;
       String internalSellerId = null;
-      boolean isBuyBoxPage = false;
       Double mainPrice = null;
 
       if (sellerInfo == null) {
@@ -139,7 +137,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
         // This market hasn't seller id, then the slug must be this.
         // I don't think that cnpj can be a good seller id.
         internalSellerId = slugSellerName;
-        isBuyBoxPage = doc.selectFirst(".seller__indentifier") != null;
       }
 
       if (priceInfo != null) {
@@ -147,7 +144,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       }
 
       Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-          .setMainPagePosition(1).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
 
       offers.add(offer);
     } catch (OfferException e) {

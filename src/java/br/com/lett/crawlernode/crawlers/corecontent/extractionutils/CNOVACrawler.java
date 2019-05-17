@@ -349,12 +349,21 @@ public abstract class CNOVACrawler extends Crawler {
 
     Element button = doc.selectFirst("#btnAdicionarCarrinho, .retirar-eleito > a");
     if (button != null) {
-      String[] params = button.attr("href").split("&");
+      String href = button.attr("href");
 
-      for (String param : params) {
-        if (param.toLowerCase().startsWith("idlojista")) {
-          internalSellerId = CommonMethods.getLast(param.split("="));
-          break;
+      if (href.toLowerCase().contains("idlojista")) {
+        String[] params = button.attr("href").split("&");
+
+        for (String param : params) {
+          if (param.toLowerCase().startsWith("idlojista")) {
+            internalSellerId = CommonMethods.getLast(param.split("="));
+            break;
+          }
+        }
+      } else {
+        Element buying = doc.selectFirst(".buying a");
+        if (buying != null) {
+          internalSellerId = CommonMethods.getLast(buying.attr("href").split("Lojista/")).split("/")[0].trim();
         }
       }
     }
