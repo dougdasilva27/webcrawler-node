@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -16,6 +17,7 @@ public class BrasilMercadolivreCrawler extends CrawlerRankingKeywords {
 
   protected BrasilMercadolivreCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   private static final String PRODUCTS_SELECTOR = ".results-item .item";
@@ -26,8 +28,8 @@ public class BrasilMercadolivreCrawler extends CrawlerRankingKeywords {
     this.pageSize = 64;
     this.log("Página " + this.currentPage);
 
-    String url = "https://lista.mercadolivre.com.br/" + this.keywordEncoded.replace("+", "-") + "_Loja_" + storeName + "#D[A:" + this.keywordEncoded
-        + "," + storeName + "]";
+    String url = "https://lista.mercadolivre.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + "_Loja_" + storeName + "#D[A:"
+        + this.keywordWithoutAccents.replace(" ", "+") + "," + storeName + "]";
 
     if (this.currentPage > 1) {
       url = this.nextUrl;
@@ -36,8 +38,9 @@ public class BrasilMercadolivreCrawler extends CrawlerRankingKeywords {
     this.currentDoc = fetchDocument(url);
     this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", "lista.mercadolivre.com.br");
     Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
+    boolean ownStoreResults = this.currentDoc.select("#search-results-disclaimers .nav-search-zrp-msg").isEmpty();
 
-    if (!products.isEmpty()) {
+    if (!products.isEmpty() && ownStoreResults) {
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
