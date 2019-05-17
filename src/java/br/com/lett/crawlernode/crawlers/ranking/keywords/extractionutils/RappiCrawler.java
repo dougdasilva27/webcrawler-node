@@ -75,7 +75,7 @@ public class RappiCrawler extends CrawlerRankingKeywords {
 
   protected void setTotalProducts(JSONObject search) {
     if (search.has("total_results") && search.get("total_results") instanceof Integer) {
-      this.totalProducts = search.getInt("total_results");
+      this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(search, "total_results", 0);
       this.log("Total da busca: " + this.totalProducts);
     }
   }

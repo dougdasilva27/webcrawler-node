@@ -108,7 +108,7 @@ public class RappiCrawler extends Crawler {
       }
 
       if (jsonSku.has("price")) {
-        mainPrice = jsonSku.getDouble("price");
+        mainPrice = CrawlerUtils.getDoubleValueFromJSON(jsonSku, "price", false, false);
       }
 
       Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
@@ -125,9 +125,15 @@ public class RappiCrawler extends Crawler {
 
   private List<String> scrapEan(JSONObject jsonSku) {
     List<String> eans = new ArrayList<>();
+    String ean = null;
 
     if (jsonSku.has("ean")) {
-      eans.add(jsonSku.getString("ean"));
+      ean = jsonSku.getString("ean");
+
+      if (ean != null) {
+        eans.add(ean);
+
+      }
     }
 
     return eans;
