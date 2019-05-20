@@ -303,10 +303,6 @@ public class RappiCrawler extends Crawler {
 
     if (productId != null && storeType != null && storeId != null) {
 
-      // String payload = "{\"query\":\"" + productId + "\",\"stores\":[\"" + storeId + "\"]," +
-      // "\"helpers\":{\"type\":\"by_products\",\"storeType\":\""
-      // + storeType + "\"},\"page\":1,\"store_type\":\"" + storeType + "\",\"options\":{}}";
-
       Map<String, String> headers = new HashMap<>();
 
       String url = "https://services.rappi.com.br/windu/products/store/" + storeId + "/product/" + productId;
@@ -321,8 +317,8 @@ public class RappiCrawler extends Crawler {
 
           if (apiResponse.has("product") && apiResponse.get("product") instanceof JSONObject) {
             productsInfo = apiResponse.getJSONObject("product");
-            System.err.println(productsInfo);
           }
+
         } catch (Exception e) {
           Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
