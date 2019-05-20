@@ -110,10 +110,13 @@ public class SaopauloExtraRatingReviewCrawler extends RatingReviewCrawler {
 
 
   private boolean isProductPage(String url) {
-    if (url.contains("deliveryextra.com.br/produto/")) {
-      return true;
+    boolean isProductPage = false;
+
+    if (url.contains("deliveryextra.com.br/produto/") || url.contains("clubeextra.com.br/produto")) {
+      isProductPage = true;
     }
-    return false;
+
+    return isProductPage;
   }
 
   /**
