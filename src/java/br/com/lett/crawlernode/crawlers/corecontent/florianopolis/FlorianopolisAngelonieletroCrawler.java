@@ -83,7 +83,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
           Product p = crawlProduct(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies, dataFetcher));
           String variationName = CrawlerUtils.scrapStringSimpleInfo(voltageAPi, "label[for=" + e.attr("id") + "]", true);
 
-          if (!p.getName().toLowerCase().contains(variationName.toLowerCase())) {
+          if (variationName != null && !p.getName().toLowerCase().contains(variationName.toLowerCase())) {
             p.setName(p.getName() + " " + variationName);
           }
           products.add(p);

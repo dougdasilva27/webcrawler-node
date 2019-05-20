@@ -91,7 +91,7 @@ public class BrasilFastshopNewCrawler {
         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
         Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
         Float price = crawlMainPagePrice(prices);
-        Offers offers = scrapOffers(skuAPIJSON);
+        Offers offers = available || !marketplace.isEmpty() ? scrapOffers(skuAPIJSON) : new Offers();
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -168,18 +168,18 @@ public class BrasilFastshopNewCrawler {
         sellerJSON.put("name", sellerName);
         sellerJSON.put("prices", prices.toJSON());
 
-        if (prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
+        if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
           Double price = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
           Float priceFloat = MathUtils.normalizeTwoDecimalPlaces(price.floatValue());
 
           sellerJSON.put("price", priceFloat);
-        }
 
-        try {
-          Seller s = new Seller(sellerJSON);
-          marketplace.add(s);
-        } catch (Exception e) {
-          Logging.printLogError(logger, session, Util.getStackTraceString(e));
+          try {
+            Seller s = new Seller(sellerJSON);
+            marketplace.add(s);
+          } catch (Exception e) {
+            Logging.printLogError(logger, session, Util.getStackTraceString(e));
+          }
         }
       }
     }
