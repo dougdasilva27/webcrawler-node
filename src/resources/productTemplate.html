@@ -84,6 +84,7 @@
 						      <th>Availability</th>
 						      <th>Price</th>
 						      <th>Stock</th>
+						      <th>Eans</th>
 						    </tr>
 						  </thead>
 						  <tbody>
@@ -93,6 +94,7 @@
 						      <td>{{available}}</td>
 						      <td>{{price}}</td>
 						      <td>{{stock}}</td>
+						      <td>{{eans}}</td>
 						    </tr>
 						  </tbody>
 						</table> 
@@ -161,6 +163,30 @@
 						</td>
 					</tr>
 				{{/marketplace}}
+				</table>
+			</div>
+			<div class="row">
+				<h3> Offers </h3>
+				<table class="table">
+					{{#offers}}
+					<tr class="col-md-4">
+						<td style="text-align:center; vertical-align:middle;">{{key}}</td>
+						<td>
+							<table class="table">
+							{{#value}}
+								<tr>
+									<td> {{key}} </td>
+									<td>
+										{{#value}}
+										  <label>{{value}}</label>
+										 {{/value}}
+									</td>
+								</tr>
+							{{/value}}
+							</table>
+						</td>
+					</tr>
+				{{/offers}}
 				</table>
 			</div>
 		</div>		

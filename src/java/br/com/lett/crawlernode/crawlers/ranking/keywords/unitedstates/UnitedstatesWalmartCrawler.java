@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.unitedstates;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,8 +12,6 @@ public class UnitedstatesWalmartCrawler extends CrawlerRankingKeywords {
   public UnitedstatesWalmartCrawler(Session session) {
     super(session);
   }
-
-  private List<Cookie> cookies = new ArrayList<>();
 
   @Override
   public void processBeforeFetch() {

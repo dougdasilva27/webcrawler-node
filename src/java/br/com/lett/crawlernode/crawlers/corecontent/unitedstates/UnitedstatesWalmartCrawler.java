@@ -57,6 +57,7 @@ public class UnitedstatesWalmartCrawler extends Crawler {
     this.cookies.add(cookie2);
   }
 
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
@@ -67,6 +68,7 @@ public class UnitedstatesWalmartCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       CategoryCollection categories = crawlCategories(doc);
+      String description = crawlDescription(doc);
 
       for (Object sku : skus) {
         JSONObject skuJson = (JSONObject) sku;
@@ -76,10 +78,9 @@ public class UnitedstatesWalmartCrawler extends Crawler {
         String name = crawlName(skuJson, doc);
         String primaryImage = crawlPrimaryImage(skuJson);
         String secondaryImages = crawlSecondaryImages(skuJson);
-        String description = crawlDescription(skuJson);
         Map<String, Prices> marketplaceMap = crawlMarketplaces(skuJson);
-        Marketplace marketplace =
-            CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(UnitedstatesWalmartCrawlerUtils.SELLER_NAME_LOWER), session);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap,
+            Arrays.asList(UnitedstatesWalmartCrawlerUtils.SELLER_NAME_LOWER), Card.SHOP_CARD, session);
         Float price = crawlPrice(marketplaceMap);
         Prices prices = crawlPrices(marketplaceMap);
         boolean available = crawlAvailability(marketplaceMap);
@@ -237,7 +238,7 @@ public class UnitedstatesWalmartCrawler extends Crawler {
    */
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select(".breadcrumb-slash a");
+    Elements elementCategories = document.select(".breadcrumb a span");
 
     for (int i = 1; i < elementCategories.size(); i++) {
       String cat = elementCategories.get(i).ownText().trim();
@@ -250,11 +251,12 @@ public class UnitedstatesWalmartCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(JSONObject skuJson) {
+  private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    if (skuJson.has(UnitedstatesWalmartCrawlerUtils.DESCRIPTION)) {
-      description.append(skuJson.get(UnitedstatesWalmartCrawlerUtils.DESCRIPTION));
+    Element desc = doc.selectFirst(".Grid-col.ads-margin-top");
+    if (desc != null) {
+      description.append(desc.html());
     }
 
     return description.toString();

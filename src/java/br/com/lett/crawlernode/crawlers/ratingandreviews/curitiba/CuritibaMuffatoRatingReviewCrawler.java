@@ -1,20 +1,20 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.curitiba;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 public class CuritibaMuffatoRatingReviewCrawler extends RatingReviewCrawler {
@@ -27,23 +27,29 @@ public class CuritibaMuffatoRatingReviewCrawler extends RatingReviewCrawler {
   protected RatingReviewsCollection extractRatingAndReviews(Document doc) throws Exception {
     RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-    if (isProductPage(doc)) {
+    JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+
+    if (skuJson.has("productId")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      String internalId = crawlInternalId(doc);
-      JSONObject rating = crawlProductInformatioApi(internalId);
+      List<String> idList = VTEXCrawlersUtils.crawlIdList(skuJson);
+      for (String internalId : idList) {
+        RatingsReviews clonedRatingReviews = ratingReviews.clone();
 
-      Integer totalReviews = getTotalNumOfReviews(rating, internalId);
-      Double avgRating = getTotalAvgRating(rating, internalId);
+        JSONObject rating = crawlProductInformatioApi(internalId);
 
-      ratingReviews.setTotalRating(totalReviews);
-      ratingReviews.setTotalWrittenReviews(totalReviews);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setInternalId(internalId);
-      ratingReviewsCollection.addRatingReviews(ratingReviews);
+        Integer totalReviews = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
+        Double avgRating = CrawlerUtils.getDoubleValueFromJSON(rating, "rate", true, false);
+
+        clonedRatingReviews.setTotalRating(totalReviews);
+        clonedRatingReviews.setTotalWrittenReviews(totalReviews);
+        clonedRatingReviews.setAverageOverallRating(avgRating == null ? 0d : avgRating);
+        clonedRatingReviews.setInternalId(internalId);
+        ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+      }
 
     }
 
@@ -51,54 +57,27 @@ public class CuritibaMuffatoRatingReviewCrawler extends RatingReviewCrawler {
 
   }
 
-  private String crawlInternalId(Document document) {
-    String internalId = null;
-    Element elementInternalID = document.select(".prd-references .prd-code .skuReference").first();
-    if (elementInternalID != null) {
-      internalId = elementInternalID.text();
-    }
-
-    return internalId;
-  }
-
-  private Double getTotalAvgRating(JSONObject rating, String internalId) {
-    JSONArray ratingArray = rating.has(internalId) ? rating.getJSONArray(internalId) : new JSONArray();
-    Double avg = null;
-    for (Object object : ratingArray) {
-      JSONObject jsonRating = (JSONObject) object;
-      if (jsonRating.has("rate")) {
-        avg = MathUtils.parseDoubleWithDot(jsonRating.get("rate").toString());
-      }
-    }
-    return avg;
-  }
-
-  private Integer getTotalNumOfReviews(JSONObject rating, String internalId) {
-    JSONArray ratingArray = rating.has(internalId) ? rating.getJSONArray(internalId) : new JSONArray();
-    Integer total = null;
-    for (Object object : ratingArray) {
-      JSONObject jsonRating = (JSONObject) object;
-      if (jsonRating.has("count")) {
-        total = jsonRating.getInt("count");
-      }
-    }
-    return total;
-  }
-
   private JSONObject crawlProductInformatioApi(String internalId) {
+    JSONObject ratingJson = new JSONObject();
+
     String apiUrl = "https://awsapis3.netreviews.eu/product";
     String payload =
-        "{\"query\":\"average\",\"products\":[\"" + internalId + "\"],\"idWebsite\":\"4f870cb3-d6ef-5664-2950-de136d5b471e\",\"plateforme\":\"br\"}";
+        "{\"query\":\"average\",\"products\":[\"" + internalId + "\"],\"idWebsite\":\"dd0aa2dc-6305-cd94-2106-9301054ace3c\",\"plateforme\":\"br\"}";
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json; charset=UTF-8");
 
     Request request =
         RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
-    return CrawlerUtils.stringToJson(new FetcherDataFetcher().post(session, request).getBody());
+    JSONObject response = CrawlerUtils.stringToJson(new FetcherDataFetcher().post(session, request).getBody());
 
-  }
+    if (response.has(internalId)) {
+      JSONArray rate = response.getJSONArray(internalId);
 
-  private boolean isProductPage(Document document) {
-    return document.select(".container.prd-info-container").first() != null;
+      if (rate.length() > 0) {
+        ratingJson = rate.getJSONObject(0);
+      }
+    }
+
+    return ratingJson;
   }
 }

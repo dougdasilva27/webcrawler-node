@@ -11,6 +11,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -40,6 +41,25 @@ public class UnitedstatesAmazonCrawler extends Crawler {
 
   public UnitedstatesAmazonCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.APACHE);
+  }
+
+  @Override
+  public void handleCookiesBeforeFetch() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "amazon.com", "/", cookies, session, headers, dataFetcher);
+  }
+
+  @Override
+  protected Object fetch() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+    headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).setHeaders(headers).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
@@ -136,7 +156,7 @@ public class UnitedstatesAmazonCrawler extends Crawler {
   private JSONArray crawlImages(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", ";");
+    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "#imageBlock_feature_div script[type=\"text/javascript\"]", "vardata=", ";", true, false);
 
     if (data.has("imageGalleryData")) {
       images = data.getJSONArray("imageGalleryData");
@@ -190,17 +210,14 @@ public class UnitedstatesAmazonCrawler extends Crawler {
     if (salePriceElement != null) {
       price = MathUtils.parseFloatWithDots(salePriceElement.text().trim());
     } else {
-      salePriceElement = document.select("#buybox .a-color-price").first();
-
-      if (salePriceElement != null) {
-        price = MathUtils.parseFloatWithDots(salePriceElement.ownText().trim());
-      }
+      price = CrawlerUtils.scrapFloatPriceFromHtml(document, "#buybox .a-color-price", null, true, '.', session);
     }
 
     if (price == null && specialPrice != null) {
       price = MathUtils.parseFloatWithDots(specialPrice.ownText().trim());
     } else if (price == null && foodPrice != null) {
-      price = MathUtils.parseFloatWithDots(foodPrice.ownText());
+      String priceStr = CommonMethods.getLast(foodPrice.ownText().split("-"));
+      price = MathUtils.parseFloatWithDots(priceStr);
     }
 
     return price;

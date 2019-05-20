@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -83,7 +84,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       boolean available = crawlAvailability(apiJson);
       CategoryCollection categories = crawlCategories(apiJson);
       String primaryImage = crawlPrimaryImage(internalId);
-      String secondaryImages = crawlSecondaryImages(apiJson);
+      String secondaryImages = crawlSecondaryImages(internalId);
       String description = crawlDescription(apiJson);
       Integer stock = null;
 
@@ -160,9 +161,20 @@ public class MexicoWalmartsuperCrawler extends Crawler {
    * @param document
    * @return
    */
-  private String crawlSecondaryImages(JSONObject apiJson) {
+  private String crawlSecondaryImages(String id) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
+
+    for (int i = 1; i < 4; i++) {
+      String img = "https://super.walmart.com.mx/images/product-images/img_large/" + id + "L" + i + ".jpg";
+      Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
+      RequestsStatistics resp = CommonMethods.getLast(this.dataFetcher.get(session, request).getRequests());
+
+      if (resp.getStatusCode() > 0 && resp.getStatusCode() < 400) {
+        secondaryImagesArray.put(img);
+      }
+    }
+
 
     if (secondaryImagesArray.length() > 0) {
       secondaryImages = secondaryImagesArray.toString();

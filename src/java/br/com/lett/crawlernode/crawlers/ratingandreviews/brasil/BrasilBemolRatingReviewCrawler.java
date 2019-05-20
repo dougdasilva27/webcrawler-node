@@ -3,118 +3,107 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 
 /**
  * Date: 13/12/16
+ * 
  * @author gabriel
  *
  */
 public class BrasilBemolRatingReviewCrawler extends RatingReviewCrawler {
 
-	public BrasilBemolRatingReviewCrawler(Session session) {
-		super(session);
-	}
+  public BrasilBemolRatingReviewCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
-		RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+  @Override
+  protected RatingReviewsCollection extractRatingAndReviews(Document document) throws Exception {
+    RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
-		if (isProductPage(document)) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+    if (isProductPage(document)) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			RatingsReviews ratingReviews = new RatingsReviews();			
-			ratingReviews.setDate(session.getDate());
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
 
-			String internalId = crawlInternalId(document);
+      String internalId = crawlInternalId(document);
 
-			if(internalId != null) {
-				Integer totalNumOfEvaluations = getTotalNumOfRatings(document);			
-				Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
+      if (internalId != null) {
+        Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+        Double avgRating = getTotalAvgRating(document);
 
-				ratingReviews.setInternalId(internalId);
-				ratingReviews.setTotalRating(totalNumOfEvaluations);
-				ratingReviews.setAverageOverallRating(avgRating);
+        ratingReviews.setInternalId(internalId);
+        ratingReviews.setTotalRating(totalNumOfEvaluations);
+        ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+        ratingReviews.setAverageOverallRating(avgRating);
 
-				ratingReviewsCollection.addRatingReviews(ratingReviews);
-			}
+        ratingReviewsCollection.addRatingReviews(ratingReviews);
+      }
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+    }
 
-		}
+    return ratingReviewsCollection;
 
-		return ratingReviewsCollection;
+  }
 
-	}
+  private static String crawlInternalId(Document doc) {
+    String internalId = null;
 
-	private String crawlInternalId(Document doc){
-		String internalID = null;
-		Element elementInternalID = doc.select("input.txtHiddenCantentryId").first();
+    Element infoElement = doc.selectFirst("input[name=ProductID]");
+    if (infoElement != null) {
+      internalId = infoElement.val();
+    }
 
-		if (elementInternalID != null && elementInternalID.val() != null && !elementInternalID.val().isEmpty()) {
-			internalID = elementInternalID.val().trim();
-		}
+    return internalId;
+  }
 
-		return internalID;
-	}
+  /**
+   * Average is calculate Example: 5 estrelas [percentage bar] 347 4 estrelas [percentage bar] 42
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(Document docRating) {
+    Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(docRating, ".wd-product-rating .rating-average", null, true, ',', session);
 
-	/**
-	 * Average is calculate 
-	 * Example: 
-	 *  5 estrelas [percentage bar] 347
-	 *  4 estrelas [percentage bar] 42
-	 * 
-	 * @param document
-	 * @return
-	 */
-	private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-		Double avgRating = null;
-		Elements rating = docRating.select("#RatingReviewDiv .rating_bars .bar-value");
+    if (avgRating == null) {
+      avgRating = 0d;
+    }
 
-		if (totalRating != null && totalRating > 0) {
-			Double total = 0.0;
-			
-			// numero da estrela
-			int star = 5;
-			
-			for (Element e : rating) {				
-				total += Double.parseDouble(e.ownText().trim()) * star;
-				
-				// começa de 5 estrelas e vai ate 1
-				star--;
-			}
+    return avgRating;
+  }
 
-			avgRating = MathUtils.normalizeTwoDecimalPlaces(total / totalRating);
-		}
+  /**
+   * Number of ratings appear in html element
+   * 
+   * @param doc
+   * @return
+   */
+  private Integer getTotalNumOfRatings(Document doc) {
+    Integer totalRating = 0;
+    Elements rating = doc.select(".wd-product-rating [itemprop=reviewCount]");
 
-		return avgRating;
-	}
+    if (rating != null) {
+      String votes = rating.attr("content").replaceAll("[^0-9]", "").trim();
 
-	/**
-	 * Number of ratings appear in html element 
-	 * @param doc
-	 * @return
-	 */
-	private Integer getTotalNumOfRatings(Document doc) {
-		Integer totalRating = 0;
-		Elements rating = doc.select("#RatingReviewDiv .rating_bars .bar-value");
+      if (!votes.isEmpty()) {
+        totalRating += Integer.parseInt(votes);
+      }
+    }
 
-		for (Element e : rating) {
-			String votes = e.text().replaceAll("[^0-9]", "").trim();
-
-			totalRating += Integer.parseInt(votes);				
-		}
-
-		return totalRating;
-	}
+    return totalRating;
+  }
 
 
-	private boolean isProductPage(Document doc) {
-		return doc.select("#product").first() != null;
-	}
+  private boolean isProductPage(Document doc) {
+    return !doc.select("input[name=ProductID]").isEmpty();
+  }
 
 }

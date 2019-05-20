@@ -1,9 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.xml.utils.URI;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -55,11 +57,13 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       String name = crawlName(doc);
       Float price = crawlPrice(doc);
       boolean available = price != null;
-      String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      String defaultImage = CrawlerUtils.scrapUrl(doc, "meta[property=\"og:image\"]", "content", "https", "img.angeloni.com.br");
+      String host = defaultImage != null ? new URI(defaultImage).getHost() : "img.angeloni.com.br";
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".box-galeria img", Arrays.asList("data-zoom-image", "src"), "https", host);
+      String secondaryImages = crawlSecondaryImages(doc, host, primaryImage);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalId);
       Prices prices = crawlPrices(doc, price);
 
       Product product = ProductBuilder.create().setUrl(newUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
@@ -121,40 +125,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     return price;
   }
 
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
-
-    Elements descs = doc.select(".div__box-info-produto");
-    for (Element e : descs) {
-      description.append(e.html());
-    }
-
-    return description.toString();
-  }
-
-
-  private String crawlPrimaryImage(Document document) {
-    String primaryImage = null;
-    Element primaryImageElement = document.selectFirst(".box-galeria img");
-
-    if (primaryImageElement != null) {
-      primaryImage = primaryImageElement.attr("data-zoom-image").trim();
-    } else {
-      Element unnavailabeImage = document.selectFirst(".img-produto-indisponivel img");
-
-      if (unnavailabeImage != null) {
-        primaryImage = unnavailabeImage.attr("src");
-      }
-    }
-
-    if (primaryImage != null && !primaryImage.startsWith("http")) {
-      primaryImage = "https:" + primaryImage;
-    }
-
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(Document document, String primaryImage) {
+  private String crawlSecondaryImages(Document document, String host, String primaryImage) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
@@ -166,7 +137,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       int x = image.indexOf("('") + 2;
       int y = image.indexOf("',", x);
 
-      image = CrawlerUtils.completeUrl(image.substring(x, y), "https:", "img.angeloni.com.br");
+      image = CrawlerUtils.completeUrl(image.substring(x, y), "https:", host);
 
       if (!image.equalsIgnoreCase(primaryImage)) {
         secondaryImagesArray.put(image);
@@ -180,6 +151,18 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     return secondaryImages;
   }
 
+  private String crawlDescription(Document doc, String internalId) {
+    StringBuilder description = new StringBuilder();
+
+    Elements descs = doc.select(".div__box-info-produto");
+    for (Element e : descs) {
+      description.append(e.html());
+    }
+
+    description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+
+    return description.toString();
+  }
 
   /**
    * Each card has your owns installments Showcase price is price sight

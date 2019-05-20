@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -28,13 +30,16 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import enums.OfferField;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
 
 public class B2WCrawler extends Crawler {
-
   public B2WCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.FETCHER);
@@ -97,7 +102,6 @@ public class B2WCrawler extends Crawler {
       String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
       String description = this.crawlDescription(internalPid, doc);
       Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson, doc);
-
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
         String name = entry.getValue().trim();
@@ -106,13 +110,14 @@ public class B2WCrawler extends Crawler {
         boolean available = this.crawlAvailability(marketplaceMap);
         Float variationPrice = this.crawlPrice(marketplaceMap);
         Prices prices = crawlPrices(marketplaceMap);
-        Integer stock = null; // stock só tem na api
+        List<JSONObject> buyBox = scrapBuyBox(doc, internalId, internalPid);
+        Offers offers = assembleOffers(buyBox);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(variationPrice).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(variationMarketplace).build();
+            .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(variationMarketplace).setOffers(offers).build();
 
         products.add(product);
       }
@@ -123,6 +128,94 @@ public class B2WCrawler extends Crawler {
     }
 
     return products;
+  }
+
+
+  private Offers assembleOffers(List<JSONObject> buyBox) {
+    Offers offers = new Offers();
+
+    for (JSONObject jsonObject : buyBox) {
+      try {
+        Offer offer = new Offer(jsonObject);
+        offers.add(offer);
+      } catch (OfferException e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
+    }
+
+    return offers;
+  }
+
+  private List<JSONObject> scrapBuyBox(Document doc, String internalId, String internalPid) {
+    List<JSONObject> listBuyBox = new ArrayList<>();
+
+    JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
+    JSONObject offers = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
+
+    boolean isBuyBox = !doc.select(".buybox-b .seller-name-container input[type=radio]").isEmpty();
+
+    // Getting informations from sellers.
+    if (offers.has(internalId)) {
+      JSONArray sellerInfo = offers.getJSONArray(internalId);
+
+      for (int i = 0; i < sellerInfo.length(); i++) {
+        JSONObject buyBoxJson = new JSONObject();
+
+        JSONObject info = (JSONObject) sellerInfo.get(i);
+        buyBoxJson.put(OfferField.IS_BUYBOX.toString(), isBuyBox);
+        buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), JSONObject.NULL);
+
+        if (i + 1 <= 3) {
+          buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), i + 1);
+        } else {
+          buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), JSONObject.NULL);
+        }
+
+        if (info.has("sellerName")) {
+          String name = info.get("sellerName").toString();
+          buyBoxJson.put(OfferField.SELLER_FULL_NAME.toString(), name);
+          buyBoxJson.put(OfferField.SLUG_SELLER_NAME.toString(), CommonMethods.toSlug(name));
+        }
+
+        if (info.has("id")) {
+          buyBoxJson.put(OfferField.INTERNAL_SELLER_ID.toString(), info.get("id").toString());
+        }
+
+        if (info.has("bankTicket")) {
+          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
+        }
+
+        if (info.has("bankTicket")) {
+          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
+        }
+
+        listBuyBox.add(buyBoxJson);
+      }
+    }
+
+    if (!doc.select(".buybox-b-nav-item.is-link").isEmpty()) {
+      Document docSellers = Jsoup.parse(fetchPage("https://www.americanas.com.br/parceiros/" + internalPid + "?productSku=" + internalId, session));
+      Elements moreOffers = docSellers.select(".more-offers-table tbody tr .seller-info-cell .seller-info a");
+
+      for (int j = 0; j < moreOffers.size(); j++) {
+        Element element = moreOffers.get(j);
+        String href = element.attr("href");
+
+        if (href.contains("/")) {
+          String sellerId = CommonMethods.getLast(href.split("/")).trim();
+
+          for (JSONObject buyBoxJson : listBuyBox) {
+            if (buyBoxJson.has(OfferField.INTERNAL_SELLER_ID.toString())
+                && buyBoxJson.get(OfferField.INTERNAL_SELLER_ID.toString()).toString().equals(sellerId)) {
+              buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), j + 1);
+            }
+          }
+        }
+      }
+    }
+
+    return listBuyBox;
+
   }
 
   /*******************************
@@ -441,17 +534,7 @@ public class B2WCrawler extends Crawler {
       }
     }
 
-    // If has rich content we have to access the page with them
-    Element iframe = doc.selectFirst("iframe[src]");
-
-    if (iframe != null) {
-      String url = "https://www.americanas.com.br/product-description/acom/";
-      Request request = RequestBuilder.create().setUrl(url.concat("119757799?")).setCookies(cookies).build();
-      Document richContent = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-      description.append(richContent.html());
-    }
-
-    return description.toString();
+    return Normalizer.normalize(description.toString(), Normalizer.Form.NFD).replaceAll("[^\n\t\r\\p{Print}]", "");
   }
 
   private Prices crawlPrices(Map<String, Prices> marketplaceMap) {
@@ -490,29 +573,4 @@ public class B2WCrawler extends Crawler {
     return sellerName;
   }
 
-  // private Integer crawlStock(String internalId, JSONObject jsonProduct){
-  // Integer stock = null;
-  //
-  // if(jsonProduct.has("prices")){
-  // if(jsonProduct.getJSONObject("prices").has(internalId)){
-  // JSONArray offers = jsonProduct.getJSONObject("prices").getJSONArray(internalId);
-  //
-  // for(int i = 0; i < offers.length(); i++) {
-  // JSONObject seller = offers.getJSONObject(i);
-  //
-  // if(seller.has("sellerName") && seller.has("stock")) {
-  // String sellerName = seller.getString("sellerName");
-  //
-  // if(sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) ||
-  // sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
-  // stock = seller.getInt("stock");
-  // break;
-  // }
-  // }
-  // }
-  // }
-  // }
-  //
-  // return stock;
-  // }
 }

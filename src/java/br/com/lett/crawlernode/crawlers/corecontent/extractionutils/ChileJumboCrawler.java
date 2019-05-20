@@ -90,10 +90,9 @@ public class ChileJumboCrawler extends Crawler {
         List<String> eans = jsonSku.has("ean") ? Arrays.asList(jsonSku.get("ean").toString()) : new ArrayList<>();
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setMarketplace(marketplace).setEans(eans).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+            .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
       }
@@ -229,7 +228,11 @@ public class ChileJumboCrawler extends Crawler {
         JSONObject seller = (JSONObject) o;
 
         if (seller.has("sellerName") && seller.has("commertialOffer")) {
-          map.put(seller.get("sellerName").toString(), scrapPrices(seller.getJSONObject("commertialOffer")));
+          Prices prices = scrapPrices(seller.getJSONObject("commertialOffer"));
+
+          if (!prices.isEmpty()) {
+            map.put(seller.get("sellerName").toString(), prices);
+          }
         }
       }
     }
@@ -243,28 +246,30 @@ public class ChileJumboCrawler extends Crawler {
     if (comertial.has("Price") && !comertial.isNull("Price")) {
       Float price = CrawlerUtils.getFloatValueFromJSON(comertial, "Price", true, false);
 
-      Map<Integer, Float> installments = new HashMap<>();
-      installments.put(1, price);
-      prices.setBankTicketPrice(price);
-      prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(comertial, "ListPrice", true, false));
+      if (price > 0) {
+        Map<Integer, Float> installments = new HashMap<>();
+        installments.put(1, price);
+        prices.setBankTicketPrice(price);
+        prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(comertial, "ListPrice", true, false));
 
-      if (comertial.has("Installments") && !comertial.isNull("Installments")) {
-        JSONArray parcels = comertial.getJSONArray("Installments");
+        if (comertial.has("Installments") && !comertial.isNull("Installments")) {
+          JSONArray parcels = comertial.getJSONArray("Installments");
 
-        for (Object o : parcels) {
-          JSONObject parcel = (JSONObject) o;
+          for (Object o : parcels) {
+            JSONObject parcel = (JSONObject) o;
 
-          Integer number = CrawlerUtils.getIntegerValueFromJSON(parcel, "NumberOfInstallments", null);
-          Float priceParcel = CrawlerUtils.getFloatValueFromJSON(parcel, "Value", true, false);
+            Integer number = CrawlerUtils.getIntegerValueFromJSON(parcel, "NumberOfInstallments", null);
+            Float priceParcel = CrawlerUtils.getFloatValueFromJSON(parcel, "Value", true, false);
 
-          if (number != null && priceParcel != null) {
-            installments.put(number, priceParcel);
+            if (number != null && priceParcel != null) {
+              installments.put(number, priceParcel);
+            }
           }
         }
-      }
 
-      prices.insertCardInstallment(Card.AMEX.toString(), installments);
-      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installments);
+        prices.insertCardInstallment(Card.AMEX.toString(), installments);
+        prices.insertCardInstallment(Card.SHOP_CARD.toString(), installments);
+      }
     }
 
     return prices;
@@ -291,8 +296,7 @@ public class ChileJumboCrawler extends Crawler {
   }
 
   private JSONObject crawlPromotionsAPI() {
-    Request request =
-        RequestBuilder.create().setUrl("https://" + HOST + "/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid").setCookies(cookies).build();
+    Request request = RequestBuilder.create().setUrl("https://" + HOST + "/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid").setCookies(cookies).build();
     return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 

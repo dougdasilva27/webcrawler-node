@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.unitedstates;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -18,6 +20,7 @@ public class UnitedstatesAmazonRatingReviewCrawler extends RatingReviewCrawler {
 
   public UnitedstatesAmazonRatingReviewCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   @Override
@@ -32,7 +35,8 @@ public class UnitedstatesAmazonRatingReviewCrawler extends RatingReviewCrawler {
 
       String internalId = crawlInternalId(document);
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
+          "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
       Double avgRating = getTotalAvgRating(document);
 
       ratingReviews.setInternalId(internalId);
@@ -62,20 +66,20 @@ public class UnitedstatesAmazonRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   /**
-   * Avg appear in html element
    * 
    * @param document
    * @return
    */
   private Double getTotalAvgRating(Document doc) {
     Double avgRating = 0d;
-    Element reviews = doc.select("#reviewSummary .averageStarRating span").first();
+    Element reviews =
+        doc.select("#reviewsMedley .arp-rating-out-of-text, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt").first();
 
     if (reviews != null) {
       String text = reviews.ownText().trim();
 
-      if (text.contains("out")) {
-        String avgText = text.split("out")[0].replaceAll("[^0-9.]", "").trim();
+      if (text.contains("of")) {
+        String avgText = text.split("of")[0].replaceAll("[^0-9.]", "").trim();
 
         if (!avgText.isEmpty()) {
           avgRating = Double.parseDouble(avgText);
@@ -85,28 +89,6 @@ public class UnitedstatesAmazonRatingReviewCrawler extends RatingReviewCrawler {
 
     return avgRating;
   }
-
-  /**
-   * Number of ratings appear in html element
-   * 
-   * @param doc
-   * @return
-   */
-  private Integer getTotalNumOfRatings(Document doc) {
-    Integer ratingNumber = 0;
-    Element reviews = doc.select("#reviewSummary .totalReviewCount").first();
-
-    if (reviews != null) {
-      String text = reviews.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        ratingNumber = Integer.parseInt(text);
-      }
-    }
-
-    return ratingNumber;
-  }
-
 
   private boolean isProductPage(Document doc) {
     return doc.select("#dp").first() != null;

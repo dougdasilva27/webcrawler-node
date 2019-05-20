@@ -38,11 +38,12 @@ public class BrasilCobasiCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
+    JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+
+    if (skuJson.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
-      JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description =
@@ -90,10 +91,4 @@ public class BrasilCobasiCrawler extends Crawler {
 
     return products;
   }
-
-  private boolean isProductPage(Document document) {
-    return document.selectFirst(".container.container--prod") != null;
-  }
-
-
 }

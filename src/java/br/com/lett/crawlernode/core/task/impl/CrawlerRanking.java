@@ -541,17 +541,6 @@ public abstract class CrawlerRanking extends Task {
       this.session.setOriginalURL(url);
     }
 
-    if (cookies != null && !cookies.isEmpty()) {
-      StringBuilder string = new StringBuilder();
-      string.append("Cookies been used: ");
-
-      for (Cookie cookie : cookies) {
-        string.append("\nCookie: " + cookie.getName() + " Value: " + cookie.getValue());
-      }
-
-      this.log(string.toString());
-    }
-
     Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
     Response response = dataFetcher.get(session, request);
 

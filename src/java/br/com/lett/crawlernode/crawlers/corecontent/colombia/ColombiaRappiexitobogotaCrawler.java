@@ -85,7 +85,7 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    return url.contains("store_type") && url.contains("query");
+    return (url.contains("store_type") && url.contains("query")) || url.contains("product/");
   }
 
   /*******************
@@ -213,7 +213,7 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
   private JSONObject crawlProductInformatioFromApi(String productUrl) {
     JSONObject productsInfo = new JSONObject();
 
-    String storeType = null;
+    String storeType = "hiper";
     String productId = null;
 
     if (productUrl.contains("?")) {
@@ -227,6 +227,8 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
           productId = parameter.split("=")[1];
         }
       }
+    } else if (productUrl.contains("_")) {
+      productId = CommonMethods.getLast(productUrl.split("_"));
     }
 
     if (productId != null && storeType != null) {

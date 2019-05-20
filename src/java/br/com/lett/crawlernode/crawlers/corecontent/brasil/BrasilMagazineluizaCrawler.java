@@ -19,7 +19,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -103,11 +107,52 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     // Description
     String description = crawlDescription(doc, internalId);
 
+    // Offers
+    Offers offers = available || !marketplace.isEmpty() ? scrapBuyBox(doc) : new Offers();
+
     // Creating the product
     return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(frontPageName)
         .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
         .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-        .setStock(stock).setMarketplace(marketplace).build();
+        .setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
+  }
+
+  private Offers scrapBuyBox(Document doc) {
+    Offers offers = new Offers();
+    try {
+      Element sellerInfo = doc.selectFirst(".seller__indentifier .seller__indentifier-magazine");
+      Element priceInfo = doc.selectFirst("meta[itemprop=\"price\"]");
+      String sellerFullName = null;
+      String slugSellerName = null;
+      String internalSellerId = null;
+      Double mainPrice = null;
+
+      if (sellerInfo == null) {
+        sellerInfo = doc.selectFirst(".seller__indentifier .seller-info-button");
+      }
+
+      if (sellerInfo != null) {
+        sellerFullName = sellerInfo.text();
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+        // This market hasn't seller id, then the slug must be this.
+        // I don't think that cnpj can be a good seller id.
+        internalSellerId = slugSellerName;
+      }
+
+      if (priceInfo != null) {
+        mainPrice = MathUtils.parseDoubleWithDot(priceInfo.attr("content"));
+      }
+
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
+
+      offers.add(offer);
+    } catch (OfferException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+
+    return offers;
   }
 
   /*******************************

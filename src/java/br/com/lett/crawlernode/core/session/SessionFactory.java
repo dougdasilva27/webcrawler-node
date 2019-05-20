@@ -27,15 +27,15 @@ public class SessionFactory {
   public static Session createSession(Request request, Markets markets) {
     String queueName = request.getQueueName();
 
-    if (queueName.equals(QueueName.INSIGHTS) || queueName.equals(QueueName.CORE_WEBSCRAPER_DEV) || queueName.equals(QueueName.INTEREST_PROCESSED)
-        || queueName.equals(QueueName.TEST_PHANTOMJS) || queueName.equals(QueueName.INSIGHTS_TRY_AGAIN)) {
+    if (queueName.equals(QueueName.INSIGHTS) || queueName.equals(QueueName.CORE_WEBSCRAPER_DEV) || queueName.equals(QueueName.INTEREST_PROCESSED) || queueName.equals(QueueName.TEST_PHANTOMJS)
+        || queueName.equals(QueueName.INSIGHTS_TRY_AGAIN)) {
 
       return new InsightsCrawlerSession(request, queueName, markets);
     } else if (queueName.equals(QueueName.SEED)) {
       return new SeedCrawlerSession(request, queueName, markets);
     } else if (queueName.equals(QueueName.DISCOVER) || queueName.equals(QueueName.DISCOVER_WEBDRIVER)) {
       return new DiscoveryCrawlerSession(request, queueName, markets);
-    } else if (queueName.equals(QueueName.RATING) || queueName.equals(QueueName.RATING_WEBDRIVER)) {
+    } else if (queueName.equals(QueueName.RATING) || queueName.equals(QueueName.RATING_WEBDRIVER) || queueName.equals(QueueName.INTEREST_PROCESSED_RATING)) {
       return new RatingReviewsCrawlerSession(request, queueName, markets);
     } else if (queueName.equals(QueueName.IMAGES)) {
       return new ImageCrawlerSession(request, queueName, markets);

@@ -84,7 +84,7 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
   private String crawlNextPage() {
     String url = null;
 
-    Element e = this.currentDoc.select(".pagnRA > a").first();
+    Element e = this.currentDoc.selectFirst(".pagnRA > a, .a-pagination .a-last a");
 
     if (e != null) {
       url = e.attr("href");
@@ -94,7 +94,7 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
       }
 
       if (!url.contains("amazon.com")) {
-        url = HOME_PAGE + "s" + url;
+        url = (HOME_PAGE + url).replace(".com//", ".com/");
       }
     }
 
@@ -102,13 +102,8 @@ public class UnitedstatesAmazonCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected boolean hasNextPage() {
-    return this.currentDoc.select("#pagnNextString").first() != null;
-  }
-
-  @Override
   protected void setTotalProducts() {
-    JSONObject totalJson = CrawlerUtils.selectJsonFromHtml(currentDoc, "script[data-a-state=\"{\"key\":\"s-metadata\"}\"]", null, null, true);
+    JSONObject totalJson = CrawlerUtils.selectJsonFromHtml(currentDoc, "script[data-a-state=\"{\"key\":\"s-metadata\"}\"]", null, "", true, true);
 
     if (totalJson.has("totalResultCount")) {
       Object obj = totalJson.get("totalResultCount");

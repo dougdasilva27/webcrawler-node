@@ -22,9 +22,13 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -79,17 +83,21 @@ public class BrasilFastshopNewCrawler {
         String name = crawlName(skuAPIJSON, variationJson) + " - " + internalPid;
         String secondaryImages = crawlSecondaryImages(skuAPIJSON);
         description.append(skuAPIJSON.has("longDescription") ? skuAPIJSON.get("longDescription") : "");
-        Map<String, Prices> marketplaceMap = crawlMarketplace(skuAPIJSON, internalId);
+        boolean pageAvailability = crawlAvailability(skuAPIJSON);
+        JSONObject jsonPrices =
+            pageAvailability ? BrasilFastshopCrawlerUtils.fetchPrices(internalId, true, session, logger, dataFetcher) : new JSONObject();
+        Map<String, Prices> marketplaceMap = crawlMarketplace(skuAPIJSON, jsonPrices);
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
         Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
         Float price = crawlMainPagePrice(prices);
+        Offers offers = scrapOffers(skuAPIJSON);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description.toString()).setStock(stock).setMarketplace(marketplace).build();
+            .setDescription(description.toString()).setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
 
         products.add(product);
       }
@@ -179,25 +187,44 @@ public class BrasilFastshopNewCrawler {
     return marketplace;
   }
 
-  private Map<String, Prices> crawlMarketplace(JSONObject apiSku, String internalId) {
+  private Map<String, Prices> crawlMarketplace(JSONObject apiSku, JSONObject jsonPrices) {
     Map<String, Prices> marketplace = new HashMap<>();
 
-    boolean available = crawlAvailability(apiSku);
+    Prices prices = crawlPrices(jsonPrices, apiSku);
 
-    if (available) {
-      JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalId, true, session, logger, dataFetcher);
-
-      Prices prices = crawlPrices(jsonPrices, apiSku);
-
-      if (apiSku.has("marketPlace") && apiSku.getBoolean("marketPlace") && apiSku.has("marketPlaceText")) {
-        marketplace.put(apiSku.getString("marketPlaceText").toLowerCase(), prices);
-      } else {
-        marketplace.put(SELLER_NAME_LOWER, prices);
-      }
+    if (apiSku.has("marketPlace") && apiSku.getBoolean("marketPlace") && apiSku.has("marketPlaceText")) {
+      marketplace.put(apiSku.getString("marketPlaceText").toLowerCase(), prices);
+    } else {
+      marketplace.put(SELLER_NAME_LOWER, prices);
     }
 
     return marketplace;
   }
+
+  private Offers scrapOffers(JSONObject apiSku) {
+    Offers offers = new Offers();
+
+    try {
+      if (apiSku.has("marketPlace") && apiSku.getBoolean("marketPlace") && apiSku.has("marketPlaceText") && apiSku.has("priceOffer")) {
+        String sellerName = apiSku.get("marketPlaceText").toString();
+
+        Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(sellerName)).setIsBuybox(false).setMainPagePosition(1)
+            .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(sellerName)
+            .setSlugSellerName(CommonMethods.toSlug(sellerName)).build();
+        offers.add(offer);
+      } else if (apiSku.has("priceOffer")) {
+        Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(SELLER_NAME_LOWER)).setIsBuybox(false).setMainPagePosition(1)
+            .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(SELLER_NAME_LOWER)
+            .setSlugSellerName(CommonMethods.toSlug(SELLER_NAME_LOWER)).build();
+        offers.add(offer);
+      }
+    } catch (Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    return offers;
+  }
+
 
   /**
    * Price "de"

@@ -200,7 +200,7 @@ public class LeroymerlinCrawler extends Crawler {
 
           if (!integers.isEmpty()) {
             StringBuilder str = new StringBuilder();
-            str.append(integers);
+            str.append(integers.replace(".", ""));
 
             if (!decimals.isEmpty()) {
               str.append(".");

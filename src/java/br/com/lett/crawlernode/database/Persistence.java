@@ -151,13 +151,14 @@ public class Persistence {
 
     Connection conn = null;
     PreparedStatement pstmt = null;
+    String query = GlobalConfigurations.dbManager.jooqPostgres.insertInto(crawler).set(insertMapCrawler).getSQL(ParamType.INLINED);
     try {
       conn = JdbcConnectionFactory.getInstance().getConnection();
-      pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.insertInto(crawler).set(insertMapCrawler).getSQL(ParamType.INLINED));
+      pstmt = conn.prepareStatement(query);
 
       pstmt.executeUpdate();
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Error inserting product on database!");
+      Logging.printLogError(logger, session, "Error inserting product on database on query: " + query);
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
       session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
@@ -281,6 +282,13 @@ public class Persistence {
         insertMap.put(processedTable.MARKETPLACE, null);
       }
 
+      // TODO
+      if (newProcessedProduct.getOffers() != null && !newProcessedProduct.getOffers().isEmpty()) {
+        insertMap.put(processedTable.OFFERS, CONVERT_STRING_GSON.converter().from(newProcessedProduct.getOffers().toJSON()));
+      } else {
+        insertMap.put(processedTable.OFFERS, null);
+      }
+
       if (newProcessedProduct.getBehaviour() != null) {
         insertMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString());
       } else {
@@ -295,10 +303,11 @@ public class Persistence {
 
       Connection conn = null;
       PreparedStatement pstmt = null;
+      String query = GlobalConfigurations.dbManager.jooqPostgres.insertInto(processedTable).set(insertMap).returning(processedTable.ID)
+          .getSQL(ParamType.INLINED);
       try {
         conn = JdbcConnectionFactory.getInstance().getConnection();
-        pstmt = conn.prepareStatement(GlobalConfigurations.dbManager.jooqPostgres.insertInto(processedTable).set(insertMap)
-            .returning(processedTable.ID).getSQL(ParamType.INLINED));
+        pstmt = conn.prepareStatement(query);
         ResultSet rs = pstmt.executeQuery();
         Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
 
@@ -320,7 +329,7 @@ public class Persistence {
           }
         }
       } catch (Exception e) {
-        Logging.printLogError(logger, session, "Error updating processed product.");
+        Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
         session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
@@ -390,6 +399,13 @@ public class Persistence {
         updateMap.put(processedTable.MARKETPLACE, null);
       }
 
+      // TODO
+      if (newProcessedProduct.getOffers() != null && !newProcessedProduct.getOffers().isEmpty()) {
+        updateMap.put(processedTable.OFFERS, CONVERT_STRING_GSON.converter().from(newProcessedProduct.getOffers().toJSON()));
+      } else {
+        updateMap.put(processedTable.OFFERS, null);
+      }
+
       if (newProcessedProduct.getBehaviour() != null) {
         updateMap.put(processedTable.BEHAVIOUR, newProcessedProduct.getBehaviour().toString());
       } else {
@@ -415,14 +431,14 @@ public class Persistence {
 
       Connection conn = null;
       PreparedStatement pstmt = null;
+      String query = GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateMap).where(conditions).getSQL(ParamType.INLINED);
       try {
         conn = JdbcConnectionFactory.getInstance().getConnection();
-        pstmt = conn.prepareStatement(
-            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateMap).where(conditions).getSQL(ParamType.INLINED));
+        pstmt = conn.prepareStatement(query);
 
         pstmt.executeUpdate();
       } catch (Exception e) {
-        Logging.printLogError(logger, session, "Error updating processed product.");
+        Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
         session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
@@ -515,6 +531,7 @@ public class Persistence {
     updateSets.put(processedTable.STATUS, "void");
     updateSets.put(processedTable.VOID, true);
     updateSets.put(processedTable.MARKETPLACE, null);
+    updateSets.put(processedTable.OFFERS, null);
     updateSets.put(processedTable.PRICE, null);
     updateSets.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(new Prices().toJSON()));
 

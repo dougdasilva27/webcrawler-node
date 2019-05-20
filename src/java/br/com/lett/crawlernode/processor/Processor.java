@@ -28,6 +28,7 @@ import models.Behavior;
 import models.BehaviorElement;
 import models.BehaviorElement.BehaviorElementBuilder;
 import models.Marketplace;
+import models.Offers;
 import models.Processed;
 import models.Seller;
 import models.Util;
@@ -68,6 +69,7 @@ public class Processor {
     String secondaryPics = product.getSecondaryImages();
     String description = product.getDescription();
     Marketplace marketplace = product.getMarketplace();
+    Offers offers = product.getOffers();
     Integer stock = product.getStock();
     String ean = product.getEan();
     List<String> eans = null;
@@ -117,6 +119,12 @@ public class Processor {
           newProcessedProduct.setMarketplace(null);
         }
 
+        if (offers != null && !offers.isEmpty()) {
+          newProcessedProduct.setOffers(offers);
+        } else {
+          newProcessedProduct.setOffers(null);
+        }
+
         newProcessedProduct.setPic(foto);
         newProcessedProduct.setPrice(price);
         newProcessedProduct.setPrices(prices);
@@ -142,7 +150,7 @@ public class Processor {
         newProcessedProduct = new Processed(null, internalId, internalPid, name, null, null, null, null, null, null, null, foto, secondaryPics, cat1,
             cat2, cat3, url, session.getMarket().getNumber(), nowISO, nowISO, null, nowISO, nowISO, null, null, description, price, prices, null,
             null, null, false, false, stock, new Behavior(), // behavior - will be update in the updateBehavior method just below
-            marketplace, ean, eans);
+            marketplace, ean, eans, offers);
       }
 
       // run the processor for the new model
@@ -638,6 +646,33 @@ public class Processor {
           }
 
           /*
+           * Offers
+           * 
+           * get the JSON representation from database if the JSON is null, then an empty model instance is
+           * created. Each seller is individually added to the marketplace model, so we can analyze for errors
+           * in each of one separately and consider only those seller that are free of errors.
+           */
+          JSONArray actualOffersJSONArray;
+          if (rs.getString("offers") != null) {
+            try {
+              actualOffersJSONArray = new JSONArray(rs.getString("offers"));
+            } catch (JSONException e) {
+              actualOffersJSONArray = null;
+            }
+          } else {
+            actualOffersJSONArray = null;
+          }
+
+          Offers offers;
+          try {
+            offers = new Offers(actualOffersJSONArray);
+          } catch (Exception e) {
+            offers = new Offers();
+
+            Logging.printLogError(logger, session, Util.getStackTraceString(e));
+          }
+
+          /*
            * Stock
            */
           Integer actualStock = rs.getInt("stock");
@@ -673,7 +708,7 @@ public class Processor {
               rs.getString("original_description"), actualPrice, actualPrices, digitalContent,
               rs.getObject("lett_id") instanceof Long ? rs.getLong("lett_id") : null,
               rs.getObject("master_id") instanceof Long ? rs.getLong("master_id") : null, similars, rs.getBoolean("available"), rs.getBoolean("void"),
-              actualStock, behavior, actualMarketplace, rs.getString("ean"), eans);
+              actualStock, behavior, actualMarketplace, rs.getString("ean"), eans, offers);
 
           return actualProcessedProduct;
 

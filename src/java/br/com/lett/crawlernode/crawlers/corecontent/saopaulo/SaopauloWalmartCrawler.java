@@ -21,9 +21,14 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -103,6 +108,9 @@ public class SaopauloWalmartCrawler extends Crawler {
         // Prices
         Prices prices = crawlPrices(internalPid, price, marketplaceMap);
 
+        // Offers
+        Offers offers = scrapBuyBox(infoDoc);
+
         // Stock
         Integer stock = crawlStock(infoDoc);
 
@@ -110,7 +118,7 @@ public class SaopauloWalmartCrawler extends Crawler {
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).build();
+            .setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
 
         products.add(product);
       }
@@ -120,6 +128,38 @@ public class SaopauloWalmartCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private Offers scrapBuyBox(Document infoDoc) {
+    Offers offers = new Offers();
+    try {
+      boolean isBuyBoxPage = infoDoc.selectFirst("buybox") != null;
+      Elements sellerInfoElement = infoDoc.select(".product-sellers ul li");
+      String sellerFullName = null;
+      String slugSellerName = null;
+      String internalSellerId = null;
+      Double mainPrice = null;
+      int mainPagePosition = 1;
+
+      for (Element element : sellerInfoElement) {
+        sellerFullName = element.attr("data-seller-name");
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+        internalSellerId = element.attr("data-offer-id");
+        mainPrice = Double.parseDouble(element.attr("data-price"));
+
+        Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+            .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+
+        mainPagePosition++;
+        offers.add(offer);
+      }
+
+    } catch (OfferException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+
+    return offers;
   }
 
   /*******************************

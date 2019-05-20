@@ -40,7 +40,7 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     String id = scrapId(document);
     String apiUrl = HOME_PAGE + "/api/products/" + id;
 
-    JSONObject available = new JSONObject(fetchApi(apiUrl + "/availability"));
+    JSONObject available = CrawlerUtils.stringToJson(fetchApi(apiUrl + "/availability"));
     JSONArray variations = available.has("variation_list") ? available.getJSONArray("variation_list") : new JSONArray();
     JSONObject ratingJson = CrawlerUtils.stringToJson(fetchApi(ratingUrl));
 
@@ -107,8 +107,12 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
     if (scriptApi.has("product")) {
 
       JSONObject product = scriptApi.getJSONObject("product");
-      if (product.has("model_number")) {
-        internalPid = product.get("model_number").toString();
+      if (product.has("productData")) {
+        JSONObject productData = product.getJSONObject("productData");
+
+        if (productData.has("model_number")) {
+          internalPid = productData.get("model_number").toString();
+        }
       }
     }
 
@@ -122,7 +126,6 @@ public class AdidasRatingReviewCrawler extends RatingReviewCrawler {
   private String fetchApi(String url) {
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-    // headers.put("accept-encoding", "gzip, deflate, br");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("cache-control", "max-age=0");
     headers.put("upgrade-insecure-requests", "1");

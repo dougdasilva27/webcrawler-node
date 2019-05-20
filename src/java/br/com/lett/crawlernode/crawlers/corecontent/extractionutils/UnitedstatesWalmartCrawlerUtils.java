@@ -96,16 +96,20 @@ public class UnitedstatesWalmartCrawlerUtils {
    */
   public static JSONArray sanitizeINITIALSTATEJson(Document doc) {
     JSONArray products = new JSONArray();
-    JSONObject initialState = CrawlerUtils.selectJsonFromHtml(doc, "script ", "window.__WML_REDUX_INITIAL_STATE__ =", ";};", false);
+    JSONObject initialState = CrawlerUtils.selectJsonFromHtml(doc, "script#item[type=\"application/json\"]", null, "", false, true);
 
-    if (initialState.has("product")) {
-      JSONObject product = initialState.getJSONObject("product");
+    if (initialState.has("item")) {
+      JSONObject item = initialState.getJSONObject("item");
 
-      JSONObject images = crawlJsonImages(product);
-      JSONObject offers = crawlJsonOffers(product);
-      JSONObject rating = crawlRating(product);
+      if (item.has("product")) {
+        JSONObject product = item.getJSONObject("product");
 
-      products = crawlProductsInfo(product, images, offers, rating);
+        JSONObject images = crawlJsonImages(product);
+        JSONObject offers = crawlJsonOffers(product);
+        JSONObject rating = crawlRating(product);
+
+        products = crawlProductsInfo(product, images, offers, rating);
+      }
     }
 
     return products;
@@ -132,7 +136,7 @@ public class UnitedstatesWalmartCrawlerUtils {
         santizedProductInfo.put(DESCRIPTION, crawlDescription(product));
         santizedProductInfo.put(NAME, crawlName(productJson));
         santizedProductInfo.put(OFFERS, crawlOffers(productJson, offers));
-        santizedProductInfo.put(IMAGES, crawlImages(productJson, images));
+        santizedProductInfo.put(IMAGES, crawlImages(productJson, product, images));
         products.put(santizedProductInfo);
       }
     }
@@ -275,12 +279,12 @@ public class UnitedstatesWalmartCrawlerUtils {
     return rating;
   }
 
-  private static JSONObject crawlImages(JSONObject productJson, JSONObject images) {
+  private static JSONObject crawlImages(JSONObject skuJson, JSONObject prodInfo, JSONObject images) {
     JSONObject productImages = new JSONObject();
 
-    if (productJson.has("images")) {
+    if (skuJson.has("images")) {
       JSONArray secondaryImages = new JSONArray();
-      JSONArray imagesIds = productJson.getJSONArray("images");
+      JSONArray imagesIds = skuJson.getJSONArray("images");
 
       for (Object imageId : imagesIds) {
         if (images.has(imageId.toString())) {
@@ -313,6 +317,37 @@ public class UnitedstatesWalmartCrawlerUtils {
       }
 
       productImages.put(IMAGES_SECONDARY, secondaryImages);
+    } else if (prodInfo.has("images")) {
+      JSONObject imagesMain = prodInfo.getJSONObject("images");
+
+      JSONArray secondaryImages = new JSONArray();
+      for (String imageId : imagesMain.keySet()) {
+        JSONObject imageJson = imagesMain.getJSONObject(imageId);
+
+        if (imageJson.has("type") && imageJson.has("assetSizeUrls")) {
+          String image = null;
+          JSONObject assetSizeUrls = imageJson.getJSONObject("assetSizeUrls");
+
+          if (assetSizeUrls.has("zoom")) {
+            image = assetSizeUrls.get("zoom").toString();
+          } else if (assetSizeUrls.has("main")) {
+            image = assetSizeUrls.get("main").toString();
+          } else if (assetSizeUrls.has("inspiration")) {
+            image = assetSizeUrls.get("inspiration").toString();
+          } else if (assetSizeUrls.has("tile")) {
+            image = assetSizeUrls.get("tile").toString();
+          } else if (assetSizeUrls.has("thumb")) {
+            image = assetSizeUrls.get("thumb").toString();
+          }
+
+          String type = imageJson.get("type").toString();
+          if (type.equalsIgnoreCase("PRIMARY") && !productImages.has(IMAGES_PRIMARY)) {
+            productImages.put(IMAGES_PRIMARY, image);
+          } else {
+            secondaryImages.put(image);
+          }
+        }
+      }
     }
 
     return productImages;

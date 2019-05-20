@@ -19,8 +19,7 @@ public class BelohorizonteBhvidaCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.bhvida.com/produto.php?LISTA=procurar&PROCURAR=" + this.keywordEncoded
-        + "&pg=" + this.currentPage;
+    String url = "https://www.bhvida.com/produto.php?LISTA=procurar&PROCURAR=" + this.keywordEncoded + "&pg=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
@@ -33,12 +32,14 @@ public class BelohorizonteBhvidaCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String productUrl = crawlUrl(e);
-        String internalPid = crawlInternalPid(productUrl, e);
+        String internalPid = getIdFromUrl(productUrl);
+
         saveDataProduct(null, internalPid, productUrl);
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+        if (this.arrayProducts.size() == productsLimit) {
           break;
+        }
 
       }
 
@@ -51,54 +52,19 @@ public class BelohorizonteBhvidaCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlUrl(Element e) {
-    String productUrl = null;
-    String rel = e.attr("rel");
-    Element imgSrc = e.selectFirst(".moldura-p img");
-
-    if (imgSrc != null && !rel.isEmpty()) {
-      productUrl = CrawlerUtils.completeUrl(rel, "https:", "www.bhvida.com/");
-      String newPid = CommonMethods.getLast(imgSrc.attr("src").split("="));
-      String oldPid = getIdFromUrl(productUrl);
-      productUrl = productUrl.replace(oldPid, newPid);
-    }
-
-    return productUrl;
-  }
-
-
-  private String crawlInternalPid(String url, Element e) {
-    String internalPid = null;
-    String rel = e.attr("rel");
-
-    if (!rel.isEmpty() && getIdFromUrl(url).contains("sem_imagem")) {
-
-      String newUrl = CrawlerUtils.completeUrl(rel, "https:", "www.bhvida.com/");
-      internalPid = getIdFromUrl(newUrl);
-
-    } else {
-
-      internalPid = getIdFromUrl(url);
-
-    }
-
-    return internalPid;
+    return CrawlerUtils.completeUrl(e.attr("rel"), "https:", "www.bhvida.com");
   }
 
   private String getIdFromUrl(String url) {
     String id = null;
 
     if (!url.isEmpty()) {
-
       String lastPart = CommonMethods.getLast(url.split("\\?")[0].split("-"));
 
       if (lastPart.contains(".")) {
-
         id = lastPart.split("\\.")[0];
-
       } else {
-
         id = lastPart;
-
       }
     }
     return id;
@@ -106,8 +72,7 @@ public class BelohorizonteBhvidaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc,
-        "#paginacao .texto strong:first-child", false);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#paginacao .texto strong:first-child", false, 0);
     this.log("Total da busca: " + this.totalProducts);
 
   }
