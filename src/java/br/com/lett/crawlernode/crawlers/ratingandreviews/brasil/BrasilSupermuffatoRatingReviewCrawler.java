@@ -62,7 +62,7 @@ public class BrasilSupermuffatoRatingReviewCrawler extends RatingReviewCrawler {
 
     String apiUrl = "https://awsapis3.netreviews.eu/product";
     String payload =
-        "{\"query\":\"average\",\"products\":[\"" + internalId + "\"],\"idWebsite\":\"dd0aa2dc-6305-cd94-2106-9301054ace3c\",\"plateforme\":\"br\"}";
+        "{\"query\":\"average\",\"products\":[\"" + internalId + "\"],\"idWebsite\":\"4f870cb3-d6ef-5664-2950-de136d5b471e\",\"plateforme\":\"br\"}";
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json; charset=UTF-8");
 
