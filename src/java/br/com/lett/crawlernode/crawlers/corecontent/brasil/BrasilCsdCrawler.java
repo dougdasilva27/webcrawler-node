@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,8 +32,10 @@ public class BrasilCsdCrawler extends Crawler {
     super(session);
   }
 
-  private static final String HOME_PAGE =
+  public static final String HOME_PAGE =
       "https://www.sitemercado.com.br/supermercadoscidadecancao/londrina-loja-londrina-19-rodocentro-avenida-tiradentes/";
+  public static final String LOAD_PAYLOAD =
+      "{\"lojaUrl\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeUrl\":\"supermercadoscidadecancao\"}";
 
   @Override
   public boolean shouldVisit() {
@@ -308,44 +308,42 @@ public class BrasilCsdCrawler extends Crawler {
     String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
     String url = "https://www.sitemercado.com.br/core/api/v1/b2c/product/load?url=" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
 
-    String smmc = "2019.03.28-0";
-
     Map<String, String> headers = new HashMap<>();
     headers.put("referer", productUrl);
-    headers.put("sm-mmc", smmc);
     headers.put("accept", "application/json, text/plain, */*");
     headers.put("content-type", "application/json");
+    headers.put("sm-mmc", fetchApiVersion(session, session.getOriginalURL()));
 
-    String payload = "{\"lojaUrl\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeUrl\":\"supermercadoscidadecancao\"}";
-
-    Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(LOAD_PAYLOAD).build();
     Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
 
     if (responseHeaders.containsKey("sm-token")) {
       headers.put("sm-token", responseHeaders.get("sm-token"));
-    } else {
-      smmc = new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0";
-      headers.put("sm-mmc", smmc);
-      request.setHeaders(headers);
-
-      responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
-
-      if (responseHeaders.containsKey("sm-token")) {
-        headers.put("sm-token", responseHeaders.get("sm-token"));
-      }
     }
 
     headers.remove("content-type");
 
     Request requestApi = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
-    String res = this.dataFetcher.get(session, requestApi).getBody();
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
+  }
 
-    if (res.isEmpty()) {
-      headers.put("sm-mmc", new SimpleDateFormat("yyyy.MM.dd").format(new Date()) + "-0");
-      requestApi.setHeaders(headers);
-      res = this.dataFetcher.get(session, requestApi).getBody();
+
+  public static String fetchApiVersion(Session session, String url) {
+    String version = null;
+
+    String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
+    Map<String, String> headers = new HashMap<>();
+    headers.put("referer", url);
+    headers.put("accept", "application/json, text/plain, */*");
+    headers.put("content-type", "application/json");
+
+    Request request = RequestBuilder.create().setUrl(loadUrl).setHeaders(headers).setPayload(LOAD_PAYLOAD).setIgnoreStatusCode(false).build();
+    Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
+
+    if (responseHeaders.containsKey("sm-mmc")) {
+      version = responseHeaders.get("sm-mmc");
     }
 
-    return CrawlerUtils.stringToJson(res);
+    return version;
   }
 }
