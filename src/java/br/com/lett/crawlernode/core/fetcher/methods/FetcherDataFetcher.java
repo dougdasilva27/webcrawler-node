@@ -82,21 +82,19 @@ public class FetcherDataFetcher implements DataFetcher {
     try {
       FetcherRequest payload = fetcherPayloadBuilder(request, method, session);
 
-      Logging.printLogDebug(logger, session,
-          "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
+      Logging.printLogDebug(logger, session, "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
 
       URL requestURL = new URI(FETCHER_HOST).toURL();
       String fetcherUrl = requestURL.getProtocol() + "://" + requestURL.getHost();
 
       Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
-      RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
-          .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
+      RequestConfig requestConfig =
+          RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout).setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
 
       List<Header> reqHeaders = new ArrayList<>();
       reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, FETCHER_CONTENT_TYPE));
 
-      CloseableHttpClient httpclient = HttpClients.custom().setDefaultRequestConfig(requestConfig)
-          .setDefaultCredentialsProvider(new BasicCredentialsProvider()).setDefaultHeaders(reqHeaders).build();
+      CloseableHttpClient httpclient = HttpClients.custom().setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(new BasicCredentialsProvider()).setDefaultHeaders(reqHeaders).build();
 
       HttpContext localContext = new BasicHttpContext();
 
@@ -347,18 +345,15 @@ public class FetcherDataFetcher implements DataFetcher {
     }
 
     if (options != null) {
-      payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(options.isMustUseMovingAverage()).setRequestType(method)
-          .setRetrieveStatistics(options.isRetrieveStatistics())
+      payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(options.isMustUseMovingAverage()).setRequestType(method).setRetrieveStatistics(options.isRetrieveStatistics())
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
-              .setMustFollowRedirects(request.isFollowRedirects()))
-          .build();
+          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload()).setMustFollowRedirects(request.isFollowRedirects()))
+          .setIgnoreStatusCode(request.mustIgnoreStatusCode()).setBodyIsRequired(request.bodyIsRequired()).build();
     } else {
       payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
-              .setMustFollowRedirects(request.isFollowRedirects()))
-          .build();
+          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload()).setMustFollowRedirects(request.isFollowRedirects()))
+          .setIgnoreStatusCode(request.mustIgnoreStatusCode()).setBodyIsRequired(request.bodyIsRequired()).build();
     }
 
     return payload;

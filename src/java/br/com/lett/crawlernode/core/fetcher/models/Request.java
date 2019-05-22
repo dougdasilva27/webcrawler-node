@@ -21,6 +21,8 @@ public class Request {
   private boolean followRedirects = true;
   private boolean sendContentEncoding = true;
   private boolean sendUserAgent = true;
+  private boolean ignoreStatusCode = false;
+  private boolean bodyIsRequired = true;
 
   public String getUrl() {
     return url;
@@ -110,6 +112,22 @@ public class Request {
     this.sendUserAgent = sendUserAgent;
   }
 
+  public boolean mustIgnoreStatusCode() {
+    return ignoreStatusCode;
+  }
+
+  public void setIgnoreStatusCode(boolean ignoreStatusCode) {
+    this.ignoreStatusCode = ignoreStatusCode;
+  }
+
+  public boolean bodyIsRequired() {
+    return bodyIsRequired;
+  }
+
+  public void setBodyIsRequired(boolean bodyIsRequired) {
+    this.bodyIsRequired = bodyIsRequired;
+  }
+
   public static class RequestBuilder {
 
     private String url;
@@ -125,6 +143,8 @@ public class Request {
     private Integer timeout;
     private boolean sendContentEncoding = true;
     private boolean sendUserAgent = true;
+    private boolean ignoreStatusCode = false;
+    private boolean bodyIsRequired = true;
 
     public static RequestBuilder create() {
       return new RequestBuilder();
@@ -185,6 +205,16 @@ public class Request {
       return this;
     }
 
+    public RequestBuilder setIgnoreStatusCode(boolean ignoreStatusCode) {
+      this.ignoreStatusCode = ignoreStatusCode;
+      return this;
+    }
+
+    public RequestBuilder setBodyIsRequired(boolean bodyIsRequired) {
+      this.bodyIsRequired = bodyIsRequired;
+      return this;
+    }
+
     public Request build() {
       Request request = new Request();
 
@@ -199,6 +229,8 @@ public class Request {
       request.setTimeout(timeout);
       request.setSendContentEncoding(sendContentEncoding);
       request.setSendUserAgent(sendUserAgent);
+      request.setBodyIsRequired(bodyIsRequired);
+      request.setIgnoreStatusCode(ignoreStatusCode);
 
       return request;
     }
