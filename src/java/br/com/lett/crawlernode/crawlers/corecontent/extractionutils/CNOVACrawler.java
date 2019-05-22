@@ -256,7 +256,11 @@ public abstract class CNOVACrawler extends Crawler {
     try {
 
       if (doc.selectFirst(".descricaoAnuncio .productDetails") != null) {
-        offers.add(scrapPrincipalOffer(doc));
+        Offer offer = scrapPrincipalOffer(doc);
+
+        if (offer != null) {
+          offers.add(offer);
+        }
       }
 
       Elements sellers = doc.select(".listaLojistas .buying");

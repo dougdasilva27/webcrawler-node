@@ -148,8 +148,8 @@ public class BrasilFastshopNewCrawler {
   public Float crawlMainPagePrice(Prices prices) {
     Float price = null;
 
-    if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
-      Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
+    if (prices != null && !prices.isEmpty()) {
+      Double priceDouble = prices.getBankTicketPrice();
       price = priceDouble.floatValue();
     }
 

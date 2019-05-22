@@ -83,8 +83,10 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         }
       }
 
+      Document docMarketplace = crawlDocMarketplaces(internalPid);
+
       // Marketplace
-      Map<String, Prices> marketplaceMap = crawlMarketplaces(internalPid, doc);
+      Map<String, Prices> marketplaceMap = crawlMarketplaces(internalPid, docMarketplace, doc);
       Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
 
       // Prices
@@ -154,7 +156,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       Integer stock = crawlStock(doc);
 
       // Offers
-      Offers offers = available || !marketplace.isEmpty() ? scrapBuyBox(internalPid, doc) : new Offers();
+      Offers offers = available || !marketplace.isEmpty() ? scrapBuyBox(internalPid, docMarketplace, doc) : new Offers();
       String ean = crawlEan(doc);
 
       List<String> eans = new ArrayList<>();
@@ -190,7 +192,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     return products;
   }
 
-  private Offers scrapBuyBox(String internalPid, Document doc) {
+  private Offers scrapBuyBox(String internalPid, Document docMarketplace, Document doc) {
     Offers offers = new Offers();
 
     try {
@@ -202,7 +204,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       }
 
       if (isBuyBoxPage) {
-        scrapSellerPage(internalPid, isBuyBoxPage, offers);
+        scrapSellerPage(docMarketplace, isBuyBoxPage, offers);
       }
 
 
@@ -233,10 +235,13 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
         mainPrice = MathUtils.parseDoubleWithDot(jsonInfo.get("productPrice").toString());
 
-        if (productMarketplace.has("nomeLoja")) {
+        if (productMarketplace.has("nomeLoja") && !productMarketplace.isNull("nomeLoja")) {
           sellerFullName = productMarketplace.getString("nomeLoja");
-          slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+        } else {
+          sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".info-parceiro strong", true);
         }
+
+        slugSellerName = CrawlerUtils.toSlug(sellerFullName);
 
         if (productMarketplace.has("siteId")) {
           internalSellerId = productMarketplace.getString("siteId");
@@ -251,15 +256,13 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     return offer;
   }
 
-  private void scrapSellerPage(String internalPid, boolean isBuyBoxPage, Offers offers) throws OfferException {
+  private void scrapSellerPage(Document docMarketplace, boolean isBuyBoxPage, Offers offers) throws OfferException {
 
     String sellerFullName = null;
     String slugSellerName = null;
     String internalSellerId = null;
     Double mainPrice = null;
     Integer sellersPagePosition = 1;
-
-    Document docMarketplace = crawlDocMarketplaces(internalPid);
 
     Elements lines = docMarketplace.select(".modal-linha-parceiro");
 
@@ -338,14 +341,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
   }
 
 
-  private Map<String, Prices> crawlMarketplaces(String internalPid, Document doc) {
-
-    Document docMarketplaceInfo = crawlDocMarketplaces(internalPid);
+  private Map<String, Prices> crawlMarketplaces(String internalPid, Document docMarketplace, Document doc) {
     String principalSeller = crawlPrincipalSeller(doc);
-
     Map<String, Prices> marketplace = new HashMap<>();
 
-    Elements lines = docMarketplaceInfo.select(".modal-linha-parceiro");
+    Elements lines = docMarketplace.select(".modal-linha-parceiro");
 
     for (Element linePartner : lines) {
       Element priceElement = linePartner.selectFirst(".valor-unitario");
