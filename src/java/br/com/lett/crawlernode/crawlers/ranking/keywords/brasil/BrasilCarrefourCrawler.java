@@ -5,8 +5,6 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,7 +16,6 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
 
   public BrasilCarrefourCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override
@@ -138,14 +135,9 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("upgrade-insecure-requests", "1");
+    headers.put("referer", "https://www.carrefour.com.br/");
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
-    String response = this.dataFetcher.get(session, request).getBody();
-
-    if (response == null || response.isEmpty()) {
-      response = new FetcherDataFetcher().get(session, request).getBody();
-    }
-
-    return response;
+    return this.dataFetcher.get(session, request).getBody();
   }
 }
