@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.core.fetcher.models;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class FetcherRequestBuilder {
 
   private String url;
@@ -8,6 +11,7 @@ public class FetcherRequestBuilder {
   private boolean retrieveStatistics;
   private boolean ignoreStatusCode;
   private boolean bodyIsRequired;
+  private List<Integer> statusCodesToIgnore = new ArrayList<>();
   private FetcherRequestsParameters parameters;
   private FetcherRequestForcedProxies forcedProxies;
 
@@ -59,6 +63,11 @@ public class FetcherRequestBuilder {
     return this;
   }
 
+  public FetcherRequestBuilder setStatusCodesToIgnore(List<Integer> statusCodesToIgnore) {
+    this.statusCodesToIgnore = statusCodesToIgnore;
+    return this;
+  }
+
   public FetcherRequest build() {
     FetcherRequest fetcher = new FetcherRequest();
     fetcher.setUrl(this.url);
@@ -69,6 +78,7 @@ public class FetcherRequestBuilder {
     fetcher.setParameters(this.parameters);
     fetcher.setIgnoreStatusCode(ignoreStatusCode);
     fetcher.setBodyIsRequired(bodyIsRequired);
+    fetcher.setStatusCodesToIgnore(statusCodesToIgnore);
 
     return fetcher;
   }

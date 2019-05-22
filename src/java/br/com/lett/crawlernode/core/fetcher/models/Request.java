@@ -16,6 +16,7 @@ public class Request {
   private Map<String, String> headers = new HashMap<>();
   private List<Cookie> cookies = new ArrayList<>();
   private FetcherOptions fetcherOptions;
+  private List<Integer> statusCodesToIgnore = new ArrayList<>();
 
   // Variables with default values
   private boolean followRedirects = true;
@@ -128,6 +129,14 @@ public class Request {
     this.bodyIsRequired = bodyIsRequired;
   }
 
+  public List<Integer> getStatusCodesToIgnore() {
+    return statusCodesToIgnore;
+  }
+
+  public void setStatusCodesToIgnore(List<Integer> statusCodesToIgnore) {
+    this.statusCodesToIgnore = statusCodesToIgnore;
+  }
+
   public static class RequestBuilder {
 
     private String url;
@@ -137,6 +146,7 @@ public class Request {
     private Map<String, String> headers = new HashMap<>();
     private List<Cookie> cookies = new ArrayList<>();
     private FetcherOptions fetcherOptions;
+    private List<Integer> statusCodesToIgnore = new ArrayList<>();
 
     // Variables with default values
     private boolean followRedirects = true;
@@ -215,6 +225,11 @@ public class Request {
       return this;
     }
 
+    public RequestBuilder setStatusCodesToIgnore(List<Integer> statusCodesToIgnore) {
+      this.statusCodesToIgnore = statusCodesToIgnore;
+      return this;
+    }
+
     public Request build() {
       Request request = new Request();
 
@@ -231,6 +246,7 @@ public class Request {
       request.setSendUserAgent(sendUserAgent);
       request.setBodyIsRequired(bodyIsRequired);
       request.setIgnoreStatusCode(ignoreStatusCode);
+      request.setStatusCodesToIgnore(statusCodesToIgnore);
 
       return request;
     }
