@@ -147,17 +147,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
       }
 
       // Descrição
-      String description = "";
-      Element elementDescription = doc.select(".productDescriptionWrap").first();
-      Element elementSpecification = doc.select(".productSpecificationWrap").first();
-      if (elementDescription != null) {
-        description = description + elementDescription.html();
-      }
-      if (elementSpecification != null) {
-        description = description + elementSpecification.html();
-      }
-
-      description += CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber());
+      String description = scrapDescription(doc, internalId);
 
       // Estoque
       Integer stock = null;
@@ -203,6 +193,24 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     return products;
   }
 
+
+  private String scrapDescription(Document doc, String internalId) {
+    String description = "";
+    Element elementDescription = doc.select(".productDescriptionWrap").first();
+    Element elementSpecification = doc.select(".productSpecificationWrap").first();
+    
+    if (elementDescription != null) {
+      description = description + elementDescription.html();
+    }
+    
+    if (elementSpecification != null) {
+      description = description + elementSpecification.html();
+    }
+
+    description += CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber());
+
+    return description;
+  }
 
   /*******************************
    * Product page identification *
