@@ -65,7 +65,7 @@ public class SaopauloMamboCrawler extends Crawler {
 
       JSONObject skusInfo = crawlSKusInfo(internalPid);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(skusInfo);
+      String description = crawlDescription(skusInfo, internalPid);
       Integer stock = null;
 
       // sku data in json
@@ -282,7 +282,7 @@ public class SaopauloMamboCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(JSONObject skuInfo) {
+  private String crawlDescription(JSONObject skuInfo, String internalPid) {
     StringBuilder description = new StringBuilder();
 
     if (skuInfo.has("description")) {
@@ -302,7 +302,7 @@ public class SaopauloMamboCrawler extends Crawler {
     // }
     // }
     // }
-
+    description.append(CrawlerUtils.scrapLettHtml(internalPid, session, 65).html());
     return description.toString();
   }
 
