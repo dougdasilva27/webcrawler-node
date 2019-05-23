@@ -172,6 +172,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
       }
     }
 
+    description.append(CrawlerUtils.scrapLettHtml(internalPid, session, 102));
+
     return description.toString();
   }
 }
