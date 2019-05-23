@@ -148,8 +148,8 @@ public class MexicoSuperamaCrawler extends Crawler {
       description.append(" Características ");
     }
 
-    description.append(CrawlerUtils.scrapSimpleDescription(document,
-        Arrays.asList(".detail-description-content", "#tab_descripcion", ".content__caracteristicas", ".content__ingredientes")));
+    description.append(CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".detail-description-content", "#tab_descripcion",
+        ".content__caracteristicas", ".content__ingredientes", "#ContenedorInfoNutriId")));
 
     return description.toString();
   }
