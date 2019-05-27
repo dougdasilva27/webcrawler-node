@@ -65,7 +65,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -74,6 +74,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
+        String descriptionV = description + CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber());
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
         List<String> eans = new ArrayList<>();
@@ -82,7 +83,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(descriptionV)
             .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);

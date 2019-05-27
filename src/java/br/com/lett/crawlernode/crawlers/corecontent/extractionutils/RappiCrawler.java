@@ -76,9 +76,8 @@ public class RappiCrawler extends Crawler {
       Offers offers = scrapBuyBox(jsonSku);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrices(prices).setPrice(price).setAvailable(available).setPrimaryImage(primaryImage).setDescription(description)
-          .setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
+      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrices(prices).setPrice(price).setAvailable(available)
+          .setPrimaryImage(primaryImage).setDescription(description).setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
 
       products.add(product);
 
@@ -111,8 +110,8 @@ public class RappiCrawler extends Crawler {
         mainPrice = CrawlerUtils.getDoubleValueFromJSON(jsonSku, "price", false, false);
       }
 
-      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId).setMainPagePosition(1).setIsBuybox(false)
+          .setMainPrice(mainPrice).build();
 
       offers.add(offer);
 
@@ -298,15 +297,13 @@ public class RappiCrawler extends Crawler {
     String productId = null;
 
     if (productUrl.contains("_")) {
-      productId = CommonMethods.getLast(productUrl.split("_"));
+      productId = CommonMethods.getLast(productUrl.split("\\?")[0].split("_"));
     }
 
     if (productId != null && storeType != null && storeId != null) {
-
       Map<String, String> headers = new HashMap<>();
 
       String url = "https://services.rappi.com.br/windu/products/store/" + storeId + "/product/" + productId;
-
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
 
       String page = this.dataFetcher.get(session, request).getBody();

@@ -74,7 +74,10 @@ public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
 
     if (jsonInfo.has("catentry_id")) {
       internalId = jsonInfo.getString("catentry_id").trim();
+    } else if (jsonInfo.has("catEntry")) {
+      internalId = jsonInfo.getString("catEntry");
     }
+
 
     return internalId;
   }
@@ -108,7 +111,7 @@ public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private Integer getTotalReviewCount(JSONObject reviewStatistics) {
-    Integer totalReviewCount = null;
+    Integer totalReviewCount = 0;
     if (reviewStatistics.has("TotalReviewCount")) {
       totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
     }
@@ -116,7 +119,7 @@ public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private Double getAverageOverallRating(JSONObject reviewStatistics) {
-    Double avgOverallRating = null;
+    Double avgOverallRating = 0d;
     if (reviewStatistics.has("AverageOverallRating")) {
       avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
     }

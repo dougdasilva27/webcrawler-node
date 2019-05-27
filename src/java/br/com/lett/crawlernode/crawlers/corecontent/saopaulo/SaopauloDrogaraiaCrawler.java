@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -44,7 +46,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       // ID interno
-      String internalID = crawlInternalId(doc);
+      String internalId = crawlInternalId(doc);
 
       // Pid
       String internalPid = null;
@@ -89,39 +91,20 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
         }
       }
 
+      String description = scrapDescription(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-      // Descrição
-      String description = "";
-      Element shortDescription = doc.select(".product-short-description").first();
-      Element elementDescription = doc.select("#details").first();
-
-      if (shortDescription != null) {
-        description += shortDescription.html().trim();
-      }
-
-      if (elementDescription != null) {
-        description += elementDescription.html().trim();
-      }
-
-      // Estoque
       Integer stock = null;
-
-      // Marketplace
       Marketplace marketplace = new Marketplace();
-
-      // Prices
       Prices prices = crawlPrices(doc, price);
-
       String ean = scrapEan(doc);
       List<String> eans = new ArrayList<>();
       eans.add(ean);
 
       Product product = new Product();
 
-
       product.setUrl(session.getOriginalURL());
-      product.setInternalId(internalID);
+      product.setInternalId(internalId);
       product.setInternalPid(internalPid);
       product.setName(name);
       product.setPrice(price);
@@ -286,5 +269,30 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     }
 
     return ean;
+  }
+
+  private String scrapDescription(Document doc) {
+    StringBuilder description = new StringBuilder();
+
+    Element shortDescription = doc.selectFirst(".product-short-description");
+    if (shortDescription != null) {
+      description.append(shortDescription.html().trim());
+    }
+
+    Element elementDescription = doc.selectFirst("#details");
+    if (elementDescription != null) {
+      description.append(elementDescription.html().trim());
+    }
+
+    Elements iframes = doc.select(".product-essential iframe");
+    for (Element iframe : iframes) {
+      String url = iframe.attr("src");
+      if (!url.contains("youtube")) {
+        description
+            .append(Jsoup.parse(this.dataFetcher.get(session, RequestBuilder.create().setUrl(url).setCookies(cookies).build()).getBody()).html());
+      }
+    }
+
+    return description.toString();
   }
 }

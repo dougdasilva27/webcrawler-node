@@ -9,7 +9,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
@@ -23,7 +22,6 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
 
   public BrasilCarrefourRatingReviewCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
   }
 
   @Override
@@ -36,6 +34,7 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
     headers.put("upgrade-insecure-requests", "1");
+    headers.put("referer", "https://www.carrefour.com.br/");
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
     return this.dataFetcher.get(session, request).getBody();
@@ -111,8 +110,7 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
   private Double crawlAverageOverallRating(Document document) {
     Double avgOverallRating = null;
 
-    Element avgOverallRatingElement =
-        document.select(".sust-review-container .block-review-pagination-bar div.block-rating div.rating.js-ratingCalc").first();
+    Element avgOverallRatingElement = document.select(".sust-review-container .block-review-pagination-bar div.block-rating div.rating.js-ratingCalc").first();
     if (avgOverallRatingElement != null) {
       String dataRatingText = avgOverallRatingElement.attr("data-rating").trim();
       try {

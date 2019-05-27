@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -236,6 +238,15 @@ public class SaopauloDrogasilCrawler extends Crawler {
     Element elementDescription = doc.select("div#details.product-details").first();
     if (elementDescription != null) {
       description.append(elementDescription.html());
+    }
+
+    Elements iframes = doc.select(".product-essential iframe");
+    for (Element iframe : iframes) {
+      String url = iframe.attr("src");
+      if (!url.contains("youtube")) {
+        description
+            .append(Jsoup.parse(this.dataFetcher.get(session, RequestBuilder.create().setUrl(url).setCookies(cookies).build()).getBody()).html());
+      }
     }
 
     return description.toString();

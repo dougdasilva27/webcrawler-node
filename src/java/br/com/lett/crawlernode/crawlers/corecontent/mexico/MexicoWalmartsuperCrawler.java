@@ -170,7 +170,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
       RequestsStatistics resp = CommonMethods.getLast(this.dataFetcher.get(session, request).getRequests());
 
-      if (resp.getStatusCode() > 0 && resp.getStatusCode() < 400) {
+      if (resp != null && resp.getStatusCode() > 0 && resp.getStatusCode() < 400) {
         secondaryImagesArray.put(img);
       }
     }

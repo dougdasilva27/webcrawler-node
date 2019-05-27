@@ -170,18 +170,18 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
   }
 
   private String scrapDescription(VTEXCrawlersUtils vtexUtil, String internalId) {
-    StringBuilder sb = new StringBuilder();
+    StringBuilder descriptionBuilder = new StringBuilder();
     JSONObject obj = vtexUtil.crawlDescriptionAPI(internalId, "skuId");
 
     if (obj.has("Descrição")) {
       JSONArray arr = obj.getJSONArray("Descrição");
 
       if (arr.length() > 0) {
-        sb.append("<div id=\"Descricao\">").append("<h4> Descrição </h4>");
+        descriptionBuilder.append("<div id=\"Descricao\">").append("<h4> Descrição </h4>");
         for (Object o : arr) {
-          sb.append(o.toString());
+          descriptionBuilder.append(o.toString());
         }
-        sb.append("</div\">");
+        descriptionBuilder.append("</div\">");
       }
     }
 
@@ -193,11 +193,11 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
       JSONArray arr = obj.getJSONArray("Indicações");
 
       if (arr.length() > 0) {
-        sb.append("<div id=\"Indicacoes\">").append("<h4> Indicações </h4>");
+        descriptionBuilder.append("<div id=\"Indicacoes\">").append("<h4> Indicações </h4>");
         for (Object o : arr) {
-          sb.append(o.toString());
+          descriptionBuilder.append(o.toString());
         }
-        sb.append("</div\">");
+        descriptionBuilder.append("</div\">");
       }
     }
 
@@ -206,14 +206,16 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
       JSONArray arr = obj.getJSONArray("Contra indicações");
 
       if (arr.length() > 0) {
-        sb.append("<div id=\"contra indicacoes\">").append("<h4> Contra indicações </h4>");
+        descriptionBuilder.append("<div id=\"contra indicacoes\">").append("<h4> Contra indicações </h4>");
         for (Object o : arr) {
-          sb.append(o.toString());
+          descriptionBuilder.append(o.toString());
         }
-        sb.append("</div\">");
+        descriptionBuilder.append("</div\">");
       }
     }
 
-    return sb.toString();
+    descriptionBuilder.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+
+    return descriptionBuilder.toString();
   }
 }

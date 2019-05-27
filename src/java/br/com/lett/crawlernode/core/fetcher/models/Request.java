@@ -16,11 +16,14 @@ public class Request {
   private Map<String, String> headers = new HashMap<>();
   private List<Cookie> cookies = new ArrayList<>();
   private FetcherOptions fetcherOptions;
+  private List<Integer> statusCodesToIgnore = new ArrayList<>();
 
   // Variables with default values
   private boolean followRedirects = true;
   private boolean sendContentEncoding = true;
   private boolean sendUserAgent = true;
+  private boolean ignoreStatusCode = false;
+  private boolean bodyIsRequired = true;
 
   public String getUrl() {
     return url;
@@ -110,6 +113,30 @@ public class Request {
     this.sendUserAgent = sendUserAgent;
   }
 
+  public boolean mustIgnoreStatusCode() {
+    return ignoreStatusCode;
+  }
+
+  public void setIgnoreStatusCode(boolean ignoreStatusCode) {
+    this.ignoreStatusCode = ignoreStatusCode;
+  }
+
+  public boolean bodyIsRequired() {
+    return bodyIsRequired;
+  }
+
+  public void setBodyIsRequired(boolean bodyIsRequired) {
+    this.bodyIsRequired = bodyIsRequired;
+  }
+
+  public List<Integer> getStatusCodesToIgnore() {
+    return statusCodesToIgnore;
+  }
+
+  public void setStatusCodesToIgnore(List<Integer> statusCodesToIgnore) {
+    this.statusCodesToIgnore = statusCodesToIgnore;
+  }
+
   public static class RequestBuilder {
 
     private String url;
@@ -119,12 +146,15 @@ public class Request {
     private Map<String, String> headers = new HashMap<>();
     private List<Cookie> cookies = new ArrayList<>();
     private FetcherOptions fetcherOptions;
+    private List<Integer> statusCodesToIgnore = new ArrayList<>();
 
     // Variables with default values
     private boolean followRedirects = true;
     private Integer timeout;
     private boolean sendContentEncoding = true;
     private boolean sendUserAgent = true;
+    private boolean ignoreStatusCode = false;
+    private boolean bodyIsRequired = true;
 
     public static RequestBuilder create() {
       return new RequestBuilder();
@@ -185,6 +215,21 @@ public class Request {
       return this;
     }
 
+    public RequestBuilder setIgnoreStatusCode(boolean ignoreStatusCode) {
+      this.ignoreStatusCode = ignoreStatusCode;
+      return this;
+    }
+
+    public RequestBuilder setBodyIsRequired(boolean bodyIsRequired) {
+      this.bodyIsRequired = bodyIsRequired;
+      return this;
+    }
+
+    public RequestBuilder setStatusCodesToIgnore(List<Integer> statusCodesToIgnore) {
+      this.statusCodesToIgnore = statusCodesToIgnore;
+      return this;
+    }
+
     public Request build() {
       Request request = new Request();
 
@@ -199,6 +244,9 @@ public class Request {
       request.setTimeout(timeout);
       request.setSendContentEncoding(sendContentEncoding);
       request.setSendUserAgent(sendUserAgent);
+      request.setBodyIsRequired(bodyIsRequired);
+      request.setIgnoreStatusCode(ignoreStatusCode);
+      request.setStatusCodesToIgnore(statusCodesToIgnore);
 
       return request;
     }

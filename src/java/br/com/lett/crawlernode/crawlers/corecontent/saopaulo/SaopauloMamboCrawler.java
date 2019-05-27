@@ -65,7 +65,6 @@ public class SaopauloMamboCrawler extends Crawler {
 
       JSONObject skusInfo = crawlSKusInfo(internalPid);
       CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(skusInfo, internalPid);
       Integer stock = null;
 
       // sku data in json
@@ -85,6 +84,7 @@ public class SaopauloMamboCrawler extends Crawler {
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         Float price = crawlMainPagePrice(marketplaceMap);
+        String description = crawlDescription(skusInfo, internalId);
         Prices prices = crawlPrices(internalId, price, jsonSku);
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 
@@ -282,27 +282,15 @@ public class SaopauloMamboCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(JSONObject skuInfo, String internalPid) {
+  private String crawlDescription(JSONObject skuInfo, String internalId) {
     StringBuilder description = new StringBuilder();
 
     if (skuInfo.has("description")) {
       description.append(skuInfo.getString("description") + "<br><br>");
     }
 
-    // if (skuInfo.has("allSpecifications")) {
-    // JSONArray spec = skuInfo.getJSONArray("allSpecifications");
-    //
-    // for (int i = 0; i < spec.length(); i++) {
-    // String key = spec.getString(i);
-    //
-    // if (skuInfo.has(key)) {
-    // description.append((key + ": ").replace("::", ":")
-    // + skuInfo.getJSONArray(key).toString().replace("[", "").replace("]", "").replace("\",", "\",
-    // ").replace("\"", "").trim() + "<br>");
-    // }
-    // }
-    // }
-    description.append(CrawlerUtils.scrapLettHtml(internalPid, session, 65).html());
+    description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+
     return description.toString();
   }
 

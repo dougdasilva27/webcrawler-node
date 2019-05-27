@@ -99,7 +99,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-      String description = crawlDescription(doc);
+      String description = crawlDescription(doc, internalId);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
 
@@ -121,10 +121,6 @@ public class BrasilBifarmaCrawler extends Crawler {
 
     return products;
 
-  }
-
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".product_body").isEmpty();
   }
 
   private String crawlInternalId(JSONObject info) {
@@ -262,7 +258,7 @@ public class BrasilBifarmaCrawler extends Crawler {
     return categories;
   }
 
-  private String crawlDescription(Document document) {
+  private String crawlDescription(Document document, String internalId) {
     StringBuilder description = new StringBuilder();
     Element descriptionElement = document.selectFirst(".accordion .accordion-section:not(.dp-banner)");
 
@@ -275,6 +271,13 @@ public class BrasilBifarmaCrawler extends Crawler {
     if (advert != null) {
       description.append(advert.html());
     }
+
+    Element lett = document.select("#shipper-container").first();
+
+    if (lett != null) {
+      description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+    }
+
 
     return description.toString();
   }

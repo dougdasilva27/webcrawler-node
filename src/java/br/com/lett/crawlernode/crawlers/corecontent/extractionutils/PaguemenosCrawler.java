@@ -77,7 +77,6 @@ public class PaguemenosCrawler extends Crawler {
         Prices prices = crawlPrices(internalId, price, jsonSku, session);
         Integer stock = null;
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
-
         List<String> eans = new ArrayList<>();
         eans.add(ean);
 
@@ -295,8 +294,9 @@ public class PaguemenosCrawler extends Crawler {
   private String crawlDescription(Document doc, String internalPid) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.select(".productDescription").first();
+    Element shortDescription = doc.selectFirst(".productDescription");
     if (shortDescription != null) {
+      shortDescription.select("iframe").remove();
       description.append(shortDescription.html());
     }
 
@@ -321,6 +321,15 @@ public class PaguemenosCrawler extends Crawler {
 
       if (aplus.has("html")) {
         description.append(aplus.get("html"));
+      }
+    }
+
+    Elements iframes = doc.select(".productDescription iframe");
+    for (Element iframe : iframes) {
+      String url = iframe.attr("src");
+      if (!url.contains("youtube")) {
+        description
+            .append(Jsoup.parse(this.dataFetcher.get(session, RequestBuilder.create().setUrl(url).setCookies(cookies).build()).getBody()).html());
       }
     }
 

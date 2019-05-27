@@ -181,7 +181,6 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
         Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
         Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-
         Map<Integer, Float> installments = crawlInstallmentsFromPaymentRequestResponse(response);
         cardInstallmentsMap.put(card.toString(), installments);
       }
@@ -288,7 +287,10 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
   private Float crawlPrice(Document document) {
     Float price = null;
 
-    Element elementPrice = document.select("div#descricao .esquerda .valores .preco-por .microFormatoProduto").first();
+    // Element elementPrice = document.select("div#descricao .esquerda .valores .preco-por
+    // .microFormatoProduto").first();
+    Element elementPrice = document.select("div#descricao .esquerda .valores .parcelamento span:not(:first-child)").first();
+
     if (elementPrice != null) {
       price = MathUtils.parseFloatWithComma(elementPrice.text());
     }

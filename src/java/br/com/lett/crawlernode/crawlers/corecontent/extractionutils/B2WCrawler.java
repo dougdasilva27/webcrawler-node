@@ -25,7 +25,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -83,8 +82,6 @@ public class B2WCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     List<Product> products = new ArrayList<>();
-
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "AMERICANAS.html");
 
     // Json da pagina principal
     JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
@@ -573,29 +570,4 @@ public class B2WCrawler extends Crawler {
     return sellerName;
   }
 
-  // private Integer crawlStock(String internalId, JSONObject jsonProduct){
-  // Integer stock = null;
-  //
-  // if(jsonProduct.has("prices")){
-  // if(jsonProduct.getJSONObject("prices").has(internalId)){
-  // JSONArray offers = jsonProduct.getJSONObject("prices").getJSONArray(internalId);
-  //
-  // for(int i = 0; i < offers.length(); i++) {
-  // JSONObject seller = offers.getJSONObject(i);
-  //
-  // if(seller.has("sellerName") && seller.has("stock")) {
-  // String sellerName = seller.getString("sellerName");
-  //
-  // if(sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) ||
-  // sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
-  // stock = seller.getInt("stock");
-  // break;
-  // }
-  // }
-  // }
-  // }
-  // }
-  //
-  // return stock;
-  // }
 }

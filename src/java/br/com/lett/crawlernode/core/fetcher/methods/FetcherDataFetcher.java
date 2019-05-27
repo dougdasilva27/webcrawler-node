@@ -352,13 +352,15 @@ public class FetcherDataFetcher implements DataFetcher {
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
           .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
               .setMustFollowRedirects(request.isFollowRedirects()))
-          .build();
+          .setIgnoreStatusCode(request.mustIgnoreStatusCode()).setBodyIsRequired(request.bodyIsRequired())
+          .setStatusCodesToIgnore(request.getStatusCodesToIgnore()).build();
     } else {
       payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
           .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
           .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
               .setMustFollowRedirects(request.isFollowRedirects()))
-          .build();
+          .setIgnoreStatusCode(request.mustIgnoreStatusCode()).setBodyIsRequired(request.bodyIsRequired())
+          .setStatusCodesToIgnore(request.getStatusCodesToIgnore()).build();
     }
 
     return payload;
