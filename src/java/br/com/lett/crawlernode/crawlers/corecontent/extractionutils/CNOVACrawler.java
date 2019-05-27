@@ -217,7 +217,6 @@ public abstract class CNOVACrawler extends Crawler {
        * crawling data of only one product in page
        */
       else {
-
         String internalIdSecondPart = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ctl00_Conteudo_hdnIdSkuSelecionado", "value");
         String internalId = internalPid + "-" + internalIdSecondPart;
         Document docMarketplace = fetchDocumentMarketPlace(internalIdSecondPart, modifiedURL);
@@ -539,7 +538,7 @@ public abstract class CNOVACrawler extends Crawler {
             }
           }
 
-          prices.insertCardInstallment("visa", installmentPriceMap);
+          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
           Element comprar = principalSeller.selectFirst(".adicionarCarrinho > a.bt-comprar-disabled");
 
@@ -574,7 +573,7 @@ public abstract class CNOVACrawler extends Crawler {
             }
           }
 
-          prices.insertCardInstallment("visa", installmentPriceMap);
+          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 
           Element comprar = linePartner.select(".adicionarCarrinho > a.bt-comprar-disabled").first();
 
@@ -672,7 +671,7 @@ public abstract class CNOVACrawler extends Crawler {
         installmentPriceShopMap.put(1, discountPrice);
       }
 
-      Elements installments = doc.select(".tabsCont #tab01 tr:not(:first-child)");
+      Elements installments = doc.select(".tabsCont #tab01 tr");
       for (Element e : installments) {
         String id = e.id();
 
@@ -707,7 +706,7 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       Float value = CrawlerUtils.scrapFloatPriceFromHtml(e, "> td", null, true, ',', session);
-      if (value != null && installment != null) {
+      if (value != null && installment != null && !installmentPriceMap.containsKey(installment)) {
         installmentPriceMap.put(installment, value);
       }
     }
