@@ -1103,6 +1103,7 @@ public class CrawlerUtils {
    * @param json
    * @param key
    * @return
+   * @deprecated use {@link getDoubleValueFromJSON}
    */
   public static Double getDoubleValueFromJSON(JSONObject json, String key) {
     return getDoubleValueFromJSON(json, key, true, null);

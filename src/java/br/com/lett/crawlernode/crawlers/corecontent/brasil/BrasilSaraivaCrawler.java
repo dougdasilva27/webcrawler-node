@@ -218,7 +218,7 @@ public class BrasilSaraivaCrawler extends Crawler {
     if (apiJson.has("price")) {
       JSONObject priceJson = apiJson.getJSONObject("price");
       if (priceJson.has("nominal")) {
-        prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(priceJson, "nominal"));
+        prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(priceJson, "nominal", false, true));
       }
 
       prices.setBankTicketPrice(crawlBilletPrice(apiJson));

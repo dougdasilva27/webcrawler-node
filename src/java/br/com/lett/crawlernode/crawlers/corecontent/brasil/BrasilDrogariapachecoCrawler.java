@@ -331,7 +331,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
         JSONArray infos = product.getJSONArray("Especificações");
 
         for (Object o : infos) {
-          if (!Arrays.asList("Garantia", "Parte do Corpo").contains(o.toString())) {
+          if (!Arrays.asList("Garantia", "Parte do Corpo", "PREÇO VIVA SAÚDE").contains(o.toString())) {
             description.append("<div> <strong>" + o.toString() + ":</strong>");
             JSONArray spec = product.getJSONArray(o.toString());
 

@@ -570,29 +570,4 @@ public class B2WCrawler extends Crawler {
     return sellerName;
   }
 
-  // private Integer crawlStock(String internalId, JSONObject jsonProduct){
-  // Integer stock = null;
-  //
-  // if(jsonProduct.has("prices")){
-  // if(jsonProduct.getJSONObject("prices").has(internalId)){
-  // JSONArray offers = jsonProduct.getJSONObject("prices").getJSONArray(internalId);
-  //
-  // for(int i = 0; i < offers.length(); i++) {
-  // JSONObject seller = offers.getJSONObject(i);
-  //
-  // if(seller.has("sellerName") && seller.has("stock")) {
-  // String sellerName = seller.getString("sellerName");
-  //
-  // if(sellerName.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER) ||
-  // sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER)) {
-  // stock = seller.getInt("stock");
-  // break;
-  // }
-  // }
-  // }
-  // }
-  // }
-  //
-  // return stock;
-  // }
 }
