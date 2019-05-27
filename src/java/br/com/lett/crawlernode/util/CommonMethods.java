@@ -68,7 +68,11 @@ public class CommonMethods {
    * @return
    */
   public static <E> E getLast(List<E> array) {
-    return array.get(array.size() - 1);
+    if (!array.isEmpty()) {
+      return array.get(array.size() - 1);
+    }
+
+    return null;
   }
 
   /**

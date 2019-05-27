@@ -256,7 +256,11 @@ public abstract class CNOVACrawler extends Crawler {
     try {
 
       if (doc.selectFirst(".descricaoAnuncio .productDetails") != null) {
-        offers.add(scrapPrincipalOffer(doc));
+        Offer offer = scrapPrincipalOffer(doc);
+
+        if (offer != null) {
+          offers.add(offer);
+        }
       }
 
       Elements sellers = doc.select(".listaLojistas .buying");
@@ -300,9 +304,10 @@ public abstract class CNOVACrawler extends Crawler {
             String sellerFullName = sellerFullNameElement.attr("title");
             String slugSellerName = CrawlerUtils.toSlug(sellerFullName);
             Double mainPrice = MathUtils.parseDoubleWithComma(mainPriceElement.text());
+            Integer mainPagePosition = offers.isEmpty() ? 1 : null;
 
             Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-                .setSellersPagePosition(position).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+                .setSellersPagePosition(position).setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
 
             offers.add(offer);
           }
@@ -330,7 +335,7 @@ public abstract class CNOVACrawler extends Crawler {
     Element elementPrice = doc.selectFirst(".productDetails .sale.price");
 
     if (elementMainSeller != null) {
-      sellerFullName = elementMainSeller.text();
+      sellerFullName = elementMainSeller.text().trim();
       slugSellerName = CrawlerUtils.toSlug(sellerFullName);
     }
 
@@ -338,8 +343,10 @@ public abstract class CNOVACrawler extends Crawler {
       mainPrice = MathUtils.parseDoubleWithComma(elementPrice.text());
     }
 
-    offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-        .setMainPrice(mainPrice).setIsBuybox(isBuyBoxPage).setMainPagePosition(1).build();
+    if (sellerFullName != null && !sellerFullName.isEmpty()) {
+      offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPrice(mainPrice).setIsBuybox(isBuyBoxPage).setMainPagePosition(1).build();
+    }
 
     return offer;
   }

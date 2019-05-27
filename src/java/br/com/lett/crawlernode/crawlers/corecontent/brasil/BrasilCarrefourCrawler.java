@@ -1,12 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -22,6 +19,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -49,26 +47,13 @@ public class BrasilCarrefourCrawler extends Crawler {
 
   public BrasilCarrefourCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
-
-  @Override
-  public void handleCookiesBeforeFetch() {
-    BasicClientCookie cookie;
-    try {
-      cookie = new BasicClientCookie("ADRUM", "s=1548346365696&r=" + URLEncoder.encode(session.getOriginalURL(), "UTF-8"));
-      cookie.setDomain("www.carrefour.com.br");
-      cookie.setPath("/");
-      cookies.add(cookie);
-    } catch (UnsupportedEncodingException e) {
-      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-    }
   }
 
   @Override
@@ -80,7 +65,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
-    headers.put("upgrade-insecure-requests", "1");
+    headers.put("referer", HOME_PAGE);
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
     return this.dataFetcher.get(session, request).getBody();
@@ -90,6 +75,8 @@ public class BrasilCarrefourCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "CARREFOUR.html");
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());

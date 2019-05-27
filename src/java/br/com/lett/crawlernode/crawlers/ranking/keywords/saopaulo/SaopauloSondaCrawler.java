@@ -2,47 +2,45 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
   public SaopauloSondaCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override
   protected void extractProductsFromCurrentPage() {
-
+    this.pageSize = 96;
     this.log("Página " + this.currentPage);
 
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-
-    String url = "http://busca.sondadelivery.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
+    String url =
+        "https://www.sondadelivery.com.br/delivery/busca/" + this.keywordWithoutAccents.replace(" ", "%20") + "/" + this.currentPage + "/96/0/";
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".neemu-products-container .nm-product-item");
+    Elements products = this.currentDoc.select(".product-list .product");
 
     if (!products.isEmpty()) {
-
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
 
       for (Element e : products) {
 
-        String urlProduct = crawlProductUrl(e);
-
-        String internalPid = crawlInternalPid(e);
-
+        String urlProduct = CrawlerUtils.scrapUrl(e, ".product--info > a", "href", "https", "www.sondadelivery.com.br");
         String internalId = crawlInternalId(urlProduct);
 
-        saveDataProduct(internalId, internalPid, urlProduct);
+        saveDataProduct(internalId, null, urlProduct);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -58,41 +56,11 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".neemu-total-products-container strong").first();
-
-    if (totalElement != null) {
-      try {
-        this.totalProducts = Integer.parseInt(totalElement.ownText());
-      } catch (Exception e) {
-        this.logError(CommonMethods.getStackTrace(e));
-      }
-    }
-
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".search-filter--results strong", null, true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 
   private String crawlInternalId(String url) {
-    return CommonMethods.getLast(url.split("/"));
-  }
-
-  private String crawlInternalPid(Element e) {
-    return null;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String urlProduct = null;
-    Element url = e.select(".nm-product-name > a").first();
-
-    if (url != null) {
-      urlProduct = url.attr("href");
-
-      if (!urlProduct.contains("sondadelivery")) {
-        urlProduct = CommonMethods.sanitizeUrl("https://www.sondadelivery.com.br/" + urlProduct);
-      } else if (!urlProduct.startsWith("http")) {
-        urlProduct = CommonMethods.sanitizeUrl("https:" + urlProduct);
-      }
-    }
-
-    return urlProduct;
+    return CommonMethods.getLast(url.split("\\?")[0].split("/"));
   }
 }

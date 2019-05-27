@@ -20,7 +20,7 @@ import models.prices.Prices;
 
 public class BrasilFarmadeliveryCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.farmadelivery.com.br/";
+  private static final String HOME_PAGE = "http://www.farmadelivery.com.br/";
 
   public BrasilFarmadeliveryCrawler(Session session) {
     super(session);
@@ -90,26 +90,12 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
         }
       }
 
-      // Imagens
       String primaryImage = crawlPrimaryImage(doc);
-
       String secondaryImages = crawlSecondaryImages(doc);
-
-
-      // Descrição
       String description = scrapDescription(doc, internalId);
-
-
-      // Estoque
       Integer stock = null;
-
-      // Prices
       Prices prices = crawlPrices(doc, price);
-
-      // Marketplace
       Marketplace marketplace = new Marketplace();
-
-      // Eans
       String ean = crawlEan(doc);
       List<String> eans = new ArrayList<>();
       eans.add(ean);
@@ -141,25 +127,6 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
     return products;
   }
 
-
-  private String scrapDescription(Document doc, String internalId) {
-    String description = "";
-    Element elementDescription = doc.select("div.product-collateral .box-description").first();
-    Element elementAdditional = doc.select("div.product-collateral .box-additional").first();
-    if (elementDescription != null) {
-      description += elementDescription.html();
-    }
-
-    if (elementAdditional != null) {
-      description += elementAdditional.html();
-    }
-
-
-    Document richContent = CrawlerUtils.scrapLettHtml(internalId, session, 103);
-    description += richContent.html();
-
-    return description;
-  }
 
   /*******************************
    * Product page identification *
@@ -277,5 +244,23 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
     }
 
     return ean;
+  }
+
+  private String scrapDescription(Document doc, String internalId) {
+    StringBuilder description = new StringBuilder();
+
+    Element elementDescription = doc.selectFirst("div.product-collateral .box-description");
+    if (elementDescription != null) {
+      description.append(elementDescription.html());
+    }
+
+    Element elementAdditional = doc.selectFirst("div.product-collateral .box-additional");
+    if (elementAdditional != null) {
+      description.append(elementAdditional.html());
+    }
+
+    description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+
+    return description.toString();
   }
 }

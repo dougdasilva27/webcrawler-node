@@ -690,34 +690,37 @@ public class VTEXCrawlersUtils {
       for (Object o : sellers) {
         JSONObject seller = (JSONObject) o;
 
-        String sellerFullName = null;
-        String slugSellerName = null;
-        String internalSellerId = null;
-        Double mainPrice = null;
+        if (CrawlerUtils.getIntegerValueFromJSON(seller, "AvailableQuantity", 0) > 0) {
 
-        if (seller.has("Name")) {
-          sellerFullName = seller.get("Name").toString();
-          slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+          String sellerFullName = null;
+          String slugSellerName = null;
+          String internalSellerId = null;
+          Double mainPrice = null;
+
+          if (seller.has("Name")) {
+            sellerFullName = seller.get("Name").toString();
+            slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+          }
+
+          if (seller.has("SellerId")) {
+            internalSellerId = seller.get("SellerId").toString();
+          }
+
+
+          if (seller.has("Price")) {
+            mainPrice = CrawlerUtils.getDoubleValueFromJSON(seller, "Price", true, true);
+          }
+
+          try {
+            Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+                .setMainPagePosition(position).setIsBuybox(this.isBuyBox).setMainPrice(mainPrice).build();
+
+            offers.add(offer);
+          } catch (Exception e) {
+            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+          }
+          position++;
         }
-
-        if (seller.has("SellerId")) {
-          internalSellerId = seller.get("SellerId").toString();
-        }
-
-
-        if (seller.has("Price")) {
-          mainPrice = CrawlerUtils.getDoubleValueFromJSON(seller, "Price", true, true);
-        }
-
-        try {
-          Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-              .setMainPagePosition(position).setIsBuybox(this.isBuyBox).setMainPrice(mainPrice).build();
-
-          offers.add(offer);
-        } catch (Exception e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-        }
-        position++;
       }
     }
 

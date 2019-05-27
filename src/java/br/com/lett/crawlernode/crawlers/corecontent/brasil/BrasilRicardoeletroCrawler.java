@@ -83,8 +83,10 @@ public class BrasilRicardoeletroCrawler extends Crawler {
         }
       }
 
+      Document docMarketplace = crawlDocMarketplaces(internalPid);
+
       // Marketplace
-      Map<String, Prices> marketplaceMap = crawlMarketplaces(internalPid, doc);
+      Map<String, Prices> marketplaceMap = crawlMarketplaces(internalPid, docMarketplace, doc);
       Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
 
       // Prices
@@ -154,8 +156,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       Integer stock = crawlStock(doc);
 
       // Offers
-      Offers offers = scrapBuyBox(internalPid, doc);
-      System.err.println(offers);
+      Offers offers = available || !marketplace.isEmpty() ? scrapBuyBox(internalPid, docMarketplace, doc) : new Offers();
       String ean = crawlEan(doc);
 
       List<String> eans = new ArrayList<>();
@@ -191,19 +192,21 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     return products;
   }
 
-  private Offers scrapBuyBox(String internalPid, Document doc) {
+  private Offers scrapBuyBox(String internalPid, Document docMarketplace, Document doc) {
     Offers offers = new Offers();
 
     try {
       boolean isBuyBoxPage = doc.selectFirst("#ModalVejaMaisParceirosProduto") != null;
+      Offer mainPage = scrapMainPage(isBuyBoxPage, doc);
+
+      if (mainPage != null) {
+        offers.add(mainPage);
+      }
 
       if (isBuyBoxPage) {
-        offers = scrapSellerPage(internalPid, isBuyBoxPage);
-
-      } else {
-        offers = scrapMainPage(isBuyBoxPage, doc);
-
+        scrapSellerPage(docMarketplace, isBuyBoxPage, offers);
       }
+
 
     } catch (OfferException e) {
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -212,55 +215,54 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     return offers;
   }
 
-  private Offers scrapMainPage(boolean isBuyBoxPage, Document doc) throws OfferException {
-    Offers offers = new Offers();
-
-    String sellerFullName = null;
-    String slugSellerName = null;
-    String internalSellerId = null;
-    Double mainPrice = null;
-    Integer mainPagePosition = 1;
-    Integer sellersPagePosition = null;
+  private Offer scrapMainPage(boolean isBuyBoxPage, Document doc) throws OfferException {
+    Offer offer = null;
 
     JSONArray jsonArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
-    JSONObject jsonInfo = jsonArray.getJSONObject(0);
 
-    if (jsonInfo.has("productMarketplace")) {
-      JSONObject productMarketplace = jsonInfo.getJSONObject("productMarketplace");
+    if (jsonArray.length() > 0) {
+      JSONObject jsonInfo = jsonArray.getJSONObject(0);
 
-      if (productMarketplace.has("nomeLoja")) {
-        sellerFullName = productMarketplace.getString("nomeLoja");
+      if (jsonInfo.has("productMarketplace") && jsonInfo.has("productPrice")) {
+        String sellerFullName = null;
+        String slugSellerName = null;
+        String internalSellerId = null;
+        Double mainPrice = null;
+        Integer mainPagePosition = 1;
+        Integer sellersPagePosition = null;
+
+        JSONObject productMarketplace = jsonInfo.getJSONObject("productMarketplace");
+
+        mainPrice = MathUtils.parseDoubleWithDot(jsonInfo.get("productPrice").toString());
+
+        if (productMarketplace.has("nomeLoja") && !productMarketplace.isNull("nomeLoja")) {
+          sellerFullName = productMarketplace.getString("nomeLoja");
+        } else {
+          sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".info-parceiro strong", true);
+        }
+
         slugSellerName = CrawlerUtils.toSlug(sellerFullName);
-      }
 
-      if (productMarketplace.has("siteId")) {
-        internalSellerId = productMarketplace.getString("siteId");
+        if (productMarketplace.has("siteId")) {
+          internalSellerId = productMarketplace.getString("siteId");
+        }
+
+        offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+            .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).setSellersPagePosition(sellersPagePosition)
+            .build();
       }
     }
 
-    if (jsonInfo.has("productPrice")) {
-      mainPrice = MathUtils.parseDoubleWithDot(jsonInfo.get("productPrice").toString());
-    }
-
-    Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-        .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).setSellersPagePosition(sellersPagePosition).build();
-
-    offers.add(offer);
-
-    return offers;
+    return offer;
   }
 
-  private Offers scrapSellerPage(String internalPid, boolean isBuyBoxPage) throws OfferException {
-    Offers offers = new Offers();
+  private void scrapSellerPage(Document docMarketplace, boolean isBuyBoxPage, Offers offers) throws OfferException {
 
     String sellerFullName = null;
     String slugSellerName = null;
     String internalSellerId = null;
     Double mainPrice = null;
-    Integer mainPagePosition = 1;
     Integer sellersPagePosition = 1;
-
-    Document docMarketplace = crawlDocMarketplaces(internalPid);
 
     Elements lines = docMarketplace.select(".modal-linha-parceiro");
 
@@ -280,16 +282,18 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       internalSellerId = linePartner.attr("parceiroid");
 
       if (mainPrice != null) {
-        Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-            .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).setSellersPagePosition(sellersPagePosition)
-            .build();
-
-        offers.add(offer);
+        Offer offer = null;
+        if (offers.contains(internalSellerId)) {
+          offer = offers.get(internalSellerId);
+          offer.setSellersPagePosition(sellersPagePosition);
+        } else {
+          offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+              .setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).setSellersPagePosition(sellersPagePosition).build();
+          offers.add(offer);
+        }
       }
       sellersPagePosition++;
     }
-
-    return offers;
   }
 
   /*******************************
@@ -337,14 +341,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
   }
 
 
-  private Map<String, Prices> crawlMarketplaces(String internalPid, Document doc) {
-
-    Document docMarketplaceInfo = crawlDocMarketplaces(internalPid);
+  private Map<String, Prices> crawlMarketplaces(String internalPid, Document docMarketplace, Document doc) {
     String principalSeller = crawlPrincipalSeller(doc);
-
     Map<String, Prices> marketplace = new HashMap<>();
 
-    Elements lines = docMarketplaceInfo.select(".modal-linha-parceiro");
+    Elements lines = docMarketplace.select(".modal-linha-parceiro");
 
     for (Element linePartner : lines) {
       Element priceElement = linePartner.selectFirst(".valor-unitario");

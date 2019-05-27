@@ -1,11 +1,17 @@
 package br.com.lett.crawlernode.core.fetcher.models;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class FetcherRequestBuilder {
 
   private String url;
   private String requestType;
   private boolean mustUseMovingAverage;
   private boolean retrieveStatistics;
+  private boolean ignoreStatusCode;
+  private boolean bodyIsRequired;
+  private List<Integer> statusCodesToIgnore = new ArrayList<>();
   private FetcherRequestsParameters parameters;
   private FetcherRequestForcedProxies forcedProxies;
 
@@ -37,6 +43,16 @@ public class FetcherRequestBuilder {
     return this;
   }
 
+  public FetcherRequestBuilder setIgnoreStatusCode(boolean ignoreStatusCode) {
+    this.ignoreStatusCode = ignoreStatusCode;
+    return this;
+  }
+
+  public FetcherRequestBuilder setBodyIsRequired(boolean bodyIsRequired) {
+    this.bodyIsRequired = bodyIsRequired;
+    return this;
+  }
+
   public FetcherRequestBuilder setParameters(FetcherRequestsParameters parameters) {
     this.parameters = parameters;
     return this;
@@ -44,6 +60,11 @@ public class FetcherRequestBuilder {
 
   public FetcherRequestBuilder setForcedProxies(FetcherRequestForcedProxies forcedProxies) {
     this.forcedProxies = forcedProxies != null && forcedProxies.isEmpty() ? null : forcedProxies;
+    return this;
+  }
+
+  public FetcherRequestBuilder setStatusCodesToIgnore(List<Integer> statusCodesToIgnore) {
+    this.statusCodesToIgnore = statusCodesToIgnore;
     return this;
   }
 
@@ -55,6 +76,9 @@ public class FetcherRequestBuilder {
     fetcher.setRequestType(this.requestType);
     fetcher.setForcedProxies(this.forcedProxies);
     fetcher.setParameters(this.parameters);
+    fetcher.setIgnoreStatusCode(ignoreStatusCode);
+    fetcher.setBodyIsRequired(bodyIsRequired);
+    fetcher.setStatusCodesToIgnore(statusCodesToIgnore);
 
     return fetcher;
   }
