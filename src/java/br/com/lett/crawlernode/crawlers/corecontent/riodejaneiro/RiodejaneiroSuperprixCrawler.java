@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.DataNode;
@@ -42,6 +43,13 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
+
+  public void handleCookiesBeforeFetch() {
+
+    BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=1");
+    this.cookies.add(cookie);
+
   }
 
   @Override

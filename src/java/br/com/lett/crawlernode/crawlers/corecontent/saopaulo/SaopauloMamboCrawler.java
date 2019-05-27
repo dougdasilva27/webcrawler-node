@@ -289,20 +289,6 @@ public class SaopauloMamboCrawler extends Crawler {
       description.append(skuInfo.getString("description") + "<br><br>");
     }
 
-    // if (skuInfo.has("allSpecifications")) {
-    // JSONArray spec = skuInfo.getJSONArray("allSpecifications");
-    //
-    // for (int i = 0; i < spec.length(); i++) {
-    // String key = spec.getString(i);
-    //
-    // if (skuInfo.has(key)) {
-    // description.append((key + ": ").replace("::", ":")
-    // + skuInfo.getJSONArray(key).toString().replace("[", "").replace("]", "").replace("\",", "\",
-    // ").replace("\"", "").trim() + "<br>");
-    // }
-    // }
-    // }
-
     description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
 
     return description.toString();

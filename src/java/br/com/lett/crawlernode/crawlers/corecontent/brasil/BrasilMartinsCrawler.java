@@ -140,7 +140,8 @@ public class BrasilMartinsCrawler extends Crawler {
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagePrincipal img", Arrays.asList("src"), "https", "imgprd.martins.com.br");
       String secondaryImages =
           CrawlerUtils.scrapSimpleSecondaryImages(doc, ".galeryImages img", Arrays.asList("src"), "https", "imgprd.martins.com.br", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".qdDetails .cods", ".details", "#especfication"));
+      String description =
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details span"));
       List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
 
       // Creating the product
