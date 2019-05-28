@@ -333,7 +333,7 @@ public class PaguemenosCrawler extends Crawler {
       }
     }
 
-    return description.toString();
+    return description.toString().replace("visibility:hidden", "");
   }
 
   /**

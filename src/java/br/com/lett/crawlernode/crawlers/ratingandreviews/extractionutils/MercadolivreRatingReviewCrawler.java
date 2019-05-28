@@ -15,9 +15,9 @@ import models.RatingsReviews;
  * @author gabriel
  *
  */
-public class BrasilMercadolivreRatingReviewCrawler extends RatingReviewCrawler {
+public class MercadolivreRatingReviewCrawler extends RatingReviewCrawler {
 
-  protected BrasilMercadolivreRatingReviewCrawler(Session session) {
+  protected MercadolivreRatingReviewCrawler(Session session) {
     super(session);
   }
 
