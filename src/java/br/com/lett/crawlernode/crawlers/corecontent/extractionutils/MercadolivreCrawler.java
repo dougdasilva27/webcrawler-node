@@ -33,7 +33,7 @@ import models.prices.Prices;
  * @author Gabriel Dornelas
  *
  */
-public class BrasilMercadolivreCrawler extends Crawler {
+public class MercadolivreCrawler extends Crawler {
 
   private String homePage;
   private String mainSellerNameLower;
@@ -46,7 +46,7 @@ public class BrasilMercadolivreCrawler extends Crawler {
     this.mainSellerNameLower = mainSellerNameLower;
   }
 
-  protected BrasilMercadolivreCrawler(Session session) {
+  protected MercadolivreCrawler(Session session) {
     super(session);
   }
 
@@ -87,7 +87,8 @@ public class BrasilMercadolivreCrawler extends Crawler {
         String description =
             CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
-        boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty();
+        boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
+            || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty();
         Map<String, Prices> marketplaceMap = availableToBuy ? crawlMarketplace(doc) : new HashMap<>();
         boolean available = availableToBuy && marketplaceMap.containsKey(mainSellerNameLower);
 
@@ -210,26 +211,32 @@ public class BrasilMercadolivreCrawler extends Crawler {
    */
   private Prices crawlPrices(Document doc) {
     Prices prices = new Prices();
+    Element separatorElement = doc.selectFirst(".item-price span.price-tag:not(.price-tag__del) .price-tag-decimal-separator");
 
-    Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del)", null, false, ',', session);
-    if (price != null) {
-      Map<Integer, Float> mapInstallments = new HashMap<>();
-      mapInstallments.put(1, price);
-      prices.setBankTicketPrice(price);
+    if (separatorElement != null) {
 
-      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, "del .price-tag-fraction", null, true, ',', session));
+      char separator = separatorElement.text().trim().charAt(0);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del)", null, false, separator, session);
+      if (price != null) {
+        Map<Integer, Float> mapInstallments = new HashMap<>();
+        mapInstallments.put(1, price);
+        prices.setBankTicketPrice(price);
 
-      Elements installments = doc.select(".payment-installments");
-      for (Element e : installments) {
-        Element eParsed = Jsoup.parse(e.toString().replace("<sup>", ",").replace("</sup>", ""));
-        Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, eParsed, false, "x");
-        if (!pair.isAnyValueNull()) {
-          mapInstallments.put(pair.getFirst(), pair.getSecond());
+        prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, "del .price-tag-fraction", null, true, ',', session));
+
+        Elements installments = doc.select(".payment-installments");
+        for (Element e : installments) {
+          Element eParsed = Jsoup.parse(e.toString().replace("<sup>", ",").replace("</sup>", ""));
+          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, eParsed, false, "x");
+          if (!pair.isAnyValueNull()) {
+            mapInstallments.put(pair.getFirst(), pair.getSecond());
+          }
         }
+
+        prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
+        prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
       }
 
-      prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
     }
 
     return prices;
