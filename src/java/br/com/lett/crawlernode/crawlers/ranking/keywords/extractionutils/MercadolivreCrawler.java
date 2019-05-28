@@ -5,30 +5,44 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class BrasilMercadolivreCrawler extends CrawlerRankingKeywords {
+public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
   private String storeName;
+  private String nextUrlHost;
+  private String nextUrl;
+  private String productUrlHost;
+
+  private static final String PRODUCTS_SELECTOR = ".results-item .item";
+
+  protected MercadolivreCrawler(Session session) {
+    super(session);
+    super.fetchMode = FetchMode.FETCHER;
+  }
+
+  public void setProductUrlHost(String productUrlHost) {
+    this.productUrlHost = productUrlHost;
+  }
+
+  public void setNextUrlHost(String nextUrlHost) {
+    this.nextUrlHost = nextUrlHost;
+  }
 
   protected void setStoreName(String storeName) {
     this.storeName = storeName;
   }
 
-  protected BrasilMercadolivreCrawler(Session session) {
-    super(session);
-    super.fetchMode = FetchMode.FETCHER;
-  }
 
-  private static final String PRODUCTS_SELECTOR = ".results-item .item";
-  private String nextUrl;
 
   @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 64;
     this.log("Página " + this.currentPage);
 
-    String url = "https://lista.mercadolivre.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + "_Loja_" + storeName + "#D[A:"
+    String url = "https://" + nextUrlHost + "/" + this.keywordWithoutAccents.replace(" ", "-") + "_Loja_" + storeName + "#D[A:"
         + this.keywordWithoutAccents.replace(" ", "+") + "," + storeName + "]";
 
     if (this.currentPage > 1) {
@@ -36,10 +50,10 @@ public class BrasilMercadolivreCrawler extends CrawlerRankingKeywords {
     }
 
     this.currentDoc = fetchDocument(url);
-    this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", "lista.mercadolivre.com.br");
+    this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", nextUrlHost);
     Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
     boolean ownStoreResults = this.currentDoc.select("#search-results-disclaimers .nav-search-zrp-msg").isEmpty();
-
+    CommonMethods.saveDataToAFile(this.currentDoc, Test.pathWrite + "x.html");
     if (!products.isEmpty() && ownStoreResults) {
       if (this.totalProducts == 0) {
         setTotalProducts();
@@ -47,8 +61,7 @@ public class BrasilMercadolivreCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String internalPid = e.id();
-        String productUrl = CrawlerUtils.scrapUrl(e, "> a", "href", "https:", "produto.mercadolivre.com.br");
-
+        String productUrl = CrawlerUtils.scrapUrl(e, "> a", "href", "https:", productUrlHost);
         saveDataProduct(null, internalPid, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);

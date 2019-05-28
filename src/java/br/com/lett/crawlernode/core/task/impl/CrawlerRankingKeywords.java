@@ -30,10 +30,10 @@ public abstract class CrawlerRankingKeywords extends CrawlerRanking {
     } else if (session instanceof RankingDiscoverKeywordsSession) {
       this.location = ((RankingDiscoverKeywordsSession) session).getLocation();
     }
-
-    if (!"mexico".equals(session.getMarket().getCity())) {
-      this.keywordWithoutAccents = CommonMethods.removeAccents(this.location.replaceAll("/", " ").replaceAll("\\.", ""));
-    }
+    // Danger! I remove this because it is too old and it can be unuseless.
+    // if (!"mexico".equals(session.getMarket().getCity())) {
+    this.keywordWithoutAccents = CommonMethods.removeAccents(this.location.replaceAll("/", " ").replaceAll("\\.", ""));
+    // }
 
     try {
       this.keywordEncoded = URLEncoder.encode(location, "UTF-8");
