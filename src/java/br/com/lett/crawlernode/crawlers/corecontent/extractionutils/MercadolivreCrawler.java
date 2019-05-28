@@ -64,7 +64,7 @@ public class MercadolivreCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=itemId]", "value");
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=itemId], #productInfo input[name=\"item_id\"]", "value");
 
       Map<String, Document> variations = getVariationsHtmls(doc);
       for (Entry<String, Document> entry : variations.entrySet()) {
@@ -114,7 +114,7 @@ public class MercadolivreCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return !doc.select("input[name=itemId]").isEmpty();
+    return !doc.select(".vip-nav-bounds .layout-main").isEmpty();
   }
 
   private Map<String, Document> getVariationsHtmls(Document doc) {
