@@ -77,14 +77,14 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
     Document doc = new Document("");
 
     String url = "https://service.yourviews.com.br/review/GetReview?storeKey=87b2aa32-fdcb-4f1d-a0b9-fd6748df725a&" + "productStoreId=" + internalPid
-        + "&extendedField=&callback=_jqjsp&_1516980244481=";
+        + "&extendedField=&callback=_jqjsp&_1559052851756=";
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     String response = this.dataFetcher.get(session, request).getBody();
 
     if (response != null && response.contains("({")) {
       int x = response.indexOf('(') + 1;
-      int y = response.indexOf(");", x);
+      int y = response.indexOf(")", x);
 
       JSONObject json = new JSONObject(response.substring(x, y));
 
