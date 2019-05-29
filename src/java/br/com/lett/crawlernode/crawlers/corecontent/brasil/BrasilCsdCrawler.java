@@ -32,10 +32,8 @@ public class BrasilCsdCrawler extends Crawler {
     super(session);
   }
 
-  public static final String HOME_PAGE =
-      "https://www.sitemercado.com.br/supermercadoscidadecancao/londrina-loja-londrina-19-rodocentro-avenida-tiradentes/";
-  public static final String LOAD_PAYLOAD =
-      "{\"lojaUrl\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeUrl\":\"supermercadoscidadecancao\"}";
+  public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoscidadecancao/londrina-loja-londrina-19-rodocentro-avenida-tiradentes/";
+  public static final String LOAD_PAYLOAD = "{\"lojaUrl\":\"londrina-loja-londrina-19-rodocentro-avenida-tiradentes\",\"redeUrl\":\"supermercadoscidadecancao\"}";
 
   @Override
   public boolean shouldVisit() {
@@ -61,7 +59,7 @@ public class BrasilCsdCrawler extends Crawler {
       CategoryCollection categories = crawlCategories(jsonSku);
       String description = crawlDescription(jsonSku);
       Integer stock = jsonSku.has("quantityStock") && jsonSku.get("quantityStock") instanceof Integer ? jsonSku.getInt("quantityStock") : null;
-      boolean available = stock != null && stock > 0;
+      boolean available = jsonSku.has("isSale") && !jsonSku.isNull("isSale") && jsonSku.getBoolean("isSale");
       Float price = available ? crawlPrice(jsonSku) : null;
       String primaryImage = crawlPrimaryImage(jsonSku);
       String name = crawlName(jsonSku);
@@ -70,10 +68,9 @@ public class BrasilCsdCrawler extends Crawler {
       Prices prices = crawlPrices(price, priceFrom);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
 
       products.add(product);
 

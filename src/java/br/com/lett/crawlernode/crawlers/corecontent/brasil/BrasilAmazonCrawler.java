@@ -110,10 +110,9 @@ public class BrasilAmazonCrawler extends Crawler {
       eans.add(ean);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
@@ -477,8 +476,7 @@ public class BrasilAmazonCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
     Element prodInfoElement = doc.selectFirst("#prodDetails");
 
-    Elements elementsDescription =
-        doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
+    Elements elementsDescription = doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
 
     for (Element e : elementsDescription) {
       description.append(e.html().replace("noscript", "div"));
@@ -554,10 +552,12 @@ public class BrasilAmazonCrawler extends Crawler {
 
     if (price != null) {
       installments.put(1, price);
+      prices.setBankTicketPrice(price);
     } else {
       Float frontPagePrice = crawlPriceForPrincipalSeller(doc);
       if (frontPagePrice != null) {
         installments.put(1, frontPagePrice);
+        prices.setBankTicketPrice(price);
       }
 
       Elements pricesElement = doc.select("div.a-popover-preload[id^=a-popover] > div > table:not([border]) tr");
@@ -575,6 +575,10 @@ public class BrasilAmazonCrawler extends Crawler {
 
           if (!installment.isEmpty() && value != null) {
             installments.put(Integer.parseInt(installment), value);
+
+            if (installment.equals("1")) {
+              prices.setBankTicketPrice(value);
+            }
           }
         }
       }
