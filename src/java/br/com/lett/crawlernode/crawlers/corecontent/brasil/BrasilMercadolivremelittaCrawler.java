@@ -18,5 +18,6 @@ public class BrasilMercadolivremelittaCrawler extends MercadolivreCrawler {
     super(session);
     super.setHomePage(HOME_PAGE);
     super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
+    super.setSeparator(',');
   }
 }

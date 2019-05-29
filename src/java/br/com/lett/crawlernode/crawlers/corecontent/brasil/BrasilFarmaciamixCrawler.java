@@ -185,10 +185,12 @@ public class BrasilFarmaciamixCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.select("[itemprop=description]").first();
+    Elements shortDescription = doc.select("[itemprop=description]");
 
-    if (shortDescription != null) {
-      description.append(shortDescription.html());
+    for (Element element : shortDescription) {
+      if (element != null) {
+        description.append(element.html());
+      }
     }
 
     Element elementDescription = doc.select(".col-infos-produto").last();
