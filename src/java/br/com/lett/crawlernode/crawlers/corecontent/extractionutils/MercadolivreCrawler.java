@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -37,6 +38,15 @@ public class MercadolivreCrawler extends Crawler {
 
   private String homePage;
   private String mainSellerNameLower;
+  private char separator;
+
+  protected MercadolivreCrawler(Session session) {
+    super(session);
+  }
+
+  public void setSeparator(char separator) {
+    this.separator = separator;
+  }
 
   public void setHomePage(String homePage) {
     this.homePage = homePage;
@@ -44,10 +54,6 @@ public class MercadolivreCrawler extends Crawler {
 
   public void setMainSellerNameLower(String mainSellerNameLower) {
     this.mainSellerNameLower = mainSellerNameLower;
-  }
-
-  protected MercadolivreCrawler(Session session) {
-    super(session);
   }
 
   @Override
@@ -60,6 +66,7 @@ public class MercadolivreCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+    doc = Jsoup.parse(CommonMethods.readFile(Test.pathWrite + "melitta.html"));
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -211,33 +218,29 @@ public class MercadolivreCrawler extends Crawler {
    */
   private Prices crawlPrices(Document doc) {
     Prices prices = new Prices();
-    Element separatorElement = doc.selectFirst(".item-price span.price-tag:not(.price-tag__del) .price-tag-decimal-separator");
 
-    if (separatorElement != null) {
+    Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del)", null, false, separator, session);
+    if (price != null) {
+      Map<Integer, Float> mapInstallments = new HashMap<>();
+      mapInstallments.put(1, price);
+      prices.setBankTicketPrice(price);
 
-      char separator = separatorElement.text().trim().charAt(0);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del)", null, false, separator, session);
-      if (price != null) {
-        Map<Integer, Float> mapInstallments = new HashMap<>();
-        mapInstallments.put(1, price);
-        prices.setBankTicketPrice(price);
+      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, "del .price-tag-fraction", null, true, ',', session));
 
-        prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, "del .price-tag-fraction", null, true, ',', session));
-
-        Elements installments = doc.select(".payment-installments");
-        for (Element e : installments) {
-          Element eParsed = Jsoup.parse(e.toString().replace("<sup>", ",").replace("</sup>", ""));
-          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, eParsed, false, "x");
-          if (!pair.isAnyValueNull()) {
-            mapInstallments.put(pair.getFirst(), pair.getSecond());
-          }
+      Elements installments = doc.select(".payment-installments");
+      for (Element e : installments) {
+        Element eParsed = Jsoup.parse(e.toString().replace("<sup>", ",").replace("</sup>", ""));
+        Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, eParsed, false, "x");
+        if (!pair.isAnyValueNull()) {
+          mapInstallments.put(pair.getFirst(), pair.getSecond());
         }
-
-        prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-        prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
       }
 
+      prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
     }
+
+    // }
 
     return prices;
   }
