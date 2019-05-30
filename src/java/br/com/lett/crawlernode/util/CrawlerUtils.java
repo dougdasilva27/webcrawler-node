@@ -1269,22 +1269,25 @@ public class CrawlerUtils {
     if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
       JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
 
+      JSONObject gallery = new JSONObject();
       if (mediaJson.has("mage/gallery/gallery")) {
-        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+        gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+      } else if (mediaJson.has("Xumulus_FastGalleryLoad/js/gallery/custom_gallery")) {
+        gallery = mediaJson.getJSONObject("Xumulus_FastGalleryLoad/js/gallery/custom_gallery");
+      }
 
-        if (gallery.has("data")) {
-          JSONArray arrayImages = gallery.getJSONArray("data");
+      if (gallery.has("data")) {
+        JSONArray arrayImages = gallery.getJSONArray("data");
 
-          for (Object o : arrayImages) {
-            JSONObject imageJson = (JSONObject) o;
+        for (Object o : arrayImages) {
+          JSONObject imageJson = (JSONObject) o;
 
-            if (imageJson.has("full")) {
-              images.put(imageJson.get("full"));
-            } else if (imageJson.has("img")) {
-              images.put(imageJson.get("img"));
-            } else if (imageJson.has("thumb")) {
-              images.put(imageJson.get("thumb"));
-            }
+          if (imageJson.has("full")) {
+            images.put(imageJson.get("full"));
+          } else if (imageJson.has("img")) {
+            images.put(imageJson.get("img"));
+          } else if (imageJson.has("thumb")) {
+            images.put(imageJson.get("thumb"));
           }
         }
       }

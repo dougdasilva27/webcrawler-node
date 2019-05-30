@@ -75,7 +75,7 @@ public class SaopauloDiaCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson, " - ");
+        String name = crawlName(jsonSku, skuJson, " - ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -105,8 +105,29 @@ public class SaopauloDiaCrawler extends Crawler {
     return products;
   }
 
-
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
+  }
+
+  public String crawlName(JSONObject jsonSku, JSONObject skuJson, String separator) {
+    StringBuilder name = new StringBuilder();
+
+    String nameVariation = jsonSku.has(VTEXCrawlersUtils.SKU_NAME) ? jsonSku.getString(VTEXCrawlersUtils.SKU_NAME) : null;
+
+    if (skuJson.has(VTEXCrawlersUtils.PRODUCT_NAME)) {
+      name.append(skuJson.getString(VTEXCrawlersUtils.PRODUCT_NAME));
+
+      if (nameVariation != null) {
+        if (name.length() > nameVariation.length()) {
+          if (!name.toString().contains(nameVariation)) {
+            name.append(separator).append(nameVariation);
+          }
+        } else {
+          name = new StringBuilder().append(nameVariation);
+        }
+      }
+    }
+
+    return name.toString();
   }
 }

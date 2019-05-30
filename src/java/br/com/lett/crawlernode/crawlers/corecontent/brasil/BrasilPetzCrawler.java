@@ -28,6 +28,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -327,6 +328,11 @@ public class BrasilPetzCrawler extends Crawler {
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
       mapInstallments.put(1, price);
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".de-apagado", doc, true, "x", "", true);
+      if (!pair.isAnyValueNull()) {
+        mapInstallments.put(pair.getFirst(), pair.getSecond());
+      }
 
       prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
