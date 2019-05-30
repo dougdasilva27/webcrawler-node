@@ -66,8 +66,7 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
     if (this.currentPage == 1) {
       String url = "https://www.gazin.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + ".mht";
       doc = fetchDocument(url);
-
-      String in = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".mProdutosEspacoAntPonto input[name=in]", "value");
+      String in = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=in]", "value");
 
       // this happen because when returns more than one category, we just crawl the first page
       if (in != null && doc.select("#conteudoProdutosSB > div > .mProdutosEspacoAntPonto").size() < 2) {
@@ -96,4 +95,5 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
 
     return doc;
   }
+
 }
