@@ -74,12 +74,13 @@ public class MexicoLacomerCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace(doc);
+      List<String> eans = scrapEans(doc);
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
@@ -89,6 +90,16 @@ public class MexicoLacomerCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private List<String> scrapEans(Document doc) {
+    Element upc = doc.selectFirst("#artean");
+    List<String> eans = new ArrayList<>();
+    if (upc != null) {
+      eans.add(upc.attr("value"));
+    }
+
+    return eans;
   }
 
   private boolean isProductPage(Document doc) {
