@@ -4,7 +4,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
 
@@ -14,21 +14,24 @@ public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 12;
+    this.pageSize = 30;
 
     this.log("Página " + this.currentPage);
-    String url = "https://busca.ultrafarma.com.br/search?w=" + this.keywordEncoded + "&srt=" + this.arrayProducts.size();
+    String url = "https://www.ultrafarma.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".conj_prod_categorias");
+    Elements products = this.currentDoc.select(".prd-list-item");
 
     if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+
       for (Element e : products) {
-        String productUrl = crawlProductUrl(e);
-        String internalId = crawlInternalId(e);
+        String productUrl = CrawlerUtils.scrapUrl(e, "a.product-item-link", "href", "https", "www.ultrafarma.com.br");
+        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "meta[itemprop=productId]", "content");
 
         saveDataProduct(internalId, null, productUrl);
 
@@ -46,34 +49,8 @@ public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected boolean hasNextPage() {
-    Element page = this.currentDoc.select(".paginacao li a").last();
-    return page == null || !page.hasClass("ativo");
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    Element id = e.selectFirst(".preco_lista_prod[data-id]");
-    if (id != null) {
-      String text = id.attr("data-id");
-
-      if (text.contains("_")) {
-        internalId = CommonMethods.getLast(text.split("_"));
-      }
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.selectFirst("a.nome_produtos_vitrine");
-    if (url != null) {
-      productUrl = url.attr("title");
-    }
-
-    return productUrl;
+  protected void setTotalProducts() {
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".prd-list-count", "de", null, false, true, 0);
+    this.log("Total de produtos: " + this.totalProducts);
   }
 }
