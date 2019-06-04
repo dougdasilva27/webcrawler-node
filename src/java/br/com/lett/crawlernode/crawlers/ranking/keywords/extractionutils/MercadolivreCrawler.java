@@ -35,8 +35,6 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     this.storeName = storeName;
   }
 
-
-
   @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 64;

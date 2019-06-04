@@ -10,5 +10,6 @@ public class BrasilMercadolivrecotyCrawler extends MercadolivreCrawler {
     super.setStoreName("coty");
     super.setNextUrlHost("lista.mercadolivre.com.br");
     super.setProductUrlHost("produto.mercadolivre.com.br");
+
   }
 }
