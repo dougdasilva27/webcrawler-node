@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.core.server.request.checkers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.aws.sqs.QueueName;
 import br.com.lett.crawlernode.core.server.ServerHandler;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingCategoriesRequest;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
@@ -10,14 +9,16 @@ import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.Logging;
+import enums.ScrapersTypes;
 
 public class CrawlerTaskRequestChecker {
 
   protected static final Logger logger = LoggerFactory.getLogger(CrawlerTaskRequestChecker.class);
 
   public static boolean checkRequest(Request request) {
-    if (request.getQueueName() == null) {
-      Logging.printLogError(logger, "Request is missing queue name");
+    String scraperType = request.getScraperType();
+    if (scraperType == null) {
+      Logging.printLogError(logger, "Request is missing scraper type");
       return false;
     }
 
@@ -30,7 +31,7 @@ public class CrawlerTaskRequestChecker {
       return checkImageTaskRequest(request);
     }
 
-    if (QueueName.INSIGHTS.equals(request.getQueueName()) || QueueName.CORE_WEBSCRAPER_DEV.equals(request.getQueueName())) {
+    if (ScrapersTypes.CORE.name().equals(scraperType)) {
       if (request.getProcessedId() == null) {
         Logging.printLogError(logger, "Request is missing processedId");
         return false;
@@ -41,12 +42,12 @@ public class CrawlerTaskRequestChecker {
       }
     }
 
-    if (QueueName.RANKING_KEYWORDS.equals(request.getQueueName()) && ((CrawlerRankingKeywordsRequest) request).getLocation() == null) {
+    if (ScrapersTypes.RANKING_BY_KEYWORDS.name().equals(scraperType) && ((CrawlerRankingKeywordsRequest) request).getLocation() == null) {
       Logging.printLogError(logger, "Request is missing keyword");
       return false;
     }
 
-    if (QueueName.RANKING_CATEGORIES.equals(request.getQueueName())) {
+    if (ScrapersTypes.RANKING_BY_CATEGORIES.name().equals(scraperType)) {
       if (((CrawlerRankingCategoriesRequest) request).getLocation() == null) {
         Logging.printLogError(logger, "Request is missing category id");
         return false;

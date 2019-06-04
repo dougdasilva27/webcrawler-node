@@ -21,7 +21,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.aws.sqs.QueueName;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -49,6 +48,7 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import enums.QueueName;
 import models.Processed;
 
 public abstract class CrawlerRanking extends Task {
@@ -491,7 +491,7 @@ public abstract class CrawlerRanking extends Task {
    * @param entries
    */
   private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
-    String queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVER_WEBDRIVER : QueueName.DISCOVER;
+    String queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.name() : QueueName.DISCOVERER.name();
 
     SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 

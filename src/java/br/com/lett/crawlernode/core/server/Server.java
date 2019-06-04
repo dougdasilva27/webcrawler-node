@@ -32,8 +32,8 @@ public class Server {
   public static final int HTTP_STATUS_CODE_NOT_FOUND = 404;
   public static final int HTTP_STATUS_CODE_TOO_MANY_REQUESTS = 429;
 
-  public static final String ENDPOINT_TASK = "/crawler-task";
-  public static final String ENDPOINT_TEST = "/crawler-test";
+  public static final String ENDPOINT_TASK = "/task";
+  public static final String ENDPOINT_TEST = "/test";
   public static final String ENDPOINT_HEALTH_CHECK = "/health-check";
 
   private static final int SERVER_PORT = 5000;

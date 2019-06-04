@@ -16,4 +16,6 @@ public class EnvironmentVariables {
   public static final String HIKARI_CP_IDLE_TIMEOUT = "HIKARI_CP_IDLE_TIMEOUT";
   public static final String KINESIS_STREAM = "KINESIS_STREAM";
   public static final String SEND_TO_KINESIS = "SEND_TO_KINESIS";
+  public static final String QUEUE_URL_FIRST_PART = "QUEUE_URL_FIRST_PART";
+  public static final String FETCHER_URL = "FETCHER_URL";
 }

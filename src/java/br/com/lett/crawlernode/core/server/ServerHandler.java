@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import br.com.lett.crawlernode.aws.sqs.QueueName;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingCategoriesRequest;
@@ -20,6 +19,8 @@ import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
 import br.com.lett.crawlernode.util.Logging;
+import enums.QueueName;
+import enums.ScrapersTypes;
 
 public class ServerHandler implements HttpHandler {
 
@@ -38,10 +39,9 @@ public class ServerHandler implements HttpHandler {
   private static final String MSG_ATTR_IMG_TYPE = "type";
   private static final String MSG_ATTR_CATEGORY_ID = "categoryId";
   private static final String MSG_ATTR_SCREENSHOT = "screenshot";
-  // private static final String MSG_ATTR_KEYWORD = "keyword";
+  private static final String MSG_ATTR_SCRAPER_TYPE = "scraperType";
 
   private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
-  private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
 
   @Override
   public void handle(HttpExchange t) throws IOException {
@@ -90,17 +90,16 @@ public class ServerHandler implements HttpHandler {
 
   private Request parseRequest(HttpExchange t) throws IOException {
     Headers headers = t.getRequestHeaders();
-    String queueName = headers.getFirst(SQS_NAME_HEADER);
+    String scraperType = headers.getFirst(MSG_ATTR_SCRAPER_TYPE);
     Request request;
 
-    if (QueueName.IMAGES.equals(queueName)) {
+    if (ScrapersTypes.IMAGES_DOWNLOAD.name().equals(scraperType)) {
       request = new ImageCrawlerRequest();
-    } else if (QueueName.RANKING_KEYWORDS.equals(queueName) || QueueName.RANKING_KEYWORDS_WEBDRIVER.equals(queueName)
-        || QueueName.DISCOVER_KEYWORDS.equals(queueName) || QueueName.DISCOVER_KEYWORDS_WEBDRIVER.equals(queueName)) {
+    } else if (ScrapersTypes.RANKING_BY_KEYWORDS.name().equals(scraperType) || ScrapersTypes.DISCOVERER_BY_KEYWORDS.name().equals(scraperType)) {
       request = new CrawlerRankingKeywordsRequest();
-    } else if (QueueName.RANKING_CATEGORIES.equals(queueName) || QueueName.DISCOVER_CATEGORIES.equals(queueName)) {
+    } else if (ScrapersTypes.RANKING_BY_CATEGORIES.name().equals(scraperType) || ScrapersTypes.DISCOVERER_BY_CATEGORIES.name().equals(scraperType)) {
       request = new CrawlerRankingCategoriesRequest();
-    } else if (QueueName.SEED.equals(queueName)) {
+    } else if (QueueName.SEED.name().equals(scraperType)) {
       request = new CrawlerSeedRequest();
     } else {
       request = new Request();
@@ -124,7 +123,7 @@ public class ServerHandler implements HttpHandler {
     String body = getRequestBody(t.getRequestBody());
 
     request.setMessageBody(body);
-    request.setQueueName(queueName);
+    request.setScraperType(scraperType);
 
     if (request instanceof ImageCrawlerRequest) {
       ((ImageCrawlerRequest) request).setImageNumber(Integer.parseInt(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_NUMBER)));

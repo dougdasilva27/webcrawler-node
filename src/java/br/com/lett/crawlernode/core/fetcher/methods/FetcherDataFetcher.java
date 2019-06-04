@@ -49,8 +49,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class FetcherDataFetcher implements DataFetcher {
 
   private static final String FETCHER_CONTENT_TYPE = "application/json";
-  public static final String FETCHER_HOST = "http://placeholder-fetcher-prod.us-east-1.elasticbeanstalk.com/";
-  public static final String FETCHER_HOST_DEV = "http://fetcher-development.us-east-1.elasticbeanstalk.com/";
+  public static final String FETCHER_HOST = GlobalConfigurations.executionParameters.getFetcherUrl();
   private static final Logger logger = LoggerFactory.getLogger(FetcherDataFetcher.class);
 
   @Override

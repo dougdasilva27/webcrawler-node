@@ -28,6 +28,8 @@ public class ExecutionParameters {
   private int hikariCpConnectionTimeout;
   private int hikariCpIdleTimeout;
 
+  private String queueUrlFirstPart;
+  private String fetcherUrl;
   private String tmpImageFolder;
   private String phantomjsPath;
   private int nthreads;
@@ -52,6 +54,8 @@ public class ExecutionParameters {
     tmpImageFolder = getEnvTmpImagesFolder();
     kinesisStream = getEnvKinesisStream();
     sendToKinesis = getEnvSendToKinesis();
+    setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
+    setFetcherUrl(getEnvFetcherUrl());
     setPhantomjsPath(getEnvPhantomjsPath());
     setHikariCpConnectionTimeout();
     setHikariCpIDLETimeout();
@@ -63,9 +67,9 @@ public class ExecutionParameters {
 
     Logging.printLogDebug(logger, this.toString());
   }
-  
+
   public Boolean mustSendToKinesis() {
-	  return sendToKinesis;
+    return sendToKinesis;
   }
 
   public Boolean getDebug() {
@@ -104,17 +108,25 @@ public class ExecutionParameters {
     }
     return false;
   }
-  
+
   private boolean getEnvSendToKinesis() {
-	  String sendToKinesis = System.getenv(EnvironmentVariables.SEND_TO_KINESIS);
-	  if (Boolean.TRUE.toString().equals(sendToKinesis)) {
-		  return true;
-	  }
-	  return false;
+    String sendToKinesis = System.getenv(EnvironmentVariables.SEND_TO_KINESIS);
+    if (Boolean.TRUE.toString().equals(sendToKinesis)) {
+      return true;
+    }
+    return false;
   }
 
   private String getEnvPhantomjsPath() {
     return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
+  }
+
+  private String getEnvQueueUrlFirstPart() {
+    return System.getenv(EnvironmentVariables.QUEUE_URL_FIRST_PART);
+  }
+
+  private String getEnvFetcherUrl() {
+    return System.getenv(EnvironmentVariables.FETCHER_URL);
   }
 
   private String getEnvTmpImagesFolder() {
@@ -140,13 +152,13 @@ public class ExecutionParameters {
     }
     return false;
   }
-  
+
   private String getEnvKinesisStream() {
-	  String kinesisStream = System.getenv(EnvironmentVariables.KINESIS_STREAM);
-	  if (kinesisStream == null) {
-		  return DEFAULT_KINESIS_STREAM;
-	  }
-	  return kinesisStream;
+    String kinesisStream = System.getenv(EnvironmentVariables.KINESIS_STREAM);
+    if (kinesisStream == null) {
+      return DEFAULT_KINESIS_STREAM;
+    }
+    return kinesisStream;
   }
 
   private boolean getEnvUseFetcher() {
@@ -172,9 +184,9 @@ public class ExecutionParameters {
   public int getCoreThreads() {
     return this.coreThreads;
   }
-  
+
   public String getKinesisStream() {
-	  return kinesisStream;
+    return kinesisStream;
   }
 
   public int getNthreads() {
@@ -255,6 +267,22 @@ public class ExecutionParameters {
 
   public void setHikariCpIDLETimeout() {
     this.hikariCpIdleTimeout = Integer.parseInt(System.getenv(EnvironmentVariables.HIKARI_CP_IDLE_TIMEOUT));
+  }
+
+  public String getQueueUrlFirstPart() {
+    return queueUrlFirstPart;
+  }
+
+  public void setQueueUrlFirstPart(String queueUrlFirstPart) {
+    this.queueUrlFirstPart = queueUrlFirstPart;
+  }
+
+  public String getFetcherUrl() {
+    return fetcherUrl;
+  }
+
+  public void setFetcherUrl(String fetcherUrl) {
+    this.fetcherUrl = fetcherUrl;
   }
 
 }
