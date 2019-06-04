@@ -65,11 +65,13 @@ public class ChileLidersuperCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(images);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-features"));
 
+      JSONObject jsonEan = selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]");
+      List<String> eans = scrapEans(jsonEan);
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).build();
+          .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
 
       products.add(product);
 
@@ -79,6 +81,40 @@ public class ChileLidersuperCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private List<String> scrapEans(JSONObject jsonEan) {
+    List<String> eans = new ArrayList<>();
+
+    if (jsonEan.has("gtin13")) {
+      eans.add(jsonEan.getString("gtin13"));
+    }
+
+    return eans;
+  }
+
+  private JSONObject selectJsonFromHtml(Document doc, String cssSelector) {
+    Element element = doc.selectFirst(cssSelector);
+    JSONObject json = new JSONObject();
+
+    if (element != null) {
+      String strJson = sanitizeStringJson(element.html());
+      json = CrawlerUtils.stringToJson(strJson);
+    }
+
+    return json;
+  }
+
+  private String sanitizeStringJson(String text) {
+    String result = null;
+    String substring = null;
+
+    if (text.contains("/*") && text.contains("*/")) {
+      substring = text.substring(text.indexOf("/*"), text.indexOf("*/") + 2);
+      result = text.replace(substring, "");
+    }
+
+    return result;
   }
 
   private boolean isProductPage(Document doc) {
