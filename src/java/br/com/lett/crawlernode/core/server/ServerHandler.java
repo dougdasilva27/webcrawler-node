@@ -90,7 +90,7 @@ public class ServerHandler implements HttpHandler {
 
   private Request parseRequest(HttpExchange t) throws IOException {
     Headers headers = t.getRequestHeaders();
-    String scraperType = headers.getFirst(MSG_ATTR_SCRAPER_TYPE);
+    String scraperType = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCRAPER_TYPE);
     Request request;
 
     if (ScrapersTypes.IMAGES_DOWNLOAD.name().equals(scraperType)) {

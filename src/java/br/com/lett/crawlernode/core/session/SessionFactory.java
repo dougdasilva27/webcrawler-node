@@ -46,7 +46,7 @@ public class SessionFactory {
     } else if (scraperType.equals(ScrapersTypes.DISCOVERER_BY_CATEGORIES.name())) {
       return new RankingDiscoverCategoriesSession(request, scraperType, markets);
     } else {
-      Logging.printLogDebug(logger, "Queue name not recognized." + "[" + scraperType + "]");
+      Logging.printLogDebug(logger, "Scraper type not recognized." + "[" + scraperType + "]");
       return null;
     }
   }
