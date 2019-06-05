@@ -60,7 +60,7 @@ public class BrasilMartinsCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".title1 .fr.obs1", null, true, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".title1 .fr.obs1", null, null, true, true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 }
