@@ -31,7 +31,7 @@ public class CrawlerTaskRequestChecker {
       return checkImageTaskRequest(request);
     }
 
-    if (ScrapersTypes.CORE.name().equals(scraperType)) {
+    if (ScrapersTypes.CORE.toString().equals(scraperType)) {
       if (request.getProcessedId() == null) {
         Logging.printLogError(logger, "Request is missing processedId");
         return false;
@@ -42,12 +42,12 @@ public class CrawlerTaskRequestChecker {
       }
     }
 
-    if (ScrapersTypes.RANKING_BY_KEYWORDS.name().equals(scraperType) && ((CrawlerRankingKeywordsRequest) request).getLocation() == null) {
+    if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType) && ((CrawlerRankingKeywordsRequest) request).getLocation() == null) {
       Logging.printLogError(logger, "Request is missing keyword");
       return false;
     }
 
-    if (ScrapersTypes.RANKING_BY_CATEGORIES.name().equals(scraperType)) {
+    if (ScrapersTypes.RANKING_BY_CATEGORIES.toString().equals(scraperType)) {
       if (((CrawlerRankingCategoriesRequest) request).getLocation() == null) {
         Logging.printLogError(logger, "Request is missing category id");
         return false;

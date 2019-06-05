@@ -491,7 +491,7 @@ public abstract class CrawlerRanking extends Task {
    * @param entries
    */
   private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
-    String queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.name() : QueueName.DISCOVERER.name();
+    String queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
 
     SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 

@@ -93,13 +93,15 @@ public class ServerHandler implements HttpHandler {
     String scraperType = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCRAPER_TYPE);
     Request request;
 
-    if (ScrapersTypes.IMAGES_DOWNLOAD.name().equals(scraperType)) {
+    if (ScrapersTypes.IMAGES_DOWNLOAD.toString().equals(scraperType)) {
       request = new ImageCrawlerRequest();
-    } else if (ScrapersTypes.RANKING_BY_KEYWORDS.name().equals(scraperType) || ScrapersTypes.DISCOVERER_BY_KEYWORDS.name().equals(scraperType)) {
+    } else if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType)
+        || ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString().equals(scraperType)) {
       request = new CrawlerRankingKeywordsRequest();
-    } else if (ScrapersTypes.RANKING_BY_CATEGORIES.name().equals(scraperType) || ScrapersTypes.DISCOVERER_BY_CATEGORIES.name().equals(scraperType)) {
+    } else if (ScrapersTypes.RANKING_BY_CATEGORIES.toString().equals(scraperType)
+        || ScrapersTypes.DISCOVERER_BY_CATEGORIES.toString().equals(scraperType)) {
       request = new CrawlerRankingCategoriesRequest();
-    } else if (QueueName.SEED.name().equals(scraperType)) {
+    } else if (QueueName.SEED.toString().equals(scraperType)) {
       request = new CrawlerSeedRequest();
     } else {
       request = new Request();

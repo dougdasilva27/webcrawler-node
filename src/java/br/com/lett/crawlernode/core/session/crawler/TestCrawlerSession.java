@@ -42,13 +42,13 @@ public class TestCrawlerSession extends Session {
   public TestCrawlerSession(Request request, Market market) {
     super(market);
 
-    if (ScrapersTypes.DISCOVERER.name().equals(request.getScraperType())) {
+    if (ScrapersTypes.DISCOVERER.toString().equals(request.getScraperType())) {
       setType(TestType.DISCOVER);
-    } else if (ScrapersTypes.IMAGES_DOWNLOAD.name().equals(request.getScraperType())) {
+    } else if (ScrapersTypes.IMAGES_DOWNLOAD.toString().equals(request.getScraperType())) {
       setType(TestType.IMAGE);
-    } else if (ScrapersTypes.CORE.name().equals(request.getScraperType())) {
+    } else if (ScrapersTypes.CORE.toString().equals(request.getScraperType())) {
       setType(TestType.INSIGHTS);
-    } else if (ScrapersTypes.RATING.name().equals(request.getScraperType())) {
+    } else if (ScrapersTypes.RATING.toString().equals(request.getScraperType())) {
       setType(TestType.RATING);
     } else {
       setType(TestType.SEED);

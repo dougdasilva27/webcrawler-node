@@ -42,23 +42,23 @@ public class QueueService {
 
   static {
     queueURLMap = new HashMap<>();
-    queueURLMap.put(QueueName.CORE.name(), QUEUE_URL + QueueName.CORE.name());
-    queueURLMap.put(QueueName.CORE_WEBDRIVER.name(), QUEUE_URL + QueueName.CORE_WEBDRIVER.name());
-    queueURLMap.put(QueueName.DISCOVERER.name(), QUEUE_URL + QueueName.DISCOVERER.name());
-    queueURLMap.put(QueueName.DISCOVERER_WEBDRIVER.name(), QUEUE_URL + QueueName.DISCOVERER_WEBDRIVER.name());
-    queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS.name(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS.name());
-    queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.name(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.name());
-    queueURLMap.put(QueueName.DISCOVERER_BY_CATEGORIES.name(), QUEUE_URL + QueueName.DISCOVERER_BY_CATEGORIES.name());
-    queueURLMap.put(QueueName.IMAGES_DOWNLOAD.name(), QUEUE_URL + QueueName.IMAGES_DOWNLOAD.name());
-    queueURLMap.put(QueueName.RANKING_BY_KEYWORDS.name(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS.name());
-    queueURLMap.put(QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.name(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.name());
-    queueURLMap.put(QueueName.RANKING_BY_CATEGORIES.name(), QUEUE_URL + QueueName.RANKING_BY_CATEGORIES.name());
-    queueURLMap.put(QueueName.RATING.name(), QUEUE_URL + QueueName.RATING.name());
-    queueURLMap.put(QueueName.RATING_WEBDRIVER.name(), QUEUE_URL + QueueName.RATING_WEBDRIVER.name());
-    queueURLMap.put(QueueName.SEED.name(), QUEUE_URL + QueueName.SEED.name());
+    queueURLMap.put(QueueName.CORE.toString(), QUEUE_URL + QueueName.CORE.toString());
+    queueURLMap.put(QueueName.CORE_WEBDRIVER.toString(), QUEUE_URL + QueueName.CORE_WEBDRIVER.toString());
+    queueURLMap.put(QueueName.DISCOVERER.toString(), QUEUE_URL + QueueName.DISCOVERER.toString());
+    queueURLMap.put(QueueName.DISCOVERER_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_WEBDRIVER.toString());
+    queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS.toString());
+    queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString());
+    queueURLMap.put(QueueName.DISCOVERER_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_CATEGORIES.toString());
+    queueURLMap.put(QueueName.IMAGES_DOWNLOAD.toString(), QUEUE_URL + QueueName.IMAGES_DOWNLOAD.toString());
+    queueURLMap.put(QueueName.RANKING_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS.toString());
+    queueURLMap.put(QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString());
+    queueURLMap.put(QueueName.RANKING_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.RANKING_BY_CATEGORIES.toString());
+    queueURLMap.put(QueueName.RATING.toString(), QUEUE_URL + QueueName.RATING.toString());
+    queueURLMap.put(QueueName.RATING_WEBDRIVER.toString(), QUEUE_URL + QueueName.RATING_WEBDRIVER.toString());
+    queueURLMap.put(QueueName.SEED.toString(), QUEUE_URL + QueueName.SEED.toString());
 
-    queueURLMap.put(QueueName.INTEREST_PROCESSED.name(), QUEUE_URL + QueueName.INTEREST_PROCESSED.name());
-    queueURLMap.put(QueueName.INTEREST_PROCESSED_RATING.name(), QUEUE_URL + QueueName.INTEREST_PROCESSED_RATING.name());
+    queueURLMap.put(QueueName.INTEREST_PROCESSED.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED.toString());
+    queueURLMap.put(QueueName.INTEREST_PROCESSED_RATING.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED_RATING.toString());
   }
 
   /**

@@ -27,23 +27,23 @@ public class SessionFactory {
   public static Session createSession(Request request, Markets markets) {
     String scraperType = request.getScraperType();
 
-    if (ScrapersTypes.CORE.name().equals(scraperType)) {
+    if (ScrapersTypes.CORE.toString().equals(scraperType)) {
       return new InsightsCrawlerSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.SEED.name())) {
+    } else if (scraperType.equals(ScrapersTypes.SEED.toString())) {
       return new SeedCrawlerSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.DISCOVERER.name())) {
+    } else if (scraperType.equals(ScrapersTypes.DISCOVERER.toString())) {
       return new DiscoveryCrawlerSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.RATING.name())) {
+    } else if (scraperType.equals(ScrapersTypes.RATING.toString())) {
       return new RatingReviewsCrawlerSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.IMAGES_DOWNLOAD.name())) {
+    } else if (scraperType.equals(ScrapersTypes.IMAGES_DOWNLOAD.toString())) {
       return new ImageCrawlerSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.RANKING_BY_KEYWORDS.name())) {
+    } else if (scraperType.equals(ScrapersTypes.RANKING_BY_KEYWORDS.toString())) {
       return new RankingKeywordsSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.DISCOVERER_BY_KEYWORDS.name())) {
+    } else if (scraperType.equals(ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString())) {
       return new RankingDiscoverKeywordsSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.RANKING_BY_CATEGORIES.name())) {
+    } else if (scraperType.equals(ScrapersTypes.RANKING_BY_CATEGORIES.toString())) {
       return new RankingCategoriesSession(request, scraperType, markets);
-    } else if (scraperType.equals(ScrapersTypes.DISCOVERER_BY_CATEGORIES.name())) {
+    } else if (scraperType.equals(ScrapersTypes.DISCOVERER_BY_CATEGORIES.toString())) {
       return new RankingDiscoverCategoriesSession(request, scraperType, markets);
     } else {
       Logging.printLogDebug(logger, "Scraper type not recognized." + "[" + scraperType + "]");
