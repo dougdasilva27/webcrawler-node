@@ -71,8 +71,7 @@ public class BrasilFastshopNewCrawler {
         JSONObject skuAPIJSON = productAPIJSON;
 
         if (arraySkus.length() > 1 && productAPIJSON.has("buyable") && productAPIJSON.getBoolean("buyable")) { // In case the array only has 1 sku.
-          skuAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(variationJson.has("partNumber") ? variationJson.getString("partNumber") : null,
-              session, cookies, dataFetcher);
+          skuAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(variationJson.has("partNumber") ? variationJson.getString("partNumber") : null, session, cookies, dataFetcher);
 
           if (skuAPIJSON.length() < 1) {
             skuAPIJSON = productAPIJSON;
@@ -84,9 +83,8 @@ public class BrasilFastshopNewCrawler {
         String secondaryImages = crawlSecondaryImages(skuAPIJSON);
         description.append(skuAPIJSON.has("longDescription") ? skuAPIJSON.get("longDescription") : "");
         boolean pageAvailability = crawlAvailability(skuAPIJSON);
-        JSONObject jsonPrices =
-            pageAvailability ? BrasilFastshopCrawlerUtils.fetchPrices(internalId, true, session, logger, dataFetcher) : new JSONObject();
-        Map<String, Prices> marketplaceMap = crawlMarketplace(skuAPIJSON, jsonPrices);
+        JSONObject jsonPrices = pageAvailability ? BrasilFastshopCrawlerUtils.fetchPrices(internalId, true, session, logger, dataFetcher) : new JSONObject();
+        Map<String, Prices> marketplaceMap = pageAvailability ? crawlMarketplace(skuAPIJSON, jsonPrices) : new HashMap<>();
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
         Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
@@ -94,10 +92,9 @@ public class BrasilFastshopNewCrawler {
         Offers offers = available || !marketplace.isEmpty() ? scrapOffers(skuAPIJSON) : new Offers();
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-            .setDescription(description.toString()).setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+            .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages).setDescription(description.toString()).setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
 
         products.add(product);
       }
@@ -209,13 +206,11 @@ public class BrasilFastshopNewCrawler {
         String sellerName = apiSku.get("marketPlaceText").toString();
 
         Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(sellerName)).setIsBuybox(false).setMainPagePosition(1)
-            .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(sellerName)
-            .setSlugSellerName(CommonMethods.toSlug(sellerName)).build();
+            .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(sellerName).setSlugSellerName(CommonMethods.toSlug(sellerName)).build();
         offers.add(offer);
       } else if (apiSku.has("priceOffer")) {
         Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(SELLER_NAME_LOWER)).setIsBuybox(false).setMainPagePosition(1)
-            .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(SELLER_NAME_LOWER)
-            .setSlugSellerName(CommonMethods.toSlug(SELLER_NAME_LOWER)).build();
+            .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(SELLER_NAME_LOWER).setSlugSellerName(CommonMethods.toSlug(SELLER_NAME_LOWER)).build();
         offers.add(offer);
       }
     } catch (Exception e) {
@@ -307,8 +302,8 @@ public class BrasilFastshopNewCrawler {
   private StringBuilder crawlDescription(String partnerId) {
     StringBuilder description = new StringBuilder();
 
-    String url = "https://www.fastshop.com.br/webapp/wcs/stores/servlet/SpotsContentView?type=content&hotsite=fastshop&catalogId=11052"
-        + "&langId=-6&storeId=10151&emsName=SC_" + partnerId + "_Conteudo";
+    String url =
+        "https://www.fastshop.com.br/webapp/wcs/stores/servlet/SpotsContentView?type=content&hotsite=fastshop&catalogId=11052" + "&langId=-6&storeId=10151&emsName=SC_" + partnerId + "_Conteudo";
     Request request = RequestBuilder.create().setUrl(url).build();
     Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
