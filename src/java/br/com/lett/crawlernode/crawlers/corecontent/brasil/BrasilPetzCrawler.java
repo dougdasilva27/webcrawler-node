@@ -158,13 +158,25 @@ public class BrasilPetzCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      List<String> eans = crawlEans(doc);
 
       return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price).setPrices(prices)
-          .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setEans(eans)
           .setMarketplace(new Marketplace()).build();
     }
 
     return new Product();
+  }
+
+  private List<String> crawlEans(Document doc) {
+    List<String> eans = new ArrayList<>();
+    Element meta = doc.selectFirst("meta[itemprop=\"gtin13\"]");
+
+    if (meta != null) {
+      eans.add(meta.attr("content"));
+    }
+
+    return eans;
   }
 
   /*******************************

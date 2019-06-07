@@ -1408,6 +1408,8 @@ public class CrawlerUtils {
       } else if (lastDelimiter != null && text.contains(lastDelimiter)) {
         int x = lastOccurrenceOfLastDelimiter ? text.lastIndexOf(lastDelimiter) : text.indexOf(lastDelimiter);
         text = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+      } else {
+        text = text.replaceAll("[^0-9]", "");
       }
 
       if (!text.isEmpty()) {

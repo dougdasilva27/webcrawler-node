@@ -65,12 +65,12 @@ public class MexicoSuperamaCrawler extends Crawler {
           "www.superama.com.mx", primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
-
+      List<String> eans = scrapEans(doc);
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).build();
+          .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
 
       products.add(product);
 
@@ -80,6 +80,16 @@ public class MexicoSuperamaCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private List<String> scrapEans(Document doc) {
+    List<String> eans = new ArrayList<>();
+    Element upc = doc.selectFirst(".container #upcProducto");
+
+    if (upc != null) {
+      eans.add(upc.attr("value"));
+    }
+    return eans;
   }
 
   private boolean isProductPage(Document doc) {

@@ -76,17 +76,15 @@ public class BrasilSaraivaCrawler extends Crawler {
       JSONArray sellerPricesInfo = crawlSellerPricesFromAPI(internalId);
       boolean availableProduct = crawlAvailability(productJSON);
       Map<String, Prices> marketplaceMap = availableProduct ? crawlMarketplaceMap(sellerPricesInfo) : new HashMap<>();
-      Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER),
-          Arrays.asList(Card.VISA, Card.SHOP_CARD), session);
+      Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER), Arrays.asList(Card.VISA, Card.SHOP_CARD), session);
       boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
       Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER));
       Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.VISA, Card.SHOP_CARD));
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
+          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -300,11 +298,9 @@ public class BrasilSaraivaCrawler extends Crawler {
     if (priceBlock.has("credit_card")) {
       JSONObject creditCard = priceBlock.getJSONObject("credit_card");
 
-      if (creditCard.has("has_discount") && creditCard.getInt("has_discount") > 0 && creditCard.has("installment_with_discount")
-          && creditCard.has("qty_installments_with_discount")) {
+      if (creditCard.has("has_discount") && creditCard.getInt("has_discount") > 0 && creditCard.has("installment_with_discount") && creditCard.has("qty_installments_with_discount")) {
 
-        installments.put(creditCard.getInt("qty_installments_with_discount"),
-            MathUtils.parseFloatWithComma(creditCard.getString("installment_with_discount")));
+        installments.put(creditCard.getInt("qty_installments_with_discount"), MathUtils.parseFloatWithComma(creditCard.getString("installment_with_discount")));
 
         if (creditCard.has("value_with_discount")) {
           installments.put(1, MathUtils.parseFloatWithComma(creditCard.getString("value_with_discount")));
@@ -344,11 +340,9 @@ public class BrasilSaraivaCrawler extends Crawler {
         }
       }
 
-      if (priceJson.has("has_discount") && priceJson.getInt("has_discount") > 0 && priceJson.has("installment_with_discount")
-          && priceJson.has("qty_installments_with_discount")) {
+      if (priceJson.has("has_discount") && priceJson.getInt("has_discount") > 0 && priceJson.has("installment_with_discount") && priceJson.has("qty_installments_with_discount")) {
 
-        installmentsShopcardMap.put(priceJson.getInt("qty_installments_with_discount"),
-            MathUtils.parseFloatWithComma(priceJson.getString("installment_with_discount")));
+        installmentsShopcardMap.put(priceJson.getInt("qty_installments_with_discount"), MathUtils.parseFloatWithComma(priceJson.getString("installment_with_discount")));
       }
 
       if (priceJson.has("discount_percent") && priceJson.has("value_with_discount")) {
@@ -497,7 +491,7 @@ public class BrasilSaraivaCrawler extends Crawler {
         description.append("</section>");
       }
     } else {
-      description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_attributes", "#product_description")));
+      description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_attributes", "#product_description", "#special_content")));
     }
 
     description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5906", ean, dataFetcher, session));

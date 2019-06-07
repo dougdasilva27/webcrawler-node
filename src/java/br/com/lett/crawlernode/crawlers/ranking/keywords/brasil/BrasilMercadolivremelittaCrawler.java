@@ -10,7 +10,6 @@ public class BrasilMercadolivremelittaCrawler extends MercadolivreCrawler {
     super.setStoreName("melitta");
     super.setNextUrlHost("lista.mercadolivre.com.br");
     super.setProductUrlHost("produto.mercadolivre.com.br");
-
-
+    super.setStoreType("Loja");
   }
 }

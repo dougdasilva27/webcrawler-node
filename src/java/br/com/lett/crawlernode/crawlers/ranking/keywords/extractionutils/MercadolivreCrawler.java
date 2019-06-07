@@ -15,6 +15,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
   private String nextUrlHost;
   private String nextUrl;
   private String productUrlHost;
+  private String storeType;
 
   private static final String PRODUCTS_SELECTOR = ".results-item .item";
 
@@ -35,14 +36,16 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     this.storeName = storeName;
   }
 
-
+  public void setStoreType(String storeType) {
+    this.storeType = storeType;
+  }
 
   @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 64;
     this.log("Página " + this.currentPage);
 
-    String url = "https://" + nextUrlHost + "/" + this.keywordWithoutAccents.replace(" ", "-") + "_Loja_" + storeName + "#D[A:"
+    String url = "https://" + nextUrlHost + "/" + this.keywordWithoutAccents.replace(" ", "-") + "_" + storeType + "_" + storeName + "#D[A:"
         + this.keywordWithoutAccents.replace(" ", "+") + "," + storeName + "]";
 
     if (this.currentPage > 1) {
@@ -87,4 +90,5 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".quantity-results", true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
+
 }
