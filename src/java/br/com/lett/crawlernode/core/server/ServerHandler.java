@@ -19,7 +19,6 @@ import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
 import br.com.lett.crawlernode.util.Logging;
-import enums.QueueName;
 import enums.ScrapersTypes;
 
 public class ServerHandler implements HttpHandler {
@@ -101,7 +100,7 @@ public class ServerHandler implements HttpHandler {
     } else if (ScrapersTypes.RANKING_BY_CATEGORIES.toString().equals(scraperType)
         || ScrapersTypes.DISCOVERER_BY_CATEGORIES.toString().equals(scraperType)) {
       request = new CrawlerRankingCategoriesRequest();
-    } else if (QueueName.SEED.toString().equals(scraperType)) {
+    } else if (ScrapersTypes.SEED.toString().equals(scraperType)) {
       request = new CrawlerSeedRequest();
     } else {
       request = new Request();
