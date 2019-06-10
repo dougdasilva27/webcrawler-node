@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.Logging;
 import enums.QueueName;
+import enums.ScrapersTypes;
 import models.Processed;
 
 
@@ -38,7 +39,7 @@ public class Scheduler {
     if (primaryPic != null && !primaryPic.isEmpty()) {
       Map<String, MessageAttributeValue> attrPrimary =
           assembleImageMessageAttributes(marketId, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR, internalId, processedId, 1);
-
+      
       SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
       entry.setId(String.valueOf(insideBatchId)); // the id must be unique in the batch
       entry.setMessageAttributes(attrPrimary);
@@ -125,12 +126,36 @@ public class Scheduler {
       int number) {
 
     Map<String, MessageAttributeValue> attr = new HashMap<>();
-    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(marketId)));
-    attr.put(QueueService.IMAGE_TYPE, new MessageAttributeValue().withDataType("String").withStringValue(type));
-    attr.put(QueueService.INTERNAL_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(internalId));
-    attr.put(QueueService.PROCESSED_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(processedId)));
-    attr.put(QueueService.NUMBER_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(number)));
-
+    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+    		.withStringValue(String.valueOf(marketId)));
+    
+    attr.put(QueueService.IMAGE_TYPE, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+    		.withStringValue(type));
+    
+    attr.put(QueueService.INTERNAL_ID_MESSAGE_ATTR, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+    		.withStringValue(internalId));
+    
+    attr.put(QueueService.PROCESSED_ID_MESSAGE_ATTR, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+    		.withStringValue(String.valueOf(processedId)));
+    
+    attr.put(QueueService.NUMBER_MESSAGE_ATTR, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+    		.withStringValue(String.valueOf(number)));
+    
+    attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+            .withStringValue(String.valueOf(ScrapersTypes.IMAGES_DOWNLOAD.toString())));
+    
     return attr;
   }
 
