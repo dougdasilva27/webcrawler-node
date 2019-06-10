@@ -27,12 +27,14 @@ public class QueueService {
   protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
   private static final Map<String, String> queueURLMap;
-
+  
+  public static final String QUEUE_DATA_TYPE_STRING = "String";
 
   public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
   public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
   public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
-
+  public static final String SCRAPER_TYPE_MESSAGE_ATTR = "scraperType";
+  
   public static final String IMAGE_TYPE = "type";
   public static final String PRIMARY_IMAGE_TYPE_MESSAGE_ATTR = "primary";
   public static final String SECONDARY_IMAGES_MESSAGE_ATTR = "secondary";

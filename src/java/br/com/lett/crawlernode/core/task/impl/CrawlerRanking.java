@@ -49,6 +49,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import enums.QueueName;
+import enums.ScrapersTypes;
 import models.Processed;
 
 public abstract class CrawlerRanking extends Task {
@@ -375,8 +376,16 @@ public abstract class CrawlerRanking extends Task {
    */
   protected void saveProductUrlToQueue(String url) {
     Map<String, MessageAttributeValue> attr = new HashMap<>();
-    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, new MessageAttributeValue().withDataType("String").withStringValue(String.valueOf(this.marketId)));
-
+    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+    		.withStringValue(String.valueOf(this.marketId)));
+    
+    attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, 
+    		new MessageAttributeValue()
+    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+            .withStringValue(String.valueOf(ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString())));
+    
     this.messages.put(url.trim(), attr);
   }
 
@@ -416,45 +425,6 @@ public abstract class CrawlerRanking extends Task {
       this.log("Não vou persistir nada pois não achei nada");
     }
   }
-
-  // /**
-  // * Insert all data on table Ranking in Postgres
-  // */
-  // protected void persistDiscoverData(){
-  // List<RankingProductsDiscover> products = sanitizedRankingProducts(this.mapUrlMessageId);
-  //
-  // //se houver 1 ou mais produtos, eles serão cadastrados no banco
-  // if(!products.isEmpty()) {
-  // this.log(products.size() + " products will be persisted");
-  //
-  // RankingDiscoverStats ranking = new RankingDiscoverStats();
-  //
-  // String nowISO = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd
-  // HH:mm:ss.mmm");
-  // Timestamp ts = Timestamp.valueOf(nowISO);
-  //
-  // ranking.setMarketId(this.marketId);
-  // ranking.setDate(ts);
-  // ranking.setLmt(nowISO);
-  // ranking.setLocation(location);
-  // ranking.setProductsDiscover(products);
-  // ranking.setRankType(rankType);
-  //
-  // RankingStatistics statistics = new RankingStatistics();
-  //
-  // statistics.setPageSize(this.pageSize);
-  // statistics.setTotalFetched(this.arrayProducts.size());
-  // statistics.setTotalSearch(this.totalProducts);
-  //
-  // ranking.setStatistics(statistics);
-  //
-  // //insere dados no mongo
-  // //Persistence.persistDiscoverStats(ranking);
-  //
-  // } else {
-  // this.log("No product was found.");
-  // }
-  // }
 
   /**
    * Create message and call function to send messages
