@@ -114,6 +114,8 @@ public class FetcherDataFetcher implements DataFetcher {
       // if there was some response code that indicates forbidden access or server error we want to
       // try again
       int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+      Logging.printLogInfo(logger, session, "STATUS CODE: " + responseCode);
+
       if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
         throw new ResponseCodeException(responseCode);
       }
