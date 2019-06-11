@@ -56,12 +56,12 @@ public class RappiCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+    String productUrl = session.getOriginalURL();
+    JSONObject jsonSku = crawlProductInformatioFromApi(productUrl, storeType);
 
-    if (isProductPage(session.getOriginalURL())) {
+    if (isProductPage(jsonSku)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String productUrl = session.getOriginalURL();
-      JSONObject jsonSku = crawlProductInformatioFromApi(productUrl, storeType);
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
       String description = crawlDescription(jsonSku);
@@ -76,8 +76,9 @@ public class RappiCrawler extends Crawler {
       Offers offers = scrapBuyBox(jsonSku);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrices(prices).setPrice(price).setAvailable(available)
-          .setPrimaryImage(primaryImage).setDescription(description).setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
+      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrices(prices).setPrice(price).setAvailable(available).setPrimaryImage(primaryImage).setDescription(description)
+          .setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
 
       products.add(product);
 
@@ -110,8 +111,8 @@ public class RappiCrawler extends Crawler {
         mainPrice = CrawlerUtils.getDoubleValueFromJSON(jsonSku, "price", false, false);
       }
 
-      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId).setMainPagePosition(1).setIsBuybox(false)
-          .setMainPrice(mainPrice).build();
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
 
       offers.add(offer);
 
@@ -142,8 +143,8 @@ public class RappiCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url) {
-    return (url.contains("store_type") && url.contains("query")) || url.contains("product/");
+  private boolean isProductPage(JSONObject jsonSku) {
+    return jsonSku.length() > 0;
   }
 
   /*******************
