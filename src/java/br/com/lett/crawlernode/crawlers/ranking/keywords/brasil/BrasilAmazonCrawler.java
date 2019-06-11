@@ -56,7 +56,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return !this.currentDoc.select("#pagnNextLink").isEmpty();
+    return this.currentDoc.select(".a-disabled.a-last").isEmpty();
   }
 
   @Override

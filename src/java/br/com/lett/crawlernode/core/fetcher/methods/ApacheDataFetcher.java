@@ -165,6 +165,8 @@ public class ApacheDataFetcher implements DataFetcher {
         // if there was some response code that indicates forbidden access or server error we want to
         // try again
         int responseCode = closeableHttpResponse != null ? closeableHttpResponse.getStatusLine().getStatusCode() : 0;
+        Logging.printLogInfo(logger, session, "STATUS CODE: " + responseCode);
+
         requestStats.setStatusCode(responseCode);
         if (responseCode == 404 || responseCode == 204) {
           FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
