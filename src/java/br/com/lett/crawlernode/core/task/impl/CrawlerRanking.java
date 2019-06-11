@@ -376,16 +376,12 @@ public abstract class CrawlerRanking extends Task {
    */
   protected void saveProductUrlToQueue(String url) {
     Map<String, MessageAttributeValue> attr = new HashMap<>();
-    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-    		.withStringValue(String.valueOf(this.marketId)));
-    
-    attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-            .withStringValue(String.valueOf(ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString())));
-    
+    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR,
+        new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
+
+    attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+        .withStringValue(String.valueOf(ScrapersTypes.DISCOVERER.toString())));
+
     this.messages.put(url.trim(), attr);
   }
 
