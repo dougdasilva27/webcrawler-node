@@ -20,6 +20,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -338,7 +340,8 @@ public class BrasilBifarmaCrawler extends Crawler {
   private JSONObject crawlProductInfo(Document doc) {
     JSONObject info = new JSONObject();
 
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "chaordicProduct = ", "};", false, false);
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "chaordicProduct=", "};", false, false);
+    CommonMethods.saveDataToAFile(json, Test.pathWrite + "x.json");
     if (json.has("product")) {
       info = json.getJSONObject("product");
     }
