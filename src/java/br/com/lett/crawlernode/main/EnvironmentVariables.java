@@ -18,4 +18,5 @@ public class EnvironmentVariables {
   public static final String SEND_TO_KINESIS = "SEND_TO_KINESIS";
   public static final String QUEUE_URL_FIRST_PART = "QUEUE_URL_FIRST_PART";
   public static final String FETCHER_URL = "FETCHER_URL";
+  public static final String LOGS_BUCKET_NAME = "LOGS_BUCKET_NAME";
 }

@@ -29,6 +29,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.FileCompression;
@@ -58,7 +59,7 @@ public class S3Service {
 
   // Amazon crawler-session
   private static AmazonS3 s3clientCrawlerSessions;
-  private static String LOGS_BUCKET_NAME = "placeholder-logs";
+  private static String LOGS_BUCKET_NAME = GlobalConfigurations.executionParameters.getLogsBucketName();
   private static String crawlerSessionsPrefix = "crawler-sessions";
 
   static {

@@ -40,6 +40,8 @@ public class ExecutionParameters {
   private Boolean useFetcher;
   private String kinesisStream;
   private Boolean sendToKinesis;
+  
+  private String logsBucketName;
 
   public ExecutionParameters() {
     debug = null;
@@ -54,6 +56,7 @@ public class ExecutionParameters {
     tmpImageFolder = getEnvTmpImagesFolder();
     kinesisStream = getEnvKinesisStream();
     sendToKinesis = getEnvSendToKinesis();
+    logsBucketName = getEnvLogsBucketName();
     setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
     setFetcherUrl(getEnvFetcherUrl());
     setPhantomjsPath(getEnvPhantomjsPath());
@@ -176,6 +179,18 @@ public class ExecutionParameters {
     }
     return Integer.parseInt(coreThreadsString);
   }
+  
+  private String getEnvLogsBucketName() {
+    String logsBucketName = System.getenv(EnvironmentVariables.LOGS_BUCKET_NAME);
+    if(logsBucketName == null || logsBucketName.isEmpty()) {
+      Logging.logWarn(logger, null, null, "LOGS_BUCKET_NAME not set");
+      
+      // Return empty string to avoid null pointers
+      return "";
+    }
+    
+    return logsBucketName;
+  }
 
   public boolean mustForceImageUpdate() {
     return forceImageUpdate;
@@ -285,4 +300,11 @@ public class ExecutionParameters {
     this.fetcherUrl = fetcherUrl;
   }
 
+  public String getLogsBucketName() {
+    return logsBucketName;
+  }
+  
+  public void setLogsBucketName(String logsBucketName) {
+    this.logsBucketName = logsBucketName;
+  }
 }
