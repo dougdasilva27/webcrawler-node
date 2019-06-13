@@ -85,7 +85,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
       // ID interno
       String internalId = null;
-      Element elementInternalId = doc.select("meta[itemprop=\"productID\"]").first();
+      Element elementInternalId = doc.selectFirst("meta[itemprop=\"productID\"]");
       if (elementInternalId != null) {
         internalId = elementInternalId.attr("content").trim();
       }
