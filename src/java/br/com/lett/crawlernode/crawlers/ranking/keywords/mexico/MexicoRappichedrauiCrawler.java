@@ -98,7 +98,7 @@ public class MexicoRappichedrauiCrawler extends CrawlerRankingKeywords {
     String productUrl = null;
 
     if (product.has("store_type")) {
-      productUrl = "https://www.rappi.com.br/product/" + internalId + "?store_type=" + product.get("store_type");
+      productUrl = "https://www.rappi.com.mx/product/" + internalId + "?store_type=" + product.get("store_type");
     }
 
     return productUrl;
