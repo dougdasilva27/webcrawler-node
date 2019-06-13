@@ -85,9 +85,9 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
       // ID interno
       String internalId = null;
-      Element elementInternalId = doc.select(".productReference").first();
+      Element elementInternalId = doc.select("meta[itemprop=\"productID\"]").first();
       if (elementInternalId != null) {
-        internalId = elementInternalId.text().trim();
+        internalId = elementInternalId.attr("content").trim();
       }
 
       // Pid
@@ -198,11 +198,11 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     String description = "";
     Element elementDescription = doc.select(".productDescriptionWrap").first();
     Element elementSpecification = doc.select(".productSpecificationWrap").first();
-    
+
     if (elementDescription != null) {
       description = description + elementDescription.html();
     }
-    
+
     if (elementSpecification != null) {
       description = description + elementSpecification.html();
     }
