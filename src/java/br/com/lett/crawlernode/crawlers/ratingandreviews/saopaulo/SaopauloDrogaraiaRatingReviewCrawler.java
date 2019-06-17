@@ -14,9 +14,11 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
@@ -39,7 +41,9 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
 
       JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
       Integer total = getTotalNumOfRatings(trustVoxResponse);
-
+      AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(trustVoxResponse);
+      CommonMethods.saveDataToAFile(trustVoxResponse, Test.pathWrite + "x.json");
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingReviews.setTotalRating(total);
       ratingReviews.setTotalWrittenReviews(total);
       ratingReviews.setAverageOverallRating(getTotalRating(trustVoxResponse));
@@ -51,6 +55,44 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
 
     return ratingReviewsCollection;
 
+  }
+
+  private AdvancedRatingReview getTotalStarsFromEachValue(JSONObject trustVoxResponse) {
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
+
+    if (trustVoxResponse.has("rate")) {
+      JSONObject rate = trustVoxResponse.getJSONObject("rate");
+      if (rate.has("histogram")) {
+
+        JSONObject histogram = rate.getJSONObject("histogram");
+
+        if (histogram.has("1") && histogram.get("1") instanceof Integer) {
+          star1 = histogram.getInt("1");
+        }
+
+        if (histogram.has("2") && histogram.get("2") instanceof Integer) {
+          star2 = histogram.getInt("2");
+        }
+
+        if (histogram.has("3") && histogram.get("3") instanceof Integer) {
+          star3 = histogram.getInt("3");
+        }
+
+        if (histogram.has("4") && histogram.get("4") instanceof Integer) {
+          star4 = histogram.getInt("4");
+        }
+
+        if (histogram.has("5") && histogram.get("5") instanceof Integer) {
+          star5 = histogram.getInt("5");
+        }
+      }
+    }
+
+    return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
   }
 
   /**
