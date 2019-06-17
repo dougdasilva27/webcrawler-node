@@ -73,11 +73,13 @@ public class TrustvoxRatingCrawler {
 
     Integer totalNumOfEvaluations = getTotalNumOfRatings(trustVoxResponse);
     Double avgRating = getTotalRating(trustVoxResponse);
+    AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(trustVoxResponse);
 
     ratingReviews.setTotalRating(totalNumOfEvaluations);
     ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
     ratingReviews.setAverageOverallRating(avgRating);
     ratingReviews.setDate(session.getDate());
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
     return ratingReviews;
   }
@@ -187,11 +189,11 @@ public class TrustvoxRatingCrawler {
   }
 
   public static AdvancedRatingReview getTotalStarsFromEachValue(JSONObject trustVoxResponse) {
-    Integer star1 = null;
-    Integer star2 = null;
-    Integer star3 = null;
-    Integer star4 = null;
-    Integer star5 = null;
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
 
     if (trustVoxResponse.has("histogram")) {
       JSONObject histogram = trustVoxResponse.getJSONObject("histogram");
