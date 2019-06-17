@@ -21,17 +21,19 @@ import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.CanonicalGrantee;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.Permission;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.FileCompression;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -141,38 +143,6 @@ public class S3Service {
   }
 
   /**
-   * Uploads a file to the Amazon session bucket.
-   * 
-   * @param session
-   * @param file
-   */
-  public static void uploadCrawlerSessionScreenshotToAmazon(Session session, File file) {
-
-    String amazonLocation = new StringBuilder().append(crawlerSessionsPrefix).append("/").append(session.getSessionId()).append("/")
-        .append("screenshot-").append(new DateTime(DateUtils.timeZone).millisOfDay()).append(".png").toString();
-
-    try {
-      Logging.printLogDebug(logger, session, "Uploading file to Amazon");
-      s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, file));
-      Logging.printLogDebug(logger, session, "Screenshot uploaded with success!");
-
-    } catch (AmazonServiceException ase) {
-      Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "
-          + "to Amazon S3, but was rejected with an error response" + " for some reason.");
-      Logging.printLogError(logger, session, "Error Message:    " + ase.getMessage());
-      Logging.printLogError(logger, session, "HTTP Status Code: " + ase.getStatusCode());
-      Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
-      Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
-      Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
-
-    } catch (AmazonClientException ace) {
-      Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " + "means the client encountered "
-          + "an internal error while trying to " + "communicate with S3, " + "such as not being able to access the network.");
-      Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
-    }
-  }
-
-  /**
    * Uploads a String as file to Amazon.
    * 
    * @param session
@@ -196,9 +166,15 @@ public class S3Service {
       try {
         Logging.printLogDebug(logger, session, "Uploading content to Amazon");
         compressedFile = new File(tarGzPath);
-        s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
-        Logging.printLogDebug(logger, session, "Content uploaded with success!");
 
+        s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
+
+        AccessControlList bucketAcl = s3clientCrawlerSessions.getBucketAcl(LOGS_BUCKET_NAME);
+        AccessControlList acl = s3clientCrawlerSessions.getObjectAcl(LOGS_BUCKET_NAME, amazonLocation);
+        acl.grantPermission(new CanonicalGrantee(bucketAcl.getOwner().getId()), Permission.FullControl);
+
+        s3clientCrawlerSessions.setObjectAcl(LOGS_BUCKET_NAME, amazonLocation, acl);
+        Logging.printLogDebug(logger, session, "Content uploaded with success!");
       } catch (AmazonServiceException ase) {
         Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "
             + "to Amazon S3, but was rejected with an error response" + " for some reason.");
@@ -207,6 +183,8 @@ public class S3Service {
         Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
         Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
         Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
+
+        ase.printStackTrace();
 
       } catch (AmazonClientException ace) {
         Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " + "means the client encountered "
