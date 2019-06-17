@@ -9,7 +9,10 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 /**
@@ -38,12 +41,15 @@ public class SaopauloDrogariasaopauloRatingReviewCrawler extends RatingReviewCra
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
 
-        YourreviewsRatingCrawler yr = new YourreviewsRatingCrawler(session, cookies, logger);
+        YourreviewsRatingCrawler yr = new YourreviewsRatingCrawler(session, cookies, logger, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", dataFetcher);
         Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", dataFetcher);
-
+        CommonMethods.saveDataToAFile(docRating, Test.pathWrite + "x.html");
         Integer totalNumOfEvaluations = yr.getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = yr.getTotalAvgRatingFromYourViews(docRating);
 
+        AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
+
+        ratingReviews.setAdvancedRatingReview(advancedRatingReview);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
         ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
