@@ -17,9 +17,11 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 /**
@@ -59,7 +61,9 @@ public class SaopauloTendadriveRatingReviewCrawler extends RatingReviewCrawler {
 
         Integer totalNumOfEvaluations = getTotalNumOfRatings(trustVoxResponse);
         Double avgRating = getTotalRating(trustVoxResponse);
+        AdvancedRatingReview advancedRatingReview = TrustvoxRatingCrawler.getTotalStarsFromEachValue(trustVoxResponse);
 
+        ratingReviews.setAdvancedRatingReview(advancedRatingReview);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
@@ -207,4 +211,5 @@ public class SaopauloTendadriveRatingReviewCrawler extends RatingReviewCrawler {
 
     return object;
   }
+
 }
