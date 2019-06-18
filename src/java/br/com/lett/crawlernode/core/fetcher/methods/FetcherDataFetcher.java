@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.core.fetcher.methods;
 
 import java.io.File;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -84,9 +83,6 @@ public class FetcherDataFetcher implements DataFetcher {
       Logging.printLogDebug(logger, session,
           "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
 
-      URL requestURL = new URI(FETCHER_HOST).toURL();
-      String fetcherUrl = requestURL.getProtocol() + "://" + requestURL.getHost();
-
       Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
       RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
           .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
@@ -102,7 +98,7 @@ public class FetcherDataFetcher implements DataFetcher {
       StringEntity input = new StringEntity(payload.toJson().toString());
       input.setContentType(FETCHER_CONTENT_TYPE);
 
-      HttpPost httpPost = new HttpPost(fetcherUrl);
+      HttpPost httpPost = new HttpPost(FETCHER_HOST);
       httpPost.setEntity(input);
       httpPost.setEntity(new StringEntity(payload.toJson().toString(), ContentType.create(FETCHER_CONTENT_TYPE)));
       httpPost.setConfig(requestConfig);
@@ -123,7 +119,7 @@ public class FetcherDataFetcher implements DataFetcher {
       // creating the page content result from the http request
       PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
       pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting the
-      pageContent.setUrl(fetcherUrl); // setting url
+      pageContent.setUrl(FETCHER_HOST); // setting url
 
       // saving request content result on Amazon
       String content;
@@ -229,10 +225,17 @@ public class FetcherDataFetcher implements DataFetcher {
         String cookieHeader = o.toString();
         String cookieName = cookieHeader.split("=")[0].trim();
 
-        int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
-        int y = cookieHeader.indexOf(';', x);
+        String cookieValue;
 
-        String cookieValue = cookieHeader.substring(x, y).trim();
+        int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+
+        if (cookieHeader.contains(";")) {
+          int y = cookieHeader.indexOf(';', x);
+
+          cookieValue = cookieHeader.substring(x, y).trim();
+        } else {
+          cookieValue = cookieHeader.substring(x).trim();
+        }
 
         BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
         cookie.setPath("/");
