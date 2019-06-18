@@ -12,7 +12,9 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 /**
@@ -42,12 +44,16 @@ public class BrasilDrogariapachecoRatingReviewCrawler extends RatingReviewCrawle
 
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
+        YourreviewsRatingCrawler yr =
+            new YourreviewsRatingCrawler(session, cookies, logger, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", this.dataFetcher);
 
-        Document docRating = crawlPageRatings(internalPid);
+        Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", this.dataFetcher);
 
         Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
         Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
+        AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
 
+        ratingReviews.setAdvancedRatingReview(advancedRatingReview);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
 
