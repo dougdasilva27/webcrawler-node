@@ -66,6 +66,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
     List<String> selectors = new ArrayList<>();
     selectors.add(".barra.especificacao");
     selectors.add("#detalhes-mini.descricao");
+    selectors.add("#detalhes-mini > ul > li p");
 
     return CrawlerUtils.scrapSimpleDescription(doc, selectors);
   }
