@@ -116,8 +116,8 @@ public class YourreviewsRatingCrawler {
   public Document crawlAllPagesRatingsFromYourViews(String internalPid, String storeKey, DataFetcher dataFetcher, Integer currentPage) {
     Document doc = new Document("");
 
-    String url = "https://service.yourviews.com.br/review/getreview?page=" + currentPage + "&storeKey=" + storeKey + "&productStoreId=" + internalPid
-        + "&orderby=1&callback=_jqjsp&";
+    String url = "https://service.yourviews.com.br/review/GetReview?storeKey=" + storeKey + "&productStoreId=" + internalPid + "&extFilters=&page="
+        + currentPage + "&callback=_jqjsp&";
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     String response = dataFetcher.get(session, request).getBody().trim();
@@ -189,7 +189,7 @@ public class YourreviewsRatingCrawler {
 
     Elements pages = docRating.select(".yv-paging:not(:last-child)");
 
-    if (!pages.get(pages.size() - 1).text().trim().equals(this.currentPage.toString())) {
+    if (pages.size() > 0 && !pages.get(pages.size() - 1).text().trim().equals(this.currentPage.toString())) {
       hasNextPage = true;
       this.currentPage++;
     }
