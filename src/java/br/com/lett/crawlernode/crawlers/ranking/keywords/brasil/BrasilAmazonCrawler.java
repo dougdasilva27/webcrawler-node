@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -11,6 +12,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override
