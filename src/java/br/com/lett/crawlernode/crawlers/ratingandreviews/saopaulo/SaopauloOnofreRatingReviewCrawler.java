@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 public class SaopauloOnofreRatingReviewCrawler extends RatingReviewCrawler {
@@ -34,12 +35,15 @@ public class SaopauloOnofreRatingReviewCrawler extends RatingReviewCrawler {
   private RatingsReviews crawlRating(Document doc, String internalId) {
     RatingsReviews ratingReviews = new RatingsReviews();
 
-    YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
+    YourreviewsRatingCrawler yourReviews =
+        new YourreviewsRatingCrawler(session, cookies, logger, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063", dataFetcher);
 
     Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063", dataFetcher);
     Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
     Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+    AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalId);
 
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
     ratingReviews.setTotalRating(totalNumOfEvaluations);
     ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
     ratingReviews.setAverageOverallRating(avgRating);
