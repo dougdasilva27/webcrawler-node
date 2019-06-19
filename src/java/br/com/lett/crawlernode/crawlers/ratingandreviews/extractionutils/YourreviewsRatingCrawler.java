@@ -141,7 +141,6 @@ public class YourreviewsRatingCrawler {
     return doc;
   }
 
-  // Passar storeKey e datafetcher no construtor
   public AdvancedRatingReview getTotalStarsFromEachValue(String internalPid) {
     Document docRating;
 

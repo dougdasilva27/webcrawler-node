@@ -283,7 +283,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
       JSONArray ratingDistribution = reviewStatistics.getJSONArray("RatingDistribution");
       for (Object object : ratingDistribution) {
         JSONObject rating = (JSONObject) object;
-        Integer option = CrawlerUtils.getIntegerValueFromJSON(rating, "RatingValue", null);
+        Integer option = CrawlerUtils.getIntegerValueFromJSON(rating, "RatingValue", 0);
 
         if (rating.has("RatingValue") && option == 1 && rating.has("Count")) {
           star1 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);

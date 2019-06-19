@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GPACrawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -46,7 +45,6 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
       ratingReviews.setDate(session.getDate());
 
       JSONObject rating = crawlProductInformatioFromGPAApi(session.getOriginalURL());
-      CommonMethods.saveDataToAFile(rating, Test.pathWrite + "x.json");
       Integer totalNumOfEvaluations = getTotalNumOfRatings(rating);
       Integer totalReviews = getTotalNumOfReviews(rating);
       Double avgRating = getTotalAvgRating(rating);

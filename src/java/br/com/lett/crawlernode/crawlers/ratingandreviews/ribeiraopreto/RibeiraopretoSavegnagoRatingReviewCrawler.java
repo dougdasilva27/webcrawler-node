@@ -54,7 +54,7 @@ public class RibeiraopretoSavegnagoRatingReviewCrawler extends RatingReviewCrawl
   private String crawlInternalId(Document doc) {
     String internalId = null;
 
-    Element elementInternalId = doc.select("meta[itemprop=\"productID\"]").first();
+    Element elementInternalId = doc.selectFirst("meta[itemprop=\"productID\"]");
     if (elementInternalId != null) {
       internalId = elementInternalId.attr("content").trim();
     }
