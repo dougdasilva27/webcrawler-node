@@ -20,7 +20,6 @@ public class YourreviewsRatingCrawler {
   private Session session;
   protected Logger logger;
   private List<Cookie> cookies;
-  private Integer currentPage = 1;
   private String storeKey;
   private DataFetcher dataFetcher;
 
@@ -143,6 +142,7 @@ public class YourreviewsRatingCrawler {
 
   public AdvancedRatingReview getTotalStarsFromEachValue(String internalPid) {
     Document docRating;
+    Integer currentPage = 1;
 
     Integer star1 = 0;
     Integer star2 = 0;
@@ -151,7 +151,8 @@ public class YourreviewsRatingCrawler {
     Integer star5 = 0;
 
     do {
-      docRating = crawlAllPagesRatingsFromYourViews(internalPid, storeKey, dataFetcher, this.currentPage);
+      currentPage++;
+      docRating = crawlAllPagesRatingsFromYourViews(internalPid, storeKey, dataFetcher, currentPage);
       Elements reviews = docRating.select(".yv-col-md-8");
       for (Element element : reviews) {
         Elements stars = element.select(".fa-star");
@@ -178,19 +179,18 @@ public class YourreviewsRatingCrawler {
 
       }
 
-    } while (hasNextPage(docRating));
+    } while (hasNextPage(docRating, currentPage));
 
     return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
   }
 
-  public boolean hasNextPage(Document docRating) {
+  private boolean hasNextPage(Document docRating, Integer currentPage) {
     boolean hasNextPage = false;
 
     Elements pages = docRating.select(".yv-paging:not(:last-child)");
 
-    if (pages.size() > 0 && !pages.get(pages.size() - 1).text().trim().equals(this.currentPage.toString())) {
+    if (!pages.isEmpty() && !pages.get(pages.size() - 1).text().trim().equals(currentPage.toString())) {
       hasNextPage = true;
-      this.currentPage++;
     }
 
     return hasNextPage;
