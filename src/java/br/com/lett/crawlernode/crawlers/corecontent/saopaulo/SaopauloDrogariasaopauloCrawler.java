@@ -69,8 +69,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-        secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+        primaryImage = crawlPrimaryImage(apiJSON);
+        secondaryImages = crawlSecondaryImages(apiJSON, primaryImage);
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
@@ -96,6 +96,49 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     return products;
   }
 
+
+  private String crawlSecondaryImages(JSONObject apiJSON, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    if (apiJSON.has("Images")) {
+      JSONArray jsonArrayImages = apiJSON.getJSONArray("Images");
+
+      for (int i = 0; i < jsonArrayImages.length(); i++) {
+        JSONArray arrayImage = jsonArrayImages.getJSONArray(i);
+        JSONObject jsonImage = arrayImage.getJSONObject(0);
+
+        // jump primary image
+        if (jsonImage.has("Path")) {
+          String urlImage = VTEXCrawlersUtils.changeImageSizeOnURL(jsonImage.getString("Path"));
+          if (urlImage.equals(primaryImage)) {
+            continue;
+          }
+          secondaryImagesArray.put(urlImage);
+        }
+
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  private String crawlPrimaryImage(JSONObject apiJSON) {
+    String primaryImage = null;
+
+    if (apiJSON.has("Images")) {
+      JSONArray jsonArrayImages = apiJSON.getJSONArray("Images");
+
+      JSONArray arrayImage = jsonArrayImages.getJSONArray(0);
+      JSONObject jsonImage = arrayImage.getJSONObject(0);
+      primaryImage = VTEXCrawlersUtils.changeImageSizeOnURL(jsonImage.getString("Path"));
+    }
+    return primaryImage;
+  }
 
   /*******************************
    * Product page identification *
