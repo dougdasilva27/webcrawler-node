@@ -22,7 +22,7 @@ public class MexicoWalmartsuperCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
 
     this.log("Página " + this.currentPage);
-    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded + "&Nrpp=20&offSet=" + this.arrayProducts.size()
+    String url = "https://super.walmart.com.mx/api/wmx/search/?Ntt=" + this.keywordEncoded + "&Nrpp=20&No=" + this.arrayProducts.size()
         + "&storeId=0000009999";
     this.log("Link onde são feitos os crawlers: " + url);
 
