@@ -193,18 +193,17 @@ public class BrasilFastshopCrawlerUtils {
     JSONObject jsonPrice = new JSONObject();
 
     if (available) {
-      String url = "https://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" + internalId
-          + "&hotsite=fastshop&fromWishList=false&" + "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
+      // String url = "https://www.fastshop.com.br/loja/AjaxPriceDisplayView?" + "catEntryIdentifier=" +
+      // internalId
+      // + "&hotsite=fastshop&fromWishList=false&" +
+      // "storeId=10151&displayPriceRange=true&displayLinkWhyInterest=true";
+      String url = "https://www.fastshop.com.br/webapp/wcs/stores/servlet/AjaxPricePromotionsDisplayView?hotsite=fastshop&storeId=10151&partNumber="
+          + internalId;
 
       Request request = RequestBuilder.create().setUrl(url).build();
       String json = dataFetcher.get(session, request).getBody();
 
       try {
-        int x = json.indexOf("/*");
-        int y = json.indexOf("*/", x + 2);
-
-        json = json.substring(x + 2, y);
-
         jsonPrice = new JSONObject(json);
       } catch (Exception e) {
         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
