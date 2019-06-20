@@ -60,7 +60,7 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
         JSONObject descriptionArray = vtexUtil.crawlDescriptionAPI(internalId, "skuId");
         String description = crawlDescription(descriptionArray);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
+        String name = crawlName(jsonSku, skuJson, " - ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -96,6 +96,22 @@ public class BrasilEpocacosmeticosCrawler extends Crawler {
 
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
+  }
+
+  public String crawlName(JSONObject jsonSku, JSONObject skuJson, String separator) {
+    StringBuilder name = new StringBuilder();
+
+    String nameVariation = jsonSku.has(VTEXCrawlersUtils.SKU_NAME) ? jsonSku.getString(VTEXCrawlersUtils.SKU_NAME) : null;
+
+    if (skuJson.has(VTEXCrawlersUtils.PRODUCT_NAME)) {
+      name.append(skuJson.getString(VTEXCrawlersUtils.PRODUCT_NAME));
+
+      if (nameVariation != null) {
+        name.append(separator).append(nameVariation);
+      }
+    }
+
+    return name.toString();
   }
 
   private String crawlDescription(JSONObject json) {

@@ -134,6 +134,12 @@ public class BrasilLojacotyCrawler extends Crawler {
       description.append("</div>");
     }
 
+    if (descriptionJson.has("Instruções de Uso")) {
+      description.append("<div><h4>Instruções de Uso</h4>");
+      description.append(sanitizeDescription(descriptionJson.get("Instruções de Uso")));
+      description.append("</div>");
+    }
+
     return description.toString();
   }
 

@@ -52,7 +52,8 @@ public class TottusCrawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".title h5", false);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".title h5", false) + " "
+          + CrawlerUtils.scrapStringSimpleInfo(doc, ".caption-description .statement", true);
       Float price = priceWithComma ? CrawlerUtils.scrapSimplePriceFloat(doc, ".price-selector .active-price", false)
           : CrawlerUtils.scrapSimplePriceFloatWithDots(doc, ".price-selector .active-price", false);
       Prices prices = crawlPrices(price, doc);

@@ -189,7 +189,7 @@ public class BrasilAmazonCrawler extends Crawler {
   private JSONArray crawlImages(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", ";", true, false);
+    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", "};", true, false);
 
     if (data.has("imageGalleryData")) {
       images = data.getJSONArray("imageGalleryData");

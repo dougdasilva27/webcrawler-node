@@ -140,7 +140,7 @@ public class MexicoAmazonCrawler extends Crawler {
   private JSONArray crawlImages(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "#imageBlock_feature_div script", "vardata=", ";", true, false);
+    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "#imageBlock_feature_div script", "vardata=", "};", true, false);
 
     if (data.has("imageGalleryData")) {
       images = data.getJSONArray("imageGalleryData");
