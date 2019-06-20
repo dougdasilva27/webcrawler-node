@@ -92,26 +92,30 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
       name = skuJson.getString("name");
     }
 
-    if (name != null && jsonSku.has("dimensions")) {
-      JSONObject dimensions = jsonSku.getJSONObject("dimensions");
-
-      if (dimensions.has("TAMANHO") && !dimensions.isNull("TAMANHO") && !dimensions.get("TAMANHO").toString().equalsIgnoreCase("NA")) {
-        name = name.concat(" ").concat(dimensions.get("TAMANHO").toString());
-      }
-
-      if (dimensions.has("COR") && !dimensions.isNull("COR") && !dimensions.get("COR").toString().equalsIgnoreCase("NA")) {
-        name = name.concat(" ").concat(dimensions.get("COR").toString());
-      }
-
-      if (dimensions.has("QUANTIDADE") && !dimensions.isNull("QUANTIDADE") && !dimensions.get("QUANTIDADE").toString().equalsIgnoreCase("NA")) {
-        name = name.concat(" ").concat(dimensions.get("QUANTIDADE").toString());
-      }
-
-      if (dimensions.has("VOLUME") && !dimensions.isNull("VOLUME") && !dimensions.get("VOLUME").toString().equalsIgnoreCase("NA")) {
-        name = name.concat(" ").concat(dimensions.get("VOLUME").toString());
-      }
-
-    }
+    // if (name != null && jsonSku.has("dimensions")) {
+    // JSONObject dimensions = jsonSku.getJSONObject("dimensions");
+    //
+    // if (dimensions.has("TAMANHO") && !dimensions.isNull("TAMANHO") &&
+    // !dimensions.get("TAMANHO").toString().equalsIgnoreCase("NA")) {
+    // name = name.concat(" ").concat(dimensions.get("TAMANHO").toString());
+    // }
+    //
+    // if (dimensions.has("COR") && !dimensions.isNull("COR") &&
+    // !dimensions.get("COR").toString().equalsIgnoreCase("NA")) {
+    // name = name.concat(" ").concat(dimensions.get("COR").toString());
+    // }
+    //
+    // if (dimensions.has("QUANTIDADE") && !dimensions.isNull("QUANTIDADE") &&
+    // !dimensions.get("QUANTIDADE").toString().equalsIgnoreCase("NA")) {
+    // name = name.concat(" ").concat(dimensions.get("QUANTIDADE").toString());
+    // }
+    //
+    // if (dimensions.has("VOLUME") && !dimensions.isNull("VOLUME") &&
+    // !dimensions.get("VOLUME").toString().equalsIgnoreCase("NA")) {
+    // name = name.concat(" ").concat(dimensions.get("VOLUME").toString());
+    // }
+    //
+    // }
 
     return name;
   }
