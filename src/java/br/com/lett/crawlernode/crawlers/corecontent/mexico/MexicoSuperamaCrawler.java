@@ -126,7 +126,14 @@ public class MexicoSuperamaCrawler extends Crawler {
 
     if (salePriceElement != null) {
       priceText = salePriceElement.ownText();
-      price = Float.parseFloat(priceText.replaceAll("\\$", "").replaceAll(",", ""));
+      if (!priceText.isEmpty()) {
+        price = Float.parseFloat(priceText.replaceAll("\\$", "").replaceAll(",", ""));
+      } else {
+        Element ancorPrice = document.selectFirst("a[data-precio]");
+        if (ancorPrice != null) {
+          price = Float.parseFloat(ancorPrice.attr("data-precio"));
+        }
+      }
     }
 
     return price;
