@@ -302,6 +302,8 @@ public class FetcherDataFetcher implements DataFetcher {
             if (proxy.has("location")) {
               lettProxy.setLocation(proxy.getString("location"));
             }
+
+            requestStats.setProxy(lettProxy);
           }
 
           requestStatistics.add(requestStats);

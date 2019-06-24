@@ -15,6 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -25,7 +26,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -57,7 +57,8 @@ public class CampograndeComperCrawler extends Crawler {
     Map<String, String> headers = new HashMap<>();
     headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers)
+        .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.BONANZA, ProxyCollection.NO_PROXY)).build();
     Response response = this.dataFetcher.get(session, request);
 
     this.proxyUsed = response.getProxyUsed();
@@ -69,15 +70,14 @@ public class CampograndeComperCrawler extends Crawler {
       this.cookies.add(cookie);
     }
 
-    Request request2 = RequestBuilder.create().setUrl("https://www.comperdelivery.com.br/store/SetStore?storeId=6602").setCookies(cookies).setHeaders(headers).setFollowRedirects(false).build();
-    Response response2 = this.dataFetcher.get(session, request2);
+    Request request2 = RequestBuilder.create().setUrl("https://www.comperdelivery.com.br/store/SetStore?storeId=6602").setProxy(proxyUsed)
+        .setCookies(cookies).setHeaders(headers).setFollowRedirects(false).build();
+    this.dataFetcher.get(session, request2);
 
-    for (Cookie cookieResponse : response2.getCookies()) {
-      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-      cookie.setDomain("www.comperdelivery.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
+    BasicClientCookie cookieM = new BasicClientCookie("MultiStoreId", "02010714110000101010000010001000");
+    cookieM.setDomain("www.comperdelivery.com.br");
+    cookieM.setPath("/");
+    this.cookies.add(cookieM);
   }
 
   @Override
@@ -107,7 +107,8 @@ public class CampograndeComperCrawler extends Crawler {
       Prices prices = available ? crawlPrices(price, doc) : new Prices();
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".images .thumbs li[style~=block] img", Arrays.asList("src"), "https", "www.comperdelivery.com.br", primaryImage);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".images .thumbs li[style~=block] img", Arrays.asList("src"), "https",
+          "www.comperdelivery.com.br", primaryImage);
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
@@ -117,14 +118,14 @@ public class CampograndeComperCrawler extends Crawler {
       eans.add(ean);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
     } else {
-      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "COMPER.html");
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
