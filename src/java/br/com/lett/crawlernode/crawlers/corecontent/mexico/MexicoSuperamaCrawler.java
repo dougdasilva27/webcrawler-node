@@ -131,7 +131,10 @@ public class MexicoSuperamaCrawler extends Crawler {
       } else {
         Element ancorPrice = document.selectFirst("a[data-precio]");
         if (ancorPrice != null) {
-          price = Float.parseFloat(ancorPrice.attr("data-precio"));
+          String dataPrecio = ancorPrice.attr("data-precio").replaceAll("[^0-9.]", "");
+          if (!dataPrecio.isEmpty()) {
+            price = Float.parseFloat(dataPrecio);
+          }
         }
       }
     }
