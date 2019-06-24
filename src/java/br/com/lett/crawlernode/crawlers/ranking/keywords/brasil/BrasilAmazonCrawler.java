@@ -27,7 +27,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
         "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage + "&keywords=" + this.keywordEncoded + "&ie=UTF8";
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, session, dataFetcher));
+    this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, dataFetcher));
 
     Elements products = this.currentDoc.select(".s-result-list .s-result-item");
     Element result = this.currentDoc.select("#noResultsTitle").first();

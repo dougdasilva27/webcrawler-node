@@ -34,7 +34,7 @@ public class MexicoAmazonCrawler extends CrawlerRankingKeywords {
     }
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, session, dataFetcher));
+    this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, dataFetcher));
     this.nextPageUrl = crawlNextPage();
 
     Elements products = this.currentDoc.select(".s-result-list .s-result-item");

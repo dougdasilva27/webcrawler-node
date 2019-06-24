@@ -54,6 +54,11 @@ public class MexicoAmazonCrawler extends Crawler {
   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
   @Override
+  public void handleCookiesBeforeFetch() {
+    this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
+  }
+
+  @Override
   protected Document fetch() {
     return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
   }
@@ -224,7 +229,7 @@ public class MexicoAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document docMarketplace = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, session, this.dataFetcher));
+      Document docMarketplace = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher));
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -235,7 +240,7 @@ public class MexicoAmazonCrawler extends Crawler {
       while (nextPage != null) {
         String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Document nextDocMarketPlace = Jsoup.parse(amazonScraperUtils.fetchPage(nextUrl, headers, cookies, session, this.dataFetcher));
+        Document nextDocMarketPlace = Jsoup.parse(amazonScraperUtils.fetchPage(nextUrl, headers, cookies, this.dataFetcher));
         docs.add(nextDocMarketPlace);
 
         nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
