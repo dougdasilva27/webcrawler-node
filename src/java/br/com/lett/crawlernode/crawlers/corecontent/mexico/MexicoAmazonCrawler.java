@@ -187,7 +187,10 @@ public class MexicoAmazonCrawler extends Crawler {
     if (salePriceElement != null) {
       price = MathUtils.parseFloatWithDots(salePriceElement.text().trim());
     } else {
-      price = CrawlerUtils.scrapFloatPriceFromHtml(document, "#buybox .a-color-price", null, true, '.', session);
+      Element priceElement = document.selectFirst("#buybox .a-color-price");
+      if (!priceElement.text().replaceAll("[^0-9]", "").equals("")) {
+        price = CrawlerUtils.scrapFloatPriceFromHtml(document, "#buybox .a-color-price", null, true, '.', session);
+      }
     }
 
     if (price == null && specialPrice != null) {
