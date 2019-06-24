@@ -2,10 +2,10 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.mexico;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
@@ -20,7 +20,13 @@ public class MexicoAmazonRatingReviewCrawler extends RatingReviewCrawler {
 
   public MexicoAmazonRatingReviewCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
+  }
+
+  private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
+
+  @Override
+  protected Document fetch() {
+    return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
   }
 
   @Override

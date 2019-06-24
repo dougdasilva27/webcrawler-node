@@ -14,14 +14,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -50,6 +49,13 @@ public class MexicoAmazonCrawler extends Crawler {
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
+
+  private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
+
+  @Override
+  protected Document fetch() {
+    return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
   }
 
   @Override
@@ -181,7 +187,10 @@ public class MexicoAmazonCrawler extends Crawler {
     if (salePriceElement != null) {
       price = MathUtils.parseFloatWithDots(salePriceElement.text().trim());
     } else {
-      price = CrawlerUtils.scrapFloatPriceFromHtml(document, "#buybox .a-color-price", null, true, '.', session);
+      Element priceElement = document.selectFirst("#buybox .a-color-price");
+      if (!priceElement.text().replaceAll("[^0-9]", "").equals("")) {
+        price = CrawlerUtils.scrapFloatPriceFromHtml(document, "#buybox .a-color-price", null, true, '.', session);
+      }
     }
 
     if (price == null && specialPrice != null) {
@@ -215,8 +224,7 @@ public class MexicoAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Request request = RequestBuilder.create().setUrl(urlMarketPlace).setCookies(cookies).setHeaders(headers).build();
-      Document docMarketplace = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      Document docMarketplace = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, session, this.dataFetcher));
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -227,8 +235,7 @@ public class MexicoAmazonCrawler extends Crawler {
       while (nextPage != null) {
         String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Request nextRequest = RequestBuilder.create().setUrl(nextUrl).setCookies(cookies).setHeaders(headers).build();
-        Document nextDocMarketPlace = Jsoup.parse(this.dataFetcher.get(session, nextRequest).getBody());
+        Document nextDocMarketPlace = Jsoup.parse(amazonScraperUtils.fetchPage(nextUrl, headers, cookies, session, this.dataFetcher));
         docs.add(nextDocMarketPlace);
 
         nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
