@@ -133,9 +133,14 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     if (apiJSON.has("Images")) {
       JSONArray jsonArrayImages = apiJSON.getJSONArray("Images");
 
-      JSONArray arrayImage = jsonArrayImages.getJSONArray(0);
-      JSONObject jsonImage = arrayImage.getJSONObject(0);
-      primaryImage = VTEXCrawlersUtils.changeImageSizeOnURL(jsonImage.getString("Path"));
+      if (jsonArrayImages.length() > 0) {
+        JSONArray arrayImage = jsonArrayImages.getJSONArray(0);
+
+        if (arrayImage.length() > 0) {
+          JSONObject jsonImage = arrayImage.getJSONObject(0);
+          primaryImage = VTEXCrawlersUtils.changeImageSizeOnURL(jsonImage.getString("Path"));
+        }
+      }
     }
     return primaryImage;
   }

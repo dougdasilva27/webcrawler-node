@@ -21,7 +21,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -344,7 +343,7 @@ public class BrasilFastshopNewCrawler {
       for (Object object : promotionData) {
         JSONObject jsonPromotionData = (JSONObject) object;
         if (jsonPromotionData.has("price")) {
-          prices.setBankTicketPrice(jsonPromotionData.getFloat("price"));
+          prices.setBankTicketPrice(CrawlerUtils.getFloatValueFromJSON(jsonPromotionData, "price"));
         }
       }
 
@@ -352,7 +351,7 @@ public class BrasilFastshopNewCrawler {
 
     if (jsonPrices.has("priceData")) {
       JSONObject priceData = jsonPrices.getJSONObject("priceData");
-      CommonMethods.saveDataToAFile(priceData, Test.pathWrite + "x.json");
+
       if (priceData.has("offerPrice")) {
         Float offerPrice = MathUtils.parseFloatWithComma(priceData.getString("offerPrice"));
 
