@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +12,9 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
 
@@ -84,30 +88,25 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     url.append("&maxAge=short");
     url.append("&appsEtag=ddb7a8f356b06ad1241e47a4a721406879e55466");
 
-    JSONObject payload = new JSONObject();
-    payload.put("operationName", "ListOffers");
-    payload.put("variables", new JSONObject());
+    StringBuilder payload = new StringBuilder();
+    payload.append("&operationName=ListOffers");
 
     JSONObject extensions = new JSONObject();
+    JSONObject persistedQuery = new JSONObject();
+
+    persistedQuery.put("version", "omnilogic.search@0.4.74");
+    persistedQuery.put("sha256Hash", "c64cbc373960ce6dd8fe3a23388168e58a133e7ef256fef9caec40c6092c3ccc");
+    extensions.put("persistedQuery", persistedQuery);
     extensions.put("variables", createVariablesBase64());
 
-    JSONObject persistedQuery = new JSONObject();
-    persistedQuery.put("version", "omnilogic.search@0.4.74");
-    persistedQuery.put("sha256Hash", "c17d5f3289f56c6a5f9b143a63f8d6105cbc0ee61eba8bb58e2be31be643ef54");
+    try {
+      payload.append("&variables=" + URLEncoder.encode("{}", "UTF-8"));
+      payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
 
-    payload.put("extensions", extensions);
-    payload.put("query",
-        "query ListOffers($pageSize: Int, $sort: String, $metadata: [Metadatum], $searchPath: String, $text: String, $selectedSubstantive: String,"
-            + " $source: String, $categories: [String], $clusters: [String], $priceRange: [Int], $sellers: [String], $ignoreSuggestions: Boolean)"
-            + " @context(sender: \"omnilogic.search@0.4.74\") {\n search(pageSize: $pageSize, sort: $sort, metadata: $metadata, searchPath: $searchPath, "
-            + "text: $text, selectedSubstantive: $selectedSubstantive, source: $source, categories: $categories, clusters: $clusters, priceRange: $priceRange, "
-            + "sellers: $sellers, ignoreSuggestions: $ignoreSuggestions) @runtimeMeta(hash: \"c17d5f3289f56c6a5f9b143a63f8d6105cbc0ee61eba8bb58e2be31be643ef54\")"
-            + " {\n store\n total\n selectedSubstantive\n suggestions {\n term\n values\n __typename\n }\n substantives\n metadata {\n name\n total\n values "
-            + "{\n value\n total\n priceRange {\n min\n max\n __typename\n }\n __typename\n }\n __typename\n }\n sellers {\n value\n total\n priceRange "
-            + "{\n min\n max\n __typename\n }\n __typename\n }\n categories {\n value\n total\n priceRange {\n min\n max\n __typename\n }\n __typename\n }\n "
-            + "results {\n name\n url\n img\n price\n listPrice\n priceDiscount\n installments\n installmentValue\n sku\n label {\n name\n value\n __typename\n }\n "
-            + "categories\n clusters\n __typename\n }\n query {\n name\n values\n __typename\n }\n __typename\n }\n}\n");
-
+    url.append(payload.toString());
     this.log("Link onde são feitos os crawlers: " + url);
 
     Map<String, String> headers = new HashMap<>();
@@ -115,7 +114,7 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
 
     Request request =
         RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setPayload(payload.toString()).mustSendContentEncoding(false).build();
-    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (response.has("data")) {
       JSONObject data = response.getJSONObject("data");

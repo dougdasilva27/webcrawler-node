@@ -29,12 +29,12 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
     if (!products.isEmpty()) {
 
       for (Element e : products) {
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "meta[itemprop=productID]", "content");
+        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "meta[itemprop=productID]", "content");
         String productUrl = CrawlerUtils.scrapUrl(e, "a[itemprop=url]", "href", "https", "www.gazin.com.br");
 
-        saveDataProduct(internalId, null, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
 
