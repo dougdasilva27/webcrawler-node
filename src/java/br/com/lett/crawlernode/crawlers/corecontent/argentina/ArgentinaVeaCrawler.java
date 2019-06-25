@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -38,6 +39,11 @@ public class ArgentinaVeaCrawler extends Crawler {
     Logging.printLogDebug(logger, session, "Adding cookie...");
     this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Login/PreHome.aspx", Arrays.asList("ASP.NET_SessionId"), "www.veadigital.com.ar",
         "/", cookies, session, new HashMap<>(), dataFetcher);
+
+    BasicClientCookie cookie = new BasicClientCookie("noLocalizar", "true");
+    cookie.setDomain("www.veadigital.com.ar");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
   }
 
   @Override
