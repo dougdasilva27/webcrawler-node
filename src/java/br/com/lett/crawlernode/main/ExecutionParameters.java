@@ -28,6 +28,8 @@ public class ExecutionParameters {
   private int hikariCpConnectionTimeout;
   private int hikariCpIdleTimeout;
 
+  private String queueUrlFirstPart;
+  private String fetcherUrl;
   private String tmpImageFolder;
   private String phantomjsPath;
   private int nthreads;
@@ -38,6 +40,8 @@ public class ExecutionParameters {
   private Boolean useFetcher;
   private String kinesisStream;
   private Boolean sendToKinesis;
+  
+  private String logsBucketName;
 
   public ExecutionParameters() {
     debug = null;
@@ -52,6 +56,9 @@ public class ExecutionParameters {
     tmpImageFolder = getEnvTmpImagesFolder();
     kinesisStream = getEnvKinesisStream();
     sendToKinesis = getEnvSendToKinesis();
+    logsBucketName = getEnvLogsBucketName();
+    setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
+    setFetcherUrl(getEnvFetcherUrl());
     setPhantomjsPath(getEnvPhantomjsPath());
     setHikariCpConnectionTimeout();
     setHikariCpIDLETimeout();
@@ -63,9 +70,9 @@ public class ExecutionParameters {
 
     Logging.printLogDebug(logger, this.toString());
   }
-  
+
   public Boolean mustSendToKinesis() {
-	  return sendToKinesis;
+    return sendToKinesis;
   }
 
   public Boolean getDebug() {
@@ -104,17 +111,25 @@ public class ExecutionParameters {
     }
     return false;
   }
-  
+
   private boolean getEnvSendToKinesis() {
-	  String sendToKinesis = System.getenv(EnvironmentVariables.SEND_TO_KINESIS);
-	  if (Boolean.TRUE.toString().equals(sendToKinesis)) {
-		  return true;
-	  }
-	  return false;
+    String sendToKinesis = System.getenv(EnvironmentVariables.SEND_TO_KINESIS);
+    if (Boolean.TRUE.toString().equals(sendToKinesis)) {
+      return true;
+    }
+    return false;
   }
 
   private String getEnvPhantomjsPath() {
     return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
+  }
+
+  private String getEnvQueueUrlFirstPart() {
+    return System.getenv(EnvironmentVariables.QUEUE_URL_FIRST_PART);
+  }
+
+  private String getEnvFetcherUrl() {
+    return System.getenv(EnvironmentVariables.FETCHER_URL);
   }
 
   private String getEnvTmpImagesFolder() {
@@ -140,13 +155,13 @@ public class ExecutionParameters {
     }
     return false;
   }
-  
+
   private String getEnvKinesisStream() {
-	  String kinesisStream = System.getenv(EnvironmentVariables.KINESIS_STREAM);
-	  if (kinesisStream == null) {
-		  return DEFAULT_KINESIS_STREAM;
-	  }
-	  return kinesisStream;
+    String kinesisStream = System.getenv(EnvironmentVariables.KINESIS_STREAM);
+    if (kinesisStream == null) {
+      return DEFAULT_KINESIS_STREAM;
+    }
+    return kinesisStream;
   }
 
   private boolean getEnvUseFetcher() {
@@ -164,6 +179,18 @@ public class ExecutionParameters {
     }
     return Integer.parseInt(coreThreadsString);
   }
+  
+  private String getEnvLogsBucketName() {
+    String logsBucketName = System.getenv(EnvironmentVariables.LOGS_BUCKET_NAME);
+    if(logsBucketName == null || logsBucketName.isEmpty()) {
+      Logging.logWarn(logger, null, null, "LOGS_BUCKET_NAME not set");
+      
+      // Return empty string to avoid null pointers
+      return "";
+    }
+    
+    return logsBucketName;
+  }
 
   public boolean mustForceImageUpdate() {
     return forceImageUpdate;
@@ -172,9 +199,9 @@ public class ExecutionParameters {
   public int getCoreThreads() {
     return this.coreThreads;
   }
-  
+
   public String getKinesisStream() {
-	  return kinesisStream;
+    return kinesisStream;
   }
 
   public int getNthreads() {
@@ -257,4 +284,27 @@ public class ExecutionParameters {
     this.hikariCpIdleTimeout = Integer.parseInt(System.getenv(EnvironmentVariables.HIKARI_CP_IDLE_TIMEOUT));
   }
 
+  public String getQueueUrlFirstPart() {
+    return queueUrlFirstPart;
+  }
+
+  public void setQueueUrlFirstPart(String queueUrlFirstPart) {
+    this.queueUrlFirstPart = queueUrlFirstPart;
+  }
+
+  public String getFetcherUrl() {
+    return fetcherUrl;
+  }
+
+  public void setFetcherUrl(String fetcherUrl) {
+    this.fetcherUrl = fetcherUrl;
+  }
+
+  public String getLogsBucketName() {
+    return logsBucketName;
+  }
+  
+  public void setLogsBucketName(String logsBucketName) {
+    this.logsBucketName = logsBucketName;
+  }
 }

@@ -28,6 +28,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -157,13 +158,25 @@ public class BrasilPetzCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      List<String> eans = crawlEans(doc);
 
       return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price).setPrices(prices)
-          .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setEans(eans)
           .setMarketplace(new Marketplace()).build();
     }
 
     return new Product();
+  }
+
+  private List<String> crawlEans(Document doc) {
+    List<String> eans = new ArrayList<>();
+    Element meta = doc.selectFirst("meta[itemprop=\"gtin13\"]");
+
+    if (meta != null) {
+      eans.add(meta.attr("content"));
+    }
+
+    return eans;
   }
 
   /*******************************
@@ -327,6 +340,11 @@ public class BrasilPetzCrawler extends Crawler {
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
       mapInstallments.put(1, price);
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".de-apagado", doc, true, "x", "", true);
+      if (!pair.isAnyValueNull()) {
+        mapInstallments.put(pair.getFirst(), pair.getSecond());
+      }
 
       prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);

@@ -82,48 +82,40 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     url.append("https://www.shopfacil.com.br/api/io/_v/public/graphql/v1?");
     url.append("workspace=master");
     url.append("&maxAge=short");
-    url.append("&appsEtag=%228350902F07D18A2390FF776EF5DA435A%22");
-    url.append("&operationName=ListOffers");
-    url.append("&variables=%7B%7D");
+    url.append("&appsEtag=ddb7a8f356b06ad1241e47a4a721406879e55466");
 
-    String substantive = fetchSubstantive();
+    JSONObject payload = new JSONObject();
+    payload.put("operationName", "ListOffers");
+    payload.put("variables", new JSONObject());
 
-    JSONObject search = new JSONObject();
-    search.put("pageSize", this.productsLimit);
-    search.put("sort", "score.desc");
-    search.put("searchPath", "/busca/");
-    search.put("selectedSubstantive", substantive == null ? JSONObject.NULL : substantive);
-    search.put("source", "page");
-    search.put("categories", JSONObject.NULL);
-    search.put("clusters", JSONObject.NULL);
-    search.put("sellers", JSONObject.NULL);
+    JSONObject extensions = new JSONObject();
+    extensions.put("variables", createVariablesBase64());
 
-    JSONArray metadata = new JSONArray();
+    JSONObject persistedQuery = new JSONObject();
+    persistedQuery.put("version", "omnilogic.search@0.4.74");
+    persistedQuery.put("sha256Hash", "c17d5f3289f56c6a5f9b143a63f8d6105cbc0ee61eba8bb58e2be31be643ef54");
 
-    if (substantive != null) {
-      JSONObject substantiveJson = new JSONObject();
-      substantiveJson.put("name", "substantive");
-      substantiveJson.put("values", new JSONArray().put(substantive));
-      metadata.put(substantiveJson);
-    }
-
-    JSONObject keywordJson = new JSONObject();
-    keywordJson.put("name", "other_details");
-    keywordJson.put("values", new JSONArray().put(this.keywordWithoutAccents));
-    metadata.put(keywordJson);
-
-    search.put("metadata", metadata);
-
-    url.append("&extensions=")
-        .append("%7B%22persistedQuery%22%3A%7B%22version%22%3A%22omnilogic.search%400.4.47%22%2C"
-            + "%22sha256Hash%22%3A%22efbc48c69c0714f7ecde0a0d1a66b5b36dd7c30dc111400cf2b2114dcb7ad729%22%7D%2C" + "%22variables%22%3A%22")
-        .append(Base64.getEncoder().encodeToString(search.toString().getBytes())).append("%3D%3D%22%7D");
-
+    payload.put("extensions", extensions);
+    payload.put("query",
+        "query ListOffers($pageSize: Int, $sort: String, $metadata: [Metadatum], $searchPath: String, $text: String, $selectedSubstantive: String,"
+            + " $source: String, $categories: [String], $clusters: [String], $priceRange: [Int], $sellers: [String], $ignoreSuggestions: Boolean)"
+            + " @context(sender: \"omnilogic.search@0.4.74\") {\n search(pageSize: $pageSize, sort: $sort, metadata: $metadata, searchPath: $searchPath, "
+            + "text: $text, selectedSubstantive: $selectedSubstantive, source: $source, categories: $categories, clusters: $clusters, priceRange: $priceRange, "
+            + "sellers: $sellers, ignoreSuggestions: $ignoreSuggestions) @runtimeMeta(hash: \"c17d5f3289f56c6a5f9b143a63f8d6105cbc0ee61eba8bb58e2be31be643ef54\")"
+            + " {\n store\n total\n selectedSubstantive\n suggestions {\n term\n values\n __typename\n }\n substantives\n metadata {\n name\n total\n values "
+            + "{\n value\n total\n priceRange {\n min\n max\n __typename\n }\n __typename\n }\n __typename\n }\n sellers {\n value\n total\n priceRange "
+            + "{\n min\n max\n __typename\n }\n __typename\n }\n categories {\n value\n total\n priceRange {\n min\n max\n __typename\n }\n __typename\n }\n "
+            + "results {\n name\n url\n img\n price\n listPrice\n priceDiscount\n installments\n installmentValue\n sku\n label {\n name\n value\n __typename\n }\n "
+            + "categories\n clusters\n __typename\n }\n query {\n name\n values\n __typename\n }\n __typename\n }\n}\n");
 
     this.log("Link onde são feitos os crawlers: " + url);
 
-    Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).mustSendContentEncoding(false).build();
-    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+    Map<String, String> headers = new HashMap<>();
+    headers.put("content-type", "application/json");
+
+    Request request =
+        RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setPayload(payload.toString()).mustSendContentEncoding(false).build();
+    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
     if (response.has("data")) {
       JSONObject data = response.getJSONObject("data");
@@ -136,35 +128,25 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     return searchApi;
   }
 
-  /**
-   * This function crawl the redirect category of a keyword
-   * 
-   * We need access a api for get this information
-   * 
-   * @return
-   */
-  private String fetchSubstantive() {
-    String substantiveLower = null;
+  private String createVariablesBase64() {
+    JSONObject search = new JSONObject();
+    search.put("pageSize", this.productsLimit);
+    search.put("sort", "score.desc");
+    search.put("searchPath", "/busca/");
+    search.put("selectedSubstantive", "none");
+    search.put("source", "page");
+    search.put("categories", JSONObject.NULL);
+    search.put("clusters", JSONObject.NULL);
+    search.put("sellers", JSONObject.NULL);
 
-    String url = "https://search.oppuz.com/api-v2/search";
-    String payload = "{\"token\":\"81b329602db72ba0b698ad17cfbc318c\",\"sort\":\"score.des\",\"pageSize\":\"3\","
-        + "\"query\":[{\"name\":\"other_details\",\"values\":[\"" + this.keywordWithoutAccents + "\"]}]}";
+    JSONArray metadata = new JSONArray();
+    JSONObject keywordJson = new JSONObject();
+    keywordJson.put("name", "other_details");
+    keywordJson.put("values", new JSONArray().put(this.keywordWithoutAccents));
+    metadata.put(keywordJson);
 
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/json");
+    search.put("metadata", metadata);
 
-    Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
-        .setPayload(payload).build();
-    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
-
-    if (response.has("substantives")) {
-      JSONArray substantives = response.getJSONArray("substantives");
-
-      if (substantives.length() > 0) {
-        substantiveLower = substantives.get(0).toString().toLowerCase();
-      }
-    }
-
-    return substantiveLower;
+    return Base64.getEncoder().encodeToString(search.toString().getBytes());
   }
 }

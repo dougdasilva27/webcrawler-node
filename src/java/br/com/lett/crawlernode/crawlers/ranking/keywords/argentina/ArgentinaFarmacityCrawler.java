@@ -22,7 +22,7 @@ public class ArgentinaFarmacityCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url, null);
 
-    Elements products = this.currentDoc.select(".main .prateleira ul > li[layout] .name");
+    Elements products = this.currentDoc.select(".main .prateleira ul > li[layout]");
     Elements productsPid = this.currentDoc.select(".prateleira ul > li[id]");
 
     int count = 0;
@@ -75,14 +75,10 @@ public class ArgentinaFarmacityCrawler extends CrawlerRankingKeywords {
 
   private String crawlProductUrl(Element e) {
     String productUrl = null;
-    String onClick = e.attr("onclick").replace("'", "");
+    Element href = e.selectFirst(".product-card-head");
 
-    if (onClick.contains("=")) {
-      productUrl = CommonMethods.getLast(onClick.split("=")).trim();
-
-      if (!productUrl.contains("farmacity.com")) {
-        productUrl = ("https://www.farmacity.com/" + e.attr("href")).replace(".com//", ".com/");
-      }
+    if (href != null) {
+      productUrl = href.attr("href");
     }
 
     return productUrl;

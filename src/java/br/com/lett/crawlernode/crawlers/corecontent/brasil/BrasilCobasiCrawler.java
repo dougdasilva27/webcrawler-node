@@ -48,8 +48,6 @@ public class BrasilCobasiCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description =
           CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescriptionShort", ".productDescription", "#caracteristicas"));
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image a", Arrays.asList("href"), "https:", "cobasi.vteximg.com.br");
-      String secondaryImages = null;
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -62,12 +60,12 @@ public class BrasilCobasiCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        primaryImage = (primaryImage == null) ? vtexUtil.crawlPrimaryImage(apiJSON) : primaryImage;
-        secondaryImages = (secondaryImages == null) ? vtexUtil.crawlSecondaryImages(apiJSON) : secondaryImages;
+        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);

@@ -1269,22 +1269,25 @@ public class CrawlerUtils {
     if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
       JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
 
+      JSONObject gallery = new JSONObject();
       if (mediaJson.has("mage/gallery/gallery")) {
-        JSONObject gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+        gallery = mediaJson.getJSONObject("mage/gallery/gallery");
+      } else if (mediaJson.has("Xumulus_FastGalleryLoad/js/gallery/custom_gallery")) {
+        gallery = mediaJson.getJSONObject("Xumulus_FastGalleryLoad/js/gallery/custom_gallery");
+      }
 
-        if (gallery.has("data")) {
-          JSONArray arrayImages = gallery.getJSONArray("data");
+      if (gallery.has("data")) {
+        JSONArray arrayImages = gallery.getJSONArray("data");
 
-          for (Object o : arrayImages) {
-            JSONObject imageJson = (JSONObject) o;
+        for (Object o : arrayImages) {
+          JSONObject imageJson = (JSONObject) o;
 
-            if (imageJson.has("full")) {
-              images.put(imageJson.get("full"));
-            } else if (imageJson.has("img")) {
-              images.put(imageJson.get("img"));
-            } else if (imageJson.has("thumb")) {
-              images.put(imageJson.get("thumb"));
-            }
+          if (imageJson.has("full")) {
+            images.put(imageJson.get("full"));
+          } else if (imageJson.has("img")) {
+            images.put(imageJson.get("img"));
+          } else if (imageJson.has("thumb")) {
+            images.put(imageJson.get("thumb"));
           }
         }
       }
@@ -1352,6 +1355,7 @@ public class CrawlerUtils {
    *        element.text()
    * @param defaultValue - return value if condition == null
    * @return
+   * @deprecated
    */
   public static Integer scrapIntegerFromHtml(Element doc, String selector, String delimiter, boolean ownText, Integer defaultValue) {
     Integer total = defaultValue;
@@ -1359,11 +1363,53 @@ public class CrawlerUtils {
     Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
 
     if (totalElement != null) {
-      String text = (ownText ? totalElement.ownText() : totalElement.text()).replaceAll("[^0-9]", "").trim();
+      String text = (ownText ? totalElement.ownText() : totalElement.text());
 
       if (delimiter != null && text.contains(delimiter)) {
         int x = text.indexOf(delimiter);
         text = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+      }
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param selector
+   * @param ownText - if true this function will use element.ownText(), if false will be used
+   *        element.text()
+   * @param defaultValue - return value if condition == null
+   * @return
+   */
+  public static Integer scrapIntegerFromHtml(Element doc, String selector, String firstDelimiter, String lastDelimiter,
+      boolean lastOccurrenceOfLastDelimiter, boolean ownText, Integer defaultValue) {
+    Integer total = defaultValue;
+
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
+
+    if (totalElement != null) {
+      String text = (ownText ? totalElement.ownText() : totalElement.text());
+
+      if (firstDelimiter != null && text.contains(firstDelimiter)) {
+        if (lastDelimiter != null && text.contains(lastDelimiter)) {
+          int x = text.indexOf(firstDelimiter);
+          int y = lastOccurrenceOfLastDelimiter ? text.lastIndexOf(lastDelimiter) : text.indexOf(lastDelimiter, x);
+          text = text.substring(x, y).replaceAll("[^0-9]", "").trim();
+        } else {
+          int x = text.indexOf(firstDelimiter);
+          text = text.substring(x).replaceAll("[^0-9]", "").trim();
+        }
+      } else if (lastDelimiter != null && text.contains(lastDelimiter)) {
+        int x = lastOccurrenceOfLastDelimiter ? text.lastIndexOf(lastDelimiter) : text.indexOf(lastDelimiter);
+        text = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+      } else {
+        text = text.replaceAll("[^0-9]", "");
       }
 
       if (!text.isEmpty()) {

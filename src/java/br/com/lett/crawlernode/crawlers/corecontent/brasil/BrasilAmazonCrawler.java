@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -17,6 +18,8 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -46,7 +49,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.FETCHER);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   @Override
@@ -58,20 +61,37 @@ public class BrasilAmazonCrawler extends Crawler {
 
   @Override
   protected Document fetch() {
-    return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>()));
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, session, this.dataFetcher));
   }
 
-  public String fetchPage(String url, Map<String, String> headers) {
-    headers.put("Accept-Encoding", "no");
+  /**
+   * Fetch html from amazon
+   * 
+   * @param url
+   * @param headers
+   * @param cookies
+   * @param session
+   * @param dataFetcher
+   * @return
+   */
+  public static String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies, Session session, DataFetcher dataFetcher) {
+    String content;
 
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
-        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU)).build();
+    if (dataFetcher instanceof FetcherDataFetcher) {
+      headers.put("Accept-Encoding", "no");
 
-    String content = this.dataFetcher.get(session, request).getBody();
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
+          .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU)).build();
 
-    if (content == null || content.isEmpty()) {
-      Request requestApache = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      content = new ApacheDataFetcher().get(session, requestApache).getBody();
+      content = dataFetcher.get(session, request).getBody();
+
+      if (content == null || content.isEmpty()) {
+        Request requestApache = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+        content = new ApacheDataFetcher().get(session, requestApache).getBody();
+      }
+    } else {
+      Request requestApache = RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).build();
+      content = dataFetcher.get(session, requestApache).getBody();
     }
 
     return content;
@@ -110,9 +130,10 @@ public class BrasilAmazonCrawler extends Crawler {
       eans.add(ean);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
       products.add(product);
 
@@ -260,7 +281,7 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document docMarketplace = Jsoup.parse(fetchPage(urlMarketPlace, headers));
+      Document docMarketplace = Jsoup.parse(fetchPage(urlMarketPlace, headers, cookies, session, this.dataFetcher));
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -271,7 +292,7 @@ public class BrasilAmazonCrawler extends Crawler {
       while (nextPage != null) {
         String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Document nextDocMarketPlace = Jsoup.parse(fetchPage(nextUrl, headers));
+        Document nextDocMarketPlace = Jsoup.parse(fetchPage(nextUrl, headers, cookies, session, this.dataFetcher));
         docs.add(nextDocMarketPlace);
         nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
         headers.put("referer", nextUrl);
@@ -476,7 +497,8 @@ public class BrasilAmazonCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
     Element prodInfoElement = doc.selectFirst("#prodDetails");
 
-    Elements elementsDescription = doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
+    Elements elementsDescription =
+        doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
 
     for (Element e : elementsDescription) {
       description.append(e.html().replace("noscript", "div"));

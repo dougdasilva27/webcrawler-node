@@ -58,8 +58,8 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        // String name = vtexUtil.crawlName(jsonSku, skuJson);
-        String name = crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
+        // String name = crawlName(jsonSku, skuJson);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -86,6 +86,13 @@ public class BrasilMegamamuteCrawler extends Crawler {
   }
 
 
+  /**
+   * This function break this url : "https://www.megamamute.com.br/lavadora-brastemp-15kg-30068859/p"
+   * 
+   * @param jsonSku
+   * @param skuJson
+   * @return
+   */
   private String crawlName(JSONObject jsonSku, JSONObject skuJson) {
     String name = null;
 

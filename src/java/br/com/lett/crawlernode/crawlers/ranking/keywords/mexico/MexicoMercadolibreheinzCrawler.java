@@ -10,6 +10,7 @@ public class MexicoMercadolibreheinzCrawler extends MercadolivreCrawler {
     super.setStoreName("heinz");
     super.setNextUrlHost("listado.mercadolibre.com.mx");
     super.setProductUrlHost("articulo.mercadolibre.com.mx");
+    super.setStoreType("Tienda");
   }
 
 }

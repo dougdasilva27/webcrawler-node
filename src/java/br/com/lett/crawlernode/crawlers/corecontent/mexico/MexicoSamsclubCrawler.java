@@ -18,26 +18,18 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.prices.Prices;
 
-/**
- * 
- * 1) Only one sku per page.
- * 
- * Price crawling notes: 1) In time crawler was made, there no product unnavailable. 2) There is no
- * bank slip (boleto bancario) payment option. 3) There is no installments for card payment. So we
- * only have 1x payment, and to this value we use the cash price crawled from the sku page. (nao
- * existe divisao no cartao de credito).
- * 
- * @author Gabriel Dornelas
- *
- */
-public class MexicoWalmartsuperCrawler extends Crawler {
-
+public class MexicoSamsclubCrawler extends Crawler {
   private static final String HOME_PAGE = "https://super.walmart.com.mx";
 
-  public MexicoWalmartsuperCrawler(Session session) {
+  public MexicoSamsclubCrawler(Session session) {
     super(session);
   }
 
@@ -61,9 +53,8 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       finalParameter = CommonMethods.getLast(finalParameter.split("_")).trim();
     }
 
-    String apiUrl =
-        "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
-            + finalParameter + "&skuId=" + finalParameter;
+    String apiUrl = "https://www.sams.com.mx/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
+        + finalParameter + "&skuId=" + finalParameter;
 
     Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
     return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
@@ -87,15 +78,19 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(internalId);
       String description = crawlDescription(apiJson);
       Integer stock = null;
+
       String ean = internalId;
       List<String> eans = new ArrayList<>();
       eans.add(ean);
+
+      Offers offers = scrapBuyBox("Sams Club", "Sams Club", MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()));
+
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
+          .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).setOffers(offers).build();
 
       products.add(product);
 
@@ -105,6 +100,27 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private Offers scrapBuyBox(String sellerFullName, String internalSellerId, Double mainPrice) {
+    Offers offers = new Offers();
+    try {
+      boolean isBuyBoxPage = false;
+      String slugSellerName = CrawlerUtils.toSlug(sellerFullName);
+      internalSellerId = CrawlerUtils.toSlug(sellerFullName);
+      int mainPagePosition = 1;
+
+      Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+          .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
+
+      offers.add(offer);
+
+    } catch (OfferException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+
+    return offers;
   }
 
   private String crawlInternalId(JSONObject apiJson) {
@@ -118,13 +134,26 @@ public class MexicoWalmartsuperCrawler extends Crawler {
   }
 
   private String crawlName(JSONObject apiJson) {
-    String name = null;
+    StringBuilder name = new StringBuilder();
 
-    if (apiJson.has("skuDisplayNameText")) {
-      name = apiJson.getString("skuDisplayNameText");
+    if (apiJson.has("sku")) {
+      JSONObject sku = apiJson.getJSONObject("sku");
+      if (sku.has("displayName")) {
+        name.append(sku.getString("displayName").trim());
+      }
+
+      if (sku.has("brand")) {
+        name.append(" ");
+        name.append(sku.getString("brand").trim());
+      }
+
+      if (sku.has("shopTicketDesc")) {
+        name.append(" ");
+        name.append(sku.getString("shopTicketDesc").trim());
+      }
     }
 
-    return name;
+    return name.toString();
   }
 
   private Float crawlPrice(JSONObject apiJson) {
@@ -155,7 +184,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
   private String crawlPrimaryImage(String id) {
 
-    return "https://super.walmart.com.mx/images/product-images/img_large/" + id + "L.jpg";
+    return "https://www.sams.com.mx/images/product-images/img_medium/" + id + "m" + ".jpg";
   }
 
   /**
@@ -169,7 +198,8 @@ public class MexicoWalmartsuperCrawler extends Crawler {
     JSONArray secondaryImagesArray = new JSONArray();
 
     for (int i = 1; i < 4; i++) {
-      String img = "https://super.walmart.com.mx/images/product-images/img_large/" + id + "L" + i + ".jpg";
+      String img = "https://www.sams.com.mx/images/product-images/img_medium/" + id + "-" + i + "m" + ".jpg";
+
       Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
       RequestsStatistics resp = CommonMethods.getLast(this.dataFetcher.get(session, request).getRequests());
 
@@ -223,19 +253,27 @@ public class MexicoWalmartsuperCrawler extends Crawler {
       JSONObject attributesMap = apiJson.getJSONObject("attributesMap");
 
       for (String key : attributesMap.keySet()) {
-        JSONObject attribute = attributesMap.getJSONObject(key);
+        if (attributesMap.get(key) instanceof JSONObject) {
+          JSONObject attribute = attributesMap.getJSONObject(key);
 
-        if (attribute.has("attrGroupId")) {
-          JSONObject attrGroupId = attribute.getJSONObject("attrGroupId");
+          if (attribute.has("attrGroupId")) {
+            JSONObject attrGroupId = attribute.getJSONObject("attrGroupId");
 
-          if (attrGroupId.has("optionValue")) {
-            String optionValue = attrGroupId.getString("optionValue");
+            if (attrGroupId.has("optionValue")) {
+              String optionValue = attrGroupId.getString("optionValue");
 
-            if (optionValue.equalsIgnoreCase("Tabla nutrimental")) {
-              setAPIDescription(attribute, nutritionalTable);
-            } else if (optionValue.equalsIgnoreCase("Caracterisitcas")) {
-              setAPIDescription(attribute, caracteristicas);
+              if (optionValue.equalsIgnoreCase("Tabla nutrimental")) {
+                setAPIDescription(attribute, nutritionalTable);
+              } else if (optionValue.equalsIgnoreCase("Caracterisitcas")) {
+                setAPIDescription(attribute, caracteristicas);
+              }
             }
+          }
+        } else if (attributesMap.get(key) instanceof JSONArray) {
+          JSONArray attribute = attributesMap.getJSONArray(key);
+          for (Object object : attribute) {
+            JSONObject attrMap = (JSONObject) object;
+            setAPIDescription(attrMap, caracteristicas);
           }
         }
       }
@@ -286,5 +324,4 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
     return prices;
   }
-
 }

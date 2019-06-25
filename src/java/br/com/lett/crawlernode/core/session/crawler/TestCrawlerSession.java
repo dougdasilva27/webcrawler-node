@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.core.session.crawler;
 
 import java.util.ArrayList;
-import br.com.lett.crawlernode.aws.sqs.QueueName;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.TestType;
+import enums.ScrapersTypes;
 
 public class TestCrawlerSession extends Session {
 
@@ -42,16 +42,16 @@ public class TestCrawlerSession extends Session {
   public TestCrawlerSession(Request request, Market market) {
     super(market);
 
-    if (QueueName.DISCOVER.equals(request.getQueueName())) {
-      type = TestType.DISCOVER;
-    } else if (QueueName.IMAGES.equals(request.getQueueName())) {
-      type = TestType.IMAGE;
-    } else if (QueueName.INSIGHTS.equals(request.getQueueName()) || QueueName.CORE_WEBSCRAPER_DEV.equals(request.getQueueName())) {
-      type = TestType.INSIGHTS;
-    } else if (QueueName.RATING.equals(request.getQueueName())) {
-      type = TestType.RATING;
+    if (ScrapersTypes.DISCOVERER.toString().equals(request.getScraperType())) {
+      setType(TestType.DISCOVER);
+    } else if (ScrapersTypes.IMAGES_DOWNLOAD.toString().equals(request.getScraperType())) {
+      setType(TestType.IMAGE);
+    } else if (ScrapersTypes.CORE.toString().equals(request.getScraperType())) {
+      setType(TestType.INSIGHTS);
+    } else if (ScrapersTypes.RATING.toString().equals(request.getScraperType())) {
+      setType(TestType.RATING);
     } else {
-      type = TestType.SEED;
+      setType(TestType.SEED);
     }
 
     // initialize counters
@@ -82,6 +82,16 @@ public class TestCrawlerSession extends Session {
   public void setVoidAttempts(int voidAttempts) {
     this.voidAttemptsCounter = voidAttempts;
   }
+
+  public TestType getType() {
+    return type;
+  }
+
+
+  public void setType(TestType type) {
+    this.type = type;
+  }
+
 
   public void incrementTrucoAttemptsCounter() {
     this.trucoAttemptsCounter++;

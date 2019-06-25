@@ -117,7 +117,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
     Float price = null;
 
     String priceText = null;
-    Element salePriceElement = document.select("span[itemprop=price]").first();
+    Element salePriceElement = document.selectFirst("span.preco-final span.valor");
 
     if (salePriceElement != null) {
       priceText = salePriceElement.text();

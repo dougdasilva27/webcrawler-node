@@ -103,7 +103,9 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
 
     description.append(CrawlerUtils.scrapElementsDescription(doc,
-        Arrays.asList(".product-short-description", ".product-page .product-section:not(:first-child):not(.-related):not(.-send-review)")));
+        Arrays.asList(".product-short-description", ".product-page .product-section:not(:first-child):not(.-related):not(.-send-review)",
+            "section[class=\"product-section\"] .container h2", ".product-section div[itemprop=\"description\"] .content-text",
+            ".product-section.-characteristics", ".product-section.-attributes")));
 
     String apiUrl = null;
     Elements scripts = doc.select("script");
