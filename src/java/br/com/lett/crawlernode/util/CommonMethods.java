@@ -415,7 +415,7 @@ public class CommonMethods {
    * @param body
    * @param path
    */
-  public static void saveDataToAFil(Object body, String path) {
+  public static void saveDataToAFile(Object body, String path) {
     try {
       BufferedWriter out = new BufferedWriter(new FileWriter(path));
 
