@@ -15,7 +15,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -53,7 +52,6 @@ public class MexicoRappichedrauiCrawler extends Crawler {
     if (isProductPage(jsonSku)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      CommonMethods.saveDataToAFile(jsonSku, Test.pathWrite + "x.json");
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
@@ -226,7 +224,6 @@ public class MexicoRappichedrauiCrawler extends Crawler {
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
 
       String page = this.dataFetcher.get(session, request).getBody();
-      CommonMethods.saveDataToAFile(page, Test.pathWrite + "x.json");
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
           JSONObject apiResponse = new JSONObject(page);

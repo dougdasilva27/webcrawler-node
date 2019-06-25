@@ -6,10 +6,20 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -37,10 +47,46 @@ public class FlorianopolisBistekCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
   }
 
+  private String userAgent;
+  private LettProxy proxyUsed;
+
   @Override
   public void handleCookiesBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.bistekonline.com.br/store/SetStoreByZipCode?zipCode=88066-000", null, HOST, "/",
-        cookies, session, new HashMap<>(), dataFetcher);
+    this.userAgent = FetchUtilities.randUserAgent();
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+
+    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers)
+        .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.BONANZA, ProxyCollection.NO_PROXY)).build();
+    Response response = this.dataFetcher.get(session, request);
+
+    this.proxyUsed = response.getProxyUsed();
+
+    for (Cookie cookieResponse : response.getCookies()) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+      cookie.setDomain(HOST);
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
+
+    Request request2 = RequestBuilder.create().setUrl("https://www.bistekonline.com.br/store/SetStoreByZipCode?zipCode=88066-000").setProxy(proxyUsed)
+        .setCookies(cookies).setHeaders(headers).build();
+    this.dataFetcher.get(session, request2);
+
+    BasicClientCookie cookieM = new BasicClientCookie("MultiStoreId", "04010000000000000000000010100000");
+    cookieM.setDomain(HOST);
+    cookieM.setPath("/");
+    this.cookies.add(cookieM);
+  }
+
+  @Override
+  protected Object fetch() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
 
