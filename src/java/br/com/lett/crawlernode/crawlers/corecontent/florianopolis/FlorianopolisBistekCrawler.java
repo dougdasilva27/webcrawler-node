@@ -26,8 +26,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -121,7 +119,6 @@ public class FlorianopolisBistekCrawler extends Crawler {
       products.add(product);
 
     } else {
-      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "BISTEK.html");
       Logging.printLogDebug(logger, session, "Not a product page: " + session.getOriginalURL());
     }
 
