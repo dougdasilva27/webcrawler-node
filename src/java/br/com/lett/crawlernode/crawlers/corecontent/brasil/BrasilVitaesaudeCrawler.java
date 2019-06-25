@@ -219,36 +219,17 @@ public class BrasilVitaesaudeCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    Elements images = doc.select(".ProductTinyImageList li");
-
-    if (images.size() > 1) {
-      Elements scripts = doc.select("script[type=text/javascript]");
-
-      for (Element e : scripts) {
-        String script = e.outerHtml();
-
-        if (script.contains("ThumbURLs")) {
-          String[] tokens = script.split(";");
-
-          for (String token : tokens) {
-            if (token.trim().contains("ThumbURLs[") && !token.contains("ThumbURLs[0]")) {
-              String image = token.split("=")[1].trim().replace("//", "/").replace("\"", "");
-              if (!image.isEmpty()) {
-                secondaryImagesArray.put(image);
-              }
-            }
-          }
-
-          break;
-        }
-      }
-    }
+    Elements images = doc.select(".ProductTinyImageList li:not(:first-child) a");
 
     for (Element e : images) {
-      String image = e.attr("href");
+      JSONObject json = CrawlerUtils.stringToJson(e.attr("rel"));
 
-      if (!image.isEmpty()) {
-        secondaryImagesArray.put(image);
+      // i've changed thi because this url
+      // https://www.vitaesaude.com.br/flavorizante-nestle-resource-thickenup-quench-24-saches-po-para-o-preparo-de-bebidas
+      if (json.has("smallimage")) {
+        secondaryImagesArray.put(CrawlerUtils.completeUrl(json.get("smallimage").toString(), "https", "static.vitaesaude.com.br"));
+      } else if (json.has("largeimage")) {
+        secondaryImagesArray.put(CrawlerUtils.completeUrl(json.get("largeimage").toString(), "https", "static.vitaesaude.com.br"));
       }
     }
 

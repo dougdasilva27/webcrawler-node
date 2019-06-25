@@ -5,8 +5,6 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class MercadolivreCrawler extends CrawlerRankingKeywords {
@@ -56,7 +54,6 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", nextUrlHost);
     Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
     boolean ownStoreResults = this.currentDoc.select("#search-results-disclaimers .nav-search-zrp-msg").isEmpty();
-    CommonMethods.saveDataToAFile(this.currentDoc, Test.pathWrite + "x.html");
     if (!products.isEmpty() && ownStoreResults) {
       if (this.totalProducts == 0) {
         setTotalProducts();

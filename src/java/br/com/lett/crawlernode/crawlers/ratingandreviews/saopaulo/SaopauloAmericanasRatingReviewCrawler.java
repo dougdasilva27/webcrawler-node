@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
@@ -135,7 +136,9 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
     JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
+    AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(reviewStatistics);
 
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
     ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
     ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
 
@@ -269,4 +272,42 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
     return skuInternalPid;
   }
 
+  private AdvancedRatingReview getTotalStarsFromEachValue(JSONObject reviewStatistics) {
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
+
+    if (reviewStatistics.has("RatingDistribution")) {
+      JSONArray ratingDistribution = reviewStatistics.getJSONArray("RatingDistribution");
+      for (Object object : ratingDistribution) {
+        JSONObject rating = (JSONObject) object;
+        Integer option = CrawlerUtils.getIntegerValueFromJSON(rating, "RatingValue", 0);
+
+        if (rating.has("RatingValue") && option == 1 && rating.has("Count")) {
+          star1 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 2 && rating.has("Count")) {
+          star2 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 3 && rating.has("Count")) {
+          star3 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 4 && rating.has("Count")) {
+          star4 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 5 && rating.has("Count")) {
+          star5 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+      }
+    }
+
+    return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
+  }
 }

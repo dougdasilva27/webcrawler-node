@@ -77,9 +77,6 @@ public class BrasilTerabyteRatingReviewCrawler extends RatingReviewCrawler {
 
       if (avgRating == null) {
         avgRating = 0d;
-      } else {
-        // esse site é de 0 a 10, a equipe de produto pediu para dividir por 2
-        avgRating = MathUtils.normalizeTwoDecimalPlaces(avgRating / 2d);
       }
     }
 

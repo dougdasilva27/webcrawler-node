@@ -1,19 +1,22 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.HashMap;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.APACHE;
   }
+
+  private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -24,7 +27,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
         "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage + "&keywords=" + this.keywordEncoded + "&ie=UTF8";
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, dataFetcher));
 
     Elements products = this.currentDoc.select(".s-result-list .s-result-item");
     Element result = this.currentDoc.select("#noResultsTitle").first();

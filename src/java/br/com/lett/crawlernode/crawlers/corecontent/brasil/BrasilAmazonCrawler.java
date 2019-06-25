@@ -3,31 +3,23 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -49,7 +41,6 @@ public class BrasilAmazonCrawler extends Crawler {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
   }
 
   @Override
@@ -58,43 +49,16 @@ public class BrasilAmazonCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
+  private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
+
+  @Override
+  public void handleCookiesBeforeFetch() {
+    this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
+  }
 
   @Override
   protected Document fetch() {
-    return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, session, this.dataFetcher));
-  }
-
-  /**
-   * Fetch html from amazon
-   * 
-   * @param url
-   * @param headers
-   * @param cookies
-   * @param session
-   * @param dataFetcher
-   * @return
-   */
-  public static String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies, Session session, DataFetcher dataFetcher) {
-    String content;
-
-    if (dataFetcher instanceof FetcherDataFetcher) {
-      headers.put("Accept-Encoding", "no");
-
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
-          .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU)).build();
-
-      content = dataFetcher.get(session, request).getBody();
-
-      if (content == null || content.isEmpty()) {
-        Request requestApache = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-        content = new ApacheDataFetcher().get(session, requestApache).getBody();
-      }
-    } else {
-      Request requestApache = RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).build();
-      content = dataFetcher.get(session, requestApache).getBody();
-    }
-
-    return content;
+    return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
   }
 
   @Override
@@ -189,7 +153,7 @@ public class BrasilAmazonCrawler extends Crawler {
   private JSONArray crawlImages(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", ";", true, false);
+    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", "};", true, false);
 
     if (data.has("imageGalleryData")) {
       images = data.getJSONArray("imageGalleryData");
@@ -281,7 +245,7 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document docMarketplace = Jsoup.parse(fetchPage(urlMarketPlace, headers, cookies, session, this.dataFetcher));
+      Document docMarketplace = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher));
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -292,7 +256,7 @@ public class BrasilAmazonCrawler extends Crawler {
       while (nextPage != null) {
         String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Document nextDocMarketPlace = Jsoup.parse(fetchPage(nextUrl, headers, cookies, session, this.dataFetcher));
+        Document nextDocMarketPlace = Jsoup.parse(amazonScraperUtils.fetchPage(nextUrl, headers, cookies, this.dataFetcher));
         docs.add(nextDocMarketPlace);
         nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
         headers.put("referer", nextUrl);

@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -13,6 +14,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
   public RiodejaneiroDrogariavenancioCrawler(Session session) {
     super(session);
   }
+
+  private String keywordKey;
 
   @Override
   protected void processBeforeFetch() {
@@ -28,15 +31,10 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 50;
+    this.pageSize = 12;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.drogariavenancio.com.br/buscapagina?ft=" + this.keywordEncoded
-        + "&PS=" + this.pageSize + "&sl=d8b783e8-6563-7d5f-61f2-2ba298708951&cc=" + this.pageSize
-        + "&sm=0&PageNumber=" + this.currentPage;
-
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = fetchPage();
     Elements products = this.currentDoc.select(".shelf-product");
 
     if (!products.isEmpty()) {
@@ -45,14 +43,13 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
       }
       for (Element e : products) {
 
-        String internalId = null;
-        String productPid = crawlProductPid(e);
-        String productUrl = crawlProductUrl(e);
+        String productPid = e.attr("data-product-id");
+        String productUrl =
+            CrawlerUtils.scrapUrl(e, "figure.shelf-product__container .shelf-product__image a", "href", "https", "www.drogariavenancio.com.br");
 
-        saveDataProduct(internalId, productPid, productUrl);
+        saveDataProduct(null, productPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + productPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + productPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
 
@@ -62,31 +59,41 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
+
+  private Document fetchPage() {
+    Document doc = new Document("");
+
+    if (this.currentPage == 1) {
+      String url = "https://www.drogariavenancio.com.br/" + this.keywordEncoded;
+      this.log("Link onde são feitos os crawlers: " + url);
+      doc = fetchDocument(url);
+
+      Elements scripts = doc.select("script[type=text/javascript]");
+      String token = "/busca?fq=";
+      for (Element e : scripts) {
+        String html = e.html();
+
+        if (html.contains(token)) {
+          this.keywordKey = CrawlerUtils.extractSpecificStringFromScript(html, "fq=", "&", false);
+          break;
+        }
+      }
+    } else if (this.keywordKey != null) {
+      String url = "https://www.drogariavenancio.com.br/buscapagina?fq=" + this.keywordKey
+          + "&PS=12&sl=d8b783e8-6563-7d5f-61f2-2ba298708951&cc=12&sm=0&PageNumber=" + this.currentPage;
+
+      this.log("Link onde são feitos os crawlers: " + url);
+      doc = fetchDocument(url);
+    }
+
+    return doc;
   }
 
   @Override
-  protected boolean hasNextPage() {
-    if (this.currentDoc.select(".shelf-product").size() < this.pageSize) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private String crawlProductPid(Element e) {
-    return e.attr("data-product-id");
-  }
-
-  private String crawlProductUrl(Element e) {
-    Element subE = e.selectFirst("figure.shelf-product__container .shelf-product__image a");
-    String url = null;
-
-    if (subE != null) {
-      url = CrawlerUtils.sanitizeUrl(subE, "href", "https:", "www.drogariavenancio.com.br");
-    }
-
-    return url;
+  protected void setTotalProducts() {
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".resultado-busca-numero .value", true, 0);
+    this.log("Total da busca: " + this.totalProducts);
   }
 }

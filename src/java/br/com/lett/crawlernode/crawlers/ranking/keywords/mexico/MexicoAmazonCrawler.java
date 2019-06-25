@@ -1,21 +1,24 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import java.util.HashMap;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 public class MexicoAmazonCrawler extends CrawlerRankingKeywords {
 
   public MexicoAmazonCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.APACHE;
   }
 
   private static final String HOME_PAGE = "https://www.amazon.com.mx";
   private String nextPageUrl;
+
+  private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -31,7 +34,7 @@ public class MexicoAmazonCrawler extends CrawlerRankingKeywords {
     }
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url, this.cookies);
+    this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, dataFetcher));
     this.nextPageUrl = crawlNextPage();
 
     Elements products = this.currentDoc.select(".s-result-list .s-result-item");

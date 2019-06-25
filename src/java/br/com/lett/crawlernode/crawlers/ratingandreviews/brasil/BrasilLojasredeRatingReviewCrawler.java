@@ -10,6 +10,7 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 public class BrasilLojasredeRatingReviewCrawler extends RatingReviewCrawler {
@@ -26,7 +27,8 @@ public class BrasilLojasredeRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviews.setDate(session.getDate());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
-      YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
+      YourreviewsRatingCrawler yourReviews =
+          new YourreviewsRatingCrawler(session, cookies, logger, "9c0aa0e9-37a2-4b03-93d7-41c964268161", this.dataFetcher);
 
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
@@ -34,7 +36,9 @@ public class BrasilLojasredeRatingReviewCrawler extends RatingReviewCrawler {
         Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "9c0aa0e9-37a2-4b03-93d7-41c964268161", this.dataFetcher);
         Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = getTotalAvgRatingFromYourViews(docRating);
+        AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
 
+        ratingReviews.setAdvancedRatingReview(advancedRatingReview);
         ratingReviews.setTotalRating(totalNumOfEvaluations);
         ratingReviews.setAverageOverallRating(avgRating);
         ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);

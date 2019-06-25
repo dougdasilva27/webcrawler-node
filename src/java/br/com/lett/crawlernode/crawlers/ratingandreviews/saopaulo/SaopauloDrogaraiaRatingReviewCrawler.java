@@ -14,9 +14,11 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
@@ -39,7 +41,9 @@ public class SaopauloDrogaraiaRatingReviewCrawler extends RatingReviewCrawler {
 
       JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
       Integer total = getTotalNumOfRatings(trustVoxResponse);
+      AdvancedRatingReview advancedRatingReview = TrustvoxRatingCrawler.getTotalStarsFromEachValueWithRate(trustVoxResponse);
 
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingReviews.setTotalRating(total);
       ratingReviews.setTotalWrittenReviews(total);
       ratingReviews.setAverageOverallRating(getTotalRating(trustVoxResponse));

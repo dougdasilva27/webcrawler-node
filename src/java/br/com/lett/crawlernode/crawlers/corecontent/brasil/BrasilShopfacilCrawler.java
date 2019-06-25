@@ -45,6 +45,9 @@ public class BrasilShopfacilCrawler extends Crawler {
 
     if (skuJson.length() > 0) {
 
+      // I've do this because of this url:
+      // https://www.shopfacil.com.br/maquina-de-costura-singer-domestica-tradition-2250---branca-2057219/p
+      String secondaryImages = null;
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");
       String description =
@@ -66,7 +69,7 @@ public class BrasilShopfacilCrawler extends Crawler {
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+        secondaryImages = secondaryImages != null ? secondaryImages : vtexUtil.crawlSecondaryImages(apiJSON);
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);

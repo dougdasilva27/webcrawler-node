@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 /**
@@ -31,12 +32,14 @@ public class RibeiraopretoSavegnagoRatingReviewCrawler extends RatingReviewCrawl
 
       String internalId = crawlInternalId(document);
 
-      YourreviewsRatingCrawler yr = new YourreviewsRatingCrawler(session, cookies, logger);
+      YourreviewsRatingCrawler yr = new YourreviewsRatingCrawler(session, cookies, logger, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
       Document docRating = yr.crawlPageRatingsFromYourViews(internalId, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
 
       Integer totalNumOfEvaluations = yr.getTotalNumOfRatingsFromYourViews(docRating);
       Double avgRating = yr.getTotalAvgRatingFromYourViews(docRating);
+      AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalId);
 
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
@@ -51,9 +54,9 @@ public class RibeiraopretoSavegnagoRatingReviewCrawler extends RatingReviewCrawl
   private String crawlInternalId(Document doc) {
     String internalId = null;
 
-    Element elementInternalId = doc.select(".productReference").first();
+    Element elementInternalId = doc.selectFirst("meta[itemprop=\"productID\"]");
     if (elementInternalId != null) {
-      internalId = elementInternalId.text().trim();
+      internalId = elementInternalId.attr("content").trim();
     }
 
     return internalId;

@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
@@ -88,7 +89,9 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
     RatingsReviews ratingReviews = new RatingsReviews();
 
     Map<String, Integer> ratingDistribution = crawlRatingDistribution(document);
+    AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValueWithRate(ratingDistribution);
 
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
     ratingReviews.setDate(session.getDate());
     ratingReviews.setTotalRating(computeTotalReviewsCount(ratingDistribution));
     ratingReviews.setAverageOverallRating(crawlAverageOverallRating(document));
@@ -110,7 +113,8 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
   private Double crawlAverageOverallRating(Document document) {
     Double avgOverallRating = null;
 
-    Element avgOverallRatingElement = document.select(".sust-review-container .block-review-pagination-bar div.block-rating div.rating.js-ratingCalc").first();
+    Element avgOverallRatingElement =
+        document.select(".sust-review-container .block-review-pagination-bar div.block-rating div.rating.js-ratingCalc").first();
     if (avgOverallRatingElement != null) {
       String dataRatingText = avgOverallRatingElement.attr("data-rating").trim();
       try {
@@ -148,6 +152,38 @@ public class BrasilCarrefourRatingReviewCrawler extends RatingReviewCrawler {
     return ratingDistributionMap;
   }
 
+  public static AdvancedRatingReview getTotalStarsFromEachValueWithRate(Map<String, Integer> ratingDistribution) {
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
 
+    for (Map.Entry<String, Integer> entry : ratingDistribution.entrySet()) {
+
+      if (entry.getKey().equals("1")) {
+        star1 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("2")) {
+        star2 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("3")) {
+        star3 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("4")) {
+        star4 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("5")) {
+        star5 = entry.getValue();
+      }
+
+    }
+
+    return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
+  }
 
 }

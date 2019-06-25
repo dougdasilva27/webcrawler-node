@@ -152,9 +152,10 @@ public class BrasilKabumCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalID).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalID).setInternalPid(internalPid).setName(name)
+          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -190,6 +191,16 @@ public class BrasilKabumCrawler extends Crawler {
 
     if (specialDescription != null) {
       str.append(specialDescription.html());
+    }
+
+    Element richContent = doc.selectFirst("#iframe_descricao");
+    if (richContent != null) {
+      String url = richContent.attr("src");
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+      String richContentPage = doc.html();
+      str.append(richContentPage);
     }
 
     return str.toString().replace("’", "").trim();
