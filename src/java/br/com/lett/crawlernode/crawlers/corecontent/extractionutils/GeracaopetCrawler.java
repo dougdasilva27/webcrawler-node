@@ -2,18 +2,14 @@ package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.prices.Prices;
 
@@ -40,42 +36,51 @@ public class GeracaopetCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
+      Product product = new Product();
 
       JSONObject skuJson = crawlSkuJson(doc);
 
-      String internalPid = crawlInternalPid(skuJson);
-      CategoryCollection categories = crawlCategories(doc);
-      String description = crawlDescription(doc, internalPid);
+      String internalPid = crawlInternalPid(doc);
+      String description = crawlDescription(doc);
 
-      // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONObject options = crawlOptions(skuJson);
+      if (options.length() > 0) {
 
-      // ean data in json
-      JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+        for (String keyStr : options.keySet()) {
+          JSONObject jsonSku = (JSONObject) options.get(keyStr);
 
-      for (int i = 0; i < arraySkus.length(); i++) {
-        JSONObject jsonSku = arraySkus.getJSONObject(i);
-        boolean available = crawlAvailability(skuJson);
-        String internalId = crawlInternalId(jsonSku);
-        String name = crawlName(jsonSku, skuJson);
-        Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
+          boolean available = crawlAvailability(skuJson);
+          String internalId = crawlInternalId(jsonSku);
+          String name = crawlName(doc, skuJson);
 
-        String primaryImage = crawlPrimaryImage(skuJson);
-        String secondaryImages = crawlSecondaryImages(skuJson);
-        Float price = crawlPrice(skuJson);
-        Prices prices = crawlPrices(skuJson);
-        Integer stock = null;
-        String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
-        List<String> eans = new ArrayList<>();
-        eans.add(ean);
+          String primaryImage = crawlPrimaryImage(skuJson);
+          String secondaryImages = crawlSecondaryImages(skuJson);
+          Float price = crawlPrice(skuJson);
+          Prices prices = crawlPrices(skuJson);
+          Integer stock = null;
 
-        // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(null).setEans(eans).build();
+          // Creating the product
+          product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+              .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(null).setCategory2(null).setCategory3(null)
+              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(null)
+              .setEans(null).build();
 
-        products.add(product);
+          products.add(product);
+
+          // Map<String, List<String>> variationsMap = new HashMap<>();
+          //
+          // if (variationsMap.containsKey("internalId")) {
+          // List<String> names = variationsMap.get("internalId");
+          // names.add("label");
+          //
+          // variationsMap.put("internalId", names);
+          // } else {
+          // variationsMap.put("internalId", Arrays.asList("label"));
+          // }
+
+        }
+      } else {
+        // SEM VARIAÇÃO
       }
 
     } else {
@@ -85,59 +90,92 @@ public class GeracaopetCrawler extends Crawler {
     return products;
   }
 
+  private JSONObject crawlOptions(JSONObject skuJson) {
+    JSONObject optionPrices = new JSONObject();
+
+    if (skuJson.has("jsonConfig")) {
+      JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
+
+      if (jsonConfig.has("optionPrices")) {
+        optionPrices = jsonConfig.getJSONObject("optionPrices");
+      }
+    }
+
+    return optionPrices;
+  }
+
   private boolean crawlAvailability(JSONObject skuJson) {
-    // TODO Auto-generated method stub
-    return false;
+    boolean availability = false;
+
+    if (skuJson.has("jsonConfig")) {
+      JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
+
+      if (jsonConfig.has("attributes")) {
+        JSONObject attributes = jsonConfig.getJSONObject("attributes");
+
+        for (String keyStr : attributes.keySet()) {
+          JSONObject keyValue = (JSONObject) attributes.get(keyStr);
+
+        }
+      }
+    }
+    return availability;
   }
 
   private Float crawlPrice(JSONObject skuJson) {
-    // TODO Auto-generated method stub
     return null;
   }
 
   private Prices crawlPrices(JSONObject skuJson) {
-    // TODO Auto-generated method stub
     return null;
   }
 
   private String crawlSecondaryImages(JSONObject skuJson) {
-    // TODO Auto-generated method stub
     return null;
   }
 
   private String crawlPrimaryImage(JSONObject skuJson) {
-    // TODO Auto-generated method stub
     return null;
   }
 
-  private Map<String, Float> crawlMarketplace(JSONObject jsonSku) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+  // COMPLETAR O NOME COM AS VARIAÇÕES
 
-  private String crawlName(JSONObject jsonSku, JSONObject skuJson) {
-    // TODO Auto-generated method stub
-    return null;
+  private String crawlName(Document doc, JSONObject skuJson) {
+    Element title = doc.selectFirst("h1 span[itemprop=\"name\"]");
+    String name = null;
+
+    if (title != null) {
+      name = title.text();
+    }
+
+    return name;
   }
 
   private String crawlInternalId(JSONObject jsonSku) {
-    // TODO Auto-generated method stub
     return null;
   }
 
-  private String crawlDescription(Document doc, String internalPid) {
-    // TODO Auto-generated method stub
-    return null;
+  private String crawlDescription(Document doc) {
+
+    Element div = doc.selectFirst(".data.item.content");
+    String description = null;
+
+    if (div != null) {
+      description = div.html();
+    }
+
+    return description;
   }
 
-  private CategoryCollection crawlCategories(Document doc) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+  private String crawlInternalPid(Document doc) {
+    String internalPid = null;
+    Element div = doc.selectFirst("div[data-product-id]");
 
-  private String crawlInternalPid(JSONObject skuJson) {
-    // TODO Auto-generated method stub
-    return null;
+    if (div != null) {
+      internalPid = div.attr("data-product-id");
+    }
+
+    return internalPid;
   }
 
   private JSONObject crawlSkuJson(Document doc) {
@@ -146,9 +184,15 @@ public class GeracaopetCrawler extends Crawler {
 
     if (script != null) {
       skuJson = new JSONObject(script.html());
+
+    } else {
+      script = doc.selectFirst(".media script[type=\"text/x-magento-init\"]");
+
+      if (script != null) {
+        skuJson = new JSONObject(script.html());
+      }
     }
 
-    System.err.println(skuJson);
     return skuJson;
   }
 
