@@ -151,6 +151,7 @@ public class FetcherDataFetcher implements DataFetcher {
       }
 
       response = responseBuilder(responseJson);
+      session.addRedirection(request.getUrl(), response.getRedirectUrl());
       S3Service.saveResponseContent(session, requestHash, response.getBody());
     } catch (Exception e) {
       Logging.printLogError(logger, session, "Fetcher did not returned the expected response: " + CommonMethods.getStackTrace(e));

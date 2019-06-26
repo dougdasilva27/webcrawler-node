@@ -473,21 +473,25 @@ public class CrawlerUtils {
   public static String completeUrl(String url, String protocol, String host) {
     StringBuilder sanitizedUrl = new StringBuilder();
 
-    if (url.startsWith("../")) {
-      url = CommonMethods.getLast(url.split("\\.\\.\\/"));
-    }
+    if (url != null) {
+      if (url.startsWith("../")) {
+        url = CommonMethods.getLast(url.split("\\.\\.\\/"));
+      }
 
-    if (!protocol.endsWith(":") && !protocol.endsWith("//")) {
-      protocol += ":";
-    }
+      if (!protocol.endsWith(":") && !protocol.endsWith("//")) {
+        protocol += ":";
+      }
 
-    if (!url.startsWith("http") && url.contains(host)) {
-      sanitizedUrl.append(protocol.endsWith("//") || url.startsWith("//") ? protocol : protocol + "//").append(url);
-    } else if (!url.contains(host) && !url.startsWith("http")) {
-      sanitizedUrl.append(protocol.endsWith("//") || url.startsWith("//") ? protocol : protocol + "//").append(host)
-          .append(url.startsWith("/") ? url : "/" + url);
+      if (!url.startsWith("http") && url.contains(host)) {
+        sanitizedUrl.append(protocol.endsWith("//") || url.startsWith("//") ? protocol : protocol + "//").append(url);
+      } else if (!url.contains(host) && !url.startsWith("http")) {
+        sanitizedUrl.append(protocol.endsWith("//") || url.startsWith("//") ? protocol : protocol + "//").append(host)
+            .append(url.startsWith("/") ? url : "/" + url);
+      } else {
+        sanitizedUrl.append(url);
+      }
     } else {
-      sanitizedUrl.append(url);
+      return null;
     }
 
     return sanitizedUrl.toString();

@@ -12,88 +12,57 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String PRODUCTS_SELECTOR = "div.listagem-titulo_descr .H-titulo a[href]";
+
   @Override
   protected void processBeforeFetch() {
     super.processBeforeFetch();
-
     this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.kabum.com.br/", null, ".kabum.com.br", "/", cookies, session, null, dataFetcher);
   }
 
   private String baseUrl;
-  private boolean isCategory;
+  private boolean isCategory = false;
 
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
+    this.pageSize = 30;
 
     String url;
-
-    // monta a url com a keyword e a página
-    if (this.currentPage > 1) {
-      if (!isCategory) {
-        url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string=" + this.keywordEncoded + "&pagina=" + this.currentPage;
-      } else {
-        url = this.baseUrl + "&pagina=" + this.currentPage;
-      }
-    } else {
+    if (!isCategory) {
       url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+    } else {
+      url = this.baseUrl + "&pagina=" + this.currentPage;
     }
 
     this.log("Link onde são feitos os crawlers: " + url);
-
-    // número de produtos or página
-    this.pageSize = 30;
-
     this.currentDoc = fetchDocument(url);
 
     if (this.currentPage == 1) {
-      this.baseUrl = this.session.getRedirectedToURL(url);
-
-      if (baseUrl != null) {
-
-        if (!baseUrl.startsWith("http")) {
-          baseUrl = "http:" + baseUrl;
-        }
-
-        if (url.equals(baseUrl)) {
-          isCategory = false;
-        } else {
-          isCategory = true;
-        }
-      } else {
-        isCategory = false;
-      }
+      this.baseUrl = CrawlerUtils.completeUrl(this.session.getRedirectedToURL(url), "https", "www.kabum.com.br");
+      this.isCategory = this.baseUrl != null && !url.equalsIgnoreCase(baseUrl);
     }
 
-    Elements products = this.currentDoc.select("div.listagem-titulo_descr span.H-titulo a[href]");
+    Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
       for (Element e : products) {
-        // seta o id da classe pai com o id retirado do elements this.id
-        String[] tokens = e.attr("href").split("/");
-
-        String internalPid = null;
-        String internalId;
-        String urlProduct = e.attr("href");
-
-        if (urlProduct.contains("?tag")) {
-          internalId = tokens[tokens.length - 3];
+        String urlProduct = CrawlerUtils.completeUrl(e.attr("href"), "https", "www.kabum.com.br");
+        if (urlProduct.contains("?")) {
           urlProduct = urlProduct.split("\\?")[0];
-        } else {
-          internalId = tokens[tokens.length - 2];
         }
 
-        saveDataProduct(internalId, internalPid, urlProduct);
+        String[] tokens = urlProduct.split("/");
+        String internalId = tokens[tokens.length - 2];
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+        saveDataProduct(internalId, null, urlProduct);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
-
       }
     } else {
-      setTotalProducts();
       this.result = false;
       this.log("Keyword sem resultado!");
     }
@@ -103,6 +72,6 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return this.currentDoc.select("div.listagem-titulo_descr span.H-titulo a[href]").size() >= 30;
+    return this.currentDoc.select(PRODUCTS_SELECTOR).size() >= this.pageSize;
   }
 }
