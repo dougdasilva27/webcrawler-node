@@ -108,8 +108,10 @@ public class ColombiaMercadoniCrawler extends CrawlerRankingKeywords {
         + "visible%3A%20true%22%5D&numericFilters=%5B%22stock%3E0%22%5D&typoTolerance=strict&restrictSearchableAttributes=%5B%22name%22%5D&clickAnalytics=true\"}";
     Map<String, String> headers = new HashMap<>();
     headers.put("Content-Type", "application/json");
+    headers.put("Accept-Encoding", "no");
 
-    Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+    Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload)
+        .mustSendContentEncoding(false).build();
     String page = this.dataFetcher.post(session, request).getBody();
 
     if (page.startsWith("{") && page.endsWith("}")) {
