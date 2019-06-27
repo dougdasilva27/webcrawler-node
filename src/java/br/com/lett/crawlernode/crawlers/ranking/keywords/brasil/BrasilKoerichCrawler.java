@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilKoerichCrawler extends CrawlerRankingKeywords {
 
@@ -14,90 +14,109 @@ public class BrasilKoerichCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
+    this.pageSize = 12;
     this.log("Página " + this.currentPage);
 
-    // número de produtos por página do market
-    this.pageSize = 15;
+    JSONObject resultsList = fetchJsonApi();
+    JSONArray products = resultsList.has("records") ? resultsList.getJSONArray("records") : new JSONArray();
 
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-
-    // monta a url com a keyword e a página
-    String url =
-        "http://www.koerich.com.br/" + keyword + "?PageNumber=" + this.currentPage + "&PS=50";
-    this.log("Link onde são feitos os crawlers: " + url);
-
-    // chama função de pegar a url
-    this.currentDoc = fetchDocument(url);
-
-    Elements products = this.currentDoc.select(".vitrine .prateleira ul li[layout]");
-    Elements ids = this.currentDoc.select(".vitrine .prateleira ul li[id]");
-
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (!products.isEmpty() && products.size() == ids.size()) {
-      // se o total de busca não foi setado ainda, chama a função para setar
+    if (products.length() > 0) {
       if (this.totalProducts == 0) {
-        setTotalProducts();
+        setTotalBusca(resultsList);
       }
 
-      for (int i = 0; i < products.size(); i++) {
-        // InternalPid
-        String internalPid = crawlInternalPid(ids.get(i));
+      for (Object o : products) {
+        JSONObject productInfo = (JSONObject) o;
 
-        // Url do produto
-        String productUrl = crawlProductUrl(products.get(i));
+        if (productInfo.has("records")) {
+          JSONArray records = productInfo.getJSONArray("records");
+          this.position++;
 
-        saveDataProduct(null, internalPid, productUrl);
+          for (Object obj : records) {
+            JSONObject jsonSku = (JSONObject) obj;
+            String internalId = crawlInternalId(jsonSku);
+            String productUrl = crawlProductUrl(jsonSku);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
+            saveDataProduct(internalId, null, productUrl, this.position);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+              break;
+            }
+          }
         }
-
       }
     } else {
       this.result = false;
-      this.log("Keyword sem resultado!");
+      this.log("Keyword sem resultados!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    return arrayProducts.size() < this.totalProducts;
-  }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
-    if (totalElement != null) {
-      try {
-        this.totalProducts = Integer.parseInt(totalElement.text());
-      } catch (Exception e) {
-        this.logError(CommonMethods.getStackTrace(e));
+  protected void setTotalBusca(JSONObject apiSearch) {
+    if (apiSearch.has("totalNumRecs")) {
+      String text = apiSearch.get("totalNumRecs").toString().replaceAll("[^0-9]", "");
+
+      if (!text.isEmpty()) {
+        this.totalProducts = Integer.parseInt(text);
       }
     }
 
     this.log("Total da busca: " + this.totalProducts);
   }
 
-  private String crawlInternalPid(Element e) {
-    String[] tokens = e.attr("id").split("_");
 
-    return tokens[tokens.length - 1];
-  }
+  private String crawlInternalId(JSONObject sku) {
+    String internalId = null;
 
-  private String crawlProductUrl(Element e) {
-    String urlProduct = null;
-    Element urlElement = e.select(".product-image_principal").first();
+    if (sku.has("attributes")) {
+      JSONObject attributes = sku.getJSONObject("attributes");
 
-    if (urlElement != null) {
-      urlProduct = urlElement.attr("href");
+      if (attributes.has("sku.repositoryId")) {
+        String id = attributes.get("sku.repositoryId").toString().replace("[", "").replace("]", "").replace("\"", "").trim();
+
+        if (!id.isEmpty()) {
+          internalId = id;
+        }
+      }
     }
 
-    return urlProduct;
+    return internalId;
+  }
+
+  private String crawlProductUrl(JSONObject sku) {
+    String productUrl = null;
+
+    if (sku.has("attributes")) {
+      JSONObject attributes = sku.getJSONObject("attributes");
+      if (attributes.has("product.route")) {
+        String route = attributes.get("product.route").toString().replace("[", "").replace("]", "").replace("\"", "").trim();
+
+        if (!route.isEmpty()) {
+          productUrl = CrawlerUtils.completeUrl(route, "https:", "www.koerich.com.br");
+        }
+      }
+    }
+
+    return productUrl;
+  }
+
+  private JSONObject fetchJsonApi() {
+    JSONObject resultsList = new JSONObject();
+
+    String url = "https://www.koerich.com.br/ccstoreui/v1/search?Ntt=" + this.keywordWithoutAccents.replace(" ", "%20") + "&No="
+        + this.arrayProducts.size() + "&Nrpp=50";
+
+    JSONObject response = CrawlerUtils.stringToJson(fetchGETString(url, cookies));
+
+    if (response.has("resultsList")) {
+      resultsList = response.getJSONObject("resultsList");
+    }
+
+    return resultsList;
   }
 
 }
