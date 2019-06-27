@@ -97,8 +97,6 @@ public class BrasilKoerichCrawler extends Crawler {
           boolean available = stock != null && stock > 0;
           String description = crawlDescription(json, jsonSku);
 
-          System.err.println(json);
-
           // Creating the product
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
               .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
