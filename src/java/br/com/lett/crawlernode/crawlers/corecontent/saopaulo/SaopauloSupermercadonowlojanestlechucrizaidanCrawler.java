@@ -199,7 +199,7 @@ public class SaopauloSupermercadonowlojanestlechucrizaidanCrawler extends Crawle
     for (Object o : categoriesArray) {
       JSONObject categoryObject = (JSONObject) o;
 
-      if (categoryObject.has("name")) {
+      if (categoryObject.has("name") && !categoryObject.isNull("name")) {
         String categoryName = categoryObject.get("name").toString();
 
         if (!categoryName.equalsIgnoreCase("todos os produtos")) {
