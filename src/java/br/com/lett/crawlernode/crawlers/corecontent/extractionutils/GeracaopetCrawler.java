@@ -82,7 +82,7 @@ public class GeracaopetCrawler extends Crawler {
         String internalId = crawlInternalId(doc);
         String name = crawlName(doc);
         Float price = crawlPrice(doc);
-        Prices prices = crawlPrices(doc);
+        Prices prices = crawlPrices(doc, price);
         boolean available = crawlAvailability(doc);
         String primaryImage = crawlPrimaryImage(jsonHtml);
         String secondaryImages = crawlSecondaryImages(jsonHtml);
@@ -161,19 +161,20 @@ public class GeracaopetCrawler extends Crawler {
     return doc.selectFirst("#outstock") == null;
   }
 
-  private Prices crawlPrices(Document doc) {
+  private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
     Map<Integer, Float> installmentPrice = new HashMap<>();
 
-    Float price = crawlPrice(doc);
+    if (price != null) {
 
-    installmentPrice.put(1, price);
-    prices.setBankTicketPrice(price);
+      installmentPrice.put(1, price);
+      prices.setBankTicketPrice(price);
 
-    prices.insertCardInstallment(Card.VISA.toString(), installmentPrice);
-    prices.insertCardInstallment(Card.ELO.toString(), installmentPrice);
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPrice);
-    prices.insertCardInstallment(Card.DINERS.toString(), installmentPrice);
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPrice);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentPrice);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPrice);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPrice);
+    }
 
     return prices;
   }
