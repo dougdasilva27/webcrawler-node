@@ -60,13 +60,13 @@ public class GeracaopetCrawler extends Crawler {
         for (String keyStr : options.keySet()) {
 
           String internalId = keyStr;
-          boolean available = crawlAvailability(variationsMap, internalId);
-          String name = crawlName(doc, variationsMap, internalId);
-          String primaryImage = crawlPrimaryImage(skuJson, internalId, available);
+          boolean available = crawlAvailabilityWithVariation(variationsMap, internalId);
+          String name = crawlNameWithVariation(doc, variationsMap, internalId);
+          String primaryImage = crawlPrimaryImageWithVariation(skuJson, internalId, available);
 
-          String secondaryImages = crawlSecondaryImages(skuJson, internalId, available);
-          Float price = crawlPrice(options, internalId, available);
-          Prices prices = crawlPrices(options, internalId, available);
+          String secondaryImages = crawlSecondaryImagesWithVariation(skuJson, internalId, available);
+          Float price = crawlPriceWithVariation(options, internalId, available);
+          Prices prices = crawlPricesWithVariation(options, internalId, available);
           Integer stock = null;
 
           // Creating the product
@@ -79,7 +79,21 @@ public class GeracaopetCrawler extends Crawler {
 
         }
       } else {
-        // SEM VARIAÇÃO
+        String internalId = crawlInternalId(doc);
+        String name = crawlName(doc);
+        Float price = crawlPrice(doc);
+        Prices prices = crawlPrices(doc);
+        boolean available = crawlAvailability(doc);
+        String primaryImage = crawlPrimaryImage(jsonHtml);
+        String secondaryImages = crawlSecondaryImages(jsonHtml);
+
+        // Creating the product
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(null).setCategory2(null).setCategory3(null)
+            .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(null)
+            .setMarketplace(new Marketplace()).setEans(null).build();
+
+        products.add(product);
       }
 
     } else {
@@ -89,7 +103,109 @@ public class GeracaopetCrawler extends Crawler {
     return products;
   }
 
-  private boolean crawlAvailability(Map<String, Set<String>> variationsMap, String internalId) {
+  private String crawlSecondaryImages(JSONObject jsonHtml) {
+    JSONArray secondaryImages = new JSONArray();
+
+    if (jsonHtml.has("[data-gallery-role=gallery-placeholder]")) {
+      JSONObject galleryPlaceholder = jsonHtml.getJSONObject("[data-gallery-role=gallery-placeholder]");
+
+      if (galleryPlaceholder.has("mage/gallery/gallery")) {
+        JSONObject gallery = galleryPlaceholder.getJSONObject("mage/gallery/gallery");
+
+        if (gallery.has("data")) {
+          JSONArray images = gallery.getJSONArray("data");
+
+          for (Object object : images) {
+            JSONObject image = (JSONObject) object;
+
+            if (image.has("isMain") && !image.getBoolean("isMain") && image.has("img")) {
+              secondaryImages.put(image.getString("img"));
+
+            }
+          }
+        }
+      }
+    }
+
+    return secondaryImages.toString();
+  }
+
+  private String crawlPrimaryImage(JSONObject jsonHtml) {
+    String primaryImage = null;
+
+    if (jsonHtml.has("[data-gallery-role=gallery-placeholder]")) {
+      JSONObject galleryPlaceholder = jsonHtml.getJSONObject("[data-gallery-role=gallery-placeholder]");
+
+      if (galleryPlaceholder.has("mage/gallery/gallery")) {
+        JSONObject gallery = galleryPlaceholder.getJSONObject("mage/gallery/gallery");
+
+        if (gallery.has("data")) {
+          JSONArray images = gallery.getJSONArray("data");
+
+          for (Object object : images) {
+            JSONObject image = (JSONObject) object;
+
+            if (image.has("isMain") && image.getBoolean("isMain") && image.has("img")) {
+              primaryImage = image.getString("img");
+
+            }
+          }
+        }
+      }
+    }
+
+    return primaryImage;
+  }
+
+  private boolean crawlAvailability(Document doc) {
+    return doc.selectFirst("#outstock") == null;
+  }
+
+  private Prices crawlPrices(Document doc) {
+    Prices prices = new Prices();
+    Map<Integer, Float> installmentPrice = new HashMap<>();
+
+    Float price = crawlPrice(doc);
+
+    installmentPrice.put(1, price);
+    prices.setBankTicketPrice(price);
+
+    prices.insertCardInstallment(Card.VISA.toString(), installmentPrice);
+    prices.insertCardInstallment(Card.ELO.toString(), installmentPrice);
+    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPrice);
+    prices.insertCardInstallment(Card.DINERS.toString(), installmentPrice);
+
+    return prices;
+  }
+
+  private Float crawlPrice(Document doc) {
+    return CrawlerUtils.scrapFloatPriceFromHtml(doc, "span[data-price-amount]", "data-price-amount", false, '.', session);
+  }
+
+  private String crawlName(Document doc) {
+
+    Element title = doc.selectFirst("h1 span[itemprop=\"name\"]");
+    String name = null;
+
+    if (title != null) {
+      name = title.text();
+    }
+
+    return name;
+  }
+
+  private String crawlInternalId(Document doc) {
+    Element input = doc.selectFirst("input[name=\"product\"]");
+    String internalId = null;
+
+    if (input != null) {
+      internalId = input.val();
+    }
+
+    return internalId;
+  }
+
+  private boolean crawlAvailabilityWithVariation(Map<String, Set<String>> variationsMap, String internalId) {
     boolean availability = false;
 
     if (variationsMap.containsKey(internalId)) {
@@ -180,7 +296,7 @@ public class GeracaopetCrawler extends Crawler {
     return optionPrices;
   }
 
-  private Float crawlPrice(JSONObject jsonSku, String internalId, boolean available) {
+  private Float crawlPriceWithVariation(JSONObject jsonSku, String internalId, boolean available) {
     Float price = null;
 
     if (available && jsonSku.has(internalId)) {
@@ -197,7 +313,7 @@ public class GeracaopetCrawler extends Crawler {
     return price;
   }
 
-  private Prices crawlPrices(JSONObject jsonSku, String internalId, boolean available) {
+  private Prices crawlPricesWithVariation(JSONObject jsonSku, String internalId, boolean available) {
     Prices prices = new Prices();
     Map<Integer, Float> installmentPrice = new HashMap<>();
 
@@ -232,7 +348,7 @@ public class GeracaopetCrawler extends Crawler {
     return prices;
   }
 
-  private String crawlSecondaryImages(JSONObject skuJson, String internalId, boolean available) {
+  private String crawlSecondaryImagesWithVariation(JSONObject skuJson, String internalId, boolean available) {
     JSONArray secondaryImages = new JSONArray();
 
     if (available && skuJson.has("jsonConfig")) {
@@ -257,7 +373,7 @@ public class GeracaopetCrawler extends Crawler {
     return secondaryImages.toString();
   }
 
-  private String crawlPrimaryImage(JSONObject skuJson, String internalId, boolean available) {
+  private String crawlPrimaryImageWithVariation(JSONObject skuJson, String internalId, boolean available) {
     String primaryImage = null;
     if (available && skuJson.has("jsonConfig")) {
       JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
@@ -280,7 +396,7 @@ public class GeracaopetCrawler extends Crawler {
     return primaryImage;
   }
 
-  private String crawlName(Document doc, Map<String, Set<String>> variationsMap, String internalId) {
+  private String crawlNameWithVariation(Document doc, Map<String, Set<String>> variationsMap, String internalId) {
     Element title = doc.selectFirst("h1 span[itemprop=\"name\"]");
     String name = null;
 
