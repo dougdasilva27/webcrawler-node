@@ -102,10 +102,22 @@ public class SaopauloSupermercadonowlojanestlechucrizaidanCrawler extends Crawle
       Prices prices = crawlPrices(price, priceFrom);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
@@ -149,7 +161,9 @@ public class SaopauloSupermercadonowlojanestlechucrizaidanCrawler extends Crawle
   }
 
   private boolean crawlAvailability(JSONObject json) {
-    return json.has("in_stock") && json.get("in_stock") instanceof Boolean && json.getBoolean("in_stock");
+    return json.has("in_stock") &&
+        json.get("in_stock") instanceof Boolean &&
+        json.getBoolean("in_stock");
   }
 
   private String crawlPrimaryImage(JSONObject json) {
