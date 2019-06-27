@@ -26,16 +26,16 @@ import models.prices.Prices;
  * Crawling notes (27/06/2019):
  * 
  * Examples: ex1 (available):
- * http://www.koerich.com.br.br/micro-ondas-panasonic-32-litros-style-nn-st654wruk-branco-3305600/p
- * ex2 (unavailable):
- * http://www.koerich.com.br.br/furadeira-black-decker-de-impacto-3-8--500w-1-velocidade-tm500-b52-laranja-3332500/p
+ * http://www.koerich.com.br/micro-ondas-panasonic-32-litros-style-nn-st654wruk-branco-3305600/p ex2
+ * (unavailable):
+ * http://www.koerich.com.br/furadeira-black-decker-de-impacto-3-8--500w-1-velocidade-tm500-b52-laranja-3332500/p
  *
  *
  ************************************************************************************************************************************************************************************/
 
 public class BrasilKoerichCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.koerich.com.br.br/";
+  private static final String HOME_PAGE = "http://www.koerich.com.br/";
 
   public BrasilKoerichCrawler(Session session) {
     super(session);
@@ -49,7 +49,8 @@ public class BrasilKoerichCrawler extends Crawler {
     String id = CommonMethods.getLast(tokens);
     String pathName = tokens[tokens.length - 2];
 
-    String apiUrl = "https://www.koerich.com.br/ccstoreui/v1/pages/produto/" + pathName + "/" + id + "?dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
+    String apiUrl =
+        "https://www.koerich.com.br/ccstoreui/v1/pages/p/" + pathName + "/" + id + "?dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
 
     Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
     JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
@@ -96,9 +97,12 @@ public class BrasilKoerichCrawler extends Crawler {
           boolean available = stock != null && stock > 0;
           String description = crawlDescription(json, jsonSku);
 
+          System.err.println(json);
+
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-              .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
               .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
 
           products.add(product);
@@ -238,7 +242,9 @@ public class BrasilKoerichCrawler extends Crawler {
     for (String key : keys) {
       if ((key.startsWith("1_") || key.startsWith("x_")) && !key.equalsIgnoreCase("1_informaesAdicionais") && jsonSku.get(key) instanceof String) {
         description.append("<tr>");
-        description.append("<td>").append(CommonMethods.upperCaseFirstCharacter(CommonMethods.splitStringWithUpperCase(key.replace("1_", "").replace("x_", "")))).append("</td>");
+        description.append("<td>")
+            .append(CommonMethods.upperCaseFirstCharacter(CommonMethods.splitStringWithUpperCase(key.replace("1_", "").replace("x_", ""))))
+            .append("</td>");
 
         description.append("<td>").append(jsonSku.get(key)).append("</td>");
         description.append("</tr>");
@@ -266,6 +272,9 @@ public class BrasilKoerichCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
+      Map<Integer, Float> installmentShopCardPriceMap = new TreeMap<>();
+      installmentShopCardPriceMap.put(1, price);
+
       prices.setPriceFrom(CrawlerUtils.getDoubleValueFromJSON(jsonSku, "listPrice", true, null));
       prices.setBankTicketPrice(price);
 
@@ -278,8 +287,8 @@ public class BrasilKoerichCrawler extends Crawler {
           if (site.has("extensionSiteSettings")) {
             JSONObject extensionSiteSettings = site.getJSONObject("extensionSiteSettings");
 
-            if (extensionSiteSettings.has("discountSettings")) {
-              JSONObject discountSettings = extensionSiteSettings.getJSONObject("discountSettings");
+            if (extensionSiteSettings.has("boletoSettings")) {
+              JSONObject discountSettings = extensionSiteSettings.getJSONObject("boletoSettings");
 
               if (discountSettings.has("descontoBoleto")) {
                 String text = discountSettings.get("descontoBoleto").toString().replaceAll("[^0-9]", "").trim();
@@ -290,41 +299,17 @@ public class BrasilKoerichCrawler extends Crawler {
               }
             }
 
-            if (extensionSiteSettings.has("customSiteSettings")) {
-              JSONObject customSiteSettings = extensionSiteSettings.getJSONObject("customSiteSettings");
+            if (extensionSiteSettings.has("installmentSettings")) {
+              JSONObject customSiteSettings = extensionSiteSettings.getJSONObject("installmentSettings");
 
-              int minValuePerInstallment = 0;
-              if (customSiteSettings.has("minValuePerInstallment")) {
-                String text = customSiteSettings.get("minValuePerInstallment").toString().replaceAll("[^0-9]", "").trim();
-
-                if (!text.isEmpty()) {
-                  minValuePerInstallment = Integer.parseInt(text);
-                }
-              }
-
-              int maxNumInstallment = 1;
-              if (customSiteSettings.has("maxNumInstallment")) {
-                String text = customSiteSettings.get("maxNumInstallment").toString().replaceAll("[^0-9]", "").trim();
-
-                if (!text.isEmpty()) {
-                  maxNumInstallment = Integer.parseInt(text);
-                }
-              }
-
-              for (int i = 1; i <= maxNumInstallment; i++) {
-                Float priceInstallment = MathUtils.normalizeTwoDecimalPlaces(price / i);
-
-                if (priceInstallment >= minValuePerInstallment) {
-                  installmentPriceMap.put(i, priceInstallment);
-                } else {
-                  break;
-                }
-              }
+              setParcels(customSiteSettings, "maxInstallmentParcel", "minInstallmentValue", installmentPriceMap, price);
+              setParcels(customSiteSettings, "maxInstallmentParcelKoerich", "minInstallmentValueKoerich", installmentShopCardPriceMap, price);
             }
           }
         }
       }
 
+      prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentShopCardPriceMap);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
@@ -332,5 +317,22 @@ public class BrasilKoerichCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private void setParcels(JSONObject customSiteSettings, String keyParcel, String keyValue, Map<Integer, Float> installmentPriceMap, Float price) {
+    int maxNumInstallment = CrawlerUtils.getIntegerValueFromJSON(customSiteSettings, keyParcel, 1);
+    Double minValuePerInstallment = CrawlerUtils.getDoubleValueFromJSON(customSiteSettings, keyValue, true, false);
+
+    if (minValuePerInstallment != null) {
+      for (int i = 1; i <= maxNumInstallment; i++) {
+        Float priceInstallment = MathUtils.normalizeTwoDecimalPlaces(price / i);
+
+        if (priceInstallment >= minValuePerInstallment) {
+          installmentPriceMap.put(i, priceInstallment);
+        } else {
+          break;
+        }
+      }
+    }
   }
 }
