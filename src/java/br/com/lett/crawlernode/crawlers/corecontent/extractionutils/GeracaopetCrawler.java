@@ -57,16 +57,15 @@ public class GeracaopetCrawler extends Crawler {
       if (options.length() > 0) {
         Map<String, Set<String>> variationsMap = crawlVariationsMap(skuJson);
 
-        for (String keyStr : options.keySet()) {
+        for (String internalId : options.keySet()) {
 
-          String internalId = keyStr;
           boolean available = crawlAvailabilityWithVariation(variationsMap, internalId);
           String name = crawlNameWithVariation(doc, variationsMap, internalId);
           String primaryImage = crawlPrimaryImageWithVariation(skuJson, internalId, available);
 
           String secondaryImages = crawlSecondaryImagesWithVariation(skuJson, internalId, available);
           Float price = crawlPriceWithVariation(options, internalId, available);
-          Prices prices = crawlPricesWithVariation(options, internalId, available);
+          Prices prices = crawlPricesWithVariation(options, internalId, available, price);
           Integer stock = null;
 
           // Creating the product
@@ -279,8 +278,8 @@ public class GeracaopetCrawler extends Crawler {
         }
       }
     }
-    return variationsMap;
 
+    return variationsMap;
   }
 
   private JSONObject crawlOptions(JSONObject skuJson) {
@@ -311,25 +310,19 @@ public class GeracaopetCrawler extends Crawler {
         }
       }
     }
+
     return price;
   }
 
-  private Prices crawlPricesWithVariation(JSONObject jsonSku, String internalId, boolean available) {
+  private Prices crawlPricesWithVariation(JSONObject jsonSku, String internalId, boolean available, Float price) {
     Prices prices = new Prices();
     Map<Integer, Float> installmentPrice = new HashMap<>();
 
     if (available && jsonSku.has(internalId)) {
       JSONObject eachPrice = jsonSku.getJSONObject(internalId);
 
-      if (eachPrice.has("finalPrice")) {
-        JSONObject finalPrice = eachPrice.getJSONObject("finalPrice");
-
-        if (finalPrice.has("amount")) {
-          Float price = CrawlerUtils.getFloatValueFromJSON(finalPrice, "amount");
-          installmentPrice.put(1, price);
-          prices.setBankTicketPrice(price);
-        }
-      }
+      installmentPrice.put(1, price);
+      prices.setBankTicketPrice(price);
 
       if (eachPrice.has("oldPrice")) {
         JSONObject oldPrice = eachPrice.getJSONObject("oldPrice");
@@ -346,6 +339,7 @@ public class GeracaopetCrawler extends Crawler {
       prices.insertCardInstallment(Card.DINERS.toString(), installmentPrice);
 
     }
+
     return prices;
   }
 
@@ -394,6 +388,7 @@ public class GeracaopetCrawler extends Crawler {
         }
       }
     }
+
     return primaryImage;
   }
 
@@ -416,8 +411,8 @@ public class GeracaopetCrawler extends Crawler {
         }
         name = name.concat(" ").concat(variation);
       }
-
     }
+
     return name;
   }
 
@@ -449,13 +444,13 @@ public class GeracaopetCrawler extends Crawler {
     Element script = doc.selectFirst(".fieldset script[type=\"text/x-magento-init\"]");
 
     if (script != null) {
-      skuJson = new JSONObject(script.html());
+      skuJson = CrawlerUtils.stringToJson(script.html());
 
     } else {
       script = doc.selectFirst(".media script[type=\"text/x-magento-init\"]");
 
       if (script != null) {
-        skuJson = new JSONObject(script.html());
+        skuJson = CrawlerUtils.stringToJson(script.html());
       }
     }
 
@@ -465,4 +460,5 @@ public class GeracaopetCrawler extends Crawler {
   private boolean isProductPage(Document doc) {
     return doc.selectFirst("#maincontent") != null;
   }
+
 }
