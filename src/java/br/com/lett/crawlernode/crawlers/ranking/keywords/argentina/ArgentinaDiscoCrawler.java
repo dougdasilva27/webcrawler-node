@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,7 +29,7 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
     cookie.setPath("/");
     this.cookies.add(cookie);
 
-    Logging.printLogDebug(logger, session, "Adding cookie...");
+    Logging.printLogDebug(logger, session, "Adding cookies...");
     this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Comprar/Home.aspx", null, "www.disco.com.ar", "/", cookies, session, new HashMap<>(), dataFetcher));
   }
 
@@ -90,7 +91,7 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
   private String crawlInternalId(JSONObject product) {
     String internalId = null;
 
-    if (product.has("IdArticulo")) {
+    if (product.has("IdArticulo") && !product.isNull("IdArticulo")) {
       internalId = product.getString("IdArticulo");
     }
 
@@ -106,7 +107,7 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
   private String crawlProductUrl(JSONObject product) {
     String productUrl = null;
 
-    if (product.has("DescripcionArticulo")) {
+    if (product.has("DescripcionArticulo") && !product.isNull("DescripcionArticulo")) {
       String name = product.getString("DescripcionArticulo");
 
       productUrl = "https://www.disco.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=" + CommonMethods.encondeStringURLToISO8859(name, logger, session);
@@ -125,9 +126,7 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
     JSONObject json = new JSONObject();
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-    headers.put("Content-Type", "application/json; charset=UTF-8");
-    headers.put("X-Requested-With", "XMLHttpRequest");
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8");
 
     String urlSearch = "https://www.disco.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
     String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\"," + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
