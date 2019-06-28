@@ -2,12 +2,16 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 
 public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
 
@@ -15,11 +19,17 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String HOME_PAGE = "https://www.disco.com.ar/";
 
   @Override
   protected void processBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.disco.com.ar/Comprar/Home.aspx?", null, "www.disco.com.ar", "/", cookies, session,
-        null, dataFetcher);
+    BasicClientCookie cookie = new BasicClientCookie("noLocalizar", "true");
+    cookie.setDomain("www.disco.com.ar");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+
+    Logging.printLogDebug(logger, session, "Adding cookie...");
+    this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Comprar/Home.aspx", null, "www.disco.com.ar", "/", cookies, session, new HashMap<>(), dataFetcher));
   }
 
   @Override
@@ -99,8 +109,7 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
     if (product.has("DescripcionArticulo")) {
       String name = product.getString("DescripcionArticulo");
 
-      productUrl = "https://www.disco.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="
-          + CommonMethods.encondeStringURLToISO8859(name, logger, session);
+      productUrl = "https://www.disco.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=" + CommonMethods.encondeStringURLToISO8859(name, logger, session);
     }
 
     return productUrl;
@@ -116,20 +125,22 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
     JSONObject json = new JSONObject();
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/json");
+    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    headers.put("Content-Type", "application/json; charset=UTF-8");
+    headers.put("X-Requested-With", "XMLHttpRequest");
 
     String urlSearch = "https://www.disco.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
-    String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\","
-        + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
+    String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\"," + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
 
     this.log("Payload: " + payload);
     this.log("Cookies: " + this.cookies);
 
-    String jsonString = fetchStringPOST(urlSearch, payload, headers, this.cookies);
+    Request request = RequestBuilder.create().setUrl(urlSearch).setPayload(payload).setCookies(cookies).setHeaders(headers).build();
+    String jsonString = this.dataFetcher.post(session, request).getBody();
 
     if (jsonString != null) {
       if (jsonString.startsWith("{")) {
-        json = parseJsonLevex(new JSONObject(jsonString));
+        json = parseJsonLevex(CrawlerUtils.stringToJson(jsonString));
       }
     }
 

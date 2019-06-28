@@ -2,12 +2,14 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 
 public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
 
@@ -15,11 +17,17 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String HOME_PAGE = "https://www.veadigital.com.ar/";
 
   @Override
   protected void processBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.veadigital.com.ar/Comprar/Home.aspx?", null, "www.veadigital.com.ar", "/", cookies,
-        session, null, dataFetcher);
+    BasicClientCookie cookie = new BasicClientCookie("noLocalizar", "true");
+    cookie.setDomain("www.veadigital.com.ar");
+    cookie.setPath("/");
+    this.cookies.add(cookie);
+
+    Logging.printLogDebug(logger, session, "Adding cookie...");
+    this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Comprar/Home.aspx", null, "www.veadigital.com.ar", "/", cookies, session, new HashMap<>(), dataFetcher));
   }
 
   @Override
@@ -99,8 +107,7 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
     if (product.has("DescripcionArticulo")) {
       String name = product.getString("DescripcionArticulo");
 
-      productUrl = "https://www.veadigital.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query="
-          + CommonMethods.encondeStringURLToISO8859(name, logger, session);
+      productUrl = "https://www.veadigital.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=" + CommonMethods.encondeStringURLToISO8859(name, logger, session);
     }
 
     return productUrl;
@@ -119,8 +126,7 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
     headers.put("Content-Type", "application/json");
 
     String urlSearch = "https://www.veadigital.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
-    String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\","
-        + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
+    String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\"," + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
 
     this.log("Payload: " + payload);
     this.log("Cookies: " + this.cookies);
