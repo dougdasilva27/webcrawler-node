@@ -23,7 +23,7 @@ public class BrasilCompracertaCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".prateleira.default ul li.nm-product-item .box-produto");
+    Elements products = this.currentDoc.select("li.nm-product-item");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -32,7 +32,7 @@ public class BrasilCompracertaCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String internalPid = crawlInternalPid(e);
-        String productUrl = CrawlerUtils.scrapUrl(e, ".detalhes a", "href", "https:", "www.compracerta.com.br");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".nm-product-name a", "href", "https:", "www.compracerta.com.br");
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -53,20 +53,11 @@ public class BrasilCompracertaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".busca-resultados strong").first();
-
-    if (totalElement != null) {
-      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
-    }
-
-    this.log("Total da busca: " + this.totalProducts);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".neemu-total-products-container", true, 0);
+    this.log("Total: " + this.totalProducts);
   }
 
   private String crawlInternalPid(Element e) {
-    return e.attr("data-idproduto");
+    return e.attr("data-pid");
   }
 }
