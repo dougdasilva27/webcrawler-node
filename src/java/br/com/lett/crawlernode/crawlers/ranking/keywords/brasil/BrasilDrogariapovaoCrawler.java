@@ -84,7 +84,7 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
 
     if (products.length() > 0) {
       if (totalProducts == 0) {
-
+        setTotalProducts(productsInfo);
       }
 
       for (int i = 0; i < products.length(); i++) {
