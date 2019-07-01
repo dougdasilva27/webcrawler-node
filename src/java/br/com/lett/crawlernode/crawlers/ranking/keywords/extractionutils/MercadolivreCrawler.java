@@ -16,6 +16,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
   private String storeType;
 
   private static final String PRODUCTS_SELECTOR = ".results-item .item";
+  private static final Integer PAGE_SIZE = 64;
 
   protected MercadolivreCrawler(Session session) {
     super(session);
@@ -40,12 +41,14 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 64;
+    this.pageSize = PAGE_SIZE;
     this.log("Página " + this.currentPage);
 
     String url = "https://" + nextUrlHost + "/" + this.keywordWithoutAccents.replace(" ", "-") + "_" + storeType + "_" + storeName + "#D[A:"
-        + this.keywordWithoutAccents.replace(" ", "+") + "," + storeName + "]";
+        + this.keywordWithoutAccents.replace(" ", "+") + ",O:" + storeName + "]";
 
+    // In this market we need to scrap url for next page
+    // because the url format change
     if (this.currentPage > 1) {
       url = this.nextUrl;
     }
