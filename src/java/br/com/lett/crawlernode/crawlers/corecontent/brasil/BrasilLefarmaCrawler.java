@@ -63,9 +63,22 @@ public class BrasilLefarmaCrawler extends Crawler {
         boolean available = crawlAvailability(jsonObject);
         Prices prices = crawlPrices(jsonObject);
 
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-            .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(null).setDescription(description).setMarketplace(null).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(null)
+            .setDescription(description)
+            .setMarketplace(null)
+            .build();
 
         products.add(product);
 
@@ -109,8 +122,10 @@ public class BrasilLefarmaCrawler extends Crawler {
   private String crawlName(JSONObject obj) {
     String name = null;
 
-    if (obj.has("definition1Value")) {
+    if (obj.has("definition1Value") && obj.get("definition1Value") instanceof String) {
       name = obj.getString("definition1Value").trim();
+    } else if (obj.has("name") && obj.get("name") instanceof String) {
+      name = obj.getString("name").trim();
     }
 
     return name;
@@ -167,13 +182,15 @@ public class BrasilLefarmaCrawler extends Crawler {
     if (obj.has("hasInstallmentsWithInterest") && obj.getBoolean("hasInstallmentsWithInterest")) {
 
       if (obj.has("quantityOfInstallmentsWithInterest") && !obj.isNull("quantityOfInstallmentsWithInterest")) {
-        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsWithInterest"), CrawlerUtils.getFloatValueFromJSON(obj, "valueOfInstallmentsWithInterest"));
+        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsWithInterest"),
+            CrawlerUtils.getFloatValueFromJSON(obj, "valueOfInstallmentsWithInterest"));
       }
 
     } else {
 
       if (obj.has("quantityOfInstallmentsNoInterest") && !obj.isNull("quantityOfInstallmentsNoInterest")) {
-        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsNoInterest"), CrawlerUtils.getFloatValueFromJSON(obj, "valueOfInstallmentsNoInterest"));
+        installmentPriceMap.put(obj.getInt("quantityOfInstallmentsNoInterest"),
+            CrawlerUtils.getFloatValueFromJSON(obj, "valueOfInstallmentsNoInterest"));
       }
 
     }
