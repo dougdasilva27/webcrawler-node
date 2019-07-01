@@ -60,7 +60,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
     JSONObject apiJson = crawlProductApi(doc);
 
-    if (apiJson.length() > 0) {
+    if (isProductPage(apiJson)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = crawlInternalPid(apiJson);
@@ -89,6 +89,10 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private boolean isProductPage(JSONObject jsonSku) {
+    return jsonSku.has("IdArticulo");
   }
 
   private String crawlInternalPid(JSONObject json) {
