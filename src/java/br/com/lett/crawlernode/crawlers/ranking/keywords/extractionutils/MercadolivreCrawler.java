@@ -47,6 +47,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     String url = "https://" + nextUrlHost + "/" + this.keywordWithoutAccents.replace(" ", "-") + "_" + storeType + "_" + storeName + "#D[A:"
         + this.keywordWithoutAccents.replace(" ", "+") + ",O:" + storeName + "]";
 
+    // In this market we need to scrap url for next page
     if (this.currentPage > 1) {
       url = this.nextUrl;
     }
