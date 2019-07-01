@@ -48,11 +48,12 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    String productUrl = session.getOriginalURL();
+    JSONObject jsonSku = crawlProductInformatioFromApi(productUrl);
+
+    if (isProductPage(jsonSku)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String productUrl = session.getOriginalURL();
-      JSONObject jsonSku = crawlProductInformatioFromApi(productUrl);
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
@@ -65,10 +66,20 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
       Prices prices = crawlPrices(price, priceFrom);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setMarketplace(new Marketplace())
-          .build();
+      Product product = ProductBuilder.create()
+          .setUrl(productUrl)
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setDescription(description)
+          .setMarketplace(new Marketplace()).build();
 
       products.add(product);
 
@@ -84,8 +95,8 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(String url) {
-    return (url.contains("store_type") && url.contains("query")) || url.contains("product/");
+  private boolean isProductPage(JSONObject jsonSku) {
+    return jsonSku.has("id");
   }
 
   /*******************
