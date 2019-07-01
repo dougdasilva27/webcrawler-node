@@ -59,7 +59,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 
     JSONObject apiJson = crawlProductApi(doc);
 
-    if (apiJson.length() > 0) {
+    if (isProductPage(apiJson)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = crawlInternalPid(apiJson);
@@ -75,10 +75,23 @@ public class ArgentinaVeaCrawler extends Crawler {
       String description = crawlDescription(internalId);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(crawlNewUrl(internalId)).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(crawlNewUrl(internalId))
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
@@ -88,6 +101,10 @@ public class ArgentinaVeaCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private boolean isProductPage(JSONObject jsonSku) {
+    return jsonSku.has("IdArticulo");
   }
 
   private String crawlInternalPid(JSONObject json) {

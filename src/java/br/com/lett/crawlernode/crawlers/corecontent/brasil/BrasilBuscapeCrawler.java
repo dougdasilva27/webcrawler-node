@@ -66,9 +66,20 @@ public class BrasilBuscapeCrawler extends Crawler {
       Marketplace marketplace = scrapMarketplaces(pageInfo);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrices(new Prices())
-          .setAvailable(false).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setPrices(new Prices())
+          .setAvailable(false)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(marketplace)
+          .build();
 
       products.add(product);
 
@@ -81,7 +92,7 @@ public class BrasilBuscapeCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return !doc.select(".product").isEmpty();
+    return !doc.select(".product #tipo_pagina").isEmpty();
   }
 
   private String crawlPrimaryImage(JSONObject product) {

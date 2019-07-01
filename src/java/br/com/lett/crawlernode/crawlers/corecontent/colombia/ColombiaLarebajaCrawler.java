@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -23,9 +24,7 @@ public class ColombiaLarebajaCrawler extends Crawler {
 
   public ColombiaLarebajaCrawler(Session session) {
     super(session);
-    // TODO Auto-generated constructor stub
   }
-
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -55,10 +54,21 @@ public class ColombiaLarebajaCrawler extends Crawler {
       String description = crawlDescription(doc);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
@@ -92,14 +102,30 @@ public class ColombiaLarebajaCrawler extends Crawler {
 
   private String crawlInternalId(Document doc) {
     String internalId = null;
-    Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto]");
 
-    if (serchedId == null) {
-      serchedId = doc.selectFirst(".detPproduct input[data-producto]");
-    }
-
+    Element serchedId = doc.selectFirst(".control_cant_detalle input[data-producto], .detPproduct input[data-producto]");
     if (serchedId != null) {
       internalId = serchedId.attr("data-producto").trim();
+    }
+
+    // I have to do this on below, because in this url:
+    // "https://larebajavirtual.com/catalogo/producto/producto/125967/GATSY-PESCADO-ARROZ-Y-ESPINACA.html"
+    // there is no save place to extract internalId, unless on head description "Código: 2216515"
+    if (internalId == null) {
+      Elements descripciones = doc.select(".descripciones > div > div > span");
+
+      for (Element element : descripciones) {
+        String text = element.ownText().toLowerCase().trim();
+
+        // The text appear like this: "Código: 58461"
+        // i used text "digo" to identify because if the site remove accent
+        // this condition will work
+        if (text.contains("digo:")) {
+          internalId = CommonMethods.getLast(text.split(":")).trim();
+
+          break;
+        }
+      }
     }
 
     return internalId;

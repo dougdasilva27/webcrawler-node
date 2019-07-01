@@ -70,7 +70,8 @@ public class ApacheDataFetcher implements DataFetcher {
     List<RequestsStatistics> requests = new ArrayList<>();
 
     String url = request.getUrl();
-    Logging.printLogDebug(logger, session, FetchUtilities.getLoggingMessage(method, url));
+    String sanitizedUrl = CommonMethods.sanitizeUrl(url);
+    Logging.printLogDebug(logger, session, FetchUtilities.getLoggingMessage(method, sanitizedUrl));
 
     int attempt = 1;
 
@@ -139,7 +140,7 @@ public class ApacheDataFetcher implements DataFetcher {
           StringEntity input = new StringEntity(payload);
           input.setContentType(headers.get(HttpHeaders.CONTENT_TYPE));
 
-          HttpPost httpPost = new HttpPost(url);
+          HttpPost httpPost = new HttpPost(sanitizedUrl);
           httpPost.setEntity(input);
           httpPost.setConfig(requestConfig);
 
@@ -154,7 +155,7 @@ public class ApacheDataFetcher implements DataFetcher {
           // do request
           closeableHttpResponse = httpclient.execute(httpPost, localContext);
         } else if (method.equals(FetchUtilities.GET_REQUEST)) {
-          HttpGet httpGet = new HttpGet(url);
+          HttpGet httpGet = new HttpGet(sanitizedUrl);
           httpGet.setConfig(requestConfig);
 
           // do request
@@ -178,7 +179,7 @@ public class ApacheDataFetcher implements DataFetcher {
         // creating the page content result from the http request
         PageContent pageContent = new PageContent(closeableHttpResponse.getEntity());
         pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode());
-        pageContent.setUrl(url);
+        pageContent.setUrl(sanitizedUrl);
 
         // saving request content result on Amazon
         String content = "";
@@ -221,7 +222,7 @@ public class ApacheDataFetcher implements DataFetcher {
         FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, code, requestHash);
         requestStats.setHasPassedValidation(false);
 
-        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url);
+        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + sanitizedUrl);
         Logging.printLogWarn(logger, session, e.getMessage());
       } catch (Exception e) {
         int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
@@ -229,7 +230,7 @@ public class ApacheDataFetcher implements DataFetcher {
         FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, code, requestHash);
         requestStats.setHasPassedValidation(false);
 
-        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + url);
+        Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + sanitizedUrl);
         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
