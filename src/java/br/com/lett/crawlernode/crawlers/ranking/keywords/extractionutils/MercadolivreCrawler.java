@@ -44,7 +44,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     String url = "https://" + nextUrlHost + "/" + this.keywordWithoutAccents.replace(" ", "-") + "_" + storeType + "_" + storeName + "#D[A:"
-        + this.keywordWithoutAccents.replace(" ", "+") + "," + storeName + "]";
+        + this.keywordWithoutAccents.replace(" ", "+") + ",O:" + storeName + "]";
 
     if (this.currentPage > 1) {
       url = this.nextUrl;
