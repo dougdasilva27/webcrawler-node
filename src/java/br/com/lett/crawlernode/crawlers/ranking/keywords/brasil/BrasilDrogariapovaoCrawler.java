@@ -1,21 +1,28 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
 
   public BrasilDrogariapovaoCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   private static final String HOME_PAGE = "http://www.drogariaspovao.com.br/";
@@ -25,8 +32,7 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
     super.processBeforeFetch();
     this.log("Adding cookie ...");
 
-    List<Cookie> cookiesResponse = fetchCookies(HOME_PAGE);
-
+    List<Cookie> cookiesResponse = fetchCookies(HOME_PAGE + "index.php");
     for (Cookie cookieResponse : cookiesResponse) {
       BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
       cookie.setDomain("www.drogariaspovao.com.br");
@@ -34,13 +40,36 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
       cookies.add(cookie);
     }
 
-    String payload = "origem=site&controle=navegacao&arrapara=[\"Carregar_Home\"]";
+    String arrapara = "[\"Carregar_Home\"]";
+
+    StringBuilder payload = new StringBuilder();
+    payload.append("origem=site");
+    payload.append("&controle=navegacao");
+
+    try {
+      payload.append("&arrapara=" + URLEncoder.encode(arrapara, "UTF-8"));
+    } catch (UnsupportedEncodingException e1) {
+      logError(CommonMethods.getStackTrace(e1));
+    }
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/x-www-form-urlencoded");
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+    headers.put(HttpHeaders.REFERER, HOME_PAGE + "index.php");
+    headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put(HttpHeaders.ACCEPT, "application/json, text/javascript, */*; q=0.01");
+    headers.put("X-Requested-With", "XMLHttpRequest");
+    headers.put("Origin", HOME_PAGE);
 
-    // Request para validar o cookie para requests de busca
-    fetchCookiesPOST("http://www.drogariaspovao.com.br/ct/atende_geral.php", payload, headers, cookies);
+    Request request = RequestBuilder.create().setUrl("http://www.drogariaspovao.com.br/ct/atende_geral.php").setPayload(payload.toString())
+        .setHeaders(headers).setCookies(cookies).build();
+    List<Cookie> loadPageCookies = this.dataFetcher.post(session, request).getCookies();
+
+    for (Cookie cookieResponse : loadPageCookies) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+      cookie.setDomain("www.drogariaspovao.com.br");
+      cookie.setPath("/");
+      cookies.add(cookie);
+    }
   }
 
   @Override
@@ -53,11 +82,9 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
     JSONObject productsInfo = crawlProductInfo();
     JSONArray products = productsInfo.has("products") ? productsInfo.getJSONArray("products") : new JSONArray();
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (products.length() > 0) {
       if (totalProducts == 0) {
-        this.totalProducts = productsInfo.has("total") ? productsInfo.getInt("total") : 0;
-        this.log("Total: " + this.totalProducts);
+
       }
 
       for (int i = 0; i < products.length(); i++) {
@@ -85,13 +112,11 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    if (this.arrayProducts.size() < this.totalProducts) {
-      return true;
+  protected void setTotalProducts(JSONObject productsInfo) {
+    if (productsInfo.has("total") && productsInfo.get("total") instanceof Integer) {
+      this.totalProducts = productsInfo.getInt("total");
+      this.log("Total: " + this.totalProducts);
     }
-
-    return false;
   }
 
   private String crawlProductUrl(String name, String internalId) {
@@ -107,26 +132,30 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
 
   private JSONObject crawlProductInfo() {
     JSONObject products = new JSONObject();
-    String payload = "origem=site&controle=navegacao&arrapara=[\"Busca_Produtos\",\"" + this.location + "\",\"" + this.currentPage
-        + "\",\"\",\"\",\"\",\"\",\"\"]";
+
+    StringBuilder payload = new StringBuilder();
+    payload.append("origem=site");
+    payload.append("&controle=navegacao");
+
+    String arrapara = "[\"Busca_Produtos\",\"" + this.location + "\",\"" + this.currentPage + "\",\"\",\"\",\"\",\"\",\"\"]";
+
+    try {
+      payload.append("&arrapara=" + URLEncoder.encode(arrapara, "UTF-8"));
+    } catch (UnsupportedEncodingException e1) {
+      logError(CommonMethods.getStackTrace(e1));
+      return products;
+    }
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/x-www-form-urlencoded");
-    headers.put("Referer", HOME_PAGE);
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+    headers.put(HttpHeaders.REFERER, HOME_PAGE + "index.php");
 
-    String page = fetchStringPOST("http://www.drogariaspovao.com.br/ct/atende_geral.php", payload, headers, cookies).trim();
+    String page = fetchStringPOST("http://www.drogariaspovao.com.br/ct/atende_geral.php", payload.toString(), headers, cookies).trim();
+    JSONArray infos = CrawlerUtils.stringToJsonArray(page);
 
-    if (page != null && page.startsWith("[") && page.endsWith("]")) {
-      try {
-        JSONArray infos = new JSONArray(page);
-
-        if (infos.length() > 1) {
-          products.put("products", infos.getJSONArray(0)); // First position of array has products info
-          products.put("total", infos.getInt(1)); // First position of array has products info
-        }
-      } catch (JSONException e) {
-        logError(CommonMethods.getStackTrace(e));
-      }
+    if (infos.length() > 1) {
+      products.put("products", infos.getJSONArray(0)); // First position of array has products info
+      products.put("total", infos.getInt(1));
     }
 
     return products;
