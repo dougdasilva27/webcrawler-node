@@ -1,16 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
@@ -26,7 +24,7 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 
   public SaopauloAmericanasRatingReviewCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.FETCHER);
+    super.config.setFetcher(FetchMode.JAVANET);
   }
 
   @Override
@@ -36,13 +34,17 @@ public class SaopauloAmericanasRatingReviewCrawler extends RatingReviewCrawler {
 
   public String fetchPage(String url, Session session) {
     Map<String, String> headers = new HashMap<>();
-    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
-    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-    headers.put("Accept-Encoding", "");
+    headers.put(
+        HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
+    );
+    headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
+    headers.put(HttpHeaders.CONNECTION, "keep-alive");
+    headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36");
+    headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put(HttpHeaders.ACCEPT_ENCODING, "no");
+    headers.put("Upgrade-Insecure-Requests", "1");
 
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
-        .setSendUserAgent(false).setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
-        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY)).build();
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
 
     String content = this.dataFetcher.get(session, request).getBody();
 
