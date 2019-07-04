@@ -31,8 +31,8 @@ public class BrasilDrogarianovaesperancaCrawler extends CrawlerRankingKeywords {
     // because we need this information for verify if the site returns products for the keyword we send
     // or returns suggestions (in this case we don't have total Products),
     // we don't scrap suggestions products
-    if (totalProducts == 0) {
-      setTotalProducts();
+    if (this.totalProducts == 0) {
+      this.setTotalProducts();
     }
 
     if (!products.isEmpty() && this.totalProducts > 0) {
