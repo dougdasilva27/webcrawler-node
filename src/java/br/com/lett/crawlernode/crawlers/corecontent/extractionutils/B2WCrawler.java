@@ -13,6 +13,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -39,15 +40,23 @@ import models.Util;
 import models.prices.Prices;
 
 public class B2WCrawler extends Crawler {
-  public B2WCrawler(Session session) {
-    super(session);
-    super.config.setFetcher(FetchMode.FETCHER);
-  }
-
+  protected Map<String, String> headers = new HashMap<>();
   private static final String MAIN_B2W_NAME_LOWER = "b2w";
   protected String sellerNameLower;
   protected List<String> subSellers;
   protected String homePage;
+
+  public B2WCrawler(Session session) {
+    super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
+    this.setHeaders();
+  }
+
+  protected void setHeaders() {
+    this.headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
+    this.headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+    this.headers.put(HttpHeaders.ACCEPT_ENCODING, "no");
+  }
 
   @Override
   public boolean shouldVisit() {
@@ -61,12 +70,7 @@ public class B2WCrawler extends Crawler {
   }
 
   public String fetchPage(String url, Session session) {
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
-    headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-    headers.put("Accept-Encoding", "no");
-
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false)
+    Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).setHeaders(this.headers).mustSendContentEncoding(false)
         .setSendUserAgent(false).setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
         .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY)).build();
 
@@ -191,7 +195,8 @@ public class B2WCrawler extends Crawler {
     }
 
     if (!doc.select(".buybox-b-nav-item.is-link").isEmpty()) {
-      Document docSellers = Jsoup.parse(fetchPage("https://www.americanas.com.br/parceiros/" + internalPid + "?productSku=" + internalId, session));
+      this.headers.put(HttpHeaders.REFERER, session.getOriginalURL());
+      Document docSellers = Jsoup.parse(fetchPage(this.homePage + "parceiros/" + internalPid + "?productSku=" + internalId, session));
       Elements moreOffers = docSellers.select(".more-offers-table tbody tr .seller-info-cell .seller-info a");
 
       for (int j = 0; j < moreOffers.size(); j++) {
