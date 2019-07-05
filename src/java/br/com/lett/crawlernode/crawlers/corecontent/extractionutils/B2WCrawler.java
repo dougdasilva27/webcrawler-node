@@ -53,9 +53,15 @@ public class B2WCrawler extends Crawler {
   }
 
   protected void setHeaders() {
-    this.headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
-    this.headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-    this.headers.put(HttpHeaders.ACCEPT_ENCODING, "no");
+    headers.put(HttpHeaders.REFERER, this.homePage);
+    headers.put(
+        HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
+    );
+    headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
+    headers.put(HttpHeaders.CONNECTION, "keep-alive");
+    headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put(HttpHeaders.ACCEPT_ENCODING, "no");
+    headers.put("Upgrade-Insecure-Requests", "1");
   }
 
   @Override
@@ -71,8 +77,8 @@ public class B2WCrawler extends Crawler {
 
   public String fetchPage(String url, Session session) {
     Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).setHeaders(this.headers).mustSendContentEncoding(false)
-        .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
-        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY)).build();
+        .setSendUserAgent(false).setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
+        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY, ProxyCollection.STORM_RESIDENTIAL_US)).build();
 
     String content = this.dataFetcher.get(session, request).getBody();
 
