@@ -99,7 +99,9 @@ public class B2WCrawler extends Crawler {
     // Pega só o que interessa do json da api
     JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
-    if (infoProductJson.has("skus")) {
+    // verifying if url starts with home page because on crawler seed,
+    // some seeds can be of another store
+    if (infoProductJson.has("skus") && session.getOriginalURL().startsWith(this.homePage)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = this.crawlInternalPid(infoProductJson);
@@ -108,7 +110,9 @@ public class B2WCrawler extends Crawler {
       String primaryImage = hasImages ? this.crawlPrimaryImage(infoProductJson) : null;
       String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
       String description = this.crawlDescription(internalPid, doc);
+
       Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson, doc);
+
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
         String name = entry.getValue().trim();
@@ -121,22 +125,32 @@ public class B2WCrawler extends Crawler {
         Offers offers = assembleOffers(buyBox);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(variationPrice).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(variationMarketplace).setOffers(offers).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(variationPrice)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setMarketplace(variationMarketplace)
+            .setOffers(offers)
+            .build();
 
         products.add(product);
       }
-
-
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
   }
-
 
   private Offers assembleOffers(List<JSONObject> buyBox) {
     Offers offers = new Offers();
