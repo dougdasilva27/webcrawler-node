@@ -281,7 +281,11 @@ public class BrasilCarrefourCrawler extends Crawler {
       Prices prices = crawlPrices(price, document);
 
       if (oneMarketplaceInfo != null && oneMarketplace != null) {
-        String text = oneMarketplace.ownText().trim().toLowerCase();
+        // This text appears like: "Venda por taQi."
+        // Sometimes marketplace name it's inside a link, so for this
+        // we need to use ".text()" instead ".ownText()"
+        // Check on: https://www.carrefour.com.br/Coifa-de-Parede-Inox-Consul-CAP90AR-90cm-110V/p/5086450
+        String text = oneMarketplace.text().trim().toLowerCase();
 
         if (text.contains("por") && text.contains(".")) {
           int x = text.indexOf("por") + 3;
