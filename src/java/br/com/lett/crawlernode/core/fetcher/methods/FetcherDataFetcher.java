@@ -377,6 +377,8 @@ public class FetcherDataFetcher implements DataFetcher {
     } else {
       payload = FetcherRequestBuilder.create()
           .setUrl(url)
+          .setMustUseMovingAverage(true)
+          .setRetrieveStatistics(true)
           .setRequestType(method)
           .setForcedProxies(
               new FetcherRequestForcedProxies()
