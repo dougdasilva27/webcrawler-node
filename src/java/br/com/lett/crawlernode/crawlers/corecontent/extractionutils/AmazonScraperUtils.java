@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -35,8 +36,12 @@ public class AmazonScraperUtils {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Encoding", "no");
 
-      request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers)
-          .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.STORM_RESIDENTIAL_US)).mustSendContentEncoding(false)
+      request = RequestBuilder.create().setUrl(url)
+          .setCookies(cookies)
+          .setHeaders(headers)
+          .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.STORM_RESIDENTIAL_US))
+          .mustSendContentEncoding(false)
+          .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
           .build();
     } else {
       request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
@@ -72,8 +77,14 @@ public class AmazonScraperUtils {
     if (dataFetcher instanceof FetcherDataFetcher) {
       headers.put("Accept-Encoding", "no");
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers)
-          .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.STORM_RESIDENTIAL_US)).mustSendContentEncoding(false)
+      Request request = RequestBuilder.create()
+          .setUrl(url)
+          .setCookies(cookies)
+          .setHeaders(headers)
+          .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.STORM_RESIDENTIAL_US))
+          .mustSendContentEncoding(false)
+          // We send this selector fetcher try again when returns captcha
+          .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
           .build();
       content = dataFetcher.get(session, request).getBody();
 

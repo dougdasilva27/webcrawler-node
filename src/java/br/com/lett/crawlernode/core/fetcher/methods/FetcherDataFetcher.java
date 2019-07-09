@@ -141,7 +141,6 @@ public class FetcherDataFetcher implements DataFetcher {
 
       // process response and parse
       JSONObject responseJson = CrawlerUtils.stringToJson(content);
-
       if (responseJson.has("statistics")) {
         JSONObject statistics = responseJson.getJSONObject("statistics");
 
@@ -354,20 +353,45 @@ public class FetcherDataFetcher implements DataFetcher {
     }
 
     if (options != null) {
-      payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(options.isMustUseMovingAverage()).setRequestType(method)
+      payload = FetcherRequestBuilder.create()
+          .setUrl(url)
+          .setMustUseMovingAverage(options.isMustUseMovingAverage())
+          .setRequestType(method)
           .setRetrieveStatistics(options.isRetrieveStatistics())
-          .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
-              .setMustFollowRedirects(request.isFollowRedirects()))
-          .setIgnoreStatusCode(request.mustIgnoreStatusCode()).setBodyIsRequired(request.bodyIsRequired())
-          .setStatusCodesToIgnore(request.getStatusCodesToIgnore()).build();
+          .setForbiddenCssSelector(options.getForbiddenCssSelector())
+          .setRequiredCssSelector(options.getRequiredCssSelector())
+          .setForcedProxies(
+              new FetcherRequestForcedProxies()
+                  .setAny(request.getProxyServices())
+                  .setSpecific(request.getProxy())
+              )
+          .setParameters(
+              new FetcherRequestsParameters().setHeaders(finalHeaders)
+                  .setPayload(request.getPayload())
+                  .setMustFollowRedirects(request.isFollowRedirects())
+              )
+          .setIgnoreStatusCode(request.mustIgnoreStatusCode())
+          .setBodyIsRequired(request.bodyIsRequired())
+          .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
+          .build();
     } else {
-      payload = FetcherRequestBuilder.create().setUrl(url).setMustUseMovingAverage(true).setRequestType(method).setRetrieveStatistics(true)
-          .setForcedProxies(new FetcherRequestForcedProxies().setAny(request.getProxyServices()).setSpecific(request.getProxy()))
-          .setParameters(new FetcherRequestsParameters().setHeaders(finalHeaders).setPayload(request.getPayload())
-              .setMustFollowRedirects(request.isFollowRedirects()))
-          .setIgnoreStatusCode(request.mustIgnoreStatusCode()).setBodyIsRequired(request.bodyIsRequired())
-          .setStatusCodesToIgnore(request.getStatusCodesToIgnore()).build();
+      payload = FetcherRequestBuilder.create()
+          .setUrl(url)
+          .setRequestType(method)
+          .setForcedProxies(
+              new FetcherRequestForcedProxies()
+                  .setAny(request.getProxyServices())
+                  .setSpecific(request.getProxy())
+              )
+          .setParameters(
+              new FetcherRequestsParameters().setHeaders(finalHeaders)
+                  .setPayload(request.getPayload())
+                  .setMustFollowRedirects(request.isFollowRedirects())
+              )
+          .setIgnoreStatusCode(request.mustIgnoreStatusCode())
+          .setBodyIsRequired(request.bodyIsRequired())
+          .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
+          .build();
     }
 
     return payload;
