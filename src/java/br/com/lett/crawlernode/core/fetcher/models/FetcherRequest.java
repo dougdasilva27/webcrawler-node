@@ -16,6 +16,8 @@ public class FetcherRequest {
   public static final String FETCHER_PARAMETER_BODY_IS_REQUIRED = "body_is_required";
   public static final String FETCHER_PARAMETER_IGNORE_STATUS_CODE = "ignore_status_code";
   public static final String FETCHER_PARAMETER_STATUS_CODES_TO_IGNORE = "status_codes_to_ignore";
+  public static final String FETCHER_PARAMETER_REQUIRED_CSS_SELECTOR = "required_css_selector";
+  public static final String FETCHER_PARAMETER_FORBIDDEN_CSS_SELECTOR = "forbidden_css_selector";
 
   private String url;
   private String requestType;
@@ -23,6 +25,8 @@ public class FetcherRequest {
   private boolean retrieveStatistics = true;
   private boolean ignoreStatusCode = false;
   private boolean bodyIsRequired = true;
+  private String requiredCssSelector;
+  private String forbiddenCssSelector;
   private List<Integer> statusCodesToIgnore = new ArrayList<>();
   private FetcherRequestsParameters parameters;
   private FetcherRequestForcedProxies forcedProxies;
@@ -53,6 +57,14 @@ public class FetcherRequest {
 
     if (forcedProxies != null) {
       fetcherParameters.put(FETCHER_PARAMETER_PROXIES, forcedProxies.toJson());
+    }
+
+    if (requiredCssSelector != null) {
+      fetcherParameters.put(FETCHER_PARAMETER_REQUIRED_CSS_SELECTOR, requiredCssSelector);
+    }
+
+    if (forbiddenCssSelector != null) {
+      fetcherParameters.put(FETCHER_PARAMETER_FORBIDDEN_CSS_SELECTOR, forbiddenCssSelector);
     }
 
     return fetcherParameters;
@@ -128,5 +140,21 @@ public class FetcherRequest {
 
   public void setStatusCodesToIgnore(List<Integer> statusCodesToIgnore) {
     this.statusCodesToIgnore = statusCodesToIgnore;
+  }
+
+  public String getRequiredCssSelector() {
+    return requiredCssSelector;
+  }
+
+  public void setRequiredCssSelector(String requiredCssSelector) {
+    this.requiredCssSelector = requiredCssSelector;
+  }
+
+  public String getForbiddenCssSelector() {
+    return forbiddenCssSelector;
+  }
+
+  public void setForbiddenCssSelector(String forbiddenCssSelector) {
+    this.forbiddenCssSelector = forbiddenCssSelector;
   }
 }
