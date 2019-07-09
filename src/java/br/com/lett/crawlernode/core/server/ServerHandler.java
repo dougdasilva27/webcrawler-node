@@ -41,6 +41,7 @@ public class ServerHandler implements HttpHandler {
   private static final String MSG_ATTR_SCRAPER_TYPE = "scraperType";
 
   private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
+  private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
 
   @Override
   public void handle(HttpExchange t) throws IOException {
@@ -107,7 +108,7 @@ public class ServerHandler implements HttpHandler {
     }
 
     request.setRequestMethod(t.getRequestMethod().toUpperCase());
-
+    request.setQueueName(headers.getFirst(SQS_NAME_HEADER));
     request.setMessageId(headers.getFirst(MSG_ID_HEADER));
     request.setInternalId(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_INTERNAL_ID));
 
