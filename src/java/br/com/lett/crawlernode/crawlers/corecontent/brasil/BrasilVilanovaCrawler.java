@@ -43,8 +43,8 @@ public class BrasilVilanovaCrawler extends Crawler {
       String internalPid = crawlInternalPid(productJson);
       List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-breadcrumb a:not(.first)");
-      String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".product-shape-and-volumn", ".tab.description", ".tab.composition", ".content-tab.description", ".content-tab.composition"));
+      String description = CrawlerUtils.scrapElementsDescription(doc,
+          Arrays.asList(".product-shape-and-volumn", ".specs-product dt .tab:not(.rating)", ".specs-product dl .content-tab:not(.ratings)"));
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumb-link", Arrays.asList("data-zoom-image", "href"), "https", IMAGES_HOST);
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "a.thumb-link", Arrays.asList("data-zoom-image", "href"),
           "https", IMAGES_HOST, primaryImage);
