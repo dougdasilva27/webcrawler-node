@@ -4,14 +4,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -34,6 +37,9 @@ import models.prices.Prices;
 public class RiodejaneiroSuperprixCrawler extends Crawler {
 
   private static final String HOME_PAGE = "http://www.superprix.com.br/";
+  private static final String CEP = "22041080";
+  private static final String CITY = "RIO DE JANEIRO";
+  private static final String VTEXSC = "sc=1";
 
   public RiodejaneiroSuperprixCrawler(Session session) {
     super(session);
@@ -46,10 +52,26 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
   }
 
   public void handleCookiesBeforeFetch() {
+    Map<String, String> cookiesMap = new HashMap<>();
+    cookiesMap.put("VTEXSC", VTEXSC);
+    cookiesMap.put("userCep", CEP);
+    cookiesMap.put("cityValidation", CITY);
 
-    BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=1");
-    this.cookies.add(cookie);
+    for (Entry<String, String> entry : cookiesMap.entrySet()) {
+      BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
+      cookie.setDomain(".www.superprix.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
+  }
 
+  @Override
+  protected Object fetch() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.REFERER, "https://www.superprix.com.br/?redirect&cep=22041080");
+
+    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).build();
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
