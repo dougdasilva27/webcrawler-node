@@ -46,9 +46,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 
       String internalId = jsonIdSkuPrice.has("pid") ? jsonIdSkuPrice.getString("pid") : null;
       String internalPid = jsonIdSkuPrice.has("sku") ? jsonIdSkuPrice.getString("sku") : null;
-      String name = jsonNameDesc.has("name")
-          ? jsonNameDesc.getString("name").concat(" ").concat(doc.selectFirst("button[data-id=\"" + internalId + "\"][disabled=\"disabled\"]").text())
-          : null;
+      String name = scrapName(jsonNameDesc, doc, internalId);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".cateMain_breadCrumbs .breadCrumbNew li span[itemprop=\"name\"]", false);
       String description = scrapDescription(jsonNameDesc);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"), "https:",
@@ -76,6 +74,21 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst("#product .primary-box") != null;
+  }
+
+  private String scrapName(JSONObject json, Document doc, String internalId) {
+    String name = null;
+
+    if (json.has("name") && !json.isNull("name")) {
+      name = json.get("name").toString();
+
+      String nameVariation = CrawlerUtils.scrapStringSimpleInfo(doc, "button[data-id=\"" + internalId + "\"][disabled=\"disabled\"]", false);
+      if (nameVariation != null) {
+        name += " " + nameVariation;
+      }
+    }
+
+    return name;
   }
 
   private String scrapDescription(JSONObject json) {
