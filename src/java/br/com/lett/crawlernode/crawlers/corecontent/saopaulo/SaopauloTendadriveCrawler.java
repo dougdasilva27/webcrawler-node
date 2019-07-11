@@ -153,7 +153,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
   private JSONObject crawlSKusInfo(String internalPid) {
     JSONObject info = new JSONObject();
 
-    String url = "http://www.tendadrive.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=14";
+    String url = "https://www.tendadrive.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=";
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     JSONArray skus = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
