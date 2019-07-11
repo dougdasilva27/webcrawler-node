@@ -45,13 +45,15 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
       ratingReviews.setDate(session.getDate());
 
       JSONObject rating = crawlProductInformatioFromGPAApi(session.getOriginalURL());
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(rating);
+
+      // This market have a bug to show reviews
+      // Reviews beside of product image is not trusted, so we may scrap reviews on footer
       Integer totalReviews = getTotalNumOfReviews(rating);
       Double avgRating = getTotalAvgRating(rating);
       AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(rating);
 
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalRating(totalReviews);
       ratingReviews.setTotalWrittenReviews(totalReviews);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
@@ -106,22 +108,6 @@ public class SaopauloPaodeacucarRatingReviewCrawler extends RatingReviewCrawler 
     }
 
     return totalReviews;
-  }
-
-  /**
-   * Number of ratings appear in key rating in json
-   * 
-   * @param docRating
-   * @return
-   */
-  private Integer getTotalNumOfRatings(JSONObject rating) {
-    Integer totalRating = null;
-
-    if (rating.has("total")) {
-      totalRating = rating.getInt("total");
-    }
-
-    return totalRating;
   }
 
   private boolean isProductPage(String url) {
