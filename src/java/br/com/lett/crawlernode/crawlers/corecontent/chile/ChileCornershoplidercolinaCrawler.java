@@ -10,7 +10,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CornershopCr
 public class ChileCornershoplidercolinaCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://web.cornershopapp.com";
-  public static final String STORE_ID = "150";
+  public static final String STORE_ID = "483";
 
   private CornershopCrawler cornerCrawler = new CornershopCrawler(session, STORE_ID, logger, cookies);
 
