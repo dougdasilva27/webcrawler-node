@@ -11,7 +11,6 @@ import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -20,13 +19,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import exceptions.OfferException;
 import models.Marketplace;
-import models.Offer;
-import models.Offer.OfferBuilder;
-import models.Offers;
-import models.Seller;
-import models.Util;
 import models.prices.Prices;
 
 /**
@@ -39,8 +32,6 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://jcdistribuicao.maxb2b.com.br/";
   private static final String API_URL = "https://api.heylabs.io/graphql";
-  private static final String SELLER_NAME = "JC Distribuição";
-  private static final String PRICE_KEY = "pricePerUnit";
   private static final String COMPANY_ID = "6486bb697694a5aed9c0b7729734372f";
 
   // In this market api, they have seven keys for description like this: "description1": "",
@@ -134,14 +125,9 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
       String internalPid = crawlInternalPid(jsonSku);
       String description = crawlDescription(jsonSku);
       CategoryCollection categories = crawlCategories(jsonSku);
-      boolean available = crawlAvailability(jsonSku);
-      Float price = available ? CrawlerUtils.getFloatValueFromJSON(jsonSku, PRICE_KEY) : null;
       String primaryImage = crawlPrimaryImage(jsonSku);
       String name = crawlName(jsonSku);
-      Prices prices = crawlPrices(price);
-      Marketplace marketplace = crawlMarketplace(price, prices, jsonSku);
       List<String> eans = scrapEan(jsonSku);
-      Offers offers = scrapBuyBox(jsonSku);
 
       // Creating the product
       Product product = ProductBuilder.create()
@@ -149,17 +135,15 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
           .setInternalId(internalId)
           .setInternalPid(internalPid)
           .setName(name)
-          .setPrices(prices)
-          .setPrice(price)
-          .setAvailable(available)
+          .setPrices(new Prices())
+          .setAvailable(false) // this market we need to log in to access price and availability
           .setPrimaryImage(primaryImage)
           .setDescription(description)
           .setCategory1(categories.getCategory(0))
           .setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2))
-          .setMarketplace(marketplace)
+          .setMarketplace(new Marketplace())
           .setEans(eans)
-          .setOffers(offers)
           .build();
 
       products.add(product);
@@ -168,22 +152,6 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
     }
 
     return products;
-  }
-
-  private Offers scrapBuyBox(JSONObject jsonSku) {
-    Offers offers = new Offers();
-    try {
-      String slugSellerName = CrawlerUtils.toSlug(SELLER_NAME);
-
-      Offer offer = new OfferBuilder().setSellerFullName(SELLER_NAME).setSlugSellerName(slugSellerName).setInternalSellerId(slugSellerName)
-          .setMainPagePosition(1).setIsBuybox(false).setMainPrice(CrawlerUtils.getDoubleValueFromJSON(jsonSku, PRICE_KEY, false, false)).build();
-
-      offers.add(offer);
-    } catch (OfferException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
-
-    return offers;
   }
 
   private boolean isProductPage(JSONObject jsonSku) {
@@ -248,10 +216,6 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
     return name;
   }
 
-  private boolean crawlAvailability(JSONObject json) {
-    return json.has("isAvailable") && json.get("isAvailable") instanceof Boolean && json.getBoolean("isAvailable");
-  }
-
   private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;
 
@@ -273,45 +237,5 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
     }
 
     return description.toString().trim();
-  }
-
-  private Marketplace crawlMarketplace(Float price, Prices prices, JSONObject jsonSku) {
-    Marketplace marketplace = new Marketplace();
-
-    if (price != null && jsonSku.has("store_name")) {
-      String sellerName = jsonSku.get("store_name").toString().replace("null", "").trim();
-
-      if (!sellerName.isEmpty()) {
-
-        try {
-          Seller seller = new Seller(new JSONObject().put("price", price).put("prices", prices.toJSON()).put("name", sellerName));
-          marketplace.add(seller);
-        } catch (Exception e) {
-          Logging.printLogError(logger, session, Util.getStackTraceString(e));
-        }
-      }
-    }
-
-    return marketplace;
-  }
-
-  /**
-   * In this site has no information of installments
-   * 
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Float price) {
-    Prices p = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
-      installmentPriceMap.put(1, price);
-      p.setBankTicketPrice(price);
-
-      p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-    }
-
-    return p;
   }
 }
