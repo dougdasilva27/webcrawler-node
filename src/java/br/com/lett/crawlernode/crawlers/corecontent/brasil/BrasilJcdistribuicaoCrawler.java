@@ -33,6 +33,7 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
   private static final String HOME_PAGE = "https://jcdistribuicao.maxb2b.com.br/";
   private static final String API_URL = "https://api.heylabs.io/graphql";
   private static final String COMPANY_ID = "6486bb697694a5aed9c0b7729734372f";
+  private static final boolean DEFAULT_AVAILABILITY = false;
 
   // In this market api, they have seven keys for description like this: "description1": "",
   // "description2": "" ...
@@ -136,7 +137,7 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
           .setInternalPid(internalPid)
           .setName(name)
           .setPrices(new Prices())
-          .setAvailable(false) // this market we need to log in to access price and availability
+          .setAvailable(DEFAULT_AVAILABILITY) // this market we need to log in to access price and availability
           .setPrimaryImage(primaryImage)
           .setDescription(description)
           .setCategory1(categories.getCategory(0))
