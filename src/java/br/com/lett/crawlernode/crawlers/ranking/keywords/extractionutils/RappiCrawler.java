@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +21,6 @@ public class RappiCrawler extends CrawlerRankingKeywords {
     super(session);
     this.markets = markets;
   }
-
-  private List<String> stores = new ArrayList<>();
 
   @Override
   public void extractProductsFromCurrentPage() {
@@ -83,8 +80,8 @@ public class RappiCrawler extends CrawlerRankingKeywords {
   private String crawlInternalId(JSONObject product) {
     String internalId = null;
 
-    if (product.has("id")) {
-      internalId = product.getString("id");
+    if (product.has("id") && !product.isNull("id")) {
+      internalId = product.get("id").toString();
     }
 
     return internalId;
@@ -93,8 +90,8 @@ public class RappiCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(JSONObject product) {
     String internalPid = null;
 
-    if (product.has("product_id")) {
-      internalPid = product.getString("product_id");
+    if (product.has("product_id") && !product.isNull("product_id")) {
+      internalPid = product.get("product_id").toString();
     }
 
     return internalPid;
