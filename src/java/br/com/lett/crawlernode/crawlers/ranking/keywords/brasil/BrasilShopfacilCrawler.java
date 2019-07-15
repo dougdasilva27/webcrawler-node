@@ -24,6 +24,9 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
   }
 
 
+  private static final String SHA256_SEARCH = "2bbb28a7eef7c8c5ed321556479120eddbc1475940765942520a0f112ce486a8";
+  private static final String API_VERSION = "omnilogic.search@0.4.92";
+
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
@@ -94,8 +97,8 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     JSONObject extensions = new JSONObject();
     JSONObject persistedQuery = new JSONObject();
 
-    persistedQuery.put("version", "omnilogic.search@0.4.74");
-    persistedQuery.put("sha256Hash", "c64cbc373960ce6dd8fe3a23388168e58a133e7ef256fef9caec40c6092c3ccc");
+    persistedQuery.put("version", API_VERSION);
+    persistedQuery.put("sha256Hash", SHA256_SEARCH);
     extensions.put("persistedQuery", persistedQuery);
     extensions.put("variables", createVariablesBase64());
 
@@ -135,8 +138,11 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     search.put("selectedSubstantive", "none");
     search.put("source", "page");
     search.put("categories", JSONObject.NULL);
+    search.put("priceRange", JSONObject.NULL);
+    search.put("priceDiscount", JSONObject.NULL);
     search.put("clusters", JSONObject.NULL);
     search.put("sellers", JSONObject.NULL);
+    search.put("ignoreSuggestions", false);
 
     JSONArray metadata = new JSONArray();
     JSONObject keywordJson = new JSONObject();
