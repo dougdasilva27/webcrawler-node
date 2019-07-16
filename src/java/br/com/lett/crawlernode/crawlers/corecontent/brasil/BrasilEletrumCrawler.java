@@ -12,8 +12,6 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -52,9 +50,8 @@ public class BrasilEletrumCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String description = crawlDescription(internalId, apiJSON, vtexUtil, doc);
+        String description = crawlDescription(internalPid, apiJSON, vtexUtil, doc);
         String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
-        CommonMethods.saveDataToAFile(apiJSON, Test.pathWrite + "x.json");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -84,8 +81,33 @@ public class BrasilEletrumCrawler extends Crawler {
     return products;
   }
 
-  private String crawlDescription(String internalId, JSONObject apiJSON, VTEXCrawlersUtils vtexUtil, Document doc) {
-    return null;
+  private String crawlDescription(String internalPid, JSONObject apiJSON, VTEXCrawlersUtils vtexUtil, Document doc) {
+    StringBuilder description = new StringBuilder();
+    JSONObject json = vtexUtil.crawlDescriptionAPI(internalPid, "productId");
+
+    if (json.has("description")) {
+      description.append("<div><h3>Descrição</h3></div>");
+      description.append(json.get("description").toString());
+    }
+
+    if (json.has("Descrição Do Produto")) {
+      JSONArray jsonArray = json.getJSONArray("Descrição Do Produto");
+      List<String> listKeys = new ArrayList<>();
+
+      for (Object object : jsonArray) {
+        String keys = (String) object;
+        listKeys.add(keys);
+      }
+
+      for (String string : listKeys) {
+        if (json.has(string)) {
+          description.append(string).append(": ").append(json.get(string).toString().replace("[", "").replace("]", "")).append("<br>");
+        }
+      }
+
+    }
+
+    return description.toString();
   }
 
   private boolean isProductPage(Document doc) {
