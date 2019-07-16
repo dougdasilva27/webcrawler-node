@@ -77,8 +77,8 @@ public class ApacheDataFetcher implements DataFetcher {
 
     boolean mustContinue = true;
 
-    while (attempt <= session.getMaxConnectionAttemptsCrawler() && (request.bodyIsRequired() && (response.getBody() == null || response.getBody()
-        .isEmpty())) && mustContinue) {
+    while (attempt <= session.getMaxConnectionAttemptsCrawler() && ((request.bodyIsRequired() && (response.getBody() == null || response.getBody()
+        .isEmpty())) || !request.bodyIsRequired()) && mustContinue) {
       RequestsStatistics requestStats = new RequestsStatistics();
       requestStats.setAttempt(attempt);
 

@@ -8,6 +8,7 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -37,11 +38,12 @@ public class ArgentinaCarrefoursuperCrawler extends CrawlerRankingKeywords {
         .setUrl("https://supermercado.carrefour.com.ar/stock/")
         .setCookies(cookies)
         .setPayload(payload)
+        .setHeaders(headers)
         .setFollowRedirects(false)
         .setBodyIsRequired(false)
         .build();
 
-    List<Cookie> cookiesResponse = this.dataFetcher.post(session, request).getCookies();
+    List<Cookie> cookiesResponse = new FetcherDataFetcher().post(session, request).getCookies();
     for (Cookie c : cookiesResponse) {
       BasicClientCookie cookie = new BasicClientCookie(c.getName(), c.getValue());
       cookie.setDomain(HOST);

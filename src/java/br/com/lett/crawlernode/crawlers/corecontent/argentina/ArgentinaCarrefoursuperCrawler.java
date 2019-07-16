@@ -11,6 +11,7 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -19,6 +20,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -50,11 +53,12 @@ public class ArgentinaCarrefoursuperCrawler extends Crawler {
         .setUrl("https://supermercado.carrefour.com.ar/stock/")
         .setCookies(cookies)
         .setPayload(payload)
+        .setHeaders(headers)
         .setFollowRedirects(false)
         .setBodyIsRequired(false)
         .build();
 
-    List<Cookie> cookiesResponse = this.dataFetcher.post(session, request).getCookies();
+    List<Cookie> cookiesResponse = new FetcherDataFetcher().post(session, request).getCookies();
     for (Cookie c : cookiesResponse) {
       BasicClientCookie cookie = new BasicClientCookie(c.getName(), c.getValue());
       cookie.setDomain(HOST);
@@ -67,6 +71,8 @@ public class ArgentinaCarrefoursuperCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "CARREFOUR.html");
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
