@@ -8,7 +8,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.MathUtils;
 
 public class BrasilEletrumCrawler extends CrawlerRankingKeywords {
 
@@ -25,9 +24,9 @@ public class BrasilEletrumCrawler extends CrawlerRankingKeywords {
     String pageUrl = "https://www.eletrum.com.br/" + this.keywordEncoded + "?map=ft";
     this.currentDoc = fetchDocument(pageUrl);
 
-    Integer index = this.arrayProducts.size();
-    String urlApi = "https://www.eletrum.com.br/api/catalog_system/pub/products/search/" + this.keywordEncoded + "?map=ft&_from=" + index + "&_to="
-        + (index + 49) + "&O=OrderByTopSaleDESC";
+    Integer offset = this.arrayProducts.size();
+    String urlApi = "https://www.eletrum.com.br/api/catalog_system/pub/products/search/" + this.keywordEncoded + "?map=ft&_from=" + offset + "&_to="
+        + (offset + 49) + "&O=OrderByTopSaleDESC";
 
     JSONArray apiJson = fetchApiJson(urlApi);
 
@@ -62,7 +61,7 @@ public class BrasilEletrumCrawler extends CrawlerRankingKeywords {
   private String crawlProductUrl(JSONObject product) {
     String url = null;
 
-    if (product.has("link")) {
+    if (product.has("link") && !product.isNull("link")) {
       url = product.getString("link");
     }
 
@@ -72,7 +71,7 @@ public class BrasilEletrumCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(JSONObject product) {
     String internalPid = null;
 
-    if (product.has("productId")) {
+    if (product.has("productId") && !product.isNull("productId")) {
       internalPid = product.getString("productId");
     }
 
@@ -90,7 +89,7 @@ public class BrasilEletrumCrawler extends CrawlerRankingKeywords {
     Element totalElement = this.currentDoc.selectFirst(".resultado-busca-numero .value");
 
     if (totalElement != null) {
-      this.totalProducts = MathUtils.parseInt(totalElement.text());
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", null, null, false, false, 0);
     }
 
   }

@@ -10,10 +10,12 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
 public class BrasilEletrumRatingReviewCrawler extends RatingReviewCrawler {
+  private static final String STORE_KEY = "8ea7baa3-231d-4049-873e-ad5afd085ca4";
 
   public BrasilEletrumRatingReviewCrawler(Session session) {
     super(session);
@@ -28,13 +30,12 @@ public class BrasilEletrumRatingReviewCrawler extends RatingReviewCrawler {
       ratingReviews.setDate(session.getDate());
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
-      YourreviewsRatingCrawler yourReviews =
-          new YourreviewsRatingCrawler(session, cookies, logger, "8ea7baa3-231d-4049-873e-ad5afd085ca4", this.dataFetcher);
+      YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger, STORE_KEY, this.dataFetcher);
 
       if (skuJson.has("productId")) {
         String internalPid = Integer.toString(skuJson.getInt("productId"));
 
-        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "8ea7baa3-231d-4049-873e-ad5afd085ca4", this.dataFetcher);
+        Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, STORE_KEY, this.dataFetcher);
         Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating);
         Double avgRating = getTotalAvgRatingFromYourViews(docRating);
         AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
@@ -61,7 +62,8 @@ public class BrasilEletrumRatingReviewCrawler extends RatingReviewCrawler {
     Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
 
     if (rating != null) {
-      avgRating = Double.parseDouble(rating.attr("content"));
+      Double avg = MathUtils.parseDoubleWithDot((rating.attr("content")));
+      avgRating = avg != null ? avg : 0d;
     }
 
     return avgRating;
@@ -72,7 +74,8 @@ public class BrasilEletrumRatingReviewCrawler extends RatingReviewCrawler {
     Element totalRatingElement = docRating.selectFirst("meta[itemprop=ratingCount]");
 
     if (totalRatingElement != null) {
-      totalRating = Integer.parseInt(totalRatingElement.attr("content"));
+      Integer total = MathUtils.parseInt(totalRatingElement.attr("content"));
+      totalRating = total != null ? total : 0;
     }
 
     return totalRating;
