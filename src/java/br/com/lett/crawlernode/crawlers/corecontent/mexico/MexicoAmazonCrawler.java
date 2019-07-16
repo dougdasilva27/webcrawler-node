@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -14,13 +16,19 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -51,16 +59,9 @@ public class MexicoAmazonCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-  private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
-
-  @Override
-  public void handleCookiesBeforeFetch() {
-    this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
-  }
-
   @Override
   protected Document fetch() {
-    return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher));
   }
 
   @Override
@@ -229,7 +230,7 @@ public class MexicoAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document docMarketplace = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher));
+      Document docMarketplace = Jsoup.parse(fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher));
       docs.add(docMarketplace);
 
       headers.put("referer", urlMarketPlace);
@@ -240,7 +241,7 @@ public class MexicoAmazonCrawler extends Crawler {
       while (nextPage != null) {
         String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
 
-        Document nextDocMarketPlace = Jsoup.parse(amazonScraperUtils.fetchPage(nextUrl, headers, cookies, this.dataFetcher));
+        Document nextDocMarketPlace = Jsoup.parse(fetchPage(nextUrl, headers, cookies, this.dataFetcher));
         docs.add(nextDocMarketPlace);
 
         nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
@@ -525,7 +526,7 @@ public class MexicoAmazonCrawler extends Crawler {
         installments.put(1, frontPagePrice);
       }
 
-      prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDoubleWithDots(doc, "#price .a-text-strike, #priceblock_ourprice", true));
+      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, "#price .a-text-strike, #priceblock_ourprice", null, true, '.', session));
 
       Elements pricesElement = doc.select("div.a-popover-preload[id^=a-popover] > div > table:not([border]) tr");
 
@@ -557,4 +558,51 @@ public class MexicoAmazonCrawler extends Crawler {
     return prices;
   }
 
+  /**
+   * Fetch html from amazon
+   * 
+   * @param url
+   * @param headers
+   * @param cookies
+   * @param session
+   * @param dataFetcher
+   * @return
+   */
+  public String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
+    String content;
+
+    headers.put("authority", "www.amazon.com.mx");
+    headers.put(HttpHeaders.ACCEPT_ENCODING, "");
+    headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
+    headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
+    headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put(HttpHeaders.ACCEPT,
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
+
+    if (dataFetcher instanceof FetcherDataFetcher) {
+      Request request = RequestBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setCookies(cookies)
+          .setHeaders(headers)
+          // We send this selector fetcher try again when returns captcha
+          .setFetcheroptions(
+              FetcherOptionsBuilder.create()
+                  .mustUseMovingAverage(true)
+                  .setForbiddenCssSelector("#captchacharacters")
+                  .build()
+          )
+          .build();
+      content = dataFetcher.get(session, request).getBody();
+
+      if (content == null || content.isEmpty()) {
+        Request requestApache = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).build();
+        content = new ApacheDataFetcher().get(session, requestApache).getBody();
+      }
+    } else {
+      Request requestApache = RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(cookies).build();
+      content = dataFetcher.get(session, requestApache).getBody();
+    }
+
+    return content;
+  }
 }
