@@ -5,12 +5,14 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.Mercado
 
 public class MexicoMercadolibreheinzCrawler extends MercadolivreCrawler {
 
+  private final String URL = "https://listado.mercadolibre.com.mx/" + this.keywordWithoutAccents.replace(" ", "-") + "_Tienda_heinz#D[A:"
+      + this.keywordWithoutAccents.replace(" ", "+") + ",O:heinz]";
+
   public MexicoMercadolibreheinzCrawler(Session session) {
     super(session);
-    super.setStoreName("heinz");
-    super.setNextUrlHost("listado.mercadolibre.com.mx");
     super.setProductUrlHost("articulo.mercadolibre.com.mx");
-    super.setStoreType("Tienda");
+    super.setNextUrlHost("listado.mercadolibre.com.mx");
+    super.setUrl(URL);
   }
 
 }

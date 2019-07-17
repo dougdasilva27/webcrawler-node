@@ -5,11 +5,13 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.Mercado
 
 public class BrasilMercadolivremelittaCrawler extends MercadolivreCrawler {
 
+  private final String URL = "https://lista.mercadolivre.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + "_Loja_melitta#D[A:"
+      + this.keywordWithoutAccents.replace(" ", "+") + ",O:melitta]";
+
   public BrasilMercadolivremelittaCrawler(Session session) {
     super(session);
-    super.setStoreName("melitta");
-    super.setNextUrlHost("lista.mercadolivre.com.br");
+    super.setUrl(URL);
     super.setProductUrlHost("produto.mercadolivre.com.br");
-    super.setStoreType("Loja");
+    super.setNextUrlHost("lista.mercadolivre.com.br");
   }
 }

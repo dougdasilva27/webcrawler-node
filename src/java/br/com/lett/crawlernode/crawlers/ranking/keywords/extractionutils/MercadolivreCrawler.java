@@ -9,11 +9,10 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
-  private String storeName;
   private String nextUrlHost;
   private String nextUrl;
   private String productUrlHost;
-  private String storeType;
+  private String url;
 
   private static final String PRODUCTS_SELECTOR = ".results-item .item";
   private static final Integer PAGE_SIZE = 64;
@@ -23,20 +22,16 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     super.fetchMode = FetchMode.FETCHER;
   }
 
-  public void setProductUrlHost(String productUrlHost) {
-    this.productUrlHost = productUrlHost;
-  }
-
   public void setNextUrlHost(String nextUrlHost) {
     this.nextUrlHost = nextUrlHost;
   }
 
-  protected void setStoreName(String storeName) {
-    this.storeName = storeName;
+  public void setUrl(String url) {
+    this.url = url;
   }
 
-  public void setStoreType(String storeType) {
-    this.storeType = storeType;
+  public void setProductUrlHost(String productUrlHost) {
+    this.productUrlHost = productUrlHost;
   }
 
   @Override
@@ -44,16 +39,13 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     this.pageSize = PAGE_SIZE;
     this.log("Página " + this.currentPage);
 
-    String url = "https://" + nextUrlHost + "/" + this.keywordWithoutAccents.replace(" ", "-") + "_" + storeType + "_" + storeName + "#D[A:"
-        + this.keywordWithoutAccents.replace(" ", "+") + ",O:" + storeName + "]";
-
     // In this market we need to scrap url for next page
     // because the url format change
     if (this.currentPage > 1) {
       url = this.nextUrl;
     }
 
-    this.currentDoc = fetchDocument(url);
+    this.currentDoc = fetchDocument(this.url);
     this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", nextUrlHost);
     Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
     boolean ownStoreResults = this.currentDoc.select("#search-results-disclaimers .nav-search-zrp-msg").isEmpty();
