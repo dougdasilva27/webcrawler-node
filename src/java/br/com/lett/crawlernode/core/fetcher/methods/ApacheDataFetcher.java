@@ -227,7 +227,7 @@ public class ApacheDataFetcher implements DataFetcher {
         requestStats.setHasPassedValidation(false);
 
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + sanitizedUrl);
-        Logging.printLogWarn(logger, session, e.getMessage());
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       } catch (Exception e) {
         int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 
