@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -63,8 +64,11 @@ public class BrasilAgroverdesrCrawler extends Crawler {
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
         Offers offers = vtexUtil.scrapBuyBox(apiJSON);
-        List<String> eans = new ArrayList<>();
-        eans.add(ean);
+        List<String> eans = null;
+
+        if (ean != null) {
+          eans = Arrays.asList(ean);
+        }
 
         // Creating the product
         Product product = ProductBuilder.create()

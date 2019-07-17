@@ -31,8 +31,8 @@ public class BrasilAgroverdesrCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String productPid = e.attr("data-id");
-        String productUrl =
-            CrawlerUtils.scrapUrl(e, ".product-image a", "href", "https", "www.agroverdesr.com.br");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".product-image a", "href", "https",
+            "www.agroverdesr.com.br");
 
         saveDataProduct(null, productPid, productUrl);
 
@@ -82,12 +82,9 @@ public class BrasilAgroverdesrCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".resultado-busca-numero .value");
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", null, null, false, false, 0);
+    this.log("Total: " + this.totalProducts);
 
-    if (totalElement != null) {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", null, null, false, false, 0);
-
-    }
   }
 
 }
