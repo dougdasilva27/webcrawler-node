@@ -64,11 +64,7 @@ public class BrasilAgroverdesrCrawler extends Crawler {
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
         Offers offers = vtexUtil.scrapBuyBox(apiJSON);
-        List<String> eans = null;
-
-        if (ean != null) {
-          eans = Arrays.asList(ean);
-        }
+        List<String> eans = ean != null ? Arrays.asList(ean) : null;
 
         // Creating the product
         Product product = ProductBuilder.create()
