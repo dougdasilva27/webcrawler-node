@@ -42,7 +42,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
     // In this market we need to scrap url for next page
     // because the url format change
     if (this.currentPage > 1) {
-      url = this.nextUrl;
+      this.url = this.nextUrl;
     }
 
     this.currentDoc = fetchDocument(this.url);

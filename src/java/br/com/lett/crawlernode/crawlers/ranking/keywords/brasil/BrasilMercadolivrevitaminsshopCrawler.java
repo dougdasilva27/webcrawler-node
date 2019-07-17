@@ -11,6 +11,6 @@ public class BrasilMercadolivrevitaminsshopCrawler extends MercadolivreCrawler {
     super(session);
     super.setUrl(URL);
     super.setProductUrlHost("produto.mercadolivre.com.br");
-    super.setNextUrlHost("listado.mercadolibre.com.mx");
+    super.setNextUrlHost("lista.mercadolivre.com.br");
   }
 }
