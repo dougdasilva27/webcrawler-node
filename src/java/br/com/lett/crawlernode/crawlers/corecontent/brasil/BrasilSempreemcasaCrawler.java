@@ -25,6 +25,8 @@ public class BrasilSempreemcasaCrawler extends Crawler {
     super(session);
   }
 
+  private static final String IMAGES_HOST = "cdn2.shopify.com";
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
@@ -35,9 +37,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
     if (productItem != null) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       CategoryCollection categories = new CategoryCollection();
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(
-          productItem, ".product-item__img img", Arrays.asList("src"), "https:", "cdn.shopify.com"
-      );
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(productItem, ".product-item__img img", Arrays.asList("src"), "https", IMAGES_HOST);
       String name = CrawlerUtils.scrapStringSimpleInfo(productItem, ".product-item__title-text", false);
 
       Elements variations = productItem.select(".product-item__variants-item[data-variant]");
