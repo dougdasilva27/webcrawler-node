@@ -7,15 +7,12 @@ import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
 
 public class BrasilMixtelCrawler extends Crawler {
 
@@ -27,17 +24,10 @@ public class BrasilMixtelCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     List<Product> products = new ArrayList<>();
-    String internalPid = null;
-    Float price = null;
-    Prices prices = null;
-    boolean available = false;
-    CategoryCollection categories = new CategoryCollection();
-    Integer stock = null;
-    Marketplace marketplace = null;
-    List<String> eans = null;
 
     if (isProductPage(doc)) {
 
+      boolean available = false;
       String internalId = scrapInternalId(doc);
       String name = scrapName(doc);
       String primaryImage = scrapPrimaryImage(doc);
@@ -46,10 +36,9 @@ public class BrasilMixtelCrawler extends Crawler {
           ".widget_custom_html.panel-last-child"));
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name)
+          .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+          .build();
 
       products.add(product);
 
