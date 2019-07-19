@@ -15,7 +15,7 @@ public class BrasilMaisabracosCrawler extends CrawlerRankingKeywords {
     this.pageSize = 10;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.maisabracos.com.br/comprar-produtos";
+    String url = "https://www.maisabracos.com.br/" + this.keywordEncoded;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
