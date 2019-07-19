@@ -3,14 +3,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 
@@ -29,9 +28,12 @@ public class BrasilMixtelCrawler extends Crawler {
 
       boolean available = false;
       String internalId = scrapInternalId(doc);
-      String name = scrapName(doc);
-      String primaryImage = scrapPrimaryImage(doc);
-      String secondaryImages = scrapSecondaryImage(doc, primaryImage);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title", false);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".sow-image-container img", Arrays.asList("src"), "https",
+          "mixteldistribuidora.com.br");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".sow-image-container img", Arrays.asList("src"), "https",
+          "mixteldistribuidora.com.br",
+          primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".textwidget",
           ".widget_custom_html.panel-last-child"));
 
@@ -49,53 +51,12 @@ public class BrasilMixtelCrawler extends Crawler {
     return products;
   }
 
-  private String scrapSecondaryImage(Document doc, String primaryImage) {
-    Elements secondaryImagesElements = doc.select(".sow-image-container img");
-    JSONArray secondaryImages = new JSONArray();
-
-    for (int i = 0; i < secondaryImagesElements.size(); i++) {
-      String href = secondaryImagesElements.get(i).attr("src");
-
-      if (!href.equals(primaryImage)) {
-        secondaryImages.put(href);
-
-      }
-    }
-
-    return secondaryImages.toString();
-  }
-
-
-  private String scrapPrimaryImage(Document doc) {
-    String primaryImage = null;
-    Element primaryImageElement = doc.selectFirst(".sow-image-container img");
-
-    if (primaryImageElement != null) {
-      primaryImage = primaryImageElement.attr("src");
-    }
-
-    return primaryImage;
-  }
-
-  private String scrapName(Document doc) {
-    Element nameElement = doc.selectFirst(".product_title");
-    String name = null;
-
-    if (nameElement != null) {
-      name = nameElement.text();
-    }
-
-    return name;
-  }
-
-
   private String scrapInternalId(Document doc) {
     Element internalIdElement = doc.selectFirst(".product.type-product");
     String internalId = null;
 
     if (internalIdElement != null) {
-      internalId = internalIdElement.attr("id");
-      internalId = internalId.replaceAll("[^0-9]", "");
+      internalId = CommonMethods.getLast(internalIdElement.attr("id").split("-"));
     }
 
     return internalId;

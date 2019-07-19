@@ -1,9 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.Arrays;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilMixtelCrawler extends CrawlerRankingKeywords {
 
@@ -24,14 +27,10 @@ public class BrasilMixtelCrawler extends CrawlerRankingKeywords {
 
     if (products.size() > 0) {
 
-      if (this.totalProducts == 0) {
-        setTotalProducts();
-      }
-
       for (Element product : products) {
 
-        String internalId = crawlInternalPid(product);
-        String productUrl = crawlProductUrl(product);
+        String internalId = crawlInternalId(product);
+        String productUrl = CrawlerUtils.scrapUrl(product, "a", Arrays.asList("href"), "https", "mixteldistribuidora.com.br");
 
         saveDataProduct(internalId, null, productUrl);
 
@@ -49,26 +48,14 @@ public class BrasilMixtelCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
   }
 
-  private String crawlProductUrl(Element product) {
-    Element productAncor = product.selectFirst("a");
-    String url = null;
-
-    if (productAncor != null) {
-      url = productAncor.attr("href");
-    }
-
-    return url;
-  }
-
-  private String crawlInternalPid(Element product) {
-    String internalPid = null;
+  private String crawlInternalId(Element product) {
+    String internalId = null;
 
     if (product.hasAttr("id")) {
-      internalPid = product.attr("id");
-      internalPid = internalPid.replaceAll("[^0-9]", "");
+      internalId = CommonMethods.getLast(product.attr("id").split("-"));
     }
 
-    return internalPid;
+    return internalId;
   }
 
 }
