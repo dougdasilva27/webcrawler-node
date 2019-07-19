@@ -37,7 +37,7 @@ import models.prices.Prices;
 public class MexicoSorianasuperCrawler extends Crawler {
 
   private static final String DOMAIN = "superentucasa.soriana.com";
-  private static final String HOME_PAGE = "http://superentucasa.soriana.com";
+  private static final String HOME_PAGE = "https://superentucasa.soriana.com";
 
   public MexicoSorianasuperCrawler(Session session) {
     super(session);
@@ -46,7 +46,7 @@ public class MexicoSorianasuperCrawler extends Crawler {
 
   @Override
   public void handleCookiesBeforeFetch() {
-    Request request = RequestBuilder.create().setCookies(cookies).setUrl("http://superentucasa.soriana.com/default.aspx?p=13187&temprefer=2141442")
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(HOME_PAGE + "/default.aspx")
         .setFollowRedirects(false).build();
 
     this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, DOMAIN, "/", null, session, dataFetcher);
