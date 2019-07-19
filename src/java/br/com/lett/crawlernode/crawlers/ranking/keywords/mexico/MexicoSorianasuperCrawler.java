@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -15,21 +14,23 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+  private static final String PROTOCOL = "https";
   private static final String DOMAIN = "superentucasa.soriana.com";
 
   @Override
   protected void processBeforeFetch() {
-    Request request =
-        RequestBuilder.create().setCookies(cookies).setUrl("http://superentucasa.soriana.com/default.aspx").setFollowRedirects(false).build();
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(PROTOCOL + "://" + DOMAIN + "/default.aspx")
+        .setFollowRedirects(false).build();
 
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, DOMAIN, "/", null, session, new FetcherDataFetcher());
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, DOMAIN, "/", null, session, dataFetcher);
   }
 
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    String url = "http://" + DOMAIN + "/default.aspx?p=13365&postback=1&Txt_Bsq_Descripcion=" + this.keywordEncoded + "&cantCeldas=0&minCeldas=0";
+    String url = PROTOCOL + "://" + DOMAIN + "/default.aspx?p=13365&postback=1&Txt_Bsq_Descripcion=" + this.keywordEncoded
+        + "&cantCeldas=0&minCeldas=0";
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, cookies);
@@ -44,7 +45,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String internalId = crawlInternalId(e);
-        String productUrl = CrawlerUtils.scrapUrl(e, "a[href]:first-child", "href", "http:", DOMAIN);
+        String productUrl = CrawlerUtils.scrapUrl(e, "a[href]:first-child", "href", PROTOCOL, DOMAIN);
 
         saveDataProduct(internalId, null, productUrl);
 
