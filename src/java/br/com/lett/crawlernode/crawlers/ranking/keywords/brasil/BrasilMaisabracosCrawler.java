@@ -19,12 +19,10 @@ public class BrasilMaisabracosCrawler extends CrawlerRankingKeywords {
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".news-shelf ul li[layout]");
+    Elements products = this.currentDoc.select(".prateleira ul li[layout]");
 
     if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
-      }
+
       for (Element e : products) {
         String internalId = crawlInternalId(e);
         String productUrl = crawlProductUrl(e);
@@ -52,7 +50,7 @@ public class BrasilMaisabracosCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlInternalId(Element e) {
-    Element inputElement = e.selectFirst(".product-variation .pdt-id");
+    Element inputElement = e.selectFirst(".pdt-id");
     String internalId = null;
 
     if (inputElement != null) {
