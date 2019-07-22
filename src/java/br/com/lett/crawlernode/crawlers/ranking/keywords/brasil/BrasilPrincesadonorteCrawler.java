@@ -33,8 +33,8 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
       for (Element product : products) {
 
-        String internalPid = null;
-        String internalId = scrapInternalId(product);
+        String internalPid = scrapInternalPid(product);
+        String internalId = null;
         String productUrl = scrapProductUrl(product);
 
         saveDataProduct(internalId, internalPid, productUrl);
@@ -53,19 +53,19 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  private String scrapInternalId(Element product) {
+  private String scrapInternalPid(Element product) {
     Element ancorElement = product.selectFirst(".view-detail");
 
-    String internalId = null;
+    String internalPid = null;
     if (ancorElement != null) {
-      internalId = ancorElement.attr("id").replaceAll("[^0-9]", "");
+      internalPid = ancorElement.attr("id").replaceAll("[^0-9]", "");
     }
 
-    if (internalId == null) {
-      internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "[id^=product-price-]", "id").split("-"));
+    if (internalPid == null) {
+      internalPid = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "[id^=product-price-]", "id").split("-"));
     }
 
-    return internalId;
+    return internalPid;
   }
 
 
