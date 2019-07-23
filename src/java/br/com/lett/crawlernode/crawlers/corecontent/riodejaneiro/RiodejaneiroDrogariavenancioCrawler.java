@@ -42,8 +42,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
-
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product__breadcrumb .bread-crumb ul li[typeof=\"v:Breadcrumb\"]", true);
 
       // sku data in json
@@ -51,7 +49,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
-        String name = crawlName(jsonSku, skuJson); // because this site always show the principal name
+        String name = crawlName(skuJson); // because this site always show the principal name
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
@@ -63,11 +61,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
-
-        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
-
-        List<String> eans = new ArrayList<>();
-        eans.add(ean);
+        List<String> eans = VTEXCrawlersUtils.scrapEanFromProductAPI(apiJSON);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -85,37 +79,12 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
     return products;
   }
 
-  private String crawlName(JSONObject jsonSku, JSONObject skuJson) {
+  private String crawlName(JSONObject skuJson) {
     String name = null;
 
     if (skuJson.has("name") && !skuJson.isNull("name")) {
       name = skuJson.getString("name");
     }
-
-    // if (name != null && jsonSku.has("dimensions")) {
-    // JSONObject dimensions = jsonSku.getJSONObject("dimensions");
-    //
-    // if (dimensions.has("TAMANHO") && !dimensions.isNull("TAMANHO") &&
-    // !dimensions.get("TAMANHO").toString().equalsIgnoreCase("NA")) {
-    // name = name.concat(" ").concat(dimensions.get("TAMANHO").toString());
-    // }
-    //
-    // if (dimensions.has("COR") && !dimensions.isNull("COR") &&
-    // !dimensions.get("COR").toString().equalsIgnoreCase("NA")) {
-    // name = name.concat(" ").concat(dimensions.get("COR").toString());
-    // }
-    //
-    // if (dimensions.has("QUANTIDADE") && !dimensions.isNull("QUANTIDADE") &&
-    // !dimensions.get("QUANTIDADE").toString().equalsIgnoreCase("NA")) {
-    // name = name.concat(" ").concat(dimensions.get("QUANTIDADE").toString());
-    // }
-    //
-    // if (dimensions.has("VOLUME") && !dimensions.isNull("VOLUME") &&
-    // !dimensions.get("VOLUME").toString().equalsIgnoreCase("NA")) {
-    // name = name.concat(" ").concat(dimensions.get("VOLUME").toString());
-    // }
-    //
-    // }
 
     return name;
   }
