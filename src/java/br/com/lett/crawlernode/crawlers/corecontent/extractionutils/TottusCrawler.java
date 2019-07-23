@@ -59,7 +59,8 @@ public class TottusCrawler {
       Prices prices = crawlPrices(price, doc);
       boolean available = doc.select(".product-detail .out-of-stock").isEmpty();
       CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("src"), "http:", "s7d2.scene7.com");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".caption-img > img", Arrays.asList("data-src", "src"), "http:",
+          "s7d2.scene7.com");
       String secondaryImages = crawlSecondaryImagesByScript(doc, internalId, primaryImage);
       String description = crawlDescription(doc, internalId);
 
