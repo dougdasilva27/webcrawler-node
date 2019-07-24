@@ -100,10 +100,10 @@ public class BrasilKalungaCrawler extends Crawler {
 
   private Float crawlPrice(Document document) {
     Float price = null;
-    Element salePriceElement = document.select(".container-price h4").first();
+    Element salePriceElement = document.select("h3[itemprop=\"price\"]").first();
 
-    if (salePriceElement != null) {
-      price = MathUtils.parseFloatWithComma(salePriceElement.text());
+    if (salePriceElement != null && salePriceElement.hasAttr("content")) {
+      price = MathUtils.parseFloatWithDots(salePriceElement.attr("content"));
     }
 
     return price;
