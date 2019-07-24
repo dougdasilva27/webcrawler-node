@@ -37,6 +37,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
 
   private static final String HOME_PAGE = "http://www.bistekonline.com.br/";
   private static final String HOST = "www.bistekonline.com.br";
+  private static final String CEP = "88066-000";
 
   public FlorianopolisBistekCrawler(Session session) {
     super(session);
@@ -72,7 +73,7 @@ public class FlorianopolisBistekCrawler extends Crawler {
       this.cookies.add(cookie);
     }
 
-    Request request2 = RequestBuilder.create().setUrl("https://www.bistekonline.com.br/store/SetStoreByZipCode?zipCode=88066-000").setProxy(proxyUsed)
+    Request request2 = RequestBuilder.create().setUrl("https://www.bistekonline.com.br/store/SetStoreByZipCode?zipCode=" + CEP).setProxy(proxyUsed)
         .setCookies(cookies).setHeaders(headers).build();
     this.dataFetcher.get(session, request2);
 
@@ -106,7 +107,8 @@ public class FlorianopolisBistekCrawler extends Crawler {
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".main-content #lblPrecoPor strong", null, true, ',', session);
       boolean available = price != null;
       CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = crawlPrimaryImage(doc);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".collum.images #hplAmpliar:not([href=\"#\"]), #big_photo_container img",
+          Arrays.asList("href", "src"), "https", HOST);
       String secondaryImages = null;
       String description = crawlDescription(doc);
       Prices prices = crawlPrices(doc, price);
@@ -162,21 +164,6 @@ public class FlorianopolisBistekCrawler extends Crawler {
     }
 
     return name;
-  }
-
-  private static String crawlPrimaryImage(Document document) {
-    String primaryImage = null;
-    Element primaryImageElement = document.select(".collum.images #hplAmpliar").first();
-
-    if (primaryImageElement != null) {
-      primaryImage = primaryImageElement.attr("href").trim();
-
-      if (primaryImage.equals("#")) { // no image for product
-        return null;
-      }
-    }
-
-    return CrawlerUtils.completeUrl(primaryImage, "https", HOST);
   }
 
   /**
