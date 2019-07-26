@@ -204,7 +204,7 @@ public class MexicoRappichedrauiCrawler extends Crawler {
 
   /**
    * - Get the json of api, this api has all info of product - Spected url like this
-   * https://www.rappi.com.br/search?store_type=market&query=2089952206
+   * https://www.rappi.com.br/product/900020401_2092884955?store_type=carrefour
    * 
    * @return
    */
