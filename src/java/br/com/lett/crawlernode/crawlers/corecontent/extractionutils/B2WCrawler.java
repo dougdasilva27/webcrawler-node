@@ -26,7 +26,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -99,8 +98,6 @@ public class B2WCrawler extends Crawler {
 
     // Pega só o que interessa do json da api
     JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
-
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "AMERICANAS.html");
 
     // verifying if url starts with home page because on crawler seed,
     // some seeds can be of another store
