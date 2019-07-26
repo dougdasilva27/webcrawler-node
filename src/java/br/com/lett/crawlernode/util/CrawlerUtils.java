@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.util;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -474,6 +476,20 @@ public class CrawlerUtils {
     StringBuilder sanitizedUrl = new StringBuilder();
 
     if (url != null) {
+      boolean hasHost = url.contains(host);
+
+      // This is necessary when url contains a host different than host on parameters
+      // We not use URI always because if url is in this format: www.imgcdn.com/image.png
+      // This library don't recognize "www.imgcdn.com" as a host, only if starts with "//"
+      if (!hasHost) {
+        try {
+          URI uri = new URI(url);
+          hasHost = uri.getHost() != null;
+        } catch (URISyntaxException e) {
+          Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e));
+        }
+      }
+
       if (url.startsWith("../")) {
         url = CommonMethods.getLast(url.split("\\.\\.\\/"));
       }
@@ -482,10 +498,10 @@ public class CrawlerUtils {
         protocol += ":";
       }
 
-      if (!url.startsWith("http") && url.contains(host)) {
+      if (!url.startsWith("http") && hasHost) {
         sanitizedUrl.append(protocol.endsWith("//") || url.startsWith("//") ? protocol : protocol + "//").append(url);
-      } else if (!url.contains(host) && !url.startsWith("http")) {
-        sanitizedUrl.append(protocol.endsWith("//") || url.startsWith("//") ? protocol : protocol + "//").append(host)
+      } else if (!hasHost && !url.startsWith("http")) {
+        sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host)
             .append(url.startsWith("/") ? url : "/" + url);
       } else {
         sanitizedUrl.append(url);

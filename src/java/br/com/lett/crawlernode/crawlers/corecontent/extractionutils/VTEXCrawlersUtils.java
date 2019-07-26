@@ -72,7 +72,7 @@ public class VTEXCrawlersUtils {
   }
 
   public VTEXCrawlersUtils(Session session, String store, String homePage, List<Cookie> cookies, Integer cardDiscount, Integer bankDiscount,
-      DataFetcher dataFetcher) {
+                           DataFetcher dataFetcher) {
     this.session = session;
     this.sellerNameLower = store;
     this.homePage = homePage;
@@ -725,6 +725,16 @@ public class VTEXCrawlersUtils {
     }
 
     return offers;
+  }
+
+  public static List<String> scrapEanFromProductAPI(JSONObject productAPI) {
+    List<String> eans = null;
+
+    if (productAPI.has("Ean") && !productAPI.isNull("Ean")) {
+      eans = Arrays.asList(productAPI.get("Ean").toString());
+    }
+
+    return eans;
   }
 
 }

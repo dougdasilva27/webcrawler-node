@@ -147,14 +147,19 @@ public class BrasilFarmaciamixCrawler extends Crawler {
   }
 
   /**
-   * Quando este crawler foi feito não achei imagens secundarias
    * 
    * @param doc
    * @return
    */
+
   private String crawlSecondaryImages(Document doc) {
-    String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
+    Elements secondaryImageElement = doc.select("#gal1 a:not(:first-child)");
+    String secondaryImages = null;
+
+    for (Element element : secondaryImageElement) {
+      secondaryImagesArray.put(element.attr("data-image"));
+    }
 
     if (secondaryImagesArray.length() > 0) {
       secondaryImages = secondaryImagesArray.toString();

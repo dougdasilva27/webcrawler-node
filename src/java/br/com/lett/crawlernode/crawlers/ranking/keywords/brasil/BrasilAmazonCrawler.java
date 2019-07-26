@@ -19,12 +19,19 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
   @Override
+  protected void processBeforeFetch() {
+    super.processBeforeFetch();
+
+    this.cookies = this.amazonScraperUtils.handleCookiesBeforeFetch("https://www.amazon.com.br/", cookies, dataFetcher);
+  }
+
+  @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    String url =
-        "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage + "&keywords=" + this.keywordEncoded + "&ie=UTF8";
+    String url = "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage +
+        "&keywords=" + this.keywordEncoded + "&ie=UTF8";
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, dataFetcher));

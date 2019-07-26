@@ -75,7 +75,10 @@ public class ApacheDataFetcher implements DataFetcher {
 
     int attempt = 1;
 
-    while (attempt <= session.getMaxConnectionAttemptsCrawler() && (response.getBody() == null || response.getBody().isEmpty())) {
+    boolean mustContinue = true;
+
+    while (attempt <= session.getMaxConnectionAttemptsCrawler() && ((request.bodyIsRequired() && (response.getBody() == null || response.getBody()
+        .isEmpty())) || !request.bodyIsRequired()) && mustContinue) {
       RequestsStatistics requestStats = new RequestsStatistics();
       requestStats.setAttempt(attempt);
 
@@ -213,6 +216,7 @@ public class ApacheDataFetcher implements DataFetcher {
         response = new ResponseBuilder().setBody(FetchUtilities.processContent(pageContent, session).trim())
             .setRedirecturl(redirectStrategy.getFinalURL()).setProxyused(randProxy).setHeaders(responseHeaders)
             .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE))).build();
+        mustContinue = false;
         requestStats.setHasPassedValidation(true);
 
         FetchUtilities.sendRequestInfoLog(request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
@@ -223,7 +227,7 @@ public class ApacheDataFetcher implements DataFetcher {
         requestStats.setHasPassedValidation(false);
 
         Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request: " + sanitizedUrl);
-        Logging.printLogWarn(logger, session, e.getMessage());
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       } catch (Exception e) {
         int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 

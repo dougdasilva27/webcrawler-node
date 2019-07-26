@@ -4,6 +4,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
   public PeruPlazaveaCrawler(Session session) {
@@ -15,11 +17,12 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.plazavea.com.pe/Busca/?ft=" + this.keywordEncoded + "&O=OrderByPriceASC&PageNumber=" + this.currentPage;
+    String url = "https://www.plazavea.com.pe/Busca/?PageNumber=" + this.currentPage + "&ft="
+        + CommonMethods.encondeStringURLToISO8859(this.location, logger, session) + "&sc=1";
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".prateleira ul li[layout] .g-producto[data-prod]");
+    Elements products = this.currentDoc.select("li[layout] .g-producto[data-prod]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -28,7 +31,7 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String productPid = e.attr("data-prod");
-        String productUrl = crawlProductUrl(e);
+        String productUrl = CrawlerUtils.scrapUrl(e, "a.Showcase__name", "href", "https", "www.plazavea.com.pe");
 
         saveDataProduct(null, productPid, productUrl);
 
@@ -58,16 +61,5 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
 
       this.log("Total da busca: " + this.totalProducts);
     }
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.selectFirst("a.g-nombre-prod");
-    if (url != null) {
-      productUrl = url.attr("href");
-    }
-
-    return productUrl;
   }
 }

@@ -5,11 +5,13 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.Mercado
 
 public class BrasilMercadolivrecotyCrawler extends MercadolivreCrawler {
 
+  private final String URL = "https://lista.mercadolivre.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + "_Loja_coty#D[A:"
+      + this.keywordWithoutAccents.replace(" ", "+") + ",O:coty]";
+
   public BrasilMercadolivrecotyCrawler(Session session) {
     super(session);
-    super.setStoreName("coty");
-    super.setNextUrlHost("lista.mercadolivre.com.br");
     super.setProductUrlHost("produto.mercadolivre.com.br");
-    super.setStoreType("Loja");
+    super.setNextUrlHost("lista.mercadolivre.com.br");
+    super.setUrl(URL);
   }
 }

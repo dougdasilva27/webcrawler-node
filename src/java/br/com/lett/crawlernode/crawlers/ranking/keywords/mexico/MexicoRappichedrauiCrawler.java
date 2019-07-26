@@ -77,8 +77,8 @@ public class MexicoRappichedrauiCrawler extends CrawlerRankingKeywords {
   private String crawlInternalId(JSONObject product) {
     String internalId = null;
 
-    if (product.has("id")) {
-      internalId = product.getString("id");
+    if (product.has("id") && !product.isNull("id")) {
+      internalId = product.get("id").toString();
     }
 
     return internalId;
@@ -87,8 +87,8 @@ public class MexicoRappichedrauiCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(JSONObject product) {
     String internalPid = null;
 
-    if (product.has("product_id")) {
-      internalPid = product.getString("product_id");
+    if (product.has("product_id") && !product.isNull("product_id")) {
+      internalPid = product.get("product_id").toString();
     }
 
     return internalPid;

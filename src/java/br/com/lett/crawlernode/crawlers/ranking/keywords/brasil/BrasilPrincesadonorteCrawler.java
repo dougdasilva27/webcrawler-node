@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -12,6 +13,7 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
   public BrasilPrincesadonorteCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
@@ -31,8 +33,8 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
       for (Element product : products) {
 
-        String internalPid = null;
-        String internalId = scrapInternalId(product);
+        String internalPid = scrapInternalPid(product);
+        String internalId = null;
         String productUrl = scrapProductUrl(product);
 
         saveDataProduct(internalId, internalPid, productUrl);
@@ -51,19 +53,19 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  private String scrapInternalId(Element product) {
+  private String scrapInternalPid(Element product) {
     Element ancorElement = product.selectFirst(".view-detail");
 
-    String internalId = null;
+    String internalPid = null;
     if (ancorElement != null) {
-      internalId = ancorElement.attr("id").replaceAll("[^0-9]", "");
+      internalPid = ancorElement.attr("id").replaceAll("[^0-9]", "");
     }
 
-    if (internalId == null) {
-      internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "[id^=product-price-]", "id").split("-"));
+    if (internalPid == null) {
+      internalPid = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "[id^=product-price-]", "id").split("-"));
     }
 
-    return internalId;
+    return internalPid;
   }
 
 

@@ -24,8 +24,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
   @Override
   public String fetchPage(String url, Session session) {
     Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).setHeaders(this.headers).mustSendContentEncoding(false)
-        .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
-        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY)).build();
+        .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).setForbiddenCssSelector("#px-captcha").build())
+        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.BUY)).build();
 
     String content = this.dataFetcher.get(session, request).getBody();
 

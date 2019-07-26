@@ -25,6 +25,8 @@ public class BrasilSempreemcasaCrawler extends Crawler {
     super(session);
   }
 
+  private static final String IMAGES_HOST = "cdn.shopify.com";
+
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
@@ -35,9 +37,8 @@ public class BrasilSempreemcasaCrawler extends Crawler {
     if (productItem != null) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       CategoryCollection categories = new CategoryCollection();
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(
-          productItem, ".product-item__img img", Arrays.asList("src"), "https:", "cdn.shopify.com"
-      );
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(productItem, ".product-item__img img", Arrays.asList("data-src"), "https", IMAGES_HOST);
       String name = CrawlerUtils.scrapStringSimpleInfo(productItem, ".product-item__title-text", false);
 
       Elements variations = productItem.select(".product-item__variants-item[data-variant]");
@@ -88,8 +89,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
     Prices prices = new Prices();
 
     Float price = CrawlerUtils.scrapFloatPriceFromHtml(
-        doc, ".product-item__variant-data[data-variant=" + internalId + "] .price__price", null, true, ',', session
-    );
+        doc, ".product-item__variant-data[data-variant=" + internalId + "] .price__price", null, true, ',', session);
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();

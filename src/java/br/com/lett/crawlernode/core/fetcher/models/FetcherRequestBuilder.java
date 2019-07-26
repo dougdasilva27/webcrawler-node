@@ -11,6 +11,8 @@ public class FetcherRequestBuilder {
   private boolean retrieveStatistics;
   private boolean ignoreStatusCode;
   private boolean bodyIsRequired;
+  private String requiredCssSelector;
+  private String forbiddenCssSelector;
   private List<Integer> statusCodesToIgnore = new ArrayList<>();
   private FetcherRequestsParameters parameters;
   private FetcherRequestForcedProxies forcedProxies;
@@ -68,6 +70,16 @@ public class FetcherRequestBuilder {
     return this;
   }
 
+  public FetcherRequestBuilder setRequiredCssSelector(String requiredCssSelector) {
+    this.requiredCssSelector = requiredCssSelector;
+    return this;
+  }
+
+  public FetcherRequestBuilder setForbiddenCssSelector(String forbiddenCssSelector) {
+    this.forbiddenCssSelector = forbiddenCssSelector;
+    return this;
+  }
+
   public FetcherRequest build() {
     FetcherRequest fetcher = new FetcherRequest();
     fetcher.setUrl(this.url);
@@ -76,9 +88,11 @@ public class FetcherRequestBuilder {
     fetcher.setRequestType(this.requestType);
     fetcher.setForcedProxies(this.forcedProxies);
     fetcher.setParameters(this.parameters);
-    fetcher.setIgnoreStatusCode(ignoreStatusCode);
-    fetcher.setBodyIsRequired(bodyIsRequired);
-    fetcher.setStatusCodesToIgnore(statusCodesToIgnore);
+    fetcher.setIgnoreStatusCode(this.ignoreStatusCode);
+    fetcher.setBodyIsRequired(this.bodyIsRequired);
+    fetcher.setStatusCodesToIgnore(this.statusCodesToIgnore);
+    fetcher.setRequiredCssSelector(this.requiredCssSelector);
+    fetcher.setForbiddenCssSelector(this.forbiddenCssSelector);
 
     return fetcher;
   }

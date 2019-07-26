@@ -72,6 +72,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
         JSONObject json = extractJsonFromScriptTag(script);
         if (json.has("@type") && json.getString("@type").equalsIgnoreCase("product")) {
           String internalId = crawlInternalId(json);
+          String internalPid = crawInternalPid(doc);
           String name = crawlName(json);
           Float price = crawlPrice(json);
           Prices prices = crawlPrices(price, doc);
@@ -79,10 +80,23 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
           String primaryImage = crawlPrimaryImage(json);
 
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(null).setName(name)
-              .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null)
-              .setDescription(description).setStock(null).setMarketplace(new Marketplace()).build();
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(null)
+              .setDescription(description)
+              .setStock(null)
+              .setMarketplace(new Marketplace())
+              .build();
 
           products.add(product);
         }
@@ -97,6 +111,18 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     return products;
 
   }
+
+  private String crawInternalPid(Document doc) {
+    Element internalPidElement = doc.selectFirst("input[name='product']");
+    String internalPid = null;
+
+    if (internalPidElement != null) {
+      internalPid = internalPidElement.val();
+    }
+
+    return internalPid;
+  }
+
 
   private JSONObject extractJsonFromScriptTag(Element script) {
     String strJson = script.toString();

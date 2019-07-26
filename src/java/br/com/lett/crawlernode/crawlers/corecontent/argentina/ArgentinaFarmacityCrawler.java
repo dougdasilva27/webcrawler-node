@@ -145,6 +145,12 @@ public class ArgentinaFarmacityCrawler extends Crawler {
       description.append(elementSpecs.html());
     }
 
+    Element productDescription = doc.selectFirst(".product-description-container .productDescription");
+
+    if (productDescription != null) {
+      description.append(productDescription.text());
+    }
+
     return description.toString();
   }
 

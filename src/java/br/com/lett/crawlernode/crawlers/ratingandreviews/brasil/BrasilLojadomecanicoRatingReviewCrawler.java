@@ -30,7 +30,8 @@ public class BrasilLojadomecanicoRatingReviewCrawler extends RatingReviewCrawler
       Integer totalNumOfEvaluations = 0;
       Double avgRating = 0.0;
 
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, true, false);
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".container script[type=\"application/ld+json\"]", "", null, true, false);
+
       if (json.has("aggregateRating")) {
         json = json.getJSONObject("aggregateRating");
 
