@@ -214,7 +214,8 @@ public class MexicoRappichedrauiCrawler extends Crawler {
     String productId = null;
 
     if (productUrl.contains("_")) {
-      productId = CommonMethods.getLast(productUrl.split("_")).replaceAll("[^0-9]", "");
+      String ids = productUrl.split("\\?")[0];
+      productId = CommonMethods.getLast(ids.split("_")).replaceAll("[^0-9]", "");
     }
 
     if (productId != null && storeId != null) {
