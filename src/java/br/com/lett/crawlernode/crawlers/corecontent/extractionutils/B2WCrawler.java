@@ -26,6 +26,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -98,6 +99,8 @@ public class B2WCrawler extends Crawler {
 
     // Pega só o que interessa do json da api
     JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "AMERICANAS.html");
 
     // verifying if url starts with home page because on crawler seed,
     // some seeds can be of another store
@@ -173,11 +176,12 @@ public class B2WCrawler extends Crawler {
     JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
     JSONObject offers = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
 
-    boolean isBuyBox = !doc.select(".buybox-b .seller-name-container input[type=radio]").isEmpty();
-
     // Getting informations from sellers.
     if (offers.has(internalId)) {
       JSONArray sellerInfo = offers.getJSONArray(internalId);
+
+      // The Business logic is: if we have more than 1 seller is buy box
+      boolean isBuyBox = sellerInfo.length() > 1;
 
       for (int i = 0; i < sellerInfo.length(); i++) {
         JSONObject buyBoxJson = new JSONObject();
@@ -214,7 +218,7 @@ public class B2WCrawler extends Crawler {
       }
     }
 
-    if (!doc.select(".buybox-b-nav-item.is-link").isEmpty()) {
+    if (listBuyBox.size() > 1) {
       this.headers.put(HttpHeaders.REFERER, session.getOriginalURL());
       Document docSellers = Jsoup.parse(fetchPage(this.homePage + "parceiros/" + internalPid + "?productSku=" + internalId, session));
       Elements moreOffers = docSellers.select(".more-offers-table tbody tr .seller-info-cell .seller-info a");
