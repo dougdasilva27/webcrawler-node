@@ -213,7 +213,7 @@ public class MexicoRappichedrauiCrawler extends Crawler {
     JSONObject productsInfo = new JSONObject();
     String productId = null;
 
-    if (productUrl.contains("_")) {
+    if (productUrl.contains("_") && productUrl.contains("?")) {
       String ids = productUrl.split("\\?")[0];
       productId = CommonMethods.getLast(ids.split("_")).replaceAll("[^0-9]", "");
     }
