@@ -109,17 +109,17 @@ public class CornershopCrawler {
   private String crawlName(JSONObject json) {
     String name = null;
 
-    if (json.has("name")) {
+    if (json.has("name") && !json.isNull("name")) {
       name = json.getString("name");
 
       if (json.has("package") && json.get("package") instanceof String) {
         name = name.concat(" ").concat(json.getString("package"));
       }
 
-      if (json.has("brand")) {
+      if (json.has("brand") && !json.isNull("brand")) {
         JSONObject brand = json.getJSONObject("brand");
 
-        if (brand.has("name")) {
+        if (brand.has("name") && !brand.isNull("name")) {
           String brandName = brand.get("name").toString().trim();
 
           if (!brandName.isEmpty()) {
