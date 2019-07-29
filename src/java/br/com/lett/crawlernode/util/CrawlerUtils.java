@@ -1121,18 +1121,9 @@ public class CrawlerUtils {
         price = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
       } else {
         if (stringWithFloatLayout) {
-          String text = priceObj.toString().replaceAll("[^0-9.]", "");
-
-          if (!text.isEmpty()) {
-            price = Float.parseFloat(text);
-          }
-        } else {
-
-          if (priceWithComma) {
-            price = MathUtils.parseFloatWithComma(priceObj.toString());
-          } else {
-            price = MathUtils.parseFloatWithDots(priceObj.toString());
-          }
+          price = MathUtils.parseFloatWithDots(priceObj.toString());
+        } else if (priceWithComma) {
+          price = MathUtils.parseFloatWithComma(priceObj.toString());
         }
       }
     }

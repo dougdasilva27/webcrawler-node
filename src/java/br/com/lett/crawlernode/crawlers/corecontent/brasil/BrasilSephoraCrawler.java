@@ -71,7 +71,9 @@ public class BrasilSephoraCrawler extends Crawler {
 
         String internalId = crawlInternalId(jsonSku);
         Element variantElement = crawlVariationElement(doc, i);
-        String name = crawlName(chaordicJson, variantElement);
+        String name = variantElement != null ? crawlName(chaordicJson, variantElement)
+            : CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
+        String primaryImage = crawlPrimaryImage(doc, variantElement);
 
         Map<String, Prices> marketplaceMap = crawlMarketplace(jsonSku, doc);
         boolean available = jsonSku.has("availability") && jsonSku.get("availability").toString().contains("InStock")
@@ -80,7 +82,6 @@ public class BrasilSephoraCrawler extends Crawler {
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
         Prices prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
         Float price = crawlPrice(prices);
-        String primaryImage = crawlPrimaryImage(doc, variantElement);
         String secondaryImages = crawlSecondaryImages(doc);
         String ean = crawlEan(jsonSku);
 
@@ -145,7 +146,7 @@ public class BrasilSephoraCrawler extends Crawler {
     Elements variations = doc.select("#product-info-grouped li[id]");
 
     if (variations.size() > productPosition) {
-      variantElement = doc.selectFirst("#product-info-grouped li[id=add-product-option-" + (productPosition + 1) + "]");
+      variantElement = doc.selectFirst("#product-info-grouped li[id]:nth-child(" + (productPosition + 1) + ")");
     }
 
     return variantElement;
@@ -181,12 +182,16 @@ public class BrasilSephoraCrawler extends Crawler {
   private String crawlPrimaryImage(Document doc, Element variantElement) {
     String primaryImage = null;
 
-    String variationImage = variantElement.attr("data-base-image").trim();
-    String variantId = crawlVariationId(variantElement);
-    Element image = doc.selectFirst("#variant-" + variantId + "[data-zoom-image]");
+    Element image = doc.selectFirst("#image-main[data-zoom-image]");
 
-    if (image == null || variationImage.isEmpty()) {
-      image = doc.selectFirst("#image-main[data-zoom-image]");
+    if (variantElement != null) {
+      String variationImage = variantElement.attr("data-base-image").trim();
+      String variantId = crawlVariationId(variantElement);
+      Element variantImage = doc.selectFirst("#variant-" + variantId + "[data-zoom-image]");
+
+      if (variantImage != null && !variationImage.isEmpty()) {
+        image = variantImage;
+      }
     }
 
     if (image != null) {
@@ -276,7 +281,7 @@ public class BrasilSephoraCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (jsonSku.has("price")) {
-      Float price = Float.parseFloat(jsonSku.getString("price"));
+      Float price = CrawlerUtils.getFloatValueFromJSON(jsonSku, "price", true, false);
       prices.setBankTicketPrice(price);
 
       Map<Integer, Float> mapInstallments = new HashMap<>();
