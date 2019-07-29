@@ -39,54 +39,65 @@ public class BrasilNutrirCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      Elements variations = getVariations(doc, ".prod_select #produto_sel option");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".p_info > .p_tags_list .n1");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".p_img .img_primary img", Arrays.asList("src"), "https",
+          "www.nutrir-sc.com.br");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "[id^=fotos] .galeria li:not(:last-child) a",
+          Arrays.asList("href"), "https://", "www.nutrir-sc.com.br", primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".tabs > div#definicao-do-produto",
+          ".tabs > div#caracteristicas-tecnicas"));
 
-      // scrap everything that is independent of availability
-      String internalPid = null;
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_title h1", true);
-      CategoryCollection categories =
-          CrawlerUtils.crawlCategories(doc, ".p_info > .p_tags_list .n1");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".p_img .img_primary img",
-          Arrays.asList("src"), "https", "www.nutrir-sc.com.br");;
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, "[id^=fotos] .galeria li:not(:last-child) a",
-              Arrays.asList("href"), "https://", "www.nutrir-sc.com.br", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays
-          .asList(".tabs > div#definicao-do-produto", ".tabs > div#caracteristicas-tecnicas"));
+      Elements variations = getVariations(doc, ".prod_select #produto_sel option[value]");
 
       if (variations.isEmpty()) {
+        String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_title h1", true);
         String internalId = scrapInternalId(doc, ".produto.produto_show");
         boolean available = false;
 
         // Creating the product
-        Product product =
-            ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-                .setInternalPid(internalPid).setName(name).setAvailable(available)
-                .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-                .setSecondaryImages(secondaryImages).setDescription(description).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setName(name)
+            .setAvailable(available)
+            .setPrices(new Prices())
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .build();
 
         products.add(product);
 
       } else {
         for (Element e : variations) {
-          String internalId = e.attr("value");
-          name = scrapVariationName(e);
+          String internalId = e.val();
+          String name = scrapVariationName(e);
           Integer stock = scrapStock(e);
           Float price = scrapPrice(e);
           Prices prices = crawlPrices(price, e);
-          boolean available = stock != 0;
+          boolean available = stock != null && stock > 0;
 
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-              .setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-              .setDescription(description).setStock(stock).build();
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(stock)
+              .build();
 
           products.add(product);
         }
@@ -123,17 +134,17 @@ public class BrasilNutrirCrawler extends Crawler {
   }
 
   private String scrapVariationName(Element e) {
-	  String name = e.ownText();
-	  
-	  if(name.contains("(R$")) {
-		  name = name.split("\\(R\\$")[0].trim();
-	  } else if(name.contains("(de")) {
-		  name = name.split("\\(de")[0].trim();
-	  }
-	  
-	  return name;
+    String name = e.ownText();
+
+    if (name.contains("(R$")) {
+      name = name.split("\\(R\\$")[0].trim();
+    } else if (name.contains("(de")) {
+      name = name.split("\\(de")[0].trim();
+    }
+
+    return name;
   }
-  
+
   private Integer scrapStock(Element e) {
     Integer stock = 0;
     String attr = e.attr("qtde");
