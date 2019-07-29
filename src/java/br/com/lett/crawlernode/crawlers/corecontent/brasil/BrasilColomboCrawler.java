@@ -51,7 +51,7 @@ public class BrasilColomboCrawler extends Crawler {
     if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && (productElement != null)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      Elements selections = doc.select(".dados-itens-table tr[id]");
+      Elements selections = doc.select(".dados-itens-table tr[data-item]");
 
       // Pid
       String internalPid = null;
@@ -256,7 +256,7 @@ public class BrasilColomboCrawler extends Crawler {
     Offers offers = new Offers();
     try {
       Element nameElement = doc.selectFirst(".dados-itens-table-estoque .label-linha-item .btn-show-info-seller");
-      Element sellerIdElement = doc.selectFirst(".item-codigo-seller");
+      Element sellerIdElement = doc.selectFirst("input[name=codigoSeller]");
       Element elementPrice = doc.selectFirst(".label-preco-item");
       Double mainPrice = price.doubleValue();
       String sellerFullName = null;
