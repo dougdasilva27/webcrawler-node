@@ -54,7 +54,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       String internalId = crawlInternalId(doc);
       String internalPid = null;
       String name = crawlName(doc);
-      Float price = crawlPrice(doc);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.preco-final span.valor, span.preco-por span.valor", null, true, ',', session);
       Prices prices = crawlPrices(price, internalId, doc);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);
