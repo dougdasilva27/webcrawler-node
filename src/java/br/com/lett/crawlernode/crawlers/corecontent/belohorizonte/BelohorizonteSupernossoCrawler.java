@@ -215,8 +215,8 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
   private CategoryCollection crawlCategories(JSONObject json) {
     CategoryCollection categories = new CategoryCollection();
 
-    String mainCategoryId = json.has("mainCategoryId") ? json.getString("mainCategoryId") : null;
-    String mainCategoryName = json.has("mainCategoryName") ? json.getString("mainCategoryName") : null;
+    String mainCategoryId = json.has("mainCategoryId") && !json.isNull("mainCategoryId") ? json.getString("mainCategoryId") : null;
+    String mainCategoryName = json.has("mainCategoryName") && !json.isNull("mainCategoryName") ? json.getString("mainCategoryName") : null;
 
     if (mainCategoryName != null) {
       categories.add(mainCategoryName);
