@@ -26,7 +26,7 @@ public class BrasilBemolCrawler extends CrawlerRankingKeywords {
     // chama função de pegar o html
     this.currentDoc = fetchDocument(url, cookies);
 
-    Elements products = this.currentDoc.select("#wd16 .row li .wd-product-line");
+    Elements products = this.currentDoc.select(".row li .wd-product-line");
 
     // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
