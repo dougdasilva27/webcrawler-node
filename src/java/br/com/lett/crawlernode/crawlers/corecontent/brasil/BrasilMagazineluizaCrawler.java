@@ -9,6 +9,9 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -69,7 +72,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
   public Product crawlProduct(Document doc) {
     // Sku info in json on html
-    JSONObject skuJsonInfo = crawlFullSKUInfo(doc, "digitalData = ");
+    JSONObject skuJsonInfo = crawlFullSKUInfo(doc);
 
     // InternalId
     String internalId = crawlInternalId(skuJsonInfo);
@@ -99,7 +102,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     boolean available = crawlAvailability(doc, marketplace, internalId);
 
     // Price
-    Float price = crawlPrice(skuJsonInfo, available);
+    Float price = available ? CrawlerUtils.getFloatValueFromJSON(skuJsonInfo, "priceTemplate", false, true) : null;
 
     // Prices
     Prices prices = crawlPrices(price, doc, skuJsonInfo);
@@ -171,32 +174,12 @@ public class BrasilMagazineluizaCrawler extends Crawler {
   private String crawlInternalId(JSONObject skuJson) {
     String internalId = null;
 
-    if (skuJson.has("idSku")) {
-      internalId = skuJson.getString("idSku");
+    if (skuJson.has("sku")) {
+      internalId = skuJson.getString("sku");
     }
 
     return internalId;
   }
-
-  // private String crawlInternalPid(Document doc) {
-  // String internalPid = null;
-  // Elements scripts = doc.select("script");
-  //
-  // for(Element e : scripts) {
-  // String html = e.outerHtml().toLowerCase();
-  //
-  // if(html.contains("oas_query") && html.contains("productid")) {
-  // int x = html.indexOf("productid=") + 10;
-  // int y = html.indexOf("&", x);
-  //
-  // internalPid = html.substring(x, y);
-  // break;
-  // }
-  // }
-  //
-  // return internalPid;
-  // }
-
 
   /**
    * Crawl name in front page
@@ -373,8 +356,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     if (marketplaceName != null) {
       String sellerName = marketplaceName.attr("content").trim();
       if (!sellerName.equalsIgnoreCase(SELLER_NAME)
-          && (skuInfo == null || (skuInfo.has("salePrice") && skuInfo.get("salePrice") instanceof Double))) {
-        Float sellerPrice = crawlPrice(skuInfo, true);
+          && (skuInfo == null || (skuInfo.has("priceTemplate")))) {
+        Float sellerPrice = CrawlerUtils.getFloatValueFromJSON(skuInfo, "priceTemplate", false, true);
 
         JSONObject sellerJSON = new JSONObject();
         sellerJSON.put("name", sellerName);
@@ -394,24 +377,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
   }
 
   /**
-   * Crawl price
-   * 
-   * @param skuInfo
-   * @param available
-   * @return
-   */
-  private Float crawlPrice(JSONObject skuInfo, boolean available) {
-    Float price = null;
-
-    if (available && skuInfo.has("salePrice") && skuInfo.get("salePrice") instanceof Double) {
-      Double priceDouble = skuInfo.getDouble("salePrice");
-      price = priceDouble.floatValue();
-    }
-
-    return price;
-  }
-
-  /**
    * if has element in html and has no marketplace
    * 
    * @param doc
@@ -419,7 +384,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    * @return
    */
   private boolean crawlAvailability(Document doc, Marketplace marketplace, String internalId) {
-    Element elementAvailable = doc.select(".button__buy-product-detail").first();
+    Element elementAvailable = doc.selectFirst(".button__buy-product-detail");
 
     if (elementAvailable != null && marketplace.isEmpty()) {
       String data = elementAvailable.attr("data-product");
@@ -444,13 +409,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       Map<Integer, Float> installmentsPriceMap = new HashMap<>();
       Map<Integer, Float> installmentsPriceMapShop = new HashMap<>();
 
-      String cashPriceKey = "cashPrice";
+      prices.setBankTicketPrice(CrawlerUtils.getDoubleValueFromJSON(skuInfo, "bestPriceTemplate", false, true));
 
-      if (skuInfo.has(cashPriceKey) && skuInfo.get(cashPriceKey) instanceof Double) {
-        Double aVista = skuInfo.getDouble(cashPriceKey);
-
-        prices.setBankTicketPrice(aVista);
-      } else {
+      if (prices.getBankTicketPrice() == null) {
         prices.setBankTicketPrice(price);
       }
 
@@ -512,46 +473,27 @@ public class BrasilMagazineluizaCrawler extends Crawler {
   }
 
   /**
-   * eg:
-   * 
-   * "reference":"com Função Limpa Fácil", "extendedWarranty":true, "idSku":"0113562",
-   * "idSkuFull":"011356201", "salePrice":429,
-   * "imageUrl":"http://i.mlcdn.com.br//micro-ondas-midea-liva-mtas4-30l-com-funcao-limpa-facil/v/210x210/011356201.jpg",
-   * "fullName":"micro%20ondas%20midea%20liva%20mtas4%2030l%20-%20com%20funcao%20limpa%20facil",
-   * "title":"Micro-ondas Midea Liva MTAS4 30L", "cashPrice":407.55, "brand":"midea",
-   * "stockAvailability":true
-   * 
+   * @param document
    * @return a json object containing all sku informations in this page.
    */
-  private JSONObject crawlFullSKUInfo(Document document, String token) {
-    Elements scriptTags = document.getElementsByTag("script");
-    JSONObject skuJsonProduct = new JSONObject();
+  private JSONObject crawlFullSKUInfo(Document document) {
     JSONObject skuJson = new JSONObject();
 
-    for (Element tag : scriptTags) {
-      String html = tag.outerHtml();
+    String dataProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".js-header-product[data-product]", "data-product");
+    if (dataProduct != null) {
+      JsonObject jsonObject = new JsonObject();
 
-      if (html.contains(token)) {
-        int x = html.indexOf(token) + token.length();
-        int y = html.indexOf("};", x) + 1;
-
-        String json = html.substring(x, y).replace(" ", "").replaceAll("\n", "").replace("':{", "\":{").replace("':'", "\":\"").replace("',", "\",")
-            .replace(",'", ",\"").replace("'}", "\"}").replace("{'", "{\"").replace("window.location.host", "\"\"")
-            .replace("window.location.protocol", "\"\"").replace("window.location.pathname", "\"\"").replace("document.referrer", "\"\"")
-            .replace("encodeURIComponent('", "\"").replace("'),", "\",").replace("':", "\":");
-
-        skuJson = CrawlerUtils.stringToJson(json);
+      // We use Gson in this case because this json has duplicate keys
+      // Gson unify those values
+      try {
+        jsonObject = (new JsonParser()).parse(dataProduct).getAsJsonObject();
+      } catch (JsonSyntaxException e) {
+        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
+
+      skuJson = CrawlerUtils.stringToJson(jsonObject.toString());
     }
 
-    if (skuJson.has("page")) {
-      JSONObject jsonPage = skuJson.getJSONObject("page");
-
-      if (jsonPage.has("product")) {
-        skuJsonProduct = jsonPage.getJSONObject("product");
-      }
-    }
-
-    return skuJsonProduct;
+    return skuJson;
   }
 }
