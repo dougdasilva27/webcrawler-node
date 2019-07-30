@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -134,12 +135,9 @@ public class MexicoChedrauiCrawler extends Crawler {
   private Float crawlPrice(Document document) {
     Float price = null;
 
-    String priceText = null;
     Element salePriceElement = document.select(".price-colour-final-pdp").last();
-
     if (salePriceElement != null) {
-      priceText = salePriceElement.ownText();
-      price = Float.parseFloat(priceText.replaceAll("\\$", "").replaceAll(",", ""));
+      price = MathUtils.parseFloatWithDots(salePriceElement.ownText());
     }
 
     return price;
