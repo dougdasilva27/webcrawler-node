@@ -22,6 +22,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -854,7 +856,9 @@ public class CrawlerUtils {
 
     if (str.trim().startsWith("{") && str.trim().endsWith("}")) {
       try {
-        json = new JSONObject(str.trim());
+        // We use gson to parse because this library treats "\n" and duplicate keys
+        JsonObject gson = ((JsonObject) new JsonParser().parse(str.trim()));
+        json = new JSONObject(gson.toString());
       } catch (Exception e1) {
         Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
