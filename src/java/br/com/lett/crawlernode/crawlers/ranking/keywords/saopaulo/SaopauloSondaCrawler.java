@@ -26,7 +26,7 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".product-list .product");
+    Elements products = this.currentDoc.select(".product-list .product:first-child");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -35,12 +35,12 @@ public class SaopauloSondaCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
 
-        String urlProduct = CrawlerUtils.scrapUrl(e, ".product--info > a", "href", "https", "www.sondadelivery.com.br");
-        String internalId = crawlInternalId(urlProduct);
+        String productUrl = CrawlerUtils.scrapUrl(e, ".product--info > a", "href", "https", "www.sondadelivery.com.br");
+        String internalId = productUrl != null ? crawlInternalId(productUrl) : null;
 
-        saveDataProduct(internalId, null, urlProduct);
+        saveDataProduct(internalId, null, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
