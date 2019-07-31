@@ -88,9 +88,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
         products.add(product);
       }
 
-    } else
-
-    {
+    } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
