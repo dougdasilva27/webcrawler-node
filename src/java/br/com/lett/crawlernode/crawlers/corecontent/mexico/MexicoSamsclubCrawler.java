@@ -136,18 +136,19 @@ public class MexicoSamsclubCrawler extends Crawler {
   private String crawlName(JSONObject apiJson) {
     StringBuilder name = new StringBuilder();
 
-    if (apiJson.has("sku")) {
+    if (apiJson.has("sku") && !apiJson.isNull("sku")) {
       JSONObject sku = apiJson.getJSONObject("sku");
-      if (sku.has("displayName")) {
+
+      if (sku.has("displayName") && !sku.isNull("displayName")) {
         name.append(sku.getString("displayName").trim());
       }
 
-      if (sku.has("brand")) {
+      if (sku.has("brand") && !sku.isNull("brand")) {
         name.append(" ");
         name.append(sku.getString("brand").trim());
       }
 
-      if (sku.has("shopTicketDesc")) {
+      if (sku.has("shopTicketDesc") && !sku.isNull("shopTicketDesc")) {
         name.append(" ");
         name.append(sku.getString("shopTicketDesc").trim());
       }
