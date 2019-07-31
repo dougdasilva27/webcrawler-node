@@ -174,8 +174,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
   private String crawlInternalId(JSONObject skuJson) {
     String internalId = null;
 
-    if (skuJson.has("sku")) {
-      internalId = skuJson.getString("sku");
+    if (skuJson.has("sku") && !skuJson.isNull("sku")) {
+      internalId = skuJson.get("sku").toString();
     }
 
     return internalId;
