@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -13,16 +10,18 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 /**
- * Date: 10/07/2019
+ * Date: 31/07/2019
  * 
- * @author gabriel
+ * @author Joao Pedro
  *
  */
 public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
 
-  private static final String API_URL = "https://api.heylabs.io/graphql";
-  private static final String SUBSIDIARY_ID = "11";
-  private static final String COMPANY_ID = "6486bb697694a5aed9c0b7729734372f";
+  private static final String API_URL = "https://superon.lifeapps.com.br/api/v1/app";
+  private static final String COMPANY_ID = "6f0ae38d-50cd-4873-89a5-6861467b5f52";
+  private static final String APP_ID = "dccca000-b2ea-11e9-a27c-b76c91df9dd6cc64548c0cbad6cf58d4d3bbd433142b";
+  private static final String FORMA_PAGAMENTO = "2001546a-9851-4393-bb68-7c04e932fa4c";
+  private JSONArray search = new JSONArray();
 
   public BrasilJcdistribuicaoCrawler(Session session) {
     super(session);
@@ -34,17 +33,12 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    JSONObject search = fetchProductsFromAPI();
+    search = fetchProductsFromAPI();
 
-    if (search.has("items") && search.getJSONArray("items").length() > 0) {
-      JSONArray products = search.getJSONArray("items");
+    if (search.length() > 0) {
 
-      if (this.totalProducts == 0) {
-        setTotalProducts(search);
-      }
-
-      for (int i = 0; i < products.length(); i++) {
-        JSONObject product = products.getJSONObject(i);
+      for (int i = 0; i < search.length(); i++) {
+        JSONObject product = search.getJSONObject(i);
 
         String internalPid = crawlInternalPid(product);
         String internalId = crawlInternalId(product);
@@ -65,21 +59,23 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-
   }
 
-  protected void setTotalProducts(JSONObject search) {
-    if (search.has("pagination") && search.get("pagination") instanceof JSONObject) {
-      this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(search.getJSONObject("pagination"), "total", 0);
-      this.log("Total da busca: " + this.totalProducts);
-    }
+  @Override
+  protected boolean hasNextPage() {
+    return search.length() >= this.pageSize;
   }
 
-  private String crawlInternalId(JSONObject product) {
+  private String crawlInternalId(JSONObject json) {
     String internalId = null;
 
-    if (product.has("id") && !product.isNull("id")) {
-      internalId = product.get("id").toString();
+    if (json.has("id_produto_erp") && !json.isNull("id_produto_erp")) {
+      String idProdutoErp = json.get("id_produto_erp").toString();
+
+      if (idProdutoErp.contains("|")) {
+        String[] idProdutoErpArray = idProdutoErp.split("\\|");
+        internalId = idProdutoErpArray[1].concat("-").concat(idProdutoErpArray[0]);
+      }
     }
 
     return internalId;
@@ -88,71 +84,65 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(JSONObject product) {
     String internalPid = null;
 
-    if (product.has("factoryCode") && !product.isNull("factoryCode")) {
-      internalPid = product.get("factoryCode").toString();
+    if (product.has("idcadastroextraproduto") && !product.isNull("idcadastroextraproduto")) {
+      internalPid = product.get("idcadastroextraproduto").toString();
     }
 
     return internalPid;
   }
 
   // url must be in this format:
-  // https://jcdistribuicao.maxb2b.com.br/{subsidiaryId}/search/{barCode}?id={cpde}
+  // https://jcdistribuicao.superon.app/commerce/6f0ae38d-50cd-4873-89a5-6861467b5f52/produto/WHISKY-JOHNNIE-WALKER-18-ANOS-750ML-1NawxZ3t/
   private String crawlProductUrl(JSONObject product) {
     String productUrl = null;
+    String host = "https://jcdistribuicao.superon.app";
 
-    if (product.has("barCode") && !product.isNull("barCode") && product.has("code") && !product.isNull("code")) {
-      productUrl = "https://jcdistribuicao.maxb2b.com.br/" + SUBSIDIARY_ID +
-          "/search/" + product.get("barCode") + "?id=" + product.get("code");
+    if (product.has("slug") && !product.isNull("slug")) {
+      String slug = product.get("slug").toString();
+      productUrl = host;
+
+      productUrl = productUrl
+          .concat("/")
+          .concat("commerce")
+          .concat("/")
+          .concat(COMPANY_ID)
+          .concat("/")
+          .concat("produto")
+          .concat("/")
+          .concat(slug);
     }
+
 
     return productUrl;
   }
 
-  private JSONObject fetchProductsFromAPI() {
-    JSONObject products = new JSONObject();
-
-    JSONObject payload = new JSONObject();
-    payload.put("operationName", "products");
-
-    // this field was extracted on api call, this will not change
-    payload.put("query", "query products($subsidiaryId: String, $campaignId: String, $sectionId: String, $subsectionId: String, $offset: Int, "
-        + "$limit: Int, $search: String, $paymentPlanId: String, $billingTypeId: String, $inCampaign: Boolean, $supplierId: String) {\n  "
-        + "products(subsidiaryId: $subsidiaryId, campaignId: $campaignId, sectionId: $sectionId, subsectionId: $subsectionId, offset: $offset, "
-        + "limit: $limit, search: $search, paymentPlanId: $paymentPlanId, billingTypeId: $billingTypeId, inCampaign: $inCampaign, supplierId: "
-        + "$supplierId) {\n    items {\n      ...BasicProduct\n      __typename\n    }\n    pagination {\n      ...BasicPagination\n      __typename\n"
-        + "    }\n    __typename\n  }\n}\n\nfragment BasicProduct on Product {\n  id\n  code\n  barCode\n  isAvailable\n  name\n  image\n  price\n  "
-        + "formerPrice\n  pricePerUnit\n  showStock\n  validateStock\n  quantityInStock\n  wrapper\n  unit\n  multiplier\n  factoryCode\n  originalCode\n  "
-        + "hasCampaign\n  campaignMessage\n  campaignCode\n  __typename\n}\n\nfragment BasicPagination on Pagination {\n  total\n  "
-        + "offset\n  limit\n  __typename\n}\n");
-
-    JSONObject variables = new JSONObject();
-    variables.put("limit", 20);
-    variables.put("offset", this.arrayProducts.size());
-    variables.put("search", this.location);
-    variables.put("subsidiaryId", SUBSIDIARY_ID);
-
-    payload.put("variables", variables);
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-    headers.put("CompanyId", COMPANY_ID);
+  private JSONArray fetchProductsFromAPI() {
+    JSONArray products = new JSONArray();
+    String url = API_URL
+        .concat("/")
+        .concat(APP_ID)
+        .concat("/")
+        .concat("listaprodutosf")
+        .concat("/")
+        .concat(COMPANY_ID)
+        .concat("?sk=")
+        .concat(this.keywordEncoded)
+        .concat("&page=")
+        .concat(Integer.toString(this.currentPage - 1))
+        .concat("&formapagamento=")
+        .concat(FORMA_PAGAMENTO)
+        .concat("&canalVenda=WEB");
 
     Request request = RequestBuilder.create()
-        .setUrl(API_URL)
+        .setUrl(url)
         .setCookies(cookies)
-        .setHeaders(headers)
-        .setPayload(payload.toString())
         .mustSendContentEncoding(false)
         .build();
 
-    JSONObject apiResponse = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+    JSONObject apiResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-    if (apiResponse.has("data") && apiResponse.get("data") instanceof JSONObject) {
-      JSONObject data = apiResponse.getJSONObject("data");
-
-      if (data.has("products") && data.get("products") instanceof JSONObject) {
-        products = data.getJSONObject("products");
-      }
+    if (apiResponse.has("dados") && apiResponse.get("dados") instanceof JSONArray) {
+      products = apiResponse.getJSONArray("dados");
     }
 
     return products;
