@@ -63,7 +63,7 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return search.length() >= 20;
+    return search.length() >= this.pageSize;
   }
 
   private String crawlInternalId(JSONObject product) {
@@ -83,8 +83,8 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(JSONObject product) {
     String internalPid = null;
 
-    if (product.has("idcadastroextraproduto")) {
-      internalPid = product.getString("idcadastroextraproduto");
+    if (product.has("idcadastroextraproduto") && product.isNull("idcadastroextraproduto")) {
+      internalPid = product.get("idcadastroextraproduto").toString();
     }
 
     return internalPid;
@@ -93,24 +93,24 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
   // url must be in this format:
   // https://jcdistribuicao.superon.app/commerce/6f0ae38d-50cd-4873-89a5-6861467b5f52/produto/WHISKY-JOHNNIE-WALKER-18-ANOS-750ML-1NawxZ3t/
   private String crawlProductUrl(JSONObject product) {
-    String productUrl = "";
-    String slug = null;
+    String productUrl = null;
     String host = "https://jcdistribuicao.superon.app";
 
-    if (product.has("slug")) {
-      slug = product.getString("slug");
+    if (product.has("slug") && !product.isNull("slug")) {
+      String slug = product.get("slug").toString();
+      productUrl = host;
+
+      productUrl = productUrl
+          .concat("/")
+          .concat("commerce")
+          .concat("/")
+          .concat(COMPANY_ID)
+          .concat("/")
+          .concat("produto")
+          .concat("/")
+          .concat(slug);
     }
 
-    productUrl = productUrl
-        .concat(host)
-        .concat("/")
-        .concat("commerce")
-        .concat("/")
-        .concat(COMPANY_ID)
-        .concat("/")
-        .concat("produto")
-        .concat("/")
-        .concat(slug);
 
     return productUrl;
   }

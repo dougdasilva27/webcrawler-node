@@ -66,18 +66,23 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
     // https://superon.lifeapps.com.br/api/v2/app/dccca000-b2ea-11e9-a27c-b76c91df9dd6cc64548c0cbad6cf58d4d3bbd433142b/fornecedor/6f0ae38d-50cd-4873-89a5-6861467b5f52/produto/DROPS-HALLS-21X1-28GR-MENTA-PRATA-jxmXNL6F?idformapagamento=2001546a-9851-4393-bb68-7c04e932fa4c&disableSimilares=false&canalVenda=WEB
 
     String originalUrl = session.getOriginalURL();
-    String[] partUrl = null;
-    String slugUrl = null;
+    String apiUrl = null;
 
     if (originalUrl.contains("produto/")) {
-      partUrl = originalUrl.split("produto/");
-      slugUrl = partUrl[1];
-      slugUrl = slugUrl.replace("/", "");
+      String[] partUrl = originalUrl.split("produto/");
+      String slugUrl = partUrl[1].replace("/", "");
+
+      apiUrl = API_URL
+          .concat(APP_ID)
+          .concat("/fornecedor/")
+          .concat(COMPANY_ID)
+          .concat("/produto/")
+          .concat(slugUrl)
+          .concat("?idformapagamento=")
+          .concat(FORMA_PAGAMENTO)
+          .concat("&disableSimilares=false&canalVenda=WEB");
     }
 
-    String apiUrl = API_URL.concat(APP_ID).concat("/fornecedor/").concat(COMPANY_ID).concat("/produto/").concat(slugUrl).concat("?idformapagamento=")
-        .concat(FORMA_PAGAMENTO)
-        .concat("&disableSimilares=false&canalVenda=WEB");
 
     Request request = RequestBuilder.create()
         .setUrl(apiUrl)
@@ -85,9 +90,8 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
         .mustSendContentEncoding(false)
         .build();
 
-    JSONObject apiResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-    return apiResponse;
+    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
@@ -138,13 +142,10 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
 
   private List<String> scrapEan(String internalId) {
     List<String> eans = new ArrayList<>();
-    String ean = null;
-    String[] eanArray = null;
 
     if (internalId.contains("-")) {
-      eanArray = internalId.split("-");
-      ean = eanArray[1];
-      eans.add(ean);
+      String[] eanArray = internalId.split("-");
+      eans.add(eanArray[1]);
     }
 
     return eans;
@@ -152,12 +153,10 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
 
   private String crawlInternalId(JSONObject json) {
     String internalId = null;
-    String idProdutoErp = null;
-    String[] idProdutoErpArray = null;
 
     if (json.has("id_produto_erp") && !json.isNull("id_produto_erp")) {
-      idProdutoErp = json.get("id_produto_erp").toString();
-      idProdutoErpArray = idProdutoErp.split("\\|");
+      String idProdutoErp = json.get("id_produto_erp").toString();
+      String[] idProdutoErpArray = idProdutoErp.split("\\|");
       internalId = idProdutoErpArray[1].concat("-").concat(idProdutoErpArray[0]);
     }
 
@@ -192,7 +191,7 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
   private String crawlInternalPid(JSONObject json) {
     String internalPid = null;
 
-    if (json.has("idcadastroextraproduto")) {
+    if (json.has("idcadastroextraproduto") && !json.isNull("idcadastroextraproduto")) {
       internalPid = json.getString("idcadastroextraproduto");
     }
 
@@ -220,7 +219,10 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
         }
       }
 
-      primaryImage = primaryImageList.get(0);
+      if (!primaryImageList.isEmpty()) {
+        primaryImage = primaryImageList.get(0);
+
+      }
     }
 
     return primaryImage;
