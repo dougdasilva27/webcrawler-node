@@ -66,15 +66,16 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
     return search.length() >= this.pageSize;
   }
 
-  private String crawlInternalId(JSONObject product) {
+  private String crawlInternalId(JSONObject json) {
     String internalId = null;
-    String idProdutoErp = null;
-    String[] idProdutoErpArray = null;
 
-    if (product.has("id_produto_erp") && !product.isNull("id_produto_erp")) {
-      idProdutoErp = product.get("id_produto_erp").toString();
-      idProdutoErpArray = idProdutoErp.split("\\|");
-      internalId = idProdutoErpArray[1].concat("-").concat(idProdutoErpArray[0]);
+    if (json.has("id_produto_erp") && !json.isNull("id_produto_erp")) {
+      String idProdutoErp = json.get("id_produto_erp").toString();
+
+      if (idProdutoErp.contains("|")) {
+        String[] idProdutoErpArray = idProdutoErp.split("\\|");
+        internalId = idProdutoErpArray[1].concat("-").concat(idProdutoErpArray[0]);
+      }
     }
 
     return internalId;
@@ -83,7 +84,7 @@ public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(JSONObject product) {
     String internalPid = null;
 
-    if (product.has("idcadastroextraproduto") && product.isNull("idcadastroextraproduto")) {
+    if (product.has("idcadastroextraproduto") && !product.isNull("idcadastroextraproduto")) {
       internalPid = product.get("idcadastroextraproduto").toString();
     }
 

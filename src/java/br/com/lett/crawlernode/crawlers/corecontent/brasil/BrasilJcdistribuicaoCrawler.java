@@ -156,8 +156,11 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
 
     if (json.has("id_produto_erp") && !json.isNull("id_produto_erp")) {
       String idProdutoErp = json.get("id_produto_erp").toString();
-      String[] idProdutoErpArray = idProdutoErp.split("\\|");
-      internalId = idProdutoErpArray[1].concat("-").concat(idProdutoErpArray[0]);
+
+      if (idProdutoErp.contains("|")) {
+        String[] idProdutoErpArray = idProdutoErp.split("\\|");
+        internalId = idProdutoErpArray[1].concat("-").concat(idProdutoErpArray[0]);
+      }
     }
 
     return internalId;
@@ -204,7 +207,7 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
 
     JSONObject json = fetchJsonImages(HOST_API_IMAGES_URL, internalPid);
 
-    if (json.has("imagens")) {
+    if (json.has("imagens") && !json.isNull("imagens")) {
       JSONArray images = json.getJSONArray("imagens");
 
       for (Object object : images) {
@@ -231,7 +234,7 @@ public class BrasilJcdistribuicaoCrawler extends Crawler {
   private String crawlDescription(JSONObject json) {
     StringBuilder description = new StringBuilder();
 
-    if (json.has("descricaolonga")) {
+    if (json.has("descricaolonga") && !json.isNull("descricaolonga")) {
       description.append(json.get("descricaolonga").toString());
     }
 
