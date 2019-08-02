@@ -59,7 +59,7 @@ public class ArgentinaGpsfarmaCrawler extends CrawlerRankingKeywords {
     Elements products = this.currentDoc.select(".products-grid .item");
 
     if (this.currentPage == 1) {
-      String redirectUrl = CrawlerUtils.crawlFinalUrl(url, session);
+      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
 
       if (!url.equals(redirectUrl)) {
         this.categoryUrl = redirectUrl;

@@ -1058,12 +1058,13 @@ public class CrawlerUtils {
    * @param session
    * @return
    */
-  public static String crawlFinalUrl(String url, Session session) {
-    if (url.equals(session.getRedirectedToURL(url)) || session.getRedirectedToURL(url) == null) {
-      return url;
+  public static String getRedirectedUrl(String url, Session session) {
+    String redirectedUrl = session.getRedirectedToURL(url);
+    if (redirectedUrl != null && !url.equalsIgnoreCase(redirectedUrl)) {
+      return redirectedUrl;
     }
 
-    return session.getRedirectedToURL(url);
+    return url;
   }
 
   /**

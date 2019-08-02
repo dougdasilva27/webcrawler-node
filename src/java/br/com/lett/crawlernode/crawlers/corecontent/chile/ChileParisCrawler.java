@@ -61,7 +61,7 @@ public class ChileParisCrawler extends Crawler {
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       String description = crawlDescription(doc);
-      String url = CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session);
+      String url = CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session);
 
       Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))

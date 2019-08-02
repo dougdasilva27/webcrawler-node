@@ -60,7 +60,7 @@ public class SaopauloPanvelCrawler extends Crawler {
       String name = crawlName(productJson, dataLayer);
       Float price = available ? crawlPrice(productJson, dataLayer) : null;
       Prices prices = crawlPrices(price, productJson, dataLayer);
-      String url = internalId != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
+      String url = internalId != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
 
       // Creating the product
       Product product = ProductBuilder.create()
