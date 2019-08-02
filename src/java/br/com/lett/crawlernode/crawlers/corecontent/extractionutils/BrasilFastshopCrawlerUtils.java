@@ -19,7 +19,7 @@ import br.com.lett.crawlernode.util.Logging;
 public class BrasilFastshopCrawlerUtils {
 
   public static String crawlPartnerId(Session session) {
-    String redirectUrl = CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session);
+    String redirectUrl = CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session);
     String partnerId = null;
 
     String[] tokens = redirectUrl.split("/");

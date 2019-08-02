@@ -90,7 +90,7 @@ public class BrasilPoloarCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String finalUrl =
-            internalId != null && !internalId.isEmpty() ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
+            internalId != null && !internalId.isEmpty() ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
 
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
 

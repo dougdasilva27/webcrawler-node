@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.prices.Prices;
 
 public class BrasilMixtelCrawler extends Crawler {
 
@@ -38,8 +39,15 @@ public class BrasilMixtelCrawler extends Crawler {
           ".widget_custom_html.panel-last-child"));
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name)
-          .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setAvailable(available)
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setPrices(new Prices())
           .build();
 
       products.add(product);

@@ -32,7 +32,7 @@ public class RiodejaneiroSuperprixCrawler extends CrawlerRankingKeywords {
     this.currentDoc = fetchDocument(url);
 
     if (this.currentPage == 1) {
-      String redirectUrl = CrawlerUtils.crawlFinalUrl(url, session);
+      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
 
       if (!url.equals(redirectUrl)) {
         this.categoryUrl = redirectUrl;

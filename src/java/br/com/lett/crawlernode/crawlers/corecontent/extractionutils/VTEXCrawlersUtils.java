@@ -379,12 +379,12 @@ public class VTEXCrawlersUtils {
         if (seller.has(SELLER_NAME) && seller.has(SELLER_PRICE) && seller.has(SELLER_AVAILABLE_QUANTITY)
             && seller.get(SELLER_AVAILABLE_QUANTITY) instanceof Integer) {
 
-          if (seller.getInt(SELLER_AVAILABLE_QUANTITY) < 1) {
+          Float price = CrawlerUtils.getFloatValueFromJSON(json, SELLER_PRICE, true, false);
+          if ((seller.getInt(SELLER_AVAILABLE_QUANTITY) < 1) || price == null || price <= 0) {
             continue;
           }
 
           String nameSeller = seller.getString(SELLER_NAME).toLowerCase().trim();
-          Float price = CrawlerUtils.getFloatValueFromJSON(json, SELLER_PRICE, true, false);
           boolean isDefaultSeller =
               seller.has(IS_DEFAULT_SELLER) && seller.get(IS_DEFAULT_SELLER) instanceof Boolean && seller.getBoolean(IS_DEFAULT_SELLER);
           marketplace.put(nameSeller, crawlPrices(internalId, price, json, isDefaultSeller, usePriceApi));

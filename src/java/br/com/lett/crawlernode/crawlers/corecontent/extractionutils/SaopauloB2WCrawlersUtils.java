@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class SaopauloB2WCrawlersUtils {
 
@@ -39,11 +40,10 @@ public class SaopauloB2WCrawlersUtils {
       if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("};")) {
 
         int x = json.indexOf("_ =") + 3;
-        int y = json.indexOf("};", x);
+        int y = json.lastIndexOf("};");
 
         json = json.substring(x, y + 1);
-
-        skus = new JSONObject(json);
+        skus = CrawlerUtils.stringToJson(json);
 
         break;
       }

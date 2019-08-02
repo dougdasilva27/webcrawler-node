@@ -37,10 +37,10 @@ public class ColombiaLarebajaCrawler extends Crawler {
       String internalId = crawlInternalId(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripciones h1", true);
 
-      Float priceUnique = CrawlerUtils.scrapSimplePriceFloat(doc, ".pricened", false);
-      Float price = priceUnique == null
-          ? CrawlerUtils.scrapSimplePriceFloat(doc, "div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora", false)
-          : priceUnique;
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc,
+          ".pricened, div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora, [id^=subtotal-producto-unidad-]",
+          null, false, ',', session);
+
 
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = crawlCategories(doc);

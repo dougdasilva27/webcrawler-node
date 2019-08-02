@@ -59,7 +59,7 @@ public class GPACrawler {
    * @param store - "ex" to extra and "pa" to paodeacucar
    */
   public GPACrawler(Logger logger, Session session, String homePage, String homePageHttp, String storeId, List<Cookie> cookies, String store,
-      DataFetcher dataFetcher) {
+                    DataFetcher dataFetcher) {
     this.logger = logger;
     this.session = session;
     this.homePage = homePage;
@@ -73,13 +73,11 @@ public class GPACrawler {
   public List<Product> extractInformation() throws Exception {
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(session.getOriginalURL())) {
+    String productUrl = session.getOriginalURL();
+    JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
+
+    if (jsonSku.has("id")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-      // Url
-      String productUrl = session.getOriginalURL();
-
-      JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
 
       String internalId = crawlInternalId(jsonSku);
       String internalPid = crawlInternalPid(jsonSku);
@@ -114,21 +112,6 @@ public class GPACrawler {
 
     return products;
   }
-
-  /*******************************
-   * Product page identification *
-   *******************************/
-
-  private boolean isProductPage(String url) {
-    if (url.contains("/produto/")) {
-      return true;
-    }
-    return false;
-  }
-
-  /*******************
-   * General methods *
-   *******************/
 
   private String crawlInternalId(JSONObject json) {
     String internalId = null;

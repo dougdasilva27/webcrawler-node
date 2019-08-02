@@ -1,67 +1,62 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.apache.http.cookie.Cookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 
 public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
-  private List<Cookie> cookies = new ArrayList<>();
 
   public ColombiaExitoCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
-  @Override
-  protected void processBeforeFetch() {
-    super.processBeforeFetch();
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.exito.com/", null, ".exito.com", "/", cookies, session, null, dataFetcher);
-  }
+  private static final String HOME_PAGE = "https://www.exito.com/";
+  private static final String SHA256_SEARCH = "68cf7ab5d1fe5031f2bb226b0889d4da0c56542d5f22f1d35f4dec901c59f5da";
+  private static final String API_VERSION = "1";
+  private static final String SENDER = "vtex.store-resources@0.x";
+  private static final String PROVIDER = "vtex.store-graphql@2.x";
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    // number of products per page
-    this.pageSize = 80;
-
     this.log("Página " + this.currentPage);
+    this.pageSize = 20;
 
-    String keyword = this.keywordWithoutAccents.replace(" ", "%20");
+    JSONObject searchApi = fetchSearchApi();
+    JSONArray products = searchApi.has("products") ? searchApi.getJSONArray("products") : new JSONArray();
 
-    // builds the url with the keyword and page number
-    String url = "https://www.exito.com/browse?Ntt=" + keyword + "&No=" + (this.currentPage - 1) * 80 + "&Nrpp=80";
+    if (products.length() > 0) {
 
-    this.log("Link onde são feitos os crawlers: " + url);
-
-    // fetch the html
-    this.currentDoc = fetchDocumentWithWebDriver(url);
-
-    Elements products = this.currentDoc.select(".product-list div.product");
-
-    if (!products.isEmpty()) {
-      if (totalProducts == 0) {
-        setTotalProducts();
+      if (this.totalProducts == 0) {
+        setTotalProducts(searchApi);
       }
 
-      for (Element e : products) {
-        String internalId = e.attr("data-prdid");
-        String internalPid = e.attr("data-skuid");
-        String productUrl = scrapProductUrl(e);
+      for (Object object : products) {
+        JSONObject product = (JSONObject) object;
+        String productUrl = HOME_PAGE + (product.has("linkText") && !product.isNull("linkText") ? product.get("linkText").toString() : null) + "/p";
+        String internalPid = product.has("productId") ? product.get("productId").toString() : null;
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
-
       }
+
     } else {
       this.result = false;
       this.log("Keyword sem resultado!");
@@ -70,51 +65,81 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".plp-pagination-result p strong");
-
-    if (totalElement != null) {
-      Pattern p = Pattern.compile("([0-9]+)");
-
-      // Reverses the string
-      Matcher m = p.matcher(new StringBuilder(totalElement.text().trim()).reverse());
-
-      if (m.find()) {
-        try {
-          // Get the first match on the reversed string and revert it to original
-          this.totalProducts = Integer.parseInt(new StringBuilder(m.group(1)).reverse().toString());
-
-        } catch (Exception e) {
-          this.logError(CommonMethods.getStackTraceString(e));
-        }
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
+  private void setTotalProducts(JSONObject data) {
+    this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "recordsFiltered", 0);
+    this.log("Total da busca: " + this.totalProducts);
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    Elements pages = this.currentDoc.select(".desktop ul li:not(:first-child)");
+  /**
+   * This function request a api with a JSON encoded on BASE64
+   * 
+   * This json has informations like: pageSize, keyword and substantive {@link fetchSubstantive}
+   * 
+   * @return
+   */
+  private JSONObject fetchSearchApi() {
+    JSONObject searchApi = new JSONObject();
 
-    if (pages.size() > 2) {
-      if (pages.get(pages.size() - 1).hasClass("disabled") && pages.get(pages.size() - 2).hasClass("active")) {
-        return false;
+    StringBuilder url = new StringBuilder();
+    url.append("https://www.exito.com/_v/segment/graphql/v1?");
+    url.append("workspace=master");
+    url.append("&maxAge=short");
+    url.append("&domain=store");
+    url.append("&appsEtag=remove");
+
+    StringBuilder payload = new StringBuilder();
+    payload.append("&operationName=search");
+
+    JSONObject extensions = new JSONObject();
+    JSONObject persistedQuery = new JSONObject();
+
+    persistedQuery.put("version", API_VERSION);
+    persistedQuery.put("sha256Hash", SHA256_SEARCH);
+    persistedQuery.put("sender", SENDER);
+    persistedQuery.put("provider", PROVIDER);
+    extensions.put("persistedQuery", persistedQuery);
+    extensions.put("variables", createVariablesBase64());
+
+    try {
+      payload.append("&variables=" + URLEncoder.encode("{}", "UTF-8"));
+      payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    url.append(payload.toString());
+    this.log("Link onde são feitos os crawlers: " + url);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("content-type", "application/json");
+
+    Request request =
+        RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setPayload(payload.toString()).mustSendContentEncoding(false).build();
+    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+    if (response.has("data") && !response.isNull("data")) {
+      JSONObject data = response.getJSONObject("data");
+
+      if (data.has("productSearch") && !data.isNull("productSearch")) {
+        searchApi = data.getJSONObject("productSearch");
       }
     }
 
-    return true;
+    return searchApi;
   }
 
-  private String scrapProductUrl(Element e) {
-    Element element = e.selectFirst(".row a");
-    String productUrl = null;
+  private String createVariablesBase64() {
+    int capturedProductsNumber = this.arrayProducts.size();
 
-    if (element != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(element, "href", "https:", "www.exito.com");
-    }
+    JSONObject search = new JSONObject();
+    search.put("withFacets", true);
+    search.put("hideUnavailableItems", true);
+    search.put("query", this.location);
+    search.put("orderBy", "OrderByReleaseDateDESC");
+    search.put("from", capturedProductsNumber);
+    search.put("to", capturedProductsNumber + (this.pageSize - 1));
+    search.put("facetQuery", this.location);
 
-    return productUrl;
+    return Base64.getEncoder().encodeToString(search.toString().getBytes());
   }
 }

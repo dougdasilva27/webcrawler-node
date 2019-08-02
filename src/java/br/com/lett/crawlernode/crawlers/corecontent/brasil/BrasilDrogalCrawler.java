@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -14,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -47,9 +49,6 @@ public class BrasilDrogalCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = crawlInternalId(doc);
-      String internalPid = null;
-      Integer stock = null;
-      Marketplace marketplace = new Marketplace();
       String name = crawlName(doc);
       Float price = crawlMainPagePrice(doc);
       boolean available = price != null;
@@ -60,10 +59,21 @@ public class BrasilDrogalCrawler extends Crawler {
       Prices prices = crawlPrices(price, doc);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
@@ -85,16 +95,42 @@ public class BrasilDrogalCrawler extends Crawler {
     return doc.select(".code span[itemprop=sku]").first() != null;
   }
 
-  /*******************
-   * General methods *
-   *******************/
 
+  /**
+   * We extract internalId on script like this:
+   * 
+   * Key: productId
+   * 
+   * In that case below, internalId will be "kityenzahshleave"
+   * 
+   * ;var dataLayer=dataLayer||[];dataLayer.push({device:"d"})
+   * dataLayer.push({pageName:"product",productId:"kityenzahshleave",productName:"Kit Yenzah Sou+
+   * Cachos Shampoo Lowpoo 240ml + Leave In Suave
+   * 365ml",productPrice:"63.24",productDepartment:"CUIDADOS COM CABELOS",productCategory:"CUIDADOS
+   * COM CABELOS",productSubCategory:"KIT CABELOS",productBrand:"Yenzah"});
+   * 
+   * @param document
+   * @return
+   */
   private String crawlInternalId(Document document) {
     String internalId = null;
+    JSONObject dataLayer = new JSONObject();
 
-    Element id = document.select(".code span[itemprop=sku]").first();
-    if (id != null) {
-      internalId = id.ownText().replaceAll("[^0-9]", "");
+    String firstIndexString = "dataLayer.push(";
+    String lastIndexString = ");";
+    Elements scripts = document.select("script[type=\"text/javascript\"]");
+
+    for (Element e : scripts) {
+      String html = e.html().replace(" ", "");
+
+      if (html.contains(firstIndexString) && html.contains(lastIndexString)) {
+        dataLayer = CrawlerUtils.stringToJson(CrawlerUtils.extractSpecificStringFromScript(html, firstIndexString, true, lastIndexString, false));
+        break;
+      }
+    }
+
+    if (dataLayer.has("productId") && !dataLayer.isNull("productId")) {
+      internalId = dataLayer.get("productId").toString();
     }
 
     return internalId;

@@ -94,7 +94,7 @@ public class BrasilFastshopCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalPid = BrasilFastshopCrawlerUtils.crawlPartnerId(doc);
-      String newUrl = internalPid != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
+      String newUrl = internalPid != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
       String name = crawlName(doc);
       ArrayList<String> categories = crawlCategories(doc);
       String category1 = getCategory(categories, 0);

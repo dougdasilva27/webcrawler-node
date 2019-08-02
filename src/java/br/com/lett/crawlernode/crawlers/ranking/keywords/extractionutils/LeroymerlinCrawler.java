@@ -111,7 +111,7 @@ public class LeroymerlinCrawler extends CrawlerRankingKeywords {
         }
       }
     } else {
-      String redirectUrl = CrawlerUtils.crawlFinalUrl(url, session);
+      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
 
       if (redirectUrl != null) {
         newUrl = redirectUrl;

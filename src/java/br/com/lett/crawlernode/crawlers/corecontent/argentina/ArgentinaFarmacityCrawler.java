@@ -64,7 +64,7 @@ public class ArgentinaFarmacityCrawler extends Crawler {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
-        String newUrl = internalId != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
+        String newUrl = internalId != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".brand", false);
 

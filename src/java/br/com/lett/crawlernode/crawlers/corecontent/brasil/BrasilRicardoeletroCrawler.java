@@ -410,9 +410,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
             String id = sku.getString("id").trim();
 
             if (id.equals(productId)) {
-              if (sku.has("stock")) {
+
+              if (sku.has("stock") && !sku.isNull("stock")) {
                 stock = sku.getInt("stock");
               }
+
               break;
             }
           }
