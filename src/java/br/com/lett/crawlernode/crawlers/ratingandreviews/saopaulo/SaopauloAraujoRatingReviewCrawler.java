@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(document, session);
 
       if (skuJson.has("productId")) {
-        JSONObject trustVoxResponse = requestTrustVoxEndpoint(skuJson.getInt("productId"), document);
+        JSONObject trustVoxResponse = requestTrustVoxEndpoint(skuJson.get("productId").toString(), skuJson, document);
 
         Integer totalNumOfEvaluations = getTotalNumOfRatings(trustVoxResponse);
         Double avgRating = getTotalRating(trustVoxResponse);
@@ -112,17 +113,25 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
     return 0d;
   }
 
-  private JSONObject requestTrustVoxEndpoint(int id, Document doc) {
+  private JSONObject requestTrustVoxEndpoint(String id, JSONObject skuJson, Document doc) {
     StringBuilder requestURL = new StringBuilder();
 
-    requestURL.append("https://trustvox.com.br/widget/root?code=");
-    requestURL.append(id);
+    requestURL.append("https://trustvox.com.br/widget/root?");
 
-    requestURL.append("&");
-    requestURL.append("store_id=78444");
+    String name = scrapName(skuJson, "name");
+    String photos = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image a[href]", Arrays.asList("href"), "https", "www.araujo.com.br");
 
-    requestURL.append("&url=");
-    requestURL.append(session.getOriginalURL());
+    requestURL.append("code=" + id);
+    requestURL.append("&store_id=78444");
+    requestURL.append("&url=" + CommonMethods.encondeStringURLToISO8859(session.getOriginalURL(), logger, session));
+
+    if (name != null) {
+      requestURL.append("&name=" + CommonMethods.encondeStringURLToISO8859(name.replace("+", ""), logger, session));
+    }
+
+    if (photos != null) {
+      requestURL.append("&photos_urls%5B%5D==" + CommonMethods.encondeStringURLToISO8859(photos.split("\\?")[0], logger, session));
+    }
 
     JSONObject vtxctx = selectJsonFromHtml(doc, "script", "vtxctx=", ";", true);
 
@@ -135,16 +144,35 @@ public class SaopauloAraujoRatingReviewCrawler extends RatingReviewCrawler {
     headerMap.put(HttpHeaders.ACCEPT, "application/vnd.trustvox-v2+json");
     headerMap.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8");
 
-    Request request = RequestBuilder.create().setUrl(requestURL.toString()).setCookies(cookies).setHeaders(headerMap).build();
-    String response = this.dataFetcher.get(session, request).getBody();
+    Request request = RequestBuilder.create().setUrl(requestURL.toString()).setHeaders(headerMap).build();
+    String response = dataFetcher.get(session, request).getBody();
 
-    JSONObject trustVoxResponse = CrawlerUtils.stringToJson(response);
+    JSONObject trustVoxResponse;
+    try {
+      trustVoxResponse = new JSONObject(response);
 
-    if (trustVoxResponse.has("rate")) {
-      return trustVoxResponse.getJSONObject("rate");
+      if (trustVoxResponse.has("rate")) {
+        return trustVoxResponse.getJSONObject("rate");
+      }
+
+    } catch (JSONException e) {
+      Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
+      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
+
+      trustVoxResponse = new JSONObject();
     }
 
     return trustVoxResponse;
+  }
+
+  private String scrapName(JSONObject productJson, String key) {
+    String field = null;
+
+    if (productJson.has(key) && !productJson.isNull(key)) {
+      field = productJson.get(key).toString();
+    }
+
+    return field;
   }
 
   public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)

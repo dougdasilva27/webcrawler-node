@@ -210,7 +210,6 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
       Map<Integer, Float> paymentPriceMap = new TreeMap<>();
 
       paymentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
       prices.setPriceFrom(crawlOldPrice(doc));
 
       prices.insertCardInstallment(Card.MASTERCARD.toString(), paymentPriceMap);
