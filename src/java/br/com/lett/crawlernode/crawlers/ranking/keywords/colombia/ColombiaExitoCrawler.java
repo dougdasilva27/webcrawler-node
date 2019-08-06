@@ -24,7 +24,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
   }
 
   private static final String HOME_PAGE = "https://www.exito.com/";
-  private static final String SHA256_SEARCH = "68cf7ab5d1fe5031f2bb226b0889d4da0c56542d5f22f1d35f4dec901c59f5da";
+  private static final String SHA256_SEARCH = "fbbd2c497ef9cbdf36cf9d5ffc1da892dc6265a8b2cbecc6bc0be5347d04303e";
   private static final String API_VERSION = "1";
   private static final String SENDER = "vtex.store-resources@0.x";
   private static final String PROVIDER = "vtex.store-graphql@2.x";
