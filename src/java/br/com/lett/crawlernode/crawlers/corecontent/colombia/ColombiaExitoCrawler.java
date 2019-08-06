@@ -101,6 +101,10 @@ public class ColombiaExitoCrawler extends Crawler {
    * Url:
    * https://www.exito.com/celular-redmi-note-7-dual-camara-48mp5mp-128gb-4gb-negro-100163854-mp/p
    * FirstKey:
+   * 
+   * Can be Product:celular-redmi-note-7-dual-camara-48mp5mp-128gb-4gb-negro-100163854-mp
+   * 
+   * Or
    * Product.undefined@undefined.x::celular-redmi-note-7-dual-camara-48mp5mp-128gb-4gb-negro-100163854-mp
    * 
    * We need to build this key with url path
@@ -113,10 +117,15 @@ public class ColombiaExitoCrawler extends Crawler {
     JSONObject jsonSku = new JSONObject();
 
     if (url.contains("/p")) {
-      String key = "Product.undefined@undefined.x::" + url.replace(HOME_PAGE, "").split("/p")[0];
+      String urlPath = url.replace(HOME_PAGE, "").split("/p")[0];
+
+      String key = "Product:" + urlPath;
+      String specialKey = "Product.undefined@undefined.x::" + urlPath;
 
       if (stateJson.has(key) && !stateJson.isNull(key)) {
         jsonSku = stateJson.getJSONObject(key);
+      } else if (stateJson.has(specialKey) && !stateJson.isNull(specialKey)) {
+        jsonSku = stateJson.getJSONObject(specialKey);
       }
     }
 
