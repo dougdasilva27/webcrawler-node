@@ -27,6 +27,7 @@ public class BrasilConsulCrawler extends Crawler {
   private static final String HOME_PAGE = "https://loja.consul.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "whirlpool";
   private static final String MAIN_SELLER_NAME_LOWER_2 = "consul";
+  private static final String MAIN_SELLER_NAME_LOWER_3 = "brastemp";
 
   public BrasilConsulCrawler(Session session) {
     super(session);
@@ -68,10 +69,12 @@ public class BrasilConsulCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available =
-            CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2));
+            CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2,
+                MAIN_SELLER_NAME_LOWER_3));
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2));
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2,
+            MAIN_SELLER_NAME_LOWER_3));
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
