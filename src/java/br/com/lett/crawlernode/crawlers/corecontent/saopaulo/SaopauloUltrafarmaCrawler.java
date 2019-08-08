@@ -119,7 +119,6 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
   }
 
-
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
     String productDetails = null;
