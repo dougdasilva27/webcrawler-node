@@ -38,18 +38,22 @@ public class BrasilVilanovaCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "skuJson = ", ";", false, true);
+      JSONArray productJsonArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
+      JSONObject productJson = productJsonArray.getJSONObject(0);
+      productJson = productJson.has("productData") ? productJson.getJSONObject("productData") : productJson;
 
       String internalPid = crawlInternalPid(productJson);
       List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-breadcrumb a:not(.first)");
-      String description = CrawlerUtils.scrapElementsDescription(doc,
-          Arrays.asList(".product-shape-and-volumn", ".specs-product dt .tab:not(.rating)", ".specs-product dl .content-tab:not(.ratings)"));
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumb-link", Arrays.asList("data-zoom-image", "href"), "https", IMAGES_HOST);
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "a.thumb-link", Arrays.asList("data-zoom-image", "href"),
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
+      String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#info-abas-mobile"));
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"),
+          "https", IMAGES_HOST);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href",
+          "src"),
           "https", IMAGES_HOST, primaryImage);
 
-      JSONArray productsArray = productJson.has("skus") && !productJson.isNull("skus") ? productJson.getJSONArray("skus") : new JSONArray();
+      JSONArray productsArray =
+          productJson.has("productSKUList") && !productJson.isNull("productSKUList") ? productJson.getJSONArray("productSKUList") : new JSONArray();
 
       for (Object obj : productsArray) {
         JSONObject skuJson = (JSONObject) obj;
@@ -85,7 +89,7 @@ public class BrasilVilanovaCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return !doc.select(".infoProduct").isEmpty();
+    return !doc.select(".container #detalhes-container").isEmpty();
   }
 
   private String crawlInternalId(JSONObject skuJson) {
@@ -101,8 +105,8 @@ public class BrasilVilanovaCrawler extends Crawler {
   private String crawlInternalPid(JSONObject productJson) {
     String internalPid = null;
 
-    if (productJson.has("productId") && !productJson.isNull("productId")) {
-      internalPid = productJson.get("productId").toString();
+    if (productJson.has("productID") && !productJson.isNull("productID")) {
+      internalPid = productJson.get("productID").toString();
     }
 
     return internalPid;
@@ -111,8 +115,8 @@ public class BrasilVilanovaCrawler extends Crawler {
   private String crawlName(JSONObject skuJson) {
     String name = null;
 
-    if (skuJson.has("skuname") && skuJson.get("skuname") instanceof String) {
-      name = skuJson.getString("skuname");
+    if (skuJson.has("name") && skuJson.get("name") instanceof String) {
+      name = skuJson.getString("name");
     }
 
     return name;

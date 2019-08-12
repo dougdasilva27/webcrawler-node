@@ -19,10 +19,11 @@ public class BrasilVilanovaCrawler extends CrawlerRankingKeywords {
     this.pageSize = PAGE_SIZE;
 
     this.log("Página " + this.currentPage);
-    String url = "https://www.vilanova.com.br/search/" + this.keywordEncoded + "?page=" + this.currentPage;
+    // https://www.vilanova.com.br/Busca/Resultado/?p=2&loja=&q=Chocolate&precode=&precoate=&ordenacao=6&limit=24
+    String url = "https://www.vilanova.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + this.keywordEncoded + "&ordenacao=6&limit=24";
 
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".shelf-content-itens li[data-product-id]");
+    Elements products = this.currentDoc.select(".shelf-content-items .box-produto");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -30,12 +31,13 @@ public class BrasilVilanovaCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = e.attr("data-product-id");
-        String productUrl = CrawlerUtils.scrapUrl(e, ".shelf-url", "href", "https", "www.vilanova.com.br");
+        Element internalIdElement = e.selectFirst(".text-center a");
+        String internalId = internalIdElement.attr("data-codigoproduto");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".img-name a", "href", "https", "www.vilanova.com.br");
 
-        saveDataProduct(null, internalPid, productUrl);
+        saveDataProduct(null, internalId, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -51,7 +53,7 @@ public class BrasilVilanovaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".shelf-total-results-qty", true, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".qtd-produtos", true, 0);
     this.log("Total: " + this.totalProducts);
   }
 }
