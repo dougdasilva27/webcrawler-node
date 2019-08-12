@@ -39,8 +39,7 @@ public class BrasilVilanovaCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONArray productJsonArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
-      JSONObject productJson = productJsonArray.getJSONObject(0);
-      productJson = productJson.has("productData") ? productJson.getJSONObject("productData") : productJson;
+      JSONObject productJson = extractProductData(productJsonArray);
 
       String internalPid = crawlInternalPid(productJson);
       List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
@@ -86,6 +85,11 @@ public class BrasilVilanovaCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private JSONObject extractProductData(JSONArray productJsonArray) {
+    JSONObject firstObjectFromArray = productJsonArray.length() > 0 ? productJsonArray.getJSONObject(0) : new JSONObject();
+    return firstObjectFromArray.has("productData") ? firstObjectFromArray.getJSONObject("productData") : firstObjectFromArray;
   }
 
   private boolean isProductPage(Document doc) {
