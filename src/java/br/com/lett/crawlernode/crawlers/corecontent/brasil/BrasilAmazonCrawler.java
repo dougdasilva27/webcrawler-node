@@ -13,6 +13,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -41,6 +42,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
@@ -232,7 +234,7 @@ public class BrasilAmazonCrawler extends Crawler {
   private List<Document> fetchDocumentMarketPlace(Document doc, String internalId) {
     List<Document> docs = new ArrayList<>();
 
-    Element marketplaceUrl = doc.select("#moreBuyingChoices_feature_div .a-box .a-padding-base .a-size-small a[href]").first();
+    Element marketplaceUrl = doc.selectFirst("#moreBuyingChoices_feature_div");
 
     if (marketplaceUrl != null) {
       String urlMarketPlace = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=0";

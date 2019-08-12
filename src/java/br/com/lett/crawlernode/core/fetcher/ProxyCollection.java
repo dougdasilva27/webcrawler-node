@@ -22,14 +22,12 @@ public class ProxyCollection {
 
   public static final String BUY = "buy";
   public static final String BONANZA = "bonanza";
-  public static final String STORM = "storm";
   public static final String STORM_RESIDENTIAL_US = "storm_residential_us";
   public static final String STORM_RESIDENTIAL_EU = "storm_residential_eu";
   public static final String NO_PROXY = "no_proxy";
   public static final String LUMINATI_SERVER_BR = "luminati_server_br";
   public static final String LUMINATI_RESIDENTIAL_BR = "luminati_residential_br";
-  public static final String LUMINATI_RESIDENTIAL_AR = "luminati_residential_ar";
-  public static final String LUMINATI_RESIDENTIAL_MX = "luminati_residential_mx";
+  public static final String INFATICA_RESIDENTIAL_BR = "infatica_residential_br";
   public static final String BR_OXYLABS = "br-oxylabs";
 
   public static final int MAX_ATTEMPTS_BUY = 2;
@@ -37,10 +35,8 @@ public class ProxyCollection {
 
   public static final int MAX_ATTEMPTS_LUMINATI_SERVER_BR = 2;
   public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_BR = 2;
-  public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_MX = 2;
-  public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_AR = 2;
+  public static final int MAX_ATTEMPTS_INFATICA_RESIDENTIAL_BR = 2;
 
-  public static final int MAX_ATTEMPTS_STORM = 3;
   public static final int MAX_ATTEMPTS_STORM_RESIDENTIAL_US = 2;
   public static final int MAX_ATTEMPTS_STORM_RESIDENTIAL_EU = 2;
   public static final int MAX_ATTEMPTS_NO_PROXY = 1;
@@ -65,9 +61,7 @@ public class ProxyCollection {
     proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
     proxyMaxAttempts.put(LUMINATI_SERVER_BR, MAX_ATTEMPTS_LUMINATI_SERVER_BR);
     proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_BR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_BR);
-    proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_MX, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_MX);
-    proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_AR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_AR);
-    proxyMaxAttempts.put(STORM, MAX_ATTEMPTS_STORM);
+    proxyMaxAttempts.put(INFATICA_RESIDENTIAL_BR, MAX_ATTEMPTS_INFATICA_RESIDENTIAL_BR);
     proxyMaxAttempts.put(STORM_RESIDENTIAL_US, MAX_ATTEMPTS_STORM_RESIDENTIAL_US);
     proxyMaxAttempts.put(STORM_RESIDENTIAL_EU, MAX_ATTEMPTS_STORM_RESIDENTIAL_EU);
     proxyMaxAttempts.put(BR_OXYLABS, 2);

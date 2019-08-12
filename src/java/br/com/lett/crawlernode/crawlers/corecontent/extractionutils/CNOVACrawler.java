@@ -9,8 +9,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -94,7 +94,6 @@ public abstract class CNOVACrawler extends Crawler {
 
   public CNOVACrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
   }
 
   protected String mainSellerNameLower;
@@ -132,7 +131,16 @@ public abstract class CNOVACrawler extends Crawler {
     headers.put("Upgrade-Insecure-Requests", "1");
     headers.put("User-Agent", FetchUtilities.randUserAgent());
 
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    Request request = RequestBuilder.create()
+        .setUrl(url)
+        .setCookies(cookies)
+        .setHeaders(headers)
+        .setProxyservice(
+            Arrays.asList(
+                ProxyCollection.STORM_RESIDENTIAL_EU,
+                ProxyCollection.STORM_RESIDENTIAL_US
+            )
+        ).build();
     return this.dataFetcher.get(session, request).getBody();
   }
 
@@ -162,10 +170,11 @@ public abstract class CNOVACrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb span:not(:first-child) a");
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carouselBox .thumbsImg li a, #divFullImage a img", Arrays
           .asList("rev", "href", "src"), PROTOCOL, marketHost);
+
       String secondaryImages =
           !unnavailableForAll ? CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carouselBox .thumbsImg li a, #divFullImage a, #divFullImage a img",
-              Arrays.asList("rev", "href", "src"), PROTOCOL, marketHost, primaryImage)
-              : null;
+              Arrays.asList("rev", "href", "src"), PROTOCOL, marketHost, primaryImage) : null;
+
       String description = crawlDescription(doc);
 
       if (hasVariations) {
