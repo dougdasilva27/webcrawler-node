@@ -19,7 +19,7 @@ public class BrasilVilanovaCrawler extends CrawlerRankingKeywords {
     this.pageSize = PAGE_SIZE;
 
     this.log("Página " + this.currentPage);
-    // https://www.vilanova.com.br/Busca/Resultado/?p=2&loja=&q=Chocolate&precode=&precoate=&ordenacao=6&limit=24
+
     String url = "https://www.vilanova.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + this.keywordEncoded + "&ordenacao=6&limit=24";
 
     this.currentDoc = fetchDocument(url);
