@@ -168,12 +168,13 @@ public abstract class CNOVACrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produtoNome h1 b", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb span:not(:first-child) a");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carouselBox .thumbsImg li a, #divFullImage a", Arrays.asList("rev", "href",
-          "src"), PROTOCOL, marketHost);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carouselBox .thumbsImg li a, #divFullImage a img", Arrays
+          .asList("rev", "href", "src"), PROTOCOL, marketHost);
+
       String secondaryImages =
-          !unnavailableForAll ? CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carouselBox .thumbsImg li a, #divFullImage a", Arrays.asList("rev",
-              "href", "src"), PROTOCOL, marketHost, primaryImage)
-              : null;
+          !unnavailableForAll ? CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carouselBox .thumbsImg li a, #divFullImage a, #divFullImage a img",
+              Arrays.asList("rev", "href", "src"), PROTOCOL, marketHost, primaryImage) : null;
+
       String description = crawlDescription(doc);
 
       if (hasVariations) {
