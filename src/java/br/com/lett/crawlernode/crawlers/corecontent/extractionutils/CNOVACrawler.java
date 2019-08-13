@@ -168,12 +168,9 @@ public abstract class CNOVACrawler extends Crawler {
       String internalPid = crawlInternalPid(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produtoNome h1 b", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb span:not(:first-child) a");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carouselBox .thumbsImg li a, #divFullImage a img", Arrays
-          .asList("rev", "href", "src"), PROTOCOL, marketHost);
-
-      String secondaryImages =
-          !unnavailableForAll ? CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carouselBox .thumbsImg li a, #divFullImage a, #divFullImage a img",
-              Arrays.asList("rev", "href", "src"), PROTOCOL, marketHost, primaryImage) : null;
+      String primaryImage = scrapPrimaryImage(doc);
+      String secondaryImages = !unnavailableForAll ? CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carouselBox .thumbsImg li a",
+          Arrays.asList("rev", "href", "src"), PROTOCOL, marketHost, primaryImage) : null;
 
       String description = crawlDescription(doc);
 
@@ -260,6 +257,26 @@ public abstract class CNOVACrawler extends Crawler {
     return products;
   }
 
+  private String scrapPrimaryImage(Document doc) {
+    String primaryImage = null;
+
+    List<String> selectors = Arrays.asList(".carouselBox .thumbsImg li a", ".carouselBox .thumbsImg li a img", "#divFullImage a",
+        "#divFullImage a img");
+
+    for (String selector : selectors) {
+      Element imageSelector = doc.selectFirst(selector);
+      if (imageSelector != null) {
+        String image = CrawlerUtils.sanitizeUrl(imageSelector, Arrays.asList("rev", "href", "src"), "https", this.marketHost);
+
+        if (image != null && !image.isEmpty()) {
+          primaryImage = image;
+          break;
+        }
+      }
+    }
+
+    return primaryImage;
+  }
 
   private Offers scrapBuyBox(Document doc, Document docMarketplace) {
     Offers offers = new Offers();
