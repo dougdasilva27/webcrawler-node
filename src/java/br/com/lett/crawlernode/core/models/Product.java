@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Offers;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class Product implements Serializable {
@@ -43,6 +44,7 @@ public class Product implements Serializable {
   private Integer marketId;
   private SkuStatus status;
   private Offers offers;
+  private RatingsReviews ratingReviews;
 
   public Product() {
     this.description = "";
@@ -52,6 +54,15 @@ public class Product implements Serializable {
   public Product clone() {
     return SerializationUtils.clone(this);
   }
+
+  public RatingsReviews getRatingReviews() {
+    return ratingReviews;
+  }
+
+  public void setRatingReviews(RatingsReviews ratingReviews) {
+    this.ratingReviews = ratingReviews;
+  }
+
 
   public String getUrl() {
     return url;
