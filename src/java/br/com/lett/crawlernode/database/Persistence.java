@@ -301,6 +301,12 @@ public class Persistence {
         insertMap.put(processedTable.SIMILARS, null);
       }
 
+      if (newProcessedProduct.getRatingsReviews() != null) {
+        insertMap.put(processedTable.RATING, newProcessedProduct.getRatingsReviews().toString());
+      } else {
+        insertMap.put(processedTable.RATING, null);
+      }
+
       Connection conn = null;
       PreparedStatement pstmt = null;
       String query = GlobalConfigurations.dbManager.jooqPostgres.insertInto(processedTable).set(insertMap).returning(processedTable.ID)
@@ -340,7 +346,9 @@ public class Persistence {
         JdbcConnectionFactory.closeResource(conn);
       }
 
-    } else {
+    } else
+
+    {
       Map<Field<?>, Object> updateMap = new HashMap<>();
 
       // Column Value
@@ -417,6 +425,13 @@ public class Persistence {
       } else {
         updateMap.put(processedTable.SIMILARS, null);
       }
+
+      if (newProcessedProduct.getRatingsReviews() != null) {
+        updateMap.put(processedTable.RATING, newProcessedProduct.getRatingsReviews().toString());
+      } else {
+        updateMap.put(processedTable.RATING, null);
+      }
+
 
       // get the id of the processed product that already exists
       id = newProcessedProduct.getId();
@@ -685,7 +700,9 @@ public class Persistence {
 
     List<Market> marketsList = markets.getMarkets();
 
-    String[] subdirectories = new String[] {"images"};
+    String[] subdirectories = new String[] {
+        "images"
+    };
 
     int counter = 0;
 

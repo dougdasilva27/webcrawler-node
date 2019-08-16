@@ -266,7 +266,7 @@ public class Crawler extends Task {
       // get crawled product by it's internalId
       Logging.printLogDebug(logger, session, "Selecting product with internalId " + ((InsightsCrawlerSession) session).getInternalId());
       Product crawledProduct = filter(products, ((InsightsCrawlerSession) session).getInternalId());
-
+      CommonMethods.saveDataToAFile(crawledProduct, "SHYRIUAMIGO.txt");
       // if the product is void run the active void analysis
       Product activeVoidResultProduct = crawledProduct;
       if (crawledProduct.isVoid()) {
@@ -289,6 +289,7 @@ public class Crawler extends Task {
       // if the resultant product is not void, the we will process it
       if (!activeVoidResultProduct.isVoid()) {
         try {
+
           processProduct(activeVoidResultProduct);
         } catch (Exception e) {
           Logging.printLogError(logger, session, "Error in process product method: " + CommonMethods.getStackTraceString(e));
@@ -386,7 +387,6 @@ public class Crawler extends Task {
 
       Processed newProcessedProduct =
           Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
-
       if (newProcessedProduct != null) {
         if (previousProcessedProduct == null) {
           PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
@@ -724,7 +724,7 @@ public class Crawler extends Task {
       // proceed the iteration only if the product is not void
       if (localProduct != null && !localProduct.isVoid()) {
         Persistence.persistProduct(localProduct, session);
-
+        System.err.println("TA NO TRUCO");
         next = Processor.createProcessed(localProduct, session, previousProcessed, GlobalConfigurations.processorResultManager);
 
         if (next != null) {

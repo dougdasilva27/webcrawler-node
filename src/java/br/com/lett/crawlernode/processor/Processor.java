@@ -146,6 +146,7 @@ public class Processor {
         newProcessedProduct.setInternalPid(internalPid);
         newProcessedProduct.setEan(ean);
         newProcessedProduct.setEans(eans);
+        newProcessedProduct.setRatingsReviews(ratingsReviews);
 
       }
 
