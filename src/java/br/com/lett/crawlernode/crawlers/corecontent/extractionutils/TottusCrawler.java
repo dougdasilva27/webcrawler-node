@@ -205,7 +205,8 @@ public class TottusCrawler {
 
   private String crawlSecondaryImagesByScript(Document doc, String internalId, String primaryImage) {
     String secondaryImages =
-        CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);;
+        CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);
+    secondaryImages = (secondaryImages != null && !secondaryImages.contains("placeHold.png")) ? secondaryImages : null;
 
     if (secondaryImages == null || secondaryImages.length() < 1) {
       JSONArray images = new JSONArray();
