@@ -65,10 +65,21 @@ public class TottusCrawler {
       String description = crawlDescription(doc, internalId);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
