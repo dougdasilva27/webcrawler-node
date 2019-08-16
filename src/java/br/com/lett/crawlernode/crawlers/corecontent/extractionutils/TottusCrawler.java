@@ -65,10 +65,21 @@ public class TottusCrawler {
       String description = crawlDescription(doc, internalId);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
@@ -205,7 +216,23 @@ public class TottusCrawler {
 
   private String crawlSecondaryImagesByScript(Document doc, String internalId, String primaryImage) {
     String secondaryImages =
-        CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);;
+        CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);
+
+    if (secondaryImages.contains("placeHold")) {
+      JSONArray secondaryImagesJsonArray = new JSONArray(secondaryImages);
+      JSONArray newSecondaryImagesJsonArray = new JSONArray();
+
+      for (Object object : secondaryImagesJsonArray) {
+        String urlSecondaryImage = (String) object;
+
+        if (!urlSecondaryImage.contains("placeHold")) {
+          newSecondaryImagesJsonArray.put(urlSecondaryImage);
+
+        }
+      }
+
+      secondaryImages = newSecondaryImagesJsonArray.toString();
+    }
 
     if (secondaryImages == null || secondaryImages.length() < 1) {
       JSONArray images = new JSONArray();
