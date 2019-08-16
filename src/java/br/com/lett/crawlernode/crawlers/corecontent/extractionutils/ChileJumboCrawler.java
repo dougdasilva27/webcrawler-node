@@ -33,6 +33,8 @@ public class ChileJumboCrawler extends Crawler {
   public static final String JUMBO_VINA_ID = "16";
 
   private static final String MAIN_SELLER_NAME_LOWER = "jumbo";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "Cyber Monday";
+  private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2);
   public static final String HOME_PAGE = "https://www2.jumbo.cl/";
   public static final String HOST = "www2.jumbo.cl";
 
@@ -78,7 +80,7 @@ public class ChileJumboCrawler extends Crawler {
           setPricePromotionInMarketplaceMap(pricePromotion, marketplaceMap);
         }
 
-        List<String> mainSellers = CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER));
+        List<String> mainSellers = CrawlerUtils.getMainSellers(marketplaceMap, SELLERS);
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, mainSellers, Card.AMEX, session);
         boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, mainSellers);
 
@@ -90,8 +92,10 @@ public class ChileJumboCrawler extends Crawler {
         List<String> eans = jsonSku.has("ean") ? Arrays.asList(jsonSku.get("ean").toString()) : new ArrayList<>();
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-            .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices)
+            .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories
+                .getCategory(2)).setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).setEans(eans).build();
 
         products.add(product);
@@ -296,7 +300,8 @@ public class ChileJumboCrawler extends Crawler {
   }
 
   private JSONObject crawlPromotionsAPI() {
-    Request request = RequestBuilder.create().setUrl("https://" + HOST + "/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid").setCookies(cookies).build();
+    Request request = RequestBuilder.create().setUrl("https://" + HOST + "/jumbo/dataentities/PM/documents/Promos?_fields=value%2Cid").setCookies(
+        cookies).build();
     return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
   }
 
