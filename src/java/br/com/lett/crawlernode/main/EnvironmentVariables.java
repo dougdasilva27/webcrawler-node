@@ -19,4 +19,6 @@ public class EnvironmentVariables {
   public static final String QUEUE_URL_FIRST_PART = "QUEUE_URL_FIRST_PART";
   public static final String FETCHER_URL = "FETCHER_URL";
   public static final String LOGS_BUCKET_NAME = "LOGS_BUCKET_NAME";
+  public static final String NEW_AWS_ACCESS_KEY = "NEW_AWS_ACCESS_KEY";
+  public static final String NEW_AWS_SECRET_KEY = "NEW_AWS_SECRET_KEY";
 }
