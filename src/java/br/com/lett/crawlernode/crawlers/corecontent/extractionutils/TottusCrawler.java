@@ -218,7 +218,7 @@ public class TottusCrawler {
     String secondaryImages =
         CrawlerUtils.scrapSimpleSecondaryImages(doc, ".caption-img img", Arrays.asList("src"), "http:", "s7d2.scene7.com", primaryImage);
 
-    if (secondaryImages.contains("placeHold")) {
+    if (secondaryImages != null && secondaryImages.contains("placeHold")) {
       JSONArray secondaryImagesJsonArray = new JSONArray(secondaryImages);
       JSONArray newSecondaryImagesJsonArray = new JSONArray();
 
