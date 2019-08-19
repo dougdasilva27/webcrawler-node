@@ -5,20 +5,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -45,46 +40,39 @@ public class BrasilPetzCrawler extends Crawler {
 
   public BrasilPetzCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
-  }
-
-  private String userAgent;
-  private LettProxy proxyUsed;
-
-  @Override
-  public void handleCookiesBeforeFetch() {
-    this.userAgent = FetchUtilities.randUserAgent();
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
-
-    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
-    Response response = this.dataFetcher.get(session, request);
-
-    this.proxyUsed = response.getProxyUsed();
-
-    for (Cookie cookieResponse : response.getCookies()) {
-      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-      cookie.setDomain("www.petz.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
-
+    super.config.setFetcher(FetchMode.WEBDRIVER);
   }
 
   @Override
   protected Object fetch() {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+    Document doc = new Document("");
+    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
 
-    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
-    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-  }
+    if (this.webdriver != null) {
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+      Element script = doc.select("head script").last();
+      Element robots = doc.select("meta[name=robots]").first();
+
+      if (script != null && robots != null) {
+        String eval = script.html().trim();
+
+        if (!eval.isEmpty()) {
+          Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
+          this.webdriver.executeJavascript(eval);
+        }
+      }
+
+      String requestHash = FetchUtilities.generateRequestHash(session);
+      this.webdriver.waitLoad(12000);
+
+      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+      // saving request content result on Amazon
+      S3Service.saveResponseContent(session, requestHash, doc.toString());
+    }
+
+    return doc;
   }
 
   @Override
@@ -113,11 +101,7 @@ public class BrasilPetzCrawler extends Crawler {
             products.add(p);
           } else {
             String url = (HOME_PAGE + e.attr("data-urlvariacao")).replace("br//", "br/");
-            Map<String, String> headers = new HashMap<>();
-            headers.put(HttpHeaders.USER_AGENT, this.userAgent);
-
-            Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
-            Document docVariation = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+            Document docVariation = DynamicDataFetcher.fetchPage(webdriver, url, session);
 
             Product p = crawlProduct(docVariation, nameVariation);
             p.setInternalPid(internalPid);
