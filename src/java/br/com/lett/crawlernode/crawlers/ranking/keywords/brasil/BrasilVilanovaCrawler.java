@@ -35,7 +35,7 @@ public class BrasilVilanovaCrawler extends CrawlerRankingKeywords {
         String internalId = internalIdElement.attr("data-codigoproduto");
         String productUrl = CrawlerUtils.scrapUrl(e, ".img-name a", "href", "https", "www.vilanova.com.br");
 
-        saveDataProduct(null, internalId, productUrl);
+        saveDataProduct(internalId, null, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
