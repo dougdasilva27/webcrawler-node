@@ -415,6 +415,8 @@ public class FetcherDataFetcher implements DataFetcher {
       requestMetadata.put("res_http_code", statusCode);
 
       Logging.printLogInfo(logger, session, "STATUS CODE: " + statusCode);
+    } else {
+      requestMetadata.put("res_http_code", 0);
     }
 
     requestMetadata.put("req_hash", requestHash);

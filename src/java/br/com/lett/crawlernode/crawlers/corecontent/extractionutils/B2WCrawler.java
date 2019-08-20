@@ -222,10 +222,10 @@ public class B2WCrawler extends Crawler {
           buyBoxJson.put(OfferField.MAIN_PRICE.toString(), featuredPrice);
 
         } else {
-          if (price1x != null) {
-            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), price1x);
-          } else if (defaultPrice != null) {
+          if (defaultPrice != null) {
             buyBoxJson.put(OfferField.MAIN_PRICE.toString(), defaultPrice);
+          } else if (price1x != null) {
+            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), price1x);
           } else if (bankTicket != null) {
             buyBoxJson.put(OfferField.MAIN_PRICE.toString(), bankTicket);
           }
