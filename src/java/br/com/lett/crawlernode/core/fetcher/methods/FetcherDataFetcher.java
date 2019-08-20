@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
@@ -110,7 +109,6 @@ public class FetcherDataFetcher implements DataFetcher {
       // if there was some response code that indicates forbidden access or server error we want to
       // try again
       int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
-      Logging.printLogInfo(logger, session, "STATUS CODE: " + responseCode);
 
       if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
         throw new ResponseCodeException(responseCode);
@@ -409,12 +407,19 @@ public class FetcherDataFetcher implements DataFetcher {
    * @param requestHash
    */
   public static void sendRequestInfoLog(Request request, Response response, String method, Session session, String requestHash) {
-    LettProxy proxy = response != null ? response.getProxyUsed() : null;
-
     JSONObject requestMetadata = new JSONObject();
+
+    List<RequestsStatistics> requestsStatistics = response.getRequests();
+    if (!requestsStatistics.isEmpty()) {
+      Integer statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
+      requestMetadata.put("res_http_code", statusCode);
+
+      Logging.printLogInfo(logger, session, "STATUS CODE: " + statusCode);
+    }
+
     requestMetadata.put("req_hash", requestHash);
-    requestMetadata.put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()));
-    requestMetadata.put("proxy_ip", (proxy == null ? "" : proxy.getAddress()));
+    requestMetadata.put("proxy_name", "FETCHER");
+    requestMetadata.put("proxy_ip", FETCHER_HOST);
     requestMetadata.put("req_method", method);
     requestMetadata.put("req_location", request != null ? request.getUrl() : "");
     requestMetadata.put("req_type", "FETCHER");
