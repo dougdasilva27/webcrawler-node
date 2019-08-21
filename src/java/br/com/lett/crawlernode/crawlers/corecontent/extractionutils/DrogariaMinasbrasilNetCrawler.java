@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -22,6 +23,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -65,11 +67,29 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
       String description = crawlDescription(doc);
       String ean = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=gtin13]", true);
 
+      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+      ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).setEans(Arrays.asList(ean)).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .setEans(Arrays.asList(ean))
+          .setRatingReviews(ratingReviews)
+          .build();
 
       products.add(product);
 
@@ -79,6 +99,40 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private RatingsReviews crawlRating(Document document, String internalId) {
+
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+
+    Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document, ".reviews-summary .reviews-count", true, 0);
+    Double avgRating = getTotalAvgRating(document);
+
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+
+    return ratingReviews;
+  }
+
+  /**
+   * Avg appear in html element
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(Document doc) {
+    Double avgRating = 0d;
+    Element rating = doc.selectFirst("meta[itemprop=ratingValue]");
+
+    if (rating != null) {
+      avgRating = Double.parseDouble(rating.attr("content"));
+    }
+
+    return avgRating;
   }
 
   private boolean isProductPage(Document doc) {
