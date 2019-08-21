@@ -42,7 +42,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject jsonIdSkuPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta=", ";", true, false);
-      JSONObject jsonNameDesc = CrawlerUtils.selectJsonFromHtml(doc, ".container script[type=\"application/ld+json\"]", "", null, false, false);
+      JSONObject jsonNameDesc = CrawlerUtils.selectJsonFromHtml(doc, ".product-page script[type=\"application/ld+json\"]", "", null, false, false);
 
       String internalId = jsonIdSkuPrice.has("pid") ? jsonIdSkuPrice.getString("pid") : null;
       String internalPid = jsonIdSkuPrice.has("sku") ? jsonIdSkuPrice.getString("sku") : null;
@@ -58,10 +58,22 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
       boolean available = doc.selectFirst("#btn-comprar-product") != null;
       Integer stock = scrapStock(doc, available);;
 
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .build();
 
       products.add(product);
 
@@ -73,12 +85,11 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.selectFirst("#product .primary-box") != null;
+    return doc.selectFirst(".product-page #product") != null;
   }
 
   private String scrapName(JSONObject json, Document doc, String internalId) {
     String name = null;
-
     if (json.has("name") && !json.isNull("name")) {
       name = json.get("name").toString();
 
