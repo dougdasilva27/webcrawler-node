@@ -10,10 +10,13 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -21,6 +24,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -67,11 +71,29 @@ public class LeroymerlinCrawler extends Crawler {
               "[name=descricao-do-produto]", ".product-info-details"));
       Integer stock = null;
 
+      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+      ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(new Marketplace())
+          .setRatingReviews(ratingReviews)
+          .build();
 
       products.add(product);
 
@@ -81,6 +103,69 @@ public class LeroymerlinCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private RatingsReviews crawlRating(Document doc, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    JSONObject reviewSummary = new JSONObject();
+    JSONObject primaryRating = new JSONObject();
+
+    ratingReviews.setDate(session.getDate());
+
+    String endpointRequest = assembleBazaarVoiceEndpointRequest(internalId, "caag5mZC6wgKSPPhld3GSUVaOqO46ZEpAemNYqZ38m7Yc");
+    Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+    JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+    if (ratingReviewsEndpointResponse.has("reviewSummary")) {
+      reviewSummary = ratingReviewsEndpointResponse.getJSONObject("reviewSummary");
+
+      if (reviewSummary.has("primaryRating")) {
+        primaryRating = reviewSummary.getJSONObject("primaryRating");
+      }
+    }
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(getTotalRating(reviewSummary));
+    ratingReviews.setAverageOverallRating(getAverageOverallRating(primaryRating));
+    ratingReviews.setTotalWrittenReviews(getTotalRating(reviewSummary));
+
+    return ratingReviews;
+  }
+
+  private Integer getTotalRating(JSONObject reviewSummary) {
+    Integer total = 0;
+
+    if (reviewSummary.has("numReviews") && reviewSummary.get("numReviews") instanceof Integer) {
+      total = reviewSummary.getInt("numReviews");
+    }
+
+    return total;
+  }
+
+  private Double getAverageOverallRating(JSONObject primaryRating) {
+    Double average = 0d;
+
+    if (primaryRating.has("average") && primaryRating.get("average") instanceof Double) {
+      average = primaryRating.getDouble("average");
+    }
+
+    return average;
+  }
+
+  // https://api.bazaarvoice.com/data/display/0.2alpha/product/summary?PassKey=caag5mZC6wgKSPPhld3GSUVaOqO46ZEpAemNYqZ38m7Yc&productid=88100915
+  // &contentType=reviews,questions&reviewDistribution=primaryRating,recommended&rev=0&contentlocale=pt_BR
+
+  private String assembleBazaarVoiceEndpointRequest(String skuInternalId, String bazaarVoiceEnpointPassKey) {
+    StringBuilder request = new StringBuilder();
+
+    request.append("https://api.bazaarvoice.com/data/display/0.2alpha/product/summary?");
+    request.append("&Passkey=" + bazaarVoiceEnpointPassKey);
+    request.append("&productid=" + skuInternalId);
+    request.append("&contentType=reviews,questions");
+    request.append("&reviewDistribution=primaryRating,recommended");
+    request.append("&rev=0");
+    request.append("&contentlocale=pt_BR");
+
+    return request.toString();
   }
 
   private boolean isProductPage(Document doc) {
