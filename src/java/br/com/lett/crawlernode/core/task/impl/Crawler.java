@@ -724,7 +724,6 @@ public class Crawler extends Task {
       // proceed the iteration only if the product is not void
       if (localProduct != null && !localProduct.isVoid()) {
         Persistence.persistProduct(localProduct, session);
-        System.err.println("TA NO TRUCO");
         next = Processor.createProcessed(localProduct, session, previousProcessed, GlobalConfigurations.processorResultManager);
 
         if (next != null) {
