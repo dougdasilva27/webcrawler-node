@@ -9,6 +9,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -94,6 +95,7 @@ public abstract class CNOVACrawler extends Crawler {
 
   public CNOVACrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   protected String mainSellerNameLower;
@@ -137,7 +139,9 @@ public abstract class CNOVACrawler extends Crawler {
         .setHeaders(headers)
         .setProxyservice(
             Arrays.asList(
+                ProxyCollection.INFATICA_RESIDENTIAL_BR,
                 ProxyCollection.STORM_RESIDENTIAL_EU,
+                ProxyCollection.BUY,
                 ProxyCollection.STORM_RESIDENTIAL_US
             )
         ).build();

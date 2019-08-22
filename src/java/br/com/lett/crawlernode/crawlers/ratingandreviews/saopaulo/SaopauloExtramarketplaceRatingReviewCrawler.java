@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
@@ -28,7 +30,7 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
 
   public SaopauloExtramarketplaceRatingReviewCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   private static final String HOME_PAGE = "https://www.extra.com.br/";
@@ -55,7 +57,19 @@ public class SaopauloExtramarketplaceRatingReviewCrawler extends RatingReviewCra
     headers.put("Upgrade-Insecure-Requests", "1");
     headers.put("User-Agent", FetchUtilities.randUserAgent());
 
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+    Request request = RequestBuilder.create()
+        .setUrl(url)
+        .setCookies(cookies)
+        .setHeaders(headers)
+        .setProxyservice(
+            Arrays.asList(
+                ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                ProxyCollection.STORM_RESIDENTIAL_EU,
+                ProxyCollection.BUY,
+                ProxyCollection.STORM_RESIDENTIAL_US
+            )
+        ).build();
+
     return this.dataFetcher.get(session, request).getBody();
   }
 

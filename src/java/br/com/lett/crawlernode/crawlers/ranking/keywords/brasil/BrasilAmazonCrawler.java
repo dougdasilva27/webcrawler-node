@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
@@ -14,6 +15,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
