@@ -15,7 +15,7 @@ public class CrawlerHealthEndpoint {
     String response = Server.MSG_SERVER_HEALTH_OK;
     t.sendResponseHeaders(Server.HTTP_STATUS_CODE_OK, response.length());
 
-    Logging.printLogDebug(logger, Server.MSG_SERVER_HEALTH_OK);
+    Logging.printLogDebug(logger, "Health: " + Server.MSG_SERVER_HEALTH_OK);
 
     return response;
   }
