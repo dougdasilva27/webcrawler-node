@@ -45,7 +45,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    if (isProductPage(doc, session.getOriginalURL())) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
@@ -96,8 +96,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
   }
 
 
-  private boolean isProductPage(Document document) {
-    return document.selectFirst(".productName") != null;
+  private boolean isProductPage(Document document, String url) {
+    return document.selectFirst(".productName") != null && url.startsWith(HOME_PAGE);
   }
 
   private String crawlDescription(Document doc, String internalPid) {

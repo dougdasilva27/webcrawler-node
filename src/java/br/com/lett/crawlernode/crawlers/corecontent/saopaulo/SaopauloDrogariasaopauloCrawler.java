@@ -43,7 +43,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    if (isProductPage(doc, session.getOriginalURL())) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
@@ -149,8 +149,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(Document document) {
-    return document.select("#___rc-p-sku-ids").first() != null;
+  private boolean isProductPage(Document document, String url) {
+    return document.selectFirst("#___rc-p-sku-ids") != null && url.startsWith(HOME_PAGE);
   }
 
   /*******************
