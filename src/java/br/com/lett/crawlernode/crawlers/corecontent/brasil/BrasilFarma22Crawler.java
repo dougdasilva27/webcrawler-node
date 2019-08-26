@@ -18,10 +18,12 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -77,11 +79,28 @@ public class BrasilFarma22Crawler extends Crawler {
         List<String> eans = new ArrayList<>();
         eans.add(ean);
 
+        RatingsReviews ratingsReviews = crawlRating(internalId, internalPid);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setEans(eans)
+            .setRatingReviews(ratingsReviews)
+            .build();
 
         products.add(product);
       }
@@ -91,6 +110,23 @@ public class BrasilFarma22Crawler extends Crawler {
     }
 
     return products;
+  }
+
+  private RatingsReviews crawlRating(String internalId, String internalPid) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
+    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "d8f4f406-5164-4042-81aa-a7fe0ec787f0", dataFetcher);
+    Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
+    Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setInternalId(internalId);
+
+    return ratingReviews;
   }
 
   /*******************************
