@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -19,7 +18,6 @@ public class SaopauloExtramarketplaceCrawler extends CNOVACrawler {
 
   public SaopauloExtramarketplaceCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.APACHE);
     super.mainSellerNameLower = MAIN_SELLER_NAME_LOWER;
     super.mainSellerNameLower2 = MAIN_SELLER_NAME_LOWER_2;
     super.marketHost = HOST;
