@@ -42,7 +42,6 @@ public class AmazonScraperUtils {
           .setProxyservice(
               Arrays.asList(
                   ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.STORM_RESIDENTIAL_EU,
                   ProxyCollection.STORM_RESIDENTIAL_US))
           .mustSendContentEncoding(false)
           .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
@@ -88,7 +87,6 @@ public class AmazonScraperUtils {
           .setProxyservice(
               Arrays.asList(
                   ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.STORM_RESIDENTIAL_EU,
                   ProxyCollection.STORM_RESIDENTIAL_US))
           .mustSendContentEncoding(false)
           // We send this selector fetcher try again when returns captcha

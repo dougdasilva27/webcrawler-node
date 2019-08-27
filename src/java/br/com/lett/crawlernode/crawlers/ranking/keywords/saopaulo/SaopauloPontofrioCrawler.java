@@ -97,7 +97,6 @@ public class SaopauloPontofrioCrawler extends CrawlerRankingKeywords {
         .setProxyservice(
             Arrays.asList(
                 ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                ProxyCollection.STORM_RESIDENTIAL_EU,
                 ProxyCollection.BUY,
                 ProxyCollection.STORM_RESIDENTIAL_US
             )
