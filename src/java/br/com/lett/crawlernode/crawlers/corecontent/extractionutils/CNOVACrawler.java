@@ -140,7 +140,6 @@ public abstract class CNOVACrawler extends Crawler {
         .setProxyservice(
             Arrays.asList(
                 ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                ProxyCollection.STORM_RESIDENTIAL_EU,
                 ProxyCollection.BUY,
                 ProxyCollection.STORM_RESIDENTIAL_US
             )
