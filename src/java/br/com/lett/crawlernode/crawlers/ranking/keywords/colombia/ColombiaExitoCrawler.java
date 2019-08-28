@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -22,12 +23,12 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
 
   public ColombiaExitoCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.FETCHER;
+    super.fetchMode = FetchMode.JAVANET;
   }
 
   private static final String HOME_PAGE = "https://www.exito.com/";
   private String keySHA256;
-  private static final String API_VERSION = "1";
+  private static final Integer API_VERSION = 1;
   private static final String SENDER = "vtex.store-resources@0.x";
   private static final String PROVIDER = "vtex.store-graphql@2.x";
 
@@ -90,11 +91,11 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     url.append("https://www.exito.com/_v/segment/graphql/v1?");
     url.append("workspace=master");
     url.append("&maxAge=short");
-    url.append("&domain=store");
     url.append("&appsEtag=remove");
+    url.append("&domain=store");
+    url.append("&locale=es-CO");
+    url.append("&operationName=search");
 
-    StringBuilder payload = new StringBuilder();
-    payload.append("&operationName=search");
 
     JSONObject extensions = new JSONObject();
     JSONObject persistedQuery = new JSONObject();
@@ -103,9 +104,10 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     persistedQuery.put("sha256Hash", this.keySHA256);
     persistedQuery.put("sender", SENDER);
     persistedQuery.put("provider", PROVIDER);
-    extensions.put("persistedQuery", persistedQuery);
     extensions.put("variables", createVariablesBase64());
+    extensions.put("persistedQuery", persistedQuery);
 
+    StringBuilder payload = new StringBuilder();
     try {
       payload.append("&variables=" + URLEncoder.encode("{}", "UTF-8"));
       payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
@@ -117,10 +119,14 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("content-type", "application/json");
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
 
-    Request request =
-        RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setPayload(payload.toString()).mustSendContentEncoding(false).build();
+    Request request = RequestBuilder.create()
+        .setUrl(url.toString())
+        .setCookies(cookies)
+        .setPayload(payload.toString())
+        .build();
+
     JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (response.has("data") && !response.isNull("data")) {
@@ -141,7 +147,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     search.put("withFacets", true);
     search.put("hideUnavailableItems", true);
     search.put("query", this.location);
-    search.put("orderBy", "OrderByReleaseDateDESC");
+    search.put("orderBy", "OrderByTopSaleDESC");
     search.put("from", capturedProductsNumber);
     search.put("to", capturedProductsNumber + (this.pageSize - 1));
     search.put("facetQuery", this.location);
