@@ -1,15 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.GpsfarmaCrawler;
 
 public class ArgentinaGpsfarmarecoletaCrawler extends GpsfarmaCrawler {
-
-  private List<Cookie> cookies = new ArrayList<>();
 
   public ArgentinaGpsfarmarecoletaCrawler(Session session) {
     super(session);
