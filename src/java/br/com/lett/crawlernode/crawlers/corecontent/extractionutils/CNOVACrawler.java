@@ -95,7 +95,7 @@ public abstract class CNOVACrawler extends Crawler {
 
   public CNOVACrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.FETCHER);
+    super.config.setFetcher(FetchMode.APACHE);
   }
 
   protected String mainSellerNameLower;

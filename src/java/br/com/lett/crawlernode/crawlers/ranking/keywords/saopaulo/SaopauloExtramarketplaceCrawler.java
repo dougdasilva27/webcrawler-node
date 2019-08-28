@@ -17,7 +17,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
   public SaopauloExtramarketplaceCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.FETCHER;
+    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override

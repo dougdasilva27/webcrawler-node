@@ -18,7 +18,7 @@ public class SaopauloCasasbahiaCrawler extends CrawlerRankingKeywords {
 
   public SaopauloCasasbahiaCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.FETCHER;
+    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override
