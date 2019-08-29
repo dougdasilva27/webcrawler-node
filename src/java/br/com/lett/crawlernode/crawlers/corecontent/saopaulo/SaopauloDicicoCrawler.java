@@ -134,6 +134,17 @@ public class SaopauloDicicoCrawler extends Crawler {
         return idArray;
       }
 
+    } else {
+      JSONObject skuObj = CrawlerUtils.selectJsonFromHtml(doc, ".pdp script[language=\"JavaScript\"]", "var digitalData =", "};", false, false);
+      if (skuObj.has("ecom")) {
+        idArray = new String[1];
+        JSONObject ecom = skuObj.getJSONObject("ecom");
+
+        if (ecom.has("sku")) {
+          idArray[0] = ecom.get("sku").toString();
+
+        }
+      }
     }
 
     return idArray;
