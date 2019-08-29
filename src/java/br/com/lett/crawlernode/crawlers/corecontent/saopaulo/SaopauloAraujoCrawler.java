@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -437,6 +438,8 @@ public class SaopauloAraujoCrawler extends Crawler {
     selectors.add("#caracteristicas table.Saiba-Mais");
 
     description = CrawlerUtils.scrapSimpleDescription(doc, selectors);
+    String tableDescription = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#caracteristicas table.group.Caracteristicas"));
+    description = description.concat("\n").concat(tableDescription);
 
     return description;
   }
