@@ -42,7 +42,7 @@ public class SaopauloTendadriveRatingReviewCrawler extends RatingReviewCrawler {
 
     // shop id (AV guarapiranga)
     BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=10");
-    cookie.setDomain(".www.tendadrive.com.br");
+    cookie.setDomain(".www.tendaatacado.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
   }
