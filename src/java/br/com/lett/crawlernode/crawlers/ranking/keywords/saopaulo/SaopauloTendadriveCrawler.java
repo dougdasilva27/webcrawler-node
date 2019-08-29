@@ -21,13 +21,13 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
   public void processBeforeFetch() {
     this.log("Adding cookie...");
     BasicClientCookie cookie = new BasicClientCookie("lx_sales_channel", "%5B%2210%22%5D");
-    cookie.setDomain("busca.tendadrive.com.br");
+    cookie.setDomain("busca.tendaatacado.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
 
     this.log("Adding cookie...");
     BasicClientCookie cookieSC = new BasicClientCookie("VTEXSX", "sc=10");
-    cookieSC.setDomain("busca.tendadrive.com.br");
+    cookieSC.setDomain("busca.tendaatacado.com.br");
     cookieSC.setPath("/");
     this.cookies.add(cookieSC);
   }
@@ -38,10 +38,10 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
     this.pageSize = 24;
 
     String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    String url = "http://busca.tendadrive.com.br/busca?q=" + keyword + "&page=" + this.currentPage + "&sc=10";
+    String url = "http://busca.tendaatacado.com.br/busca?q=" + keyword + "&page=" + this.currentPage + "&sc=10";
     takeAScreenshot(url, cookies);
 
-    String apiUrl = "http://busca.tendadrive.com.br/busca?q=" + keyword + "&page=" + this.currentPage + "&ajaxSearch=1&sc=10";
+    String apiUrl = "http://busca.tendaatacado.com.br/busca?q=" + keyword + "&page=" + this.currentPage + "&ajaxSearch=1&sc=10";
     this.log("Link onde são feitos os crawlers: " + apiUrl);
 
     JSONObject search = fetchJSONObject(apiUrl, cookies);
