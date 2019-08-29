@@ -62,11 +62,12 @@ public class PeruPlazaveaCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Double priceDiscount = scrapPriceDescuento(vtexUtil, internalId);
         Map<String, Prices> marketplaceMap = crawlMarketplace(apiJSON, jsonSku, doc, vtexUtil, priceDiscount);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+        List<String> plazaveaSellers = CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER));
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, plazaveaSellers, Arrays.asList(Card.VISA), session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, plazaveaSellers);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
 
