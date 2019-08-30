@@ -48,7 +48,7 @@ public class BrasilMaisabracosCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".productDescription", ".title[data-destec=\"descp\"]", ".content-description .value-field.Descripcion",
-              ".title[data-destec=\"tech\"]", ".content-description table.group.Especificaciones-Tecnicas"));
+              ".title[data-destec=\"tech\"]", ".content-description table.group.Especificaciones-Tecnicas", "#caracteristicas"));
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();

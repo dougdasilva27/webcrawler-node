@@ -7,6 +7,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -25,7 +26,8 @@ public class PeruMetroCrawler extends Crawler {
   }
 
   private static final String HOME_PAGE = "https://www.metro.pe/";
-  private static final String MAIN_SELLER_NAME_LOWER = "metrofood";
+  private static final String MAIN_SELLER_NAME_LOWER = "wong";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "metro";
 
   @Override
   public boolean shouldVisit() {
@@ -59,14 +61,15 @@ public class PeruMetroCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+        List<String> metroSellers = CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2));
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, metroSellers, Arrays.asList(Card.VISA), session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, metroSellers);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-        Float price = vtexUtil.crawlMainPagePrice(prices);
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, metroSellers);
+        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 

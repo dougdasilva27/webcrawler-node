@@ -5,8 +5,11 @@ import java.net.URLEncoder;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -20,12 +23,12 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
 
   public ColombiaExitoCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.FETCHER;
+    super.fetchMode = FetchMode.JAVANET;
   }
 
   private static final String HOME_PAGE = "https://www.exito.com/";
-  private static final String SHA256_SEARCH = "68cf7ab5d1fe5031f2bb226b0889d4da0c56542d5f22f1d35f4dec901c59f5da";
-  private static final String API_VERSION = "1";
+  private String keySHA256;
+  private static final Integer API_VERSION = 1;
   private static final String SENDER = "vtex.store-resources@0.x";
   private static final String PROVIDER = "vtex.store-graphql@2.x";
 
@@ -33,6 +36,10 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
     this.pageSize = 20;
+
+    if (this.currentPage == 1) {
+      this.keySHA256 = fetchSHA256Key();
+    }
 
     JSONObject searchApi = fetchSearchApi();
     JSONArray products = searchApi.has("products") ? searchApi.getJSONArray("products") : new JSONArray();
@@ -84,22 +91,23 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     url.append("https://www.exito.com/_v/segment/graphql/v1?");
     url.append("workspace=master");
     url.append("&maxAge=short");
-    url.append("&domain=store");
     url.append("&appsEtag=remove");
+    url.append("&domain=store");
+    url.append("&locale=es-CO");
+    url.append("&operationName=search");
 
-    StringBuilder payload = new StringBuilder();
-    payload.append("&operationName=search");
 
     JSONObject extensions = new JSONObject();
     JSONObject persistedQuery = new JSONObject();
 
     persistedQuery.put("version", API_VERSION);
-    persistedQuery.put("sha256Hash", SHA256_SEARCH);
+    persistedQuery.put("sha256Hash", this.keySHA256);
     persistedQuery.put("sender", SENDER);
     persistedQuery.put("provider", PROVIDER);
-    extensions.put("persistedQuery", persistedQuery);
     extensions.put("variables", createVariablesBase64());
+    extensions.put("persistedQuery", persistedQuery);
 
+    StringBuilder payload = new StringBuilder();
     try {
       payload.append("&variables=" + URLEncoder.encode("{}", "UTF-8"));
       payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
@@ -111,10 +119,14 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("content-type", "application/json");
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
 
-    Request request =
-        RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setPayload(payload.toString()).mustSendContentEncoding(false).build();
+    Request request = RequestBuilder.create()
+        .setUrl(url.toString())
+        .setCookies(cookies)
+        .setPayload(payload.toString())
+        .build();
+
     JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
     if (response.has("data") && !response.isNull("data")) {
@@ -135,11 +147,56 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     search.put("withFacets", true);
     search.put("hideUnavailableItems", true);
     search.put("query", this.location);
-    search.put("orderBy", "OrderByReleaseDateDESC");
+    search.put("orderBy", "OrderByTopSaleDESC");
     search.put("from", capturedProductsNumber);
     search.put("to", capturedProductsNumber + (this.pageSize - 1));
     search.put("facetQuery", this.location);
 
     return Base64.getEncoder().encodeToString(search.toString().getBytes());
+  }
+
+  /**
+   * This function accesses the search url and extracts a hash that will be required to access the
+   * search api.
+   * 
+   * This hash is inside a key in json STATE. Ex:
+   * 
+   * "$ROOT_QUERY.productSearch({\"from\":0,\"hideUnavailableItems\":true,\"map\":\"ft\",\"orderBy\":\"OrderByTopSaleDESC\",\"query\":\"ACONDICIONADOR\",\"to\":19}) @runtimeMeta({\"hash\":\"0be25eb259af62c2a39f305122908321d46d3710243c4d4ec301bf158554fa71\"})"
+   * 
+   * Hash: 0be25eb259af62c2a39f305122908321d46d3710243c4d4ec301bf158554fa71
+   * 
+   * @return
+   */
+  private String fetchSHA256Key() {
+    String hash = null;
+    String url = "https://www.exito.com/" + this.keywordEncoded;
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
+    String response = this.dataFetcher.get(session, request).getBody();
+
+    if (response != null) {
+      Document doc = Jsoup.parse(response);
+      JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "__STATE__ =", null, false, true);
+
+
+      for (String key : stateJson.keySet()) {
+        String firstIndexString = "@runtimeMeta(";
+        String keyIdentifier = "$ROOT_QUERY.productSearch";
+
+        if (key.contains(firstIndexString) && key.contains(keyIdentifier) && key.endsWith(")")) {
+          int x = key.indexOf(firstIndexString) + firstIndexString.length();
+          int y = key.indexOf(')', x);
+
+          JSONObject hashJson = CrawlerUtils.stringToJson(key.substring(x, y));
+          if (hashJson.has("hash") && !hashJson.isNull("hash")) {
+            hash = hashJson.get("hash").toString();
+          }
+
+          break;
+        }
+      }
+    }
+
+    return hash;
   }
 }

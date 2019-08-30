@@ -1,21 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
@@ -27,29 +14,6 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
   }
 
   private static final String HOME_PAGE = "https://www.petz.com.br/";
-  private String userAgent;
-  private LettProxy proxyUsed;
-  private List<Cookie> cookies = new ArrayList<>();
-
-  @Override
-  public void processBeforeFetch() {
-    this.userAgent = FetchUtilities.randUserAgent();
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
-
-    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
-    Response response = this.dataFetcher.get(session, request);
-
-    this.proxyUsed = response.getProxyUsed();
-
-    for (Cookie cookieResponse : response.getCookies()) {
-      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-      cookie.setDomain("www.petz.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
-  }
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -58,14 +22,10 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://www.petz.com.br/busca_Loja.html?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+    String url = "https://www.petz.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
-
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
-    this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+    this.currentDoc = fetchDocumentWithWebDriver(url, 9000);
 
     Elements products = this.currentDoc.select(".liProduct > div");
 

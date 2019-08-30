@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
 import br.com.lett.crawlernode.core.server.Server;
-import br.com.lett.crawlernode.core.server.ServerExecutorStatusAgent;
-import br.com.lett.crawlernode.core.server.ServerExecutorStatusCollector;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.Logging;
@@ -42,7 +40,6 @@ public class Main {
 
   public static QueueHandler queueHandler;
   public static Resources globalResources;
-  public static ServerExecutorStatusAgent serverExecutorStatusAgent;
   public static Server server;
 
   public static void main(String args[]) {
@@ -66,10 +63,6 @@ public class Main {
 
     // Create the server
     server = new Server();
-
-    // Create the scheduled task to check the executor status
-    serverExecutorStatusAgent = new ServerExecutorStatusAgent();
-    serverExecutorStatusAgent.executeScheduled(new ServerExecutorStatusCollector(server), 20);
   }
 
   private static void checkFiles() {

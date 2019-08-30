@@ -142,6 +142,8 @@ public class DynamicDataFetcher {
    */
   public static Document fetchPage(CrawlerWebdriver webdriver, String url, Session session) {
     try {
+      Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
+
       String requestHash = FetchUtilities.generateRequestHash(session);
       Document doc = new Document(url);
       webdriver.loadUrl(url);

@@ -25,7 +25,7 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
     super.fetchMode = FetchMode.APACHE;
   }
 
-  private static final String HOME_PAGE = "http://www.drogariaspovao.com.br/";
+  private static final String HOME_PAGE = "https://www.drogariaspovao.com.br/";
 
   @Override
   protected void processBeforeFetch() {
@@ -60,7 +60,7 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
     headers.put("X-Requested-With", "XMLHttpRequest");
     headers.put("Origin", HOME_PAGE);
 
-    Request request = RequestBuilder.create().setUrl("http://www.drogariaspovao.com.br/ct/atende_geral.php").setPayload(payload.toString())
+    Request request = RequestBuilder.create().setUrl("https://www.drogariaspovao.com.br/ct/atende_geral.php").setPayload(payload.toString())
         .setHeaders(headers).setCookies(cookies).build();
     List<Cookie> loadPageCookies = this.dataFetcher.post(session, request).getCookies();
 
@@ -150,7 +150,7 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
     headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
     headers.put(HttpHeaders.REFERER, HOME_PAGE + "index.php");
 
-    String page = fetchStringPOST("http://www.drogariaspovao.com.br/ct/atende_geral.php", payload.toString(), headers, cookies).trim();
+    String page = fetchStringPOST("https://www.drogariaspovao.com.br/ct/atende_geral.php", payload.toString(), headers, cookies).trim();
     JSONArray infos = CrawlerUtils.stringToJsonArray(page);
 
     if (infos.length() > 1) {

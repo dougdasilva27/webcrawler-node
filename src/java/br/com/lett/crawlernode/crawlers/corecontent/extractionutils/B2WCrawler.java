@@ -45,6 +45,7 @@ import models.prices.Prices;
 public class B2WCrawler extends Crawler {
   protected Map<String, String> headers = new HashMap<>();
   private static final String MAIN_B2W_NAME_LOWER = "b2w";
+  private static final Card DEFAULT_CARD = Card.VISA;
   protected String sellerNameLower;
   protected List<String> subSellers;
   protected String homePage;
@@ -79,9 +80,25 @@ public class B2WCrawler extends Crawler {
   }
 
   public String fetchPage(String url, Session session) {
-    Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).setHeaders(this.headers).mustSendContentEncoding(false)
-        .setSendUserAgent(false).setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
-        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.BUY, ProxyCollection.STORM_RESIDENTIAL_US)).build();
+    Request request = RequestBuilder.create()
+        .setUrl(url)
+        .setCookies(this.cookies)
+        .setHeaders(this.headers)
+        .mustSendContentEncoding(false)
+        .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+                .mustUseMovingAverage(false)
+                .mustRetrieveStatistics(true)
+                .setForbiddenCssSelector("#px-captcha")
+                .build()
+        ).setProxyservice(
+            Arrays.asList(
+                ProxyCollection.STORM_RESIDENTIAL_EU,
+                ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                ProxyCollection.STORM_RESIDENTIAL_US,
+                ProxyCollection.BUY
+            )
+        ).build();
 
     String content = this.dataFetcher.get(session, request).getBody();
 
@@ -368,9 +385,32 @@ public class B2WCrawler extends Crawler {
         buyBoxJson.put(OfferField.IS_BUYBOX.toString(), isBuyBox);
         buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), JSONObject.NULL);
 
+        Prices prices = crawlMarketplacePrices(info);
+        Float price1x = !prices.isEmpty() ? prices.getCardInstallmentValue(DEFAULT_CARD.toString(), 1).floatValue() : null;
+        Float bankTicket = CrawlerUtils.getFloatValueFromJSON(info, "bakTicket", true, false);
+        Float defaultPrice = CrawlerUtils.getFloatValueFromJSON(info, "defaultPrice", true, false);
+
         if (i + 1 <= 3) {
           buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), i + 1);
+          Float featuredPrice = null;
+
+          for (Float value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
+            if (featuredPrice == null || (value != null && value < featuredPrice)) {
+              featuredPrice = value;
+            }
+          }
+
+          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), featuredPrice);
+
         } else {
+          if (defaultPrice != null) {
+            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), defaultPrice);
+          } else if (price1x != null) {
+            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), price1x);
+          } else if (bankTicket != null) {
+            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), bankTicket);
+          }
+
           buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), JSONObject.NULL);
         }
 
@@ -382,14 +422,6 @@ public class B2WCrawler extends Crawler {
 
         if (info.has("id")) {
           buyBoxJson.put(OfferField.INTERNAL_SELLER_ID.toString(), info.get("id").toString());
-        }
-
-        if (info.has("bankTicket")) {
-          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
-        }
-
-        if (info.has("bankTicket")) {
-          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), info.getDouble("bankTicket"));
         }
 
         listBuyBox.add(buyBoxJson);
@@ -542,6 +574,7 @@ public class B2WCrawler extends Crawler {
         }
       }
 
+      prices.insertCardInstallment(DEFAULT_CARD.toString(), installmentMapPrice);
       prices.insertCardInstallment(Card.VISA.toString(), installmentMapPrice);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMapPrice);
       prices.insertCardInstallment(Card.AURA.toString(), installmentMapPrice);
