@@ -52,7 +52,8 @@ public class PeruPlazaveaCrawler extends Crawler {
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
       String description =
-          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-caract", ".productDescription", "#product-spec .b12-product-descspec"));
+          CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-caract", ".productDescription", "#product-spec .b12-product-descspec",
+              "#caracteristicas"));
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
