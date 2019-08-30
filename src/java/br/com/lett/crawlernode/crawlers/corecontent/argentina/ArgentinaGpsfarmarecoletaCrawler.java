@@ -4,9 +4,9 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GpsfarmaCrawler;
 
-public class ArgentinaGpsfarmarecoleta extends GpsfarmaCrawler {
+public class ArgentinaGpsfarmarecoletaCrawler extends GpsfarmaCrawler {
 
-  public ArgentinaGpsfarmarecoleta(Session session) {
+  public ArgentinaGpsfarmarecoletaCrawler(Session session) {
     super(session);
   }
 
