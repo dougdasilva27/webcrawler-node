@@ -48,13 +48,15 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
           .setCookies(cookies)
           .setProxyservice(
               Arrays.asList(
+                  ProxyCollection.STORM_RESIDENTIAL_EU,
                   ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.STORM_RESIDENTIAL_US
+                  ProxyCollection.STORM_RESIDENTIAL_US,
+                  ProxyCollection.BUY
               )
           ).mustSendContentEncoding(false)
           .setFetcheroptions(FetcherOptionsBuilder.create()
               .setForbiddenCssSelector("#px-captcha")
-              .mustUseMovingAverage(true)
+              .mustUseMovingAverage(false)
               .mustRetrieveStatistics(true).build())
           .build();
     } else {
