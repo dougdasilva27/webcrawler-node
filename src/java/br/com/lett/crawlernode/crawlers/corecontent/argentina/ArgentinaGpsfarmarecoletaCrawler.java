@@ -4,28 +4,22 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GpsfarmaCrawler;
 
-/**
- * Date: 28/08/2019
- * 
- * @author João Pedro
- *
- */
-public class ArgentinaGpsfarmaCrawler extends GpsfarmaCrawler {
+public class ArgentinaGpsfarmarecoletaCrawler extends GpsfarmaCrawler {
 
-  public ArgentinaGpsfarmaCrawler(Session session) {
+  public ArgentinaGpsfarmarecoletaCrawler(Session session) {
     super(session);
   }
 
   @Override
   public void handleCookiesBeforeFetch() {
 
-    // Criando cookie da cidade CABA
-    BasicClientCookie cookie = new BasicClientCookie("GPS_CITY_ID", "32");
+    // Criando cookie da regiao recoleta
+    BasicClientCookie cookie = new BasicClientCookie("GPS_CITY_ID", "28");
     cookie.setDomain(".www.gpsfarma.com");
     cookie.setPath("/");
     this.cookies.add(cookie);
 
-    // Criando cookie da regiao sao nicolas
+    // Criando cookie da cidade CABA
     BasicClientCookie cookie2 = new BasicClientCookie("GPS_REGION_ID", "509");
     cookie2.setDomain(".www.gpsfarma.com");
     cookie2.setPath("/");
@@ -38,5 +32,4 @@ public class ArgentinaGpsfarmaCrawler extends GpsfarmaCrawler {
     this.cookies.add(cookie3);
 
   }
-
 }
