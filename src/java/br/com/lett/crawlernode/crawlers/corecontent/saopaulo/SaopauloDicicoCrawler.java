@@ -136,11 +136,11 @@ public class SaopauloDicicoCrawler extends Crawler {
 
     } else {
       JSONObject skuObj = CrawlerUtils.selectJsonFromHtml(doc, ".pdp script[language=\"JavaScript\"]", "var digitalData =", "};", false, false);
-      if (skuObj.has("ecom")) {
+      if (skuObj.has("ecom") && !skuObj.isNull("ecom")) {
         idArray = new String[1];
         JSONObject ecom = skuObj.getJSONObject("ecom");
 
-        if (ecom.has("sku")) {
+        if (ecom.has("sku") && !ecom.isNull("sku")) {
           idArray[0] = ecom.get("sku").toString();
 
         }
@@ -148,6 +148,7 @@ public class SaopauloDicicoCrawler extends Crawler {
     }
 
     return idArray;
+
   }
 
   private boolean isProductPage(Document doc) {
