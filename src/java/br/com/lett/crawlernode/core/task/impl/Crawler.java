@@ -13,6 +13,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
+import br.com.lett.crawlernode.aws.kinesis.KPLProducerRating;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -49,6 +50,7 @@ import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import containers.ProcessedComparison;
 import models.DateConstants;
 import models.Processed;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -173,9 +175,31 @@ public class Crawler extends Task {
           p.setStatus(SkuStatus.UNAVAILABLE);
         }
       }
+      RatingsReviews productRating = p.getRatingReviews();
+      RatingsReviews rating = assembleRatingToSendToKinesis(productRating);
 
+      KPLProducerRating.getInstance().put(rating, session);
       KPLProducer.getInstance().put(p, session);
     }
+  }
+
+  private RatingsReviews assembleRatingToSendToKinesis(RatingsReviews rating) {
+    RatingsReviews r = new RatingsReviews();
+
+    if (session.getInternalId() != null) {
+      r.setInternalId(session.getInternalId());
+      r.setUrl(session.getOriginalURL());
+      r.setMarketId(session.getMarket().getNumber());
+
+      if (rating != null) {
+        r.setAverageOverallRating(rating.getAverageOverallRating());
+        r.setTotalRating(rating.getTotalReviews());
+        r.setTotalWrittenReviews(rating.getTotalWrittenReviews());
+      }
+
+    }
+
+    return r;
   }
 
   @Override
