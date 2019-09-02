@@ -112,7 +112,6 @@ public class B2WCrawler extends Crawler {
 
     // Json da pagina principal
     JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
-
     // Pega só o que interessa do json da api
     JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
@@ -127,6 +126,7 @@ public class B2WCrawler extends Crawler {
       String primaryImage = hasImages ? this.crawlPrimaryImage(infoProductJson) : null;
       String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
       String description = this.crawlDescription(internalPid, doc);
+      List<String> eans = crawlEan(infoProductJson);
 
       Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson, doc);
 
@@ -140,7 +140,6 @@ public class B2WCrawler extends Crawler {
         Prices prices = crawlPrices(marketplaceMap);
         List<JSONObject> buyBox = scrapBuyBox(doc, internalId, internalPid);
         Offers offers = assembleOffers(buyBox);
-
         // Creating the product
         Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -158,6 +157,7 @@ public class B2WCrawler extends Crawler {
             .setDescription(description)
             .setMarketplace(variationMarketplace)
             .setOffers(offers)
+            .setEans(eans)
             .build();
 
         products.add(product);
@@ -167,6 +167,27 @@ public class B2WCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private List<String> crawlEan(JSONObject infoProductJson) {
+    List<String> eans = new ArrayList<>();
+    if (infoProductJson.has("skus")) {
+      JSONArray skusArray = infoProductJson.getJSONArray("skus");
+      for (Object object : skusArray) {
+        JSONObject skus = (JSONObject) object;
+
+        if (skus.has("eans")) {
+          JSONArray eansArray = skus.getJSONArray("eans");
+
+          for (Object eansObject : eansArray) {
+            String ean = (String) eansObject;
+            eans.add(ean);
+          }
+        }
+      }
+    }
+
+    return eans;
   }
 
   private Offers assembleOffers(List<JSONObject> buyBox) {
