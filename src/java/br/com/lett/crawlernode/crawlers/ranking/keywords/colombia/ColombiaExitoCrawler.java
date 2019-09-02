@@ -163,12 +163,13 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    * 
    * "$ROOT_QUERY.productSearch({\"from\":0,\"hideUnavailableItems\":true,\"map\":\"ft\",\"orderBy\":\"OrderByTopSaleDESC\",\"query\":\"ACONDICIONADOR\",\"to\":19}) @runtimeMeta({\"hash\":\"0be25eb259af62c2a39f305122908321d46d3710243c4d4ec301bf158554fa71\"})"
    * 
-   * Hash: 0be25eb259af62c2a39f305122908321d46d3710243c4d4ec301bf158554fa71
+   * Hash: 1d1ad37219ceb86fc281aa774971bbe1fe7656730e0a2ac50ba63ed63e45a2a3
    * 
    * @return
    */
   private String fetchSHA256Key() {
-    String hash = null;
+    // When sha256Hash is not found, this key below works (on 02/09/2019)
+    String hash = "1d1ad37219ceb86fc281aa774971bbe1fe7656730e0a2ac50ba63ed63e45a2a3";
     String url = "https://www.exito.com/" + this.keywordEncoded;
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
@@ -177,7 +178,6 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     if (response != null) {
       Document doc = Jsoup.parse(response);
       JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "__STATE__ =", null, false, true);
-
 
       for (String key : stateJson.keySet()) {
         String firstIndexString = "@runtimeMeta(";
@@ -188,6 +188,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
           int y = key.indexOf(')', x);
 
           JSONObject hashJson = CrawlerUtils.stringToJson(key.substring(x, y));
+
           if (hashJson.has("hash") && !hashJson.isNull("hash")) {
             hash = hashJson.get("hash").toString();
           }
