@@ -78,8 +78,8 @@ public class PeruPlazaveaCrawler extends Crawler {
               "plazavea.vteximg.com.br", primaryImage);
         }
 
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-        Float price = vtexUtil.crawlMainPagePrice(prices);
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, plazaveaSellers);
+        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
         Integer stock = vtexUtil.crawlStock(apiJSON);
 
         // Creating the product
