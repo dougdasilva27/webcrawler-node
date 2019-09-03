@@ -100,6 +100,7 @@ public class SaopauloB2WCrawlersUtils {
 
       JSONArray jsonCategories = getJSONCategories(productJson);
       jsonProduct.put("categories", jsonCategories);
+
     }
 
     return jsonProduct;
@@ -189,11 +190,14 @@ public class SaopauloB2WCrawlersUtils {
               sku.put("variationName", name.toString().trim());
             }
           }
+          if (skuJson.has("eans") && !skuJson.isNull("eans")) {
+            sku.put("eans", skuJson.getJSONArray("eans"));
+          }
         }
+
         skus.put(sku);
       }
     }
-
     return skus;
   }
 
