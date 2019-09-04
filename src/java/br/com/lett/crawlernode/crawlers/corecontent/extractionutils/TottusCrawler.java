@@ -127,10 +127,26 @@ public class TottusCrawler {
         description.append(scrapTechnicDescription(doc.select("[v-if=\"tieneDescripcion==true\"] v-flex:first-child"), jsonDescription));
       }
 
+      if (description.toString().isEmpty()) {
+        description.append(assembleDescription(jsonDescription));
+      }
     }
 
-
     return description.toString();
+  }
+
+  private String assembleDescription(JSONObject jsonDescription) {
+    String assembledDescription = "";
+
+    for (Object object : jsonDescription.keySet()) {
+      assembledDescription = assembledDescription
+          .concat(object.toString())
+          .concat(": ")
+          .concat(jsonDescription.get(object.toString()).toString())
+          .concat("<br>");
+    }
+
+    return assembledDescription;
   }
 
   private StringBuilder scrapTechnicDescription(Elements elements, JSONObject jsonDescription) {
