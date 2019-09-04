@@ -13,7 +13,6 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
-import br.com.lett.crawlernode.aws.kinesis.KPLProducerRating;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -178,7 +177,7 @@ public class Crawler extends Task {
       RatingsReviews productRating = p.getRatingReviews();
       RatingsReviews rating = assembleRatingToSendToKinesis(productRating);
 
-      KPLProducerRating.getInstance().put(rating, session);
+      KPLProducer.getInstance().put(rating, session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
       KPLProducer.getInstance().put(p, session);
     }
   }
