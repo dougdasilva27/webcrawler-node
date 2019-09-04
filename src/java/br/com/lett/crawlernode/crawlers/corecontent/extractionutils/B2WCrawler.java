@@ -115,7 +115,6 @@ public class B2WCrawler extends Crawler {
 
     // Json da pagina principal
     JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
-
     // Pega só o que interessa do json da api
     JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
@@ -131,6 +130,7 @@ public class B2WCrawler extends Crawler {
       String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
       String description = this.crawlDescription(internalPid, doc);
       RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+      List<String> eans = crawlEan(infoProductJson);
 
       Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson, doc);
 
@@ -170,6 +170,7 @@ public class B2WCrawler extends Crawler {
             .setMarketplace(variationMarketplace)
             .setOffers(offers)
             .setRatingReviews(clonedRatingReviews)
+            .setEans(eans)
             .build();
 
         products.add(product);
@@ -348,6 +349,27 @@ public class B2WCrawler extends Crawler {
     }
 
     return new JSONObject();
+  }
+
+  private List<String> crawlEan(JSONObject infoProductJson) {
+    List<String> eans = new ArrayList<>();
+    if (infoProductJson.has("skus")) {
+      JSONArray skusArray = infoProductJson.getJSONArray("skus");
+      for (Object object : skusArray) {
+        JSONObject skus = (JSONObject) object;
+
+        if (skus.has("eans")) {
+          JSONArray eansArray = skus.getJSONArray("eans");
+
+          for (Object eansObject : eansArray) {
+            String ean = (String) eansObject;
+            eans.add(ean);
+          }
+        }
+      }
+    }
+
+    return eans;
   }
 
   private Offers assembleOffers(List<JSONObject> buyBox) {

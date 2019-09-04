@@ -3,11 +3,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -217,7 +219,7 @@ public class BrasilAmazonCrawler extends Crawler {
   private JSONArray crawlImages(Document doc) {
     JSONArray images = new JSONArray();
 
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "vardata=", "};", true, false);
+    JSONObject data = scrapImagesJson(doc);
 
     if (data.has("imageGalleryData")) {
       images = data.getJSONArray("imageGalleryData");
@@ -230,6 +232,39 @@ public class BrasilAmazonCrawler extends Crawler {
     }
 
     return images;
+  }
+
+  private JSONObject scrapImagesJson(Document doc) {
+    JSONObject data = new JSONObject();
+
+    String firstIndex = "vardata=";
+    String lastIndex = "};";
+
+    Elements scripts = doc.select("script[type=\"text/javascript\"]");
+    for (Element e : scripts) {
+      // This json can be broken, we need to remove additional ','
+      String script = e.html()
+          .replace(" ", "")
+          .replaceAll("\n", "")
+          .replace(",}", "}")
+          .replace(",]", "]");
+
+      if (script.contains(firstIndex) && script.contains(lastIndex)) {
+        String json = CrawlerUtils.extractSpecificStringFromScript(script, firstIndex, false, lastIndex, false);
+        if (json != null && json.trim().startsWith("{") && json.trim().endsWith("}")) {
+
+          try {
+            data = new JSONObject(json.trim());
+          } catch (JSONException e1) {
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
+          }
+        }
+
+        break;
+      }
+    }
+
+    return data;
   }
 
   private Float crawlPrice(Map<String, Prices> marketplaces) {
@@ -645,14 +680,18 @@ public class BrasilAmazonCrawler extends Crawler {
   }
 
   private String crawlEan(Document doc) {
-    Element e = doc.select(".pdTab table tr:not([class]):not([id]):not(:last-child)").last();
     String ean = null;
 
-    if (e != null) {
-      Element subE = e.selectFirst(".value");
+    List<String> eanKeys = Arrays.asList("código de barras:", "ean:", "eans:", "código de barras", "codigo de barras", "ean", "eans");
 
-      if (subE != null) {
-        ean = subE.text().trim();
+    Elements attributes = doc.select(".pdTab table tr:not([class]):not([id]):not(:last-child)");
+    for (Element att : attributes) {
+      String key = CrawlerUtils.scrapStringSimpleInfo(att, ".label", true).toLowerCase();
+
+      if (eanKeys.contains(key)) {
+        ean = CrawlerUtils.scrapStringSimpleInfo(att, ".value", true);
+
+        break;
       }
     }
 
