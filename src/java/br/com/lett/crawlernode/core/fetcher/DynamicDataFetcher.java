@@ -54,7 +54,7 @@ public class DynamicDataFetcher {
       }
 
       // Dufrio block luminati_server
-      if (session.getMarket().getName().equals("dufrio")) {
+      if (session.getMarket().getName().equals("dufrio") || session.getMarket().getName().equals("petz")) {
         proxyString = ProxyCollection.BUY;
       }
 
