@@ -180,12 +180,17 @@ public class BrasilAmazonCrawler extends Crawler {
 
     Elements scripts = doc.select("script[type=\"text/javascript\"]");
     for (Element e : scripts) {
-      String script = e.html().replace(" ", "");
+      // This json can be broken, we need to remove additional ','
+      String script = e.html()
+          .replace(" ", "")
+          .replaceAll("\n", "")
+          .replace(",}", "}")
+          .replace(",]", "]");
 
       if (script.contains(firstIndex) && script.contains(lastIndex)) {
         String json = CrawlerUtils.extractSpecificStringFromScript(script, firstIndex, false, lastIndex, false);
-
         if (json != null && json.trim().startsWith("{") && json.trim().endsWith("}")) {
+
           try {
             data = new JSONObject(json.trim());
           } catch (JSONException e1) {
