@@ -22,6 +22,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -783,7 +785,6 @@ public class CrawlerUtils {
       }
     }
 
-
     return object;
   }
 
@@ -798,24 +799,47 @@ public class CrawlerUtils {
    * @param finalIndex if final index is null or is'nt in html, substring will use only the token
    * @param lastFinalIndex if true, the substring will find last index of finalIndex
    * @return
+   * @deprecated
    */
   public static String extractSpecificStringFromScript(String script, String token, String finalIndex, boolean lastFinalIndex) {
+    return extractSpecificStringFromScript(script, token, false, finalIndex, lastFinalIndex);
+  }
+
+  /**
+   * Extract Json string from script(string) e.g: vtxctx = [{ skus:"825484", searchTerm:"",
+   * categoryId:"38", categoryName:"Leite infantil", departmentyId:"4", departmentName:"Infantil",
+   * url:"www.araujo.com.br" }, {...}];
+   *
+   * token = "vtxctx=" finalIndex = ";"
+   * 
+   * @param firstIndexString whithout spaces
+   * @param lastOccurrenceOfFirstIndex if true, the substring will find last index of firstIndexString
+   * @param lastIndexString if final index is null or is'nt in html, substring will use only the token
+   * @param lastOccurrenceOfLastIndex if true, the substring will find last index of lastIndexString
+   * @return
+   */
+  public static String extractSpecificStringFromScript(String script, String firstIndexString, boolean lastOccurrenceOfFirstIndex,
+      String lastIndexString,
+      boolean lastOccurrenceOfLastIndex) {
     String json = null;
 
-    int x = script.indexOf(token) + token.length();
+    int x = (lastOccurrenceOfFirstIndex ? script.lastIndexOf(firstIndexString) : script.indexOf(firstIndexString)) + firstIndexString.length();
 
-    if (finalIndex != null) {
+    if (lastIndexString != null) {
       int y;
 
-      if (lastFinalIndex) {
-        y = script.lastIndexOf(finalIndex);
+      if (lastOccurrenceOfLastIndex) {
+        y = script.lastIndexOf(lastIndexString);
       } else {
-        y = script.indexOf(finalIndex, x);
+        y = script.indexOf(lastIndexString, x);
       }
 
       int plusIndex = 0;
 
-      if (finalIndex.equals("};") || finalIndex.equals("},")) {
+      // This happen when we need scrap a specific json on script
+      // Sometime we have more than one json
+      // So the last index in this case will be "}," or "};"
+      if (lastIndexString.equals("};") || lastIndexString.equals("},")) {
         plusIndex = 1;
       }
 
@@ -832,7 +856,9 @@ public class CrawlerUtils {
 
     if (str.trim().startsWith("{") && str.trim().endsWith("}")) {
       try {
-        json = new JSONObject(str.trim());
+        // We use gson to parse because this library treats "\n" and duplicate keys
+        JsonObject gson = ((JsonObject) new JsonParser().parse(str.trim()));
+        json = new JSONObject(gson.toString());
       } catch (Exception e1) {
         Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
       }
@@ -1032,12 +1058,13 @@ public class CrawlerUtils {
    * @param session
    * @return
    */
-  public static String crawlFinalUrl(String url, Session session) {
-    if (url.equals(session.getRedirectedToURL(url)) || session.getRedirectedToURL(url) == null) {
-      return url;
+  public static String getRedirectedUrl(String url, Session session) {
+    String redirectedUrl = session.getRedirectedToURL(url);
+    if (redirectedUrl != null && !url.equalsIgnoreCase(redirectedUrl)) {
+      return redirectedUrl;
     }
 
-    return session.getRedirectedToURL(url);
+    return url;
   }
 
   /**
@@ -1099,18 +1126,9 @@ public class CrawlerUtils {
         price = MathUtils.normalizeTwoDecimalPlaces(((Double) priceObj).floatValue());
       } else {
         if (stringWithFloatLayout) {
-          String text = priceObj.toString().replaceAll("[^0-9.]", "");
-
-          if (!text.isEmpty()) {
-            price = Float.parseFloat(text);
-          }
-        } else {
-
-          if (priceWithComma) {
-            price = MathUtils.parseFloatWithComma(priceObj.toString());
-          } else {
-            price = MathUtils.parseFloatWithDots(priceObj.toString());
-          }
+          price = MathUtils.parseFloatWithDots(priceObj.toString());
+        } else if (priceWithComma) {
+          price = MathUtils.parseFloatWithComma(priceObj.toString());
         }
       }
     }

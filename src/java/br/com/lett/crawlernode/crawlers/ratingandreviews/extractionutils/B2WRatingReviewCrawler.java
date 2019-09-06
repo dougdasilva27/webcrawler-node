@@ -49,9 +49,23 @@ public class B2WRatingReviewCrawler extends RatingReviewCrawler {
     headers.put(HttpHeaders.ACCEPT_ENCODING, "no");
     headers.put("Upgrade-Insecure-Requests", "1");
 
-    Request request = RequestBuilder.create().setUrl(url).setCookies(this.cookies).setHeaders(headers).mustSendContentEncoding(false)
-        .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).setForbiddenCssSelector("#px-captcha").build())
-        .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_EU, ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.BUY)).build();
+    Request request = RequestBuilder.create()
+        .setUrl(url)
+        .setCookies(this.cookies)
+        .setHeaders(headers)
+        .mustSendContentEncoding(false)
+        .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+                .mustUseMovingAverage(false)
+                .setForbiddenCssSelector("#px-captcha")
+                .build())
+        .setProxyservice(
+            Arrays.asList(
+                ProxyCollection.STORM_RESIDENTIAL_EU,
+                ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                ProxyCollection.STORM_RESIDENTIAL_US,
+                ProxyCollection.BUY))
+        .build();
 
     String content = this.dataFetcher.get(session, request).getBody();
 

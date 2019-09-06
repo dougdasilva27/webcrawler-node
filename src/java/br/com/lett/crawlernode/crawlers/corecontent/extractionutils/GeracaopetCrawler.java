@@ -458,7 +458,7 @@ public class GeracaopetCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.selectFirst("#maincontent") != null;
+    return doc.selectFirst("h1 span[itemprop=name]") != null;
   }
 
 }

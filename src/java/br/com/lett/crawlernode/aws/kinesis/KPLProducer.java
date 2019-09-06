@@ -6,7 +6,10 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesis.producer.Attempt;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
@@ -37,11 +40,27 @@ public class KPLProducer {
   private KinesisProducer kinesisProducer;
 
   private static final KPLProducer INSTANCE = new KPLProducer();
+  
+  class CustomAwsCredentialsProvider implements AWSCredentialsProvider {
+
+	@Override
+	public AWSCredentials getCredentials() {
+		return new BasicAWSCredentials(
+				GlobalConfigurations.executionParameters.getNewAwsAccessKey(), 
+				GlobalConfigurations.executionParameters.getNewAwsSecretKey());
+	}
+
+	@Override
+	public void refresh() {
+		// no-op
+	}
+	  
+  }
 
   private KPLProducer() {
     KinesisProducerConfiguration config = new KinesisProducerConfiguration();
     config.setRegion(KPLProducerConfig.REGION);
-    config.setCredentialsProvider(new DefaultAWSCredentialsProviderChain());
+    config.setCredentialsProvider(new CustomAwsCredentialsProvider());
     config.setMaxConnections(KPLProducerConfig.KPL_MAX_CONNECTIONS);
     config.setRequestTimeout(KPLProducerConfig.KPL_REQUEST_TIMEOUT);
     config.setRecordTtl(KPLProducerConfig.RECORD_TTL); // 5 minutes to avoid data loss

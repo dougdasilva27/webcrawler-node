@@ -2,38 +2,33 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilPoloarCrawler extends CrawlerRankingKeywords {
 
   public BrasilPoloarCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
     this.pageSize = 12;
-
     this.log("Página " + this.currentPage);
 
-    String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
-
-    // monta a url com a keyword e a página
-    String url = "https://www.poloar.com.br/" + key + "?PageNumber=" + this.currentPage + "&PS=50";
+    String url = "https://www.poloar.com.br/" + this.keywordWithoutAccents.replace(" ", "%20")
+        + "?PageNumber=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar a url
     this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select("div.prateleira ul > li[layout]");
     Elements productsId = this.currentDoc.select("div.prateleira ul > li.helperComplement");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
     if (!products.isEmpty()) {
-      // se o total de busca não foi setado ainda, chama a função para setar
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
@@ -41,13 +36,9 @@ public class BrasilPoloarCrawler extends CrawlerRankingKeywords {
       int index = 0;
 
       for (Element e : products) {
-        // seta o id com o seletor
         String internalPid = crawlInternalPid(productsId, index);
         String internalId = null;
-
-        // monta a url
-        Element eUrl = e.select(".product-name a").first();
-        String productUrl = eUrl.attr("href");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".data > a", "href", "https", "www.poloar.com.br");
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -68,17 +59,8 @@ public class BrasilPoloarCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("span.resultado-busca-numero > span.value").first();
-
-    if (totalElement != null) {
-      try {
-        this.totalProducts = Integer.parseInt(totalElement.text().trim());
-      } catch (Exception e) {
-        this.logError(CommonMethods.getStackTraceString(e));
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "span.resultado-busca-numero > span.value", true, 0);
+    this.log("Total da busca: " + this.totalProducts);
   }
 
   private String crawlInternalPid(Elements products, int index) {

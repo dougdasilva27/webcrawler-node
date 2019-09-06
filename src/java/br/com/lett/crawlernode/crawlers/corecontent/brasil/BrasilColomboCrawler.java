@@ -51,7 +51,7 @@ public class BrasilColomboCrawler extends Crawler {
     if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && (productElement != null)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      Elements selections = doc.select(".dados-itens-table tr[id]");
+      Elements selections = doc.select(".dados-itens-table tr[data-item]");
 
       // Pid
       String internalPid = null;
@@ -198,11 +198,7 @@ public class BrasilColomboCrawler extends Crawler {
           }
 
           // Nome
-          String variationName = null;
-          Element variationElementName = e.selectFirst(".caracteristicasdados-itens-table-caracteristicas > label");
-          if (variationElementName != null) {
-            variationName = name + " " + variationElementName.ownText().split("- R")[0];
-          }
+          String variationName = scrapVariationName(name, e);
 
           // Available
           boolean variationAvailable = available;
@@ -252,11 +248,26 @@ public class BrasilColomboCrawler extends Crawler {
     return products;
   }
 
+  private String scrapVariationName(String name, Element variationElement) {
+    StringBuilder variationName = new StringBuilder();
+    variationName.append(name);
+
+    String volts = CrawlerUtils.scrapStringSimpleInfo(variationElement, ".caracteristicasdados-itens-table-caracteristicas > label,"
+        + " .dados-itens-table-caracteristicas > label", true);
+
+    if (volts != null) {
+      variationName.append(" ");
+      variationName.append(volts.contains("- R") ? volts.split("- R")[0] : volts);
+    }
+
+    return variationName.toString();
+  }
+
   private Offers scrapBuyBox(Element doc, Float price) {
     Offers offers = new Offers();
     try {
       Element nameElement = doc.selectFirst(".dados-itens-table-estoque .label-linha-item .btn-show-info-seller");
-      Element sellerIdElement = doc.selectFirst(".item-codigo-seller");
+      Element sellerIdElement = doc.selectFirst("input[name=codigoSeller]");
       Element elementPrice = doc.selectFirst(".label-preco-item");
       Double mainPrice = price.doubleValue();
       String sellerFullName = null;

@@ -52,7 +52,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String internalPid = internalId;
-      String newUrl = internalId != null ? CrawlerUtils.crawlFinalUrl(session.getOriginalURL(), session) : session.getOriginalURL();
+      String newUrl = internalId != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb > a:not(:first-child)");
       String name = crawlName(doc);
       Float price = crawlPrice(doc);

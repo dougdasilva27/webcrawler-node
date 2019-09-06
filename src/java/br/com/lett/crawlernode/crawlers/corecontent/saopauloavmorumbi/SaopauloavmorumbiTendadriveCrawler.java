@@ -38,7 +38,7 @@ import models.prices.Prices;
 
 public class SaopauloavmorumbiTendadriveCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.tendadrive.com.br/";
+  private static final String HOME_PAGE = "http://www.tendaatacado.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "tenda drive";
 
   public SaopauloavmorumbiTendadriveCrawler(Session session) {
@@ -58,7 +58,7 @@ public class SaopauloavmorumbiTendadriveCrawler extends Crawler {
 
     // shop id (AV guarapiranga)
     BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=23");
-    cookie.setDomain(".www.tendadrive.com.br");
+    cookie.setDomain(".www.tendaatacado.com.br");
     cookie.setPath("/");
     this.cookies.add(cookie);
   }
@@ -408,7 +408,7 @@ public class SaopauloavmorumbiTendadriveCrawler extends Crawler {
   private JSONObject crawlSKusInfo(String internalPid) {
     JSONObject info = new JSONObject();
 
-    String url = "http://www.tendadrive.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=14";
+    String url = "http://www.tendaatacado.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=14";
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     JSONArray skus = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 

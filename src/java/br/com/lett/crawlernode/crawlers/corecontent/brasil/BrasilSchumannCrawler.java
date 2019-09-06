@@ -116,7 +116,7 @@ public class BrasilSchumannCrawler extends Crawler {
 
         String name = this.crawlName(jsonSku, mainPageName);
         String internalId = this.crawlInternalId(jsonSku);
-        String redirectUrl = internalId != null ? CrawlerUtils.crawlFinalUrl(originalUrl, session) : originalUrl;
+        String redirectUrl = internalId != null ? CrawlerUtils.getRedirectedUrl(originalUrl, session) : originalUrl;
         Integer stock = crawlStock(jsonSku);
         boolean available = this.crawlAvailability(stock);
         Float price = this.crawlPrice(jsonSku);

@@ -7,6 +7,8 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -46,10 +48,12 @@ public class BrasilMaisabracosCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
       String description = CrawlerUtils.scrapSimpleDescription(doc,
           Arrays.asList(".productDescription", ".title[data-destec=\"descp\"]", ".content-description .value-field.Descripcion",
-              ".title[data-destec=\"tech\"]", ".content-description table.group.Especificaciones-Tecnicas"));
+              ".title[data-destec=\"tech\"]", ".content-description table.group.Especificaciones-Tecnicas", "#caracteristicas"));
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      String primaryImage = crawlPrimaryImage(doc);
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -60,8 +64,6 @@ public class BrasilMaisabracosCrawler extends Crawler {
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
@@ -86,6 +88,41 @@ public class BrasilMaisabracosCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private String crawlSecondaryImages(Document doc, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(".images-source ul li a");
+    for (Element e : images) {
+
+      if (e.hasAttr("zoom")) {
+        String image = e.attr("zoom");
+
+        if ((primaryImage == null || !primaryImage.equals(image)) && image != null) {
+          secondaryImagesArray.put(image);
+
+        }
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+
+  private String crawlPrimaryImage(Document doc) {
+    Element primaryImageElement = doc.selectFirst(".images-source ul li a");
+    String primaryImage = null;
+
+    if (primaryImageElement != null && primaryImageElement.hasAttr("zoom")) {
+      primaryImage = primaryImageElement.attr("zoom");
+    }
+
+    return primaryImage;
   }
 
   private boolean isProductPage(Document document) {

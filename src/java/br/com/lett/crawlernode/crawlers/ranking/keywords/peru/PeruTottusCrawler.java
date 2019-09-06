@@ -40,7 +40,7 @@ public class PeruTottusCrawler extends CrawlerRankingKeywords {
     Elements products = this.currentDoc.select(".item-product-caption");
 
     if (this.currentPage == 1) {
-      this.redirectUrl = CrawlerUtils.crawlFinalUrl(url, session);
+      this.redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
     }
 
     if (!products.isEmpty()) {

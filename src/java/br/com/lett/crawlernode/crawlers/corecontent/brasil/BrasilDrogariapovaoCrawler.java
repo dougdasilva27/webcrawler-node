@@ -34,7 +34,7 @@ import models.prices.Prices;
  */
 public class BrasilDrogariapovaoCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.drogariaspovao.com.br/";
+  private static final String HOME_PAGE = "https://www.drogariaspovao.com.br/";
 
   public BrasilDrogariapovaoCrawler(Session session) {
     super(session);
@@ -63,7 +63,8 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-      Request request = RequestBuilder.create().setUrl("http://www.drogariaspovao.com.br/ct/atende_geral.php").setCookies(cookies).setHeaders(headers)
+      Request request = RequestBuilder.create().setUrl("https://www.drogariaspovao.com.br/ct/atende_geral.php").setCookies(cookies).setHeaders(
+          headers)
           .setPayload(payload).build();
       JSONArray infos = CrawlerUtils.stringToJsonArray(this.dataFetcher.post(session, request).getBody());
 

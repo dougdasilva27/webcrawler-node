@@ -57,7 +57,8 @@ public class BrasilTerabyteCrawler extends Crawler {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.tit-prod", false);
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(doc, price);
-      boolean available = !doc.select(".product-payment .buy").isEmpty();
+      Element availableElement = doc.selectFirst(".tbt_esgotado");
+      boolean available = availableElement == null && price != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a strong");
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carousel-inner div .thumbitem> a",
           Arrays.asList("data-zoom-image", "data-image"), "https:", "www.terabyteshop.com.br");

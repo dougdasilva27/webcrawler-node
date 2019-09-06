@@ -9,6 +9,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -32,58 +35,51 @@ public class ChileSalcobrandCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "window.chaordic_meta = ", ";", false, false);
-    JSONObject productJson = new JSONObject();
-    JSONObject jsonPrices = CrawlerUtils.selectJsonFromHtml(doc, "script", "var prices = ", ";", false, true);
-    JSONArray categoriesJson = new JSONArray();
-
-    String description = crawlDesciption(doc);
-
-    if (json.has("product")) {
-      productJson = json.getJSONObject("product");
-    }
-
-    if (json.has("page")) {
-      JSONObject pageJson = json.getJSONObject("page");
-
-      if (pageJson.has("categories")) {
-        categoriesJson = pageJson.getJSONArray("categories");
-      }
-    }
-
-    CategoryCollection categories = crawlCategories(categoriesJson);
-
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      if (productJson.has("skus")) {
+      String internalPid = scrapInternalPid(doc);
+      JSONArray skusStock = fetchStockAPI(internalPid);
+      JSONObject skusPrices = CrawlerUtils.selectJsonFromHtml(doc, "script", "var prices = ", ";", false, true);
+      String description = crawlDesciption(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li  a:not([href=\"/\"])");
 
-        for (Object obj : productJson.getJSONArray("skus")) {
+      // Json skusPrices Ex:
+      // {"4750152":{"normal":"$3.299","oferta":null,"internet":null,"tarjeta":null},"4750155":{"normal":"$5.599","oferta":null,"internet":null,"tarjeta":null}}
+      // When 4750152 and 4750155 are internalId's
+      for (String internalId : skusPrices.keySet()) {
 
-          JSONObject sku = (JSONObject) obj;
+        String name = crawlName(doc, internalId);
+        Integer stock = scrapStock(internalId, skusStock);
+        boolean available = stock > 0;
+        Float price = crawlPrice(skusPrices, internalId);
+        Prices prices = crawlPrices(skusPrices, internalId);
+        String primaryImage =
+            CrawlerUtils.scrapSimplePrimaryImage(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"), "https:", "salcobrand.cl");
+        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"),
+            "https:", "salcobrand.cl", primaryImage);
+        String url = buildUrl(session.getOriginalURL(), internalId);
 
-          String internalId = crawlInternalId(sku);
-          String internalPid = crawlInternalPid(sku);
-          String name = crawlName(doc, internalId);
-          boolean available = crawlAvailability(sku);
-          Integer stock = scrapStock(sku);
-          Float price = crawlPrice(jsonPrices, internalId);
-          Prices prices = crawlPrices(jsonPrices, internalId);
-          String primaryImage =
-              CrawlerUtils.scrapSimplePrimaryImage(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"), "https:", "salcobrand.cl");
-          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"),
-              "https:", "salcobrand.cl", primaryImage);
-          String url = buildUrl(session.getOriginalURL(), internalId);
+        Product product = ProductBuilder.create()
+            .setUrl(url)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setMarketplace(new Marketplace())
+            .setStock(stock)
+            .build();
 
-          Product product = ProductBuilder.create().setUrl(url).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-              .setStock(stock).setMarketplace(new Marketplace()).build();
-
-          products.add(product);
-        }
+        products.add(product);
       }
-
 
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -91,6 +87,64 @@ public class ChileSalcobrandCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private Integer scrapStock(String internalId, JSONArray skusStock) {
+    Integer stock = 0;
+
+    for (Object obj : skusStock) {
+      JSONObject skuStock = (JSONObject) obj;
+
+      if (skuStock.has(internalId)) {
+        stock = CrawlerUtils.getIntegerValueFromJSON(skuStock, internalId, 0);
+        break;
+      }
+    }
+
+    return stock;
+  }
+
+  /**
+   * Ex:
+   * 
+   * [{"4751790":0},{"4751792":1548}]
+   * 
+   * @param internalPid
+   * @return
+   */
+  private JSONArray fetchStockAPI(String internalPid) {
+    String url = "https://salcobrand.cl/api/v1/stock?sku=" + internalPid;
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+
+    return CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+  }
+
+  private String scrapInternalPid(Document doc) {
+    String internalPid = null;
+
+    String token = "\"sku=";
+
+    Elements scripts = doc.select("script");
+    for (Element e : scripts) {
+      String text = e.html().toLowerCase().replace(" ", "");
+
+      if (text.contains(token)) {
+        int x = text.indexOf(token) + token.length();
+
+        String id = text.substring(x).trim();
+        if (id.contains("\"")) {
+          int y = id.indexOf('"');
+
+          internalPid = id.substring(0, y);
+        } else {
+          internalPid = id;
+        }
+
+        break;
+      }
+    }
+
+    return internalPid;
   }
 
   private String crawlName(Document doc, String internalId) {
@@ -172,67 +226,6 @@ public class ChileSalcobrandCrawler extends Crawler {
     }
 
     return prices;
-  }
-
-
-
-  private CategoryCollection crawlCategories(JSONArray categoriesJson) {
-    CategoryCollection categories = new CategoryCollection();
-
-    for (Object object : categoriesJson) {
-
-      JSONObject categorieJson = (JSONObject) object;
-
-      if (categorieJson.has("name")) {
-        categories.add(categorieJson.get("name").toString().trim());
-
-      }
-
-    }
-
-    return categories;
-  }
-
-  private boolean crawlAvailability(JSONObject sku) {
-    boolean availability = false;
-
-    if (sku.has("status")) {
-      availability = sku.get("status").toString().trim().equalsIgnoreCase("available");
-
-    }
-
-    return availability;
-  }
-
-  private Integer scrapStock(JSONObject sku) {
-    Integer stock = 0;
-
-    if (sku.has("stock")) {
-      stock = sku.getInt("stock");
-    }
-
-    return stock;
-  }
-
-  private String crawlInternalPid(JSONObject sku) {
-    String id = null;
-
-    if (sku.has("id")) {
-      id = sku.get("id").toString().trim();
-    }
-
-    return id;
-
-  }
-
-  private String crawlInternalId(JSONObject sku) {
-    String id = null;
-
-    if (sku.has("sku")) {
-      id = sku.get("sku").toString().trim();
-    }
-
-    return id;
   }
 
   private boolean isProductPage(Document doc) {

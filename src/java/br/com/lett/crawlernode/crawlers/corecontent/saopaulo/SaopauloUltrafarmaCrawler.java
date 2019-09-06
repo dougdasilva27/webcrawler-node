@@ -9,6 +9,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -92,10 +93,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       String internalPid = internalId;
 
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-name", true);
-      String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".product-references .product-seller-brand-name",
-              ".product-details-container .product-details-section:not([ng-if]):not([id])", "#pdp-section-outras-informacoes",
-              ".product-details-section[id~=anvisa]"));
+      String description = crawlDescription(doc);
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-price-new span[data-preco]", null, true, ',', session);
       Prices prices = crawlPrices(doc, price);
       boolean available = !doc.select(".product-stock").isEmpty();
@@ -121,6 +119,25 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
   }
 
+  private String crawlDescription(Document doc) {
+    StringBuilder description = new StringBuilder();
+    String productDetails = null;
+    description.append(CrawlerUtils.scrapSimpleDescription(doc,
+        Arrays.asList(".product-references .product-seller-brand-name",
+            "#pdp-section-outras-informacoes",
+            ".product-details-section[id~=anvisa]")));
+
+    Element productDetailsElement = doc.selectFirst(".product-details-container .product-details-section:not([ng-if]):not([id])");
+
+    if (productDetailsElement != null) {
+      productDetails = productDetailsElement.text();
+      if (!productDetails.contains("avaliar")) {
+        description.append(productDetails);
+      }
+    }
+
+    return description.toString();
+  }
 
   private String scrapPrimaryImage(JSONArray images) {
     String primaryImage = null;

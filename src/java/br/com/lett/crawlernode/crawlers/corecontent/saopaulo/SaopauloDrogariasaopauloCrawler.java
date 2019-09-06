@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -43,7 +44,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    if (isProductPage(doc, session.getOriginalURL())) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
@@ -67,11 +68,12 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+        List<String> dpspSellers = CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER));
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, dpspSellers, Arrays.asList(Card.VISA), session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, dpspSellers);
         primaryImage = crawlPrimaryImage(apiJSON);
         secondaryImages = crawlSecondaryImages(apiJSON, primaryImage);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, dpspSellers);
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String descriptionV = description + CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber());
@@ -149,8 +151,8 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
    * Product page identification *
    *******************************/
 
-  private boolean isProductPage(Document document) {
-    return document.select("#___rc-p-sku-ids").first() != null;
+  private boolean isProductPage(Document document, String url) {
+    return document.selectFirst("#___rc-p-sku-ids") != null && url.startsWith(HOME_PAGE);
   }
 
   /*******************

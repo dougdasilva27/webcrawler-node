@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
@@ -20,6 +21,7 @@ public class BrasilAmazonRatingReviewCrawler extends RatingReviewCrawler {
 
   public BrasilAmazonRatingReviewCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
