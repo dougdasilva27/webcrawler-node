@@ -1,10 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
@@ -17,21 +19,26 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    String url = "https://merqueo.com/bogota/domicilios-super-ahorro/buscar?q=" + this.keywordEncoded;
+    String url = "https://merqueo.com/api/2.0/stores/63/search?q=" + this.keywordEncoded + "&per_page=15&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
+    JSONObject apiJson = fetchApiProducts(url);
+    JSONArray productsArray = new JSONArray();
 
-    Elements products = this.currentDoc.select(".product-column .product-list");
+    if (apiJson.has("data")) {
+      productsArray = apiJson.getJSONArray("data");
+    }
 
-    if (!products.isEmpty()) {
+    if (productsArray.length() > 0) {
       if (this.totalProducts == 0) {
-        setTotalProducts();
+        this.totalProducts = productsArray.length();
       }
 
-      for (Element e : products) {
-        String internalId = CommonMethods.getLast(e.attr("class").split("-"));
-        String productUrl = CrawlerUtils.scrapUrl(e, "a.name-link", "href", "https:", "merqueo.com");
+      for (Object object : productsArray) {
+        JSONObject data = (JSONObject) object;
+
+        String internalId = data.has("id") ? data.get("id").toString() : null;
+        String productUrl = assembleProductUrl(data);
         saveDataProduct(internalId, null, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
@@ -39,6 +46,7 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
           break;
         }
       }
+
     } else {
       this.result = false;
       this.log("Keyword sem resultado!");
@@ -47,8 +55,45 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    return false;
+  /*
+   * Url exemple:
+   * https://merqueo.com/bogota/despensa/condimentos-especias-y-adobos/canela-su-despensa-20-gr
+   */
+  private String assembleProductUrl(JSONObject data) {
+    String productUrl = "";
+
+    if (data.has("slugs")) {
+      JSONObject slugs = data.getJSONObject("slugs");
+
+      if (slugs.has("data")) {
+        JSONObject dataSlugs = slugs.getJSONObject("data");
+
+        if (dataSlugs.has("city") && dataSlugs.has("department") && dataSlugs.has("shelf") && dataSlugs.has("product")) {
+          productUrl = productUrl
+              .concat("https://merqueo.com/")
+              .concat(dataSlugs.getString("city"))
+              .concat("/")
+              .concat(dataSlugs.getString("department"))
+              .concat("/")
+              .concat(dataSlugs.getString("shelf"))
+              .concat("/")
+              .concat(dataSlugs.getString("product"));
+        }
+      }
+    }
+
+    return productUrl;
   }
+
+  private JSONObject fetchApiProducts(String url) {
+
+    Request request = RequestBuilder
+        .create()
+        .setUrl(url)
+        .mustSendContentEncoding(false)
+        .build();
+
+    return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
+  }
+
 }
