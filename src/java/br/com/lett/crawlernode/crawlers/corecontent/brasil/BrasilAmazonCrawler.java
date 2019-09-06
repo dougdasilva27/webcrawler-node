@@ -167,6 +167,8 @@ public class BrasilAmazonCrawler extends Crawler {
       if (colorImages.has("initial")) {
         images = colorImages.getJSONArray("initial");
       }
+    } else if (data.has("initial")) {
+      images = data.getJSONArray("initial");
     }
 
     return images;
@@ -194,7 +196,19 @@ public class BrasilAmazonCrawler extends Crawler {
           try {
             data = new JSONObject(json.trim());
           } catch (JSONException e1) {
-            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
+            Logging.printLogWarn(logger, session, e1.getMessage());
+
+
+            // This case we try to scrap initialJsonArray, because the complete json is not valid
+            String initialJson = CrawlerUtils.extractSpecificStringFromScript(json, "initial':", false, "},'", false);
+            if (initialJson != null && initialJson.trim().startsWith("[") && initialJson.trim().endsWith("]")) {
+              try {
+                data = new JSONObject().put("initial", new JSONArray(initialJson.trim()));
+              } catch (JSONException e2) {
+                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e2));
+              }
+            }
+
           }
         }
 

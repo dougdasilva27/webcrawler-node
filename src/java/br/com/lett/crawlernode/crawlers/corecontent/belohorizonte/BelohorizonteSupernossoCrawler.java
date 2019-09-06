@@ -7,7 +7,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -33,7 +32,6 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
   public BelohorizonteSupernossoCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
