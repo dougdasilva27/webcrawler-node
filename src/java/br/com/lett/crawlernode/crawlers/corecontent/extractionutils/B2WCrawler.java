@@ -91,7 +91,6 @@ public class B2WCrawler extends Crawler {
         ).setProxyservice(
             Arrays.asList(
                 ProxyCollection.STORM_RESIDENTIAL_EU,
-                ProxyCollection.INFATICA_RESIDENTIAL_BR,
                 ProxyCollection.STORM_RESIDENTIAL_US,
                 ProxyCollection.BUY
             )

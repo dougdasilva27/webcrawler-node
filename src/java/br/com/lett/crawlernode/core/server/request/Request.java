@@ -12,6 +12,7 @@ public class Request {
 
   private String internalId;
   private Long processedId;
+  private String queueName;
 
   public Request() {
     super();
@@ -73,9 +74,17 @@ public class Request {
     this.scraperType = scraperType;
   }
 
+  public String getQueueName() {
+    return queueName;
+  }
+
+  public void setQueueName(String queueName) {
+    this.queueName = queueName;
+  }
+
   @Override
   public String toString() {
     return "Request[messageId=" + messageId + ", messageBody=" + messageBody + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
-        + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + marketId + "]";
+        + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + marketId + ", queueName=" + queueName + "]";
   }
 }
