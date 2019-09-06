@@ -68,7 +68,18 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
       if (slugs.has("data") && !slugs.isNull("data")) {
         JSONObject dataSlugs = slugs.getJSONObject("data");
 
-        if (dataSlugs.has("city") && dataSlugs.has("department") && dataSlugs.has("shelf") && dataSlugs.has("product")) {
+        boolean hasFields = dataSlugs.has("city")
+            && dataSlugs.has("department")
+            && dataSlugs.has("shelf")
+            && dataSlugs.has("product");
+
+        boolean isFieldsNull =
+            !dataSlugs.isNull("city")
+                && !dataSlugs.isNull("department")
+                && !dataSlugs.isNull("shelf")
+                && !dataSlugs.isNull("product");
+
+        if (hasFields && isFieldsNull) {
           productUrl = productUrl
               .concat("https://merqueo.com/")
               .concat(dataSlugs.getString("city"))

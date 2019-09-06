@@ -97,14 +97,14 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
     if (data.has("shelf") && !data.isNull("shelf")) {
       shelf = data.getJSONObject("shelf");
-      if (shelf.has("name")) {
+      if (shelf.has("name") && !shelf.isNull("name")) {
         categories.add(shelf.getString("name"));
       }
     }
 
     if (data.has("department") && !data.isNull("department")) {
       shelf = data.getJSONObject("department");
-      if (shelf.has("name")) {
+      if (shelf.has("name") && !shelf.isNull("name")) {
         categories.add(shelf.getString("name"));
       }
     }
@@ -162,7 +162,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
   private String crawlName(JSONObject data) {
     String name = null;
 
-    if (data.has("name")) {
+    if (data.has("name") && !data.isNull("name")) {
       name = data.getString("name");
     }
 
