@@ -34,7 +34,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
     JSONObject apiJson = scrapApiJson(session.getOriginalURL());
     JSONObject data = new JSONObject();
 
-    if (apiJson.has("data")) {
+    if (apiJson.has("data") && !apiJson.isNull("data")) {
       data = apiJson.getJSONObject("data");
     }
 
@@ -95,14 +95,14 @@ public class ColombiaMerqueoCrawler extends Crawler {
     CategoryCollection categories = new CategoryCollection();
     JSONObject shelf = new JSONObject();
 
-    if (data.has("shelf")) {
+    if (data.has("shelf") && !data.isNull("shelf")) {
       shelf = data.getJSONObject("shelf");
       if (shelf.has("name")) {
         categories.add(shelf.getString("name"));
       }
     }
 
-    if (data.has("department")) {
+    if (data.has("department") && !data.isNull("department")) {
       shelf = data.getJSONObject("department");
       if (shelf.has("name")) {
         categories.add(shelf.getString("name"));
@@ -115,7 +115,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
   private String crawlDescription(JSONObject data) {
     String description = null;
 
-    if (data.has("description")) {
+    if (data.has("description") && !data.isNull("description")) {
       description = data.getString("description");
     }
 
@@ -125,13 +125,13 @@ public class ColombiaMerqueoCrawler extends Crawler {
   private String crawlPrimaryImage(JSONObject data) {
     String primaryImage = null;
 
-    if (data.has("imageLargeUrl")) {
+    if (data.has("imageLargeUrl") && !data.isNull("imageLargeUrl")) {
       primaryImage = data.getString("imageLargeUrl");
 
-    } else if (data.has("imageMediumUrl")) {
+    } else if (data.has("imageMediumUrl") && !data.isNull("imageMediumUrl")) {
       primaryImage = data.getString("imageMediumUrl");
 
-    } else if (data.has("imageSmallUrl")) {
+    } else if (data.has("imageSmallUrl") && !data.isNull("imageSmallUrl")) {
       primaryImage = data.getString("imageSmallUrl");
 
     }
@@ -142,7 +142,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
   private boolean crawlAvailable(JSONObject data) {
     boolean availability = false;
 
-    if (data.has("availability")) {
+    if (data.has("availability") && !data.isNull("availability")) {
       availability = data.getBoolean("availability");
     }
 
@@ -152,7 +152,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
   private Float crawlPrice(JSONObject data) {
     Float price = null;
 
-    if (data.has("price")) {
+    if (data.has("price") && !data.isNull("price")) {
       price = CrawlerUtils.getFloatValueFromJSON(data, "price");
     }
 
@@ -210,7 +210,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
   private String crawlInternalId(JSONObject data) {
     String internalId = null;
 
-    if (data.has("id")) {
+    if (data.has("id") && !data.isNull("id")) {
       internalId = data.get("id").toString();
     }
 
@@ -234,6 +234,4 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
     return prices;
   }
-
-
 }

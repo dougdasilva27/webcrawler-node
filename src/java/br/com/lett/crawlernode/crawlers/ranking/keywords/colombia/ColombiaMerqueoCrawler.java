@@ -25,7 +25,7 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
     JSONObject apiJson = fetchApiProducts(url);
     JSONArray productsArray = new JSONArray();
 
-    if (apiJson.has("data")) {
+    if (apiJson.has("data") && !apiJson.isNull("data")) {
       productsArray = apiJson.getJSONArray("data");
     }
 
@@ -62,10 +62,10 @@ public class ColombiaMerqueoCrawler extends CrawlerRankingKeywords {
   private String assembleProductUrl(JSONObject data) {
     String productUrl = "";
 
-    if (data.has("slugs")) {
+    if (data.has("slugs") && !data.isNull("slugs")) {
       JSONObject slugs = data.getJSONObject("slugs");
 
-      if (slugs.has("data")) {
+      if (slugs.has("data") && !slugs.isNull("data")) {
         JSONObject dataSlugs = slugs.getJSONObject("data");
 
         if (dataSlugs.has("city") && dataSlugs.has("department") && dataSlugs.has("shelf") && dataSlugs.has("product")) {
