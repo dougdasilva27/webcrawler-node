@@ -36,6 +36,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
     if (!doc.select(".infoProduct").isEmpty()) {
       String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true);
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".infoProduct [data-product-id]", "data-product-id");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.nameProduct", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumb-link", Arrays.asList("data-zoom-image", "data-img-medium", "href"),
           "https", "i1-mondelez.a8e.net.br");
@@ -46,10 +47,22 @@ public class BrasilLojamondelezCrawler extends Crawler {
       CategoryCollection categories = new CategoryCollection();
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrices(new Prices())
-          .setAvailable(false).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace())
-          .setEans(eans).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrices(new Prices())
+          .setAvailable(false)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .setEans(eans)
+          .build();
 
       products.add(product);
     } else {
