@@ -44,7 +44,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
           "href"), "https", "i1-mondelez.a8e.net.br", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".description-product"));
       List<String> eans = Arrays.asList(internalId);
-      CategoryCollection categories = new CategoryCollection();
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-breadcrumb a[href]:not(:first-child)");
 
       // Creating the product
       Product product = ProductBuilder.create()
