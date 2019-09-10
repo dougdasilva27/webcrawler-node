@@ -20,52 +20,6 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
-/************************************************************************************************************************************************************************************
- * Crawling notes (29/08/2016):
- * 
- * 1) For this crawler, we have one url for mutiples skus.
- * 
- * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
- * 
- * 3) There is no marketplace information.
- * 
- * 4) In some cases in products has color variation, a variation can be void, so is treated in this
- * crawler.
- * 
- * 5) The sku page identification is done simply looking the URL format or simply looking the html
- * element.
- * 
- * 6) Even if a product is unavailable, its price is not displayed.
- * 
- * 7) There is no internalPid for skus in this ecommerce.
- * 
- * 8) The first image in secondary images is the primary image.
- * 
- * 9) When the sku has variations, the variation name it is added to the name found in the main
- * page.
- * 
- * 10) In case with color variations is make a url with internalId for crawl iformations for this
- * sku.
- * 
- * 11) In case with voltage variations, we have informations in html selector.
- * 
- * 12) When one sku with color variations is void, this crawler accessed a page diferent, then
- * verify if cod in main page is empty, if is empty, this crawler ignore this variation because that
- * is void.
- * 
- * Examples: ex1 (available):
- * http://www.multiloja.com.br/produto/TV-43-Led-Conversor+TV+Digital+Integrado-PHILIPS/5669 ex2
- * (unavailable):
- * http://www.multiloja.com.br/produto/Antena+Interna+DTV-4500+para+TV+(VHFUHFHDTV)-Aquario/3688 ex3
- * (Color Variation):
- * http://www.multiloja.com.br/produto/guarda+roupa+aires+3+portas+3+gavetas-araplac/7271 ex4
- * (Variation):
- * http://www.multiloja.com.br/produto/Cafeteira+CP15+600W+com+Chapa+Aquecedora+Indicador+do+Nivel+de+agua+15xicaras-BRITANIA/2689
- *
- * Optimizations notes: No optimizations.
- *
- ************************************************************************************************************************************************************************************/
-
 public class BrasilMultilojaCrawler extends Crawler {
 
   private final String HOME_PAGE = "http://www.multiloja.com.br/";
