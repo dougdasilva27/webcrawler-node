@@ -180,6 +180,10 @@ public class BrasilAmazonCrawler extends Crawler {
     String firstIndex = "vardata=";
     String lastIndex = "};";
 
+    // this keys are to identify images JSON
+    String idNormalImages = "imageGalleryData";
+    String idColorImages = "colorImages";
+
     Elements scripts = doc.select("script[type=\"text/javascript\"]");
     for (Element e : scripts) {
       // This json can be broken, we need to remove additional ','
@@ -189,7 +193,7 @@ public class BrasilAmazonCrawler extends Crawler {
           .replace(",}", "}")
           .replace(",]", "]");
 
-      if (script.contains(firstIndex) && script.contains(lastIndex)) {
+      if (script.contains(firstIndex) && script.contains(lastIndex) && (script.contains(idColorImages) || script.contains(idNormalImages))) {
         String json = CrawlerUtils.extractSpecificStringFromScript(script, firstIndex, false, lastIndex, false);
         if (json != null && json.trim().startsWith("{") && json.trim().endsWith("}")) {
 
@@ -197,7 +201,6 @@ public class BrasilAmazonCrawler extends Crawler {
             data = new JSONObject(json.trim());
           } catch (JSONException e1) {
             Logging.printLogWarn(logger, session, e1.getMessage());
-
 
             // This case we try to scrap initialJsonArray, because the complete json is not valid
             String initialJson = CrawlerUtils.extractSpecificStringFromScript(json, "initial':", false, "},'", false);
