@@ -18,12 +18,12 @@ public class BrasilLepodiumCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.lepodium.com.br/" + this.location.replace(" ", "%20") + "?PageNumber=" + this.currentPage;
+    String url = "https://www.lepodium.com.br/" + this.keywordWithoutAccents.replace(" ", "%20") + "?PageNumber=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".list-prod .moveis-estar .ct");
+    Elements products = this.currentDoc.select(".prateleira ul li[layout]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
