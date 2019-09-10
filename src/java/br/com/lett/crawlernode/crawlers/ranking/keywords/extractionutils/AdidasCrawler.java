@@ -80,7 +80,7 @@ public class AdidasCrawler extends CrawlerRankingKeywords {
 
   private JSONObject fecthApi() {
 
-    String url = "https://".concat(host).concat("/api/search/query?query=").concat(this.location).concat("&start=")
+    String url = "https://".concat(host).concat("/api/search/query?query=").concat(this.keywordEncoded).concat("&start=")
         .concat(Integer.toString(arrayProducts.size()));
     JSONObject rankingJson = fecthJson(url);
 
