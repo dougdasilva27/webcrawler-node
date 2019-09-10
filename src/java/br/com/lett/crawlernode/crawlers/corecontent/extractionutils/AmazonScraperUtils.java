@@ -87,7 +87,7 @@ public class AmazonScraperUtils {
           .setHeaders(headers)
           .setProxyservice(
               Arrays.asList(
-                  ProxyCollection.LUMINATI_SERVER_BR,
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
                   ProxyCollection.STORM_RESIDENTIAL_EU,
                   ProxyCollection.STORM_RESIDENTIAL_US))
           .mustSendContentEncoding(false)
