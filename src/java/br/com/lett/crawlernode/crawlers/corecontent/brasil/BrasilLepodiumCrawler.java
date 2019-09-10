@@ -48,7 +48,11 @@ public class BrasilLepodiumCrawler extends Crawler {
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li" + CrawlerUtils.CSS_SELECTOR_IGNORE_FIRST_CHILD + " > a");
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus = skuJson != null
+          && skuJson.has("skus")
+          && skuJson.get("skus") instanceof JSONArray
+              ? skuJson.getJSONArray("skus")
+              : new JSONArray();
 
       // ean data in json
       JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
@@ -74,10 +78,25 @@ public class BrasilLepodiumCrawler extends Crawler {
         eans.add(ean);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setEans(eans)
+            .setOffers(offers)
+            .build();
 
         products.add(product);
       }
@@ -93,21 +112,21 @@ public class BrasilLepodiumCrawler extends Crawler {
     Element descriptionElement = doc.selectFirst(".productDescription");
     Element infoDescriptionElement = doc.selectFirst(".box.specification");
 
-    String description = "";
+    StringBuilder description = new StringBuilder();
 
     if (descriptionElement != null) {
-      description = descriptionElement.text();
+      description.append(descriptionElement.text());
     }
 
     if (infoDescriptionElement != null) {
-      description = description.concat(infoDescriptionElement.text());
+      description.append(infoDescriptionElement.text());
     }
 
-    return description;
+    return description.toString();
   }
 
   private boolean isProductPage(Document document) {
-    return document.select(".produto").first() != null;
+    return document.selectFirst(".produto") != null;
   }
 
 }

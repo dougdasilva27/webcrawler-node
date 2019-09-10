@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,9 +18,7 @@ public class BrasilLepodiumCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.lepodium.com.br/buscapagina?ft=" + this.location
-        + "&PS=24&sl=d9cf4574-2102-48f5-9219-ad8da4285fbf&cc=3&sm=0&PageNumber="
-        + this.currentPage;
+    String url = "https://www.lepodium.com.br/" + this.location.replace(" ", "%20") + "?PageNumber=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
@@ -65,18 +62,12 @@ public class BrasilLepodiumCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
-  protected boolean hasNextPage() {
-    return this.arrayProducts.size() < this.totalProducts;
-  }
-
-  @Override
   protected void setTotalProducts() {
-    Document doc = fetchDocument("https://www.lepodium.com.br/" + this.location);
-    Element totalElement = doc.select(".searchResultsTime .value").first();
+    Element totalElement = this.currentDoc.select(".searchResultsTime .value").first();
 
     if (totalElement != null) {
       String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-      System.err.println(text);
+
       if (!text.isEmpty()) {
         this.totalProducts = Integer.parseInt(text);
       }
