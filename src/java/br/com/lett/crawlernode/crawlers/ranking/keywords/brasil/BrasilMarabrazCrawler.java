@@ -6,7 +6,6 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.MathUtils;
 
 public class BrasilMarabrazCrawler extends CrawlerRankingKeywords {
 
@@ -19,7 +18,7 @@ public class BrasilMarabrazCrawler extends CrawlerRankingKeywords {
     this.pageSize = 10;
     this.log("Página " + this.currentPage);
 
-    String url = "https://busca.marabraz.com.br/busca?q=" + this.keywordEncoded;
+    String url = "https://busca.marabraz.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
@@ -56,11 +55,10 @@ public class BrasilMarabrazCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".neemu-total-products-container  strong");
 
-    if (totalElement != null) {
-      this.totalProducts = MathUtils.parseInt(totalElement.text());
-    }
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".neemu-total-products-container  strong", false, 0);
+
+    this.log("Total da busca: " + this.totalProducts);
 
   }
 
