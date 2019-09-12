@@ -52,8 +52,6 @@ public class BrasilMaisabracosCrawler extends Crawler {
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-      String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -61,6 +59,8 @@ public class BrasilMaisabracosCrawler extends Crawler {
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
+        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
