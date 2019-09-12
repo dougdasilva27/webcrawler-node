@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -30,43 +31,52 @@ public class BrasilMarabrazCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
+    if (isProductPage(doc)) {
 
-    String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=\"sku\"]", false);
-    String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=\"productId\"]", "value");
-    String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
-    Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".special-price .price", "content", false, '.', session);
-    Prices prices = scrapPrices(doc);
-    boolean available = scrapAvailability(doc);
-    CategoryCollection categories = scrapCategories(doc);
-    String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-image img", "src");
-    String secondaryImages = scrapSecondaryImages(doc);
-    String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-collateral"));
-    List<String> eans = new ArrayList<>();
+      String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=\"sku\"]", false);
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=\"productId\"]", "value");
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".special-price .price", "content", false, '.', session);
+      Prices prices = scrapPrices(doc);
+      boolean available = scrapAvailability(doc);
+      CategoryCollection categories = scrapCategories(doc);
+      String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-image img", "src");
+      String secondaryImages = scrapSecondaryImages(doc);
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-collateral"));
+      List<String> eans = new ArrayList<>();
 
-    eans.add(CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=\"gtin13\"]", false));
+      eans.add(CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=\"gtin13\"]", false));
 
-    // Creating the product
-    Product product = ProductBuilder.create()
-        .setUrl(session.getOriginalURL())
-        .setInternalId(internalId)
-        .setInternalPid(internalPid)
-        .setName(name)
-        .setPrice(price)
-        .setPrices(prices)
-        .setAvailable(available)
-        .setCategory1(categories.getCategory(0))
-        .setCategory2(categories.getCategory(1))
-        .setCategory3(categories.getCategory(2))
-        .setPrimaryImage(primaryImage)
-        .setSecondaryImages(secondaryImages)
-        .setDescription(description)
-        .setMarketplace(new Marketplace())
-        .setEans(eans)
-        .build();
+      // Creating the product
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .setEans(eans)
+          .build();
 
-    products.add(product);
+      products.add(product);
+
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+    }
 
     return products;
+  }
+
+  private boolean isProductPage(Document doc) {
+    return doc.selectFirst(".product-essential") != null;
   }
 
   private CategoryCollection scrapCategories(Document doc) {
