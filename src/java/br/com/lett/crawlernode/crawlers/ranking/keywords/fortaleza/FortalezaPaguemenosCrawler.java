@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -22,6 +23,7 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
 
   public FortalezaPaguemenosCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.APACHE;
   }
 
   private String keySHA256;
