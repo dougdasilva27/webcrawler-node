@@ -43,7 +43,12 @@ public class BrasilCasatemaCrawler extends Crawler {
           Arrays.asList(".productDescription", "#caracteristicas"));
 
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null &&
+              skuJson.has("skus") &&
+              !skuJson.isNull("skus")
+                  ? skuJson.getJSONArray("skus")
+                  : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);

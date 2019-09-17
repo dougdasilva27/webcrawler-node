@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,7 +18,10 @@ public class BrasilCasatemaCrawler extends CrawlerRankingKeywords {
     this.pageSize = 10;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.casatema.com.br/" + this.keywordEncoded + "#" + this.currentPage;
+    String url = "https://www.casatema.com.br/buscapagina?fq=" + this.keywordEncoded
+        + "&PS=18&sl=f5a9b57e-3212-4dac-88ab-871111d79345&cc=1&sm=0&PageNumber="
+        + this.currentPage;
+
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
@@ -76,7 +80,8 @@ public class BrasilCasatemaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".searchResultsTime .resultado-busca-numero span[class=\"value\"]",
+    Document document = fetchDocument("https://www.casatema.com.br/" + this.keywordEncoded);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(document, ".searchResultsTime .resultado-busca-numero span[class=\"value\"]",
         false, 0);
 
     this.log("Total de produtos: " + this.totalProducts);
