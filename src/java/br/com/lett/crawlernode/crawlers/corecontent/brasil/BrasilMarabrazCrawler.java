@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -37,7 +41,7 @@ public class BrasilMarabrazCrawler extends Crawler {
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=\"productId\"]", "value");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", false);
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".special-price .price", "content", false, '.', session);
-      Prices prices = scrapPrices(doc);
+      Prices prices = scrapPrices(internalPid);
       boolean available = scrapAvailability(doc);
       CategoryCollection categories = scrapCategories(doc);
       String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-image img", "src");
@@ -83,6 +87,7 @@ public class BrasilMarabrazCrawler extends Crawler {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = doc.select(".breadcrumbs ul li");
 
+    // This iteraction get only the middle categories (excludes last and first element from breadcrumbs)
     for (int i = 1; i < elementCategories.size() - 1; i++) {
       categories.add(elementCategories.get(i).text().replace("|", "").trim());
     }
@@ -132,18 +137,55 @@ public class BrasilMarabrazCrawler extends Crawler {
     return availability;
   }
 
-  private Prices scrapPrices(Document doc) {
-    Prices prices = new Prices();
-    Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", "content", false, '.', session);
-    Double bankTicketPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".boleto .price", null, false, ',', session);
-    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    Element installmentElement = doc.selectFirst(".installments_count");
-    Element installmentPriceElement = doc.selectFirst(".installments_price");
+  private JSONObject getJsonPrices(String internalPid) {
+    String url = "https://www.marabraz.com.br/ajax/product/prices?product_ids[]=" + internalPid + "&";
 
-    if (installmentElement != null && installmentPriceElement != null) {
-      Integer installmentValue = Integer.parseInt(installmentElement.text().replace("x", ""));
-      Float installmentPrice = CrawlerUtils.scrapFloatPriceFromHtml(installmentPriceElement, null, null, false, ',', session);
-      installmentPriceMap.put(installmentValue, installmentPrice);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+    Response response = dataFetcher.get(session, request);
+
+    JSONObject jsonPrices = new JSONObject(response.getBody());
+    JSONObject prices = new JSONObject();
+
+    if (jsonPrices.has(internalPid) && !jsonPrices.isNull(internalPid)) {
+      prices = jsonPrices.getJSONObject(internalPid);
+    }
+
+    return prices;
+  }
+
+  private Prices scrapPrices(String internalPid) {
+    Prices prices = new Prices();
+    Double priceFrom = null;
+    Float bankTicketPrice = null;
+    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+    Integer installment = null;
+    Float installmentePrice = null;
+    JSONObject jsonPrices = getJsonPrices(internalPid);
+
+    if (jsonPrices.has("price_from") && !jsonPrices.isNull("price_from")) {
+      priceFrom = jsonPrices.getDouble("price_from");
+    }
+
+    if (jsonPrices.has("boleto_value") && !jsonPrices.isNull("price_from")) {
+      bankTicketPrice = jsonPrices.getFloat("boleto_value");
+    }
+
+    if (jsonPrices.has("installments_info") && !jsonPrices.isNull("installments_info")) {
+      JSONArray installmentsJsonArray = jsonPrices.getJSONArray("installments_info");
+
+      for (Object object : installmentsJsonArray) {
+        JSONObject priceJsonObject = (JSONObject) object;
+
+        if (priceJsonObject.has("count") && !priceJsonObject.isNull("count")) {
+          installment = priceJsonObject.getInt("count");
+        }
+
+        if (priceJsonObject.has("price") && !priceJsonObject.isNull("price")) {
+          installmentePrice = priceJsonObject.getFloat("price");
+        }
+
+        installmentPriceMap.put(installment, installmentePrice);
+      }
 
     }
 
