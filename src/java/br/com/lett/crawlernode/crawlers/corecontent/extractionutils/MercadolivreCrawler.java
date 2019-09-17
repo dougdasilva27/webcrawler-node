@@ -75,13 +75,13 @@ public class MercadolivreCrawler extends Crawler {
       for (Entry<String, Document> entry : variations.entrySet()) {
         Document docVariation = entry.getValue();
 
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
+        String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
 
-        if (variations.size() > 1 && (internalId == null || internalId.trim().isEmpty())) {
+        if (variations.size() > 1 && (variationId == null || variationId.trim().isEmpty())) {
           continue;
         }
 
-        internalId = internalId == null || variations.size() < 2 ? internalPid : internalPid + "-" + internalId;
+        String internalId = variationId == null || variations.size() < 2 ? internalPid : internalPid + "-" + variationId;
 
         String name = crawlName(docVariation);
         CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "a.breadcrumb:not(.shortened)");
