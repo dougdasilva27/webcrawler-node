@@ -25,7 +25,8 @@ public class BrasilRihappyCrawler extends Crawler {
   private static final String HOME_PAGE = "https://www.rihappy.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "ri happy";
   private static final String MAIN_SELLER_NAME_LOWER_2 = "rihappy";
-  private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2);
+  private static final String MAIN_SELLER_NAME_LOWER_3 = "pbkids";
+  private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2, MAIN_SELLER_NAME_LOWER_3);
 
   public BrasilRihappyCrawler(Session session) {
     super(session);
