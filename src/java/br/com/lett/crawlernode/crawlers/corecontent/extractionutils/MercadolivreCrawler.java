@@ -81,7 +81,7 @@ public class MercadolivreCrawler extends Crawler {
           continue;
         }
 
-        internalId = internalId == null && variations.size() < 2 ? internalPid : internalPid + "-" + internalId;
+        internalId = internalId == null || variations.size() < 2 ? internalPid : internalPid + "-" + internalId;
 
         String name = crawlName(docVariation);
         CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "a.breadcrumb:not(.shortened)");
