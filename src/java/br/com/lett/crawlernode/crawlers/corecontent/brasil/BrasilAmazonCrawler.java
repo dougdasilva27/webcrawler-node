@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,6 +40,9 @@ public class BrasilAmazonCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.amazon.com.br";
   private static final String SELLER_NAME_LOWER = "amazon.com.br";
+
+  private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
+  private static final String IMAGES_PROTOCOL = "https";
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
@@ -78,9 +80,9 @@ public class BrasilAmazonCrawler extends Crawler {
       String name = crawlName(doc);
       CategoryCollection categories = crawlCategories(doc);
 
-      JSONArray images = crawlImages(doc);
-      String primaryImage = crawlPrimaryImage(images, doc);
-      String secondaryImages = crawlSecondaryImages(images);
+      JSONArray images = this.amazonScraperUtils.scrapImagesJSONArray(doc);
+      String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
+      String secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
       String description = crawlDescription(doc);
       Integer stock = null;
@@ -146,80 +148,6 @@ public class BrasilAmazonCrawler extends Crawler {
     }
 
     return name;
-  }
-
-  /**
-   * Get json of images inside html
-   * 
-   * @param doc
-   * @return
-   */
-  private JSONArray crawlImages(Document doc) {
-    JSONArray images = new JSONArray();
-
-    JSONObject data = scrapImagesJson(doc);
-
-    if (data.has("imageGalleryData")) {
-      images = data.getJSONArray("imageGalleryData");
-    } else if (data.has("colorImages")) {
-      JSONObject colorImages = data.getJSONObject("colorImages");
-
-      if (colorImages.has("initial")) {
-        images = colorImages.getJSONArray("initial");
-      }
-    } else if (data.has("initial")) {
-      images = data.getJSONArray("initial");
-    }
-
-    return images;
-  }
-
-  private JSONObject scrapImagesJson(Document doc) {
-    JSONObject data = new JSONObject();
-
-    String firstIndex = "vardata=";
-    String lastIndex = "};";
-
-    // this keys are to identify images JSON
-    String idNormalImages = "imageGalleryData";
-    String idColorImages = "colorImages";
-
-    Elements scripts = doc.select("script[type=\"text/javascript\"]");
-    for (Element e : scripts) {
-      // This json can be broken, we need to remove additional ','
-      String script = e.html()
-          .replace(" ", "")
-          .replaceAll("\n", "")
-          .replace(",}", "}")
-          .replace(",]", "]");
-
-      if (script.contains(firstIndex) && script.contains(lastIndex) && (script.contains(idColorImages) || script.contains(idNormalImages))) {
-        String json = CrawlerUtils.extractSpecificStringFromScript(script, firstIndex, false, lastIndex, false);
-        if (json != null && json.trim().startsWith("{") && json.trim().endsWith("}")) {
-
-          try {
-            data = new JSONObject(json.trim());
-          } catch (JSONException e1) {
-            Logging.printLogWarn(logger, session, e1.getMessage());
-
-            // This case we try to scrap initialJsonArray, because the complete json is not valid
-            String initialJson = CrawlerUtils.extractSpecificStringFromScript(json, "initial':", false, "},'", false);
-            if (initialJson != null && initialJson.trim().startsWith("[") && initialJson.trim().endsWith("]")) {
-              try {
-                data = new JSONObject().put("initial", new JSONArray(initialJson.trim()));
-              } catch (JSONException e2) {
-                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e2));
-              }
-            }
-
-          }
-        }
-
-        break;
-      }
-    }
-
-    return data;
   }
 
   private Float crawlPrice(Map<String, Prices> marketplaces) {
@@ -420,76 +348,6 @@ public class BrasilAmazonCrawler extends Crawler {
     }
 
     return marketplaces;
-  }
-
-  private String crawlPrimaryImage(JSONArray images, Document doc) {
-    String primaryImage = null;
-
-    if (images.length() > 0) {
-      JSONObject image = images.getJSONObject(0);
-
-      if (image.has("mainUrl") && image.get("mainUrl") instanceof String) {
-        primaryImage = image.get("mainUrl").toString().trim();
-      } else if (image.has("thumbUrl") && image.get("thumbUrl") instanceof String) {
-        primaryImage = image.get("thumbUrl").toString().trim();
-      } else if (image.has("hiRes") && image.get("hiRes") instanceof String) {
-        primaryImage = image.get("hiRes").toString().trim();
-      } else if (image.has("large") && image.get("large") instanceof String) {
-        primaryImage = image.get("large").toString().trim();
-      } else if (image.has("thumb") && image.get("thumb") instanceof String) {
-        primaryImage = image.get("thumb").toString().trim();
-      }
-
-    } else {
-      Element img = doc.select("#ebooksImageBlockContainer img").first();
-
-      if (img != null) {
-        primaryImage = img.attr("src").trim();
-      }
-    }
-
-    return primaryImage;
-  }
-
-  /**
-   * Quando este crawler foi feito, nao tinha imagens secundarias
-   * 
-   * @param doc
-   * @return
-   */
-  private String crawlSecondaryImages(JSONArray images) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-
-    for (int i = 1; i < images.length(); i++) { // first index is the primary Image
-      JSONObject imageJson = images.getJSONObject(i);
-
-      String image = null;
-
-      if (imageJson.has("mainUrl")) {
-        image = imageJson.get("mainUrl").toString().trim();
-      } else if (imageJson.has("thumbUrl")) {
-        image = imageJson.get("thumbUrl").toString().trim();
-      } else if (imageJson.has("hiRes")) {
-        image = imageJson.get("hiRes").toString().trim();
-      } else if (imageJson.has("large")) {
-        image = imageJson.get("large").toString().trim();
-      } else if (imageJson.has("thumb")) {
-        image = imageJson.get("thumb").toString().trim();
-      }
-
-      if (image != null) {
-        secondaryImagesArray.put(image);
-      }
-
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
   }
 
   /**
