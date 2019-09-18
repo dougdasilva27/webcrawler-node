@@ -27,11 +27,11 @@ import models.Marketplace;
 import models.prices.Prices;
 
 
-public class BrasilEstrela10Crawler extends Crawler {
+public class BrasilEstrela10OldCrawler extends Crawler {
 
   private static final String HOME_PAGE = "http://www.estrela10.com.br/";
 
-  public BrasilEstrela10Crawler(Session session) {
+  public BrasilEstrela10OldCrawler(Session session) {
     super(session);
   }
 
@@ -49,9 +49,8 @@ public class BrasilEstrela10Crawler extends Crawler {
     if (isProductPage(this.session.getOriginalURL(), doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String mainPageName = crawlName(doc);
+      String mainPageName = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".wd-browsing-breadcrumbs li:not(.last) a:not([href=\"/\"]) span");
-      String internalPid = crawlInternalPid(doc);
       String description = crawlDescription(doc);
       Map<String, String> colorsMap = identifyNumberOfColors(doc);
       JSONArray imageColorsArray = fetchImageColors(colorsMap, session.getOriginalURL());
@@ -74,6 +73,7 @@ public class BrasilEstrela10Crawler extends Crawler {
         JSONObject jsonSku = jsonProducts.getJSONObject(i);
 
         String name = crawlName(jsonSku, mainPageName);
+        String internalPid = null;
         String internalId = crawlInternalId(jsonSku);
         Integer stock = crawlStock(jsonSku);
         boolean available = crawlAvailability(stock);
@@ -130,15 +130,6 @@ public class BrasilEstrela10Crawler extends Crawler {
    * Multiple products identification *
    ************************************/
 
-  private String crawlInternalPid(Document document) {
-    String internalPid = null;
-    Element elementInternalId = document.select("small.code").first();
-    if (elementInternalId != null) {
-      internalPid = elementInternalId.text().trim();
-    }
-
-    return internalPid;
-  }
 
 
   /*******************
