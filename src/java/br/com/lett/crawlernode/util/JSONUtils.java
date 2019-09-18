@@ -11,7 +11,7 @@ public class JSONUtils {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JSONUtils.class);
 
-  public Object getValueWithPath(JSONObject json, String path) {
+  public static Object getValueWithPath(JSONObject json, String path) {
     Object value = null;
 
     JSONObject finalJson = json;
@@ -33,7 +33,7 @@ public class JSONUtils {
     return value;
   }
 
-  public Object getValue(JSONObject json, String key) {
+  public static Object getValue(JSONObject json, String key) {
     Object value = null;
 
     if (json.has(key) && !json.isNull(key)) {
@@ -43,7 +43,27 @@ public class JSONUtils {
     return value;
   }
 
-  public String getStringValue(JSONObject json, String key) {
+  public static JSONObject getJSONValue(JSONObject json, String key) {
+    JSONObject value = new JSONObject();
+
+    if (json.has(key) && json.get(key) instanceof JSONObject) {
+      value = json.getJSONObject(key);
+    }
+
+    return value;
+  }
+
+  public static JSONArray getJSONArrayValue(JSONObject json, String key) {
+    JSONArray value = new JSONArray();
+
+    if (json.has(key) && json.get(key) instanceof JSONArray) {
+      value = json.getJSONArray(key);
+    }
+
+    return value;
+  }
+
+  public static String getStringValue(JSONObject json, String key) {
     String value = null;
 
     if (json.has(key) && json.get(key) instanceof String) {
@@ -133,11 +153,10 @@ public class JSONUtils {
       } else if (obj instanceof Double) {
         doubleValue = (Double) obj;
       } else {
-
         if (stringWithDoubleLayout) {
-          doubleValue = MathUtils.parseDoubleWithComma(obj.toString());
-        } else {
           doubleValue = MathUtils.parseDoubleWithDot(obj.toString());
+        } else {
+          doubleValue = MathUtils.parseDoubleWithComma(obj.toString());
         }
       }
     }
