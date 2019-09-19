@@ -11,28 +11,6 @@ public class JSONUtils {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JSONUtils.class);
 
-  public static Object getValueWithPath(JSONObject json, String path) {
-    Object value = null;
-
-    JSONObject finalJson = json;
-    String[] keys = path.split("=>");
-    String finalKey = CommonMethods.getLast(keys);
-
-    for (String key : keys) {
-      if (finalJson.has(key) && finalJson.get(key) instanceof JSONObject) {
-        finalJson = finalJson.getJSONObject(key);
-      } else {
-        break;
-      }
-    }
-
-    if (finalJson.has(finalKey) && !finalJson.isNull(finalKey)) {
-      value = json.get(finalKey);
-    }
-
-    return value;
-  }
-
   public static Object getValue(JSONObject json, String key) {
     Object value = null;
 
