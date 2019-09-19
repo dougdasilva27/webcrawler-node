@@ -1,103 +1,73 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
-public class BrasilMoblyCrawler extends CrawlerRankingKeywords{
+public class BrasilMoblyCrawler extends CrawlerRankingKeywords {
 
-	public BrasilMoblyCrawler(Session session) {
-		super(session);
-	}
+  public BrasilMoblyCrawler(Session session) {
+    super(session);
+  }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 48;
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.pageSize = 60;
 
-		this.log("Página "+ this.currentPage);
+    this.log("Página " + this.currentPage);
 
-		//monta a url com a keyword e a página
-		String url = "http://busca.mobly.com.br/busca.php?q="+ this.keywordEncoded +"&results_per_page=96&page="+ this.currentPage;
+    String url = "https://www.mobly.com.br/catalog/?terms=" + this.keywordEncoded + "&page=" + this.currentPage
+        + "&api=true&partner=Neemu&bucketTest=A";
 
-		this.log("Link onde são feitos os crawlers: "+url);	
+    Map<String, String> headers = new HashMap<>();
+    headers.put("x-requested-with", "XMLHttpRequest");
 
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
 
-		Elements products =  this.currentDoc.select("ul.productsCatalog > li");
-		Element noResult = this.currentDoc.select("#neemu-approximated-search").first();
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1 && noResult == null) {
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) {
-				setTotalProducts();
-			}
+    JSONObject productsInfo = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+    JSONObject products = JSONUtils.getJSONValue(productsInfo, "products");
 
-			for(Element e: products) {
-				//seta o id com o seletor
-				String internalPid 	= e.attr("id");
-				String internalId 	= null;
+    if (products.length() > 0) {
+      if (totalProducts == 0) {
+        this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(productsInfo, "total", 0);
+        this.log("Total: " + this.totalProducts);
+      }
 
-				//monta a url
-				Element eUrl = e.select("a").first();
-				String productUrl;
-				String temp = eUrl.attr("href");
-				
-				if(temp.contains("link=")){
+      for (String internalPid : products.keySet()) {
+        JSONObject product = products.getJSONObject(internalPid);
 
-					int x = eUrl.attr("href").indexOf("link=");
-					int y = eUrl.attr("href").indexOf("&", x+5);
+        String productUrl = scrapUrl(product);
 
-					productUrl = eUrl.attr("href").substring(x+5, y);
-				} else {
-					productUrl = temp;
-				}
-				
-				saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
-					break;
-				}
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-	@Override
-	protected boolean hasNextPage() {
-		if(this.arrayProducts.size() < this.totalProducts){
-			//tem próxima página
-			return true;
-		} 
-		
-		return false;
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+  }
 
-	}
+  private String scrapUrl(JSONObject product) {
+    String url = null;
 
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("li.itens-encontrados").first();
+    String productUrl = JSONUtils.getStringValue(product, "url");
+    if (productUrl != null) {
+      url = CrawlerUtils.completeUrl(productUrl.split("#")[0], "https", "www.mobly.com.br");
+    }
 
-		if(totalElement != null) { 	
-			String token = (totalElement.text().replaceAll("[^0-9]", "")).trim();
-			if(!token.isEmpty()) {
-				try {				
-					this.totalProducts = Integer.parseInt(token);
-				} catch(Exception e) {
-					this.logError(CommonMethods.getStackTraceString(e));
-				}
-			}
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}	
+    return url;
+  }
 }
