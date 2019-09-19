@@ -25,20 +25,18 @@ public class BrasilMpozenatoCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url);
 
-    // Elements products = this.currentDoc.select(".spots-interna .spot");
     JSONArray products = getJsonArrayProducts(this.currentDoc);
 
     if (products.length() > 0) {
 
       for (Object object : products) {
         JSONObject product = (JSONObject) object;
-        String internalId = null;
         String internalPid = product.has("ProdutoId") ? product.get("ProdutoId").toString() : null;
         String productUrl = product.has("Link") ? CrawlerUtils.completeUrl(product.getString("Link"), "https", "www.mpozenato.com.br") : null;
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
