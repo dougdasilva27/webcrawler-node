@@ -21,7 +21,6 @@ public class DatabaseCredentialsSetter {
     DBCredentialsSetter st = new DBCredentialsSetter();
 
     List<String> databases = new ArrayList<>();
-    databases.add(DBCredentials.MONGO_INSIGHTS);
     databases.add(DBCredentials.MONGO_FROZEN);
     databases.add(DBCredentials.MONGO_FETCHER);
     databases.add(DBCredentials.POSTGRES);
