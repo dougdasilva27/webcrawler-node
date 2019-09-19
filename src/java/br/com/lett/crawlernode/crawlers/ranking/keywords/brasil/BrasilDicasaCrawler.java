@@ -62,13 +62,8 @@ public class BrasilDicasaCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst("div.results > span:nth-child(3)");
-
-    if (totalElement != null) {
-      this.totalProducts = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
-      this.log("Total da busca: " + this.totalProducts);
-    }
-
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "div.results > span:nth-child(3)", false, 0);
+    this.log("Total da busca: " + this.totalProducts);
   }
 
 }
