@@ -60,7 +60,7 @@ public class BrasilEstrela10Crawler extends Crawler {
       Map<String, Map<String, String>> imagesMap = fetchImageColors(colorsMap, session.getOriginalURL());
       JSONArray productsArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var variants = ", ";", false, true);
       boolean hasVariations = doc.select(".sku-option").size() > 2;
-      String priceId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=ProductID]", "value");
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=ProductID]", "value");
 
       // if product has variations, the first product is a product default, so is not crawled
       // then if is not, the last product is not crawled, because is a invalid product
@@ -77,14 +77,13 @@ public class BrasilEstrela10Crawler extends Crawler {
         JSONObject jsonSku = productsArray.getJSONObject(i);
 
         String name = scrapName(jsonSku, mainPageName);
-        String internalId = JSONUtils.getStringValue(jsonSku, "sku");
-        String internalPid = JSONUtils.getStringValue(jsonSku, "productID");
+        String internalId = JSONUtils.getStringValue(jsonSku, "productID");
         Integer stock = crawlStock(jsonSku);
         boolean available = stock != null && stock > 0;
         Float price = JSONUtils.getFloatValueFromJSON(jsonSku, "price", false);
         String primaryImage = crawlPrimaryImage(doc, jsonSku, imagesMap);
         String secondaryImages = crawlSecondaryImages(doc, jsonSku, primaryImage, imagesMap);
-        Prices prices = crawlPrices(priceId, internalPid, price, jsonSku);
+        Prices prices = crawlPrices(internalPid, internalId, price, jsonSku);
 
         Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
