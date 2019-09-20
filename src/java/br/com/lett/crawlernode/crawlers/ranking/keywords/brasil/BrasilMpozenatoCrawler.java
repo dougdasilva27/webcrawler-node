@@ -6,6 +6,7 @@ import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class BrasilMpozenatoCrawler extends CrawlerRankingKeywords {
 
@@ -31,8 +32,8 @@ public class BrasilMpozenatoCrawler extends CrawlerRankingKeywords {
 
       for (Object object : products) {
         JSONObject product = (JSONObject) object;
-        String internalPid = product.has("ProdutoId") ? product.get("ProdutoId").toString() : null;
-        String productUrl = product.has("Link") ? CrawlerUtils.completeUrl(product.getString("Link"), "https", "www.mpozenato.com.br") : null;
+        String internalPid = JSONUtils.getStringValue(product, "ProdutoId");
+        String productUrl = JSONUtils.getStringValue(product, "Link");
 
         saveDataProduct(null, internalPid, productUrl);
 
