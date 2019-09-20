@@ -198,7 +198,11 @@ public class BrasilDicasaCrawler extends Crawler {
     Double bankTicketPrice = null;
     Map<Integer, Float> installmentPriceMap = new TreeMap<>();
     Pair<Integer, Float> pairInstallment = CrawlerUtils.crawlSimpleInstallment(".product-contents .content .price .condition", doc, false, "x");
-    installmentPriceMap.put(pairInstallment.getFirst(), pairInstallment.getSecond());
+
+    if (!pairInstallment.isAnyValueNull()) {
+      installmentPriceMap.put(pairInstallment.getFirst(), pairInstallment.getSecond());
+    }
+
     Element bankTicketPriceElement = doc.selectFirst(".product-contents .content .price .savings b:first-child");
 
     if (bankTicketPriceElement != null) {
