@@ -195,25 +195,30 @@ public class BrasilDicasaCrawler extends Crawler {
 
   private Prices scrapPrices(Document doc, Float price) {
     Prices prices = new Prices();
-    Double bankTicketPrice = null;
-    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    Pair<Integer, Float> pairInstallment = CrawlerUtils.crawlSimpleInstallment(".product-contents .content .price .condition", doc, false, "x");
 
-    if (!pairInstallment.isAnyValueNull()) {
-      installmentPriceMap.put(pairInstallment.getFirst(), pairInstallment.getSecond());
+    if (price != null) {
+      Double bankTicketPrice = null;
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      Pair<Integer, Float> pairInstallment = CrawlerUtils.crawlSimpleInstallment(".product-contents .content .price .condition", doc, false, "x");
+
+      if (!pairInstallment.isAnyValueNull()) {
+        installmentPriceMap.put(pairInstallment.getFirst(), pairInstallment.getSecond());
+      }
+
+      installmentPriceMap.put(1, price);
+
+      Element bankTicketPriceElement = doc.selectFirst(".product-contents .content .price .savings b:first-child");
+
+      if (bankTicketPriceElement != null) {
+        bankTicketPrice = MathUtils.parseDoubleWithComma(bankTicketPriceElement.text());
+      }
+
+      prices.setBankTicketPrice(bankTicketPrice);
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
     }
-
-    Element bankTicketPriceElement = doc.selectFirst(".product-contents .content .price .savings b:first-child");
-
-    if (bankTicketPriceElement != null) {
-      bankTicketPrice = MathUtils.parseDoubleWithComma(bankTicketPriceElement.text());
-    }
-
-    prices.setBankTicketPrice(bankTicketPrice);
-    prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
 
     return prices;
   }
