@@ -80,6 +80,7 @@ public class BrasilMpozenatoCrawler extends Crawler {
       prices.setBankTicketPrice(bankTicketPrice);
       prices.setPriceFrom(priceFrom);
 
+      installmentPriceMap.put(1, price);
       installmentPriceMap.put(installmentQuantity, installmentPrice);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
