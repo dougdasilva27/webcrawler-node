@@ -29,6 +29,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -48,10 +49,15 @@ public class MexicoAmazonCrawler extends Crawler {
   private static final String HOME_PAGE = "https://www.amazon.com.mx";
   private static final String SELLER_NAME_LOWER = "amazon méxico";
 
+  private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
+  private static final String IMAGES_PROTOCOL = "https";
+
   public MexicoAmazonCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.APACHE);
   }
+
+  private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
   @Override
   public boolean shouldVisit() {
@@ -77,9 +83,9 @@ public class MexicoAmazonCrawler extends Crawler {
       String name = crawlName(doc);
       CategoryCollection categories = crawlCategories(doc);
 
-      JSONArray images = crawlImages(doc);
-      String primaryImage = crawlPrimaryImage(images, doc);
-      String secondaryImages = crawlSecondaryImages(images);
+      JSONArray images = this.amazonScraperUtils.scrapImagesJSONArray(doc);
+      String primaryImage = this.amazonScraperUtils.scrapPrimaryImage(images, doc, IMAGES_PROTOCOL, IMAGES_HOST);
+      String secondaryImages = this.amazonScraperUtils.scrapSecondaryImages(images, IMAGES_PROTOCOL, IMAGES_HOST);
 
       String description = crawlDescription(doc);
       Integer stock = null;
@@ -143,29 +149,6 @@ public class MexicoAmazonCrawler extends Crawler {
     return name;
   }
 
-  /**
-   * Get json of images inside html
-   * 
-   * @param doc
-   * @return
-   */
-  private JSONArray crawlImages(Document doc) {
-    JSONArray images = new JSONArray();
-
-    JSONObject data = CrawlerUtils.selectJsonFromHtml(doc, "#imageBlock_feature_div script", "vardata=", "};", true, false);
-
-    if (data.has("imageGalleryData")) {
-      images = data.getJSONArray("imageGalleryData");
-    } else if (data.has("colorImages")) {
-      JSONObject colorImages = data.getJSONObject("colorImages");
-
-      if (colorImages.has("initial")) {
-        images = colorImages.getJSONArray("initial");
-      }
-    }
-
-    return images;
-  }
 
   private Float crawlPrice(Map<String, Prices> marketplaces) {
     Float price = null;
@@ -352,76 +335,6 @@ public class MexicoAmazonCrawler extends Crawler {
     }
 
     return marketplaces;
-  }
-
-  private String crawlPrimaryImage(JSONArray images, Document doc) {
-    String primaryImage = null;
-
-    if (images.length() > 0) {
-      JSONObject image = images.getJSONObject(0);
-
-      if (image.has("mainUrl") && !image.isNull("mainUrl")) {
-        primaryImage = image.get("mainUrl").toString().trim();
-      } else if (image.has("thumbUrl") && !image.isNull("thumbUrl")) {
-        primaryImage = image.get("thumbUrl").toString().trim();
-      } else if (image.has("hiRes") && !image.isNull("hiRes")) {
-        primaryImage = image.get("hiRes").toString().trim();
-      } else if (image.has("large") && !image.isNull("large")) {
-        primaryImage = image.get("large").toString().trim();
-      } else if (image.has("thumb") && !image.isNull("thumb")) {
-        primaryImage = image.get("thumb").toString().trim();
-      }
-
-    } else {
-      Element img = doc.select("#ebooksImageBlockContainer img").first();
-
-      if (img != null) {
-        primaryImage = img.attr("src").trim();
-      }
-    }
-
-    return primaryImage;
-  }
-
-  /**
-   * Quando este crawler foi feito, nao tinha imagens secundarias
-   * 
-   * @param doc
-   * @return
-   */
-  private String crawlSecondaryImages(JSONArray images) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-
-    for (int i = 1; i < images.length(); i++) { // first index is the primary Image
-      JSONObject imageJson = images.getJSONObject(i);
-
-      String image = null;
-
-      if (imageJson.has("mainUrl") && !imageJson.isNull("mainUrl")) {
-        image = imageJson.get("mainUrl").toString().trim();
-      } else if (imageJson.has("thumbUrl") && !imageJson.isNull("thumbUrl")) {
-        image = imageJson.get("thumbUrl").toString().trim();
-      } else if (imageJson.has("hiRes") && !imageJson.isNull("hiRes")) {
-        image = imageJson.get("hiRes").toString().trim();
-      } else if (imageJson.has("large") && !imageJson.isNull("large")) {
-        image = imageJson.get("large").toString().trim();
-      } else if (imageJson.has("thumb") && !imageJson.isNull("thumb")) {
-        image = imageJson.get("thumb").toString().trim();
-      }
-
-      if (image != null) {
-        secondaryImagesArray.put(image);
-      }
-
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
   }
 
   /**
