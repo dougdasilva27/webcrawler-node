@@ -49,7 +49,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
           "https",
           "images.madeiramadeira.com.br");
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#product-images-desktop .product-slider-thumbs div[data-image-zoom]",
-          Arrays.asList("data-image-zoom"), "https", "",
+          Arrays.asList("data-image-zoom"), "https", "images.madeiramadeira.com.br",
           primaryImage);
 
       Prices prices = scrapPrices(doc, price);
