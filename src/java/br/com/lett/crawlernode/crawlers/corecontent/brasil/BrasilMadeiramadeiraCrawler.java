@@ -123,20 +123,24 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
   private Prices scrapPrices(Document doc, Float price) {
     Prices prices = new Prices();
-    Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.section-price > p.text > del", null, false, ',', session);
-    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    Pair<Integer, Float> pairInstallment = CrawlerUtils.crawlSimpleInstallment(".installment-payment-info-installments", doc, false, "x", "",
-        true);
 
-    installmentPriceMap.put(1, price);
+    if (price != null) {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.section-price > p.text > del", null, false, ',', session);
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      Pair<Integer, Float> pairInstallment = CrawlerUtils.crawlSimpleInstallment(".installment-payment-info-installments", doc, false, "x", "",
+          true);
 
-    if (!pairInstallment.isAnyValueNull()) {
-      installmentPriceMap.put(pairInstallment.getFirst(), pairInstallment.getSecond());
+      installmentPriceMap.put(1, price);
+
+      if (!pairInstallment.isAnyValueNull()) {
+        installmentPriceMap.put(pairInstallment.getFirst(), pairInstallment.getSecond());
+      }
+      prices.setBankTicketPrice(price);
+      prices.setPriceFrom(priceFrom);
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+
     }
-    prices.setBankTicketPrice(price);
-    prices.setPriceFrom(priceFrom);
-    prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
 
     return prices;
   }
