@@ -40,8 +40,6 @@ public class BrasilMultilojaCrawler extends Crawler {
 
     if (isProductPage(doc)) {
 
-      String internalId = null;
-      String primaryImage = null;
       Elements variations = doc.select(
           "body > div.conteudo > div > form > div > div:nth-child(3) > div:nth-child(2) > div.ciq > div:nth-child(2) > div");
 
@@ -52,12 +50,11 @@ public class BrasilMultilojaCrawler extends Crawler {
       Prices prices = scrapPrices(doc);
       boolean available = scrapAvaibility(doc);
       String description = scrapDescription(doc);
-      String secondaryImages = null;
 
       for (Element element : variations) {
-        internalId = scrapInternalId(element);
-        primaryImage = scrapPrimaryImage(element);
-        secondaryImages = scrapSecondaryImages(doc, internalId);
+        String internalId = scrapInternalId(element);
+        String primaryImage = scrapPrimaryImage(element);
+        String secondaryImages = scrapSecondaryImages(doc, internalId);
 
         // Creating the product
         Product product = ProductBuilder.create()
