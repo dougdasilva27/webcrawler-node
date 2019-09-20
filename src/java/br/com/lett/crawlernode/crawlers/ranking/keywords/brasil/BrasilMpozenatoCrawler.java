@@ -32,8 +32,8 @@ public class BrasilMpozenatoCrawler extends CrawlerRankingKeywords {
 
       for (Object object : products) {
         JSONObject product = (JSONObject) object;
-        String internalPid = JSONUtils.getStringValue(product, "ProdutoId");
-        String productUrl = JSONUtils.getStringValue(product, "Link");
+        String internalPid = JSONUtils.getValue(product, "ProdutoId").toString();
+        String productUrl = scrapUrl(product);
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -57,6 +57,16 @@ public class BrasilMpozenatoCrawler extends CrawlerRankingKeywords {
   @Override
   protected boolean hasNextPage() {
     return !this.currentDoc.select(".pg.sel").isEmpty();
+  }
+
+  private String scrapUrl(JSONObject product) {
+    String url = JSONUtils.getStringValue(product, "Link");
+
+    if (url != null) {
+      url = CrawlerUtils.completeUrl(url, "https", "www.mpozenato.com.br");
+    }
+
+    return url;
   }
 
   private JSONArray getJsonArrayProducts(Document doc) {
