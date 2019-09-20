@@ -789,6 +789,56 @@ public class CrawlerUtils {
   }
 
   /**
+   * Crawl json inside element html
+   *
+   * e.g: vtxctx = [{ skus:"825484", searchTerm:"", categoryId:"38", categoryName:"Leite infantil",
+   * departmentyId:"4", departmentName:"Infantil", url:"www.araujo.com.br" }, {...}];
+   *
+   * token = "vtxctx=" finalIndex = ";"
+   * 
+   * @param doc
+   * @param cssElement selector used to get the desired json element
+   * @param token whithout spaces
+   * @param finalIndex if final index is null or is'nt in html, substring will use only the token
+   * @param withoutSpaces remove all spaces
+   * @param lastFinalIndex if true, the substring will find last index of finalIndex
+   * @param lastOccurrenceOfFirstIndex if true, the substring will find the last occurrence of first
+   *        index
+   * @return JSONArray
+   * 
+   * @throws JSONException
+   * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
+   * @throws IllegalArgumentException if doc is null
+   */
+  public static JSONArray selectJsonArrayFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
+      boolean lastFinalIndex, boolean lastOccurrenceOfFirstIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+
+    if (doc == null)
+      throw new IllegalArgumentException("Argument doc cannot be null");
+
+    JSONArray object = new JSONArray();
+
+    Elements scripts = doc.select(cssElement);
+    boolean hasToken = token != null;
+
+    for (Element e : scripts) {
+      String script = e.html();
+
+      script = withoutSpaces ? script.replace(" ", "") : script;
+
+      if (!hasToken) {
+        object = stringToJsonArray(script.trim());
+        break;
+      } else if (script.contains(token) && (finalIndex == null || script.contains(finalIndex))) {
+        object = stringToJsonArray(extractSpecificStringFromScript(script, token, lastOccurrenceOfFirstIndex, finalIndex, lastFinalIndex));
+        break;
+      }
+    }
+
+    return object;
+  }
+
+  /**
    * Extract Json string from script(string) e.g: vtxctx = [{ skus:"825484", searchTerm:"",
    * categoryId:"38", categoryName:"Leite infantil", departmentyId:"4", departmentName:"Infantil",
    * url:"www.araujo.com.br" }, {...}];
