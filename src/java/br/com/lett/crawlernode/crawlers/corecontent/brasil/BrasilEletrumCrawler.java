@@ -114,7 +114,6 @@ public class BrasilEletrumCrawler extends Crawler {
     Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating);
     Double avgRating = getTotalAvgRatingFromYourViews(docRating);
     AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
-    System.err.println(avgRating);
     ratingReviews.setAdvancedRatingReview(advancedRatingReview);
     ratingReviews.setTotalRating(totalNumOfEvaluations);
     ratingReviews.setAverageOverallRating(avgRating);
