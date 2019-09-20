@@ -30,7 +30,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
   private String keySHA256;
   private static final Integer API_VERSION = 1;
   private static final String SENDER = "vtex.store-resources@0.x";
-  private static final String PROVIDER = "vtex.store-graphql@2.x";
+  private static final String PROVIDER = "vtex.search-graphql@0.x";
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -169,7 +169,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    */
   private String fetchSHA256Key() {
     // When sha256Hash is not found, this key below works (on 02/09/2019)
-    String hash = "1d1ad37219ceb86fc281aa774971bbe1fe7656730e0a2ac50ba63ed63e45a2a3";
+    String hash = "78c1deb2e99da3be4b118ce63d36d0d4f8fd457becaa4b109227467934a2858e";
     String url = "https://www.exito.com/" + this.keywordEncoded;
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
