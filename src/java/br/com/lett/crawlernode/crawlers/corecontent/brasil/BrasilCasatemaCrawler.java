@@ -7,8 +7,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -20,24 +18,19 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
-public class BrasilMaisabracosCrawler extends Crawler {
-  public BrasilMaisabracosCrawler(Session session) {
+public class BrasilCasatemaCrawler extends Crawler {
+
+  public BrasilCasatemaCrawler(Session session) {
     super(session);
   }
 
-  private static final String HOME_PAGE = "https://www.maisabracos.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "mais abraços";
-
-  @Override
-  public boolean shouldVisit() {
-    String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
+  private static final String HOME_PAGE = "https://www.casatema.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "casatema";
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+    List<Product> products = new ArrayList<Product>();
 
     if (isProductPage(doc)) {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
@@ -45,13 +38,17 @@ public class BrasilMaisabracosCrawler extends Crawler {
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
 
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a");
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".productDescription", ".title[data-destec=\"descp\"]", ".content-description .value-field.Descripcion",
-              ".title[data-destec=\"tech\"]", ".content-description table.group.Especificaciones-Tecnicas", "#caracteristicas"));
+          Arrays.asList(".productDescription", "#caracteristicas"));
 
       // sku data in json
-      JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONArray arraySkus =
+          skuJson != null &&
+              skuJson.has("skus") &&
+              !skuJson.isNull("skus")
+                  ? skuJson.getJSONArray("skus")
+                  : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -75,10 +72,24 @@ public class BrasilMaisabracosCrawler extends Crawler {
         eans.add(ean);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setEans(eans)
+            .build();
 
         products.add(product);
       }
@@ -86,46 +97,10 @@ public class BrasilMaisabracosCrawler extends Crawler {
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
-
     return products;
   }
 
-  private String crawlSecondaryImages(Document doc, String primaryImage) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements images = doc.select(".images-source ul li a");
-    for (Element e : images) {
-
-      if (e.hasAttr("zoom")) {
-        String image = e.attr("zoom");
-
-        if ((primaryImage == null || !primaryImage.equals(image)) && image != null) {
-          secondaryImagesArray.put(image);
-
-        }
-      }
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
-  private String crawlPrimaryImage(Document doc) {
-    Element primaryImageElement = doc.selectFirst(".images-source ul li a");
-    String primaryImage = null;
-
-    if (primaryImageElement != null && primaryImageElement.hasAttr("zoom")) {
-      primaryImage = primaryImageElement.attr("zoom");
-    }
-
-    return primaryImage;
-  }
-
-  private boolean isProductPage(Document document) {
-    return document.selectFirst(".productName") != null;
+  private boolean isProductPage(Document doc) {
+    return doc.selectFirst(".produto") != null;
   }
 }

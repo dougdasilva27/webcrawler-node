@@ -6,37 +6,38 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class BrasilEstrela10Crawler extends CrawlerRankingKeywords {
+public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
-  public BrasilEstrela10Crawler(Session session) {
+  public BrasilLojamondelezCrawler(Session session) {
     super(session);
   }
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 36;
-
     this.log("Página " + this.currentPage);
 
-    String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    String url = "https://www.estrela10.com.br/pesquisa?t=" + key + "&pg=" + this.currentPage;
+    this.pageSize = 24;
+    String url = "https://www.lojamondelez.com.br/search/" + this.keywordEncoded + "?page=" + this.currentPage;
+
     this.log("Link onde são feitos os crawlers: " + url);
+    this.currentDoc = fetchDocument(url, cookies);
 
-    this.currentDoc = fetchDocument(url);
-
-    Elements products = this.currentDoc.select("div.wd-browsing-grid-list > ul > li > div");
+    Elements products = this.currentDoc.select(".shelf-content-itens > [data-product-id]");
 
     if (!products.isEmpty()) {
-      if (this.totalProducts == 0) setTotalProducts();
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
 
       for (Element e : products) {
         String internalPid = e.attr("data-product-id");
-        String productUrl = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.estrela10.com.br");
+        String productUrl = CrawlerUtils.scrapUrl(e, "a.shelf-url", "href", "https", "www.lojamondelez.com.br");
 
         saveDataProduct(null, internalPid, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) break;
+        if (this.arrayProducts.size() == productsLimit)
+          break;
       }
     } else {
       this.result = false;
@@ -48,7 +49,7 @@ public class BrasilEstrela10Crawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "div.product-count span", true, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".shelf-total-results-qty", true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 }

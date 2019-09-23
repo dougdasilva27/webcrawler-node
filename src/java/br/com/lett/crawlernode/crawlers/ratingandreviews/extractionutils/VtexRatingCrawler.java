@@ -93,8 +93,6 @@ public class VtexRatingCrawler {
    * @return document
    */
   private Document crawlApiRatings(String url, String internalPid, DataFetcher dataFetcher) {
-    Document doc = new Document(url);
-
     // Parameter in url for request POST ex: "led-32-ilo-hd-smart-d300032-" IN URL
     // "http://www.walmart.com.ar/led-32-ilo-hd-smart-d300032-/p"
     String[] tokens = url.split("/");

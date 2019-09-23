@@ -28,31 +28,6 @@ public class CrawlerTaskEndpoint {
     Logging.printLogDebug(logger, "Creating session....");
     Session session = SessionFactory.createSession(request, GlobalConfigurations.markets);
 
-    //
-    // first we must check if the session is from a market
-    // that uses webdriver. If so, we must check if the current
-    // number of webdriver instances is already at maximum. If that is
-    // the case, we must send an error status code to the client
-    //
-    // if (session.getMarket().mustUseCrawlerWebdriver() && !Main.server.isAcceptingWebdriverTasks()) {
-    // Logging.printLogDebug(logger, session, "Server is full for webdriver tasks.");
-    //
-    // // send error response
-    // response = Server.MSG_TOO_MANY_REQUESTS_WEBDRIVER;
-    // t.sendResponseHeaders(Server.HTTP_STATUS_CODE_TOO_MANY_REQUESTS, response.length());
-    // Main.server.incrementFailedTasks();
-    //
-    // // set task status on mongo
-    // if ( session instanceof InsightsCrawlerSession ||
-    // session instanceof DiscoveryCrawlerSession ) {
-    //
-    // Persistence.setTaskStatusOnMongo(Persistence.MONGO_TASK_STATUS_FAILED, session,
-    // Main.dbManager.connectionPanel);
-    // }
-    //
-    // return response;
-    // }
-
     // create the task
     Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
     Task task = TaskFactory.createTask(session);
@@ -65,10 +40,12 @@ public class CrawlerTaskEndpoint {
     if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
       response = Server.MSG_TASK_COMPLETED;
       t.sendResponseHeaders(Server.HTTP_STATUS_CODE_OK, response.length());
+      Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + Server.HTTP_STATUS_CODE_OK);
       Main.server.incrementSucceededTasks();
     } else {
       response = Server.MSG_TASK_FAILED;
       t.sendResponseHeaders(Server.HTTP_STATUS_CODE_SERVER_ERROR, response.length());
+      Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + Server.HTTP_STATUS_CODE_SERVER_ERROR);
       Main.server.incrementFailedTasks();
     }
 

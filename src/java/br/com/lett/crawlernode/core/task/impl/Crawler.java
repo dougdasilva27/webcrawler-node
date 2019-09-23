@@ -208,7 +208,6 @@ public class Crawler extends Task {
 
   @Override
   public void onFinish() {
-
     try {
       S3Service.uploadCrawlerSessionContentToAmazon(session);
 
@@ -226,11 +225,7 @@ public class Crawler extends Task {
       if (!errors.isEmpty()) {
         Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
         session.setTaskStatus(Task.STATUS_FAILED);
-      }
-
-      // only remove the task from queue if it was flawless
-      // and if we are not testing, because when testing there is no message processing
-      else if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
+      } else {
         Logging.printLogDebug(logger, session, "Task completed.");
         session.setTaskStatus(Task.STATUS_COMPLETED);
       }
@@ -245,7 +240,8 @@ public class Crawler extends Task {
       Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
 
     } catch (Exception e) {
-      DBSlack.reportCrawlerErrors(session, CommonMethods.getStackTrace(e));
+      session.setTaskStatus(Task.STATUS_FAILED);
+      Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
       Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
   }

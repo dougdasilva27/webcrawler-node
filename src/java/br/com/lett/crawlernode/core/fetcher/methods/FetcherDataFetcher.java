@@ -76,13 +76,13 @@ public class FetcherDataFetcher implements DataFetcher {
     Response response = new Response();
     String requestHash = FetchUtilities.generateRequestHash(session);
 
+    FetcherRequest payload = fetcherPayloadBuilder(request, method, session);
+
+    Logging.printLogDebug(logger, session,
+        "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
+
     try {
-      FetcherRequest payload = fetcherPayloadBuilder(request, method, session);
-
-      Logging.printLogDebug(logger, session,
-          "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
-
-      Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 15;
+      Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 18;
       RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
           .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
 
@@ -151,7 +151,7 @@ public class FetcherDataFetcher implements DataFetcher {
       session.addRedirection(request.getUrl(), response.getRedirectUrl());
       S3Service.saveResponseContent(session, requestHash, response.getBody());
     } catch (Exception e) {
-      Logging.printLogError(logger, session, "Fetcher did not returned the expected response: " + CommonMethods.getStackTrace(e));
+      Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response: " + CommonMethods.getStackTrace(e));
     }
 
     sendRequestInfoLog(request, response, method, session, requestHash);
