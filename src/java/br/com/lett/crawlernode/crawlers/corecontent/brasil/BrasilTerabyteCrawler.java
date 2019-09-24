@@ -21,9 +21,9 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
@@ -54,9 +54,7 @@ public class BrasilTerabyteCrawler extends Crawler {
       Request request = RequestBuilder.create().setCookies(cookies).setUrl(completeUrl).build();
       Response response = dataFetcher.get(session, request);
       JSONObject bodyJson = new JSONObject(response.getBody());
-      if (bodyJson.has("body")) {
-        doc = Jsoup.parse(bodyJson.getString("body"));
-      }
+      doc = Jsoup.parse(JSONUtils.getStringValue(bodyJson, "body"));
 
     } catch (MalformedURLException e) {
       e.printStackTrace();
@@ -75,7 +73,6 @@ public class BrasilTerabyteCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "e.html");
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 

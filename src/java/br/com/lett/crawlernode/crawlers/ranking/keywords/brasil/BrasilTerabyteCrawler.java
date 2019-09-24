@@ -10,9 +10,9 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class BrasilTerabyteCrawler extends CrawlerRankingKeywords {
 
@@ -28,7 +28,6 @@ public class BrasilTerabyteCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     this.currentDoc = fetchSearchPage();
-    CommonMethods.saveDataToAFile(this.currentDoc, Test.pathWrite + "e.html");
     Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
 
     if (!products.isEmpty()) {
@@ -75,18 +74,16 @@ public class BrasilTerabyteCrawler extends CrawlerRankingKeywords {
 
     String url = "https://www.terabyteshop.com.br/busca?app=true&url=%2Fbusca&filter%5Bstr%5D=" + this.keywordWithoutAccents.replace(" ", "+")
         + "&filter%5Bppg%5D=" + this.currentPage;
-
     this.log("Link onde são feitos os crawlers: " + url);
 
     Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
     Response response = dataFetcher.get(session, request);
+
+    // A resposta vem com um caractere ascii que não aparece em arquivo, por isso é usado essa expressão
+    // para remover.
     String resultString = response.getBody().replaceAll("[^\\x00-\\x7F]", "");
-
     JSONObject bodyJson = new JSONObject(resultString);
-
-    if (bodyJson.has("body")) {
-      doc = Jsoup.parse(bodyJson.getString("body"));
-    }
+    doc = Jsoup.parse(JSONUtils.getStringValue(bodyJson, "body"));
 
     return doc;
   }
