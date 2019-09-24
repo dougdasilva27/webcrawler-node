@@ -5,8 +5,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
@@ -24,6 +28,7 @@ public class BrasilTerabyteCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     this.currentDoc = fetchSearchPage();
+    CommonMethods.saveDataToAFile(this.currentDoc, Test.pathWrite + "e.html");
     Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
 
     if (!products.isEmpty()) {
@@ -68,18 +73,19 @@ public class BrasilTerabyteCrawler extends CrawlerRankingKeywords {
   private Document fetchSearchPage() {
     Document doc = new Document("");
 
-    String url = "https://www.terabyteshop.com.br/busca?str=" + this.keywordWithoutAccents.replace(" ", "%20") + "&ppg=" + this.currentPage;
+    String url = "https://www.terabyteshop.com.br/busca?app=true&url=%2Fbusca&filter%5Bstr%5D=" + this.keywordWithoutAccents.replace(" ", "+")
+        + "&filter%5Bppg%5D=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
 
-    if (this.currentPage == 1) {
-      doc = fetchDocument(url);
-    } else {
-      JSONObject json = fetchJSONObject(url);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+    Response response = dataFetcher.get(session, request);
+    String resultString = response.getBody().replaceAll("[^\\x00-\\x7F]", "");
 
-      if (json.has("src")) {
-        doc = Jsoup.parse(json.get("src").toString());
-      }
+    JSONObject bodyJson = new JSONObject(resultString);
+
+    if (bodyJson.has("body")) {
+      doc = Jsoup.parse(bodyJson.getString("body"));
     }
 
     return doc;
