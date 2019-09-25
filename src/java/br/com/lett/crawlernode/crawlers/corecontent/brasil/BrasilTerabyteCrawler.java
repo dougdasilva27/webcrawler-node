@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -50,14 +51,17 @@ public class BrasilTerabyteCrawler extends Crawler {
     try {
       URL url = new URL(session.getOriginalURL());
       String pathUrl = url.getPath();
-      String completeUrl = session.getOriginalURL() + "?app=true&" + "&url=" + pathUrl;
-      Request request = RequestBuilder.create().setCookies(cookies).setUrl(completeUrl).build();
+      String apiUrl = session.getOriginalURL() + "?app=true&" + "&url=" + pathUrl;
+      Request request = RequestBuilder.create().setCookies(cookies).setUrl(apiUrl).build();
       Response response = dataFetcher.get(session, request);
-      JSONObject bodyJson = new JSONObject(response.getBody());
+      // A resposta vem com um caractere ascii que não aparece em arquivo, por isso é usado essa expressão
+      // para remover.
+      String resultString = response.getBody().replaceAll("[^\\x00-\\x7F]", "");
+      JSONObject bodyJson = JSONUtils.stringToJson(resultString);
       doc = Jsoup.parse(JSONUtils.getStringValue(bodyJson, "body"));
 
     } catch (MalformedURLException e) {
-      e.printStackTrace();
+      Logging.printLogError(logger, session, e.getMessage());
     }
 
     return doc;
@@ -72,6 +76,7 @@ public class BrasilTerabyteCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "e.html");
     List<Product> products = new ArrayList<>();
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
