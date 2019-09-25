@@ -5,10 +5,14 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class BrasilTerabyteCrawler extends CrawlerRankingKeywords {
 
@@ -68,19 +72,18 @@ public class BrasilTerabyteCrawler extends CrawlerRankingKeywords {
   private Document fetchSearchPage() {
     Document doc = new Document("");
 
-    String url = "https://www.terabyteshop.com.br/busca?str=" + this.keywordWithoutAccents.replace(" ", "%20") + "&ppg=" + this.currentPage;
-
+    String url = "https://www.terabyteshop.com.br/busca?app=true&url=%2Fbusca&filter%5Bstr%5D=" + this.keywordWithoutAccents.replace(" ", "+")
+        + "&filter%5Bppg%5D=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    if (this.currentPage == 1) {
-      doc = fetchDocument(url);
-    } else {
-      JSONObject json = fetchJSONObject(url);
+    Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+    Response response = dataFetcher.get(session, request);
 
-      if (json.has("src")) {
-        doc = Jsoup.parse(json.get("src").toString());
-      }
-    }
+    // A resposta vem com um caractere ascii que não aparece em arquivo, por isso é usado essa expressão
+    // para remover.
+    String resultString = response.getBody().replaceAll("[^\\x00-\\x7F]", "");
+    JSONObject bodyJson = new JSONObject(resultString);
+    doc = Jsoup.parse(JSONUtils.getStringValue(bodyJson, "body"));
 
     return doc;
   }
