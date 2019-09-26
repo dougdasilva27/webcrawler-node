@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 
@@ -104,7 +105,10 @@ public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
     JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
     JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, partnerId);
 
-    ratingReviews.setTotalRating(getTotalReviewCount(reviewStatistics));
+    Integer total = getTotalReviewCount(ratingReviewsEndpointResponse);
+
+    ratingReviews.setTotalRating(total);
+    ratingReviews.setTotalWrittenReviews(total);
     ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
 
     return ratingReviews;
@@ -112,9 +116,17 @@ public class BrasilFastshopRatingReviewCrawler extends RatingReviewCrawler {
 
   private Integer getTotalReviewCount(JSONObject reviewStatistics) {
     Integer totalReviewCount = 0;
-    if (reviewStatistics.has("TotalReviewCount")) {
-      totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
+
+    JSONArray results = JSONUtils.getJSONArrayValue(reviewStatistics, "Results");
+    for (Object result : results) {
+      JSONObject resultObject = (JSONObject) result;
+
+      String locale = JSONUtils.getStringValue(resultObject, "ContentLocale");
+      if (locale != null && locale.equalsIgnoreCase("pt_BR")) { // this happen because fastshop only show reviews from brasil
+        totalReviewCount++;
+      }
     }
+
     return totalReviewCount;
   }
 
