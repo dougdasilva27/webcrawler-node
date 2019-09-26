@@ -169,7 +169,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    */
   private String fetchSHA256Key() {
     // When sha256Hash is not found, this key below works (on 02/09/2019)
-    String hash = "78c1deb2e99da3be4b118ce63d36d0d4f8fd457becaa4b109227467934a2858e";
+    String hash = "b4441d837d10fc5b78f1379c0d851208d7fe3bd60d39114d87663340b6e5381f";
     String url = "https://www.exito.com/" + this.keywordEncoded;
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
