@@ -53,6 +53,7 @@ public class B2WCrawler extends Crawler {
   public B2WCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.FETCHER);
+    super.config.setMustSendRatingToKinesis(true);
     this.setHeaders();
   }
 

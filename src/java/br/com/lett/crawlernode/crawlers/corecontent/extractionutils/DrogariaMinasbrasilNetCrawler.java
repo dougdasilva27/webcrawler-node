@@ -38,6 +38,7 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
 
   public DrogariaMinasbrasilNetCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override

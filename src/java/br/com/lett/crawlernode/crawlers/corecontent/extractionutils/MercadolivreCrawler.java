@@ -43,6 +43,7 @@ public class MercadolivreCrawler extends Crawler {
 
   protected MercadolivreCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   public void setSeparator(char separator) {

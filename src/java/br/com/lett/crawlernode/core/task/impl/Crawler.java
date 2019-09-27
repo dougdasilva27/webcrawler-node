@@ -103,6 +103,8 @@ public class Crawler extends Task {
     this.config.setFetcher(FetchMode.STATIC);
     this.config.setProxyList(new ArrayList<String>());
     this.config.setConnectionAttempts(0);
+    // It will be false until exists rating out of core.
+    this.config.setMustSendRatingToKinesis(false);
   }
 
   /**
@@ -174,11 +176,15 @@ public class Crawler extends Task {
           p.setStatus(SkuStatus.UNAVAILABLE);
         }
       }
-      RatingsReviews productRating = p.getRatingReviews();
-      RatingsReviews rating = assembleRatingToSendToKinesis(productRating);
 
-      KPLProducer.getInstance().put(rating, session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
       KPLProducer.getInstance().put(p, session);
+
+      if (this.config.mustSendRatingToKinesis()) {
+        RatingsReviews productRating = p.getRatingReviews();
+        RatingsReviews rating = assembleRatingToSendToKinesis(productRating);
+
+        KPLProducer.getInstance().put(rating, session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
+      }
     }
   }
 

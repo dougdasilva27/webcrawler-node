@@ -35,6 +35,7 @@ public class BrasilLojasredeCrawler extends Crawler {
 
   public BrasilLojasredeCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override

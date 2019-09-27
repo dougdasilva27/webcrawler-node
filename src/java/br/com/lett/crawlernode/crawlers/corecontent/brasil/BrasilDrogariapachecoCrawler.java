@@ -36,6 +36,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
   public BrasilDrogariapachecoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override

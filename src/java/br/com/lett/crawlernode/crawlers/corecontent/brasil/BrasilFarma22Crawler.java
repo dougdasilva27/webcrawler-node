@@ -38,6 +38,7 @@ public class BrasilFarma22Crawler extends Crawler {
 
   public BrasilFarma22Crawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override

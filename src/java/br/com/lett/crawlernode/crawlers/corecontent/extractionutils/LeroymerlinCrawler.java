@@ -39,6 +39,7 @@ public class LeroymerlinCrawler extends Crawler {
 
   public LeroymerlinCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
 

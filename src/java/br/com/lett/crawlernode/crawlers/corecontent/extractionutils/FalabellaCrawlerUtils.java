@@ -44,6 +44,7 @@ public class FalabellaCrawlerUtils extends Crawler {
 
   public FalabellaCrawlerUtils(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   /**
