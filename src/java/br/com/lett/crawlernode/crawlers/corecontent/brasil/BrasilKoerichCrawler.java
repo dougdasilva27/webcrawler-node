@@ -44,6 +44,7 @@ public class BrasilKoerichCrawler extends Crawler {
 
   public BrasilKoerichCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override

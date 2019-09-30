@@ -44,6 +44,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
   public SaopauloOnofreCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override

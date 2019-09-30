@@ -48,6 +48,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
     super.config.setFetcher(FetchMode.FETCHER);
   }
 

@@ -29,6 +29,7 @@ public class BrasilCasaeconstrucaoCrawler extends Crawler {
 
   public BrasilCasaeconstrucaoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   private static final String HOME_PAGE = "https://www.cec.com.br/";

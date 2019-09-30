@@ -31,6 +31,7 @@ public class BrasilEletrumCrawler extends Crawler {
 
   public BrasilEletrumCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
