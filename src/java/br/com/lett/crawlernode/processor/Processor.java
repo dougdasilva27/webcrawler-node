@@ -24,12 +24,14 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.IllegalBehaviorElementValueException;
 import exceptions.MalformedPricesException;
+import exceptions.MalformedRatingModel;
 import models.Behavior;
 import models.BehaviorElement;
 import models.BehaviorElement.BehaviorElementBuilder;
 import models.Marketplace;
 import models.Offers;
 import models.Processed;
+import models.RatingsReviews;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -72,6 +74,8 @@ public class Processor {
     Offers offers = product.getOffers();
     Integer stock = product.getStock();
     String ean = product.getEan();
+    RatingsReviews ratingsReviews = product.getRatingReviews();
+
     List<String> eans = null;
 
     List<String> crawledEans = product.getEans();
@@ -142,6 +146,7 @@ public class Processor {
         newProcessedProduct.setInternalPid(internalPid);
         newProcessedProduct.setEan(ean);
         newProcessedProduct.setEans(eans);
+        newProcessedProduct.setRatingsReviews(ratingsReviews);
 
       }
 
@@ -150,7 +155,7 @@ public class Processor {
         newProcessedProduct = new Processed(null, internalId, internalPid, name, null, null, null, null, null, null, null, foto, secondaryPics, cat1,
             cat2, cat3, url, session.getMarket().getNumber(), nowISO, nowISO, null, nowISO, nowISO, null, null, description, price, prices, null,
             null, null, false, false, stock, new Behavior(), // behavior - will be update in the updateBehavior method just below
-            marketplace, ean, eans, offers);
+            marketplace, ean, eans, offers, ratingsReviews);
       }
 
       // run the processor for the new model
@@ -673,6 +678,29 @@ public class Processor {
           }
 
           /*
+           * Rating Reviews
+           * 
+           */
+
+          JSONObject ratingReviewsJson;
+          RatingsReviews ratingReviews;
+          if (rs.getString("rating") != null) {
+            try {
+              ratingReviewsJson = new JSONObject(rs.getString("rating"));
+              try {
+                ratingReviews = new RatingsReviews(ratingReviewsJson);
+              } catch (MalformedRatingModel e) {
+                ratingReviews = new RatingsReviews();
+              }
+            } catch (JSONException e) {
+              ratingReviews = new RatingsReviews();
+            }
+          } else {
+            ratingReviews = new RatingsReviews();
+          }
+
+
+          /*
            * Stock
            */
           Integer actualStock = rs.getInt("stock");
@@ -708,7 +736,7 @@ public class Processor {
               rs.getString("original_description"), actualPrice, actualPrices, digitalContent,
               rs.getObject("lett_id") instanceof Long ? rs.getLong("lett_id") : null,
               rs.getObject("master_id") instanceof Long ? rs.getLong("master_id") : null, similars, rs.getBoolean("available"), rs.getBoolean("void"),
-              actualStock, behavior, actualMarketplace, rs.getString("ean"), eans, offers);
+              actualStock, behavior, actualMarketplace, rs.getString("ean"), eans, offers, ratingReviews);
 
           return actualProcessedProduct;
 

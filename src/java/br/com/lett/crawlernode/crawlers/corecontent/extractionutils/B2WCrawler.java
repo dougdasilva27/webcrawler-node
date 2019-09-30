@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -32,9 +33,11 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import enums.OfferField;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -50,6 +53,7 @@ public class B2WCrawler extends Crawler {
   public B2WCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.FETCHER);
+    super.config.setMustSendRatingToKinesis(true);
     this.setHeaders();
   }
 
@@ -126,6 +130,7 @@ public class B2WCrawler extends Crawler {
       String primaryImage = hasImages ? this.crawlPrimaryImage(infoProductJson) : null;
       String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
       String description = this.crawlDescription(internalPid, doc);
+      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
       List<String> eans = crawlEan(infoProductJson);
 
       Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson, doc);
@@ -140,6 +145,14 @@ public class B2WCrawler extends Crawler {
         Prices prices = crawlPrices(marketplaceMap);
         List<JSONObject> buyBox = scrapBuyBox(doc, internalId, internalPid);
         Offers offers = assembleOffers(buyBox);
+
+        RatingsReviews ratingReviews = crawlRatingReviews(frontPageJson, internalPid);
+
+
+        RatingsReviews clonedRatingReviews = ratingReviews.clone();
+        clonedRatingReviews.setInternalId(internalId);
+        ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+
         // Creating the product
         Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -157,6 +170,7 @@ public class B2WCrawler extends Crawler {
             .setDescription(description)
             .setMarketplace(variationMarketplace)
             .setOffers(offers)
+            .setRatingReviews(clonedRatingReviews)
             .setEans(eans)
             .build();
 
@@ -167,6 +181,175 @@ public class B2WCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  /**
+   * Crawl rating and reviews stats using the bazaar voice endpoint. To get only the stats summary we
+   * need at first, we only have to do one request. If we want to get detailed information about each
+   * review, we must perform pagination.
+   * 
+   * The RatingReviews crawled in this method, is the same across all skus variations in a page.
+   *
+   * @param document
+   * @return
+   */
+  private RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+
+    ratingReviews.setDate(session.getDate());
+
+    String bazaarVoicePassKey = crawlBazaarVoiceEndpointPassKey(frontPageJson);
+
+    String endpointRequest = assembleBazaarVoiceEndpointRequest(skuInternalPid, bazaarVoicePassKey, 0, 5);
+
+    Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+    JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+    JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, skuInternalPid);
+    AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(reviewStatistics);
+
+    Integer totalRating = getTotalReviewCount(reviewStatistics);
+
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    ratingReviews.setTotalRating(totalRating);
+    ratingReviews.setTotalWrittenReviews(totalRating);
+    ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
+
+    return ratingReviews;
+  }
+
+  private AdvancedRatingReview getTotalStarsFromEachValue(JSONObject reviewStatistics) {
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
+
+    if (reviewStatistics.has("RatingDistribution")) {
+      JSONArray ratingDistribution = reviewStatistics.getJSONArray("RatingDistribution");
+      for (Object object : ratingDistribution) {
+        JSONObject rating = (JSONObject) object;
+        Integer option = CrawlerUtils.getIntegerValueFromJSON(rating, "RatingValue", 0);
+
+        if (rating.has("RatingValue") && option == 1 && rating.has("Count")) {
+          star1 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 2 && rating.has("Count")) {
+          star2 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 3 && rating.has("Count")) {
+          star3 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 4 && rating.has("Count")) {
+          star4 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+        if (rating.has("RatingValue") && option == 5 && rating.has("Count")) {
+          star5 = CrawlerUtils.getIntegerValueFromJSON(rating, "Count", 0);
+        }
+
+      }
+    }
+
+    return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
+  }
+
+  private Integer getTotalReviewCount(JSONObject reviewStatistics) {
+    Integer totalReviewCount = null;
+    if (reviewStatistics.has("TotalReviewCount")) {
+      totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
+    }
+    return totalReviewCount;
+  }
+
+  private Double getAverageOverallRating(JSONObject reviewStatistics) {
+    Double avgOverallRating = null;
+    if (reviewStatistics.has("AverageOverallRating")) {
+      avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
+    }
+    return avgOverallRating;
+  }
+
+  /**
+   * e.g: http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4
+   * &passkey=oqu6lchjs2mb5jp55bl55ov0d &Offset=0 &Limit=5 &Sort=SubmissionTime:desc
+   * &Filter=ProductId:113048617 &Include=Products &Stats=Reviews
+   * 
+   * Endpoint request parameters:
+   * <p>
+   * &passKey: the password used to request the bazaar voice endpoint. This pass key e crawled inside
+   * the html of the sku page, inside a script tag. More details on how to crawl this passKey
+   * </p>
+   * <p>
+   * &Offset: the number of the chunk of data retrieved by the endpoint. If we want the second chunk,
+   * we must add this value by the &Limit parameter.
+   * </p>
+   * <p>
+   * &Limit: the number of reviews that a request will return, at maximum.
+   * </p>
+   * 
+   * The others parameters we left as default.
+   * 
+   * Request Method: GET
+   */
+  private String assembleBazaarVoiceEndpointRequest(String skuInternalPid, String bazaarVoiceEnpointPassKey, Integer offset, Integer limit) {
+
+    StringBuilder request = new StringBuilder();
+
+    request.append("http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4");
+    request.append("&passkey=" + bazaarVoiceEnpointPassKey);
+    request.append("&Offset=" + offset);
+    request.append("&Limit=" + limit);
+    request.append("&Sort=SubmissionTime:desc");
+    request.append("&Filter=ProductId:" + skuInternalPid);
+    request.append("&Include=Products");
+    request.append("&Stats=Reviews");
+
+    return request.toString();
+  }
+
+  /**
+   * Crawl the bazaar voice endpoint passKey on the sku page. The passKey is located inside a script
+   * tag, which contains a json object is several metadata, including the passKey.
+   * 
+   * @param document
+   * @return
+   */
+  private String crawlBazaarVoiceEndpointPassKey(JSONObject embeddedJSONObject) {
+    String passKey = null;
+    if (embeddedJSONObject != null) {
+      if (embeddedJSONObject.has("configuration")) {
+        JSONObject configuration = embeddedJSONObject.getJSONObject("configuration");
+
+        if (configuration.has("bazaarvoicePasskey")) {
+          passKey = configuration.getString("bazaarvoicePasskey");
+        }
+      }
+    }
+    return passKey;
+  }
+
+  private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
+    if (ratingReviewsEndpointResponse.has("Includes")) {
+      JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
+
+      if (includes.has("Products")) {
+        JSONObject products = includes.getJSONObject("Products");
+
+        if (products.has(skuInternalPid)) {
+          JSONObject product = products.getJSONObject(skuInternalPid);
+
+          if (product.has("ReviewStatistics")) {
+            return product.getJSONObject("ReviewStatistics");
+          }
+        }
+      }
+    }
+
+    return new JSONObject();
   }
 
   private List<String> crawlEan(JSONObject infoProductJson) {

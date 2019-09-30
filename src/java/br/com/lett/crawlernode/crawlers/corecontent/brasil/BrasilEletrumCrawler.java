@@ -6,25 +6,32 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Offers;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilEletrumCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.eletrum.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "eletrum";
+  private static final String STORE_KEY = "8ea7baa3-231d-4049-873e-ad5afd085ca4";
 
   public BrasilEletrumCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -64,6 +71,7 @@ public class BrasilEletrumCrawler extends Crawler {
         Offers offers = vtexUtil.scrapBuyBox(apiJSON);
         List<String> eans = new ArrayList<>();
         eans.add(ean);
+        RatingsReviews ratingReviews = crawlRatingReviews(internalPid);
 
         // Creating the product
         Product product = ProductBuilder.create()
@@ -84,6 +92,7 @@ public class BrasilEletrumCrawler extends Crawler {
             .setMarketplace(marketplace)
             .setEans(eans)
             .setOffers(offers)
+            .setRatingReviews(ratingReviews)
             .build();
 
         products.add(product);
@@ -95,6 +104,49 @@ public class BrasilEletrumCrawler extends Crawler {
 
     return products;
   }
+
+  private RatingsReviews crawlRatingReviews(String internalPid) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger, STORE_KEY, this.dataFetcher);
+
+    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, STORE_KEY, this.dataFetcher);
+    Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating);
+    Double avgRating = getTotalAvgRatingFromYourViews(docRating);
+    AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+    return ratingReviews;
+  }
+
+  private Double getTotalAvgRatingFromYourViews(Document docRating) {
+    Double avgRating = 0d;
+    Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
+
+    if (rating != null) {
+      Double avg = MathUtils.parseDoubleWithDot((rating.attr("content")));
+      avgRating = avg != null ? avg : 0d;
+    }
+
+    return avgRating;
+  }
+
+  private Integer getTotalNumOfRatingsFromYourViews(Document docRating) {
+    Integer totalRating = 0;
+    Element totalRatingElement = docRating.selectFirst("meta[itemprop=ratingCount]");
+
+    if (totalRatingElement != null) {
+      Integer total = MathUtils.parseInt(totalRatingElement.attr("content"));
+      totalRating = total != null ? total : 0;
+    }
+
+    return totalRating;
+  }
+
 
   private String crawlDescription(String internalPid, JSONObject apiJSON, VTEXCrawlersUtils vtexUtil, Document doc) {
     StringBuilder description = new StringBuilder();

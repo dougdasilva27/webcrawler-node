@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -25,6 +26,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -41,6 +43,7 @@ public class MercadolivreCrawler extends Crawler {
 
   protected MercadolivreCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   public void setSeparator(char separator) {
@@ -101,11 +104,28 @@ public class MercadolivreCrawler extends Crawler {
         Prices prices = available ? marketplaceMap.get(mainSellerNameLower) : new Prices();
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
 
+        RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+        ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+        RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(entry.getKey()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create()
+            .setUrl(entry.getKey())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setMarketplace(marketplace)
+            .setRatingReviews(ratingReviews)
+            .build();
 
         products.add(product);
       }
@@ -116,6 +136,62 @@ public class MercadolivreCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private RatingsReviews crawlRating(Document doc, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
+    Double avgRating = getTotalAvgRating(doc);
+
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+
+    return ratingReviews;
+  }
+
+  /**
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(Document doc) {
+    Double avgRating = 0d;
+
+    Element avg = doc.selectFirst(".review-summary-average");
+    if (avg != null) {
+      String text = avg.ownText().replaceAll("[^0-9.]", "");
+
+      if (!text.isEmpty()) {
+        avgRating = Double.parseDouble(text);
+      }
+    }
+
+    return avgRating;
+  }
+
+  /**
+   * Number of ratings appear in html
+   * 
+   * @param docRating
+   * @return
+   */
+  private Integer getTotalNumOfRatings(Document docRating) {
+    Integer totalRating = 0;
+    Element totalRatingElement = docRating.selectFirst(".core-review .average-legend");
+
+    if (totalRatingElement != null) {
+      String text = totalRatingElement.text().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        totalRating = Integer.parseInt(text);
+      }
+    }
+
+    return totalRating;
   }
 
   private boolean isProductPage(Document doc) {

@@ -14,5 +14,7 @@ public class PeruFalabellaCrawler extends FalabellaCrawlerUtils {
     super.setHomePage(HOME_PAGE);
     super.setImageUrl(IMAGE_URL_CITY);
     super.setCurrencyHasCents(true);
+    super.setApiKey("t6cq31k112riuu8rgp51fq5al");
+
   }
 }

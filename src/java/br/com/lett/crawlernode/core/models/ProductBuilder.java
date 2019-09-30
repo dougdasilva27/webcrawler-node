@@ -4,6 +4,7 @@ import java.util.List;
 import br.com.lett.crawlernode.util.DateUtils;
 import models.Marketplace;
 import models.Offers;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class ProductBuilder {
@@ -26,6 +27,8 @@ public class ProductBuilder {
   private String ean;
   private List<String> eans;
   private Offers offers;
+  private RatingsReviews ratingReviews;
+
 
   public static ProductBuilder create() {
     return new ProductBuilder();
@@ -121,6 +124,11 @@ public class ProductBuilder {
     return this;
   }
 
+  public ProductBuilder setRatingReviews(RatingsReviews ratingReviews) {
+    this.ratingReviews = ratingReviews;
+    return this;
+  }
+
   public Product build() {
     Product product = new Product();
 
@@ -142,6 +150,7 @@ public class ProductBuilder {
     product.setEan(this.ean);
     product.setEans(this.eans);
     product.setOffers(this.offers);
+    product.setRatingReviews(this.ratingReviews);
 
     // Timestamp is only created here, there is no public method to set timestamp
     product.setTimestamp(DateUtils.newTimestamp());

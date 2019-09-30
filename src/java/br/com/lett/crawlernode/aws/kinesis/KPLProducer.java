@@ -6,7 +6,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -40,21 +39,21 @@ public class KPLProducer {
   private KinesisProducer kinesisProducer;
 
   private static final KPLProducer INSTANCE = new KPLProducer();
-  
+
   class CustomAwsCredentialsProvider implements AWSCredentialsProvider {
 
-	@Override
-	public AWSCredentials getCredentials() {
-		return new BasicAWSCredentials(
-				GlobalConfigurations.executionParameters.getNewAwsAccessKey(), 
-				GlobalConfigurations.executionParameters.getNewAwsSecretKey());
-	}
+    @Override
+    public AWSCredentials getCredentials() {
+      return new BasicAWSCredentials(
+          GlobalConfigurations.executionParameters.getNewAwsAccessKey(),
+          GlobalConfigurations.executionParameters.getNewAwsSecretKey());
+    }
 
-	@Override
-	public void refresh() {
-		// no-op
-	}
-	  
+    @Override
+    public void refresh() {
+      // no-op
+    }
+
   }
 
   private KPLProducer() {
@@ -89,7 +88,7 @@ public class KPLProducer {
    * 
    * @param r
    */
-  public void put(RatingsReviews r, Session session) {
+  public void put(RatingsReviews r, Session session, String kinesisStream) {
     try {
       long countCreated = eventsCreated.incrementAndGet();
 
@@ -123,9 +122,15 @@ public class KPLProducer {
 
       // TIMESTAMP is our partition key
       ListenableFuture<UserRecordResult> f =
-          kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStream(), r.getTimestamp(), randomExplicitHashKey(), data);
+          kinesisProducer.addUserRecord(
+              kinesisStream,
+              r.getTimestamp(),
+              randomExplicitHashKey(),
+              data
+          );
 
       Futures.addCallback(f, myCallback);
+
 
     } catch (Exception e) {
       Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));

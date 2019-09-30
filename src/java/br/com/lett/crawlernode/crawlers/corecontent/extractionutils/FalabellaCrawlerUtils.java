@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -24,6 +25,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class FalabellaCrawlerUtils extends Crawler {
@@ -34,9 +36,15 @@ public class FalabellaCrawlerUtils extends Crawler {
   private String HOME_PAGE = "https://www.falabella.com";
   private String IMAGE_URL_CITY = "Falabella/";
   private boolean HAS_CENTS = false;
+  private String API_KEY = "mk9fosfh4vxv20y8u5pcbwipl";
+
+  protected void setApiKey(String apiKey) {
+    this.API_KEY = apiKey;
+  }
 
   public FalabellaCrawlerUtils(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   /**
@@ -77,6 +85,7 @@ public class FalabellaCrawlerUtils extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+    RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -108,11 +117,30 @@ public class FalabellaCrawlerUtils extends Crawler {
           String primaryImage = images.isEmpty() ? null : images.get(0);
           String secondaryImages = crawlSecondaryImages(images, primaryImage);
 
+          RatingsReviews clonedRatingReviews = crawlRating(internalPid).clone();
+          clonedRatingReviews.setInternalId(crawlInternalId(arraySkus.getJSONObject(i)));
+          ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
+          RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(stock)
+              .setMarketplace(new Marketplace())
+              .setRatingReviews(ratingReviews)
+              .build();
 
           products.add(product);
         }
@@ -122,10 +150,27 @@ public class FalabellaCrawlerUtils extends Crawler {
         String internalPid = internalId;
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fb-pp-photo img", Arrays.asList("src"), "https:", "falabella.scene7.com");
 
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(null).setPrices(new Prices()).setAvailable(false).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description)
-            .setMarketplace(new Marketplace()).build();
+        RatingsReviews ratingReviewsScraped = crawlRating(internalId);
+        ratingReviewsScraped.setInternalId(internalId);
+        ratingReviewsCollection.addRatingReviews(ratingReviewsScraped);
+        RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(null)
+            .setPrices(new Prices())
+            .setAvailable(false)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setMarketplace(new Marketplace())
+            .setRatingReviews(ratingReviews)
+            .build();
 
         products.add(product);
       }
@@ -135,6 +180,102 @@ public class FalabellaCrawlerUtils extends Crawler {
     }
 
     return products;
+  }
+
+  private RatingsReviews crawlRating(String id) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    String endpointRequest = assembleBazaarVoiceEndpointRequest(id, 0, 50);
+
+    Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+    JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+    JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, id);
+
+    Integer totalNumOfEvaluations = getTotalReviewCount(reviewStatistics);
+    Double avgRating = getAverageOverallRating(reviewStatistics);
+
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+    return ratingReviews;
+  }
+
+  private Integer getTotalReviewCount(JSONObject reviewStatistics) {
+    Integer totalReviewCount = 0;
+    if (reviewStatistics.has("TotalReviewCount")) {
+      totalReviewCount = reviewStatistics.getInt("TotalReviewCount");
+    }
+    return totalReviewCount;
+  }
+
+  private Double getAverageOverallRating(JSONObject reviewStatistics) {
+    Double avgOverallRating = 0d;
+    if (reviewStatistics.has("AverageOverallRating")) {
+      avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
+    }
+    return avgOverallRating;
+  }
+
+
+  /**
+   * e.g: http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4
+   * &passkey=oqu6lchjs2mb5jp55bl55ov0d &Offset=0 &Limit=5 &Sort=SubmissionTime:desc
+   * &Filter=ProductId:113048617 &Include=Products &Stats=Reviews
+   * 
+   * Endpoint request parameters:
+   * <p>
+   * &passKey: the password used to request the bazaar voice endpoint. This pass key e crawled inside
+   * the html of the sku page, inside a script tag. More details on how to crawl this passKey
+   * </p>
+   * <p>
+   * &Offset: the number of the chunk of data retrieved by the endpoint. If we want the second chunk,
+   * we must add this value by the &Limit parameter.
+   * </p>
+   * <p>
+   * &Limit: the number of reviews that a request will return, at maximum.
+   * </p>
+   * 
+   * The others parameters we left as default.
+   * 
+   * Request Method: GET
+   */
+  private String assembleBazaarVoiceEndpointRequest(String skuInternalPid, Integer offset, Integer limit) {
+
+    StringBuilder request = new StringBuilder();
+
+    request.append("http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4");
+    request.append("&passkey=" + this.API_KEY);
+    request.append("&Offset=" + offset);
+    request.append("&Limit=" + limit);
+    request.append("&Sort=SubmissionTime:desc");
+    request.append("&Filter=ProductId:" + skuInternalPid);
+    request.append("&Include=Products");
+    request.append("&Stats=Reviews");
+
+    return request.toString();
+  }
+
+
+  private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
+    if (ratingReviewsEndpointResponse.has("Includes")) {
+      JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
+
+      if (includes.has("Products")) {
+        JSONObject products = includes.getJSONObject("Products");
+
+        if (products.has(skuInternalPid)) {
+          JSONObject product = products.getJSONObject(skuInternalPid);
+
+          if (product.has("ReviewStatistics")) {
+            return product.getJSONObject("ReviewStatistics");
+          }
+        }
+      }
+    }
+
+    return new JSONObject();
   }
 
   /**
