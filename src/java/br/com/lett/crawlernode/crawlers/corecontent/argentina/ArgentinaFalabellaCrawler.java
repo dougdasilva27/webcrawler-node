@@ -10,5 +10,6 @@ public class ArgentinaFalabellaCrawler extends FalabellaCrawlerUtils {
     super.setHomePage("https://www.falabella.com.ar/");
     super.setImageUrl("FalabellaAR/");
     super.setCurrencyHasCents(false);
+    super.setApiKey("u5y9xkb4b1ly36cs5uvppykl0");
   }
 }

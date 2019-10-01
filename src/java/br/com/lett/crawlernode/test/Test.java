@@ -103,13 +103,16 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("nestle", market);
+        session = SessionFactory.createTestRankingKeywordsSession("eletro", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
-        session = SessionFactory.createTestRankingCategoriesSession("https://www.araujo.com.br/molico-composto-lacteo-desnatado-totalcalcio/p",
+        session = SessionFactory.createTestRankingCategoriesSession(
+            "https://produto.mercadolivre.com.br/MLB-1225997122-capsula-de-cafe-espresso-melitta-staccato-10-unidades-_JM",
             market, "Aparelhos");
       } else {
         session = SessionFactory
-            .createTestSession("https://www.angeloni.com.br/eletro/p/smart-tv-lg-55-led-ultra-hd-4k-nano-cell-smart-magic-55sk8500-4202953", market);
+            .createTestSession(
+                "https://www.mobly.com.br/armario-lavanderia-uma-porta-com-rodizio-turin-branco-rpm-moveis-494721.html",
+                market);
       }
 
       Task task = TaskFactory.createTask(session);
