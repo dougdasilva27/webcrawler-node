@@ -58,19 +58,19 @@ public class BrasilColomboCrawler extends Crawler {
         String internalId = sku.attr("data-item");
         String internalPid = scrapInternalPid(doc);
         String name = scrapVariationName(doc, "h1.nome-produto", sku);
-        CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", true);
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
-        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "li.js_slide picture img", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST, primaryImage);
-        String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#produto-descricao", "#produto-caracteristicas", "#produto-perguntas"));
-        
-        // Marketplace logic
         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".parcelas-produto-table .parcelas-produto-table-valor", null, false, ',', session);
         Prices prices = crawlPrices(doc, price);
         boolean available = doc.selectFirst("#dados-produto-indisponivel.avisoIndisponivel:not(.hide)") == null;
+        CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", true);
+        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
+        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "li.js_slide picture img", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST, primaryImage);
+        String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#produto-descricao", "#produto-caracteristicas"));
         Offers offers = available ? scrapBuyBox(doc, price) : new Offers();
-        Marketplace marketplace = scrapMarketplace(sku, prices);
         
-        if(!marketplace.isEmpty()) {
+        
+        // Marketplace logic
+        Marketplace marketplace = available ? scrapMarketplace(sku, prices) : new Marketplace();
+        if(!marketplace.isEmpty() || !available) {
           price = null;
           prices = new Prices();
           available = false;
@@ -110,7 +110,7 @@ public class BrasilColomboCrawler extends Crawler {
 
     return products;
   }
-
+  
   private boolean isProductPage(String url, Document doc) {
     return url.contains("/produto/") && doc.selectFirst(".detalhe-produto") != null;
   }
