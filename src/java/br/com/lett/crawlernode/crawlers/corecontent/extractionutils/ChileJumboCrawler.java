@@ -19,8 +19,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -60,7 +58,6 @@ public class ChileJumboCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     List<Product> products = new ArrayList<>();
 
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "Dehesa.html");
 
     JSONObject skuJson = scrapProductJson(doc);
 
