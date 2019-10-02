@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -18,7 +19,10 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -55,6 +59,8 @@ public class ChileJumboCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "Dehesa.html");
 
     JSONObject skuJson = scrapProductJson(doc);
 
@@ -121,7 +127,21 @@ public class ChileJumboCrawler extends Crawler {
   private JSONObject scrapProductJson(Document doc) {
     JSONObject jsonSku = new JSONObject();
 
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "__renderData =", ";", false, true);
+    JSONObject json = new JSONObject();
+
+    String id = "__renderData = \"";
+    String lastId = "\";";
+
+    for (Element e : doc.select("script")) {
+      String html = e.html();
+
+      if (html.contains(id)) {
+        String jsonS = CrawlerUtils.extractSpecificStringFromScript(html, id, false, lastId, true)
+            .replace("\\\"", "\"").replace("\\\\\"", "\\\"");
+        json = JSONUtils.stringToJson(jsonS);
+        break;
+      }
+    }
 
     if (json.has("pdp")) {
       JSONObject pdp = json.getJSONObject("pdp");
