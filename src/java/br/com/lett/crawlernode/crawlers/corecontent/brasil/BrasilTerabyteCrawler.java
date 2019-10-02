@@ -1,30 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
@@ -45,29 +36,6 @@ public class BrasilTerabyteCrawler extends Crawler {
   }
 
   @Override
-  protected Object fetch() {
-    Document doc = null;
-
-    try {
-      URL url = new URL(session.getOriginalURL());
-      String pathUrl = url.getPath();
-      String apiUrl = session.getOriginalURL() + "?app=true&" + "&url=" + pathUrl;
-      Request request = RequestBuilder.create().setCookies(cookies).setUrl(apiUrl).build();
-      Response response = dataFetcher.get(session, request);
-      // A resposta vem com um caractere ascii que não aparece em arquivo, por isso é usado essa expressão
-      // para remover.
-      String resultString = response.getBody().replaceAll("[^\\x00-\\x7F]", "");
-      JSONObject bodyJson = JSONUtils.stringToJson(resultString);
-      doc = Jsoup.parse(JSONUtils.getStringValue(bodyJson, "body"));
-
-    } catch (MalformedURLException e) {
-      Logging.printLogError(logger, session, e.getMessage());
-    }
-
-    return doc;
-  }
-
-  @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
@@ -76,7 +44,6 @@ public class BrasilTerabyteCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "e.html");
     List<Product> products = new ArrayList<>();
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -84,7 +51,7 @@ public class BrasilTerabyteCrawler extends Crawler {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "span[data-produto]", "data-produto");
       String internalPid = crawlInternalPid(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.tit-prod", false);
-      Float price = crawlPrice(doc);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#body .val-prod, #body .p3", null, true, ',', session);
       Prices prices = crawlPrices(doc, price);
       Element availableElement = doc.selectFirst("#indisponivel");
       boolean available = availableElement == null && price != null;
@@ -122,29 +89,8 @@ public class BrasilTerabyteCrawler extends Crawler {
 
   }
 
-  private Float crawlPrice(Document doc) {
-    Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".val-prod", true);
-
-    if (price == null) {
-      price = CrawlerUtils.scrapSimplePriceFloat(doc, ".p3", false);
-    }
-
-    return price;
-  }
-
   private boolean isProductPage(Document doc) {
-    return !doc.select(".produtos-home").isEmpty();
-  }
-
-  private static String crawlInternalId(Document doc) {
-    String internalId = null;
-
-    Element infoElement = doc.selectFirst("input#idproduto");
-    if (infoElement != null) {
-      internalId = infoElement.val();
-    }
-
-    return internalId;
+    return !doc.select("#partnumber").isEmpty();
   }
 
   private static String crawlInternalPid(Document doc) {
