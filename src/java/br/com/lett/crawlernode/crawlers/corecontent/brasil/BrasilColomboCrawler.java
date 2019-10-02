@@ -1,19 +1,17 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.http.client.utils.URIBuilder;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -28,6 +26,11 @@ import models.Offers;
 import models.prices.Prices;
 
 public class BrasilColomboCrawler extends Crawler {
+  
+  private static final String HOME_PAGE = "https://www.colombo.com.br";
+  private static final String IMAGE_HOST = "images.colombo.com.br";
+  
+  private static final String SELLER_NAME_LOWER = "colombo";
 
   public BrasilColomboCrawler(Session session) {
     super(session);
@@ -37,7 +40,7 @@ public class BrasilColomboCrawler extends Crawler {
   @Override
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && href.startsWith("https://www.colombo.com.br");
+    return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
   }
 
 
@@ -45,213 +48,98 @@ public class BrasilColomboCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-
-    Element productElement = doc.select(".detalhe-produto").first();
-
-    if (session.getOriginalURL().contains("www.colombo.com.br/produto/") && (productElement != null)) {
+    
+    if(isProductPage(session.getOriginalURL(), doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-      Elements selections = doc.select(".dados-itens-table tr[data-item]");
-
-      // Pid
-      String internalPid = null;
-      Element elementInternalPid = doc.select(".codigo-produto").first();
-      if (elementInternalPid != null) {
-        internalPid = elementInternalPid.attr("content").trim();
-        if (internalPid.isEmpty()) {
-          internalPid = elementInternalPid.text().replaceAll("[^0-9]", "").trim();
-        }
-      }
-
-      // ID interno
-      String internalId = null;
-      Element elementInternalID = doc.select("input[type=radio][checked][value]").first();
-      if (elementInternalID != null) {
-        internalId = elementInternalID.attr("value").trim();
-      } else {
-        elementInternalID = doc.select("#itemAviso").first();
-        if (elementInternalID != null) {
-          internalId = elementInternalID.attr("value").trim();
-        }
-      }
-
-      // Nome
-      String name = null;
-      Element elementName = doc.select("h1.nome-produto").first();
-      if (elementName != null) {
-        name = elementName.ownText().trim();
-      }
-
-      // Preço
-      Float price = null;
-      Element elementPrice = doc.select(".parcelas-produto-table .parcelas-produto-table-valor").first();
-      if (elementPrice != null) {
-        price = MathUtils.parseFloatWithComma(elementPrice.ownText());
-      }
-
-      Prices prices = crawlPrices(doc, price);
-
-      // Categoria
-      String category1 = "";
-      String category2 = "";
-      String category3 = "";
-      Elements elementCategories = doc.select(".breadcrumb a");
-      for (int i = 1; i < elementCategories.size(); i++) {
-        if (category1.isEmpty()) {
-          category1 = elementCategories.get(i).text().trim();
-        } else if (category2.isEmpty()) {
-          category2 = elementCategories.get(i).text().trim();
-        } else if (category3.isEmpty()) {
-          category3 = elementCategories.get(i).text().trim();
-        }
-      }
-
-      // Descrição
-      String description = scrapDescription(doc);
-
-      Element elementPrimaryImage = doc.select("li.js_slide picture img[data-slide-position=0]").first();
-      String primaryImage = null;
-      if (elementPrimaryImage != null) {
-        primaryImage = sanitizeImageURL(elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
-      } else {
-        elementPrimaryImage = doc.select("li.js_slide picture img[data-slide-position=1]").first();
-
-        if (elementPrimaryImage != null) {
-          primaryImage = sanitizeImageURL(elementPrimaryImage.attr("src").trim().replace("400x400", "800x800"));
-        }
-      }
-
-      // Imagens -- Caso principal
-      Elements elementSecondaryImages = doc.select("li.js_slide picture img");
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      for (Element el : elementSecondaryImages) {
-        String image = sanitizeImageURL(el.attr("src").trim().replace("400x400", "800x800"));
-        if (image != null && !image.equals(primaryImage)) { // imagem primária
-          secondaryImagesArray.put(image);
-        }
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-        secondaryImages = secondaryImagesArray.toString();
-      }
-
-      // Estoque
-      Integer stock = null;
-
-      // Marketplace
-      Marketplace marketplace = new Marketplace();
-
-      // Disponibilidade
-      boolean available = true;
-      Element elementUnavailable = doc.select("#dados-produto-indisponivel.avisoIndisponivel:not(.hide)").first();
-      if (elementUnavailable != null) {
-        available = false;
-      }
-
-      if (selections.size() <= 1) { // sem variações
+      
+      Elements variations = doc.select(".dados-itens-table tr[data-item]");
+      
+      for(Element sku : variations) {        
+        String internalId = sku.attr("data-item");
+        String internalPid = scrapInternalPid(doc);
+        String name = scrapVariationName(doc, "h1.nome-produto", sku);
+        Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".parcelas-produto-table .parcelas-produto-table-valor", null, false, ',', session);
+        Prices prices = crawlPrices(doc, price);
+        boolean available = doc.selectFirst("#dados-produto-indisponivel.avisoIndisponivel:not(.hide)") == null;
+        CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", true);
+        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
+        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "li.js_slide picture img", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST, primaryImage);
+        String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#produto-descricao", "#produto-caracteristicas"));
         Offers offers = available ? scrapBuyBox(doc, price) : new Offers();
-
-        if (!available) {
+        
+        
+        // Marketplace logic
+        Marketplace marketplace = available ? scrapMarketplace(sku, prices) : new Marketplace();
+        if(!marketplace.isEmpty() || !available) {
           price = null;
           prices = new Prices();
+          available = false;
         }
-
-        // esse caso acontece quando o internalId não aparece, apenas o internalPid
-        // isso acontece quando o produto está indisponível em alguns casos
-        if (!available && (internalId == null || internalId.isEmpty())) {
-          internalId = internalPid + "-i";
-        }
-
-        Product product = new Product();
-        product.setUrl(session.getOriginalURL());
-        product.setInternalId(internalId);
-        product.setInternalPid(internalPid);
-        product.setName(name);
-        product.setPrice(price);
-        product.setPrices(prices);
-        product.setCategory1(category1);
-        product.setCategory2(category2);
-        product.setCategory3(category3);
-        product.setPrimaryImage(primaryImage);
-        product.setSecondaryImages(secondaryImages);
-        product.setDescription(description);
-        product.setStock(stock);
-        product.setMarketplace(marketplace);
-        product.setAvailable(available);
-        product.setOffers(offers);
-
+        
+        // Stuff that were not on site when crawler was made
+        Integer stock = null;
+        List<String> eans = null;
+        
+        // Creating the product
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setOffers(offers)
+            .setEans(eans)
+            .build();
+        
         products.add(product);
-
       }
-
-      else { // múltiplas variações
-
-        for (Element e : selections) {
-
-          // ID interno
-          String variationInternalId = null;
-          Element variationElementInternalID = e.selectFirst("input[name=item]");
-          if (variationElementInternalID != null) {
-            variationInternalId = variationElementInternalID.val();
-          }
-
-          // Nome
-          String variationName = scrapVariationName(name, e);
-
-          // Available
-          boolean variationAvailable = available;
-          Element variationElementAvailable = e.select(".dados-itens-table-estoque").first();
-          if (variationElementAvailable != null && variationAvailable) {
-            String tmp = variationElementAvailable.text().trim();
-            if (tmp.contains("Esgotado")) {
-              variationAvailable = false;
-            }
-          }
-
-          Offers offers = available ? scrapBuyBox(e, price) : new Offers();
-
-          if (!variationAvailable) {
-            price = null;
-            prices = new Prices();
-          }
-
-          Product product = new Product();
-          product.setUrl(session.getOriginalURL());
-          product.setInternalId(variationInternalId);
-          product.setInternalPid(internalPid);
-          product.setName(variationName);
-          product.setPrice(price);
-          product.setPrices(prices);
-          product.setCategory1(category1);
-          product.setCategory2(category2);
-          product.setCategory3(category3);
-          product.setPrimaryImage(primaryImage);
-          product.setSecondaryImages(secondaryImages);
-          product.setDescription(description);
-          product.setStock(stock);
-          product.setMarketplace(marketplace);
-          product.setAvailable(variationAvailable);
-          product.setOffers(offers);
-
-          products.add(product);
-
-        }
-
-      }
-
+      
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
   }
-
-  private String scrapVariationName(String name, Element variationElement) {
+  
+  private boolean isProductPage(String url, Document doc) {
+    return url.contains("/produto/") && doc.selectFirst(".detalhe-produto") != null;
+  }
+  
+  private String scrapInternalPid(Document doc) {
+    String internalPid = null;
+    Element internalPidElement = doc.selectFirst(".codigo-produto");
+    
+    if (internalPidElement != null) {
+      internalPid = internalPidElement.attr("content").trim();
+      
+      if (internalPid.isEmpty()) {
+        internalPid = internalPidElement.text().replaceAll("[^0-9]", "").trim();
+      }
+    }
+    
+    return internalPid;
+  }
+  
+  private String scrapVariationName(Document doc, String nameCssSelector, Element variationElement) {
     StringBuilder variationName = new StringBuilder();
-    variationName.append(name);
+    String name = CrawlerUtils.scrapStringSimpleInfo(doc, nameCssSelector, true);
+    
+    if(name == null) {
+      return null;
+    }
 
+    variationName.append(name);
+    
     String volts = CrawlerUtils.scrapStringSimpleInfo(variationElement, ".caracteristicasdados-itens-table-caracteristicas > label,"
         + " .dados-itens-table-caracteristicas > label", true);
 
@@ -263,8 +151,68 @@ public class BrasilColomboCrawler extends Crawler {
     return variationName.toString();
   }
 
+  private Prices crawlPrices(Document doc, Float price) {
+    Prices prices = new Prices();
+
+    if (price != null) {
+      Map<Integer, Float> installmentPriceMap = new HashMap<>();
+
+      installmentPriceMap.put(1, price);
+
+      Element bankPrice = doc.selectFirst(".dados-preco-valor");
+
+      if (bankPrice != null) {
+        Float bankTicketPrice = Float.parseFloat(bankPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replace(",", ".").trim());
+        prices.setBankTicketPrice(bankTicketPrice);
+      }
+
+      Elements parcelas = doc.select(".detalhe-produto-dados__dados-comprar .parcelas-produto-table tr");
+
+      for (Element e : parcelas) {
+        Element index = e.select(".parcelas-produto-table-index").first();
+
+        if (index != null) {
+          Integer installment = Integer.parseInt(index.text().replaceAll("[^0-9]", "").trim());
+
+          Element valor = e.select(".parcelas-produto-table-valor").first();
+
+          if (valor != null) {
+            Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replace(",", ".").trim());
+
+            installmentPriceMap.put(installment, value);
+          }
+        }
+
+        prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+        prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
+      }
+    }
+
+    return prices;
+  }
+  
+  private Marketplace scrapMarketplace(Element variation, Prices prices) {
+    Marketplace marketplace = new Marketplace();
+    Element sellerElement = variation.selectFirst(".dados-itens-table-estoque .btn-show-info-seller");
+    
+    if(sellerElement != null && !sellerElement.ownText().isEmpty() && !sellerElement.ownText().equalsIgnoreCase(SELLER_NAME_LOWER)) { 
+      Map<String, Prices> priceMap = new HashMap<>();
+      priceMap.put(sellerElement.ownText().toLowerCase().trim(), prices);
+      
+      marketplace = CrawlerUtils.assembleMarketplaceFromMap(priceMap, Arrays.asList(SELLER_NAME_LOWER), Card.VISA, session);
+    }
+        
+    return marketplace;
+  }
+  
   private Offers scrapBuyBox(Element doc, Float price) {
     Offers offers = new Offers();
+    
     try {
       Element nameElement = doc.selectFirst(".dados-itens-table-estoque .label-linha-item .btn-show-info-seller");
       Element sellerIdElement = doc.selectFirst("input[name=codigoSeller]");
@@ -298,91 +246,5 @@ public class BrasilColomboCrawler extends Crawler {
     }
 
     return offers;
-  }
-
-
-  private String sanitizeImageURL(String imageURL) {
-    String sanitizedURL = imageURL;
-
-    if (imageURL != null) {
-      if (imageURL.contains("?")) { // removendo parâmetros da url da imagem, senão não passa no crawler de imagens
-        int index = imageURL.indexOf('?');
-        sanitizedURL = imageURL.substring(0, index);
-      }
-    }
-
-    try {
-      URI rawUri = new URI(sanitizedURL);
-      if (rawUri.getScheme() == null) {
-        return new URIBuilder().setScheme("https").setHost(rawUri.getHost()).setPath(rawUri.getPath()).build().toString();
-      }
-
-      return rawUri.toString();
-
-    } catch (URISyntaxException uriSyntaxException) {
-      Logging.printLogDebug(logger, session, "Not a valid image URL " + CommonMethods.getStackTrace(uriSyntaxException));
-    }
-
-    return sanitizedURL;
-  }
-
-  private String scrapDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
-
-    Elements titles = doc.select(".ancoras .ancoras-item");
-    for (Element e : titles) {
-      if (e.select(".ci-duvidas, [class~=ci-star]").isEmpty()) {
-        description.append(e.html());
-      }
-    }
-
-    description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#produto-descricao", "#produto-caracteristicas")));
-
-    return description.toString();
-  }
-
-  private Prices crawlPrices(Document doc, Float price) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
-      installmentPriceMap.put(1, price);
-
-      Element bankPrice = doc.select(".dados-preco-valor").first();
-
-      if (bankPrice != null) {
-        Float bankTicketPrice = Float.parseFloat(bankPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-        prices.setBankTicketPrice(bankTicketPrice);
-      }
-
-      Elements parcelas = doc.select(".detalhe-produto-dados__dados-comprar .parcelas-produto-table tr");
-
-      for (Element e : parcelas) {
-        Element index = e.select(".parcelas-produto-table-index").first();
-
-        if (index != null) {
-          Integer installment = Integer.parseInt(index.text().replaceAll("[^0-9]", "").trim());
-
-          Element valor = e.select(".parcelas-produto-table-valor").first();
-
-          if (valor != null) {
-            Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-
-            installmentPriceMap.put(installment, value);
-          }
-        }
-
-        prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-        prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
-      }
-    }
-
-    return prices;
   }
 }
