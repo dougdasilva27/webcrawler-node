@@ -4,12 +4,15 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
   public BrasilDrogarianisseiCrawler(Session session) {
     super(session);
   }
+
+  private String categoryUrl;
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -18,10 +21,23 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
     String url = "https://www.farmaciasnissei.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded
         + "&product_list_limit=36";
+
+    if (this.currentPage > 1 && this.categoryUrl != null) {
+      url = this.categoryUrl + "?p=" + this.currentPage;
+    }
+
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
     Elements products = this.currentDoc.select(".category-products .product-item-info");
+
+    if (this.currentPage == 1) {
+      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
+
+      if (!url.equals(redirectUrl)) {
+        this.categoryUrl = redirectUrl;
+      }
+    }
 
     if (!products.isEmpty()) {
       for (Element e : products) {
