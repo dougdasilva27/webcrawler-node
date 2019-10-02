@@ -10,5 +10,6 @@ public class ColombiaFalabellaCrawler extends FalabellaCrawlerUtils {
     super.setHomePage("https://www.falabella.com.co/");
     super.setImageUrl("FalabellaCO/");
     super.setCurrencyHasCents(false);
+    super.setApiKey("oub11ocqqjr1ukjf43c9dukc9");
   }
 }

@@ -7,15 +7,19 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -31,6 +35,7 @@ public class BrasilLojasredeCrawler extends Crawler {
 
   public BrasilLojasredeCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -74,15 +79,30 @@ public class BrasilLojasredeCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
-
         List<String> eans = new ArrayList<>();
         eans.add(ean);
+        RatingsReviews ratingsReviews = crawlRating(skuJson, internalId, internalPid);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setEans(eans)
+            .setRatingReviews(ratingsReviews)
+            .build();
 
         products.add(product);
       }
@@ -94,6 +114,47 @@ public class BrasilLojasredeCrawler extends Crawler {
     return products;
   }
 
+
+  private RatingsReviews crawlRating(JSONObject skuJson, String internalId, String internalPid) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+    YourreviewsRatingCrawler yourReviews =
+        new YourreviewsRatingCrawler(session, cookies, logger, "9c0aa0e9-37a2-4b03-93d7-41c964268161", this.dataFetcher);
+
+    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "9c0aa0e9-37a2-4b03-93d7-41c964268161", this.dataFetcher);
+    Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating);
+    Double avgRating = getTotalAvgRatingFromYourViews(docRating);
+    AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
+
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+    return ratingReviews;
+  }
+
+  private Double getTotalAvgRatingFromYourViews(Document docRating) {
+    Double avgRating = 0d;
+    Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
+
+    if (rating != null) {
+      avgRating = Double.parseDouble(rating.attr("content"));
+    }
+
+    return avgRating;
+  }
+
+  private Integer getTotalNumOfRatingsFromYourViews(Document doc) {
+    Integer totalRating = 0;
+    Element totalRatingElement = doc.selectFirst("meta[itemprop=ratingCount]");
+
+    if (totalRatingElement != null) {
+      totalRating = Integer.parseInt(totalRatingElement.attr("content"));
+    }
+
+    return totalRating;
+  }
 
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;

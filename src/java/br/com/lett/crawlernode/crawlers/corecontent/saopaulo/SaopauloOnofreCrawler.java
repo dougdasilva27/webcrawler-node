@@ -12,12 +12,16 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -40,6 +44,7 @@ public class SaopauloOnofreCrawler extends Crawler {
 
   public SaopauloOnofreCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -70,14 +75,33 @@ public class SaopauloOnofreCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
       String ean = crawlEan(doc);
 
+      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+      ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+
       List<String> eans = new ArrayList<>();
       eans.add(ean);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(marketplace)
+          .setEans(eans)
+          .setRatingReviews(ratingReviews)
+          .build();
 
       products.add(product);
 
@@ -302,6 +326,27 @@ public class SaopauloOnofreCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private RatingsReviews crawlRating(Document doc, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+
+    YourreviewsRatingCrawler yourReviews =
+        new YourreviewsRatingCrawler(session, cookies, logger, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063", dataFetcher);
+
+    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063", dataFetcher);
+    Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
+    Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+    AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalId);
+
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setInternalId(internalId);
+
+    return ratingReviews;
   }
 
 

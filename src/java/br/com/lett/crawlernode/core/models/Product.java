@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Offers;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class Product implements Serializable {
@@ -43,6 +44,7 @@ public class Product implements Serializable {
   private Integer marketId;
   private SkuStatus status;
   private Offers offers;
+  private RatingsReviews ratingReviews;
 
   public Product() {
     this.description = "";
@@ -51,6 +53,14 @@ public class Product implements Serializable {
 
   public Product clone() {
     return SerializationUtils.clone(this);
+  }
+
+  public RatingsReviews getRatingReviews() {
+    return ratingReviews;
+  }
+
+  public void setRatingReviews(RatingsReviews ratingReviews) {
+    this.ratingReviews = ratingReviews;
   }
 
   public String getUrl() {
@@ -301,6 +311,7 @@ public class Product implements Serializable {
     sb.append("ean: " + this.ean + "\n");
     sb.append("eans: " + (this.eans == null ? this.eans : this.eans.toString()) + "\n");
     sb.append("offers: " + (this.offers == null ? this.offers : this.offers.size()) + "\n");
+    sb.append("rating reviews: " + (this.ratingReviews != null ? this.ratingReviews.toString() : null));
 
     return sb.toString();
   }
@@ -315,7 +326,10 @@ public class Product implements Serializable {
         .put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
         .put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", (description != null ? description : JSONObject.NULL)).put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
-        .put("offers", (offers != null ? offers.toString() : Collections.EMPTY_LIST)).put("timestamp", timestamp).toString();
+        .put("offers", (offers != null ? offers.toString() : Collections.EMPTY_LIST))
+        .put("timestamp", timestamp)
+        .put("rating", (ratingReviews != null ? ratingReviews.toString() : JSONObject.NULL))
+        .toString();
   }
 
   public String serializeToKinesis() {
@@ -337,6 +351,8 @@ public class Product implements Serializable {
         .put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
         .put("offers", (offers != null ? offers.toString() : new JSONArray().toString())).put("stock", (stock != null ? stock : JSONObject.NULL))
         .put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
-        .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp).toString();
+        .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp)
+        // .put("rating", (ratingReviews != null ? ratingReviews : JSONObject.NULL))
+        .toString();
   }
 }

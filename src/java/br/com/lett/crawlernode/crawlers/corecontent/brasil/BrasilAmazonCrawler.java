@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
@@ -27,6 +28,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.Seller;
 import models.prices.Prices;
 
@@ -46,6 +48,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
   public BrasilAmazonCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
     super.config.setFetcher(FetchMode.FETCHER);
   }
 
@@ -96,14 +99,33 @@ public class BrasilAmazonCrawler extends Crawler {
       boolean available = crawlAvailability(marketplaceMap) && price != null;
       String ean = crawlEan(doc);
 
+      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+      ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+
       List<String> eans = new ArrayList<>();
       eans.add(ean);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(marketplace)
+          .setEans(eans)
+          .setRatingReviews(ratingReviews)
+          .build();
 
       products.add(product);
 
@@ -113,6 +135,47 @@ public class BrasilAmazonCrawler extends Crawler {
 
     return products;
 
+  }
+
+  private RatingsReviews crawlRating(Document document, String internalId) {
+
+    Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    if (internalId != null) {
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
+          "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
+      Double avgRating = getTotalAvgRating(document);
+
+      ratingReviews.setInternalId(internalId);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+    }
+
+    return ratingReviews;
+  }
+
+  private Double getTotalAvgRating(Document doc) {
+    Double avgRating = 0d;
+    Element reviews =
+        doc.select("#reviewsMedley .arp-rating-out-of-text, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt").first();
+
+    if (reviews != null) {
+      String text = reviews.ownText().trim();
+
+      if (text.contains("de")) {
+        String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
+
+        if (!avgText.isEmpty()) {
+          avgRating = Double.parseDouble(avgText);
+        }
+      }
+    }
+
+    return avgRating;
   }
 
   private boolean isProductPage(Document doc) {
