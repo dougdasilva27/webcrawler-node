@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,14 +17,14 @@ public class BrasilBenipetCrawler extends CrawlerRankingKeywords {
     this.pageSize = 24;
     this.log("Página " + this.currentPage);
     
-    String url = "https://www.benipet.com.br/buscapagina?fq=" + this.keywordEncoded
-        + "&PS=24&sl=88737d54-a74b-450b-91c1-71450d9b7d73&cc=24&sm=0&PageNumber="
+    String url = "https://www.benipet.com.br/" + this.keywordEncoded
+        + "?PageNumber="
         + this.currentPage;
 
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select("ul > li > div");
+    Elements products = this.currentDoc.select(".ad-showcase .ad-showcase > ul > li .ad-showcase-product");
 
     if (!products.isEmpty()) {
 
@@ -59,7 +58,7 @@ public class BrasilBenipetCrawler extends CrawlerRankingKeywords {
   private String crawlInternalPid(Element e) {
     String internalPid = null;
     
-    if(e.attr("data-id").trim().isEmpty()) {
+    if(!e.attr("data-id").trim().isEmpty()) {
       internalPid = e.attr("data-id").trim();
     }
     
@@ -79,8 +78,7 @@ public class BrasilBenipetCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Document document = fetchDocument("https://www.benipet.com.br/" + this.keywordEncoded);
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(document, ".main .searchResultsTime .resultado-busca-numero span.value",
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".main .searchResultsTime .resultado-busca-numero span.value",
         true, 0);
 
     this.log("Total de produtos: " + this.totalProducts);
