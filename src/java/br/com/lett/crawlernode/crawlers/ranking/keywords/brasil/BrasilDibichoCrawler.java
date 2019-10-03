@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,14 +17,14 @@ public class BrasilDibichoCrawler extends CrawlerRankingKeywords {
     this.pageSize = 12;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.dibicho.com.br/buscapagina?fq=" + this.keywordEncoded
-        + "&PS=12&sl=1e5e8823-2334-44c1-8d40-8898d4e81978&cc=3&sm=0&PageNumber="
+    String url = "https://www.dibicho.com.br/" + this.keywordEncoded
+        + "?PageNumber="
         + this.currentPage;
 
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".shelf ul li[layout]");
+    Elements products = this.currentDoc.select(".shelf .shelf > ul > li:not(.helperComplement)");
 
     if (!products.isEmpty()) {
 
@@ -80,8 +79,7 @@ public class BrasilDibichoCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    Document document = fetchDocument("https://www.dibicho.com.br/" + this.keywordEncoded);
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(document, ".main .searchResultsTime .resultado-busca-numero .value",
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".main .searchResultsTime .resultado-busca-numero .value",
         true, 0);
 
     this.log("Total de produtos: " + this.totalProducts);
