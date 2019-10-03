@@ -45,6 +45,7 @@ public class BrasilDibichoCrawler extends Crawler {
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
+      RatingsReviews ratingReviews = scrapRatingsReviews(internalPid);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
@@ -73,7 +74,7 @@ public class BrasilDibichoCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
-        RatingsReviews ratingReviews = scrapRatingsReviews(internalPid);
+        RatingsReviews ratingReviewsClone = (RatingsReviews) ratingReviews.clone();
 
         String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 
@@ -98,7 +99,7 @@ public class BrasilDibichoCrawler extends Crawler {
             .setStock(stock)
             .setMarketplace(marketplace)
             .setEans(eans)
-            .setRatingReviews(ratingReviews)
+            .setRatingReviews(ratingReviewsClone)
             .build();
 
         products.add(product);
