@@ -43,11 +43,10 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
         String productUrl = crawlProductUrl(product);
         String internalPid = crawlInternalPid(product);
-        String internalId = crawlInternalId(product);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;
@@ -65,16 +64,6 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
   @Override
   protected boolean hasNextPage() {
     return false;
-  }
-
-  private String crawlInternalId(JSONObject product) {
-    String internalId = null;
-
-    if (product.has("idLojaProduto")) {
-      internalId = product.get("idLojaProduto").toString();
-    }
-
-    return internalId;
   }
 
   private String crawlInternalPid(JSONObject product) {
