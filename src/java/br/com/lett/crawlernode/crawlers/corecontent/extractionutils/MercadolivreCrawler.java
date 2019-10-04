@@ -8,10 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.apache.http.HttpHeaders;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -62,6 +64,20 @@ public class MercadolivreCrawler extends Crawler {
   public boolean shouldVisit() {
     String href = session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(homePage));
+  }
+
+  @Override
+  protected Object fetch() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgentWithoutChrome());
+
+    Request request = RequestBuilder.create()
+        .setUrl(session.getOriginalURL())
+        .setCookies(cookies)
+        .setHeaders(headers)
+        .build();
+
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
