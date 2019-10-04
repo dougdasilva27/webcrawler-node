@@ -180,7 +180,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
       Map<String, String> headers = response.getHeaders();
       if (headers.containsKey(HttpHeaders.CONTENT_TYPE.toLowerCase())) {
-        // We get this header because sometimes the image url can return a html
+        // We get this header because sometimes the image url will return a html
         String content = headers.get(HttpHeaders.CONTENT_TYPE.toLowerCase());
 
         if (resp != null && resp.getStatusCode() > 0 && resp.getStatusCode() < 400 && (content.contains("image") || content.contains("img"))) {
