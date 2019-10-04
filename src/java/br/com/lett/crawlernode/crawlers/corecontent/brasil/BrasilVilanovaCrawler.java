@@ -2,16 +2,31 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.prices.Prices;
 
@@ -26,14 +41,96 @@ public class BrasilVilanovaCrawler extends Crawler {
   public static final String HOME_PAGE = "https://www.vilanova.com.br/";
   private static final String IMAGES_HOST = "i2-vilanova.a8e.net.br";
 
+  private static final String LOGIN_URL = "https://www.vilanova.com.br/Cliente/Logar";
+  private static final String CNPJ = "33.033.028%2F0040-90";
+  private static final String PASSWORD = "Mudar123";
+
+  private LettProxy proxy = null;
+  private static final String USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36";
+
   public BrasilVilanovaCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
+  }
+
+  @Override
+  public void handleCookiesBeforeFetch() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+
+    Request requestHome = RequestBuilder.create()
+        .setUrl(HOME_PAGE)
+        .setHeaders(headers)
+        .setProxyservice(
+            Arrays.asList(
+                ProxyCollection.BONANZA,
+                ProxyCollection.INFATICA_RESIDENTIAL_BR
+            ))
+        .build();
+    Response response = this.dataFetcher.get(session, requestHome);
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.vilanova.com.br", "/", cookies, session, new HashMap<>(), dataFetcher);
+    this.proxy = response.getProxyUsed();
+
+    StringBuilder payload = new StringBuilder();
+    payload.append("usuario_cnpj=").append(CNPJ);
+    payload.append("&usuario_senha=").append(PASSWORD);
+
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+    headers.put("sec-fetch-mode", "cors");
+    headers.put("sec-fetch-site", "same-origin");
+    headers.put("origin", "https://www.vilanova.com.br");
+    headers.put("X-Requested-With", "XMLHttpRequest");
+
+    Request request = RequestBuilder.create()
+        .setUrl(LOGIN_URL)
+        .setPayload(payload.toString())
+        .setCookies(this.cookies)
+        .setHeaders(headers)
+        .setProxy(this.proxy)
+        .build();
+
+    Response loginResponse = this.dataFetcher.post(session, request);
+    List<Cookie> cookiesResponse = loginResponse.getCookies();
+
+    for (Cookie cookieResponse : cookiesResponse) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+      cookie.setDomain("www.vilanova.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
+
+    Request requestHome2 = RequestBuilder.create()
+        .setUrl(HOME_PAGE)
+        .setHeaders(headers)
+        .setCookies(this.cookies)
+        .setProxy(this.proxy)
+        .build();
+
+    CommonMethods.saveDataToAFile(Jsoup.parse(this.dataFetcher.get(session, requestHome2).getBody()), Test.pathWrite + "ILUSAO.html");
+
+    System.err.println(cookies);
+  }
+
+  @Override
+  protected Object fetch() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+
+    Request request = RequestBuilder.create()
+        .setUrl(session.getOriginalURL())
+        .setCookies(this.cookies)
+        .setProxy(this.proxy)
+        .build();
+
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "VILANOVA.html");
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -59,12 +156,14 @@ public class BrasilVilanovaCrawler extends Crawler {
 
         String internalId = crawlInternalId(skuJson);
         String name = crawlName(skuJson);
+        Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
 
         Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
+            .setPrice(price)
             .setPrices(new Prices())
             .setAvailable(false)
             .setCategory1(categories.getCategory(0))
