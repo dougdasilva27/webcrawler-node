@@ -103,7 +103,7 @@ public class Test {
       Session session;
 
       if (testType.equals(KEYWORDS_TEST)) {
-        session = SessionFactory.createTestRankingKeywordsSession("eletro", market);
+        session = SessionFactory.createTestRankingKeywordsSession("fralda", market);
       } else if (testType.equals(CATEGORIES_TEST)) {
         session = SessionFactory.createTestRankingCategoriesSession(
             "https://produto.mercadolivre.com.br/MLB-1225997122-capsula-de-cafe-espresso-melitta-staccato-10-unidades-_JM",
@@ -111,7 +111,7 @@ public class Test {
       } else {
         session = SessionFactory
             .createTestSession(
-                "https://www.mobly.com.br/armario-lavanderia-uma-porta-com-rodizio-turin-branco-rpm-moveis-494721.html",
+                "https://www.americanas.com.br/produto/116107985",
                 market);
       }
 
