@@ -32,7 +32,7 @@ public class BrasilMpozenatoCrawler extends Crawler {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.fbits-produto-nome.prodTitle.title", false);
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".produtoInfo-precos .precoPor", null, false, ',', session);
       Prices prices = scrapPrices(doc, price);
-      boolean available = doc.select(".esconde .avisoIndisponivel").isEmpty();
+      boolean available = doc.selectFirst(".produto-comprar:not(.hide) .btn-comprar") != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb.bread ol li", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#galeria > li:nth-child(1) > a", Arrays.asList("data-image"), "https",
           "www.mpozenato.com.br");
