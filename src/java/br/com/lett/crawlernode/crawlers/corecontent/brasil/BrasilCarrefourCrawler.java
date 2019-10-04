@@ -465,9 +465,15 @@ public class BrasilCarrefourCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
       installmentPriceMap.put(1, price);
 
-      Pair<Integer, Float> pairNormalCards = CrawlerUtils.crawlSimpleInstallment(".installment", e, false, "x");
+      Pair<Integer, Float> pairNormalCards = CrawlerUtils.crawlSimpleInstallment(".installment span:last-child", e, false, "x");
       if (!pairNormalCards.isAnyValueNull()) {
         installmentPriceMap.put(pairNormalCards.getFirst(), pairNormalCards.getSecond());
+      } else {
+        pairNormalCards = CrawlerUtils.crawlSimpleInstallment(".installment", e, false, "x");
+
+        if (!pairNormalCards.isAnyValueNull()) {
+          installmentPriceMap.put(pairNormalCards.getFirst(), pairNormalCards.getSecond());
+        }
       }
 
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
