@@ -35,6 +35,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.Seller;
 import models.prices.Prices;
 
@@ -55,6 +56,7 @@ public class MexicoAmazonCrawler extends Crawler {
   public MexicoAmazonCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.APACHE);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
@@ -97,12 +99,29 @@ public class MexicoAmazonCrawler extends Crawler {
       Float price = crawlPrice(marketplaceMap);
       Prices prices = crawlPrices(marketplaceMap);
       boolean available = price != null;
+      RatingsReviews ratingReviews = crawlRating(doc, internalId);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(marketplace)
+          .setRatingReviews(ratingReviews)
+          .build();
+
+      products.add(product);
 
       products.add(product);
 
@@ -517,5 +536,47 @@ public class MexicoAmazonCrawler extends Crawler {
     }
 
     return content;
+  }
+
+  private RatingsReviews crawlRating(Document document, String internalId) {
+
+    Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    if (internalId != null) {
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
+          "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
+      Double avgRating = getTotalAvgRating(document);
+
+      ratingReviews.setInternalId(internalId);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+    }
+
+    return ratingReviews;
+  }
+
+  private Double getTotalAvgRating(Document doc) {
+    Double avgRating = 0d;
+    Element reviews =
+        doc.select("#reviewsMedley [data-hook=rating-out-of-text], #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt")
+            .first();
+
+    if (reviews != null) {
+      String text = reviews.ownText().trim();
+
+      if (text.contains("de")) {
+        String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
+
+        if (!avgText.isEmpty()) {
+          avgRating = Double.parseDouble(avgText);
+        }
+      }
+    }
+
+    return avgRating;
   }
 }
