@@ -28,6 +28,7 @@ public class TrustvoxRatingCrawler {
   private Session session;
   private String storeId;
   protected Logger logger;
+  private String primaryImage;
 
   public TrustvoxRatingCrawler(Session session, String storeId, Logger logger) {
     this.session = session;
@@ -119,6 +120,17 @@ public class TrustvoxRatingCrawler {
     if (vtxctx.has("departmentyId") && vtxctx.has("categoryId")) {
       requestURL.append("&product_extra_attributes%5Bdepartment_id%5D=" + vtxctx.get("departmentyId") + "&product_extra_attributes%5Bcategory_id%5D="
           + vtxctx.get("categoryId"));
+    } else {
+      JSONObject normalStoreJson = selectJsonFromHtml(doc, "script", "_trustvox.push(['_productExtraAttributes',", "]);", true);
+      if (normalStoreJson.has("group") && !normalStoreJson.isNull("group") && normalStoreJson.has("subgroup") && !normalStoreJson.isNull(
+          "subgroup")) {
+        requestURL.append("&product_extra_attributes%5Bgroup%5D=" + normalStoreJson.get("group") + "&product_extra_attributes%5Bsubgroup%5D="
+            + normalStoreJson.get("subgroup"));
+      }
+    }
+
+    if (this.primaryImage != null) {
+      requestURL.append("&photos_urls%5B%5D=" + this.primaryImage);
     }
 
     Map<String, String> headerMap = new HashMap<>();
@@ -258,6 +270,14 @@ public class TrustvoxRatingCrawler {
     }
 
     return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
+  }
+
+  public String getPrimaryImage() {
+    return primaryImage;
+  }
+
+  public void setPrimaryImage(String primaryImage) {
+    this.primaryImage = primaryImage;
   }
 
 }
