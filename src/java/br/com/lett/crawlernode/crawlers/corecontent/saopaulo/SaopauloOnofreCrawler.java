@@ -1,25 +1,22 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -60,27 +57,25 @@ public class SaopauloOnofreCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
 
-      String internalId = crawlInternalId(doc);
-      String internalPid = crawlInternalPid(doc);
-      String name = crawlName(doc);
-      Float price = crawlPrice(doc);
+      String internalId = JSONUtils.getValue(jsonInfo, "sku").toString();
+      String internalPid = internalId;
+      String name = JSONUtils.getStringValue(jsonInfo, "name");
+      Float price = crawlPrice(jsonInfo);
       Prices prices = crawlPrices(price, doc);
-      boolean available = crawlAvailability(doc);
-      CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = crawlPrimaryImage(doc);
-      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-      String description = crawlDescription(doc);
-      Integer stock = null;
+      boolean available = crawlAvailability(jsonInfo);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product) a");
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-short-description", "#details"));
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img:not(:first-child)",
+          Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-gallery img:not(:first-child)",
+          Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br", primaryImage);
       Marketplace marketplace = new Marketplace();
-      String ean = crawlEan(doc);
+      String ean = JSONUtils.getStringValue(jsonInfo, "gtin13");
+      List<String> eans = ean != null ? Arrays.asList(ean) : null;
 
-      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-      ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
-      RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
-
-      List<String> eans = new ArrayList<>();
-      eans.add(ean);
+      RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
 
       // Creating the product
       Product product = ProductBuilder.create()
@@ -97,7 +92,6 @@ public class SaopauloOnofreCrawler extends Crawler {
           .setPrimaryImage(primaryImage)
           .setSecondaryImages(secondaryImages)
           .setDescription(description)
-          .setStock(stock)
           .setMarketplace(marketplace)
           .setEans(eans)
           .setRatingReviews(ratingReviews)
@@ -114,168 +108,36 @@ public class SaopauloOnofreCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.select("#skuId").first() != null;
+    return doc.selectFirst(".product-view") != null;
   }
 
-  private String crawlInternalId(Document doc) {
-    String internalId = null;
-
-    Element elementInternalPid = doc.select("#skuId").first();
-    if (elementInternalPid != null) {
-      internalId = elementInternalPid.text();
-    }
-
-    return internalId;
-  }
-
-  /**
-   * There is no internalPid.
-   * 
-   * @param document
-   * @return
-   */
-  private String crawlInternalPid(Document doc) {
-    String internalPid = null;
-
-    Element id = doc.select("#product-code").first();
-
-    if (id != null) {
-      String text = id.text();
-
-      if (text.contains(":")) {
-        internalPid = CommonMethods.getLast(text.split(":")).trim();
-      } else {
-        internalPid = text.trim();
-      }
-    }
-
-    return internalPid;
-  }
-
-  private String crawlName(Document document) {
-    String name = null;
-    Element nameElement = document.select(".product-information__title").first();
-
-    if (nameElement != null) {
-      name = nameElement.text().trim();
-    }
-
-    return name;
-  }
-
-  private Float crawlPrice(Document document) {
+  private Float crawlPrice(JSONObject json) {
     Float price = null;
-    Element elementPrice = document.select(".price-box__value").first();
 
-    if (elementPrice != null) {
-      price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+    if (json.has("offers") && !json.isNull("offers")) {
+      JSONObject value = json.getJSONObject("offers");
+      if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer")) {
+        price = JSONUtils.getFloatValueFromJSON(value, "price", true);
+      }
     }
 
     return price;
   }
 
-  private boolean crawlAvailability(Document document) {
-    boolean available = false;
-    Element elementAvailable = document.select(".product-information__stock").first();
-    if (elementAvailable != null) {
-      String text = elementAvailable.text().trim();
-      available = text.equalsIgnoreCase("em estoque");
-    }
+  private boolean crawlAvailability(JSONObject json) {
+    boolean availability = false;
 
-    return available;
-  }
+    if (json.has("offers") && !json.isNull("offers")) {
+      JSONObject value = json.getJSONObject("offers");
+      if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer") && value.has("availability") &&
+          !value.isNull("availability")) {
 
-  private String crawlPrimaryImage(Document document) {
-    String primaryImage = null;
-    Element elementPrimaryImage = document.select(".product-gallery__main img").first();
-
-    if (elementPrimaryImage != null) {
-      primaryImage = elementPrimaryImage.attr("src").trim();
-    }
-
-    if (primaryImage != null && !primaryImage.startsWith("http")) {
-      primaryImage = HOME_PAGE + primaryImage;
-    }
-
-    return primaryImage;
-  }
-
-  private String crawlSecondaryImages(Document document, String primaryImage) {
-    String secondaryImages = null;
-
-    JSONArray secondaryImagesArray = new JSONArray();
-    Elements elementSecondaryImages = document.select(".product-gallery__thumbs-list a");
-
-    for (Element e : elementSecondaryImages) {
-      Element img = e.select("img").first();
-      if (img != null) {
-        String imgString = img.attr("src").trim();
-
-        if (imgString.isEmpty()) {
-          continue;
-        }
-      } else {
-        continue;
-      }
-
-      String image = e.attr("data-image").trim();
-
-      if (!image.startsWith("http")) {
-        image = HOME_PAGE + image;
-      }
-
-      if (!image.equals(primaryImage)) {
-        secondaryImagesArray.put(image);
+        availability = value.get("availability").toString().equalsIgnoreCase("in stock");
       }
     }
 
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
+    return availability;
   }
-
-  private CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select("#breadcrumbs-data a");
-
-    for (int i = 1; i < elementCategories.size(); i++) { // first index is the home page
-      categories.add(elementCategories.get(i).text().trim());
-    }
-
-    return categories;
-  }
-
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
-
-    Elements elementsDescription = doc.select(".product-tabs__content");
-    for (Element e : elementsDescription) {
-      Elements specs = e.select(".product-tabs__table tr td");
-
-      if (!specs.isEmpty()) {
-        for (Element spec : specs) {
-          String text = spec.text().trim();
-          String content = spec.attr("content").trim();
-
-          if (text.isEmpty()) {
-            spec.appendText(content.isEmpty() ? "Não possui" : content);
-          }
-        }
-      }
-
-      description.append(e.html());
-    }
-
-    Element elementWarning = doc.select(".product-disclaimer").first();
-    if (elementWarning != null) {
-      description.append(elementWarning.html());
-    }
-
-    return description.toString();
-  }
-
 
   /**
    * In product page has only one price, but in footer has informations of payment methods
@@ -289,33 +151,9 @@ public class SaopauloOnofreCrawler extends Crawler {
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
-      Element priceFrom = doc.select(".price-box__old strike").first();
-      if (priceFrom != null) {
-        Float priceOld = MathUtils.parseFloatWithComma(priceFrom.text());
-
-        if (priceOld != null && !priceOld.equals(price)) {
-          prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
-        }
-      }
-
-      Element installment = doc.select(".price-box__portion span").first();
-      if (installment != null) {
-        Element installmentNumber = installment.select("u").first();
-        Element installmentValue = installment.select("u strong").first();
-
-        if (installmentNumber != null && installmentValue != null) {
-          String parcel = installmentNumber.ownText().replaceAll("[^0-9]", "").trim();
-          Float value = MathUtils.parseFloatWithComma(installmentValue.ownText());
-
-          if (!parcel.isEmpty() && value != null) {
-            installmentPriceMap.put(Integer.parseInt(parcel), value);
-          }
-        }
-      }
-
       installmentPriceMap.put(1, price);
       prices.setBankTicketPrice(price);
+      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session));
 
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
@@ -328,34 +166,10 @@ public class SaopauloOnofreCrawler extends Crawler {
     return prices;
   }
 
-  private RatingsReviews crawlRating(Document doc, String internalId) {
-    RatingsReviews ratingReviews = new RatingsReviews();
+  private RatingsReviews crawlRating(Document doc, String internalId, String primaryImage) {
+    TrustvoxRatingCrawler rating = new TrustvoxRatingCrawler(session, "109192", logger);
+    rating.setPrimaryImage(primaryImage);
 
-    YourreviewsRatingCrawler yourReviews =
-        new YourreviewsRatingCrawler(session, cookies, logger, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063", dataFetcher);
-
-    Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalId, "c8cbeadc-e277-4c51-b84b-e19b6ef9c063", dataFetcher);
-    Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
-    Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
-    AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalId);
-
-    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-    ratingReviews.setTotalRating(totalNumOfEvaluations);
-    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-    ratingReviews.setAverageOverallRating(avgRating);
-    ratingReviews.setDate(session.getDate());
-    ratingReviews.setInternalId(internalId);
-
-    return ratingReviews;
+    return rating.extractRatingAndReviews(internalId, doc, dataFetcher);
   }
-
-
-  private String crawlEan(Element e) {
-    String ean = null;
-    Element td = e.selectFirst("[itemprop=\"gtin13\"]");
-    ean = td != null ? td.text().trim() : null;
-
-    return ean;
-  }
-
 }
