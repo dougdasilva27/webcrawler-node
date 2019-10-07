@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -173,10 +175,17 @@ public class MexicoWalmartsuperCrawler extends Crawler {
     for (int i = 1; i < 4; i++) {
       String img = "https://super.walmart.com.mx/images/product-images/img_large/" + id + "L" + i + ".jpg";
       Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
-      RequestsStatistics resp = CommonMethods.getLast(this.dataFetcher.get(session, request).getRequests());
+      Response response = this.dataFetcher.get(session, request);
+      RequestsStatistics resp = CommonMethods.getLast(response.getRequests());
 
-      if (resp != null && resp.getStatusCode() > 0 && resp.getStatusCode() < 400) {
-        secondaryImagesArray.put(img);
+      Map<String, String> headers = response.getHeaders();
+      if (headers.containsKey(HttpHeaders.CONTENT_TYPE.toLowerCase())) {
+        // We get this header because sometimes the image url will return a html
+        String content = headers.get(HttpHeaders.CONTENT_TYPE.toLowerCase());
+
+        if (resp != null && resp.getStatusCode() > 0 && resp.getStatusCode() < 400 && (content.contains("image") || content.contains("img"))) {
+          secondaryImagesArray.put(img);
+        }
       }
     }
 
