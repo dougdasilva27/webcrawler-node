@@ -316,7 +316,7 @@ public class BrasilMoblyCrawler extends Crawler {
 
   private JSONObject fetchSkuInformation(String internalIDS) {
     String url =
-        "https://secure.mobly.com.br/api/catalog/price/hash/92b1f91a6df23cfc5e00a6fc26bcb27d2b2d9128/?skus=" + internalIDS + "&_=1550515484107";
+        "https://secure.mobly.com.br/api/catalog/price/hash/6de5d90d65af409e242cb399067487fd83be8d07/?skus=" + internalIDS;
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
