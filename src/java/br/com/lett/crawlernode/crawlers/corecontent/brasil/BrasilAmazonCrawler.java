@@ -161,7 +161,8 @@ public class BrasilAmazonCrawler extends Crawler {
   private Double getTotalAvgRating(Document doc) {
     Double avgRating = 0d;
     Element reviews =
-        doc.select("#reviewsMedley .arp-rating-out-of-text, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt").first();
+        doc.select("#reviewsMedley [data-hook=rating-out-of-text], #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt")
+            .first();
 
     if (reviews != null) {
       String text = reviews.ownText().trim();
