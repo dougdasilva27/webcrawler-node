@@ -14,7 +14,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -177,8 +176,6 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
 
     if (response != null) {
       Document doc = Jsoup.parse(response);
-      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "SINGER.html");
-
       JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "__STATE__=", ";", true, true);
 
       for (String key : stateJson.keySet()) {
