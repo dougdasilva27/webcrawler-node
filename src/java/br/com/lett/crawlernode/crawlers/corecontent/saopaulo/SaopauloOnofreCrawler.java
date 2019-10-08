@@ -132,7 +132,7 @@ public class SaopauloOnofreCrawler extends Crawler {
       if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer") && value.has("availability") &&
           !value.isNull("availability")) {
 
-        availability = value.get("availability").toString().equalsIgnoreCase("in stock");
+        availability = value.get("availability").toString().toLowerCase().endsWith("instock");
       }
     }
 
