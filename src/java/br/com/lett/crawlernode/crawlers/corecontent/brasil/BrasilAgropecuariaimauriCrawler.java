@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -49,7 +50,6 @@ public class BrasilAgropecuariaimauriCrawler extends Crawler {
       } else {
         skuJson = null;
       }
-      
 
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#comment_post_ID", "value");
       String internalPid = skuJson != null && skuJson.has("sku") ? skuJson.get("sku").toString() : null;
@@ -64,27 +64,59 @@ public class BrasilAgropecuariaimauriCrawler extends Crawler {
       boolean available = stock > 0;
       Marketplace marketplace = null;
 
-      // Creating the product
-      Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setInternalPid(internalPid)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setStock(stock)
-          .setMarketplace(marketplace)
-          .build();
-
-      products.add(product);
+      Elements variations = doc.select(".variations .value .tawcvs-swatches span");
+      Element variationIdsElement = doc.selectFirst(".single_variation_wrap #wc-shipping-simulator");
+      String[] variationIds = variationIdsElement.hasAttr("data-product-ids") ? variationIdsElement.attr("data-product-ids").split(",") : null;
       
+      if(!variations.isEmpty() && variationIds != null && variations.size() == variationIds.length) {
+        for(int i = 0; i < variations.size(); i++) {
+          Element e = variations.get(i);
+          
+          // Creating the product
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId + "-" + variationIds[i])
+              .setInternalPid(internalPid)
+              .setName(name + " - " + e.ownText())
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(stock)
+              .setMarketplace(marketplace)
+              .build();
+    
+          products.add(product);
+          
+        }
+      } else {
+        
+        // Creating the product
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .build();
+  
+        products.add(product);
+      }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
