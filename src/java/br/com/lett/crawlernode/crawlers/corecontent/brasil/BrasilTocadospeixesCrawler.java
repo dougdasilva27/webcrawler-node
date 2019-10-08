@@ -20,7 +20,6 @@ import models.prices.Prices;
 
 public class BrasilTocadospeixesCrawler extends Crawler {
 
-  // TODO: Checkar produto: https://www.tocadospeixes.com.br/milteforan-virbac/p
   public BrasilTocadospeixesCrawler(Session session) {
     super(session);
   }
