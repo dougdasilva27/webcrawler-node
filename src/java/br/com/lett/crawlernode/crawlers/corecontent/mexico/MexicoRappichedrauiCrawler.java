@@ -130,7 +130,7 @@ public class MexicoRappichedrauiCrawler extends Crawler {
     String primaryImage = null;
 
     if (json.has("image")) {
-      primaryImage = "https://images.rappi.com/products/" + json.get("image");
+      primaryImage = "https://images.rappi.com.mx/products/" + json.get("image");
     }
 
     return primaryImage;
