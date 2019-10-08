@@ -50,6 +50,11 @@ public class BrasilTocadospeixesCrawler extends Crawler {
               !skuJson.isNull("skus")
                   ? skuJson.getJSONArray("skus")
                   : new JSONArray();
+      
+      // Website shows only first variation images, so we must
+      // set the images from first variations on all of them
+      String primaryImage = null;
+      String secondaryImages = null;
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -57,8 +62,8 @@ public class BrasilTocadospeixesCrawler extends Crawler {
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
-        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-        String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+        primaryImage = primaryImage == null ? vtexUtil.crawlPrimaryImage(apiJSON) : primaryImage;
+        secondaryImages = secondaryImages == null ? vtexUtil.crawlSecondaryImages(apiJSON) : secondaryImages;
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
