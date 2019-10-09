@@ -25,7 +25,7 @@ import models.prices.Prices;
 public class BrasilAgropecuariaimauriCrawler extends Crawler {
   
   private static final String HOME_PAGE = "https://agropecuariaimarui.com.br/";
-
+  
   public BrasilAgropecuariaimauriCrawler(Session session) {
     super(session);
   }
@@ -66,7 +66,9 @@ public class BrasilAgropecuariaimauriCrawler extends Crawler {
 
       Elements variations = doc.select(".variations .value .tawcvs-swatches span");
       Element variationIdsElement = doc.selectFirst(".single_variation_wrap #wc-shipping-simulator");
-      String[] variationIds = variationIdsElement.hasAttr("data-product-ids") ? variationIdsElement.attr("data-product-ids").split(",") : null;
+      String[] variationIds = variationIdsElement != null && variationIdsElement.hasAttr("data-product-ids") 
+          ? variationIdsElement.attr("data-product-ids").split(",") 
+          : null;
       
       if(!variations.isEmpty() && variationIds != null && variations.size() == variationIds.length) {
         for(int i = 0; i < variations.size(); i++) {
@@ -131,32 +133,35 @@ public class BrasilAgropecuariaimauriCrawler extends Crawler {
   private Prices scrapPrices(Document doc, Float price) {
     Prices prices = new Prices();
     
-    prices.setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".wc-simulador-parcelas-offer .woocommerce-Price-amount", null, true, ',', session));
-    prices.setPriceFrom(price.doubleValue());
-    
-    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    
-    if(doc.selectFirst(".product-info .wc-simulador-parcelas-payment-options li") != null) {
-      installmentPriceMap.put(1, price);
-    }
-    
-    for(Element e : doc.select(".product-info .wc-simulador-parcelas-payment-options li")) {
-      Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x de", "juros", true);
+    if (price != null) {
+      prices.setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".wc-simulador-parcelas-offer .woocommerce-Price-amount", null, true, ',', session));
       
-      if (!installment.isAnyValueNull()) {
-        installmentPriceMap.put(installment.getFirst(), installment.getSecond());
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-wrapper .price del .amount", null, true, ',', session);
+      if(priceFrom != null) {
+        prices.setPriceFrom(priceFrom);
       }
+      
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
+      
+      for(Element e : doc.select(".product-info .wc-simulador-parcelas-payment-options li")) {
+        Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x de", "juros", true);
+        
+        if (!installment.isAnyValueNull()) {
+          installmentPriceMap.put(installment.getFirst(), installment.getSecond());
+        }
+      }
+      
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.UNKNOWN_CARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
     }
-    
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.UNKNOWN_CARD.toString(), installmentPriceMap);
-    prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
     
     return prices;
   }
