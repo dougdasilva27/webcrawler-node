@@ -22,11 +22,11 @@ import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
-public class BrasilAgropecuariaimauriCrawler extends Crawler {
+public class BrasilAgropecuariaimaruiCrawler extends Crawler {
   
   private static final String HOME_PAGE = "https://agropecuariaimarui.com.br/";
   
-  public BrasilAgropecuariaimauriCrawler(Session session) {
+  public BrasilAgropecuariaimaruiCrawler(Session session) {
     super(session);
   }
 

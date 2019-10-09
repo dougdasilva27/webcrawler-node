@@ -6,9 +6,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class BrasilAgropecuariaimauriCrawler extends CrawlerRankingKeywords {
+public class BrasilAgropecuariaimaruiCrawler extends CrawlerRankingKeywords {
 
-  public BrasilAgropecuariaimauriCrawler(Session session) {
+  public BrasilAgropecuariaimaruiCrawler(Session session) {
     super(session);
   }
 
