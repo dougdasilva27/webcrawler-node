@@ -32,6 +32,7 @@ public class BrasilMoblyCrawler extends Crawler {
 
   public BrasilMoblyCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
