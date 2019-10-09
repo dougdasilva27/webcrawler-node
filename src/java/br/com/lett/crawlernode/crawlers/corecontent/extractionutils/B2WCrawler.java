@@ -4,15 +4,16 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -394,6 +395,8 @@ public class B2WCrawler extends Crawler {
     JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
     JSONObject offers = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
 
+    Map<String, Float> mapOfSellerIdAndPrice = new HashMap<>();
+
     // Getting informations from sellers.
     if (offers.has(internalId)) {
       JSONArray sellerInfo = offers.getJSONArray(internalId);
@@ -405,76 +408,93 @@ public class B2WCrawler extends Crawler {
         JSONObject buyBoxJson = new JSONObject();
 
         JSONObject info = (JSONObject) sellerInfo.get(i);
-        buyBoxJson.put(OfferField.IS_BUYBOX.toString(), isBuyBox);
-        buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), JSONObject.NULL);
 
-        Prices prices = crawlMarketplacePrices(info);
-        Float price1x = !prices.isEmpty() ? prices.getCardInstallmentValue(DEFAULT_CARD.toString(), 1).floatValue() : null;
-        Float bankTicket = CrawlerUtils.getFloatValueFromJSON(info, "bakTicket", true, false);
-        Float defaultPrice = CrawlerUtils.getFloatValueFromJSON(info, "defaultPrice", true, false);
-
-        if (i + 1 <= 3) {
-          buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), i + 1);
-          Float featuredPrice = null;
-
-          for (Float value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
-            if (featuredPrice == null || (value != null && value < featuredPrice)) {
-              featuredPrice = value;
-            }
-          }
-
-          buyBoxJson.put(OfferField.MAIN_PRICE.toString(), featuredPrice);
-
-        } else {
-          if (defaultPrice != null) {
-            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), defaultPrice);
-          } else if (price1x != null) {
-            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), price1x);
-          } else if (bankTicket != null) {
-            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), bankTicket);
-          }
-
-          buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), JSONObject.NULL);
-        }
-
-        if (info.has("sellerName")) {
+        if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
           String name = info.get("sellerName").toString();
+          String internalSellerId = info.get("id").toString();
+
+          buyBoxJson.put(OfferField.IS_BUYBOX.toString(), isBuyBox);
+          buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), JSONObject.NULL);
           buyBoxJson.put(OfferField.SELLER_FULL_NAME.toString(), name);
           buyBoxJson.put(OfferField.SLUG_SELLER_NAME.toString(), CommonMethods.toSlug(name));
-        }
+          buyBoxJson.put(OfferField.INTERNAL_SELLER_ID.toString(), internalSellerId);
 
-        if (info.has("id")) {
-          buyBoxJson.put(OfferField.INTERNAL_SELLER_ID.toString(), info.get("id").toString());
-        }
+          Prices prices = crawlMarketplacePrices(info);
+          Float price1x = !prices.isEmpty() ? prices.getCardInstallmentValue(DEFAULT_CARD.toString(), 1).floatValue() : null;
+          Float bankTicket = CrawlerUtils.getFloatValueFromJSON(info, "bakTicket", true, false);
+          Float defaultPrice = CrawlerUtils.getFloatValueFromJSON(info, "defaultPrice", true, false);
 
-        listBuyBox.add(buyBoxJson);
+
+          if (i + 1 <= 3) {
+            buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), i + 1);
+            Float featuredPrice = null;
+
+            for (Float value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
+              if (featuredPrice == null || (value != null && value < featuredPrice)) {
+                featuredPrice = value;
+              }
+            }
+
+            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), featuredPrice);
+            mapOfSellerIdAndPrice.put(internalSellerId, featuredPrice);
+
+
+          } else {
+            Float featuredPrice = null;
+
+            if (defaultPrice != null) {
+              featuredPrice = defaultPrice;
+            } else if (price1x != null) {
+              featuredPrice = price1x;
+            } else if (bankTicket != null) {
+              featuredPrice = bankTicket;
+            }
+
+            mapOfSellerIdAndPrice.put(internalSellerId, featuredPrice);
+
+            buyBoxJson.put(OfferField.MAIN_PRICE.toString(), featuredPrice);
+            buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), JSONObject.NULL);
+          }
+
+          listBuyBox.add(buyBoxJson);
+        }
       }
     }
 
     if (listBuyBox.size() > 1) {
-      this.headers.put(HttpHeaders.REFERER, session.getOriginalURL());
-      Document docSellers = Jsoup.parse(fetchPage(this.homePage + "parceiros/" + internalPid + "?productSku=" + internalId, session));
-      Elements moreOffers = docSellers.select(".more-offers-table tbody tr .seller-info-cell .seller-info a");
+      // Sellers page positios is order by price, in this map, price is the value
+      Map<String, Float> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
-      for (int j = 0; j < moreOffers.size(); j++) {
-        Element element = moreOffers.get(j);
-        String href = element.attr("href");
+      int position = 1;
 
-        if (href.contains("/")) {
-          String sellerId = CommonMethods.getLast(href.split("/")).trim();
-
-          for (JSONObject buyBoxJson : listBuyBox) {
-            if (buyBoxJson.has(OfferField.INTERNAL_SELLER_ID.toString())
-                && buyBoxJson.get(OfferField.INTERNAL_SELLER_ID.toString()).toString().equals(sellerId)) {
-              buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), j + 1);
-            }
+      for (Entry<String, Float> entry : sortedMap.entrySet()) {
+        for (JSONObject buyBoxJson : listBuyBox) {
+          if (buyBoxJson.has(OfferField.INTERNAL_SELLER_ID.toString())
+              && buyBoxJson.get(OfferField.INTERNAL_SELLER_ID.toString()).toString().equals(entry.getKey())) {
+            buyBoxJson.put(OfferField.SELLERS_PAGE_POSITION.toString(), position);
           }
         }
+
+        position++;
       }
     }
 
     return listBuyBox;
+  }
 
+  /**
+   * Sort map by Value
+   * 
+   * @param map
+   * @return
+   */
+  private Map<String, Float> sortMapByValue(final Map<String, Float> map) {
+    return map.entrySet()
+        .stream()
+        .sorted(Map.Entry.comparingByValue())
+        .collect(
+            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
+                LinkedHashMap::new));
   }
 
   /*******************************

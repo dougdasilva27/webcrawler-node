@@ -49,7 +49,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
       // Pid
       String internalPid = null;
-      Elements elementInternalPid = doc.select("#product-attribute-specs-table tr td.data");
+      Elements elementInternalPid = doc.select("#product-attribute-specs-table tr.sku td.data");
       if (elementInternalPid != null && elementInternalPid.size() > 1) {
         internalPid = elementInternalPid.get(0).text().trim();
       }

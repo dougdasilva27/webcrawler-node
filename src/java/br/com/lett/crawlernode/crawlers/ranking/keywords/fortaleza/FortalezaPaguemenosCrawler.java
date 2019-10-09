@@ -166,7 +166,7 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
    */
   private String fetchSHA256Key() {
     // When sha256Hash is not found, this key below works (on 12/09/2019)
-    String hash = "5ddbf1d0246c3486f7f8bdab2cef14e60d52d508a0ae93a2504d2c22f12ae1c5";
+    String hash = "aeaa17c1a994c5ee774df5b6b1f62483331a09f1e14b7e14e28b9ac1d263870d";
     String url = "https://www.paguemenos.com.br/search?query=" + this.keywordEncoded;
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();

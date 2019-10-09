@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -23,8 +25,6 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     super.fetchMode = FetchMode.FETCHER;
   }
 
-
-  private static final String SHA256_SEARCH = "2bbb28a7eef7c8c5ed321556479120eddbc1475940765942520a0f112ce486a8";
   private static final String API_VERSION = "omnilogic.search@0.4.92";
 
   @Override
@@ -98,7 +98,7 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     JSONObject persistedQuery = new JSONObject();
 
     persistedQuery.put("version", API_VERSION);
-    persistedQuery.put("sha256Hash", SHA256_SEARCH);
+    persistedQuery.put("sha256Hash", fetchSHA256Key());
     extensions.put("persistedQuery", persistedQuery);
     extensions.put("variables", createVariablesBase64());
 
@@ -153,5 +153,50 @@ public class BrasilShopfacilCrawler extends CrawlerRankingKeywords {
     search.put("metadata", metadata);
 
     return Base64.getEncoder().encodeToString(search.toString().getBytes());
+  }
+
+  /**
+   * This function accesses the search url and extracts a hash that will be required to access the
+   * search api.
+   * 
+   * This hash is inside a key in json STATE. Ex:
+   * 
+   * "$ROOT_QUERY.productSearch({\"from\":0,\"hideUnavailableItems\":true,\"map\":\"ft\",\"orderBy\":\"OrderByTopSaleDESC\",\"query\":\"ACONDICIONADOR\",\"to\":19}) @runtimeMeta({\"hash\":\"0be25eb259af62c2a39f305122908321d46d3710243c4d4ec301bf158554fa71\"})"
+   * 
+   * Hash: 1d1ad37219ceb86fc281aa774971bbe1fe7656730e0a2ac50ba63ed63e45a2a3
+   * 
+   * @return
+   */
+  private String fetchSHA256Key() {
+    String hash = "2da1e09e3e9fb5f2e1ad240b91afa44914933ec59f8ab99cc52d0be296923299";
+    String url = "https://www.shopfacil.com.br/busca/?io_text=termos--" + this.keywordWithoutAccents.replace(" ", "-");
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    String response = this.dataFetcher.get(session, request).getBody();
+
+    if (response != null) {
+      Document doc = Jsoup.parse(response);
+      JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "__STATE__=", ";", true, true);
+
+      for (String key : stateJson.keySet()) {
+        String firstIndexString = "@runtimeMeta(";
+        String keyIdentifier = "$ROOT_QUERY.search";
+
+        if (key.contains(firstIndexString) && key.contains(keyIdentifier) && key.endsWith(")")) {
+          int x = key.indexOf(firstIndexString) + firstIndexString.length();
+          int y = key.indexOf(')', x);
+
+          JSONObject hashJson = CrawlerUtils.stringToJson(key.substring(x, y).replace("\\\"", "\""));
+
+          if (hashJson.has("hash") && !hashJson.isNull("hash")) {
+            hash = hashJson.get("hash").toString();
+          }
+
+          break;
+        }
+      }
+    }
+
+    return hash;
   }
 }

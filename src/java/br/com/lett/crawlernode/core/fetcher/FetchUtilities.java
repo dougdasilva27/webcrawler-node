@@ -65,6 +65,7 @@ public class FetchUtilities {
    * https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
    */
   public static List<String> userAgents;
+  public static List<String> userAgentsWithoutChrome;
   public static List<String> mobileUserAgents;
   public static List<String> errorCodes;
   public static List<String> highTimeoutMarkets;
@@ -87,6 +88,15 @@ public class FetchUtilities {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
         "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
 
+    userAgentsWithoutChrome = Arrays.asList(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
+        "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
+        "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0"
+    );
+
     mobileUserAgents = Arrays.asList(
         "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36",
         "Mozilla/5.0 (Linux; Android 7.0; SM-A310F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36 OPR/42.7.2246.114996",
@@ -108,6 +118,16 @@ public class FetchUtilities {
    */
   public static String randUserAgent() {
     return userAgents.get(MathUtils.randInt(0, userAgents.size() - 1));
+  }
+
+  /**
+   * Retrieve a random user agent (chrome is not considered for this fucntion) from the user agents
+   * array.
+   * 
+   * @return
+   */
+  public static String randUserAgentWithoutChrome() {
+    return userAgentsWithoutChrome.get(MathUtils.randInt(0, userAgentsWithoutChrome.size() - 1));
   }
 
   /**
@@ -329,7 +349,9 @@ public class FetchUtilities {
   public static SSLConnectionSocketFactory createSSLConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
     TrustManager trustManager = new TrustManager();
     SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-    sslContext.init(null, new TrustManager[] {trustManager}, null);
+    sslContext.init(null, new TrustManager[] {
+        trustManager
+    }, null);
 
     return new SSLConnectionSocketFactory(sslContext);
   }

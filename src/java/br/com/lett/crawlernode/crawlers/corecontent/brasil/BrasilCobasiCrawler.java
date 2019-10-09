@@ -7,6 +7,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -22,6 +23,7 @@ public class BrasilCobasiCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.cobasi.com.br/";
   private static final String MAIN_SELLER_NAME_LOWER = "cobasi";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "voegol cobasi";
 
   public BrasilCobasiCrawler(Session session) {
     super(session);
@@ -37,6 +39,8 @@ public class BrasilCobasiCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
+
+    List<String> sellersOwnStore = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2);
 
     VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
     JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
@@ -62,12 +66,12 @@ public class BrasilCobasiCrawler extends Crawler {
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, sellersOwnStore, Card.VISA, session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, sellersOwnStore);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-        Float price = vtexUtil.crawlMainPagePrice(prices);
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, sellersOwnStore);
+        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
 
