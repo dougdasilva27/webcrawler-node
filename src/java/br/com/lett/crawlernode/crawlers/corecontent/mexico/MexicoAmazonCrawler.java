@@ -122,9 +122,6 @@ public class MexicoAmazonCrawler extends Crawler {
           .build();
 
       products.add(product);
-
-      products.add(product);
-
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
@@ -569,10 +566,10 @@ public class MexicoAmazonCrawler extends Crawler {
       String text = reviews.ownText().trim();
 
       if (text.contains("de")) {
-        String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
+        avgRating = MathUtils.parseDoubleWithDot(text.split("de")[0]);
 
-        if (!avgText.isEmpty()) {
-          avgRating = Double.parseDouble(avgText);
+        if (avgRating == null) {
+          avgRating = 0d;
         }
       }
     }
