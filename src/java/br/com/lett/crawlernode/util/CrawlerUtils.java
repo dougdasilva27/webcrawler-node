@@ -1434,6 +1434,39 @@ public class CrawlerUtils {
 
     return total;
   }
+  
+  /**
+   * Utility method to extract integer from from a html with is contained on a 
+   * attribute of a html tag.
+   * <br>
+   * <br>
+   * Ex:
+   * <br>
+   * < tag value="37"/>
+   * <br>
+   * Extracts: 37
+   * 
+   * @param doc
+   * @param selector
+   * @param attr - attribute to search
+   * @param defaultValue - return value if condition == null
+   * @return
+   */
+  public static Integer scrapIntegerFromHtmlAttr(Element doc, String selector, String attr, Integer defaultValue) {
+    Integer total = defaultValue;
+
+    Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
+
+    if (totalElement != null && totalElement.hasAttr(attr)) {
+      String text = totalElement.attr(attr).replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        total = Integer.parseInt(text);
+      }
+    }
+
+    return total;
+  }
 
   /**
    * 
