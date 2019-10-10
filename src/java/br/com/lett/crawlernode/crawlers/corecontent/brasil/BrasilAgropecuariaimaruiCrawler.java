@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -63,60 +63,45 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
       Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".product-info form.cart input[name=\"gtm4wp_stocklevel\"]", "value", 0);
       boolean available = stock > 0;
       Marketplace marketplace = null;
-
-      Elements variations = doc.select(".variations .value .tawcvs-swatches span");
-      Element variationIdsElement = doc.selectFirst(".single_variation_wrap #wc-shipping-simulator");
-      String[] variationIds = variationIdsElement != null && variationIdsElement.hasAttr("data-product-ids") 
-          ? variationIdsElement.attr("data-product-ids").split(",") 
+          
+      // Creating the product
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalPid(internalPid)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(marketplace)
+          .build();
+      
+      Element variationElement = doc.selectFirst(".product-container .product-info form.variations_form");
+      JSONArray variationJsonArray = variationElement != null && variationElement.hasAttr("data-product_variations") 
+          ? new JSONArray(variationElement.attr("data-product_variations")) 
           : null;
       
-      if(!variations.isEmpty() && variationIds != null && variations.size() == variationIds.length) {
-        for(int i = 0; i < variations.size(); i++) {
-          Element e = variations.get(i);
+      if(variationJsonArray != null && variationJsonArray.length() > 0) {
+        for(Object obj : variationJsonArray) {
+          JSONObject json = (JSONObject) obj;
           
-          // Creating the product
-          Product product = ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalId + "-" + variationIds[i])
-              .setInternalPid(internalPid)
-              .setName(name + " - " + e.ownText())
-              .setPrice(price)
-              .setPrices(prices)
-              .setAvailable(available)
-              .setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2))
-              .setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages)
-              .setDescription(description)
-              .setStock(stock)
-              .setMarketplace(marketplace)
-              .build();
+          Product clone = product.clone();
+          clone.setInternalId(internalId + "-" + json.get("variation_id").toString());
+          clone.setName(scrapVariationName(json, name));
+          clone.setPrice(scrapVariationPrice(json));
+          clone.setPrices(scrapVariationPrices(json, clone.getPrice()));
+          clone.setStock(null);
+          clone.setAvailable(scrapVariationAvailability(json));
     
-          products.add(product);
+          products.add(clone);
           
         }
-      } else {
-        
-        // Creating the product
-        Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setStock(stock)
-            .setMarketplace(marketplace)
-            .build();
-  
+      } else {  
         products.add(product);
       }
     } else {
@@ -150,6 +135,74 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
         if (!installment.isAnyValueNull()) {
           installmentPriceMap.put(installment.getFirst(), installment.getSecond());
         }
+      }
+      
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DISCOVER.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.UNKNOWN_CARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+    }
+    
+    return prices;
+  }
+  
+  private String scrapVariationName(JSONObject json, String name) {
+    
+    if(json.has("attributes") && !json.isNull("attributes") && json.get("attributes") instanceof JSONObject) {
+      json = json.getJSONObject("attributes");
+      
+      for(String key : json.keySet()) {
+        if(!json.isNull(key) && json.get(key) instanceof String) {
+          name += " - " + json.getString(key);
+        }
+      }
+    }
+    
+    return name;
+  }
+  
+  private boolean scrapVariationAvailability(JSONObject json) {
+    if(json.has("is_in_stock") && json.get("is_in_stock") instanceof Boolean) {
+      return json.getBoolean("is_in_stock");
+    }
+    
+    return false;
+  }
+  
+  private Float scrapVariationPrice(JSONObject json) {
+    Float price = null;
+    
+    if(json.has("display_price") && !json.isNull("display_price") &&
+        (json.get("display_price") instanceof Float || json.get("display_price") instanceof Double)) {
+      
+      price = json.getFloat("display_price");
+    }
+    
+    return price;
+  }
+  
+  private Prices scrapVariationPrices(JSONObject json, Float price) {
+    Prices prices = new Prices();
+
+    if(price != null && json.has("price_html") && json.get("price_html") instanceof String) {
+      Document doc = Jsoup.parse(json.getString("price_html"));
+
+      prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, ".wc-simulador-parcelas-offer > .amount", null, false, ',', session));
+      
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
+      
+      Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(
+          ".wc-simulador-parcelas-parcelamento-info-container .wc-simulador-parcelas-parcelamento-info", 
+          doc, false, "x de", "juros", true);
+      
+      if (!installment.isAnyValueNull()) {
+        installmentPriceMap.put(installment.getFirst(), installment.getSecond());
       }
       
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
