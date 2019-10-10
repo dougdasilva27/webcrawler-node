@@ -533,7 +533,7 @@ public class B2WCrawler extends Crawler {
 
           String varationNameWithoutVolts = variationName.replace("volts", "").trim();
 
-          if (unnavailablePage || (variationName.isEmpty() && skus.length() < 2) && infoProductJson.has("name")) {
+          if ((variationName.isEmpty() && skus.length() < 2) && infoProductJson.has("name")) {
             name.append(infoProductJson.getString("name"));
           } else if (sku.has("name")) {
             name.append(sku.getString("name"));
