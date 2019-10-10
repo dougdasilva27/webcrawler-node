@@ -1436,6 +1436,15 @@ public class CrawlerUtils {
   }
   
   /**
+   * Utility method to extract integer from from a html with is contained on a 
+   * attribute of a html tag.
+   * <br>
+   * <br>
+   * Ex:
+   * <br>
+   * < tag value="37"/>
+   * <br>
+   * Extracts: 37
    * 
    * @param doc
    * @param selector
