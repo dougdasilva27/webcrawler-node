@@ -611,14 +611,29 @@ public class CrawlerUtils {
     List<Cookie> cookiesResponse = response.getCookies();
     for (Cookie cookieResponse : cookiesResponse) {
       if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieResponse.getName())) {
-        BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-        cookie.setDomain(domain);
-        cookie.setPath(path);
-        cookies.add(cookie);
+        cookies.add(setCookie(cookieResponse.getName(), cookieResponse.getValue(), path, domain));
       }
     }
 
     return cookies;
+  }
+
+
+  /**
+   * Return a Cookie
+   * 
+   * @param cookieName
+   * @param cookieValue
+   * @param path
+   * @param domain
+   * @return
+   */
+  public static Cookie setCookie(String cookieName, String cookieValue, String path, String domain) {
+    BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
+    cookie.setDomain(domain);
+    cookie.setPath(path);
+
+    return cookie;
   }
 
   /**
