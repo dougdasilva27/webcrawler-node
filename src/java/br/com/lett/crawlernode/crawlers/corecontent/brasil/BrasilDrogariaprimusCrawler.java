@@ -25,6 +25,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -38,7 +39,7 @@ import models.prices.Prices;
  */
 public class BrasilDrogariaprimusCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.drogariaprimus.com.br/";
+  private static final String HOME_PAGE = "http://www.drogariaprimus.com.br/";
 
   public BrasilDrogariaprimusCrawler(Session session) {
     super(session);
@@ -60,7 +61,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String internalPid = crawlInternalPid(doc);
-      String name = crawlName(doc);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".item [itemprop=name]", true);
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(doc, price);
       boolean available = crawlAvailability(doc);
@@ -160,50 +161,6 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
     if (internalPidElement != null) {
       return internalPidElement.text().trim();
     }
-    return null;
-  }
-
-  /**
-   * Crawl the name using two different approaches.
-   * 
-   * @param document
-   * @return the product name or null if it wasn't found
-   */
-  private String crawlName(Document document) {
-    // two possible options here
-    // .item[itemprop='name'] span.fn -> is a simple html tag with the id as a value attribute
-    // #productdata -> is a json
-
-    // we try to get the data from the json before, because
-    // it's less prone to format changes, as it is probably
-    // an API response.
-    // In case of any error we try to get the name from the
-    // itemprop name tag
-
-    Element productDataElement = document.select("#productdata").first();
-    if (productDataElement != null) {
-      String jsonText = productDataElement.attr("value");
-      if (jsonText != null && !jsonText.isEmpty()) {
-        try {
-          JSONObject productData = new JSONObject(jsonText);
-          return productData.getString("name");
-        } catch (JSONException jsonException) {
-          Logging.printLogDebug(logger, session, "Name error [" + jsonException.getMessage() + "]");
-          Logging.printLogDebug(logger, "Trying backup approach ... ");
-        }
-      }
-    }
-
-    Element nameElement = document.select(".item[itemprop='name'] span.fn").first();
-    if (nameElement != null) {
-      String name = nameElement.text().trim();
-      if (name == null || name.isEmpty()) {
-        Logging.printLogDebug(logger, session, "Backup approach also failed [name=" + name + "]");
-      } else {
-        return name;
-      }
-    }
-
     return null;
   }
 
