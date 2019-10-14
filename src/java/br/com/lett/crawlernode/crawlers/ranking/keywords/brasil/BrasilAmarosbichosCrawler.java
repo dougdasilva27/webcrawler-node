@@ -13,8 +13,6 @@ public class BrasilAmarosbichosCrawler extends CrawlerRankingKeywords {
   public BrasilAmarosbichosCrawler(Session session) {
     super(session);
   }
-  
-  // TODO: passar de pagina. A pesquisa não tem total de produtos e o crawler não segue as paginas
 
   @Override
   protected void extractProductsFromCurrentPage() {
@@ -30,10 +28,6 @@ public class BrasilAmarosbichosCrawler extends CrawlerRankingKeywords {
     Elements products = this.currentDoc.select(".result-list > div");
 
     if (!products.isEmpty()) {
-      /*if (this.totalProducts == 0) {
-        setTotalProducts();
-      }*/
-
       for (Element e : products) {
         String internalPid = scrapInternalPid(e, ".description-product .product-name > a");
         String productUrl = CrawlerUtils.scrapUrl(e, ".description-product .product-name > a", "href", "http:", HOME_PAGE);
@@ -78,16 +72,9 @@ public class BrasilAmarosbichosCrawler extends CrawlerRankingKeywords {
 
     return internalPid;
   }
-
-  /*@Override
-  protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(
-        this.currentDoc, 
-        ".page-title-inner .flex-col p.woocommerce-result-count", 
-        "de", 
-        "resultados", 
-        false, true, 0);
-
-    this.log("Total de produtos: " + this.totalProducts);
-  }*/
+  
+  @Override
+  protected boolean hasNextPage() {
+    return this.currentDoc.selectFirst(".next_page.disabled") == null;
+  }
 }
