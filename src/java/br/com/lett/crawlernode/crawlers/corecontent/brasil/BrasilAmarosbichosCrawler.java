@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -15,8 +17,10 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Offers;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilAmarosbichosCrawler extends Crawler {
@@ -50,6 +54,7 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       boolean available = doc.selectFirst(".buybox .compra-wrapper") != null;
       Marketplace marketplace = null;
       Offers offers = null;
+      RatingsReviews ratingsReviews = scrapRatingReviews(doc);
           
       // Creating the product
       Product product = ProductBuilder.create()
@@ -69,6 +74,7 @@ public class BrasilAmarosbichosCrawler extends Crawler {
           .setStock(stock)
           .setMarketplace(marketplace)
           .setOffers(offers)
+          .setRatingReviews(ratingsReviews)
           .build();
       
       products.add(product);
@@ -109,5 +115,59 @@ public class BrasilAmarosbichosCrawler extends Crawler {
     }
     
     return prices;
+  }
+  
+  private RatingsReviews scrapRatingReviews(Document doc) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+    
+    Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".comments-wrapper [itemprop=\"ratingCount\"]", "content", 0);
+    Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".comments-wrapper [itemprop=\"ratingValue\"]", "", false, '.', session);
+    Integer totalWrittenReviews = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".comments-wrapper [itemprop=\"reviewCount\"]", "content", 0);
+    AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+    
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setTotalWrittenReviews(totalWrittenReviews);
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    
+    return ratingReviews;
+  }
+  
+  private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
+    
+    Elements reviews = doc.select(".product-comment-list > .customer-comments .stars > .rating-stars");
+    
+    for(Element review : reviews) {
+      if(review.hasAttr("data-score")) {
+        Integer val = Integer.parseInt(review.attr("data-score").replaceAll("[^0-9]+", ""));     
+        
+        switch(val) {
+          case 1: star1 += 1; 
+          break;
+          case 2: star2 += 1; 
+          break;
+          case 3: star3 += 1; 
+          break;
+          case 4: star4 += 1; 
+          break;
+          case 5: star5 += 1; 
+          break;
+        }
+      }
+    }
+    
+    return new AdvancedRatingReview.Builder()
+        .totalStar1(star1)
+        .totalStar2(star2)
+        .totalStar3(star3)
+        .totalStar4(star4)
+        .totalStar5(star5)
+        .build();
   }
 }
