@@ -68,6 +68,7 @@ public class PortoalegreBichopetstoreCrawler extends CrawlerRankingKeywords {
       String onclick = internalPidElement.attr("onclick");
       
       internalPid = onclick.replace("cart.add('", "").replace("');", "");
+      if(internalPid.isEmpty()) internalPid = null;
     }
 
     return internalPid;
