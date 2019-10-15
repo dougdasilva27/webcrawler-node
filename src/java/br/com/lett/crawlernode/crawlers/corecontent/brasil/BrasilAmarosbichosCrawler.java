@@ -29,6 +29,7 @@ public class BrasilAmarosbichosCrawler extends Crawler {
   
   public BrasilAmarosbichosCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -46,9 +47,9 @@ public class BrasilAmarosbichosCrawler extends Crawler {
       Prices prices = scrapPrices(doc, price);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrump-container > ul > li span[itemprop=\"title\"]", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-sku-image .image-highlight a.main-product img", 
-          Arrays.asList("src"), "https:", HOME_PAGE);
+          Arrays.asList("data-zoom-image", "src"), "https:", HOME_PAGE);
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-sku-image .image-highlight a.main-product img", 
-          Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
+          Arrays.asList("data-zoom-image", "src"), "https:", HOME_PAGE, primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".descriptions"));
       Integer stock = null;
       boolean available = doc.selectFirst(".buybox .compra-wrapper") != null;
