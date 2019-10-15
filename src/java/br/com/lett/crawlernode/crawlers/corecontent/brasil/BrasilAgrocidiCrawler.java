@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -13,6 +16,7 @@ import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -35,12 +39,18 @@ public class BrasilAgrocidiCrawler extends Crawler {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".principal .nome-produto", false);
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".principal .preco-produto .preco-promocional", null, false, ',', session);
       Prices prices = crawlPrices(doc, price);
-      boolean available = !doc.select(".principal .disponivel").isEmpty();;
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a strong");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fotorama img", Arrays.asList("src"), "https:", "www.terabyteshop.com.br");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fotorama img", Arrays.asList("src"), "https:",
-          "www.terabyteshop.com.br", primaryImage);
-      String description = crawlDescription(doc);
+      boolean available = !doc.select(".principal .disponivel").isEmpty();
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:first-child) a");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
+          ".produto-thumbs:not(.thumbs-horizontal) #carouselImagem ul.miniaturas:first-child  a",
+          Arrays.asList("data-imagem-grande"), "https:", "cdn.awsli.com.br");
+
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
+          ".produto-thumbs:not(.thumbs-horizontal) #carouselImagem ul.miniaturas:first-child  a",
+          Arrays.asList("data-imagem-grande"), "https:", "cdn.awsli.com.br", primaryImage);
+
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(
+          ".row-fluid:not(#comentarios-container) > div.span12  .abas-custom .tab-content"));
 
       // Creating the product
       Product product = ProductBuilder.create()
@@ -70,24 +80,28 @@ public class BrasilAgrocidiCrawler extends Crawler {
 
   }
 
-  private String crawlDescription(Document doc) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   private Prices crawlPrices(Document doc, Float price) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+    Prices prices = new Prices();
 
-  private Float crawlPrice(Document doc) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+    if (price != null) {
+      Map<Integer, Float> installments = new HashMap<>();
+      installments.put(1, price);
+      prices.setBankTicketPrice(price);
 
-  private String crawlInternalPid(Document doc) {
-    // TODO Auto-generated method stub
-    return null;
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".principal .preco-produto  .preco-parcela", doc, false, "x");
+      if (!pair.isAnyValueNull()) {
+        installments.put(pair.getFirst(), pair.getSecond());
+      }
+
+      prices.insertCardInstallment(Card.VISA.toString(), installments);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+      prices.insertCardInstallment(Card.DINERS.toString(), installments);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+      prices.insertCardInstallment(Card.AMEX.toString(), installments);
+      prices.insertCardInstallment(Card.ELO.toString(), installments);
+    }
+
+    return prices;
   }
 
   private boolean isProductPage(Document doc) {
