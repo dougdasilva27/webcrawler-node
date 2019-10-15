@@ -56,7 +56,7 @@ public class PortoalegreBichopetstoreCrawler extends Crawler {
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".thumbnails > li.image-additional > a.thumbnail", 
           Arrays.asList("href"), "https:", HOME_PAGE, primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#content p"));
-      boolean available = !doc.selectFirst("#content #otp-stock").text().contains(" a ");
+      boolean available = doc.selectFirst("#content #otp-stock") != null && !doc.selectFirst("#content #otp-stock").text().contains(" a ");
       Integer stock = null;
       Marketplace marketplace = null;
 
