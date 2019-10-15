@@ -84,6 +84,7 @@ public class SaopauloMamboCrawler extends Crawler {
         String internalPid = crawlInternalPid(json);
         String internalId = internalPid;
         String name = JSONUtils.getStringValue(json, "displayName");
+        boolean available = scrapAvailability(internalPid);
         CategoryCollection categories = new CategoryCollection(); // This crawler is very hard to capture categories
         String primaryImage = crawlPrimaryImage(json);
         String secondaryImages = crawlSecondaryImages(json, primaryImage);
@@ -97,8 +98,6 @@ public class SaopauloMamboCrawler extends Crawler {
           price = price == null ? CrawlerUtils.getFloatValueFromJSON(jsonSku, "listPrice") : price;
 
           Prices prices = crawlPrices(price, jsonSku, pageJson);
-          Integer stock = crawlStock(JSONUtils.getStringValue(jsonSku, "repositoryId"), internalPid);
-          boolean available = stock != null && stock > 0;
           String description = crawlDescription(json, jsonSku);
 
           // Creating the product
@@ -145,20 +144,18 @@ public class SaopauloMamboCrawler extends Crawler {
     return internalPid;
   }
 
-  private Integer crawlStock(String internalId, String internalPid) {
-    Integer stock = 0;
+  private boolean scrapAvailability(String internalPid) {
+    boolean available = false;
 
-    String url = "https://www.mambo.com.br/ccstoreui/v1/stockStatus/" + internalPid + "?skuId=" + internalId + "&catalogId=";
+    String url = "https://www.mambo.com.br/ccstoreui/v1/stockStatus/" + internalPid;
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     JSONObject stockJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-    if (stockJson.has("inStockQuantity") && stockJson.get("inStockQuantity") instanceof Integer) {
-      stock = stockJson.getInt("inStockQuantity");
-    } else if (stockJson.has("orderableQuantity") && stockJson.get("orderableQuantity") instanceof Integer) {
-      stock = stockJson.getInt("orderableQuantity");
+    if (stockJson.has("stockStatus") && !stockJson.isNull("stockStatus")) {
+      available = stockJson.get("stockStatus").toString().equalsIgnoreCase("IN_STOCK");
     }
 
-    return stock;
+    return available;
   }
 
   private String crawlPrimaryImage(JSONObject json) {
