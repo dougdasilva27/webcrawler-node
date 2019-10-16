@@ -622,6 +622,23 @@ public class CrawlerUtils {
   }
 
   /**
+   * Return a Cookie apache
+   * 
+   * @param name
+   * @param value
+   * @param domain
+   * @param path
+   * @return
+   */
+  public static Cookie setCookie(String name, String value, String domain, String path) {
+    BasicClientCookie cookie = new BasicClientCookie(name, value);
+    cookie.setDomain(domain);
+    cookie.setPath(path);
+
+    return cookie;
+  }
+
+  /**
    * Crawl skuJson from html in VTEX Sites
    * 
    * @param document
@@ -1434,16 +1451,13 @@ public class CrawlerUtils {
 
     return total;
   }
-  
+
   /**
-   * Utility method to extract integer from from a html with is contained on a 
-   * attribute of a html tag.
+   * Utility method to extract integer from from a html with is contained on a attribute of a html
+   * tag. <br>
    * <br>
-   * <br>
-   * Ex:
-   * <br>
-   * < tag value="37"/>
-   * <br>
+   * Ex: <br>
+   * < tag value="37"/> <br>
    * Extracts: 37
    * 
    * @param doc

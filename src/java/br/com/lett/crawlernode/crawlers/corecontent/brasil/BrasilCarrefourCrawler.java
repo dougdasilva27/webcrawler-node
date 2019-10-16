@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,14 +22,17 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
+import models.RatingsReviews;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -47,6 +51,7 @@ public class BrasilCarrefourCrawler extends Crawler {
   public BrasilCarrefourCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.FETCHER);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -60,7 +65,7 @@ public class BrasilCarrefourCrawler extends Crawler {
     return Jsoup.parse(fetchPage(session.getOriginalURL()));
   }
 
-  private String fetchPage(String url) {
+  protected String fetchPage(String url) {
     Map<String, String> headers = new HashMap<>();
     headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
     headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
@@ -103,10 +108,27 @@ public class BrasilCarrefourCrawler extends Crawler {
       Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
       Float price = available ? crawlPrice(prices) : null;
 
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
+      RatingsReviews rating = crawlRatingReviews(doc);
+
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(marketplace)
+          .setOffers(offers)
+          .setRatingReviews(rating)
+          .build();
 
       products.add(product);
 
@@ -209,7 +231,7 @@ public class BrasilCarrefourCrawler extends Crawler {
 
               try {
                 Offer offer = new OfferBuilder().setInternalSellerId(miraklVendor.get("code").toString()).setMainPagePosition(position)
-                    .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(priceJson, "value")).setSellerFullName(sellerName)
+                    .setMainPrice(JSONUtils.getDoubleValueFromJSON(priceJson, "value", true)).setSellerFullName(sellerName)
                     .setSlugSellerName(CommonMethods.toSlug(sellerName)).setIsBuybox(true).build();
                 offers.add(offer);
               } catch (OfferException e) {
@@ -490,5 +512,106 @@ public class BrasilCarrefourCrawler extends Crawler {
 
 
     return prices;
+  }
+
+  private RatingsReviews crawlRatingReviews(Document document) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+
+    Map<String, Integer> ratingDistribution = crawlRatingDistribution(document);
+    AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValueWithRate(ratingDistribution);
+
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setTotalRating(computeTotalReviewsCount(ratingDistribution));
+    ratingReviews.setAverageOverallRating(crawlAverageOverallRating(document));
+
+    return ratingReviews;
+  }
+
+  private Integer computeTotalReviewsCount(Map<String, Integer> ratingDistribution) {
+    Integer totalReviewsCount = 0;
+
+    for (String rating : ratingDistribution.keySet()) {
+      if (ratingDistribution.get(rating) != null)
+        totalReviewsCount += ratingDistribution.get(rating);
+    }
+
+    return totalReviewsCount;
+  }
+
+  private Double crawlAverageOverallRating(Document document) {
+    Double avgOverallRating = null;
+
+    Element avgOverallRatingElement =
+        document.select(".sust-review-container .block-review-pagination-bar div.block-rating div.rating.js-ratingCalc").first();
+    if (avgOverallRatingElement != null) {
+      String dataRatingText = avgOverallRatingElement.attr("data-rating").trim();
+      try {
+        JSONObject dataRating = new JSONObject(dataRatingText);
+        if (dataRating.has("rating")) {
+          avgOverallRating = dataRating.getDouble("rating");
+        }
+      } catch (JSONException e) {
+        Logging.printLogWarn(logger, session, "Error converting String to JSONObject");
+      }
+    }
+
+    return avgOverallRating;
+  }
+
+  private Map<String, Integer> crawlRatingDistribution(Document document) {
+    Map<String, Integer> ratingDistributionMap = new HashMap<String, Integer>();
+
+    Elements ratingLineElements = document.select("div.tab-review ul.block-list-starbar li");
+    for (Element ratingLine : ratingLineElements) {
+      Element ratingStarElement = ratingLine.select("div").first();
+      Element ratingStarCount = ratingLine.select("div").last();
+
+      if (ratingStarElement != null && ratingStarCount != null) {
+        String ratingStarText = ratingStarElement.text();
+        String ratingCountText = ratingStarCount.attr("data-star");
+
+        List<String> parsedNumbers = MathUtils.parseNumbers(ratingStarText);
+        if (parsedNumbers.size() > 0 && !ratingCountText.isEmpty()) {
+          ratingDistributionMap.put(parsedNumbers.get(0), Integer.parseInt(ratingCountText));
+        }
+      }
+    }
+
+    return ratingDistributionMap;
+  }
+
+  public static AdvancedRatingReview getTotalStarsFromEachValueWithRate(Map<String, Integer> ratingDistribution) {
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
+
+    for (Map.Entry<String, Integer> entry : ratingDistribution.entrySet()) {
+
+      if (entry.getKey().equals("1")) {
+        star1 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("2")) {
+        star2 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("3")) {
+        star3 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("4")) {
+        star4 = entry.getValue();
+      }
+
+      if (entry.getKey().equals("5")) {
+        star5 = entry.getValue();
+      }
+
+    }
+
+    return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
   }
 }
