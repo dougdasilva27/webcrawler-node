@@ -7,9 +7,12 @@ import java.util.List;
 import java.util.Map;
 import org.apache.xml.utils.URI;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -55,7 +58,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       String newUrl = internalId != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb > a:not(:first-child)");
       String name = crawlName(doc);
-      Float price = crawlPrice(doc);
+      Float price = crawlPrice(internalId, internalPid);
       boolean available = price != null;
       String defaultImage = CrawlerUtils.scrapUrl(doc, "meta[property=\"og:image\"]", "content", "https", "img.angeloni.com.br");
       String host = defaultImage != null ? new URI(defaultImage).getHost() : "img.angeloni.com.br";
@@ -114,10 +117,15 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     return null;
   }
 
-  private Float crawlPrice(Document doc) {
+  private Float crawlPrice(String internalId, String internalPid) {
     Float price = null;
 
-    Element elementPrice = doc.selectFirst(".content__desc-prod__box-valores");
+    String url = "https://www.angeloni.com.br/super/ajax/productDetailPriceAjax.jsp?productId=" + internalPid
+        + "&skuId=" + internalId + "&ajax=&_=1571244043146";
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    Document docPrice = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+
+    Element elementPrice = docPrice.selectFirst(".content__desc-prod__box-valores");
     if (elementPrice != null) {
       price = Float.parseFloat(elementPrice.attr("content"));
     }
