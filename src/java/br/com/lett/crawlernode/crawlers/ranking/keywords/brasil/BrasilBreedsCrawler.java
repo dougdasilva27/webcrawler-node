@@ -9,7 +9,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilBreedsCrawler extends CrawlerRankingKeywords {
   
-  private static final String HOME_PAGE = "https://www.breeds.com.br/";
+  private static final String HOME_PAGE = "breeds.com.br/";
 
   public BrasilBreedsCrawler(Session session) {
     super(session);
@@ -20,7 +20,7 @@ public class BrasilBreedsCrawler extends CrawlerRankingKeywords {
     this.pageSize = 21;
     this.log("Página " + this.currentPage);
 
-    String url = "https://busca.breeds.com.br/" 
+    String url = "https://busca." + HOME_PAGE 
         + this.keywordEncoded + "?pagina=" 
         + this.currentPage;
     
