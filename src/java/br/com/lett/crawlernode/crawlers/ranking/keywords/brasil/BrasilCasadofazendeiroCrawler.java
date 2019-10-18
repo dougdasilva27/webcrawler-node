@@ -11,7 +11,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilCasadofazendeiroCrawler extends CrawlerRankingKeywords {
   
-  private static final String HOME_PAGE = "www.casafazendeiro.com.br";
+  private static final String HOME_PAGE = "casafazendeiro.com.br";
 
   public BrasilCasadofazendeiroCrawler(Session session) {
     super(session);
@@ -22,7 +22,7 @@ public class BrasilCasadofazendeiroCrawler extends CrawlerRankingKeywords {
     this.pageSize = 15;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.casafazendeiro.com.br/index.php?route=product/search&search=" + 
+    String url = "https://" + HOME_PAGE + "/index.php?route=product/search&search=" + 
         this.keywordEncoded + "&page=" +  this.currentPage;
     
     this.log("Link onde são feitos os crawlers: " + url);
