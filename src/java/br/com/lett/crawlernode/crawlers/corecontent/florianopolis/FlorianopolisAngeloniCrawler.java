@@ -58,8 +58,8 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       String newUrl = internalId != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb > a:not(:first-child)");
       String name = crawlName(doc);
-      Float price = crawlPrice(internalId, internalPid);
-      boolean available = price != null;
+      boolean available = doc.select(".box-sem-estoque").isEmpty();
+      Float price = available ? crawlPrice(internalId, internalPid) : null;
       String defaultImage = CrawlerUtils.scrapUrl(doc, "meta[property=\"og:image\"]", "content", "https", "img.angeloni.com.br");
       String host = defaultImage != null ? new URI(defaultImage).getHost() : "img.angeloni.com.br";
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".box-galeria img", Arrays.asList("data-zoom-image", "src"), "https", host);
