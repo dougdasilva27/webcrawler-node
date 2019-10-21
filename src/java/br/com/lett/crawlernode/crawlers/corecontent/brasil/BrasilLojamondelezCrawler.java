@@ -94,7 +94,6 @@ public class BrasilLojamondelezCrawler extends Crawler {
       JSONObject productJson = extractProductData(productJsonArray);
 
       String internalPid = crawlInternalPid(productJson);
-      List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#info-abas-mobile"));
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"),
@@ -110,6 +109,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
         JSONObject skuJson = (JSONObject) obj;
 
         String internalId = crawlInternalId(skuJson);
+        List<String> eans = Arrays.asList(internalId);
         String name = crawlName(skuJson);
         Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
 
