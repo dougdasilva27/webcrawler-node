@@ -10,12 +10,12 @@ import java.util.Map;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -23,13 +23,14 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilLojamondelezCrawler extends Crawler {
 
   private static final String HOME_PAGE = "https://www.lojamondelez.com.br/";
+  private static final String IMAGES_HOST = "images-mondelez.ifcshop.com.br";
 
   private static final String LOGIN_URL = "https://secure.lojamondelez.com.br/ckout/api/v2/customer/login";
   private static final String CNPJ = "33033028004090";
@@ -86,59 +87,96 @@ public class BrasilLojamondelezCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (!doc.select(".infoProduct").isEmpty()) {
-      String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true);
-      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".infoProduct [data-product-id]", "data-product-id");
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.nameProduct", true);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".bestPrice .val", null, true, ',', session);
-      boolean available = doc.selectFirst(".withStock") != null;
-      Prices prices = scrapPrices(price);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.thumb-link", Arrays.asList("data-zoom-image", "data-img-medium", "href"),
-          "https", "i1-mondelez.a8e.net.br");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "a.thumb-link", Arrays.asList("data-zoom-image", "data-img-medium",
-          "href"), "https", "i1-mondelez.a8e.net.br", primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".description-product"));
-      List<String> eans = Arrays.asList(internalId);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-breadcrumb a[href]:not(:first-child)");
+    if (isProductPage(doc)) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // Creating the product
-      Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setInternalPid(internalPid)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setMarketplace(new Marketplace())
-          .setEans(eans)
-          .build();
+      JSONArray productJsonArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
+      JSONObject productJson = extractProductData(productJsonArray);
 
-      products.add(product);
+      String internalPid = crawlInternalPid(productJson);
+      List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
+      String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#info-abas-mobile"));
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"),
+          "https", IMAGES_HOST);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href",
+          "src"),
+          "https", IMAGES_HOST, primaryImage);
+
+      JSONArray productsArray =
+          productJson.has("productSKUList") && !productJson.isNull("productSKUList") ? productJson.getJSONArray("productSKUList") : new JSONArray();
+
+      for (Object obj : productsArray) {
+        JSONObject skuJson = (JSONObject) obj;
+
+        String internalId = crawlInternalId(skuJson);
+        String name = crawlName(skuJson);
+        Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
+
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(new Prices())
+            .setAvailable(false)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setEans(eans)
+            .build();
+
+        products.add(product);
+      }
+
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
+
   }
 
-  private Prices scrapPrices(Float price) {
-    Prices prices = new Prices();
+  private JSONObject extractProductData(JSONArray productJsonArray) {
+    JSONObject firstObjectFromArray = productJsonArray.length() > 0 ? productJsonArray.getJSONObject(0) : new JSONObject();
+    return firstObjectFromArray.has("productData") ? firstObjectFromArray.getJSONObject("productData") : firstObjectFromArray;
+  }
 
-    if (price != null) {
-      Map<Integer, Float> installments = new HashMap<>();
-      installments.put(1, price);
+  private boolean isProductPage(Document doc) {
+    return !doc.select(".container #detalhes-container").isEmpty();
+  }
 
-      prices.setBankTicketPrice(price);
-      prices.insertCardInstallment(Card.VISA.toString(), installments);
+  private String crawlInternalId(JSONObject skuJson) {
+    String internalId = null;
+
+    if (skuJson.has("sku") && !skuJson.isNull("sku")) {
+      internalId = skuJson.get("sku").toString();
     }
 
-    return prices;
+    return internalId;
+  }
+
+  private String crawlInternalPid(JSONObject productJson) {
+    String internalPid = null;
+
+    if (productJson.has("productID") && !productJson.isNull("productID")) {
+      internalPid = productJson.get("productID").toString();
+    }
+
+    return internalPid;
+  }
+
+  private String crawlName(JSONObject skuJson) {
+    String name = null;
+
+    if (skuJson.has("name") && skuJson.get("name") instanceof String) {
+      name = skuJson.getString("name");
+    }
+
+    return name;
   }
 }

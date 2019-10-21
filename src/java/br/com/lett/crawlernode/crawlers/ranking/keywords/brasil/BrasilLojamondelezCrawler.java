@@ -71,12 +71,13 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     this.pageSize = 24;
-    String url = "https://www.lojamondelez.com.br/search/" + this.keywordEncoded + "?page=" + this.currentPage;
+    String url = "https://www.lojamondelez.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + this.keywordEncoded
+        + "&ordenacao=6&limit=24";
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, this.cookies);
 
-    Elements products = this.currentDoc.select(".shelf-content-itens > [data-product-id]");
+    Elements products = this.currentDoc.select(".shelf-content-items > [data-ean]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -84,8 +85,8 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = e.attr("data-product-id");
-        String productUrl = CrawlerUtils.scrapUrl(e, "a.shelf-url", "href", "https", "www.lojamondelez.com.br");
+        String internalPid = e.attr("data-ean");
+        String productUrl = CrawlerUtils.scrapUrl(e, "a.container-information", "href", "https", "www.lojamondelez.com.br");
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -103,7 +104,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".shelf-total-results-qty", true, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".qtd-produtos", true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 }

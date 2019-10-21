@@ -76,8 +76,6 @@ public class BrasilVilanovamondelezCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "VILANOVA.html");
-
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
