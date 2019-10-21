@@ -25,7 +25,7 @@ import models.prices.Prices;
 
 public class BrasilMartinsmondelezCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://b.martins.com.br/";
+  private static final String HOME_PAGE = "https://www.martinsatacado.com.br";
 
   public BrasilMartinsmondelezCrawler(Session session) {
     super(session);

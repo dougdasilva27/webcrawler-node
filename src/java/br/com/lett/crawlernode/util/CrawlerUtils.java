@@ -611,7 +611,7 @@ public class CrawlerUtils {
     List<Cookie> cookiesResponse = response.getCookies();
     for (Cookie cookieResponse : cookiesResponse) {
       if (cookiesToBeCrawled == null || cookiesToBeCrawled.isEmpty() || cookiesToBeCrawled.contains(cookieResponse.getName())) {
-        cookies.add(setCookie(cookieResponse.getName(), cookieResponse.getValue(), path, domain));
+        cookies.add(setCookie(cookieResponse.getName(), cookieResponse.getValue(), domain, path));
       }
     }
 
@@ -619,22 +619,6 @@ public class CrawlerUtils {
   }
 
 
-  /**
-   * Return a Cookie
-   * 
-   * @param cookieName
-   * @param cookieValue
-   * @param path
-   * @param domain
-   * @return
-   */
-  public static Cookie setCookie(String cookieName, String cookieValue, String path, String domain) {
-    BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
-    cookie.setDomain(domain);
-    cookie.setPath(path);
-
-    return cookie;
-  }
 
   /**
    * Return a Cookie apache
