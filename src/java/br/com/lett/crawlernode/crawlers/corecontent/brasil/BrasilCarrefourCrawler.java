@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,6 +13,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -20,6 +22,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -80,6 +83,8 @@ public class BrasilCarrefourCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "CARREFOUR.html");
+
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -89,7 +94,6 @@ public class BrasilCarrefourCrawler extends Crawler {
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
       String description = crawlDescription(doc);
-      Integer stock = null;
       String internalPid = crawlInternalPid(doc);
       Elements marketplacesElements = doc.select(".list-group-item");
       Map<String, Prices> marketplaceMap;
@@ -97,7 +101,8 @@ public class BrasilCarrefourCrawler extends Crawler {
       Double priceFrom = crawlPriceFrom(doc);
 
       if (marketplacesElements.isEmpty()) {
-        marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalPid);
+        Integer stock = scrapStock(internalId, internalPid, doc);
+        marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalPid, stock);
       } else {
         marketplaceMap = crawlMarketplaceForMutipleSellers(marketplacesElements);
       }
@@ -124,7 +129,6 @@ public class BrasilCarrefourCrawler extends Crawler {
           .setPrimaryImage(primaryImage)
           .setSecondaryImages(secondaryImages)
           .setDescription(description)
-          .setStock(stock)
           .setMarketplace(marketplace)
           .setOffers(offers)
           .setRatingReviews(rating)
@@ -197,15 +201,68 @@ public class BrasilCarrefourCrawler extends Crawler {
     return name;
   }
 
-  private Float crawlMainPagePrice(Document document) {
-    Float price = null;
-    Element specialPrice = document.select(".prince-product-default").first();
+  private Integer scrapStock(String internalId, String internalPid, Document doc) {
+    Integer stock = 0;
 
-    if (specialPrice != null) {
-      price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+    Map<String, String> headers = scrapHeadersForAccessStockApi(doc);
+
+    StringBuilder url = new StringBuilder();
+    url.append("https://api2.carrefour.com.br/cci/publico/cci-ecom-consulta-estoque/v3/content/products/")
+        .append(internalId);
+
+    if (internalPid.startsWith("M")) {
+      url.append("?productPartnerId=").append(internalPid);
     }
 
-    return price;
+    Request request = RequestBuilder.create()
+        .setUrl(url.toString())
+        .setCookies(cookies)
+        .setHeaders(headers)
+        .build();
+
+    JSONObject apiJson = JSONUtils.stringToJson(new ApacheDataFetcher().get(session, request).getBody());
+
+    if (apiJson.has("product") && apiJson.get("product") instanceof JSONObject) {
+      JSONObject product = apiJson.getJSONObject("product");
+
+      if (product.has("stock") && product.get("stock") instanceof JSONObject) {
+        JSONObject stockJson = product.getJSONObject("stock");
+
+        stock = JSONUtils.getIntegerValueFromJSON(stockJson, "quantity", 0);
+      }
+    }
+
+    return stock;
+  }
+
+  private Map<String, String> scrapHeadersForAccessStockApi(Document doc) {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("accept", "application/json, text/javascript, */*; q=0.01");
+    headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+    headers.put("referer", HOME_PAGE);
+
+    String authToken = "apiCatalogAuthorization=\"";
+    String clientToken = "apiCatalogIbmClientId=\"";
+    Elements scripts = doc.select("script");
+    for (Element e : scripts) {
+      String script = e.html().replace(" ", "");
+
+      if (script.contains(authToken) && script.contains(clientToken)) {
+        String auth = CrawlerUtils.extractSpecificStringFromScript(script, authToken, true, "\";", false);
+        String clientId = CrawlerUtils.extractSpecificStringFromScript(script, clientToken, true, "\";", false);
+
+        headers.put(HttpHeaders.AUTHORIZATION, "Basic " + auth);
+        headers.put("X-IBM-Client-Id", clientId);
+
+        break;
+      }
+    }
+
+    return headers;
+  }
+
+  private Float crawlMainPagePrice(Document document) {
+    return CrawlerUtils.scrapFloatPriceFromHtml(document, ".prince-product-default", null, false, ',', session);
   }
 
   private Offers scrapOffers(Document doc, String internalPid) {
@@ -291,14 +348,13 @@ public class BrasilCarrefourCrawler extends Crawler {
     return offers;
   }
 
-  private Map<String, Prices> crawlMarketplaceForSingleSeller(Document document, String internalPid) {
+  private Map<String, Prices> crawlMarketplaceForSingleSeller(Document document, String internalPid, Integer stock) {
     Map<String, Prices> marketplaces = new HashMap<>();
 
     Element oneMarketplaceInfo = document.select(".block-add-cart #moreInformation" + internalPid).first();
     Element oneMarketplace = document.select(".block-add-cart > span").first();
-    Element notifyMeElement = document.select(".text-not-product-avisme").first();
 
-    if (notifyMeElement == null) {
+    if (stock > 0 || oneMarketplace != null) {
       Float price = crawlMainPagePrice(document);
       Prices prices = crawlPrices(price, document);
 
