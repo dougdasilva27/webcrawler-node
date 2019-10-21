@@ -16,15 +16,18 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 
 public class BrasilLojadomecanicoCrawler extends Crawler {
-  private final String HOME_PAGE = "http://www.lojadomecanico.com.br/";
+  private static final String HOME_PAGE = "http://www.lojadomecanico.com.br/";
 
   public BrasilLojadomecanicoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -56,7 +59,8 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
       Float price = CrawlerUtils.getFloatValueFromJSON(jsonIdSkuPrice, "price");
       Prices prices = scrapPrices(doc, price, jsonIdSkuPrice);
       boolean available = doc.selectFirst("#btn-comprar-product") != null;
-      Integer stock = scrapStock(doc, available);;
+      Integer stock = scrapStock(doc, available);
+      RatingsReviews rating = scrapRating(jsonNameDesc);
 
       Product product = ProductBuilder.create()
           .setUrl(session.getOriginalURL())
@@ -73,6 +77,7 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
           .setSecondaryImages(secondaryImages)
           .setDescription(description)
           .setStock(stock)
+          .setRatingReviews(rating)
           .build();
 
       products.add(product);
@@ -167,5 +172,36 @@ public class BrasilLojadomecanicoCrawler extends Crawler {
     }
 
     return stock;
+  }
+
+  private RatingsReviews scrapRating(JSONObject json) {
+    RatingsReviews rating = new RatingsReviews();
+
+    Integer totalNumOfEvaluations = 0;
+    Double avgRating = 0.0;
+
+    if (json.has("aggregateRating")) {
+      json = json.getJSONObject("aggregateRating");
+
+      totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(json, "reviewCount", 0);
+      avgRating = scrapAvgRating(json);
+    }
+
+    rating.setDate(session.getDate());
+    rating.setTotalRating(totalNumOfEvaluations);
+    rating.setAverageOverallRating(avgRating);
+    rating.setTotalWrittenReviews(totalNumOfEvaluations);
+
+    return rating;
+  }
+
+  private Double scrapAvgRating(JSONObject json) {
+    Double avgRating = JSONUtils.getDoubleValueFromJSON(json, "ratingValue", true);
+
+    if (avgRating == null) {
+      avgRating = 0d;
+    }
+
+    return avgRating;
   }
 }
