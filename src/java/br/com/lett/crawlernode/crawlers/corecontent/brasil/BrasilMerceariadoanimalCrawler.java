@@ -23,12 +23,14 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilMerceariadoanimalCrawler extends Crawler {
   
   public BrasilMerceariadoanimalCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   private static final String HOME_PAGE = "https://www.merceariadoanimal.com.br/";
@@ -55,6 +57,8 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
       Integer stock = null;
       boolean available = doc.selectFirst("#hidden_aviseme") == null;
       Marketplace marketplace = null;
+      RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+      
 
       // Creating the product
       Product product = ProductBuilder.create()
@@ -73,6 +77,7 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
           .setDescription(description)
           .setStock(stock)
           .setMarketplace(marketplace)
+          .setRatingReviews(ratingReviews)
           .build();
       
       Elements selectVariations = doc.select(".ProductOptionList .VariationSelect option:not([value=\"\"])");
@@ -185,6 +190,22 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
     }
     
     return prices;
+  }
+  
+  private RatingsReviews scrapRatingsReviews(Document doc) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+    
+    Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, 
+        "[itemprop=\"aggregateRating\"] meta[itemprop=\"ratingCount\"]", "content", 0);
+    Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, "[itemprop=\"aggregateRating\"] meta[itemprop=\"ratingValue\"]", "content", false, '.', session);
+    Integer totalWrittenReviews = doc.select(".ProductReviewList > li").size();
+    
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setTotalWrittenReviews(totalWrittenReviews);
+    
+    return ratingReviews;
   }
   
   private JSONObject getVariationJSON(String variation, String internalPid) {
