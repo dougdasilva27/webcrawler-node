@@ -24,12 +24,6 @@ import models.prices.Prices;
 
 public class BrasilCatdogshopCrawler extends Crawler {
   
-  // Ava: https://www.catdogshop.com.br/caes-e-gatos/antipulgas-carrapatos/coleira-anti-pulgas-e-carrapato-ate-8-kg-seresto-bayer/
-  // Ind: https://www.catdogshop.com.br/caes-e-gatos/comedouros/alimentador-para-caes-e-gatos-playpet-blue-com-aplicativo/
-  // Pro: https://www.catdogshop.com.br/caes-e-gatos/antipulgas-carrapatos/anti-pulgas-advocate-caes-ate-4-kg-com-3-pipetas-bayer/
-  
-  private static final String HOME_PAGE = "catdogshop.com.br/";
-  
   public BrasilCatdogshopCrawler(Session session) {
     super(session);
   }
@@ -58,7 +52,7 @@ public class BrasilCatdogshopCrawler extends Crawler {
         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, 
             "#product-slider > .product-slide > a", Arrays.asList("href"), "https:", "d26lpennugtm8s.cloudfront.net", primaryImage);
         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".description", false);
-        Integer stock = skuJson.getInt("stock");
+        Integer stock = skuJson.has("stock") && skuJson.get("stock") instanceof Integer ? skuJson.getInt("stock") : null;
         boolean available = skuJson.has("available") && skuJson.get("available") instanceof Boolean 
             ? skuJson.getBoolean("available") 
             : false;
