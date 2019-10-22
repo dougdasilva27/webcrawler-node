@@ -44,6 +44,7 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
         
       String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".VariationProductSKU", true);
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#productDetailsAddToCartForm > input[name=\"product_id\"]", "value");
@@ -79,9 +80,11 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
           .setMarketplace(marketplace)
           .build();
       
-      Elements variations = doc.select(".ProductOptionList .VariationSelect option:not([value=\"\"])");
-      if(variations.size() > 0) {
-        for(Element variation : variations) {
+      Elements selectVariations = doc.select(".ProductOptionList .VariationSelect option:not([value=\"\"])");
+      Elements radioVariations = doc.select(".ProductOptionList .Value > ul > li > label");
+      
+      if(!selectVariations.isEmpty()) {
+        for(Element variation : selectVariations) {
           JSONObject json = getVariationJSON(variation.attr("value"), internalPid);
           
           Product clone = product.clone();
@@ -93,13 +96,38 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
           clone.setName(product.getName() + ", " + variation.text().replace("(Indisponível)", "").trim());
           
           clone.setPrice(CrawlerUtils.getFloatValueFromJSON(json, "price", false, true));
-          clone.setPrices(scrapVariationPrices(prices, json));
+          clone.setPrices(scrapVariationPrices(prices, json, clone.getPrice()));
          
           if(json.has("instock") && json.get("instock") instanceof Boolean) {
             clone.setAvailable(json.getBoolean("instock"));
           }
           
           products.add(clone);
+        }
+      } else if(!radioVariations.isEmpty()) {        
+        for(Element variation : radioVariations) {
+          Element input = variation.selectFirst("input");
+          
+          if(input != null) {
+            JSONObject json = getVariationJSON(input.attr("value"), internalPid);
+            
+            Product clone = product.clone();
+            
+            if(json.has("combinationid") && !json.isNull("combinationid")) {
+              clone.setInternalId(json.get("combinationid").toString());
+            }
+            
+            clone.setName(product.getName() + ", " + variation.text().replace("(Indisponível)", "").trim());
+            
+            clone.setPrice(CrawlerUtils.getFloatValueFromJSON(json, "price", false, true));
+            clone.setPrices(scrapVariationPrices(prices, json, clone.getPrice()));
+           
+            if(json.has("instock") && json.get("instock") instanceof Boolean) {
+              clone.setAvailable(json.getBoolean("instock"));
+            }
+            
+            products.add(clone);
+          }
         }
       } else {
         products.add(product);
@@ -176,9 +204,33 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
     return variationJSON;
   }
   
-  // TODO: todo
-  private Prices scrapVariationPrices(Prices prices, JSONObject json) {
+  private Prices scrapVariationPrices(Prices prices, JSONObject json, Float price) {   
+    if(price == null) {
+      return new Prices();
+    }
+    
     Prices clone = prices.clone();
+    
+    if(json.has("checkdescmsg") && json.get("checkdescmsg") instanceof String) {
+      clone.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromString(json.getString("checkdescmsg"), ',', "(", ")", session));
+    }
+    
+    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+    installmentPriceMap.put(1, price);
+    
+    if(json.has("parcmsg") && json.get("parcmsg") instanceof String) {
+      String installmentText = json.getString("parcmsg");
+      
+      Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallmentFromString(installmentText, "x", "juros", true);
+      if (!installment.isAnyValueNull()) {
+        installmentPriceMap.put(installment.getFirst(), installment.getSecond());
+      }
+      
+      clone.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      clone.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      clone.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      clone.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+    }
     
     return clone;
   }
