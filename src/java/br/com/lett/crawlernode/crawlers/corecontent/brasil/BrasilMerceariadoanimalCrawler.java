@@ -27,11 +27,6 @@ import models.prices.Prices;
 
 public class BrasilMerceariadoanimalCrawler extends Crawler {
   
-  // Ava: https://www.merceariadoanimal.com.br/biscrok-multi-500g/
-  // Var: https://www.merceariadoanimal.com.br/bolsa-atenas-1/
-  // Var ind: https://www.merceariadoanimal.com.br/fraldas-higienicas-super-secao-macho/
-  // Ind: https://www.merceariadoanimal.com.br/oral-care-water-additive/
-  
   public BrasilMerceariadoanimalCrawler(Session session) {
     super(session);
   }
