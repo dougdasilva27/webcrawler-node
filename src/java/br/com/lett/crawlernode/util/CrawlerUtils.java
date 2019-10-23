@@ -186,6 +186,47 @@ public class CrawlerUtils {
 
     return price;
   }
+  
+  /**
+   * Scrap simple price from text
+   * 
+   * @param text - string containing price
+   * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+   * @param firstDelimiter
+   * @param lastDelimiter
+   * @param session
+   * @return
+   */
+  public static Float scrapFloatPriceFromString(String text, char priceFormat, String firstDelimiter, String lastDelimiter, Session session) {
+    Float price = null;  
+    
+    String priceStr = text;
+    
+    if (priceStr != null) {
+      
+      int first = priceStr.indexOf(firstDelimiter);  
+      if(first != -1) {
+        priceStr = priceStr.substring(first);
+      }
+      
+      int last = priceStr.indexOf(lastDelimiter);
+      if(last != -1) {
+        priceStr = priceStr.substring(0, last);
+      }
+
+      try {
+        if (priceFormat == '.') {
+          price = MathUtils.parseFloatWithDots(priceStr);
+        } else if (priceFormat == ',') {
+          price = MathUtils.parseFloatWithComma(priceStr);
+        }
+      } catch (NumberFormatException e) {
+        Logging.printLogWarn(LOGGER, session, CommonMethods.getStackTrace(e));
+      }
+    }
+
+    return price;
+  }
 
   /**
    * 
@@ -1353,6 +1394,50 @@ public class CrawlerUtils {
         if (value != null) {
           pair.set(1, value);
         }
+      }
+    }
+
+    return pair;
+  }
+  
+  /**
+   * Crawl simple installment with this text example:
+   * 
+   * 2 (@param delimiter) R$12,90
+   * 
+   * @param text string to search
+   * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros de
+   *        (2.8%)" delimiter will be "x"
+   * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
+   *        lastDelimiter will be "com"
+   * @param lastOccurrenceForLastDelimiter - if lastDelimiter will be last ocurrence on text
+   * @return Pair<Integer, Float>
+   */
+  public static Pair<Integer, Float> crawlSimpleInstallmentFromString(String text, String delimiter, String lastDelimiter,
+      boolean lastOccurrenceForLastDelimiter) {
+    Pair<Integer, Float> pair = new Pair<>();
+    
+    if (text.contains(delimiter) && text.contains(lastDelimiter)) {
+      int x = text.indexOf(delimiter);
+      int y;
+
+      if (lastOccurrenceForLastDelimiter) {
+        y = text.lastIndexOf(lastDelimiter);
+      } else {
+        y = text.indexOf(lastDelimiter, x);
+      }
+
+      String installmentNumber = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+      Float value = MathUtils.parseFloatWithComma(text.substring(x, y));
+
+      if (!installmentNumber.isEmpty() && value != null) {
+        pair.set(Integer.parseInt(installmentNumber), value);
+      }
+    } else if (text.contains("vista")) {
+      Float value = MathUtils.parseFloatWithComma(text);
+
+      if (value != null) {
+        pair.set(1, value);
       }
     }
 
