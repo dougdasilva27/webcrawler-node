@@ -23,12 +23,6 @@ import models.prices.Prices;
 
 public class BrasilPethereCrawler extends Crawler {
   
-  // Nor:    https://www.pethere.com.br/escada-para-pets-pet-one
-  // Var:    https://www.pethere.com.br/racao-royal-canin-para-gatos-adultos-da-raca-persa-persian
-  // No img: https://www.pethere.com.br/caixa-de-transporte-pata-forte-cinza-n2
-  // Ind:    https://www.pethere.com.br/kit-comedouro-para-transporte-western-pet
-  // Pro:    https://www.pethere.com.br/zoetis-apoquel-16mg
-  
   private static final String CDN_URL = "cdn.awsli.com.br";
   
   public BrasilPethereCrawler(Session session) {
