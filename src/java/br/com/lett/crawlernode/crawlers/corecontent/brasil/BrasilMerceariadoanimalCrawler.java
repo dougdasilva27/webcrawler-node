@@ -202,7 +202,7 @@ public class BrasilMerceariadoanimalCrawler extends Crawler {
     Integer totalWrittenReviews = doc.select(".ProductReviewList > li").size();
     
     ratingReviews.setTotalRating(totalNumOfEvaluations);
-    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0.0d);
     ratingReviews.setTotalWrittenReviews(totalWrittenReviews);
     
     return ratingReviews;
