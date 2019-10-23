@@ -37,8 +37,8 @@ public class BrasilCasadofazendeiroCrawler extends Crawler {
 
       String internalId = scrapProductId(doc);
       String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info > ul > li > span", false);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#content h1", true);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#content .price", null, false, ',', session);
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1", true);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price", null, false, ',', session);
       Prices prices = scrapPrices(doc, price);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb > li:not(:last-child) > a", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumbnails > li > .thumbnail", Arrays.asList("href"), "https:", HOME_PAGE);

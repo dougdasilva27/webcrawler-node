@@ -67,7 +67,9 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
       // Creating the product
       Product product = ProductBuilder.create()
           .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
           .setInternalPid(internalPid)
+          .setName(name)
           .setPrice(price)
           .setPrices(prices)
           .setAvailable(available)
@@ -86,7 +88,7 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
           ? new JSONArray(variationElement.attr("data-product_variations")) 
           : null;
       
-      if(variationJsonArray != null && variationJsonArray.length() > 0) {
+      if(variationJsonArray != null && variationJsonArray.length() > 0) {        
         for(Object obj : variationJsonArray) {
           JSONObject json = (JSONObject) obj;
           
@@ -101,7 +103,7 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
           products.add(clone);
           
         }
-      } else {  
+      } else {
         products.add(product);
       }
     } else {
