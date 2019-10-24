@@ -55,7 +55,7 @@ public class BrasilPetshopwebCrawler extends Crawler {
       if (skus.length() > 0) {
 
         for (Object obj : skus) {
-          JSONObject skuJson = (JSONObject) obj;
+          JSONObject skuJson = obj instanceof JSONObject ? (JSONObject) obj : new JSONObject();
 
           if (skuJson.has("idSku") && !skuJson.isNull("idSku")) {
             String internalId = skuJson.get("idSku").toString();
