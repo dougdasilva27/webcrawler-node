@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import models.prices.Prices;
 
 public class BrasilMpozenatoCrawler extends Crawler {
@@ -59,7 +60,7 @@ public class BrasilMpozenatoCrawler extends Crawler {
       products.add(product);
 
     } else {
-
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
     return products;
   }
