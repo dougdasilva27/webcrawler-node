@@ -98,17 +98,6 @@ public class BrasilVilanovaCrawler extends Crawler {
       cookie.setPath("/");
       this.cookies.add(cookie);
     }
-
-    Request requestHome2 = RequestBuilder.create()
-        .setUrl(HOME_PAGE)
-        .setHeaders(headers)
-        .setCookies(this.cookies)
-        .setProxy(this.proxy)
-        .build();
-
-    CommonMethods.saveDataToAFile(Jsoup.parse(this.dataFetcher.get(session, requestHome2).getBody()), Test.pathWrite + "ILUSAO.html");
-
-    System.err.println(cookies);
   }
 
   @Override
@@ -187,8 +176,17 @@ public class BrasilVilanovaCrawler extends Crawler {
   }
 
   private JSONObject extractProductData(JSONArray productJsonArray) {
-    JSONObject firstObjectFromArray = productJsonArray.length() > 0 ? productJsonArray.getJSONObject(0) : new JSONObject();
-    return firstObjectFromArray.has("productData") ? firstObjectFromArray.getJSONObject("productData") : firstObjectFromArray;
+    JSONObject productJson = new JSONObject();
+    Object firstObjectFromArray = productJsonArray.length() > 0 ? productJsonArray.get(0) : null;
+
+    if (firstObjectFromArray instanceof JSONObject) {
+      productJson = (JSONObject) firstObjectFromArray;
+    } else if (firstObjectFromArray instanceof JSONArray) {
+      JSONArray prankArray = (JSONArray) firstObjectFromArray;
+      productJson = prankArray.length() > 0 ? prankArray.getJSONObject(0) : new JSONObject();
+    }
+
+    return productJson.has("productData") ? productJson.getJSONObject("productData") : productJson;
   }
 
   private boolean isProductPage(Document doc) {
