@@ -55,7 +55,7 @@ public class MexicoSuperamaCrawler extends Crawler {
 
       String internalId = crawlInternalId(doc);
       String name = crawlName(doc);
-      Float price = crawlPrice(doc);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".btnAddToCarDetail[data-precio]", "data-precio", true, '.', session);
       Prices prices = crawlPrices(price);
       boolean available = crawlAvailability(doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#breadcrumbNav ul li:not(.mobile):not(.hidden-sm):not(:first-child)");
@@ -116,30 +116,6 @@ public class MexicoSuperamaCrawler extends Crawler {
     }
 
     return name;
-  }
-
-  private Float crawlPrice(Document document) {
-    Float price = null;
-
-    String priceText = null;
-    Element salePriceElement = document.select(".pdp-price").first();
-
-    if (salePriceElement != null) {
-      priceText = salePriceElement.ownText();
-      if (!priceText.isEmpty()) {
-        price = Float.parseFloat(priceText.replaceAll("\\$", "").replaceAll(",", ""));
-      } else {
-        Element ancorPrice = document.selectFirst("a[data-precio]");
-        if (ancorPrice != null) {
-          String dataPrecio = ancorPrice.attr("data-precio").replaceAll("[^0-9.]", "");
-          if (!dataPrecio.isEmpty()) {
-            price = Float.parseFloat(dataPrecio);
-          }
-        }
-      }
-    }
-
-    return price;
   }
 
   private boolean crawlAvailability(Document document) {
