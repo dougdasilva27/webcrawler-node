@@ -97,6 +97,8 @@ public class BrasilPetlazerCrawler extends Crawler {
               
               if(basePrice != null && variationJson.has("price")) {
                 Float priceSum = JSONUtils.getFloatValueFromJSON(variationJson, "price", true);
+                priceSum = priceSum != null ? priceSum : 0.0f;
+                
                 clone.setPrice(basePrice + priceSum);
                 clone.setPrices(scrapPrices(doc, clone.getPrice()));
               }
