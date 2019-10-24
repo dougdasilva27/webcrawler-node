@@ -101,7 +101,7 @@ public class BrasilPetzCrawler extends Crawler {
             products.add(p);
           } else {
             String url = (HOME_PAGE + e.attr("data-urlvariacao")).replace("br//", "br/");
-            Document docVariation = DynamicDataFetcher.fetchPage(webdriver, url, session);
+            Document docVariation = DynamicDataFetcher.fetchPage(this.webdriver, url, session);
 
             Product p = crawlProduct(docVariation, nameVariation);
             p.setInternalPid(internalPid);
@@ -238,7 +238,7 @@ public class BrasilPetzCrawler extends Crawler {
   private String crawlPrimaryImage(Document doc) {
     String primaryImage = null;
 
-    Element image = doc.select(".sp-wrap > a").first();
+    Element image = doc.select(".sp-wrap a").first();
 
     if (image != null) {
       primaryImage = CrawlerUtils.sanitizeUrl(image, "href", "https:", "www.petz.com.br");
@@ -251,7 +251,7 @@ public class BrasilPetzCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    Elements images = doc.select(".sp-wrap > a");
+    Elements images = doc.select(".sp-wrap a");
 
     for (Element e : images) {
       String image = CrawlerUtils.sanitizeUrl(e, "href", "https:", "www.petz.com.br");
