@@ -32,6 +32,7 @@ public class BrasilTudodebichoCrawler extends Crawler {
   
   public BrasilTudodebichoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
