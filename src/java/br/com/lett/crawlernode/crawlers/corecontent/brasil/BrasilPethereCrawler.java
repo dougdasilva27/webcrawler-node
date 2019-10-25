@@ -73,7 +73,7 @@ public class BrasilPethereCrawler extends Crawler {
           .build();
       
       Elements variations = doc.select(".atributo-comum > ul > li > a");
-      if(variations != null) {
+      if(variations != null && !variations.isEmpty()) {
         for(Element variation : variations) {
           String variationId = variation.hasAttr("data-variacao-id") ? variation.attr("data-variacao-id") : null;
           if(variationId == null) {
