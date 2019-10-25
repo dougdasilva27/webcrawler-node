@@ -85,12 +85,12 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = e.attr("data-ean");
+        String internalId = e.attr("data-ean");
         String productUrl = CrawlerUtils.scrapUrl(e, "a.container-information", "href", "https", "www.lojamondelez.com.br");
 
-        saveDataProduct(null, internalPid, productUrl);
+        saveDataProduct(internalId, null, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
