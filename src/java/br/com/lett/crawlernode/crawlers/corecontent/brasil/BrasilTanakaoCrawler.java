@@ -47,7 +47,7 @@ public class BrasilTanakaoCrawler extends Crawler {
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.rsImg", Arrays.asList("data-rsbigimg","href"), "https", HOME_PAGE);
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeria a", Arrays.asList("href"), "https", HOME_PAGE, primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".short-description", ".product-collateral .box-collateral:not(.box-reviews)"));
-      boolean available = doc.selectFirst(".availability") != null && doc.selectFirst(".availability").hasClass("in-stock");
+      boolean available = doc.selectFirst(".availability .in-stock") != null;
           
       // Creating the product
       Product product = ProductBuilder.create()
