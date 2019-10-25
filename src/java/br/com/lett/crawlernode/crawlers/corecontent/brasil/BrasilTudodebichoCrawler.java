@@ -23,6 +23,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilTudodebichoCrawler extends Crawler {
@@ -70,7 +71,8 @@ public class BrasilTudodebichoCrawler extends Crawler {
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
       Integer stock = null;
       Marketplace marketplace = null;
-          
+      RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+      
       // Creating the product
       Product product = ProductBuilder.create()
           .setUrl(session.getOriginalURL())
@@ -83,6 +85,7 @@ public class BrasilTudodebichoCrawler extends Crawler {
           .setDescription(description)
           .setStock(stock)
           .setMarketplace(marketplace)
+          .setRatingReviews(ratingReviews)
           .build();
 
       JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
@@ -142,5 +145,28 @@ public class BrasilTudodebichoCrawler extends Crawler {
     }
     
     return prices;
+  }
+  
+  private RatingsReviews scrapRatingsReviews(Document doc) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+    
+    Integer totalNumOfEvaluations = 0;
+    Integer totalWrittenReviews = 0;
+    Double avgRating = 0.0d;
+    
+    Element ratingElement = doc.selectFirst("[itemprop=\"aggregateRating\"]");
+    if(ratingElement != null) { 
+      
+      totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(ratingElement, "[itemprop=\"ratingCount\"]", "content", 0);
+      totalWrittenReviews = CrawlerUtils.scrapIntegerFromHtmlAttr(ratingElement, "[itemprop=\"reviewCount\"]", "content", 0);
+      avgRating = CrawlerUtils.scrapDoublePriceFromHtml(ratingElement, "[itemprop=\"ratingValue\"]", "content", false, '.', session);
+      
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0.0d);
+      ratingReviews.setTotalWrittenReviews(totalWrittenReviews);
+    }
+    
+    return ratingReviews;
   }
 }
