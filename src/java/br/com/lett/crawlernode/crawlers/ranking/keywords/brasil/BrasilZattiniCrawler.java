@@ -9,6 +9,8 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
 
+  private static final String HOME_PAGE = "zattini.com.br";
+  
   public BrasilZattiniCrawler(Session session) {
     super(session);
   }
@@ -22,7 +24,7 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("#item-list .item[parent-sku]");
+    Elements products = this.currentDoc.select("#item-list .item-card");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -71,10 +73,10 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
   private String crawlProductUrl(Element e) {
     String productUrl = null;
 
-    Element url = e.selectFirst("> a");
+    Element url = e.selectFirst("a");
 
     if (url != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(url, Arrays.asList("href"), "https:", "");;
+      productUrl = CrawlerUtils.sanitizeUrl(url, Arrays.asList("href"), "https", HOME_PAGE);
     }
 
     return productUrl;
