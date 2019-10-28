@@ -372,33 +372,33 @@ public class RappiCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
       
-      long productIdNumber = Long.parseLong(productId);
-      long storeIdNumber = Long.parseLong(storeId);
-      
-      JSONObject payload = new JSONObject();
-      payload.put("operationName", "fetchProductDetails");
-      payload.put("variables", new JSONObject().put("productId", productIdNumber).put("storeId", storeIdNumber));
-      payload.put("query", "query fetchProductDetails($productId: Int!, $storeId: Int!) " +
-          "{\n productDetail(productId: $productId, storeId: $storeId) {\n longDescription\n " +
-          "images {\n name\n }\n toppings {\n id\n description\n toppingTypeId\n " + 
-          "minToppingsForCategories\n maxToppingsForCategories\n index\n presentationTypeId\n " + 
-          "topping {\n id\n description\n toppingCategoryId\n price\n maxLimit\n index\n }\n " + 
-          "}\n nutritionFactsImg {\n name\n }\n additionalInformation {\n attribute\n value\n " + 
-          "}\n ingredients {\n name\n }\n }\n}\n");
-
-      Request request = RequestBuilder.create()
-          .setUrl(DETAILS_API_URL)
-          .setHeaders(headers)
-          .mustSendContentEncoding(false)
-          .setPayload(payload.toString())
-          .build();
-      
-      String page = this.dataFetcher.post(session, request).getBody();
-
-      if (page.startsWith("{") && page.endsWith("}")) {
-        try {
+      try {
+        long productIdNumber = Long.parseLong(productId);
+        long storeIdNumber = Long.parseLong(storeId);
+        
+        JSONObject payload = new JSONObject();
+        payload.put("operationName", "fetchProductDetails");
+        payload.put("variables", new JSONObject().put("productId", productIdNumber).put("storeId", storeIdNumber));
+        payload.put("query", "query fetchProductDetails($productId: Int!, $storeId: Int!) " +
+            "{\n productDetail(productId: $productId, storeId: $storeId) {\n longDescription\n " +
+            "images {\n name\n }\n toppings {\n id\n description\n toppingTypeId\n " + 
+            "minToppingsForCategories\n maxToppingsForCategories\n index\n presentationTypeId\n " + 
+            "topping {\n id\n description\n toppingCategoryId\n price\n maxLimit\n index\n }\n " + 
+            "}\n nutritionFactsImg {\n name\n }\n additionalInformation {\n attribute\n value\n " + 
+            "}\n ingredients {\n name\n }\n }\n}\n");
+  
+        Request request = RequestBuilder.create()
+            .setUrl(DETAILS_API_URL)
+            .setHeaders(headers)
+            .mustSendContentEncoding(false)
+            .setPayload(payload.toString())
+            .build();
+        
+        String page = this.dataFetcher.post(session, request).getBody();
+  
+        if (page.startsWith("{") && page.endsWith("}")) {
           JSONObject apiResponse = new JSONObject(page);
-
+  
           if (apiResponse.has("data") && apiResponse.get("data") instanceof JSONObject) {
             apiResponse = apiResponse.getJSONObject("data");
             
@@ -410,12 +410,12 @@ public class RappiCrawler extends Crawler {
               }
             }
           }
-
-        } catch (Exception e) {
-          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
         }
+      } catch (Exception e) {
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
+    
     
     return productImages;
   }
