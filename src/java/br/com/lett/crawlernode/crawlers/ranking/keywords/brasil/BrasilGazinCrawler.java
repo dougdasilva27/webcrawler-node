@@ -24,7 +24,7 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     this.currentDoc = fetchCurrentPage();
-    Elements products = this.currentDoc.select(".listaprod li[itemprop=\"offers\"]");
+    Elements products = this.currentDoc.select(".listaprod li");
 
     if (!products.isEmpty()) {
 
