@@ -74,7 +74,7 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
     JSONObject products = new JSONObject();
 
     String payload = "{\"requests\":[{\"indexName\":\"farmadelivery_default_products\","
-        + "\"params\":\"query=" + this.keywordWithoutAccents.replace(" ", "%20")
+        + "\"params\":\"query=" + this.keywordEncoded
         + "&hitsPerPage=32&maxValuesPerFacet=30&page=" + (this.currentPage - 1)
         + "&ruleContexts=%5B%22magento_filters%22%2C%22%22%5D&facets=%5B%22brand%22%2C%22"
         + "composicao_new%22%2C%22manufacturer%22%2C%22activation_information%22%2C%22frete_gratis_dropdown%22%2C%22category_ids%22%2C%22"
