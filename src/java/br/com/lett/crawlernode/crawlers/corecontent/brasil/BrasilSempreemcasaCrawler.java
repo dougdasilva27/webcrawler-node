@@ -47,7 +47,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
         String internalId = e.attr("data-variant");
 
         // In this market all products are sold per pack, so variations always have "unidades"
-        String nameVariation = name.concat(" ").concat(e.ownText().trim()).concat(" unidades");
+        String nameVariation = name.concat(" ").concat(e.text().trim());
 
         Prices prices = crawlPrices(doc, internalId);
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.MASTERCARD);
