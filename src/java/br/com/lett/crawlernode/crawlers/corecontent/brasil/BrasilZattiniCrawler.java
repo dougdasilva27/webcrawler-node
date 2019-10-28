@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -41,6 +42,7 @@ public class BrasilZattiniCrawler extends Crawler {
 
   public BrasilZattiniCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -89,12 +91,26 @@ public class BrasilZattiniCrawler extends Crawler {
         String primaryImage = crawlPrimaryImage(doc);
         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".swiper-slide:not(.active) img",
             Arrays.asList("data-src-large", "src"), PROTOCOL, "static.zattini.com.br", primaryImage);
+        RatingsReviews ratingsReviews = scrapRatingsReviews(doc);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setMarketplace(marketplace)
+            .setRatingReviews(ratingsReviews)
+            .build();
 
         products.add(product);
       }
@@ -228,6 +244,60 @@ public class BrasilZattiniCrawler extends Crawler {
     }
 
     return prices;
+  }
+  
+  private RatingsReviews scrapRatingsReviews(Document doc) {
+    RatingsReviews ratingsReviews = new RatingsReviews();
+    ratingsReviews.setDate(session.getDate());
+
+    Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
+
+    ratingsReviews.setTotalRating(totalNumOfEvaluations);
+    ratingsReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingsReviews.setAverageOverallRating(getTotalAvgRating(doc));
+    
+    return ratingsReviews;
+  }
+  
+  /**
+   * Number of ratings appear in html element
+   * 
+   * @param doc
+   * @return
+   */
+  private Integer getTotalNumOfRatings(Document doc) {
+    Integer totalRating = 0;
+    Element rating = doc.selectFirst(".reviews__customerFeedback  h3");
+
+    if (rating != null) {
+      String votes = rating.ownText().replaceAll("[^0-9]", "");
+
+      if (!votes.isEmpty()) {
+        totalRating = Integer.parseInt(votes);
+      }
+    }
+
+    return totalRating;
+  }
+
+  /**
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(Document docRating) {
+    Double avgRating = 0d;
+    Element rating = docRating.selectFirst(".reviews__customerFeedback  [itemprop=\"ratingValue\"]");
+
+    if (rating != null) {
+      String text = rating.text().replaceAll("[^0-9.]", "").trim();
+
+      if (!text.isEmpty()) {
+        avgRating = Double.parseDouble(text);
+      }
+    }
+
+    return avgRating;
   }
 
   private JSONObject crawlChaordicJson(Document doc) {
