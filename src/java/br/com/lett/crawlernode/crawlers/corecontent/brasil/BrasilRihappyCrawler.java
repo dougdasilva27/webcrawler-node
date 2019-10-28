@@ -51,7 +51,8 @@ public class BrasilRihappyCrawler extends Crawler {
 
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-information"));
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".box__product-description",
+          "#caracteristicas table.Especificacoes", "#caracteristicas table.Informacoes-do-Fornecedor"));
 
       // sku data in json
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
