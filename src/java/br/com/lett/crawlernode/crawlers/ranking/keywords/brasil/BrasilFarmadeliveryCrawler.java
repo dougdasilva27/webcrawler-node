@@ -1,124 +1,110 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import com.google.gson.JsonParser;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
 
+  public static final String PRODUCTS_API_URL = "https://gri9dmsahc-dsn.algolia.net/1/indexes/*/queries?"
+      + "x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%20(lite)%203.32.1%3Binstantsearch.js%201.12.1%3BMagento%20integration%20(1.16.0)%3BJS%20"
+      + "Helper%202.26.1&x-algolia-application-id=GRI9DMSAHC&x-algolia-api-key=YmJiZTRhNmQ4ZTcxYzQ1N2E5NTYzZGU1ZjIyNjFjYmI0YjRhYzc2ZDZjYzkxMzQ5ZTQzN2YyY"
+      + "zkzYjNkYTU5YWZpbHRlcnM9Jm51bWVyaWNGaWx0ZXJzPXZpc2liaWxpdHlfc2VhcmNoJTNEMQ%3D%3D";
+
   public BrasilFarmadeliveryCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 36;
-
+    this.pageSize = 32;
     this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String url = "https://www.farmadelivery.com.br/catalogsearch/result/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
-    this.log("Link onde são feitos os crawlers: " + url);
+    JSONObject search = fetchProductsFromAPI();
+    JSONArray arraySkus = search.has("hits") ? search.getJSONArray("hits") : new JSONArray();
 
-    // chama função de pegar url
-    this.currentDoc = fetchDocument(url);
+    if (arraySkus.length() > 0) {
 
-    Elements products = this.currentDoc.select("div .products-grid li.item");
-
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (!products.isEmpty()) {
-      // se o total de busca não foi setado ainda, chama a função para setar
-      if (this.totalProducts == 0)
-        setTotalProducts();
-
-      for (Element e : products) {
-        // InternalPid
-        String internalPid = crawlInternalPid(e);
-
-        // InternalId
-        String internalId = crawlInternalId(e);
-
-        // Url do produto
-        String urlProduct = crawlProductUrl(e);
-
-        saveDataProduct(internalId, internalPid, urlProduct);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+      if (this.totalProducts == 0) {
+        setTotalProducts(search);
       }
+
+      for (Object product : arraySkus) {
+        JSONObject jsonSku = (JSONObject) product;
+        String internalId = JSONUtils.getStringValue(jsonSku, "objectID");
+        String productUrl = JSONUtils.getStringValue(jsonSku, "url");
+
+        saveDataProduct(internalId, null, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+
+        if (this.arrayProducts.size() == productsLimit) {
+          break;
+        }
+      }
+
     } else {
+
       this.result = false;
       this.log("Keyword sem resultado!");
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    Element page = this.currentDoc.select("a.next").first();
-
-    // se elemeno page obtiver algum resultado.
-    if (page != null)
-      return true;
-
-    // não tem próxima página
-    return false;
 
   }
 
+  private void setTotalProducts(JSONObject search) {
+    this.totalProducts = JSONUtils.getIntegerValueFromJSON(search, "nbHits", 0);
+    this.log("Total: " + this.totalProducts);
+  }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("p.amount span").last();
+  private JSONObject fetchProductsFromAPI() {
+    JSONObject products = new JSONObject();
 
-    if (totalElement != null) {
-      String text = totalElement.ownText().replaceAll("[^0-9]", "");
+    String payload = "{\"requests\":[{\"indexName\":\"farmadelivery_default_products\","
+        + "\"params\":\"query=" + this.keywordWithoutAccents.replace(" ", "%20")
+        + "&hitsPerPage=32&maxValuesPerFacet=30&page=" + (this.currentPage - 1)
+        + "&ruleContexts=%5B%22magento_filters%22%2C%22%22%5D&facets=%5B%22brand%22%2C%22"
+        + "composicao_new%22%2C%22manufacturer%22%2C%22activation_information%22%2C%22frete_gratis_dropdown%22%2C%22category_ids%22%2C%22"
+        + "price.BRL.default%22%2C%22color%22%2C%22categories.level0%22%5D&tagFilters=\"}]}";
 
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Content-Type", "application/x-www-form-urlencoded");
+    headers.put("Accept-Encoding", "no");
+
+    Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload)
+        .mustSendContentEncoding(false).build();
+    String page = this.dataFetcher.post(session, request).getBody();
+
+    if (page.startsWith("{") && page.endsWith("}")) {
+      try {
+        // Using google JsonObject to get a JSONObject because this json can have a duplicate key.
+        JSONObject result = new JSONObject(new JsonParser().parse(page).getAsJsonObject().toString());
+
+        if (result.has("results") && result.get("results") instanceof JSONArray) {
+          JSONArray results = result.getJSONArray("results");
+          if (results.length() > 0 && results.get(0) instanceof JSONObject) {
+            products = results.getJSONObject(0);
+          }
+        }
+
+      } catch (Exception e) {
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
     }
 
-    this.log("Total da busca: " + this.totalProducts);
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-    Element internalIdElement = e.select("div.price-box span[id]").first();
-
-    if (internalIdElement != null) {
-      String[] tokens = internalIdElement.attr("id").split("-");
-      internalId = tokens[tokens.length - 1];
-    }
-
-    return internalId;
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-    Element pid = e.select("> span").first();
-
-    if (pid != null) {
-      String[] tokens2 = pid.text().split(":");
-      internalPid = tokens2[tokens2.length - 1].trim();
-    }
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String urlProduct = null;
-    Element urlElement = e.select(" > a").first();
-
-    if (urlElement != null) {
-      urlProduct = urlElement.attr("href");
-    }
-
-    return urlProduct;
+    return products;
   }
 }
