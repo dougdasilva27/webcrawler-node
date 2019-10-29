@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -16,6 +18,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -48,11 +51,27 @@ public class SaopauloPolipetCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
+  private String ajaxToken = null;
+
   @Override
   public void handleCookiesBeforeFetch() {
     Logging.printLogDebug(logger, session, "Adding cookie...");
 
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "www.polipet.com.br", "/", cookies, session, null, dataFetcher);
+    Request request = RequestBuilder.create()
+        .setCookies(cookies)
+        .setUrl(HOME_PAGE)
+        .build();
+    Response response = dataFetcher.get(session, request);
+
+    List<Cookie> cookiesResponse = response.getCookies();
+    for (Cookie cookieResponse : cookiesResponse) {
+      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
+      cookie.setDomain("www.polipet.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+    }
+
+    this.ajaxToken = crawlToken(Jsoup.parse(response.getBody()));
   }
 
   @Override
@@ -62,9 +81,6 @@ public class SaopauloPolipetCrawler extends Crawler {
 
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-      // Token to access apis
-      String token = crawlToken(doc);
 
       String internalPid = crawlInternalPid(doc);
       String name = this.crawlName(doc);
@@ -80,7 +96,7 @@ public class SaopauloPolipetCrawler extends Crawler {
       // the only type of variations found was in product colors
 
       // Variations
-      Map<String, String> skusMap = this.crawlSkuOptions(internalPid, this.session.getOriginalURL(), token);
+      Map<String, String> skusMap = this.crawlSkuOptions(internalPid, this.session.getOriginalURL());
 
       if (skusMap.size() > 1) {
 
@@ -92,7 +108,7 @@ public class SaopauloPolipetCrawler extends Crawler {
         for (Entry<String, String> entry : skusMap.entrySet()) {
 
           String idVariation = entry.getKey();
-          JSONObject skuInformation = crawlSkuInformations(idVariation, internalPid, this.session.getOriginalURL(), token);
+          JSONObject skuInformation = crawlSkuInformations(idVariation, internalPid, this.session.getOriginalURL());
           String variationName = entry.getValue();
           String nameVariation = crawlNameVariation(variationName, name);
           String internalIdVariation = idVariation != null ? internalPid + "-" + idVariation : internalPid;
@@ -156,7 +172,6 @@ public class SaopauloPolipetCrawler extends Crawler {
   private boolean isProductPage(Document doc) {
     return doc.select("#info-product").first() != null;
   }
-
 
   private Float crawlPriceVariation(JSONObject jsonSku, boolean availbale) {
     Float price = null;
@@ -240,12 +255,12 @@ public class SaopauloPolipetCrawler extends Crawler {
    * @param urlProduct
    * @return
    */
-  private JSONObject fetchJSONFromApi(String urlProduct, String payload, String method, String token) {
+  private JSONObject fetchJSONFromApi(String urlProduct, String payload, String method) {
     Map<String, String> headers = new HashMap<>();
 
     headers.put("Referer", urlProduct);
     headers.put("X-AjaxPro-Method", method);
-    headers.put("X-AjaxPro-Token", token);
+    headers.put("X-AjaxPro-Token", this.ajaxToken);
 
     Request request = RequestBuilder.create()
         .setUrl(URL_API)
@@ -254,7 +269,6 @@ public class SaopauloPolipetCrawler extends Crawler {
         .setPayload(payload)
         .build();
     String response = this.dataFetcher.post(session, request).getBody();
-    System.err.println(response);
     return CrawlerUtils.stringToJson(response);
   }
 
@@ -269,12 +283,12 @@ public class SaopauloPolipetCrawler extends Crawler {
    * @param urlProduct
    * @return
    */
-  private Map<String, String> crawlSkuOptions(String internalIdMainPage, String urlProduct, String token) {
+  private Map<String, String> crawlSkuOptions(String internalIdMainPage, String urlProduct) {
     Map<String, String> skusMap = new HashMap<>();
     String payload =
         "{\"ProdutoCodigo\": \"" + internalIdMainPage + "\", \"" + VARIATION_NAME_PAYLOAD + "\": \"0\", \"isRequiredCustomization\": false}";
 
-    JSONObject colorsJson = fetchJSONFromApi(urlProduct, payload, VARIATIONS_AJAX_METHOD, token);
+    JSONObject colorsJson = fetchJSONFromApi(urlProduct, payload, VARIATIONS_AJAX_METHOD);
 
     if (colorsJson.has("value")) {
       String htmlColors = (colorsJson.getJSONArray("value").getString(0)).replaceAll("\t", "");
@@ -302,14 +316,14 @@ public class SaopauloPolipetCrawler extends Crawler {
    * @param urlProduct
    * @return
    */
-  private JSONObject crawlSkuInformations(String idVariation, String internalIdMainPage, String urlProduct, String token) {
+  private JSONObject crawlSkuInformations(String idVariation, String internalIdMainPage, String urlProduct) {
     JSONObject returnJson = new JSONObject();
 
     String payload = "{\"ProdutoCodigo\": \"" + internalIdMainPage + "\", \"CarValorCodigo1\": \"" + idVariation + "\", "
         + "\"CarValorCodigo2\": \"0\", \"CarValorCodigo3\": \"0\", "
         + "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\", \"isRequiredCustomization\": false}";
 
-    JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD, token);
+    JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD);
 
     if (jsonSku.has("value")) {
       JSONArray valueArray = jsonSku.getJSONArray("value");
