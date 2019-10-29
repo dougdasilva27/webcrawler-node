@@ -103,7 +103,7 @@ public class BrasilIkesakiCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    return document.select(".product__main").first() != null;
+    return document.select(".produto").first() != null;
   }
 
   /*******************
