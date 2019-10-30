@@ -423,7 +423,7 @@ public class B2WCrawler extends Crawler {
           Float defaultPrice = CrawlerUtils.getFloatValueFromJSON(info, "defaultPrice", true, false);
 
 
-          if (i == 0) {
+          if (i + 1 <= 3) {
             buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), i + 1);
             Float featuredPrice = null;
 
