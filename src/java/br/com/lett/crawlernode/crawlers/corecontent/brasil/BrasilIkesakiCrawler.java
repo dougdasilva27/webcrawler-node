@@ -83,10 +83,24 @@ public class BrasilIkesakiCrawler extends Crawler {
         eans.add(ean);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setEans(eans)
+            .build();
 
         products.add(product);
       }
@@ -103,7 +117,7 @@ public class BrasilIkesakiCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    return document.select(".product__main").first() != null;
+    return document.select(".produto").first() != null;
   }
 
   /*******************
@@ -295,7 +309,7 @@ public class BrasilIkesakiCrawler extends Crawler {
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
 
-    Element shortDescription = doc.select(".product-characteristics table.Abas-de-informacao").first();
+    Element shortDescription = doc.selectFirst(".product_description");
     if (shortDescription != null) {
       description.append(shortDescription.html());
     }
