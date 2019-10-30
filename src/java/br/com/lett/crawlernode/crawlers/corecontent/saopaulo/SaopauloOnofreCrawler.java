@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.Card;
@@ -58,9 +59,9 @@ public class SaopauloOnofreCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
+      
+      JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
-      String internalId = JSONUtils.getValue(jsonInfo, "sku").toString();
-      String internalPid = internalId;
       String name = JSONUtils.getStringValue(jsonInfo, "name");
       Float price = crawlPrice(jsonInfo);
       Prices prices = crawlPrices(price, doc);
@@ -74,31 +75,36 @@ public class SaopauloOnofreCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
       String ean = JSONUtils.getStringValue(jsonInfo, "gtin13");
       List<String> eans = ean != null ? Arrays.asList(ean) : null;
-
-      RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
-
-      // Creating the product
-      Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setInternalPid(internalPid)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setMarketplace(marketplace)
-          .setEans(eans)
-          .setRatingReviews(ratingReviews)
-          .build();
-
-      products.add(product);
-
+      
+      for(Object obj : skus) {
+        if(obj instanceof String) {
+          String internalId = (String) obj;
+          String internalPid = internalId;
+          RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
+  
+          // Creating the product
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setMarketplace(marketplace)
+              .setEans(eans)
+              .setRatingReviews(ratingReviews)
+              .build();
+    
+          products.add(product);
+        }
+      }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
