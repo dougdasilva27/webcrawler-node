@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -62,35 +63,31 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
    */
   private Document fetchCurrentPage() {
     Document doc = new Document("");
-
-    if (this.currentPage == 1) {
-      String url = "https://www.gazin.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + ".mht";
-      doc = fetchDocument(url);
-      String in = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=in]", "value");
-
-      // this happen because when returns more than one category, we just crawl the first page
-      if (in != null && doc.select("#conteudoProdutosSB > div > .mProdutosEspacoAntPonto").size() < 2) {
-        try {
-          url = "https://www.gazin.com.br/comprar/encontrar.php?des=s&in=" + URLEncoder.encode(in, "UTF-8");
+    
+    try {
+      if (this.currentPage == 1) {
+        String url = "https://www.gazin.com.br/" + URLEncoder.encode(location.replace(" ", "-"), StandardCharsets.ISO_8859_1.toString()) + ".mht";
+        doc = fetchDocument(url);
+        String in = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=in]", "value");
+  
+        // this happen because when returns more than one category, we just crawl the first page
+        if (in != null && doc.select("#conteudoProdutosSB > div > .mProdutosEspacoAntPonto").size() < 2) {
+          url = "https://www.gazin.com.br/comprar/encontrar.php?des=s&in=" + URLEncoder.encode(in, StandardCharsets.ISO_8859_1.toString());
           doc = fetchDocument(url);
-        } catch (UnsupportedEncodingException e) {
-          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
         }
-      }
-    } else {
-      StringBuilder url = new StringBuilder();
-      url.append("https://www.gazin.com.br/comprar/encontrar.php?");
-
-      try {
+      } else {
+        StringBuilder url = new StringBuilder();
+        url.append("https://www.gazin.com.br/comprar/encontrar.php?");
+  
         Elements inputs = this.currentDoc.select(".conteudo .BarraPaginas a:last-child input");
         for (Element e : inputs) {
-          url.append("&").append(e.attr("name")).append("=").append(URLEncoder.encode(e.val(), "UTF-8"));
+          url.append("&").append(e.attr("name")).append("=").append(URLEncoder.encode(e.val(), StandardCharsets.ISO_8859_1.toString()));
         }
 
         doc = fetchDocument(url.toString());
-      } catch (UnsupportedEncodingException e) {
-        Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
+    } catch(UnsupportedEncodingException e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
     }
 
     return doc;
