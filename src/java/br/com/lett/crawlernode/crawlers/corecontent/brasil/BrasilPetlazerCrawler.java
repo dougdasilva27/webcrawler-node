@@ -23,9 +23,9 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilPetlazerCrawler extends Crawler {
-  
+
   private static final String HOME_PAGE = "petlazer.com.br";
-  
+
   public BrasilPetlazerCrawler(Session session) {
     super(session);
   }
@@ -34,10 +34,10 @@ public class BrasilPetlazerCrawler extends Crawler {
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
-    
+
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      
+
       JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".no-display script", "Product.Config(", ");", false, true);
 
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-view [name=\"product\"]", "value");
@@ -50,9 +50,9 @@ public class BrasilPetlazerCrawler extends Crawler {
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeria a", Arrays.asList("href"), "https", HOME_PAGE, primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".box-descricao"));
       Integer stock = null;
-      boolean available = doc.selectFirst(".availability") != null && doc.selectFirst(".availability").hasAttr("in-stock");
+      boolean available = doc.selectFirst(".availability.in-stock") != null;
       Marketplace marketplace = null;
-          
+
       // Creating the product
       Product product = ProductBuilder.create()
           .setUrl(session.getOriginalURL())
@@ -71,41 +71,41 @@ public class BrasilPetlazerCrawler extends Crawler {
           .setStock(stock)
           .setMarketplace(marketplace)
           .build();
-      
-      if(json != null && !json.keySet().isEmpty()) {
+
+      if (json != null && !json.keySet().isEmpty()) {
         String idAttr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".outros-lista-atributos [data-idatributo]", "data-idatributo");
-        if(idAttr != null) {
+        if (idAttr != null) {
           Float basePrice = JSONUtils.getFloatValueFromJSON(json, "basePrice", true);
-          
+
           json = json.has("attributes") && json.get("attributes") instanceof JSONObject ? json.getJSONObject("attributes") : new JSONObject();
           json = json.has(idAttr) && json.get(idAttr) instanceof JSONObject ? json.getJSONObject(idAttr) : new JSONObject();
-          
+
           String code = "";
-          if(json.has("code") && json.get("code") instanceof String) {
+          if (json.has("code") && json.get("code") instanceof String) {
             code = json.getString("code");
           }
-          
+
           JSONArray variations = json.has("options") && json.get("options") instanceof JSONArray ? json.getJSONArray("options") : new JSONArray();
-          for(Object o : variations) {
-            if(o instanceof JSONObject) {
+          for (Object o : variations) {
+            if (o instanceof JSONObject) {
               JSONObject variationJson = (JSONObject) o;
               Product clone = product.clone();
-              
-              if(variationJson.has("label") && variationJson.get("label") instanceof String) {
+
+              if (variationJson.has("label") && variationJson.get("label") instanceof String) {
                 clone.setName(product.getName() + " - " + variationJson.getString("label") + " " + code);
               }
-              
-              if(basePrice != null && variationJson.has("price")) {
+
+              if (basePrice != null && variationJson.has("price")) {
                 Float priceSum = JSONUtils.getFloatValueFromJSON(variationJson, "price", true);
                 priceSum = priceSum != null ? priceSum : 0.0f;
-                
+
                 clone.setPrice(basePrice + priceSum);
                 clone.setPrices(scrapPrices(doc, clone.getPrice()));
               }
-              
-              if(variationJson.has("products") && variationJson.get("products") instanceof JSONArray) {
-                for(Object obj : variationJson.getJSONArray("products")) {
-                  if(obj instanceof String) {
+
+              if (variationJson.has("products") && variationJson.get("products") instanceof JSONArray) {
+                for (Object obj : variationJson.getJSONArray("products")) {
+                  if (obj instanceof String) {
                     Product cloneClone = clone.clone();
                     cloneClone.setInternalId((String) obj);
 
@@ -118,54 +118,54 @@ public class BrasilPetlazerCrawler extends Crawler {
         }
       } else {
         products.add(product);
-      } 
+      }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
-    
+
     return products;
   }
-  
+
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".catalog-product-view") != null;
   }
-  
+
   private Prices scrapPrices(Document doc, Float price) {
     Prices prices = new Prices();
-    
+
     Element parcelaBloco = doc.selectFirst(".parcelaBloco");
-    
-    if(price != null) {
+
+    if (price != null) {
       Float discount = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price-box .priceAvista", "data-desconto", false, '.', session);
-      
-      if(discount != null) {
+
+      if (discount != null) {
         prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price * (1.0 - discount)));
       }
-      
+
       prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session));
-      
+
       Integer maxParcelas = CrawlerUtils.scrapIntegerFromHtmlAttr(parcelaBloco, null, "data-maximo_parcelas", 0);
       Integer maxParcelasSemJuros = CrawlerUtils.scrapIntegerFromHtmlAttr(parcelaBloco, null, "data-maximo_parcelas_sem_juros", 0);
       Float juros = CrawlerUtils.scrapFloatPriceFromHtml(parcelaBloco, null, "data-juros", false, '.', session);
       Float valorMinimo = CrawlerUtils.scrapFloatPriceFromHtml(parcelaBloco, null, "data-valor_minimo", false, '.', session);
-      
+
       // Evitando null pointers
       juros = juros == null ? 0.0f : juros;
-      
-      if(valorMinimo != null) {
-        Integer parcelas = (int)(price / valorMinimo);
-        
+
+      if (valorMinimo != null) {
+        Integer parcelas = (int) (price / valorMinimo);
+
         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-        for(int i = 1; i <= parcelas && i <= maxParcelas; i++) {
-          Float installment = price/i;
-          
-          if(i > maxParcelasSemJuros) {
+        for (int i = 1; i <= parcelas && i <= maxParcelas; i++) {
+          Float installment = price / i;
+
+          if (i > maxParcelasSemJuros) {
             installment += installment * juros;
           }
-          
+
           installmentPriceMap.put(i, MathUtils.normalizeTwoDecimalPlaces(installment));
         }
-        
+
         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
@@ -175,7 +175,7 @@ public class BrasilPetlazerCrawler extends Crawler {
         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
       }
     }
-    
+
     return prices;
   }
 }
