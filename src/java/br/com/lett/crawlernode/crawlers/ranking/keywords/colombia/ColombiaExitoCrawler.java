@@ -167,11 +167,11 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    */
   private String fetchSHA256Key() {
     String hash = "6d98ffeb45b2706036dedc2189973929924433d158b5af169beafa14d3f2898c";
-    String url = "https://exitocol.vteximg.com.br/_v/public/assets/v1/published/bundle/public/react/asset.min.js?"
-        + "v=1&files=exito.icons@2.12.6,common,0,Icon,IconList"
-        + "&files=vtex.store-resources@0.33.2,common,OrderFormContext,Mutations,Queries,PWAContext"
-        + "&files=vtex.store-icons@0.13.4,common,IconSearch,IconCaret,IconCart,IconArrowBack,IconEyeSigh"
-        + "t&files=vtex.styleguide@9.90.5,common,1,Input,Spinner,0&workspace=master";
+    String url = "https://exitocol.vtexassets.com/_v/public/assets/v1/published/bundle/public/react/asset.min.js?v=1"
+        + "&files=exito.icons@2.12.8,common,0,Icon,IconList"
+        + "&files=vtex.store-resources@0.35.0,common,OrderFormContext,Mutations,Queries,0,PWAContext"
+        + "&files=vtex.store-icons@0.13.4,common,IconSearch,IconCaret,IconCart,IconArrowBack,IconEyeSight"
+        + "&files=vtex.styleguide@9.91.3,common,0,1,Input&workspace=master";
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
     String response = this.dataFetcher.get(session, request).getBody().replace(" ", "");
