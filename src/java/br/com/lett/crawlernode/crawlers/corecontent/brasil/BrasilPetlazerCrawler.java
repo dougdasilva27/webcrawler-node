@@ -43,7 +43,7 @@ public class BrasilPetlazerCrawler extends Crawler {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-view [name=\"product\"]", "value");
       String internalPid = internalId;
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h2", true);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "[id*=product-price]", null, true, ',', session);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "[id*=product-price]", null, false, ',', session);
       Prices prices = scrapPrices(doc, price);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image > a", Arrays.asList("href"), "https", HOME_PAGE);
