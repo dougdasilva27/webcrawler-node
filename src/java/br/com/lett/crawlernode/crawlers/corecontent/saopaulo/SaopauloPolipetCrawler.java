@@ -16,6 +16,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -42,7 +43,7 @@ public class SaopauloPolipetCrawler extends Crawler {
 
   public SaopauloPolipetCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.FETCHER);
+    super.config.setFetcher(FetchMode.JAVANET);
   }
 
   @Override
@@ -61,7 +62,7 @@ public class SaopauloPolipetCrawler extends Crawler {
         .setCookies(cookies)
         .setUrl(HOME_PAGE)
         .build();
-    Response response = dataFetcher.get(session, request);
+    Response response = new ApacheDataFetcher().get(session, request);
 
     List<Cookie> cookiesResponse = response.getCookies();
     for (Cookie cookieResponse : cookiesResponse) {
@@ -128,11 +129,23 @@ public class SaopauloPolipetCrawler extends Crawler {
           Prices prices = crawlPrices(doc, priceVariation);
 
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalIdVariation).setInternalPid(internalPid)
-              .setName(nameVariation).setPrice(priceVariation).setPrices(prices).setAvailable(availableVariation)
-              .setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-              .setPrimaryImage(primaryImageVariation).setSecondaryImages(secondaryImagesVariation).setDescription(description).setStock(stock)
-              .setMarketplace(marketplace).build();
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalIdVariation)
+              .setInternalPid(internalPid)
+              .setName(nameVariation)
+              .setPrice(priceVariation)
+              .setPrices(prices)
+              .setAvailable(availableVariation)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImageVariation)
+              .setSecondaryImages(secondaryImagesVariation)
+              .setDescription(description)
+              .setStock(stock)
+              .setMarketplace(marketplace)
+              .build();
 
           products.add(product);
         }
@@ -148,10 +161,23 @@ public class SaopauloPolipetCrawler extends Crawler {
         boolean available = this.crawlAvailability(doc);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalPid).setInternalPid(internalPid)
-            .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalPid)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .build();
 
         products.add(product);
       }
@@ -294,10 +320,8 @@ public class SaopauloPolipetCrawler extends Crawler {
       String htmlColors = (colorsJson.getJSONArray("value").getString(0)).replaceAll("\t", "");
 
       Document doc = Jsoup.parse(htmlColors);
-
-      System.err.println(doc);
-
-      Elements colorsSkus = doc.select("li option");
+      
+      Elements colorsSkus = doc.select("li option:not([value=\"0\"])");
       for (Element e : colorsSkus) {
         skusMap.put(e.val(), e.ownText());
       }
