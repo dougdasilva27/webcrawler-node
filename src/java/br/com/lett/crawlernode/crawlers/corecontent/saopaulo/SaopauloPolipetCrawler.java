@@ -345,7 +345,7 @@ public class SaopauloPolipetCrawler extends Crawler {
 
     String payload = "{\"ProdutoCodigo\": \"" + internalIdMainPage + "\", \"CarValorCodigo1\": \"" + idVariation + "\", "
         + "\"CarValorCodigo2\": \"0\", \"CarValorCodigo3\": \"0\", "
-        + "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\", \"isRequiredCustomization\": false}";
+        + "\"CarValorCodigo4\": \"0\", \"CarValorCodigo5\": \"0\", \"isRequiredCustomization\": false, \"recurrencyId\": \"0\"}";
 
     JSONObject jsonSku = fetchJSONFromApi(urlProduct, payload, SKU_AJAX_METHOD);
 
@@ -464,7 +464,7 @@ public class SaopauloPolipetCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      Element boleto = doc.select("#lblPrecoAVista").first();
+      Element boleto = doc.selectFirst("#lblPrecoAVista");
       if (boleto != null) {
         prices.setBankTicketPrice(MathUtils.parseFloatWithComma(boleto.text()));
       }
