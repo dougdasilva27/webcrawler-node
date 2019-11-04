@@ -65,9 +65,8 @@ public class SaopauloOnofreCrawler extends Crawler {
       
       JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
-      
-      String name = JSONUtils.getStringValue(jsonInfo, "name");
-      name = crawlName(doc, name);
+
+      String name = crawlName(doc, jsonInfo);
       Float price = crawlPrice(jsonInfo);
       Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(jsonInfo);
@@ -118,16 +117,19 @@ public class SaopauloOnofreCrawler extends Crawler {
 
   }
   
-  private String crawlName(Document doc, String name) {
+  private String crawlName(Document doc, JSONObject jsonInfo) {
+	    String name = JSONUtils.getStringValue(jsonInfo, "name");
+	    
 	  	Element el = doc.selectFirst(".product-view .product-info .marca.hide-hover");
 	  	if(el != null) {
-	  		String aux = doc.select(".product-view .product-info .marca.hide-hover").text();
 			name  = name +" "+ el.text();
 	  	}
+	  	
 	  	Element ele = doc.selectFirst(".product-view .product-info .quantidade.hide-hover");
 	  	if(ele != null) {
 			name  = name +" "+ ele.text();
 		}
+	  	
 		return name;
   }
 
