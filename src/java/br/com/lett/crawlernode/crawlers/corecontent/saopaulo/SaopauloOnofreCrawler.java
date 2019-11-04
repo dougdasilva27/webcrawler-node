@@ -119,13 +119,14 @@ public class SaopauloOnofreCrawler extends Crawler {
   }
   
   private String crawlName(Document doc, String name) {
-	  	if(!doc.select(".product-view .product-info .marca.hide-hover").isEmpty()) {
+	  	Element el = doc.selectFirst(".product-view .product-info .marca.hide-hover");
+	  	if(el != null) {
 	  		String aux = doc.select(".product-view .product-info .marca.hide-hover").text();
-			name  = name +" "+ aux;
+			name  = name +" "+ el.text();
 	  	}
-	  	if(!doc.select(".product-view .product-info .quantidade.hide-hover").isEmpty()) {
-	  		String aux2 = doc.select(".product-view .product-info .quantidade.hide-hover").text();
-			name  = name +" "+ aux2;
+	  	Element ele = doc.selectFirst(".product-view .product-info .quantidade.hide-hover");
+	  	if(ele != null) {
+			name  = name +" "+ ele.text();
 		}
 		return name;
   }
