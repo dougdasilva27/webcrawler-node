@@ -166,7 +166,6 @@ public class BrasilApoiomineiroCrawler extends Crawler {
 
           if(pack.has("tradePolicyId") && pack.get("tradePolicyId") instanceof String && pack.getString("tradePolicyId").equals("2")) {            
             if(pack.has("listPrice") && pack.get("listPrice") instanceof Double && pack.has("minQuantity") && pack.get("minQuantity") instanceof Integer) {
-              System.err.println("5");
               quantities.add(new Pair<Double, Integer>(pack.getDouble("listPrice"), pack.getInt("minQuantity")));
             }
           }
