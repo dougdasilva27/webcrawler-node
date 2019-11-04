@@ -8,6 +8,9 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -62,7 +65,12 @@ public class SaopauloOnofreCrawler extends Crawler {
       
       JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
+      Element e = doc.selectFirst(".product-view .product-info .marca.hide-hover");
+      Element elem = doc.selectFirst(".product-view .product-info .quantidade.hide-hover");
+
+      
       String name = JSONUtils.getStringValue(jsonInfo, "name");
+      name = crawlName(doc, name);
       Float price = crawlPrice(jsonInfo);
       Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(jsonInfo);
@@ -111,6 +119,18 @@ public class SaopauloOnofreCrawler extends Crawler {
 
     return products;
 
+  }
+  
+  private String crawlName(Document doc, String name) {
+	  	if(!doc.select(".product-view .product-info .marca.hide-hover").isEmpty()) {
+	  		String aux = doc.select(".product-view .product-info .marca.hide-hover").text();
+			name  = name +" "+ aux;
+	  	}
+	  	if(!doc.select(".product-view .product-info .quantidade.hide-hover").isEmpty()) {
+	  		String aux2 = doc.select(".product-view .product-info .quantidade.hide-hover").text();
+			name  = name +" "+ aux2;
+		}
+		return name;
   }
 
   private boolean isProductPage(Document doc) {
