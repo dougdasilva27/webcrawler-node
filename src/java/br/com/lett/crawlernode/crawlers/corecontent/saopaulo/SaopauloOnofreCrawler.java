@@ -65,9 +65,6 @@ public class SaopauloOnofreCrawler extends Crawler {
       
       JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
-      Element e = doc.selectFirst(".product-view .product-info .marca.hide-hover");
-      Element elem = doc.selectFirst(".product-view .product-info .quantidade.hide-hover");
-
       
       String name = JSONUtils.getStringValue(jsonInfo, "name");
       name = crawlName(doc, name);
