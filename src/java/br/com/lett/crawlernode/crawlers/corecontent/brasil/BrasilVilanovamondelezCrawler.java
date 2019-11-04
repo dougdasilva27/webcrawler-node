@@ -92,8 +92,7 @@ public class BrasilVilanovamondelezCrawler extends Crawler {
           "src"),
           "https", IMAGES_HOST, primaryImage);
 
-      JSONArray productsArray =
-          productJson.has("productSKUList") && !productJson.isNull("productSKUList") ? productJson.getJSONArray("productSKUList") : new JSONArray();
+      JSONArray productsArray = getSkusList(productJson);
 
       for (Object obj : productsArray) {
         JSONObject skuJson = (JSONObject) obj;
@@ -168,4 +167,20 @@ public class BrasilVilanovamondelezCrawler extends Crawler {
 
     return name;
   }
+  
+  private JSONArray getSkusList(JSONObject productJson) {
+     JSONArray skus = new JSONArray();
+     
+     if(productJson.has("productSKUList") && productJson.get("productSKUList") instanceof JSONArray) {
+       skus = productJson.getJSONArray("productSKUList");
+     } else if(productJson.has("productSKUList") && productJson.get("productSKUList") instanceof JSONObject) {
+       JSONObject skusJSON = productJson.getJSONObject("productSKUList");
+       
+       for(String key : skusJSON.keySet()) {
+         skus.put(skusJSON.get(key));
+       }
+     }
+     
+     return skus;
+   }
 }
