@@ -1,15 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -35,6 +41,38 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
   public BrasilDrogarianovaesperancaCrawler(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
+  }
+  
+  @Override
+  protected Document fetch() {
+    return Jsoup.parse(fetchPage(session.getOriginalURL(), session));
+  }
+
+  public String fetchPage(String url, Session session) {
+    Request request = RequestBuilder.create()
+        .setUrl(url)
+        .setCookies(this.cookies)
+        .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+                .mustUseMovingAverage(false)
+                .mustRetrieveStatistics(true)
+                .build()
+        ).setProxyservice(
+            Arrays.asList(
+                ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                ProxyCollection.STORM_RESIDENTIAL_EU,
+                ProxyCollection.STORM_RESIDENTIAL_US
+            )
+        ).build();
+
+    String content = this.dataFetcher.get(session, request).getBody();
+
+    if (content == null || content.isEmpty()) {
+      content = new ApacheDataFetcher().get(session, request).getBody();
+    }
+
+    return content;
   }
 
   @Override
