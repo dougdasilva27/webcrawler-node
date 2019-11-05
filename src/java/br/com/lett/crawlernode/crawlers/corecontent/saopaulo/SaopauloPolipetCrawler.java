@@ -418,16 +418,16 @@ public class SaopauloPolipetCrawler extends Crawler {
    */
   private String getPriceFromJSON(JSONArray skuArray) {
     String price = null;
-
+    
     JSONArray priceArray = skuArray.getJSONArray(0);
 
     if (!priceArray.getString(0).contains("Indisponível")) {
 
       for (int i = 0; i < priceArray.length(); i++) {
-        String temp = priceArray.getString(i);
+        String temp = priceArray.get(i).toString();
 
         if (temp.startsWith("<em>por")) {
-          price = temp.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
+          price = temp.replaceAll("[^0-9,]+", "").replace("\\.", "").replace(",", ".").trim();
           break;
         }
       }
