@@ -122,18 +122,14 @@ public class BrasilFemalepetCrawler extends Crawler {
     
     Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, YOURVIEWS_API_KEY, this.dataFetcher);
     
-    //System.err.println(docRating);
-    //System.err.println(docRating.selectFirst(".yv-col-md-8").outerHtml());
-    
     Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
     Double avgRating = getTotalAvgRating(docRating);
     AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
     
     ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
     ratingReviews.setAverageOverallRating(avgRating);
     ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-    
-    System.err.println(ratingReviews.toString());
     
     return ratingReviews;
   }
