@@ -8,6 +8,9 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -62,7 +65,8 @@ public class SaopauloOnofreCrawler extends Crawler {
       
       JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
-      String name = JSONUtils.getStringValue(jsonInfo, "name");
+
+      String name = crawlName(doc, jsonInfo);
       Float price = crawlPrice(jsonInfo);
       Prices prices = crawlPrices(price, doc);
       boolean available = crawlAvailability(jsonInfo);
@@ -111,6 +115,22 @@ public class SaopauloOnofreCrawler extends Crawler {
 
     return products;
 
+  }
+  
+  private String crawlName(Document doc, JSONObject jsonInfo) {
+	    String name = JSONUtils.getStringValue(jsonInfo, "name");
+	    
+	  	Element el = doc.selectFirst(".product-view .product-info .marca.hide-hover");
+	  	if(el != null) {
+			name  = name +" "+ el.text();
+	  	}
+	  	
+	  	Element ele = doc.selectFirst(".product-view .product-info .quantidade.hide-hover");
+	  	if(ele != null) {
+			name  = name +" "+ ele.text();
+		}
+	  	
+		return name;
   }
 
   private boolean isProductPage(Document doc) {

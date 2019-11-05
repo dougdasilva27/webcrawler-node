@@ -8,7 +8,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -17,6 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.OfferException;
@@ -27,18 +27,12 @@ import models.Offers;
 import models.prices.Prices;
 
 public class MexicoSamsclubCrawler extends Crawler {
-  private static final String HOME_PAGE = "https://super.walmart.com.mx";
+  private static final String IMAGE_URL = "www.sams.com.mx";
 
   public MexicoSamsclubCrawler(Session session) {
     super(session);
   }
-
-  @Override
-  public boolean shouldVisit() {
-    String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
-
+ 
   @Override
   protected Object fetch() {
     String url = session.getOriginalURL();
@@ -67,6 +61,8 @@ public class MexicoSamsclubCrawler extends Crawler {
 
     if (apiJson.has("skuId")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      
+      JSONObject imagesJson = JSONUtils.getJSONValue(JSONUtils.getJSONValue(apiJson, "sku"), "auxiliaryMedia");
 
       String internalId = crawlInternalId(apiJson);
       String name = crawlName(apiJson);
@@ -74,8 +70,8 @@ public class MexicoSamsclubCrawler extends Crawler {
       Prices prices = crawlPrices(price);
       boolean available = crawlAvailability(apiJson);
       CategoryCollection categories = crawlCategories(apiJson);
-      String primaryImage = crawlPrimaryImage(internalId);
-      String secondaryImages = crawlSecondaryImages(internalId);
+      String primaryImage = crawlPrimaryImage(imagesJson);
+      String secondaryImages = crawlSecondaryImages(imagesJson, primaryImage);
       String description = crawlDescription(apiJson);
       Integer stock = null;
 
@@ -87,10 +83,23 @@ public class MexicoSamsclubCrawler extends Crawler {
 
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).setOffers(offers).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices).setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(new Marketplace())
+          .setEans(eans)
+          .setOffers(offers)
+          .build();
 
       products.add(product);
 
@@ -182,34 +191,39 @@ public class MexicoSamsclubCrawler extends Crawler {
 
     return available;
   }
-
-  private String crawlPrimaryImage(String id) {
-
-    return "https://www.sams.com.mx/images/product-images/img_medium/" + id + "m" + ".jpg";
-  }
-
-  /**
-   * Não achei imagens secundarias
-   * 
-   * @param document
-   * @return
-   */
-  private String crawlSecondaryImages(String id) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    for (int i = 1; i < 4; i++) {
-      String img = "https://www.sams.com.mx/images/product-images/img_medium/" + id + "-" + i + "m" + ".jpg";
-
-      Request request = RequestBuilder.create().setUrl(img).setCookies(cookies).build();
-      RequestsStatistics resp = CommonMethods.getLast(this.dataFetcher.get(session, request).getRequests());
-
-      if (resp != null && resp.getStatusCode() > 0 && resp.getStatusCode() < 400) {
-        secondaryImagesArray.put(img);
+  
+  private String crawlPrimaryImage(JSONObject json) {
+    String primaryImage = null;
+    
+    if(json.has("MEDIUM") && json.get("MEDIUM") instanceof JSONObject) {
+      json = json.getJSONObject("MEDIUM");
+      
+      if(json.has("url") && json.get("url") instanceof String) {
+        primaryImage = CrawlerUtils.completeUrl(json.getString("url"), "https:", IMAGE_URL);
       }
     }
-
-
+    
+    return primaryImage;
+  }
+  
+  private String crawlSecondaryImages(JSONObject json, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+    
+    for(String key : json.keySet()) {
+      if(key.contains("MEDIUM") && json.get(key) instanceof JSONObject) {
+        JSONObject imgJson = json.getJSONObject(key);
+        
+        if(imgJson.has("url") && imgJson.get("url") instanceof String) {
+          String secondaryImage = CrawlerUtils.completeUrl(imgJson.getString("url"), "https:", IMAGE_URL);
+          
+          if(!secondaryImage.equals(primaryImage)) {
+            secondaryImagesArray.put(secondaryImage);
+          }
+        }
+      }
+    }
+    
     if (secondaryImagesArray.length() > 0) {
       secondaryImages = secondaryImagesArray.toString();
     }
