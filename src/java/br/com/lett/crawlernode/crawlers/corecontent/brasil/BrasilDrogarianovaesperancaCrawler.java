@@ -271,7 +271,24 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
 
-      Request request = RequestBuilder.create().setUrl(pricesUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+      Request request = RequestBuilder.create()
+            .setUrl(pricesUrl)
+            .setCookies(this.cookies)
+            .setHeaders(headers)
+            .setPayload(payload)
+            .setFetcheroptions(
+                FetcherOptionsBuilder.create()
+                    .mustUseMovingAverage(false)
+                    .mustRetrieveStatistics(true)
+                    .build()
+            ).setProxyservice(
+                Arrays.asList(
+                    ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                    ProxyCollection.STORM_RESIDENTIAL_EU,
+                    ProxyCollection.STORM_RESIDENTIAL_US
+                )
+            ).build();
+      
       JSONObject pricesJson = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
       if (pricesJson.has("d")) {
