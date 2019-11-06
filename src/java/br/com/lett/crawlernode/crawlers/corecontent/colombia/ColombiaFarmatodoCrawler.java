@@ -124,13 +124,10 @@ public class ColombiaFarmatodoCrawler extends Crawler {
     if(!reviewJson.keySet().isEmpty()) {
       Integer totalRating = JSONUtils.getIntegerValueFromJSON(reviewJson, "numReviews", 0);
       Double avgRating = JSONUtils.getDoubleValueFromJSON(JSONUtils.getJSONValue(reviewJson, "primaryRating"), "average", true);
-      Integer missingReviews = JSONUtils.getIntegerValueFromJSON(JSONUtils.getJSONValue(reviewJson, "recommended"), "missing", 0);
-      Integer writtenReviews = totalRating - missingReviews;
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(reviewJson);
       
       ratingsReviews.setTotalRating(totalRating);
       ratingsReviews.setAverageOverallRating(avgRating);      
-      ratingsReviews.setTotalWrittenReviews(writtenReviews < 0 ? 0 : writtenReviews);
       ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
     }
     
