@@ -24,7 +24,7 @@ public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".vitrine li[layout] > div");
+    Elements products = this.currentDoc.select(".vitrine .prateleira li[layout]");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -72,13 +72,23 @@ public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
   }
 
   private String crawlInternalPid(Element e) {
-    return e.attr("data-product-id");
+	  String str = null;
+	  
+	Element el = e.selectFirst("article.product[data-product-id]");
+	
+	  if(el != null) {
+		  if(el.hasAttr("data-product-id")) {
+			  str = e.selectFirst("article.product[data-product-id]").attr("data-product-id");
+		  }
+	  }
+	   
+	  return str;
   }
 
   private String crawlProductUrl(Element e) {
     String productUrl = null;
 
-    Element url = e.select(".shelf-product-name__link").first();
+    Element url = e.selectFirst(".prat_image a[href]");
 
     if (url != null) {
       productUrl = url.attr("href");
