@@ -30,6 +30,7 @@ public class BrasilFemalepetCrawler extends Crawler {
 
   public BrasilFemalepetCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
