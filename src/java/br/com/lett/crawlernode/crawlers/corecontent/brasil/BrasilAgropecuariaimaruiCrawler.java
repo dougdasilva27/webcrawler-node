@@ -118,6 +118,7 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
 	 if(price == null) {
 		 price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price-wrapper .product-page-price .woocommerce-Price-amount", null, true, ',', session);
 	 }
+	 
 	 return price;
   }
   
