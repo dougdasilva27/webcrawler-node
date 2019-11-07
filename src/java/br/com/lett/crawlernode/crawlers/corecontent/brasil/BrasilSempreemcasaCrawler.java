@@ -8,6 +8,9 @@ import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -20,12 +23,13 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilSempreemcasaCrawler extends Crawler {
+  
+  private static final String IMAGES_HOST = "cdn.shopify.com";
+  private static final String HOME_PAGE = "sempreemcasa.com.br";
 
   public BrasilSempreemcasaCrawler(Session session) {
     super(session);
   }
-
-  private static final String IMAGES_HOST = "cdn.shopify.com";
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -72,10 +76,10 @@ public class BrasilSempreemcasaCrawler extends Crawler {
         
         // Fixing wrong urls on postgres
         if(internalId != null && internalPid != null) {
-          String searchUrl = "https://sempreemcasa.com.br/search?q=" + internalPid;
+          String productUrl = fetchProductUrl(internalPid);
           
-          if(!searchUrl.equals(session.getOriginalURL())) {
-            product.setUrl(searchUrl);
+          if(!productUrl.equals(session.getOriginalURL())) {
+            product.setUrl(productUrl);
           }
         }
 
@@ -109,5 +113,18 @@ public class BrasilSempreemcasaCrawler extends Crawler {
     }
 
     return prices;
+  }
+  
+  private String fetchProductUrl(String internalPid) {
+    String url = null;
+    Request request = RequestBuilder.create().setUrl("https://sempreemcasa.com.br/search?q=" + internalPid).setCookies(cookies).build();
+    Document doc = new Document(new FetcherDataFetcher().get(session, request).getBody());
+    String fullUrl = CrawlerUtils.scrapUrl(doc, "#PID" + internalPid + " > a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
+    
+    if(fullUrl != null) {
+      url = fullUrl.split("\\?")[0];
+    }
+    
+    return url;
   }
 }
