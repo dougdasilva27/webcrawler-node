@@ -48,6 +48,16 @@ public class TestHtmlBuilder {
   private static final String BANK_TICKET = "bank_ticket";
   private static final String FROM = "from";
   private static final String EANS = "eans";
+  private static final String RATING = "rating";
+  private static final String OVERALL = "overall";
+  private static final String REVIEWS = "reviews";
+  private static final String WRITTEN = "written";
+
+  private static final String STAR1 = "star1";
+  private static final String STAR2 = "star2";
+  private static final String STAR3 = "star3";
+  private static final String STAR4 = "star4";
+  private static final String STAR5 = "star5";
 
   public static String buildProductHtml(JSONObject productJson, String pathWrite, Session session) {
     MustacheFactory mustacheFactory = new DefaultMustacheFactory();
@@ -114,6 +124,9 @@ public class TestHtmlBuilder {
 
       // Put prices in map
       putPrices(productJson, scopes);
+      
+      // Put ratings in map
+      putRatings(productJson, scopes);
 
       // Execute replace in html
       StringWriter writer = new StringWriter();
@@ -124,7 +137,7 @@ public class TestHtmlBuilder {
       } catch (FileNotFoundException e) {
         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
-
+      
       return writer.toString();
     }
 
@@ -304,7 +317,36 @@ public class TestHtmlBuilder {
       scopes.put(PRICES, pricesMap.entrySet());
     }
   }
-
+  
+  private static void putRatings(JSONObject productJson, Map<String, Object> scopes) {
+    if (productJson.has(RATING) && !productJson.isNull(RATING)) {
+      JSONObject ratingJson = new JSONObject(productJson.getString(RATING));
+      
+      if(ratingJson.has("average_overall_rating")) {
+        scopes.put(OVERALL, ratingJson.get("average_overall_rating"));
+      }
+      
+      if(ratingJson.has("total_reviews")) {
+        scopes.put(REVIEWS, ratingJson.get("total_reviews"));
+      }
+      
+      if(ratingJson.has("total_written_reviews")) {
+        scopes.put(WRITTEN, ratingJson.get("total_written_reviews"));
+      }
+      
+      if(ratingJson.has("rating_star") && ratingJson.get("rating_star") instanceof JSONObject) {
+        JSONObject starJson = ratingJson.getJSONObject("rating_star");
+        
+        if(starJson.has("star_1")) scopes.put(STAR1, starJson.get("star_1"));
+        if(starJson.has("star_2")) scopes.put(STAR2, starJson.get("star_2"));
+        if(starJson.has("star_3")) scopes.put(STAR3, starJson.get("star_3"));
+        if(starJson.has("star_4")) scopes.put(STAR4, starJson.get("star_4"));
+        if(starJson.has("star_5")) scopes.put(STAR5, starJson.get("star_5"));
+      }
+      
+      scopes.put(RATING, ratingJson);
+    }
+  }
 
   private static Map<Object, Object> getMapPricesFromJson(JSONObject prices) {
     Map<Object, Object> pricesMap = new HashMap<>();
