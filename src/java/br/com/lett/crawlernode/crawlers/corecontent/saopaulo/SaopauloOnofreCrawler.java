@@ -9,8 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -62,9 +60,8 @@ public class SaopauloOnofreCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
-      
-      JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
+      JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
       String name = crawlName(doc, jsonInfo);
       Float price = crawlPrice(jsonInfo);
@@ -79,13 +76,13 @@ public class SaopauloOnofreCrawler extends Crawler {
       Marketplace marketplace = new Marketplace();
       String ean = JSONUtils.getStringValue(jsonInfo, "gtin13");
       List<String> eans = ean != null ? Arrays.asList(ean) : null;
-      
-      for(Object obj : skus) {
-        if(obj instanceof String) {
+
+      for (Object obj : skus) {
+        if (obj instanceof String) {
           String internalId = (String) obj;
           String internalPid = internalId;
           RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
-  
+
           // Creating the product
           Product product = ProductBuilder.create()
               .setUrl(session.getOriginalURL())
@@ -105,7 +102,7 @@ public class SaopauloOnofreCrawler extends Crawler {
               .setEans(eans)
               .setRatingReviews(ratingReviews)
               .build();
-    
+
           products.add(product);
         }
       }
@@ -116,21 +113,21 @@ public class SaopauloOnofreCrawler extends Crawler {
     return products;
 
   }
-  
+
   private String crawlName(Document doc, JSONObject jsonInfo) {
-	    String name = JSONUtils.getStringValue(jsonInfo, "name");
-	    
-	  	Element el = doc.selectFirst(".product-view .product-info .marca.hide-hover");
-	  	if(el != null) {
-			name  = name +" "+ el.text();
-	  	}
-	  	
-	  	Element ele = doc.selectFirst(".product-view .product-info .quantidade.hide-hover");
-	  	if(ele != null) {
-			name  = name +" "+ ele.text();
-		}
-	  	
-		return name;
+    String name = JSONUtils.getStringValue(jsonInfo, "name");
+
+    Element el = doc.selectFirst(".product-view .product-info .marca.show-hover");
+    if (el != null) {
+      name = name + " " + el.text();
+    }
+
+    Element ele = doc.selectFirst(".product-view .product-info .quantidade.show-hover");
+    if (ele != null) {
+      name = name + " " + ele.text();
+    }
+
+    return name;
   }
 
   private boolean isProductPage(Document doc) {
