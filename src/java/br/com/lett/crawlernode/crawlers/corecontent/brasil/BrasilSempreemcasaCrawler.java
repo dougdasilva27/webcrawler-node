@@ -69,6 +69,15 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setMarketplace(new Marketplace())
             .build();
+        
+        // Fixing wrong urls on postgres
+        if(internalId != null && internalPid != null) {
+          String searchUrl = "https://sempreemcasa.com.br/search?q=" + internalPid;
+          
+          if(!searchUrl.equals(session.getOriginalURL())) {
+            product.setUrl(searchUrl);
+          }
+        }
 
         products.add(product);
       }
