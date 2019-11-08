@@ -1,10 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -132,9 +136,9 @@ public abstract class CNOVACrawler extends Crawler {
     headers.put("Referer", PROTOCOL + "://" + this.marketHost + "/");
     headers.put("Upgrade-Insecure-Requests", "1");
     headers.put("User-Agent", FetchUtilities.randUserAgent());
-
+    
     Request request = RequestBuilder.create()
-        .setUrl(url)
+        .setUrl(encodeUrlPath(url))
         .setCookies(cookies)
         .setHeaders(headers)
         .setProxyservice(
@@ -145,6 +149,26 @@ public abstract class CNOVACrawler extends Crawler {
             )
         ).build();
     return this.dataFetcher.get(session, request).getBody();
+  }
+  
+  private String encodeUrlPath(String url) {    
+    StringBuilder sb = new StringBuilder();
+    
+    try {
+      URL u = new URL(url);
+      String path = u.getPath();
+      
+      sb.append(u.getProtocol() + "://" + u.getHost());
+      for(String subPath : path.split("/")) {
+        if(subPath.isEmpty()) continue;
+        
+        sb.append("/" + URLEncoder.encode(subPath, StandardCharsets.UTF_8.toString()));
+      }
+    } catch(Exception e) {
+      Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+    }
+    
+    return sb.toString();
   }
 
   @Override
@@ -172,8 +196,7 @@ public abstract class CNOVACrawler extends Crawler {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produtoNome h1 b", true);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb span:not(:first-child) a");
       String primaryImage = scrapPrimaryImage(doc);
-      String secondaryImages = !unnavailableForAll ? CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carouselBox .thumbsImg li a",
-          Arrays.asList("rev", "href", "src"), PROTOCOL, marketHost, primaryImage) : null;
+      String secondaryImages = !unnavailableForAll ? scrapSecondaryImages(doc, primaryImage) : null;
 
       String description = crawlDescription(doc);
 
@@ -213,12 +236,24 @@ public abstract class CNOVACrawler extends Crawler {
           }
 
           // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(variationInternalID).setInternalPid(internalPid)
-              .setName(variationName).setPrice(price)
-              .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(
-                  categories.getCategory(2))
-              .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).setEans(eans)
-              .setOffers(offers).build();
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(variationInternalID)
+              .setInternalPid(internalPid)
+              .setName(variationName)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setMarketplace(marketplace)
+              .setEans(eans)
+              .setOffers(offers)
+              .build();
 
           products.add(product);
         }
@@ -243,11 +278,24 @@ public abstract class CNOVACrawler extends Crawler {
         }
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices)
-            .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories
-                .getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setMarketplace(marketplace)
+            .setEans(eans)
+            .setOffers(offers)
+            .build();
 
         products.add(product);
       }
@@ -269,16 +317,56 @@ public abstract class CNOVACrawler extends Crawler {
     for (String selector : selectors) {
       Element imageSelector = doc.selectFirst(selector);
       if (imageSelector != null) {
-        String image = CrawlerUtils.sanitizeUrl(imageSelector, Arrays.asList("rev", "href", "src"), "https", this.marketHost);
+        
+        // Encoding url path of captured url to ensure that java.net can execute the request
+        List<String> attrs = Arrays.asList("rev", "href", "src");
+        for(String attr : attrs) {
+          String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(imageSelector, null, attr);
+          
+          image = encodeUrlPath(image);
+          
+          image = CrawlerUtils.completeUrl(image, PROTOCOL, this.marketHost);
+          if (image != null && !image.isEmpty()) {
+            primaryImage = image;
+            break;
+          }
+        }
 
-        if (image != null && !image.isEmpty()) {
-          primaryImage = image;
+        if (primaryImage != null && !primaryImage.isEmpty()) {
           break;
         }
       }
     }
 
     return primaryImage;
+  }
+  
+  private String scrapSecondaryImages(Document doc, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+    
+    Elements elements = doc.select(".carouselBox .thumbsImg li a");
+    
+    for(Element imageElement : elements) {
+      
+      List<String> attrs = Arrays.asList("rev", "href", "src");
+      for(String attr : attrs) {
+        String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, null, attr);
+        image = encodeUrlPath(image);
+        image = CrawlerUtils.completeUrl(image, PROTOCOL, this.marketHost);
+        
+        if ((primaryImage == null || !primaryImage.equals(image)) && image != null && !image.isEmpty()) {
+          secondaryImagesArray.put(image);
+          break;
+        }
+      }
+    }
+    
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+    
+    return secondaryImages;
   }
 
   private Offers scrapBuyBox(Document doc, Document docMarketplace) {
