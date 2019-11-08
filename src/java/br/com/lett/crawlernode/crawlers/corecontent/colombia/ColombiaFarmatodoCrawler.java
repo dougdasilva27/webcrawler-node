@@ -148,7 +148,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(reviewJson);
       
       ratingsReviews.setTotalRating(totalRating);
-      ratingsReviews.setAverageOverallRating(avgRating);      
+      ratingsReviews.setAverageOverallRating(avgRating == null ? 0.0f : avgRating);      
       ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
     }
     
