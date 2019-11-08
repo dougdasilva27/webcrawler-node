@@ -2,11 +2,14 @@ package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -61,7 +64,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
       
       String internalId = JSONUtils.getStringValue(seo, "sku");
       String internalPid = JSONUtils.getStringValue(json, "id");
-      String name = JSONUtils.getStringValue(seo, "name") + " - " + JSONUtils.getStringValue(seo, "description");
+      String name = scrapName(seo);
       Float price = JSONUtils.getFloatValueFromJSON(offer, "price", true);
       Prices prices = scrapPrices(offer, price);
       String primaryImage = JSONUtils.getStringValue(seo, "image");
@@ -100,11 +103,29 @@ public class ColombiaFarmatodoCrawler extends Crawler {
     return !json.keySet().isEmpty();
   }
   
+  private String scrapName(JSONObject json) {
+    String name = JSONUtils.getStringValue(json, "name");
+    
+    if(name != null) {
+      name += " - " + JSONUtils.getStringValue(json, "description");
+    }
+    
+    return name;
+  }
+  
   private Prices scrapPrices(JSONObject json, Float price) {
     Prices prices = new Prices();
     
     if(price != null) {
       prices.setPriceFrom(JSONUtils.getDoubleValueFromJSON(json, "highPrice", true));
+      
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
+      
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
     }
     
     return prices;
