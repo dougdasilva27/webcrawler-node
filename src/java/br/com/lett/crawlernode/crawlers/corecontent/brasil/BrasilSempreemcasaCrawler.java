@@ -20,12 +20,13 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilSempreemcasaCrawler extends Crawler {
+  
+  private static final String IMAGES_HOST = "cdn.shopify.com";
+  private static final String HOME_PAGE = "sempreemcasa.com.br";
 
   public BrasilSempreemcasaCrawler(Session session) {
     super(session);
   }
-
-  private static final String IMAGES_HOST = "cdn.shopify.com";
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -69,10 +70,17 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setMarketplace(new Marketplace())
             .build();
+        
+        // Fixing wrong urls on postgres
+        if(session.getOriginalURL().contains("/search?q=")) {
+          String fullUrl = CrawlerUtils.scrapUrl(doc, "#PID" + internalPid + " > a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
+          if(fullUrl != null) {
+            product.setUrl(fullUrl.split("\\?")[0]);
+          }
+        }
 
         products.add(product);
       }
-
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }

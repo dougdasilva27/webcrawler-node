@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.Arrays;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,6 +8,8 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
+  
+  private static final String HOME_PAGE = "sempreemcasa.com.br";
 
   public BrasilSempreemcasaCrawler(Session session) {
     super(session);
@@ -27,12 +30,9 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
     Elements products = this.currentDoc.select(".product-item");
 
     if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
-      }
       for (Element e : products) {
         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item__variant-data[data-id]", "data-id");
-        String productUrl = "https://sempreemcasa.com.br/search?q=" + internalPid;
+        String productUrl = scrapUrl(e);
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -49,10 +49,20 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
-
+  
+  private String scrapUrl(Element e) {
+    String url = null;
+    String fullUrl = CrawlerUtils.scrapUrl(e, "a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
+    
+    if(fullUrl != null) {
+      url = fullUrl.split("\\?")[0];
+    }
+    
+    return url;
+  }
+  
   @Override
-  protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".search-title", null, "resultados", false, true, 0);
-    this.log("Total: " + this.totalProducts);
+  protected boolean hasNextPage() {
+    return this.currentDoc.selectFirst(".pages-navigation__btn-next > a[href=\"\"]") == null;
   }
 }
