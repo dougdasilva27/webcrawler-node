@@ -8,9 +8,6 @@ import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -75,17 +72,15 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             .build();
         
         // Fixing wrong urls on postgres
-        if(internalId != null && internalPid != null) {
-          String productUrl = fetchProductUrl(internalPid);
-          
-          if(!productUrl.equals(session.getOriginalURL())) {
-            product.setUrl(productUrl);
+        if(session.getOriginalURL().contains("/search?q=")) {
+          String fullUrl = CrawlerUtils.scrapUrl(doc, "#PID" + internalPid + " > a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
+          if(fullUrl != null) {
+            product.setUrl(fullUrl.split("\\?")[0]);
           }
         }
 
         products.add(product);
       }
-
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
@@ -113,18 +108,5 @@ public class BrasilSempreemcasaCrawler extends Crawler {
     }
 
     return prices;
-  }
-  
-  private String fetchProductUrl(String internalPid) {
-    String url = null;
-    Request request = RequestBuilder.create().setUrl("https://sempreemcasa.com.br/search?q=" + internalPid).setCookies(cookies).build();
-    Document doc = new Document(new FetcherDataFetcher().get(session, request).getBody());
-    String fullUrl = CrawlerUtils.scrapUrl(doc, "#PID" + internalPid + " > a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
-    
-    if(fullUrl != null) {
-      url = fullUrl.split("\\?")[0];
-    }
-    
-    return url;
   }
 }
