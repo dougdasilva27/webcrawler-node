@@ -362,8 +362,10 @@ public class B2WCrawler extends Crawler {
           JSONArray eansArray = skus.getJSONArray("eans");
 
           for (Object eansObject : eansArray) {
-            String ean = (String) eansObject;
-            eans.add(ean);
+            if(eansObject instanceof String) {
+              String ean = (String) eansObject;
+              eans.add(ean);
+            }
           }
         }
       }
