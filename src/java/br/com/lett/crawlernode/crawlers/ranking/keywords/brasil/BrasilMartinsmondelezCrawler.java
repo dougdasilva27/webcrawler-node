@@ -52,12 +52,8 @@ public class BrasilMartinsmondelezCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       // monta a url com a keyword e a página
-      String url;
-      if (this.currentPage == 1) {
-         url = "https://www.martinsatacado.com.br/martins/pt/BRL/search/?text=" + this.keywordWithoutAccents.replace(" ", "%20") + "&pageSize=45";
-      } else {
-         url = "https://www.martinsatacado.com.br/martins/pt/BRL/search/showMore?page=" + (this.currentPage - 1) + "&sort=relevance&q=" + this.keywordWithoutAccents.replace(" ", "%20") + ":relevance&pageSize=45";
-      }
+      String url = "https://busca.martinsatacado.com.br/search//warehouse/seller/warehouse/64?query="
+            + this.keywordWithoutAccents.replace(" ", "%20") + "&page=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocumentWithWebDriver(url);
@@ -92,7 +88,7 @@ public class BrasilMartinsmondelezCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".title1 .fr.obs1", null, null, true, true, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".biggy-search__count", null, null, true, true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 }
