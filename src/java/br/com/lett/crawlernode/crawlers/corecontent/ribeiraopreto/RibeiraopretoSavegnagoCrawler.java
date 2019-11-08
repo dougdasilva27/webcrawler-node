@@ -102,7 +102,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         String description = scrapDescription(doc, internalId);
-        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
+        Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
@@ -139,7 +139,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
   private String scrapDescription(Document doc, String internalId) {
     StringBuilder description = new StringBuilder();
 
-    description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescriptionWrap", ".productSpecificationWrap")));
+    description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription")));
     description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
 
     return description.toString();
