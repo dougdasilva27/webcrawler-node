@@ -30,6 +30,7 @@ public class BrasilDibichoCrawler extends Crawler {
 
   public BrasilDibichoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   private static final String HOME_PAGE = "https://www.dibicho.com.br/";
