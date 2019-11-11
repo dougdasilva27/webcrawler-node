@@ -544,7 +544,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       if (!pairNormalCards.isAnyValueNull()) {
         installmentPriceMap.put(pairNormalCards.getFirst(), pairNormalCards.getSecond());
       } else {
-        pairNormalCards = CrawlerUtils.crawlSimpleInstallment(".installment", e, false, "x");
+        pairNormalCards = CrawlerUtils.crawlSimpleInstallment(".installment .margin-bottom-for-product-promotions:not(:first-child)", e, false, "x");
 
         if (!pairNormalCards.isAnyValueNull()) {
           installmentPriceMap.put(pairNormalCards.getFirst(), pairNormalCards.getSecond());
