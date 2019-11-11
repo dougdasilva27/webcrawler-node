@@ -67,7 +67,7 @@ public class BrasilPetloveCrawler extends Crawler {
           String internalId = JSONUtils.getStringValue(jsonSku, "sku");
           String name = crawlName(jsonSku);
           boolean available = jsonSku.has("in_stock") && jsonSku.get("in_stock") instanceof Boolean ? jsonSku.getBoolean("in_stock") : false;
-          Float price = crawlMainPagePrice(jsonSku, available);
+          Float price = JSONUtils.getFloatValueFromJSON(jsonSku, "price", true);
           String primaryImage = crawlPrimaryImage(jsonSku);
           String secondaryImages = crawlSecondaryImages(jsonSku);
           Prices prices = crawlPrices(price, jsonSku);
@@ -141,16 +141,6 @@ public class BrasilPetloveCrawler extends Crawler {
     }
 
     return name.toString().trim();
-  }
-
-  private Float crawlMainPagePrice(JSONObject json, boolean available) {
-    Float price = null;
-
-    if (json.has("price") && !json.isNull("price") && available) {
-      price = Float.parseFloat(json.get("price").toString());
-    }
-
-    return price;
   }
 
   private String crawlPrimaryImage(JSONObject skuJson) {
