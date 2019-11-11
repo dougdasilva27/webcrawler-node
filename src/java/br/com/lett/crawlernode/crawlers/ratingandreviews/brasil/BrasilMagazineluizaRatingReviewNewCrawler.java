@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -77,10 +79,22 @@ public class BrasilMagazineluizaRatingReviewNewCrawler extends RatingReviewCrawl
               .replace("'),", "',");
           
           for(String line : json.split("\n")) {
-            String jsonToken = "'idSku': '";
+            String jsonToken = "'idSku'";
             
-            if(line.contains(jsonToken) && line.endsWith("',")) {
-              internalId = line.substring(line.indexOf(jsonToken) + jsonToken.length(), line.length() - 2);
+            if(line.contains(jsonToken)) {
+              Pattern p = Pattern.compile("\\'(.*?)\\'"); 
+              Matcher m = p.matcher(line); 
+              
+              while (m.find()) {
+                String group = m.group();
+                
+                if(!group.equals(jsonToken)) {
+                  internalId = group.substring(1, group.length()-1);
+                  break;
+                }
+              }
+              
+              break;
             }
           }
         }
