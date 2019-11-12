@@ -7,7 +7,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -122,7 +121,7 @@ public class BrasilLojasredeCrawler extends Crawler {
         new YourreviewsRatingCrawler(session, cookies, logger, "9c0aa0e9-37a2-4b03-93d7-41c964268161", this.dataFetcher);
 
     Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "9c0aa0e9-37a2-4b03-93d7-41c964268161", this.dataFetcher);
-    Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating);
+    Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(docRating, "meta[itemprop=ratingCount]", "content", 0);
     Double avgRating = getTotalAvgRatingFromYourViews(docRating);
     AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
 
@@ -136,24 +135,13 @@ public class BrasilLojasredeCrawler extends Crawler {
 
   private Double getTotalAvgRatingFromYourViews(Document docRating) {
     Double avgRating = 0d;
-    Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
+    Double ratingOnHtml = CrawlerUtils.scrapDoublePriceFromHtml(docRating, "meta[itemprop=ratingValue]", "content", true, '.', session);
 
-    if (rating != null) {
-      avgRating = Double.parseDouble(rating.attr("content"));
+    if (ratingOnHtml != null) {
+      avgRating = ratingOnHtml;
     }
 
     return avgRating;
-  }
-
-  private Integer getTotalNumOfRatingsFromYourViews(Document doc) {
-    Integer totalRating = 0;
-    Element totalRatingElement = doc.selectFirst("meta[itemprop=ratingCount]");
-
-    if (totalRatingElement != null) {
-      totalRating = Integer.parseInt(totalRatingElement.attr("content"));
-    }
-
-    return totalRating;
   }
 
   private boolean isProductPage(Document document) {
