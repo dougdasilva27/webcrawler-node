@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
@@ -16,6 +17,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -116,6 +118,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
             List<String> eans = Arrays.asList(internalId);
             String name = crawlName(skuJson);
             Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
+            Prices prices = scrapPrices(price);
 
             Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -123,8 +126,8 @@ public class BrasilLojamondelezCrawler extends Crawler {
                   .setInternalPid(internalPid)
                   .setName(name)
                   .setPrice(price)
-                  .setPrices(new Prices())
-                  .setAvailable(false)
+                  .setPrices(prices)
+                  .setAvailable(price != null && price > 0)
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
@@ -207,5 +210,20 @@ public class BrasilLojamondelezCrawler extends Crawler {
       }
 
       return skus;
+   }
+
+   private Prices scrapPrices(Float price) {
+      Prices prices = new Prices();
+
+      if (price != null && price > 0) {
+         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+         installmentPriceMap.put(1, price);
+
+         prices.setBankTicketPrice(price);
+         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      }
+
+      return prices;
    }
 }
