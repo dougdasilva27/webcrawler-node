@@ -1,10 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class BrasilRicardoeletroCrawler extends CrawlerRankingKeywords {
 
@@ -15,34 +18,28 @@ public class BrasilRicardoeletroCrawler extends CrawlerRankingKeywords {
 
    @Override
    public void extractProductsFromCurrentPage() {
-      // número de produtos por página do market
       this.pageSize = 24;
-
       this.log("Página " + this.currentPage);
 
       String keyword = this.keywordWithoutAccents.replaceAll(" ", "+");
 
-      // monta a url com a keyword e a página
       String url = "https://www.ricardoeletro.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + keyword;
       this.log("Link onde são feitos os crawlers: " + url);
-
-      // chama função de pegar a url
       this.currentDoc = fetchDocument(url);
 
+      JSONArray jsonArray = CrawlerUtils.selectJsonArrayFromHtml(this.currentDoc, "script", "dataLayer = ", ";", false, true);
+      JSONObject productsJSON = jsonArray.length() > 0 && jsonArray.get(0) instanceof JSONObject ? jsonArray.getJSONObject(0) : new JSONObject();
+      JSONArray productsArray = JSONUtils.getJSONArrayValue(productsJSON, "searchProducts");
       Elements products = this.currentDoc.select("#products > div a");
 
-      // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-      if (!products.isEmpty()) {
-         for (Element e : products) {
+      if (!products.isEmpty() && products.size() == productsArray.length()) {
+         for (int index = 0; index < products.size(); index++) {
+            Object obj = productsArray.get(index);
+            JSONObject productJSON = obj instanceof JSONObject ? (JSONObject) obj : new JSONObject();
 
-            // InternalPid
-            String internalPid = crawlInternalPid(e);
-
-            // InternalId
-            String internalId = crawlInternalId(e);
-
-            // Url do produto
-            String productUrl = crawlProductUrl(e);
+            String internalPid = scrapInternalPid(productJSON);
+            String internalId = scrapInternalId(productJSON);
+            String productUrl = CrawlerUtils.scrapUrl(products.get(index), null, "href", "https", "www.ricardoeletro.com.br");
 
             saveDataProduct(internalId, internalPid, productUrl);
 
@@ -64,44 +61,26 @@ public class BrasilRicardoeletroCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      Element page = this.currentDoc.select("span.ultima.inativo").first();
-
-      // se elemeno page obtiver algum resultado
-      if (page != null) {
-         // não tem próxima página
-         return false;
-      }
-
-      return true;
-
+      return !this.currentDoc.select("li a.ultima:not(.inativo)").isEmpty();
    }
 
-   private String crawlInternalId(Element e) {
+   private String scrapInternalId(JSONObject productJSON) {
       String internalId = null;
-      Element inid = e.select(".foto-produto").first();
 
-      if (inid != null) {
-         internalId = inid.attr("data-codigo").trim();
+      if (productJSON.has("sku") && !productJSON.isNull("sku")) {
+         internalId = productJSON.get("sku").toString();
       }
 
       return internalId;
    }
 
-   private String crawlInternalPid(Element e) {
+   private String scrapInternalPid(JSONObject productJSON) {
       String internalPid = null;
+
+      if (productJSON.has("id") && !productJSON.isNull("id")) {
+         internalPid = productJSON.get("id").toString();
+      }
 
       return internalPid;
    }
-
-   private String crawlProductUrl(Element e) {
-      String urlProduct = null;
-      Element urlElement = e.select(".nome-produto-vertical > a").first();
-
-      if (urlElement != null) {
-         urlProduct = urlElement.attr("href");
-      }
-
-      return urlProduct;
-   }
-
 }

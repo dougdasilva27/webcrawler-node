@@ -25,10 +25,12 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilRicardoeletroCrawler extends Crawler {
@@ -82,6 +84,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
             Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME));
             Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
             Integer stock = JSONUtils.getIntegerValueFromJSON(skuJson, "stock", 0);
+            RatingsReviews rating = scrapRating(doc);
 
             Product product = ProductBuilder.create()
                   .setUrl(url)
@@ -101,6 +104,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
                   .setStock(stock)
                   .setEans(eans)
                   .setOffers(offers)
+                  .setRatingReviews(rating)
                   .build();
 
             products.add(product);
@@ -125,13 +129,13 @@ public class BrasilRicardoeletroCrawler extends Crawler {
    }
 
    private String scrapMainId(JSONObject productJSON) {
-      String internalPid = null;
+      String mainId = null;
 
       if (productJSON.has("productSKU") && !productJSON.isNull("productSKU")) {
-         internalPid = productJSON.get("productSKU").toString();
+         mainId = productJSON.get("productSKU").toString();
       }
 
-      return internalPid;
+      return mainId;
    }
 
    private Document scrapVariationHTML(String url) {
@@ -277,5 +281,75 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       }
 
       return prices;
+   }
+
+   /**
+    * Crawl rating and reviews stats using the bazaar voice endpoint. To get only the stats summary we
+    * need at first, we only have to do one request. If we want to get detailed information about each
+    * review, we must perform pagination.
+    * 
+    * The RatingReviews crawled in this method, is the same across all skus variations in a page.
+    *
+    * @param document
+    * @return
+    */
+   private RatingsReviews scrapRating(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalReviews = scrapReviewsCount(doc);
+      ratingReviews.setTotalRating(totalReviews);
+      ratingReviews.setTotalWrittenReviews(totalReviews);
+      ratingReviews.setAverageOverallRating(scrapAverageOverallRating(doc));
+      ratingReviews.setAdvancedRatingReview(scrapTotalOfRewviesPerEachStar(doc));
+
+      return ratingReviews;
+   }
+
+   private Integer scrapReviewsCount(Document doc) {
+      return doc.select(".product-comments-body-comment-stars").size();
+   }
+
+   private Double scrapAverageOverallRating(Document doc) {
+      Double avgOverallRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-comments-body-grade", null, true, '.', session);
+
+      if (avgOverallRating == null) {
+         avgOverallRating = 0d;
+      }
+      return avgOverallRating;
+   }
+
+   private AdvancedRatingReview scrapTotalOfRewviesPerEachStar(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".product-comments-body-comment-stars");
+      for (Element e : reviews) {
+         int numberOfStars = e.select("img[src=/public/img/star-full.svg]").size();
+
+         if (numberOfStars == 1) {
+            star1++;
+         } else if (numberOfStars == 2) {
+            star2++;
+         } else if (numberOfStars == 3) {
+            star3++;
+         } else if (numberOfStars == 4) {
+            star4++;
+         } else if (numberOfStars == 5) {
+            star5++;
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 }
