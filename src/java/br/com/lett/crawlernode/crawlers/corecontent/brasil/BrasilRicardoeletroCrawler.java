@@ -61,54 +61,55 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
          for (Object obj : skusArray) {
             JSONObject skuJson = obj instanceof JSONObject ? (JSONObject) obj : new JSONObject();
-
-            String name = scrapName(skuJson);
             String internalId = scrapInternalId(skuJson);
-            String newUrl = JSONUtils.getStringValue(skuJson, "url");
-            String url = newUrl != null ? newUrl : session.getOriginalURL();
 
-            Document docVariation = mainId != null && internalId != null && !mainId.equalsIgnoreCase(internalId) ? scrapVariationHTML(url) : doc;
+            if (internalId != null) {
+               String name = scrapName(skuJson);
+               String newUrl = JSONUtils.getStringValue(skuJson, "url");
+               String url = newUrl != null ? newUrl : session.getOriginalURL();
 
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
-                  "https", "www.imgeletro.com.br");
-            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
-                  "https", "www.imgeletro.com.br", primaryImage);
-            CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "#Breadcrumbs a");
-            String description = scrapDescription(docVariation);
+               Document docVariation = !internalId.equalsIgnoreCase(mainId) ? scrapVariationHTML(url) : doc;
 
-            List<Document> sellersHtmls = scrapProductPagePerSeller(doc);
-            Offers offers = scrapOffers(sellersHtmls);
-            Map<String, Prices> marketplaceMap = scrapMarketplaceMap(sellersHtmls);
-            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
-            boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(SELLER_NAME));
-            Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME));
-            Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
-            Integer stock = JSONUtils.getIntegerValueFromJSON(skuJson, "stock", 0);
-            RatingsReviews rating = scrapRating(doc);
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
+                     "https", "www.imgeletro.com.br");
+               String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
+                     "https", "www.imgeletro.com.br", primaryImage);
+               CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "#Breadcrumbs a");
+               String description = scrapDescription(docVariation);
 
-            Product product = ProductBuilder.create()
-                  .setUrl(url)
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setMarketplace(marketplace)
-                  .setStock(stock)
-                  .setEans(eans)
-                  .setOffers(offers)
-                  .setRatingReviews(rating)
-                  .build();
+               List<Document> sellersHtmls = scrapProductPagePerSeller(doc);
+               Offers offers = scrapOffers(sellersHtmls);
+               Map<String, Prices> marketplaceMap = scrapMarketplaceMap(sellersHtmls);
+               Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
+               boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(SELLER_NAME));
+               Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME));
+               Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
+               Integer stock = JSONUtils.getIntegerValueFromJSON(skuJson, "stock", 0);
+               RatingsReviews rating = scrapRating(doc);
 
-            products.add(product);
+               Product product = ProductBuilder.create()
+                     .setUrl(url)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setPrice(price)
+                     .setPrices(prices)
+                     .setAvailable(available)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setMarketplace(marketplace)
+                     .setStock(stock)
+                     .setEans(eans)
+                     .setOffers(offers)
+                     .setRatingReviews(rating)
+                     .build();
 
+               products.add(product);
+            }
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
