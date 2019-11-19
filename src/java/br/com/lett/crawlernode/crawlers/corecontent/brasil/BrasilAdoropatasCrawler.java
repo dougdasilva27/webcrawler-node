@@ -109,7 +109,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
     							  cloneClone.setPrice(skuPrice);
     						  }
     						  
-    						  cloneClone.setPrices(scrapVariationPrices(prices, skuPrice));
+    						  cloneClone.setPrices(scrapVariationPrices(skuPrice));
     						  
     						  products.add(cloneClone);
     					  }
@@ -187,7 +187,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
 		  Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 	      installmentPriceMap.put(1, price);
 		  
-		  Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(".valor_dividido", doc, false, "de", "", true);
+		  Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(".valor_dividido", doc, false, "de", "", true, '.');
 		  
 		  if(!installment.isAnyValueNull()) {
 			  installmentPriceMap.put(installment.getFirst(), installment.getSecond());
@@ -201,7 +201,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
 	  return prices;
   }
   
-  private Prices scrapVariationPrices(Prices oldPrices, Float price) {
+  private Prices scrapVariationPrices(Float price) {
 	  Prices prices = new Prices();
 	  
 	  if(price != null) {
@@ -209,13 +209,6 @@ public class BrasilAdoropatasCrawler extends Crawler {
 		  
 		  Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 	      installmentPriceMap.put(1, price);
-	      
-	      Map<Integer, Double> installmentMap = oldPrices.getCardPaymentOptions(Card.VISA.toString());
-	      for(Integer key : installmentMap.keySet()) {
-	    	  if(key != 1) {
-	    		  installmentPriceMap.put(key, installmentMap.get(key).floatValue());
-	    	  }
-	      }
 		  
 		  prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 		  prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
