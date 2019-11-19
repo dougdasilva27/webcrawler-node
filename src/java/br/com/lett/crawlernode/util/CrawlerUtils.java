@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
+
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -22,8 +23,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -1350,9 +1353,7 @@ public class CrawlerUtils {
   }
 
   /**
-   * Crawl simple installment with this text example:
-   * 
-   * 2 (@param delimiter) R$12,90
+   * @deprecated Because of non possibility to parse price with ',' or '.'
    * 
    * @param cssSelector - if null, you must pass the specific element in the html parameter
    * @param html - document html or element html
@@ -1366,7 +1367,29 @@ public class CrawlerUtils {
    */
   public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter, String lastDelimiter,
       boolean lastOccurrenceForLastDelimiter) {
-    Pair<Integer, Float> pair = new Pair<>();
+
+    return crawlSimpleInstallment(cssSelector, html, ownText, delimiter, lastDelimiter, lastOccurrenceForLastDelimiter, '.');
+  }
+  
+  /**
+   * Crawl simple installment with this text example:
+   * 
+   * 2 (@param delimiter) R$12,90
+   * 
+   * @param cssSelector - if null, you must pass the specific element in the html parameter
+   * @param html - document html or element html
+   * @param ownText - if the returned text of the element is taken from the first child
+   * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros de
+   *        (2.8%)" delimiter will be "x"
+   * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
+   *        lastDelimiter will be "com"
+   * @param lastOccurrenceForLastDelimiter - if lastDelimiter will be last ocurrence on text
+   * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+   * @return Pair<Integer, Float>
+   */
+  public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter, String lastDelimiter,
+	      boolean lastOccurrenceForLastDelimiter, char priceFormat) {
+	Pair<Integer, Float> pair = new Pair<>();
 
     Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
 
@@ -1383,13 +1406,25 @@ public class CrawlerUtils {
         }
 
         String installmentNumber = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-        Float value = MathUtils.parseFloatWithComma(text.substring(x, y));
+        Float value = null;
+        
+        if(priceFormat == '.') {
+        	value = MathUtils.parseFloatWithDots(text.substring(x, y));
+        } else if(priceFormat == ',') {
+        	value = MathUtils.parseFloatWithComma(text.substring(x, y));
+        }
 
         if (!installmentNumber.isEmpty() && value != null) {
           pair.set(Integer.parseInt(installmentNumber), value);
         }
       } else if (text.contains("vista")) {
-        Float value = MathUtils.parseFloatWithComma(text);
+        Float value = null;
+        
+        if(priceFormat == '.') {
+        	value = MathUtils.parseFloatWithDots(text);
+        } else if(priceFormat == ',') {
+        	value = MathUtils.parseFloatWithComma(text);
+        }
 
         if (value != null) {
           pair.set(1, value);
