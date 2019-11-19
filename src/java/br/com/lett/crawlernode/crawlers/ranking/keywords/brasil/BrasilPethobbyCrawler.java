@@ -98,17 +98,15 @@ public class BrasilPethobbyCrawler extends CrawlerRankingKeywords {
     JSONObject json = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "script", "vtex.events.addData(", ");", false, true);
     Integer catId = JSONUtils.getIntegerValueFromJSON(json, "categoryId", -1);
         
-    if(catId == -1) {
-      return;
-    }
-    
-    String path = "C:/" + catId + "/";
-    
-    try {
-      this.encodedPath = URLEncoder.encode(path, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      this.encodedPath = null;
+    if(catId != -1) {    
+	    String path = "C:/" + catId + "/";
+	    
+	    try {
+	      this.encodedPath = URLEncoder.encode(path, "UTF-8");
+	    } catch (UnsupportedEncodingException e) {
+	      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+	      this.encodedPath = null;
+	    }
     }
   }
   

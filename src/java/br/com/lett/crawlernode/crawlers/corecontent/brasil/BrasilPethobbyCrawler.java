@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -14,6 +16,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
@@ -44,12 +47,7 @@ public class BrasilPethobbyCrawler extends Crawler {
           Arrays.asList(".productDescription", "#caracteristicas"));
 
       // sku data in json
-      JSONArray arraySkus =
-          skuJson != null &&
-              skuJson.has("skus") &&
-              !skuJson.isNull("skus")
-                  ? skuJson.getJSONArray("skus")
-                  : new JSONArray();
+      JSONArray arraySkus = JSONUtils.getJSONArrayValue(skuJson, "skus");
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
@@ -67,10 +65,8 @@ public class BrasilPethobbyCrawler extends Crawler {
         Integer stock = vtexUtil.crawlStock(apiJSON);
         JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
-        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
-
-        List<String> eans = new ArrayList<>();
-        eans.add(ean);
+        String ean = i < eanArray.length() && eanArray.get(i) instanceof String ? eanArray.getString(i) : null;
+        List<String> eans = ean != null && !ean.isEmpty() ? Arrays.asList(ean) : null;
         
         // Creating the product
         Product product = ProductBuilder.create()
