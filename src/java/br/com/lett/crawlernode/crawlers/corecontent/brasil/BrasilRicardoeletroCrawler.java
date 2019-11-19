@@ -77,7 +77,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
                CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "#Breadcrumbs a");
                String description = scrapDescription(docVariation);
 
-               List<Document> sellersHtmls = scrapProductPagePerSeller(doc);
+               List<Document> sellersHtmls = scrapProductPagePerSeller(docVariation);
                Offers offers = scrapOffers(sellersHtmls);
                Map<String, Prices> marketplaceMap = scrapMarketplaceMap(sellersHtmls);
                Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
