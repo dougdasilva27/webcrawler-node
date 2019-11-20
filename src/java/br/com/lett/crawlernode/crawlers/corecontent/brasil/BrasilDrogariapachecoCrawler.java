@@ -214,7 +214,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
       Element iframe = elementInformation.select("iframe[src]").first();
       if (iframe != null) {
-        Request request = RequestBuilder.create().setUrl(iframe.attr("src")).setCookies(cookies).build();
+        Request request = RequestBuilder.create().setUrl(iframe.attr("src").trim()).setCookies(cookies).build();
         description.append(this.dataFetcher.get(session, request).getBody());
       }
 
@@ -284,8 +284,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
         if (specialPage.length() > 0) {
           Element iframe = Jsoup.parse(specialPage.get(0).toString()).select("iframe").first();
 
-          if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {
-            Request requestSpecial = RequestBuilder.create().setUrl(iframe.attr("src")).setCookies(cookies).build();
+          if (iframe != null && iframe.hasAttr("src") && !iframe.attr("src").contains("youtube")) {           
+            Request requestSpecial = RequestBuilder.create().setUrl(iframe.attr("src").trim()).setCookies(cookies).build();
             description.append(this.dataFetcher.get(session, requestSpecial).getBody());
           }
         }

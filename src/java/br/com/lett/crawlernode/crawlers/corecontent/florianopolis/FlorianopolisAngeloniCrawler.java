@@ -125,10 +125,8 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
     Document docPrice = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
-    Element elementPrice = docPrice.selectFirst(".content__desc-prod__box-valores");
-    if (elementPrice != null) {
-      price = Float.parseFloat(elementPrice.attr("content"));
-    }
+    price = CrawlerUtils.scrapFloatPriceFromHtml(docPrice, ".content__desc-prod__box-valores", "content",
+    			true, '.', session);
 
     return price;
   }

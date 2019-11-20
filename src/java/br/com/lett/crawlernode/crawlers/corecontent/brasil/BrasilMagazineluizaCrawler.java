@@ -27,6 +27,7 @@ import models.Marketplace;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
+import models.RatingsReviews;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -45,6 +46,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
   public BrasilMagazineluizaCrawler(Session session) {
     super(session);
+    this.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -112,12 +114,30 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
     // Offers
     Offers offers = available || !marketplace.isEmpty() ? scrapBuyBox(doc) : new Offers();
+    
+    // RatingsReviews
+    RatingsReviews ratingReviews = crawlRatingNew(doc, internalId);
 
     // Creating the product
-    return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(frontPageName)
-        .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-        .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-        .setStock(stock).setMarketplace(marketplace).setOffers(offers).build();
+    return ProductBuilder.create()
+        .setUrl(session.getOriginalURL())
+        .setInternalId(internalId)
+        .setInternalPid(internalPid)
+        .setName(frontPageName)
+        .setPrice(price)
+        .setPrices(prices)
+        .setAvailable(available)
+        .setCategory1(categories.getCategory(0))
+        .setCategory2(categories.getCategory(1))
+        .setCategory3(categories.getCategory(2))
+        .setPrimaryImage(primaryImage)
+        .setSecondaryImages(secondaryImages)
+        .setDescription(description)
+        .setStock(stock)
+        .setMarketplace(marketplace)
+        .setOffers(offers)
+        .setRatingReviews(ratingReviews)
+        .build();
   }
 
   private Offers scrapBuyBox(Document doc) {
@@ -495,5 +515,46 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     }
 
     return skuJson;
+  }
+  
+  public RatingsReviews crawlRatingNew(Document doc, String internalId) {
+      
+    RatingsReviews ratingReviews = crawlRatingReviews(doc);
+    ratingReviews.setInternalId(internalId);
+      
+    return ratingReviews;
+  }
+  
+  private RatingsReviews crawlRatingReviews(Document doc) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+
+    ratingReviews.setDate(session.getDate());
+
+    ratingReviews.setTotalRating(getTotalReviewCount(doc));
+    ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
+
+    return ratingReviews;
+  }
+
+  private Integer getTotalReviewCount(Document doc) {
+    Integer totalReviewCount = null;
+    Element total = doc.select(".interaction-client__rating-info > span").last();
+      
+    if (total != null) {
+      totalReviewCount = Integer.parseInt(total.ownText().replaceAll("[^0-9]", ""));
+    }
+    
+    return totalReviewCount;
+  }
+
+  private Double getAverageOverallRating(Document doc) {
+    Double avgOverallRating = null;
+    Element avg = doc.select(".interaction-client__rating-info > span").first();
+      
+    if (avg != null) {
+      avgOverallRating = Double.parseDouble(avg.ownText().replaceAll("[^0-9,]", "").replace(",", "."));
+    }
+    
+    return avgOverallRating;
   }
 }
