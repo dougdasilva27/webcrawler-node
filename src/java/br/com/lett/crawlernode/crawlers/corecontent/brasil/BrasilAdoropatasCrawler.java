@@ -106,8 +106,6 @@ public class BrasilAdoropatasCrawler extends Crawler {
     	  for(String key : variations.keySet()) {    			  
 			  Product clone = product.clone();
 			  
-			  System.err.println("Key: " + key + " - Val: " + variations.get(key));
-			
 			  clone.setInternalId(key);
 			  clone.setName(product.getName() + variations.get(key));
 
