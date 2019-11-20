@@ -2,21 +2,27 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -27,15 +33,26 @@ import models.Offers;
 import models.prices.Prices;
 
 public class BrasilAdoropatasCrawler extends Crawler {
-	
-  // Dis: https://www.adoropatas.com.br/bravecto-20kg-a-40kg
-  // Ind: https://www.adoropatas.com.br/flunixin-5mg-e-20mg
-  // Var: https://www.adoropatas.com.br/pa-higienica-cara-de-gato-cores
-	  
+
   private static final String HOME_PAGE = "www.adoropatas.com.br";
   
   public BrasilAdoropatasCrawler(Session session) {
     super(session);
+  }
+  
+  @Override
+  protected Object fetch() {
+
+	// Colocando User-Agent do mozila para não receber imagens do tipo webp
+    Map<String, String> headers = new HashMap<>();
+    headers.put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0");
+
+    Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setCookies(cookies)
+            .build();
+
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
   }
 
   @Override
@@ -48,16 +65,17 @@ public class BrasilAdoropatasCrawler extends Crawler {
       
       JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "Product.Config(", ");", false, true);
       JSONObject childProducts = JSONUtils.getJSONValue(json, "childProducts");
-      JSONArray variationArray = extractVariationArray(json);
+      Map<String, String> variations = reagroupVariationArray(extractVariationArray(json));
 
       String internalId = scrapInternalId(doc);
       String internalPid = scrapInternalPid(doc);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name > h1", true);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".regular-price > .price", null, true, ',', session);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".data > .price", null, true, ',', session);
       Prices prices = scrapPrices(doc, price);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li:not(:last-child)", true);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image-main", Arrays.asList("src"), "https", HOME_PAGE);
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-gallery > .gallery-image", Arrays.asList("data-zoom-image", "src"), "https", HOME_PAGE, primaryImage);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image-main", 
+    		  Arrays.asList("src"), "https", HOME_PAGE);
+      String secondaryImages = scrapSecondaryImages(doc, primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".short-description", "#collateral-tabs > [class *= tab]:not(:last-child):not(:nth-last-child(2))"));
       Integer stock = null;
       boolean available = doc.selectFirst(".extra-info .availability.out-of-stock") == null;
@@ -84,38 +102,24 @@ public class BrasilAdoropatasCrawler extends Crawler {
           .setOffers(offers)
           .build();
       
-      if(variationArray.length() > 0) {
-    	  for(Object obj : variationArray) {
-    		  if(obj instanceof JSONObject) {
-    			  JSONObject varJson = (JSONObject) obj;
-    			  
-    			  Product clone = product.clone();
-    			  
-    			  if(varJson.has("label") && varJson.get("label") instanceof String) {
-    				  clone.setName(product.getName() + " - " + varJson.getString("label"));
-    			  }
-    			  
-    			  if(varJson.has("products") && varJson.get("products") instanceof JSONArray) {
-    				  for(Object productsObj : varJson.getJSONArray("products")) {
-    					  if(productsObj instanceof String) {
-    						  Product cloneClone = clone.clone();
-    						  String skuId = (String) productsObj;
-    						  Float skuPrice = null;
-    						  
-    						  cloneClone.setInternalId(skuId);
-    						  
-    						  if(childProducts.has(skuId) && childProducts.get(skuId) instanceof JSONObject) {
-    							  skuPrice = JSONUtils.getFloatValueFromJSON(childProducts.getJSONObject(skuId), "finalPrice", true);
-    							  cloneClone.setPrice(skuPrice);
-    						  }
-    						  
-    						  cloneClone.setPrices(scrapVariationPrices(skuPrice));
-    						  
-    						  products.add(cloneClone);
-    					  }
-    				  }
-    			  }
-    		  }
+      if(variations.size() > 0) {
+    	  for(String key : variations.keySet()) {    			  
+			  Product clone = product.clone();
+			  
+			  System.err.println("Key: " + key + " - Val: " + variations.get(key));
+			
+			  clone.setInternalId(key);
+			  clone.setName(product.getName() + variations.get(key));
+
+			  Float skuPrice = null;
+			  if(childProducts.has(key) && childProducts.get(key) instanceof JSONObject) {
+				  skuPrice = JSONUtils.getFloatValueFromJSON(childProducts.getJSONObject(key), "finalPrice", true);
+				  clone.setPrice(skuPrice);
+			  }
+			  
+			  clone.setPrices(scrapVariationPrices(skuPrice));
+			  
+			  products.add(clone);
     	  }
       } else {
     	  products.add(product);
@@ -155,6 +159,34 @@ public class BrasilAdoropatasCrawler extends Crawler {
 	  return variationArray;
   }
   
+  private Map<String, String> reagroupVariationArray(JSONArray arr) {
+	  Map<String, String> idNameMap = new HashMap<>();
+	  
+	  for(Object obj : arr) {
+		  if(obj instanceof JSONObject) {
+			  JSONObject product = (JSONObject) obj;
+			  
+			  if(product.has("products") && product.get("products") instanceof JSONArray) {
+				  JSONArray skus = product.getJSONArray("products");
+				  
+				  for(Object o : skus) {
+					  if(o instanceof String) {
+						  if(!idNameMap.containsKey((String) o)) {							  
+							  idNameMap.put((String) o, " -");
+						  }
+						  
+						  if(product.has("label") && product.get("label") instanceof String) {
+							  idNameMap.put((String) o, idNameMap.get((String) o) + " " + product.getString("label"));
+						  }
+					  }
+				  }
+			  }
+		  }
+	  }
+	  
+	  return idNameMap;
+  }
+  
   private String scrapInternalId(Document doc) {
 	  String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-shop > .ref", true);
 	  
@@ -180,10 +212,33 @@ public class BrasilAdoropatasCrawler extends Crawler {
 	  return internalPid;
   }
   
+  private String scrapSecondaryImages(Document doc, String primaryImage) {
+	String secondaryImages = null;
+	  
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(".product-image-gallery > .gallery-image:not(#image-main)");
+    for (Element e : images) {
+      String image = CrawlerUtils.sanitizeUrl(e, Arrays.asList("data-zoom-image", "src"), "https", HOME_PAGE);
+
+      if ((primaryImage == null || !primaryImage.equals(image)) && image != null && !primaryImage.contains(CommonMethods.getLast(image.split("/")))) {
+        secondaryImagesArray.put(image);
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
+  }
+  
   private Prices scrapPrices(Document doc, Float price) {
 	  Prices prices = new Prices();
 	  
 	  if(price != null) {
+		  prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".regular-price > .price-desconto", null, true, ',', session));
+		  
 		  Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 	      installmentPriceMap.put(1, price);
 		  
@@ -205,7 +260,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
 	  Prices prices = new Prices();
 	  
 	  if(price != null) {
-		  prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlacesUp(price * 0.95f));
+		  prices.setBankTicketPrice(MathUtils.normalizeTwoDecimalPlaces(price * 0.95f));
 		  
 		  Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 	      installmentPriceMap.put(1, price);
