@@ -65,6 +65,10 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
 
       String description =
           CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_tabs_description_contents", "#product_tabs_additional_contents"));
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-img-box  #items a", Arrays.asList("href"),
+          "https", "www.princesadonorteonline.com.br");
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-img-box  #items a", Arrays.asList("href"),
+          "https", "www.princesadonorteonline.com.br", primaryImage);
 
       CategoryCollection categories = crawlCategories(doc);
 
@@ -77,7 +81,6 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
           Float price = crawlPrice(json);
           Prices prices = crawlPrices(price, doc);
           boolean available = crawlAvailability(json);
-          String primaryImage = crawlPrimaryImage(json);
 
           // Creating the product
           Product product = ProductBuilder.create()
@@ -92,9 +95,8 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
               .setCategory2(categories.getCategory(1))
               .setCategory3(categories.getCategory(2))
               .setPrimaryImage(primaryImage)
-              .setSecondaryImages(null)
+              .setSecondaryImages(secondaryImages)
               .setDescription(description)
-              .setStock(null)
               .setMarketplace(new Marketplace())
               .build();
 
@@ -199,16 +201,6 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     }
 
     return available;
-  }
-
-  private String crawlPrimaryImage(JSONObject json) {
-    String primaryImage = null;
-
-    if (json.has("image")) {
-      primaryImage = json.getString("image");
-    }
-
-    return primaryImage;
   }
 
   /**
