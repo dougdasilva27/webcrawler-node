@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -38,161 +39,181 @@ import models.prices.Prices;
  */
 public class SaopauloOnofreCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "https://www.onofre.com.br";
-  private static final String HOME_PAGE_HTTP = "http://www.onofre.com.br/";
+   private static final String HOME_PAGE = "https://www.onofre.com.br";
+   private static final String HOME_PAGE_HTTP = "http://www.onofre.com.br/";
 
-  public SaopauloOnofreCrawler(Session session) {
-    super(session);
-    super.config.setMustSendRatingToKinesis(true);
-  }
+   public SaopauloOnofreCrawler(Session session) {
+      super(session);
+      super.config.setMustSendRatingToKinesis(true);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTP));
-  }
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTP));
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
 
-      JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
+         JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
-      String name = crawlName(doc, jsonInfo);
-      Float price = crawlPrice(jsonInfo);
-      Prices prices = crawlPrices(price, doc);
-      boolean available = crawlAvailability(jsonInfo);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product) a");
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-short-description", "#details"));
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img:not(:first-child)",
-          Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-gallery img:not(:first-child)",
-          Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br", primaryImage);
-      Marketplace marketplace = new Marketplace();
-      String ean = JSONUtils.getStringValue(jsonInfo, "gtin13");
-      List<String> eans = ean != null ? Arrays.asList(ean) : null;
+         String name = crawlName(doc, jsonInfo);
+         Float price = crawlPrice(jsonInfo);
+         Prices prices = crawlPrices(price, doc);
+         boolean available = crawlAvailability(jsonInfo);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product) a");
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-short-description", "#details"));
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img#image-main",
+               Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br");
+         String secondaryImages = scrapSecondaryImages(doc, primaryImage);
+         Marketplace marketplace = new Marketplace();
+         String ean = JSONUtils.getStringValue(jsonInfo, "gtin13");
+         List<String> eans = ean != null ? Arrays.asList(ean) : null;
 
-      for (Object obj : skus) {
-        if (obj instanceof String) {
-          String internalId = (String) obj;
-          String internalPid = internalId;
-          RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
+         for (Object obj : skus) {
+            if (obj instanceof String) {
+               String internalId = (String) obj;
+               String internalPid = internalId;
+               RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
 
-          // Creating the product
-          Product product = ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalId)
-              .setInternalPid(internalPid)
-              .setName(name)
-              .setPrice(price)
-              .setPrices(prices)
-              .setAvailable(available)
-              .setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2))
-              .setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages)
-              .setDescription(description)
-              .setMarketplace(marketplace)
-              .setEans(eans)
-              .setRatingReviews(ratingReviews)
-              .build();
+               // Creating the product
+               Product product = ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setPrice(price)
+                     .setPrices(prices)
+                     .setAvailable(available)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setMarketplace(marketplace)
+                     .setEans(eans)
+                     .setRatingReviews(ratingReviews)
+                     .build();
 
-          products.add(product);
-        }
+               products.add(product);
+            }
+         }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
 
-    return products;
+      return products;
 
-  }
+   }
 
-  private String crawlName(Document doc, JSONObject jsonInfo) {
-    String name = JSONUtils.getStringValue(jsonInfo, "name");
+   private String scrapSecondaryImages(Document doc, String primaryImage) {
+      String secondaryImages = null;
 
-    Element el = doc.selectFirst(".product-view .product-info .marca.show-hover");
-    if (el != null) {
-      name = name + " " + el.text();
-    }
+      JSONArray secondaryImagesArray = new JSONArray();
 
-    Element ele = doc.selectFirst(".product-view .product-info .quantidade.show-hover");
-    if (ele != null) {
-      name = name + " " + ele.text();
-    }
+      Elements images = doc.select(".product-image-gallery img:not(#image-main)");
+      for (Element e : images) {
+         String image = CrawlerUtils.sanitizeUrl(e, Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br");
 
-    return name;
-  }
-
-  private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".product-view") != null;
-  }
-
-  private Float crawlPrice(JSONObject json) {
-    Float price = null;
-
-    if (json.has("offers") && !json.isNull("offers")) {
-      JSONObject value = json.getJSONObject("offers");
-      if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer")) {
-        price = JSONUtils.getFloatValueFromJSON(value, "price", true);
+         if ((primaryImage == null || !primaryImage.split("\\?")[0].equals(image.split("\\?")[0])) && image != null) {
+            secondaryImagesArray.put(image);
+         }
       }
-    }
 
-    return price;
-  }
-
-  private boolean crawlAvailability(JSONObject json) {
-    boolean availability = false;
-
-    if (json.has("offers") && !json.isNull("offers")) {
-      JSONObject value = json.getJSONObject("offers");
-      if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer") && value.has("availability") &&
-          !value.isNull("availability")) {
-
-        availability = value.get("availability").toString().toLowerCase().endsWith("instock");
+      if (secondaryImagesArray.length() > 0) {
+         secondaryImages = secondaryImagesArray.toString();
       }
-    }
 
-    return availability;
-  }
+      return secondaryImages;
+   }
 
-  /**
-   * In product page has only one price, but in footer has informations of payment methods
-   *
-   * @param doc
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Float price, Document doc) {
-    Prices prices = new Prices();
+   private String crawlName(Document doc, JSONObject jsonInfo) {
+      String name = JSONUtils.getStringValue(jsonInfo, "name");
 
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
-      installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
-      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session));
+      Element el = doc.selectFirst(".product-view .product-info .marca.show-hover");
+      if (el != null) {
+         name = name + " " + el.text();
+      }
 
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-    }
+      Element ele = doc.selectFirst(".product-view .product-info .quantidade.show-hover");
+      if (ele != null) {
+         name = name + " " + ele.text();
+      }
 
-    return prices;
-  }
+      return name;
+   }
 
-  private RatingsReviews crawlRating(Document doc, String internalId, String primaryImage) {
-    TrustvoxRatingCrawler rating = new TrustvoxRatingCrawler(session, "109192", logger);
-    rating.setPrimaryImage(primaryImage);
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-view") != null;
+   }
 
-    return rating.extractRatingAndReviews(internalId, doc, dataFetcher);
-  }
+   private Float crawlPrice(JSONObject json) {
+      Float price = null;
+
+      if (json.has("offers") && !json.isNull("offers")) {
+         JSONObject value = json.getJSONObject("offers");
+         if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer")) {
+            price = JSONUtils.getFloatValueFromJSON(value, "price", true);
+         }
+      }
+
+      return price;
+   }
+
+   private boolean crawlAvailability(JSONObject json) {
+      boolean availability = false;
+
+      if (json.has("offers") && !json.isNull("offers")) {
+         JSONObject value = json.getJSONObject("offers");
+         if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer") && value.has("availability") &&
+               !value.isNull("availability")) {
+
+            availability = value.get("availability").toString().toLowerCase().endsWith("instock");
+         }
+      }
+
+      return availability;
+   }
+
+   /**
+    * In product page has only one price, but in footer has informations of payment methods
+    *
+    * @param doc
+    * @param price
+    * @return
+    */
+   private Prices crawlPrices(Float price, Document doc) {
+      Prices prices = new Prices();
+
+      if (price != null) {
+         Map<Integer, Float> installmentPriceMap = new HashMap<>();
+         installmentPriceMap.put(1, price);
+         prices.setBankTicketPrice(price);
+         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session));
+
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      }
+
+      return prices;
+   }
+
+   private RatingsReviews crawlRating(Document doc, String internalId, String primaryImage) {
+      TrustvoxRatingCrawler rating = new TrustvoxRatingCrawler(session, "109192", logger);
+      rating.setPrimaryImage(primaryImage);
+
+      return rating.extractRatingAndReviews(internalId, doc, dataFetcher);
+   }
 }
