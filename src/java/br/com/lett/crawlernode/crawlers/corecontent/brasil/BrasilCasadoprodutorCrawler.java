@@ -60,25 +60,16 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
     if (dataLayer.has("id")) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalIds = getMainProductId(dataLayer);// mudar o metodo usado 
+      String internalIds = getMainProductId(dataLayer);
       String internalPid = crawlInternalPid(doc);
-      //System.err.println(internalPid);
-      //System.err.println(internalId);
+
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".respiro_conteudo .migalha a");
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList( ".descricao_texto .descricao_texto_conteudo"));
       String mainProductId = getMainProductId(dataLayer);
 
       // sku data in json
       JSONArray arraySkus = dataLayer != null && dataLayer.has("variants") ? dataLayer.getJSONArray("variants") : new JSONArray();
-/*
-      boolean a = internalPid instanceof String;
-      float v = (float) 6;
-      
-      Object o;
-      
-      o instanceof JSONObject;
-      json = (JSONObject) o;
-  */    
+
       for (int i = 0; i < arraySkus.length(); i++) { 
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
@@ -88,7 +79,6 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
         Document productAPI = captureImageAndPricesInfo(internalIds, internalPid, mainProductId, doc);
         
         Float price = JSONUtils.getFloatValueFromJSON(jsonSku, "payInFullPrice", true);
-        //Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".preco_por_titulo span", null, false, ',', session);
         boolean available = crawlAvailability(price, jsonSku);
         Prices prices = available ? crawlPrices(price, jsonSku) : new Prices();
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(productAPI, ".produto_foto #divImagemPrincipalZoom > a", Arrays.asList("href"),
