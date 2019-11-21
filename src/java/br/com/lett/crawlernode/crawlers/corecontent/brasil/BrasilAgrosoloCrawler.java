@@ -67,7 +67,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
     
-    Elements elements = doc.select("a[href][idgrade]");
+    Elements elements = doc.select(".product-variation > ul > li");
     
     if(elements.size() > 1) {
       products.addAll(extractVariations(elements));
@@ -86,8 +86,9 @@ public class BrasilAgrosoloCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     for(Element e : elements) {
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "idgrade");
-      String variationName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "title");
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a[href][idgrade]", "idgrade");
+      String variationName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a[href][idgrade]", "title");
+      boolean availability = !e.hasClass("indisponivel");
       
       if(internalId != null) {
         Request request = RequestBuilder.create()
@@ -98,8 +99,8 @@ public class BrasilAgrosoloCrawler extends Crawler {
         Document productDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
     
         Product product = extractProduct(productDoc, internalId, variationName);
-      
         if(product != null) {
+          product.setAvailable(availability);
           products.add(product);
         }
       }
