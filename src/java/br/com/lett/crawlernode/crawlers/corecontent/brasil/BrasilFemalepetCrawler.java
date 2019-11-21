@@ -2,39 +2,36 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 
-public class BrasilDibichoCrawler extends Crawler {
+public class BrasilFemalepetCrawler extends Crawler {
+  
+  private static final String HOME_PAGE = "https://www.femalepet.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "femalepet";
+  private static final String YOURVIEWS_API_KEY = "14bf3f36-845e-4e67-8ccf-629f69289f81";
 
-  public BrasilDibichoCrawler(Session session) {
+  public BrasilFemalepetCrawler(Session session) {
     super(session);
     super.config.setMustSendRatingToKinesis(true);
   }
-
-  private static final String HOME_PAGE = "https://www.dibicho.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "loja di bicho";
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -45,8 +42,9 @@ public class BrasilDibichoCrawler extends Crawler {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+      
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      RatingsReviews ratingReviews = scrapRatingsReviews(internalPid);
+      RatingsReviews ratingReviews = scrapRatingsReviews(skuJson, internalPid);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
@@ -75,7 +73,7 @@ public class BrasilDibichoCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
-        RatingsReviews ratingReviewsClone = (RatingsReviews) ratingReviews.clone();
+        RatingsReviews ratingReviewsClone = ratingReviews.clone();
 
         String ean = i < eanArray.length() ? eanArray.getString(i) : null;
 
@@ -113,104 +111,44 @@ public class BrasilDibichoCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".mainProduct") != null;
+    return doc.selectFirst("#produto") != null;
   }
   
-  private RatingsReviews scrapRatingsReviews(String internalPid) {
+  private RatingsReviews scrapRatingsReviews(JSONObject json, String internalPid) {
     RatingsReviews ratingReviews = new RatingsReviews();
     ratingReviews.setDate(session.getDate());
     
-    Document docRating = crawlApiRatings(session.getOriginalURL(), internalPid);
+    YourreviewsRatingCrawler yr =
+        new YourreviewsRatingCrawler(session, cookies, logger, YOURVIEWS_API_KEY, this.dataFetcher);
+    
+    Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, YOURVIEWS_API_KEY, this.dataFetcher);
+    
     Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
-    Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
+    Double avgRating = getTotalAvgRating(docRating);
+    AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
     
     ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
     ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
     
     return ratingReviews;
   }
-  
-  /**
-   * Api Ratings Url: http://www.walmart.com.ar/userreview Ex payload:
-   * productId=8213&productLinkId=home-theater-5-1-microlab-m-710u51 Required headers to crawl this
-   * api
-   * 
-   * @param url
-   * @param internalPid
-   * @return document
-   */
-  private Document crawlApiRatings(String url, String internalPid) {
-    
-    // Parameter in url for request POST ex: "led-32-ilo-hd-smart-d300032-" IN URL
-    // "http://www.walmart.com.ar/led-32-ilo-hd-smart-d300032-/p"
-    String[] tokens = url.split("/");
-    String productLinkId = tokens[tokens.length - 2];
 
-    String payload = "productId=" + internalPid + "&productLinkId=" + productLinkId;
+  private Double getTotalAvgRating(Document docRating) {
+    Double avgRating = null;
+    Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
 
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/x-www-form-urlencoded");
-    headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
-
-    Request request =
-        RequestBuilder.create().setUrl(HOME_PAGE + "userreview").setCookies(cookies).setHeaders(headers).setPayload(payload).build();
-    return Jsoup.parse(this.dataFetcher.post(session, request).getBody());
-  }
-
-  /**
-   * Average is calculated
-   * 
-   * @param document
-   * @return
-   */
-  private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-    Double avgRating = 0.0;
-    Elements rating = docRating.select("ul.rating li");
-
-    if (totalRating != null) {
-      Double total = 0.0;
-
-      for (Element e : rating) {
-        Element star = e.select("strong.rating-demonstrativo").first();
-        Element totalStar = e.select("> span:not([class])").first();
-
-        if (totalStar != null) {
-          String votes = totalStar.text().replaceAll("[^0-9]", "").trim();
-
-          if (!votes.isEmpty()) {
-            Integer totalVotes = Integer.parseInt(votes);
-            if (star != null) {
-              if (star.hasClass("avaliacao50")) {
-                total += totalVotes * 5;
-              } else if (star.hasClass("avaliacao40")) {
-                total += totalVotes * 4;
-              } else if (star.hasClass("avaliacao30")) {
-                total += totalVotes * 3;
-              } else if (star.hasClass("avaliacao20")) {
-                total += totalVotes * 2;
-              } else if (star.hasClass("avaliacao10")) {
-                total += totalVotes * 1;
-              }
-            }
-          }
-        }
-      }
-
-      avgRating = MathUtils.normalizeTwoDecimalPlaces(total / totalRating);
+    if (rating != null) {
+      avgRating = Double.parseDouble(rating.attr("content"));
     }
 
     return avgRating;
   }
-
-  /**
-   * Number of ratings appear in api
-   * 
-   * @param docRating
-   * @return
-   */
-  private Integer getTotalNumOfRatings(Document docRating) {
+  
+  private Integer getTotalNumOfRatings(Document doc) {
     Integer totalRating = null;
-    Element totalRatingElement = docRating.select(".media em > span").first();
+    Element totalRatingElement = doc.select("strong[itemprop=ratingCount]").first();
 
     if (totalRatingElement != null) {
       String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();

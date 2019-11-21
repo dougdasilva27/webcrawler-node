@@ -38,7 +38,7 @@ public class ExecutionParameters {
   private Boolean debug;
   private Boolean useFetcher;
   private String kinesisStream;
-  private String kinesisRatingStream;
+  private String kinesisRatingStream = null;
   private String newAwsAccessKey;
   private String newAwsSecretKey;
   private Boolean sendToKinesis;

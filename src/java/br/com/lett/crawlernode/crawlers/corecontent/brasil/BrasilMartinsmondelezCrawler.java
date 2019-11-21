@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -44,18 +45,19 @@ public class BrasilMartinsmondelezCrawler extends Crawler {
 
   @Override
   protected Object fetch() {
+     try {
     this.webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.martinsatacado.com.br/login", session);
     this.webdriver.waitLoad(10000);
 
-    WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
+    WebElement email = this.webdriver.driver.findElement(By.cssSelector("#js_username_login"));
     email.sendKeys(EMAIL_LOGIN);
     this.webdriver.waitLoad(2000);
 
-    WebElement cnpj = this.webdriver.driver.findElement(By.cssSelector("#selectCNPJ"));
+    WebElement cnpj = this.webdriver.driver.findElement(By.cssSelector("#jsSelectCNPJ"));
     this.webdriver.clickOnElementViaJavascript(cnpj);
     this.webdriver.waitLoad(2000);
 
-    WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#j_password"));
+    WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#j_password[required]"));
     pass.sendKeys(PASSWORD);
     this.webdriver.waitLoad(2000);
 
@@ -67,6 +69,10 @@ public class BrasilMartinsmondelezCrawler extends Crawler {
     this.webdriver.waitLoad(10000);
 
     return Jsoup.parse(this.webdriver.getCurrentPageSource());
+     } catch (Exception e) {
+        Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+        return super.fetch();
+     }
   }
 
   @Override
@@ -74,6 +80,8 @@ public class BrasilMartinsmondelezCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
+    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "MARTINS.html");
+    
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 

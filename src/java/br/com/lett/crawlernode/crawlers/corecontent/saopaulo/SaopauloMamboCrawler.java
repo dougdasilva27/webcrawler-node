@@ -89,6 +89,7 @@ public class SaopauloMamboCrawler extends Crawler {
         String primaryImage = crawlPrimaryImage(json);
         String secondaryImages = crawlSecondaryImages(json, primaryImage);
         RatingsReviews rating = scrapRating(internalId, new Document(""));
+        Float multiplicadorUnidade = JSONUtils.getFloatValueFromJSON(json, "x_multiplicadorDeUnidade", true);
 
         JSONArray arraySkus = json.has("childSKUs") && !json.isNull("childSKUs") ? json.getJSONArray("childSKUs") : new JSONArray();
 
@@ -96,6 +97,10 @@ public class SaopauloMamboCrawler extends Crawler {
           JSONObject jsonSku = arraySkus.getJSONObject(0);
           Float price = CrawlerUtils.getFloatValueFromJSON(jsonSku, "salePrice");
           price = price == null ? CrawlerUtils.getFloatValueFromJSON(jsonSku, "listPrice") : price;
+
+          if (price != null && multiplicadorUnidade != null) {
+            price = MathUtils.normalizeTwoDecimalPlaces(price / multiplicadorUnidade);
+          }
 
           Prices prices = crawlPrices(price, jsonSku, pageJson);
           String description = crawlDescription(json, jsonSku);
