@@ -79,10 +79,10 @@ public class BrasilRicardoeletroCrawler extends Crawler {
                String description = scrapDescription(docVariation);
 
                List<Document> sellersHtmls = scrapProductPagePerSeller(docVariation);
-               Offers offers = scrapOffers(sellersHtmls);
                Map<String, Prices> marketplaceMap = scrapMarketplaceMap(sellersHtmls);
                Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
                boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(SELLER_NAME));
+               Offers offers = !marketplaceMap.isEmpty() ? scrapOffers(sellersHtmls) : new Offers();
                Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME));
                Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
                Integer stock = JSONUtils.getIntegerValueFromJSON(skuJson, "stock", 0);
@@ -250,7 +250,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
          String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-price-details .product-price-details-sold-by b", true).toLowerCase();
          Prices prices = scrapPrices(doc);
 
-         marketplaceMap.put(sellerName, prices);
+         if (!prices.isEmpty()) {
+            marketplaceMap.put(sellerName, prices);
+         }
       }
 
       return marketplaceMap;
