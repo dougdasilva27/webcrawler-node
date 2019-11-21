@@ -1,16 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -19,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
@@ -27,18 +27,41 @@ import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilAgrosoloCrawler extends Crawler {
-	
-  // De:  https://www.agrosolo.com.br/dog-chow-adultos-racas-medias-grandes-frango-arroz-15kg
-  // Var: https://www.agrosolo.com.br/racao-premier-ambientes-internos-gatos-adultos-castrados-ate-7-anos-sabor-salmao
-  // Ind: https://www.agrosolo.com.br/combo-royal-canin-mini-adulto-25kg-gratis-2-latas-de-alimento-umido
-	  
+
   private static final String HOME_PAGE = "www.agrosolo.com.br";
   
   public BrasilAgrosoloCrawler(Session session) {
     super(session);
     super.config.setMustSendRatingToKinesis(true);
   }
+  
+  @Override
+  protected Object fetch() {
 
+    String urlToFetch = session.getOriginalURL();
+    
+    try {
+      URL u = new URL(urlToFetch);
+      String query = u.getQuery();
+      
+      // Colocando parâmetro para aparecer todos os comentários na pagina
+      if(query == null) {
+        urlToFetch += "?comtodos=s";
+      } else if(!query.contains("comtodos")) {
+        urlToFetch += "&comtodos=s";
+      }
+    } catch(Exception e) {
+      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+    }
+
+    Request request = RequestBuilder.create()
+        .setUrl(urlToFetch)
+        .setCookies(cookies)
+        .build();
+
+    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+  }
+  
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
@@ -47,40 +70,48 @@ public class BrasilAgrosoloCrawler extends Crawler {
     Elements elements = doc.select("a[href][idgrade]");
     
     if(elements.size() > 1) {
-	    for(Element e : elements) {
-	    	String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "idgrade");
-	    	String variationName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "title");;
-	    	
-	    	if(internalId != null) {
-			  Request request = RequestBuilder.create()
-					  .setUrl(session.getOriginalURL() + "?idgrade=" + internalId)
-					  .setCookies(cookies)
-					  .build();
-			
-			  Document productDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-		
-			  Product product = extractProduct(productDoc, internalId, variationName);
-			
-		      if(product != null) {
-			    products.add(product);
-		      }
-	    	}
-	    }
+      products.addAll(extractVariations(elements));
     } else {
-    	Product product = extractProduct(doc, CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ctrIdGrade", "value"), null);
-		
-        if(product != null) {
-	      products.add(product);
-        }
+      Product product = extractProduct(doc, CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ctrIdGrade", "value"), null);
+    
+      if(product != null) {
+        products.add(product);
+      }
     }
+  
+    return products;
+  }
+  
+  private List<Product> extractVariations(Elements elements) {
+    List<Product> products = new ArrayList<>();
 
+    for(Element e : elements) {
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "idgrade");
+      String variationName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "title");
+      
+      if(internalId != null) {
+        Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL() + "&idgrade=" + internalId)
+            .setCookies(cookies)
+            .build();
+      
+        Document productDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+    
+        Product product = extractProduct(productDoc, internalId, variationName);
+      
+        if(product != null) {
+          products.add(product);
+        }
+      }
+    }
+    
     return products;
   }
   
   private Product extractProduct(Document doc, String internalId, String variationName) {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
+  
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ctrIdProduto", "value");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info > h1", true);
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".new-value .ctrValorMoeda", null, true, ',', session);
@@ -92,7 +123,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       Integer stock = null;
       String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[ean]", "ean");
       List<String> eans = ean != null && !ean.isEmpty() ? Arrays.asList(ean) : null;
-      RatingsReviews ratingsReviews = null;
+      RatingsReviews ratingsReviews = scrapRatingReviews(doc);
       
       Element availabilityElement = doc.selectFirst(".product-buy-area");
       boolean available = availabilityElement != null && !availabilityElement.hasAttr("hidden");
@@ -102,7 +133,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       }
       
       // Creating the product
-      Product product = ProductBuilder.create()
+      return ProductBuilder.create()
           .setUrl(session.getOriginalURL())
           .setInternalId(internalId)
           .setInternalPid(internalPid)
@@ -120,8 +151,6 @@ public class BrasilAgrosoloCrawler extends Crawler {
           .setEans(eans)
           .setRatingReviews(ratingsReviews)
           .build();
-      
-      return product;
       
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -150,7 +179,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
         installmentPriceMap.put(installment.getFirst(), installment.getSecond());
       }
       
-
+  
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
@@ -166,9 +195,9 @@ public class BrasilAgrosoloCrawler extends Crawler {
     RatingsReviews ratingReviews = new RatingsReviews();
     ratingReviews.setDate(session.getDate());
     
-    Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".comments-wrapper [itemprop=\"ratingCount\"]", "content", 0);
-    Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".comments-wrapper [itemprop=\"ratingValue\"]", "", false, '.', session);
-    Integer totalWrittenReviews = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".comments-wrapper [itemprop=\"reviewCount\"]", "content", 0);
+    Integer totalNumOfEvaluations = doc.select(".comments-area > .customer-comment").size();
+    Double avgRating = scrapAvgRating(doc);
+    Integer totalWrittenReviews = totalNumOfEvaluations;
     AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
     
     ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -179,6 +208,19 @@ public class BrasilAgrosoloCrawler extends Crawler {
     return ratingReviews;
   }
   
+  private Double scrapAvgRating(Document doc) {
+    Double avgRating = 0.0;
+    Elements elements = doc.select(".detalhe-produto-avaliacao-estrelas > li");
+    
+    for(Element e : elements) {
+      if(e.hasClass("cheia")) {
+        avgRating += 1.0;
+      }
+    }
+    
+    return avgRating;
+  }
+  
   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
     Integer star1 = 0;
     Integer star2 = 0;
@@ -186,24 +228,23 @@ public class BrasilAgrosoloCrawler extends Crawler {
     Integer star4 = 0;
     Integer star5 = 0;
     
-    Elements reviews = doc.select(".product-comment-list > .customer-comments .stars > .rating-stars");
+    Elements reviews = doc.select(".comments-area > .customer-comment");
     
     for(Element review : reviews) {
-      if(review.hasAttr("data-score")) {
-        Integer val = Integer.parseInt(review.attr("data-score").replaceAll("[^0-9]+", ""));     
-        
-        switch(val) {
-          case 1: star1 += 1; 
-          break;
-          case 2: star2 += 1; 
-          break;
-          case 3: star3 += 1; 
-          break;
-          case 4: star4 += 1; 
-          break;
-          case 5: star5 += 1; 
-          break;
-        }
+      Elements stars = review.select(".rating > ul > li.cheia"); 
+      
+      switch(stars.size()) {
+        case 1: star1 += 1; 
+        break;
+        case 2: star2 += 1; 
+        break;
+        case 3: star3 += 1; 
+        break;
+        case 4: star4 += 1; 
+        break;
+        case 5: star5 += 1; 
+        break;
+        default:
       }
     }
     
