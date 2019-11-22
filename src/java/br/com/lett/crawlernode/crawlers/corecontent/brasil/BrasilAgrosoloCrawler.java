@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -119,7 +120,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       Prices prices = scrapPrices(doc, price);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb > ul > li", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .ctrFotoPrincipalZoomNew", Arrays.asList("href"), "https", HOME_PAGE);
-      String secondaryImages = null;
+      String secondaryImages = scrapSecondaryImages(doc, primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("[tab=caracteristicas]", "#caracteristicas", "[tab=especificacoes]", "#especificacoes"));
       Integer stock = null;
       String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[ean]", "ean");
@@ -162,6 +163,30 @@ public class BrasilAgrosoloCrawler extends Crawler {
   
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".content-product") != null;
+  }
+  
+  private String scrapSecondaryImages(Document doc, String primaryImage) {
+    String secondaryImages = null;
+    JSONArray secondaryImagesArray = new JSONArray();
+
+    Elements images = doc.select(".images li.ctrFotosVideosFoto > a");
+    for (Element e : images) {
+      String image = CrawlerUtils.sanitizeUrl(e, Arrays.asList("urlfoto"), "https", HOME_PAGE);
+      
+      if(image != null) {
+        image = image.replace("/det/", "/original/");
+        
+        if ((primaryImage == null || !primaryImage.equals(image))) {
+          secondaryImagesArray.put(image);
+        }
+      }
+    }
+
+    if (secondaryImagesArray.length() > 0) {
+      secondaryImages = secondaryImagesArray.toString();
+    }
+
+    return secondaryImages;
   }
   
   private Prices scrapPrices(Document doc, Float price) {
