@@ -975,6 +975,20 @@ public class CrawlerUtils {
       return json;
    }
 
+   public static JSONObject stringToJSONObject(String str) {
+      JSONObject json = new JSONObject();
+
+      if (str.trim().startsWith("{") && str.trim().endsWith("}")) {
+         try {
+            json = new JSONObject(str.trim());
+         } catch (Exception e1) {
+            Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
+         }
+      }
+
+      return json;
+   }
+
    public static JSONArray stringToJsonArray(String str) {
       JSONArray json = new JSONArray();
 
