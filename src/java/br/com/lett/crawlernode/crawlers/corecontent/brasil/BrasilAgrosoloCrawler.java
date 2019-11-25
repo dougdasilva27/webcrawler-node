@@ -174,6 +174,9 @@ public class BrasilAgrosoloCrawler extends Crawler {
       String image = CrawlerUtils.sanitizeUrl(e, Arrays.asList("urlfoto"), "https", HOME_PAGE);
       
       if(image != null) {
+        
+        // Subtituindo parte da url da imagem de para pegar a imagem com maior tamanho
+        // Essa operação é feita pelo site via javascript
         image = image.replace("/det/", "/original/");
         
         if ((primaryImage == null || !primaryImage.equals(image))) {
