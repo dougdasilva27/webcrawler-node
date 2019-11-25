@@ -223,18 +223,20 @@ public class BrasilRicardoeletroCrawler extends Crawler {
          String sellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ExibeFormasPagamento[data-siteid]", "data-siteid");
          Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-details .product-price-details-new-price", null, false, ',', session);
 
-         try {
-            Offer offer = new OfferBuilder()
-                  .setSellerFullName(sellerName)
-                  .setSlugSellerName(CrawlerUtils.toSlug(sellerName))
-                  .setInternalSellerId(sellerId)
-                  .setMainPagePosition(position)
-                  .setIsBuybox(htmls.size() > 1)
-                  .setMainPrice(price)
-                  .build();
-            offers.add(offer);
-         } catch (OfferException e) {
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+         if (price != null) {
+            try {
+               Offer offer = new OfferBuilder()
+                     .setSellerFullName(sellerName)
+                     .setSlugSellerName(CrawlerUtils.toSlug(sellerName))
+                     .setInternalSellerId(sellerId)
+                     .setMainPagePosition(position)
+                     .setIsBuybox(htmls.size() > 1)
+                     .setMainPrice(price)
+                     .build();
+               offers.add(offer);
+            } catch (OfferException e) {
+               Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+            }
          }
 
          position++;
