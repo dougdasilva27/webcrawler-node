@@ -84,6 +84,7 @@ public class BrasilAgrocidiCrawler extends Crawler {
          Map<Integer, Float> installments = new HashMap<>();
          installments.put(1, price);
          prices.setBankTicketPrice(price);
+         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-venda.titulo", null, true, ',', session));
 
          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".principal .preco-produto  .preco-parcela", doc, false, "x");
          if (!pair.isAnyValueNull()) {
