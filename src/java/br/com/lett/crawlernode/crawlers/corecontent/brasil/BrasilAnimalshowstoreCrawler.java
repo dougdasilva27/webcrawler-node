@@ -134,11 +134,10 @@ public class BrasilAnimalshowstoreCrawler extends Crawler {
         installmentPriceMap.put(pair.getFirst(), pair.getSecond());
       }
       
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+      List<Card> marketCards = Arrays.asList(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO);
+      for(Card c : marketCards) {
+        prices.insertCardInstallment(c.toString(), installmentPriceMap);
+      }
     }
     
     return prices;
@@ -203,9 +202,9 @@ public class BrasilAnimalshowstoreCrawler extends Crawler {
         String content = review.attr("content").replaceAll("[^0-9]+", "");
         
         if(!content.isEmpty()) {
-          Integer val = Integer.parseInt(content);     
+          Integer starValue = Integer.parseInt(content);     
           
-          switch(val) {
+          switch(starValue) {
             case 1: star1 += 1; 
             break;
             case 2: star2 += 1; 
