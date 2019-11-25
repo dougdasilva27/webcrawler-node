@@ -1380,7 +1380,7 @@ public class CrawlerUtils {
    public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter, String lastDelimiter,
          boolean lastOccurrenceForLastDelimiter) {
 
-      return crawlSimpleInstallment(cssSelector, html, ownText, delimiter, lastDelimiter, lastOccurrenceForLastDelimiter, '.');
+      return crawlSimpleInstallment(cssSelector, html, ownText, delimiter, lastDelimiter, lastOccurrenceForLastDelimiter, ',');
    }
 
    /**

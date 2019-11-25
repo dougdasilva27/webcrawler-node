@@ -18,190 +18,191 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.Pair;
 import models.RatingsReviews;
 import models.prices.Prices;
 
 
 public class BrasilLojadomecanicoCrawler extends Crawler {
-  private static final String HOME_PAGE = "http://www.lojadomecanico.com.br/";
+   private static final String HOME_PAGE = "http://www.lojadomecanico.com.br/";
 
-  public BrasilLojadomecanicoCrawler(Session session) {
-    super(session);
-    super.config.setMustSendRatingToKinesis(true);
-  }
+   public BrasilLojadomecanicoCrawler(Session session) {
+      super(session);
+      super.config.setMustSendRatingToKinesis(true);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject jsonIdSkuPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta=", ";", true, false);
-      JSONObject jsonNameDesc = CrawlerUtils.selectJsonFromHtml(doc, ".product-page script[type=\"application/ld+json\"]", "", null, false, false);
+         JSONObject jsonIdSkuPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta=", ";", true, false);
+         JSONObject jsonNameDesc = CrawlerUtils.selectJsonFromHtml(doc, ".product-page script[type=\"application/ld+json\"]", "", null, false, false);
 
-      String internalId = jsonIdSkuPrice.has("pid") ? jsonIdSkuPrice.getString("pid") : null;
-      String internalPid = jsonIdSkuPrice.has("sku") ? jsonIdSkuPrice.getString("sku") : null;
-      String name = scrapName(jsonNameDesc, doc, internalId);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".cateMain_breadCrumbs .breadCrumbNew li span[itemprop=\"name\"]", false);
-      String description = scrapDescription(jsonNameDesc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"), "https:",
-          "www.lojadomecanico.com.br");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"),
-          "https:", "www.lojadomecanico.com.br", primaryImage);
-      Float price = CrawlerUtils.getFloatValueFromJSON(jsonIdSkuPrice, "price");
-      Prices prices = scrapPrices(doc, price, jsonIdSkuPrice);
-      boolean available = doc.selectFirst("#btn-comprar-product") != null;
-      Integer stock = scrapStock(doc, available);
-      RatingsReviews rating = scrapRating(jsonNameDesc);
+         String internalId = jsonIdSkuPrice.has("pid") ? jsonIdSkuPrice.getString("pid") : null;
+         String internalPid = jsonIdSkuPrice.has("sku") ? jsonIdSkuPrice.getString("sku") : null;
+         String name = scrapName(jsonNameDesc, doc, internalId);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".cateMain_breadCrumbs .breadCrumbNew li span[itemprop=\"name\"]", false);
+         String description = scrapDescription(jsonNameDesc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"), "https:",
+               "www.lojadomecanico.com.br");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image .img-produto-min li a", Arrays.asList("data-image"),
+               "https:", "www.lojadomecanico.com.br", primaryImage);
+         Float price = CrawlerUtils.getFloatValueFromJSON(jsonIdSkuPrice, "price");
+         Prices prices = scrapPrices(doc, price, jsonIdSkuPrice);
+         boolean available = doc.selectFirst("#btn-comprar-product") != null;
+         Integer stock = scrapStock(doc, available);
+         RatingsReviews rating = scrapRating(jsonNameDesc);
 
-      Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setInternalPid(internalPid)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setStock(stock)
-          .setRatingReviews(rating)
-          .build();
+         Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(available)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setRatingReviews(rating)
+               .build();
 
-      products.add(product);
+         products.add(product);
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
-
-    return products;
-  }
-
-  private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".product-page #product") != null;
-  }
-
-  private String scrapName(JSONObject json, Document doc, String internalId) {
-    String name = null;
-    if (json.has("name") && !json.isNull("name")) {
-      name = json.get("name").toString();
-
-      String nameVariation = CrawlerUtils.scrapStringSimpleInfo(doc, "button[data-id=\"" + internalId + "\"][disabled=\"disabled\"]", false);
-      if (nameVariation != null) {
-        name += " " + nameVariation;
-      }
-    }
-
-    return name;
-  }
-
-  private String scrapDescription(JSONObject json) {
-    String description = null;
-
-    if (json.has("description")) {
-      description = json.getString("description");
-
-      // Decodificando string
-      description = description.replace("&lt;", "<");
-      description = description.replace("&gt;", ">");
-    }
-
-    return description;
-  }
-
-  private Prices scrapPrices(Document doc, Float price, JSONObject json) {
-    Prices prices = new Prices();
-    Elements elements = doc.select(".modal-content .tab-container #pgCartao tbody tr");
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-
-      prices.setBankTicketPrice(price);
-
-      if (json.has("product")) {
-        JSONObject innerJson = json.getJSONObject("product");
-
-        if (innerJson.has("old_price")) {
-          prices.setPriceFrom(innerJson.getDouble("old_price"));
-        }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      for (Element e : elements) {
-        br.com.lett.crawlernode.util.Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "total", false);
-        installmentPriceMap.put(installment.getFirst(), installment.getSecond());
+      return products;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-page #product") != null;
+   }
+
+   private String scrapName(JSONObject json, Document doc, String internalId) {
+      String name = null;
+      if (json.has("name") && !json.isNull("name")) {
+         name = json.get("name").toString();
+
+         String nameVariation = CrawlerUtils.scrapStringSimpleInfo(doc, "button[data-id=\"" + internalId + "\"][disabled=\"disabled\"]", false);
+         if (nameVariation != null) {
+            name += " " + nameVariation;
+         }
       }
 
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-    }
+      return name;
+   }
 
-    return prices;
-  }
+   private String scrapDescription(JSONObject json) {
+      String description = null;
 
-  private Integer scrapStock(Document doc, boolean available) {
-    Integer stock = 0;
+      if (json.has("description")) {
+         description = json.getString("description");
 
-    if (available) {
-      stock = null;
-      Element e = doc.selectFirst("#btn-comprar-product");
-
-      if (e != null && e.hasAttr("data-product")) {
-        JSONObject json = new JSONObject(e.attr("data-product"));
-
-        if (json.has("maxStock")) {
-          stock = json.getInt("maxStock");
-        }
+         // Decodificando string
+         description = description.replace("&lt;", "<");
+         description = description.replace("&gt;", ">");
       }
-    }
 
-    return stock;
-  }
+      return description;
+   }
 
-  private RatingsReviews scrapRating(JSONObject json) {
-    RatingsReviews rating = new RatingsReviews();
+   private Prices scrapPrices(Document doc, Float price, JSONObject json) {
+      Prices prices = new Prices();
+      Elements elements = doc.select(".modal-content .tab-container #pgCartao tbody tr");
 
-    Integer totalNumOfEvaluations = 0;
-    Double avgRating = 0.0;
+      if (price != null) {
+         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 
-    if (json.has("aggregateRating")) {
-      json = json.getJSONObject("aggregateRating");
+         prices.setBankTicketPrice(price);
 
-      totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(json, "reviewCount", 0);
-      avgRating = scrapAvgRating(json);
-    }
+         if (json.has("product")) {
+            JSONObject innerJson = json.getJSONObject("product");
 
-    rating.setDate(session.getDate());
-    rating.setTotalRating(totalNumOfEvaluations);
-    rating.setAverageOverallRating(avgRating);
-    rating.setTotalWrittenReviews(totalNumOfEvaluations);
+            if (innerJson.has("old_price")) {
+               prices.setPriceFrom(innerJson.getDouble("old_price"));
+            }
+         }
 
-    return rating;
-  }
+         for (Element e : elements) {
+            Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "total", false, ',');
+            installmentPriceMap.put(installment.getFirst(), installment.getSecond());
+         }
 
-  private Double scrapAvgRating(JSONObject json) {
-    Double avgRating = JSONUtils.getDoubleValueFromJSON(json, "ratingValue", true);
+         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+      }
 
-    if (avgRating == null) {
-      avgRating = 0d;
-    }
+      return prices;
+   }
 
-    return avgRating;
-  }
+   private Integer scrapStock(Document doc, boolean available) {
+      Integer stock = 0;
+
+      if (available) {
+         stock = null;
+         Element e = doc.selectFirst("#btn-comprar-product");
+
+         if (e != null && e.hasAttr("data-product")) {
+            JSONObject json = new JSONObject(e.attr("data-product"));
+
+            if (json.has("maxStock")) {
+               stock = json.getInt("maxStock");
+            }
+         }
+      }
+
+      return stock;
+   }
+
+   private RatingsReviews scrapRating(JSONObject json) {
+      RatingsReviews rating = new RatingsReviews();
+
+      Integer totalNumOfEvaluations = 0;
+      Double avgRating = 0.0;
+
+      if (json.has("aggregateRating")) {
+         json = json.getJSONObject("aggregateRating");
+
+         totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(json, "reviewCount", 0);
+         avgRating = scrapAvgRating(json);
+      }
+
+      rating.setDate(session.getDate());
+      rating.setTotalRating(totalNumOfEvaluations);
+      rating.setAverageOverallRating(avgRating);
+      rating.setTotalWrittenReviews(totalNumOfEvaluations);
+
+      return rating;
+   }
+
+   private Double scrapAvgRating(JSONObject json) {
+      Double avgRating = JSONUtils.getDoubleValueFromJSON(json, "ratingValue", true);
+
+      if (avgRating == null) {
+         avgRating = 0d;
+      }
+
+      return avgRating;
+   }
 }
