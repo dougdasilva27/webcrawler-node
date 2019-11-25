@@ -200,19 +200,23 @@ public class BrasilAnimalshowstoreCrawler extends Crawler {
     
     for(Element review : reviews) {
       if(review.hasAttr("content")) {
-        Integer val = Integer.parseInt(review.attr("content").replaceAll("[^0-9]+", ""));     
+        String content = review.attr("content").replaceAll("[^0-9]+", "");
         
-        switch(val) {
-          case 1: star1 += 1; 
-          break;
-          case 2: star2 += 1; 
-          break;
-          case 3: star3 += 1; 
-          break;
-          case 4: star4 += 1; 
-          break;
-          case 5: star5 += 1; 
-          break;
+        if(!content.isEmpty()) {
+          Integer val = Integer.parseInt(content);     
+          
+          switch(val) {
+            case 1: star1 += 1; 
+            break;
+            case 2: star2 += 1; 
+            break;
+            case 3: star3 += 1; 
+            break;
+            case 4: star4 += 1; 
+            break;
+            case 5: star5 += 1; 
+            break;
+          }
         }
       }
     }
