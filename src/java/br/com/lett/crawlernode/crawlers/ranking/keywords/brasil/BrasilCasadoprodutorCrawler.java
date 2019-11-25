@@ -24,7 +24,7 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String keyword = this.keywordWithoutAccents.replaceAll(" ", "");
+      String keyword = this.keywordWithoutAccents.replace(" ", "");
 
       String url = "https://www.casadoprodutor.com.br/resultadopesquisa?pag=" + this.currentPage + "&departamento=&buscarpor=" + keyword;
       this.log("Link onde são feitos os crawlers: " + url);
@@ -32,7 +32,8 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
       
       JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "script", "dataLayer.push(", ");", false, true); 
       JSONObject ecommerceProducts = jsonObject.getJSONObject("ecommerce");
-      JSONArray productsArray = ecommerceProducts != null && ecommerceProducts.has("impressions") ? ecommerceProducts.getJSONArray("impressions") : new JSONArray();
+      Object object = ecommerceProducts != null ? ecommerceProducts.get("impressions") : new Object();
+      JSONArray productsArray = object instanceof JSONArray ? (JSONArray) object: new JSONArray();
 
       Elements products = this.currentDoc.select(".loadProducts ul > li");
 
@@ -53,7 +54,6 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
@@ -73,7 +73,6 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
   private String scrapUrl(Element doc, String cssSelector,String attributes) {
 	  String url = null;
 	  
-	  //System.err.println(doc);
       Element urlElement = cssSelector != null ? doc.selectFirst(cssSelector) : doc;
       url = urlElement.attr("href").trim();
       if (urlElement != null) {
@@ -81,10 +80,7 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
     	  int indexBegin = url.indexOf("window.location='")+ 17;
     	  int indexFinal = url.length()-2;
     	  url = url.substring(indexBegin, indexFinal);
-    	  
       }
-      
-      
       return url;
   }
 
@@ -94,7 +90,6 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
       if (productJSON.has("sku") && !productJSON.isNull("sku")) {
          internalId = productJSON.get("sku").toString();
       }
-
       return internalId;
    }
 
@@ -108,7 +103,6 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
         	 internalPid = internalPid.substring(0, index);
          }
       }
-
       return internalPid;
    }
 }

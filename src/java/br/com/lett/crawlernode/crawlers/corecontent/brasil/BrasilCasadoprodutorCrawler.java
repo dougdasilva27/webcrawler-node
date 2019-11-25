@@ -87,8 +87,10 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
         String ean = crawlEan(jsonSku);
         List<String> eans = new ArrayList<>();
-        eans.add(ean);
-
+        if(ean != null) {
+        	eans.add(ean);
+        }
+        
         // Creating the product
         Product product = ProductBuilder.create()
         		.setUrl(session.getOriginalURL())
@@ -125,29 +127,17 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   private String getMainProductId(JSONObject json) {
     String mainProductId = null;
 
-    if (json.has("id")) {
+    if (json.has("id") && !json.isNull("id")) {
       mainProductId = json.get("id").toString();
     }
 
     return mainProductId;
   }
 
-  private String crawlInternalId(JSONObject json) {
-    String internalId = null;
-
-    if (json.has("variants")) {
-      internalId = json.get("id").toString();
-    }
-
-    return internalId;
-  }
-
   private String crawlInternalPid(Document doc) {
     String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name .produto_codigo span", false);
-    
-   
-    
-    if(internalPid.contains("-")) {
+
+    if(internalPid.contains("-") && internalPid != null) {
     	int finalInternalPid = internalPid.indexOf("-");
     	internalPid = internalPid.substring(0, finalInternalPid);
     }
@@ -157,13 +147,11 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   private String crawlName(JSONObject skuJson) {
     StringBuilder name = new StringBuilder();
 
-    if (skuJson.has("name")) {
+    if (skuJson.has("name") && !skuJson.isNull("name")) {
       name.append(skuJson.getString("name"));
     }
-
     return name.toString();
   }
-
 
   private boolean crawlAvailability(Float price, JSONObject jsonSku) {
     return jsonSku.has("available") && jsonSku.get("available") instanceof Boolean && jsonSku.getBoolean("available") && price != null;
@@ -230,13 +218,16 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   private Prices crawlPrices(Float price, JSONObject json) {
 	    Prices prices = new Prices();
 
+	    //available ? crawlPrices(price, jsonSku) : new Prices();
 	    if (price != null) {
 	      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 	      Integer quantityInstallment = JSONUtils.getIntegerValueFromJSON(json, "quantityOfInstallmentsNoInterest", null);
 	      Float installment = JSONUtils.getFloatValueFromJSON(json, "valueOfInstallmentsNoInterest", true);
 	      installmentPriceMap.put(1, price);
-	      installmentPriceMap.put(quantityInstallment, installment);
 	      prices.setBankTicketPrice(price);
+	      if(quantityInstallment != null && installment != null) {
+	    	  installmentPriceMap.put(quantityInstallment, installment);  
+	      }
 
 	      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
 	      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
@@ -251,14 +242,13 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   private String crawlEan(JSONObject json) {
     String ean = null;
 
-    if (json.has("ean")) {
+    if (json.has("ean") && !json.isNull("ean")) {
       Object obj = json.get("ean");
 
       if (obj != null) {
         ean = obj.toString();
       }
     }
-
     return ean;
   }
 }
