@@ -8,8 +8,6 @@ import java.util.Map;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -23,7 +21,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
 
   public ColombiaExitoCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.JAVANET;
+    super.fetchMode = FetchMode.APACHE;
   }
 
   private static final String HOME_PAGE = "https://www.exito.com/";
@@ -168,34 +166,24 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    * @return
    */
   private String fetchSHA256Key() {
-    // When sha256Hash is not found, this key below works (on 02/09/2019)
-    String hash = "eddb5557c24a3d17132e86b41c6dad23d08904469d0730c6f5df9f6cfa98ca9d";
-    String url = "https://www.exito.com/" + this.keywordEncoded;
+    String hash = "6d98ffeb45b2706036dedc2189973929924433d158b5af169beafa14d3f2898c";
+    String url = "https://exitocol.vtexassets.com/_v/public/assets/v1/published/bundle/public/react/asset.min.js?v=1"
+        + "&files=exito.icons@2.12.8,common,0,Icon,IconList"
+        + "&files=vtex.store-resources@0.35.0,common,OrderFormContext,Mutations,Queries,0,PWAContext"
+        + "&files=vtex.store-icons@0.13.4,common,IconSearch,IconCaret,IconCart,IconArrowBack,IconEyeSight"
+        + "&files=vtex.styleguide@9.91.3,common,0,1,Input&workspace=master";
 
     Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
-    String response = this.dataFetcher.get(session, request).getBody();
+    String response = this.dataFetcher.get(session, request).getBody().replace(" ", "");
 
-    if (response != null) {
-      Document doc = Jsoup.parse(response);
-      JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "__STATE__ =", null, false, true);
+    String searchProducts = CrawlerUtils.extractSpecificStringFromScript(response, "productSearch(", false, "',", false);
 
-      for (String key : stateJson.keySet()) {
-        String firstIndexString = "@runtimeMeta(";
-        String keyIdentifier = "$ROOT_QUERY.productSearch";
+    String firstIndexString = "@runtimeMeta(hash:";
+    if (searchProducts.contains(firstIndexString) && searchProducts.contains(")")) {
+      int x = searchProducts.indexOf(firstIndexString) + firstIndexString.length();
+      int y = searchProducts.indexOf(')', x);
 
-        if (key.contains(firstIndexString) && key.contains(keyIdentifier) && key.endsWith(")")) {
-          int x = key.indexOf(firstIndexString) + firstIndexString.length();
-          int y = key.indexOf(')', x);
-
-          JSONObject hashJson = CrawlerUtils.stringToJson(key.substring(x, y));
-
-          if (hashJson.has("hash") && !hashJson.isNull("hash")) {
-            hash = hashJson.get("hash").toString();
-          }
-
-          break;
-        }
-      }
+      hash = searchProducts.substring(x, y).replace("\"", "");
     }
 
     return hash;

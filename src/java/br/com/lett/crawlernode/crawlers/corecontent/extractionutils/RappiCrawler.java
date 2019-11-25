@@ -33,6 +33,8 @@ public class RappiCrawler extends Crawler {
   private static final String HOME_PAGE = "https://www.rappi.com";
   private static final String STORES_API_URL = "https://services.rappi.com.br/api/base-crack/principal?lat=-23.584&lng=-46.671&device=2";
   public static final String PRODUCTS_API_URL = "https://services.rappi.com.br/api/search-client/search/v2/products";
+  private static final String DETAILS_API_URL = "https://services.rappi.com.br/api/cpgs-graphql-domain/";
+  private static final String IMAGES_DOMAIN = "images.rappi.com.br/products";
 
   private final String storeType;
 
@@ -69,6 +71,7 @@ public class RappiCrawler extends Crawler {
       Float price = available ? crawlPrice(jsonSku) : null;
       Double priceFrom = available ? crawlPriceFrom(jsonSku) : null;
       String primaryImage = crawlPrimaryImage(jsonSku);
+      String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
       String name = crawlName(jsonSku);
       Prices prices = crawlPrices(price, priceFrom);
       Marketplace marketplace = crawlMarketplace(price, prices, jsonSku);
@@ -76,9 +79,21 @@ public class RappiCrawler extends Crawler {
       Offers offers = scrapBuyBox(jsonSku);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrices(prices).setPrice(price).setAvailable(available).setPrimaryImage(primaryImage).setDescription(description)
-          .setMarketplace(marketplace).setEans(eans).setOffers(offers).build();
+      Product product = ProductBuilder.create()
+          .setUrl(productUrl)
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrices(prices)
+          .setPrice(price)
+          .setAvailable(available)
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(marketplace)
+          .setEans(eans)
+          .setOffers(offers)
+          .build();
 
       products.add(product);
 
@@ -214,11 +229,35 @@ public class RappiCrawler extends Crawler {
   private String crawlPrimaryImage(JSONObject json) {
     String primaryImage = null;
 
-    if (json.has("image")) {
-      primaryImage = "https://images.rappi.com.br/products/" + json.get("image");
+    if (json.has("image") && json.get("image") instanceof String) {
+      primaryImage = CrawlerUtils.completeUrl(json.getString("image"), "https", IMAGES_DOMAIN);
     }
 
     return primaryImage;
+  }
+  
+  private String crawlSecondaryImages(JSONObject json, String primaryImage) {
+    JSONArray imagesArray = new JSONArray();
+
+    if(json.has("store_id") && !json.isNull("store_id") && json.has("product_id") && !json.isNull("product_id")) {
+      JSONArray jsonImagesArray = crawlProductImagesFromApi(json.get("product_id").toString(), json.get("store_id").toString());
+
+      for(Object obj : jsonImagesArray) {
+        if(obj instanceof JSONObject) {
+          JSONObject imageObj = (JSONObject) obj;
+          
+          if(imageObj.has("name") && imageObj.get("name") instanceof String) {
+            String secondaryImage = CrawlerUtils.completeUrl(imageObj.getString("name"), "https", IMAGES_DOMAIN);
+            
+            if(!secondaryImage.equals(primaryImage)) {
+              imagesArray.put(CrawlerUtils.completeUrl(imageObj.getString("name"), "https", IMAGES_DOMAIN));
+            }
+          }
+        }
+      }
+    }
+
+    return imagesArray.toString();
   }
 
 
@@ -324,6 +363,61 @@ public class RappiCrawler extends Crawler {
     }
 
     return productsInfo;
+  }
+  
+  private JSONArray crawlProductImagesFromApi(String productId, String storeId) {
+    JSONArray productImages = new JSONArray();
+    
+    if (productId != null && storeId != null) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Content-Type", "application/json");
+      
+      try {
+        long productIdNumber = Long.parseLong(productId);
+        long storeIdNumber = Long.parseLong(storeId);
+        
+        JSONObject payload = new JSONObject();
+        payload.put("operationName", "fetchProductDetails");
+        payload.put("variables", new JSONObject().put("productId", productIdNumber).put("storeId", storeIdNumber));
+        payload.put("query", "query fetchProductDetails($productId: Int!, $storeId: Int!) " +
+            "{\n productDetail(productId: $productId, storeId: $storeId) {\n longDescription\n " +
+            "images {\n name\n }\n toppings {\n id\n description\n toppingTypeId\n " + 
+            "minToppingsForCategories\n maxToppingsForCategories\n index\n presentationTypeId\n " + 
+            "topping {\n id\n description\n toppingCategoryId\n price\n maxLimit\n index\n }\n " + 
+            "}\n nutritionFactsImg {\n name\n }\n additionalInformation {\n attribute\n value\n " + 
+            "}\n ingredients {\n name\n }\n }\n}\n");
+  
+        Request request = RequestBuilder.create()
+            .setUrl(DETAILS_API_URL)
+            .setHeaders(headers)
+            .mustSendContentEncoding(false)
+            .setPayload(payload.toString())
+            .build();
+        
+        String page = this.dataFetcher.post(session, request).getBody();
+  
+        if (page.startsWith("{") && page.endsWith("}")) {
+          JSONObject apiResponse = new JSONObject(page);
+  
+          if (apiResponse.has("data") && apiResponse.get("data") instanceof JSONObject) {
+            apiResponse = apiResponse.getJSONObject("data");
+            
+            if (apiResponse.has("productDetail") && apiResponse.get("productDetail") instanceof JSONObject) {
+              apiResponse = apiResponse.getJSONObject("productDetail");
+              
+              if (apiResponse.has("images") && apiResponse.get("images") instanceof JSONArray) {
+                productImages = apiResponse.getJSONArray("images");
+              }
+            }
+          }
+        }
+      } catch (Exception e) {
+        Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+      }
+    }
+    
+    
+    return productImages;
   }
 
   private Map<String, String> crawlStores() {

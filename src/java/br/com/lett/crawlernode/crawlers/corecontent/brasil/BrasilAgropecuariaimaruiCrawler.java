@@ -54,7 +54,7 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#comment_post_ID", "value");
       String internalPid = skuJson != null && skuJson.has("sku") ? skuJson.get("sku").toString() : null;
       String name = skuJson != null && skuJson.has("name") ? skuJson.get("name").toString() : null;
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price-wrapper .product-page-price .woocommerce-Price-amount", null, true, ',', session);
+      Float price = crawlPrice(doc);
       Prices prices = scrapPrices(doc, price);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-info .woocommerce-breadcrumb a[href]", true);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".woocommerce-product-gallery figure img", Arrays.asList("src"), "https:", HOME_PAGE);
@@ -67,7 +67,9 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
       // Creating the product
       Product product = ProductBuilder.create()
           .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
           .setInternalPid(internalPid)
+          .setName(name)
           .setPrice(price)
           .setPrices(prices)
           .setAvailable(available)
@@ -86,7 +88,7 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
           ? new JSONArray(variationElement.attr("data-product_variations")) 
           : null;
       
-      if(variationJsonArray != null && variationJsonArray.length() > 0) {
+      if(variationJsonArray != null && variationJsonArray.length() > 0) {        
         for(Object obj : variationJsonArray) {
           JSONObject json = (JSONObject) obj;
           
@@ -101,7 +103,7 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
           products.add(clone);
           
         }
-      } else {  
+      } else {
         products.add(product);
       }
     } else {
@@ -109,6 +111,15 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
     }
     
     return products;
+  }
+  
+  private float crawlPrice(Document doc) {
+	 Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price-wrapper .product-page-price :not(:first-child) .woocommerce-Price-amount", null, true, ',', session);
+	 if(price == null) {
+		 price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".price-wrapper .product-page-price .woocommerce-Price-amount", null, true, ',', session);
+	 }
+	 
+	 return price;
   }
   
   private boolean isProductPage(Document doc) {

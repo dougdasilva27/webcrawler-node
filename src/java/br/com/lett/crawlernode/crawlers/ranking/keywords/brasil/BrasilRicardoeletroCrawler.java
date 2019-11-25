@@ -1,107 +1,86 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class BrasilRicardoeletroCrawler extends CrawlerRankingKeywords {
 
-  public BrasilRicardoeletroCrawler(Session session) {
-    super(session);
-    super.fetchMode = FetchMode.APACHE;
-  }
+   public BrasilRicardoeletroCrawler(Session session) {
+      super(session);
+      super.fetchMode = FetchMode.APACHE;
+   }
 
-  @Override
-  public void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 24;
+   @Override
+   public void extractProductsFromCurrentPage() {
+      this.pageSize = 24;
+      this.log("Página " + this.currentPage);
 
-    this.log("Página " + this.currentPage);
+      String keyword = this.keywordWithoutAccents.replaceAll(" ", "+");
 
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "+");
+      String url = "https://www.ricardoeletro.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + keyword;
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
 
-    // monta a url com a keyword e a página
-    String url = "https://www.ricardoeletro.com.br/Busca/Resultado/?p=" + this.currentPage + "&loja=&q=" + keyword;
-    this.log("Link onde são feitos os crawlers: " + url);
+      JSONArray jsonArray = CrawlerUtils.selectJsonArrayFromHtml(this.currentDoc, "script", "dataLayer = ", ";", false, true);
+      JSONObject productsJSON = jsonArray.length() > 0 && jsonArray.get(0) instanceof JSONObject ? jsonArray.getJSONObject(0) : new JSONObject();
+      JSONArray productsArray = JSONUtils.getJSONArrayValue(productsJSON, "searchProducts");
+      Elements products = this.currentDoc.select("#products > div a");
 
-    // chama função de pegar a url
-    this.currentDoc = fetchDocument(url);
+      if (!products.isEmpty() && products.size() == productsArray.length()) {
+         for (int index = 0; index < products.size(); index++) {
+            Object obj = productsArray.get(index);
+            JSONObject productJSON = obj instanceof JSONObject ? (JSONObject) obj : new JSONObject();
 
-    Elements products = this.currentDoc.select("div.box-vitrine.content-produto");
+            String internalPid = scrapInternalPid(productJSON);
+            String internalId = scrapInternalId(productJSON);
+            String productUrl = CrawlerUtils.scrapUrl(products.get(index), null, "href", "https", "www.ricardoeletro.com.br");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (!products.isEmpty()) {
-      for (Element e : products) {
+            saveDataProduct(internalId, internalPid, productUrl);
 
-        // InternalPid
-        String internalPid = crawlInternalPid(e);
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
 
-        // InternalId
-        String internalId = crawlInternalId(e);
-
-        // Url do produto
-        String productUrl = crawlProductUrl(e);
-
-        saveDataProduct(internalId, internalPid, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
-
+         }
+      } else {
+         setTotalProducts();
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      setTotalProducts();
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-    if (!(hasNextPage()))
-      setTotalProducts();
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+      if (!(hasNextPage()))
+         setTotalProducts();
+   }
 
-  @Override
-  protected boolean hasNextPage() {
-    Element page = this.currentDoc.select("span.ultima.inativo").first();
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select("li a.ultima:not(.inativo)").isEmpty();
+   }
 
-    // se elemeno page obtiver algum resultado
-    if (page != null) {
-      // não tem próxima página
-      return false;
-    }
+   private String scrapInternalId(JSONObject productJSON) {
+      String internalId = null;
 
-    return true;
+      if (productJSON.has("sku") && !productJSON.isNull("sku")) {
+         internalId = productJSON.get("sku").toString();
+      }
 
-  }
+      return internalId;
+   }
 
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-    Element inid = e.select(".foto-produto").first();
+   private String scrapInternalPid(JSONObject productJSON) {
+      String internalPid = null;
 
-    if (inid != null) {
-      internalId = inid.attr("data-codigo").trim();
-    }
+      if (productJSON.has("id") && !productJSON.isNull("id")) {
+         internalPid = productJSON.get("id").toString();
+      }
 
-    return internalId;
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String urlProduct = null;
-    Element urlElement = e.select(".nome-produto-vertical > a").first();
-
-    if (urlElement != null) {
-      urlProduct = urlElement.attr("href");
-    }
-
-    return urlProduct;
-  }
-
+      return internalPid;
+   }
 }

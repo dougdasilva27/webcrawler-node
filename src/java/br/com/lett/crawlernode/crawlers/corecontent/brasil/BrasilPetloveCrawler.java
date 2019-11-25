@@ -17,9 +17,9 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
 import models.prices.Prices;
 
 /**
@@ -51,33 +51,47 @@ public class BrasilPetloveCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer.push(", ");", false);
-      JSONObject productJson = json.has("info") ? json.getJSONObject("info") : new JSONObject();
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer.push(", ");", false, false);
+      JSONObject productJson = JSONUtils.getJSONValue(json, "info");
       String internalPid = crawlInternalPid(productJson);
       CategoryCollection categories = crawlCategories(doc);
       String description = crawlDescription(doc);
       Integer stock = null;
 
-      JSONArray arraySkus = productJson.has("variants") ? productJson.getJSONArray("variants") : new JSONArray();
-
-      for (int i = 0; i < arraySkus.length(); i++) {
-        JSONObject jsonSku = arraySkus.getJSONObject(i);
-
-        String internalId = crawlInternalId(jsonSku);
-        String name = crawlName(jsonSku);
-        boolean available = crawlAvailability(jsonSku);
-        Float price = crawlMainPagePrice(jsonSku, available);
-        String primaryImage = crawlPrimaryImage(jsonSku);
-        String secondaryImages = crawlSecondaryImages(jsonSku);
-        Prices prices = crawlPrices(price, jsonSku);
-
-        // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(new Marketplace()).build();
-
-        products.add(product);
+      JSONArray arraySkus = JSONUtils.getJSONArrayValue(productJson, "variants");
+      
+      for(Object obj : arraySkus) {
+        if(obj instanceof JSONObject) {
+          JSONObject jsonSku = (JSONObject) obj;
+  
+          String internalId = JSONUtils.getStringValue(jsonSku, "sku");
+          String name = crawlName(jsonSku);
+          boolean available = jsonSku.has("in_stock") && jsonSku.get("in_stock") instanceof Boolean ? jsonSku.getBoolean("in_stock") : false;
+          Float price = JSONUtils.getFloatValueFromJSON(jsonSku, "price", true);
+          String primaryImage = crawlPrimaryImage(jsonSku);
+          String secondaryImages = crawlSecondaryImages(jsonSku);
+          Prices prices = crawlPrices(price, jsonSku);
+  
+          // Creating the product
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(stock)
+              .build();
+  
+          products.add(product);
+        }
       }
 
     } else {
@@ -87,36 +101,17 @@ public class BrasilPetloveCrawler extends Crawler {
     return products;
   }
 
-  /*******************************
-   * Product page identification *
-   *******************************/
-
   private boolean isProductPage(Document doc) {
-    return doc.select("#product").first() != null;
+    return doc.selectFirst("#product") != null;
   }
-
-  /*******************
-   * General methods *
-   *******************/
-
-  private String crawlInternalId(JSONObject json) {
-    String internalId = null;
-
-    if (json.has("sku")) {
-      internalId = json.getString("sku").trim();
-    }
-
-    return internalId;
-  }
-
 
   private String crawlInternalPid(JSONObject json) {
     String internalPid = null;
 
-    if (json.has("master")) {
+    if (json.has("master") && json.get("master") instanceof JSONObject) {
       JSONObject master = json.getJSONObject("master");
 
-      if (master.has("product_sku")) {
+      if (master.has("product_sku") && master.get("product_sku") instanceof String) {
         internalPid = master.getString("product_sku");
       }
     }
@@ -127,15 +122,15 @@ public class BrasilPetloveCrawler extends Crawler {
   private String crawlName(JSONObject jsonSku) {
     StringBuilder name = new StringBuilder();
 
-    if (jsonSku.has("name")) {
+    if (jsonSku.has("name") && jsonSku.get("name") instanceof String) {
       name.append(jsonSku.getString("name"));
 
-      if (jsonSku.has("label_name")) {
+      if (jsonSku.has("label_name") && !jsonSku.isNull("label_name")) {
         name.append(" ");
         name.append(jsonSku.get("label_name"));
       }
 
-      if (jsonSku.has("original_short_name")) {
+      if (jsonSku.has("original_short_name") && jsonSku.get("original_short_name") instanceof String) {
         String shortName = jsonSku.getString("original_short_name");
 
         if (!name.toString().toLowerCase().contains(shortName.toLowerCase())) {
@@ -148,27 +143,10 @@ public class BrasilPetloveCrawler extends Crawler {
     return name.toString().trim();
   }
 
-  private Float crawlMainPagePrice(JSONObject json, boolean available) {
-    Float price = null;
-
-    if (json.has("price") && available) {
-      price = Float.parseFloat(json.getString("price"));
-    }
-
-    return price;
-  }
-
-  private boolean crawlAvailability(JSONObject json) {
-    if (json.has("in_stock")) {
-      return json.getBoolean("in_stock");
-    }
-    return false;
-  }
-
   private String crawlPrimaryImage(JSONObject skuJson) {
     String primaryImage = null;
 
-    if (skuJson.has("images") && skuJson.getJSONArray("images").length() > 0) {
+    if (skuJson.has("images") && skuJson.get("images") instanceof JSONArray && skuJson.getJSONArray("images").length() > 0) {
       JSONObject image = skuJson.getJSONArray("images").getJSONObject(0);
 
       if (image.has("fullhd_url") && image.get("fullhd_url").toString().startsWith("http")) {
@@ -187,7 +165,7 @@ public class BrasilPetloveCrawler extends Crawler {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
 
-    if (skuJson.has("images") && skuJson.getJSONArray("images").length() > 1) {
+    if (skuJson.has("images") && skuJson.get("images") instanceof JSONArray && skuJson.getJSONArray("images").length() > 1) {
       JSONArray images = skuJson.getJSONArray("images");
 
       for (int i = 1; i < images.length(); i++) { // starts with index 1, because the first image is
@@ -259,12 +237,14 @@ public class BrasilPetloveCrawler extends Crawler {
       Map<Integer, Float> mapInstallments = new HashMap<>();
       mapInstallments.put(1, price);
 
-      if (skuJson.has("best_installment")) {
+      if (skuJson.has("best_installment") && skuJson.get("best_installment") instanceof JSONObject) {
         JSONObject bestInstallment = skuJson.getJSONObject("best_installment");
 
-        if (bestInstallment.has("count") && bestInstallment.has("display_amount")) {
+        if (bestInstallment.has("count") && bestInstallment.get("count") instanceof Integer 
+            && bestInstallment.has("display_amount") && !bestInstallment.isNull("display_amount")) {
+          
           Integer installment = bestInstallment.getInt("count");
-          Float value = MathUtils.parseFloatWithComma(bestInstallment.getString("display_amount"));
+          Float value = MathUtils.parseFloatWithComma(bestInstallment.get("display_amount").toString());
 
           if (value != null) {
             mapInstallments.put(installment, value);

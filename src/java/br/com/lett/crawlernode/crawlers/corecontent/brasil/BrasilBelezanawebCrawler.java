@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -32,6 +33,7 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
   public BrasilBelezanawebCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -53,18 +55,31 @@ public class BrasilBelezanawebCrawler extends Crawler {
       Float price = crawlPrice(doc);
       Prices prices = crawlPrices(price, doc);
       boolean available = !doc.select(".product-buy > a").isEmpty();
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb .breadcrumb-item:not(:first-child) > a span", false);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb .breadcrumb-item:not(:first-child) > a", false);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-wrapper > img", Arrays.asList("data-zoom-image", "src"),
           "https:", "res.cloudinary.com");
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".gallery-lightbox .product-image-wrapper > img",
           Arrays.asList("data-zoom-image", "src"), "https:", "res.cloudinary.com", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-description", ".product-characteristics"));
+      RatingsReviews rating = scrapRating(doc);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(new Marketplace())
+          .setRatingReviews(rating)
+          .build();
 
       products.add(product);
 
@@ -78,6 +93,36 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     return !doc.select(".product-sku").isEmpty();
+  }
+
+  private RatingsReviews scrapRating(Document doc) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating-container .rating-count", false, 0);
+    Double avgRating = getTotalAvgRating(doc);
+
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+
+    return ratingReviews;
+  }
+
+  private Double getTotalAvgRating(Document doc) {
+    Double avgRating = 0d;
+
+    Element avg = doc.selectFirst(".rating-value-container");
+
+    if (avg != null) {
+      String text = avg.ownText().replaceAll("[^0-9.]", "").trim();
+
+      if (!text.isEmpty()) {
+        avgRating = Double.parseDouble(text);
+      }
+    }
+
+    return avgRating;
   }
 
   private Float crawlPrice(Document document) {

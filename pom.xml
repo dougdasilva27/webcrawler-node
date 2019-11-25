@@ -23,7 +23,7 @@
 		<models.version>2.6.1</models.version>
 		<logback.version>1.2.3</logback.version>
 		<commonscli.version>1.3.1</commonscli.version>
-		<jodatime.version>2.9.4</jodatime.version>
+		<jodatime.version>2.10.5</jodatime.version>
 		<json.version>20171018</json.version>
 		<phantomjs.version>1.2.1</phantomjs.version>
 		<slack.webhook.version>1.2.1</slack.webhook.version>
@@ -257,8 +257,8 @@
 		</repository>
 
 		<repository>
-			<id>maven-placeholder</id>
-			<url>s3://maven-placeholder</url>
+			<id>lett-maven</id>
+			<url>s3://lett-maven</url>
 		</repository>
 
 	</repositories>

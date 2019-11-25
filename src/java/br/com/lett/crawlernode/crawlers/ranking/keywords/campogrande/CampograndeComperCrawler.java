@@ -23,7 +23,7 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
   public CampograndeComperCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.APACHE;
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   private static final String HOME_PAGE = "https://www.comperdelivery.com.br/";
@@ -68,8 +68,8 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String specialKeywrod = this.keywordWithoutAccents.replace(" ", "%20");
-    String url = "https://busca.comperdelivery.com.br/" + specialKeywrod + "?pagina=" + this.currentPage;
+    String url = "https://www.comperdelivery.com.br/busca/3/0/0/MaisVendidos/Decrescente/20/" + this.currentPage + "/0/0/" + this.keywordEncoded
+        + ".aspx?q=" + this.keywordEncoded;
 
     Map<String, String> headers = new HashMap<>();
     headers.put(HttpHeaders.USER_AGENT, this.userAgent);
@@ -106,7 +106,7 @@ public class CampograndeComperCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".list-results strong:last-child", true, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".filter-details strong:last-child", true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 

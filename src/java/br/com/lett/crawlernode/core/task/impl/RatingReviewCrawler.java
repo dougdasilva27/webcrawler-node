@@ -196,8 +196,8 @@ public class RatingReviewCrawler extends Task {
           r.setTotalRating(rating.getTotalReviews());
           r.setTotalWrittenReviews(rating.getTotalWrittenReviews());
         }
-
-        KPLProducer.getInstance().put(r, session, GlobalConfigurations.executionParameters.getKinesisStream());
+        
+        KPLProducer.getInstance().put(r, session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
       }
     } else {
       Logging.printLogWarn(logger, session, "InternalId inside session is null. Skipping event to Kinesis.");

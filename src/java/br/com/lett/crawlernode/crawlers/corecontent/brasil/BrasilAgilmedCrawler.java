@@ -17,7 +17,6 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilAgilmedCrawler extends Crawler {
@@ -33,24 +32,32 @@ public class BrasilAgilmedCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(doc);
-      String internalPid = crawInternalPid(doc);
-
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-produto-id]", "data-produto-id");
+      String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=\"sku\"]", false);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.nome-produto", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#descricao"));
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".principal .preco-promocional, b.text-parcelas.pull-right.cor-principal", false);
-
-      boolean available = crawlAvailability(doc);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, 
+          ".principal .preco-promocional, b.text-parcelas.pull-right.cor-principal", null, false, ',', session);
+      boolean available = doc.selectFirst(".comprar .qtde-adicionar-carrinho") != null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li", true);
       Prices prices = crawlPrices(doc, price);
-
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagemProduto", Arrays.asList("src"), "https:", "www.cdn.awsli.com.br");
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setDescription(description)
+          .build();
 
       products.add(product);
 
@@ -59,18 +66,10 @@ public class BrasilAgilmedCrawler extends Crawler {
     }
 
     return products;
-
   }
 
-  private String crawInternalPid(Document doc) {
-    Element internalPidElement = doc.selectFirst("span[itemprop=\"sku\"]");
-    String internalPid = null;
-
-    if (internalPidElement != null) {
-      internalPid = internalPidElement.text().trim();
-    }
-
-    return internalPid;
+  private boolean isProductPage(Document doc) {
+    return doc.selectFirst(".produto") != null;
   }
 
   private Prices crawlPrices(Document doc, Float price) {
@@ -106,32 +105,4 @@ public class BrasilAgilmedCrawler extends Crawler {
 
     return prices;
   }
-
-  private boolean crawlAvailability(Document doc) {
-    Element avaibleElement = doc.selectFirst(".disponibilidade-produto b");
-    boolean availability = false;
-
-    if (avaibleElement != null) {
-      availability = true;
-    }
-
-    return availability;
-  }
-
-
-  private String crawlInternalId(Document doc) {
-    Element internalIdElement = doc.selectFirst("div[data-produto-id]");
-    String internalId = null;
-
-    if (internalIdElement != null) {
-      internalId = internalIdElement.attr("data-produto-id").trim();
-    }
-
-    return internalId;
-  }
-
-  private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".produto") != null;
-  }
-
 }

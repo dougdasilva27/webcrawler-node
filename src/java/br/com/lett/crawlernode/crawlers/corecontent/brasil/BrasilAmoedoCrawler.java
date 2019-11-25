@@ -68,51 +68,36 @@ public class BrasilAmoedoCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      /*
-       * *********************************** crawling data of only one product *
-       *************************************/
-
-      // InternalId
       String internalId = crawlInternalId(doc);
-
-      // Pid
       String internalPid = crawlInternalPid(doc);
-
-      // Name
       String name = crawlName(doc);
-
-      // Price
-      Float price = crawlPrice(doc);
-
-      // Prices
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-info-main .special-price .price, .product-info-main .price", null, true, ',',
+          session);
       Prices prices = crawlPrices(doc, price);
-
-      // Availability
       boolean available = !doc.select(".stock:not(.unavailable)").isEmpty();
-
-      // Categories
       CategoryCollection categories = new CategoryCollection();
-
       JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-
-      // Primary image
       String primaryImage = crawlPrimaryImage(images);
-
-      // Secondary images
       String secondaryImages = crawlSecondaryImages(images);
-
-      // Description
       String description = crawlDescription(doc);
-
-      // Marketplace
       Marketplace marketplace = crawlMarketplace();
 
-      // Creating the product
-
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(1)).setCategory2(categories.getCategory(2))
-          .setCategory3(categories.getCategory(3)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(1))
+          .setCategory2(categories.getCategory(2))
+          .setCategory3(categories.getCategory(3))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setMarketplace(marketplace)
+          .build();
 
       products.add(product);
 
@@ -170,22 +155,6 @@ public class BrasilAmoedoCrawler extends Crawler {
     }
 
     return name;
-  }
-
-  private Float crawlPrice(Document doc) {
-    Float price = null;
-
-    Element priceElement = doc.selectFirst(".special-price .price");
-
-    if (priceElement == null) {
-      priceElement = doc.selectFirst(".price");
-    }
-
-    if (priceElement != null) {
-      price = MathUtils.parseFloatWithComma(priceElement.ownText());
-    }
-
-    return price;
   }
 
   private Marketplace crawlMarketplace() {

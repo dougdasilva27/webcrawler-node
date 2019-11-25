@@ -4,6 +4,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class SaopauloMamboCrawler extends CrawlerRankingKeywords {
 
@@ -13,93 +15,101 @@ public class SaopauloMamboCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
+    this.pageSize = 12;
     this.log("Página " + this.currentPage);
-    this.pageSize = 24;
 
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    String url = "http://busca.mambo.com.br/busca?q=" + keyword + "&page=" + this.currentPage;
-    takeAScreenshot(url);
-
-    String apiUrl = "https://busca.mambo.com.br/searchapi/v3/search?apikey=mambo&secretkey=O3i%2FCRv0rNgaIo08FGLo4g%3D%3D&terms=" + keyword + "&page="
-        + this.currentPage;
-    this.log("Link onde são feitos os crawlers: " + apiUrl);
-
-    JSONObject search = fetchJSONObject(apiUrl);
-    JSONArray products = crawlProducts(search);
+    JSONObject resultsList = fetchJsonApi();
+    JSONArray products = resultsList.has("records") ? resultsList.getJSONArray("records") : new JSONArray();
 
     if (products.length() > 0) {
       if (this.totalProducts == 0) {
-        setTotalProducts(search);
+        setTotalBusca(resultsList);
       }
 
-      for (int i = 0; i < products.length(); i++) {
-        JSONObject product = products.getJSONObject(i);
+      for (Object o : products) {
+        JSONObject productInfo = (JSONObject) o;
 
-        String internalPid = crawlInternalPid(product);
-        String internalId = null;
-        String productUrl = crawlProductUrl(product);
+        if (productInfo.has("records")) {
+          JSONArray records = productInfo.getJSONArray("records");
+          this.position++;
 
-        saveDataProduct(internalId, internalPid, productUrl);
+          for (Object obj : records) {
+            JSONObject jsonSku = (JSONObject) obj;
+            String internalId = crawlInternalId(jsonSku);
+            String productUrl = crawlProductUrl(jsonSku);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
+            saveDataProduct(internalId, null, productUrl, this.position);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+              break;
+            }
+          }
         }
       }
     } else {
       this.result = false;
-      this.log("Keyword sem resultado!");
+      this.log("Keyword sem resultados!");
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    return arrayProducts.size() < this.totalProducts;
+
+  protected void setTotalBusca(JSONObject apiSearch) {
+    this.totalProducts = JSONUtils.getIntegerValueFromJSON(apiSearch, "totalNumRecs", 0);
+    this.log("Total da busca: " + this.totalProducts);
   }
 
-  protected void setTotalProducts(JSONObject search) {
-    if (search.has("size")) {
-      this.totalProducts = search.getInt("size");
 
-      this.log("Total: " + this.totalProducts);
-    }
-  }
+  private String crawlInternalId(JSONObject sku) {
+    String internalId = null;
 
-  private String crawlInternalPid(JSONObject product) {
-    String internalPid = null;
+    if (sku.has("attributes")) {
+      JSONObject attributes = sku.getJSONObject("attributes");
 
-    if (product.has("id")) {
-      internalPid = product.get("id").toString();
-    }
+      if (attributes.has("product.repositoryId")) {
+        String id = attributes.get("product.repositoryId").toString().replace("[", "").replace("]", "").replace("\"", "").trim();
 
-    return internalPid;
-  }
-
-  private String crawlProductUrl(JSONObject product) {
-    String urlProduct = null;
-
-    if (product.has("url")) {
-      urlProduct = product.getString("url");
-
-      if (!urlProduct.startsWith("http")) {
-        urlProduct = "https://" + urlProduct;
+        if (!id.isEmpty()) {
+          internalId = id;
+        }
       }
     }
 
-    return urlProduct;
+    return internalId;
   }
 
+  private String crawlProductUrl(JSONObject sku) {
+    String productUrl = null;
 
-  private JSONArray crawlProducts(JSONObject json) {
-    JSONArray products = new JSONArray();
+    if (sku.has("attributes")) {
+      JSONObject attributes = sku.getJSONObject("attributes");
+      if (attributes.has("product.route")) {
+        String route = attributes.get("product.route").toString().replace("[", "").replace("]", "").replace("\"", "").trim();
 
-    if (json.has("products")) {
-      products = json.getJSONArray("products");
+        if (!route.isEmpty()) {
+          productUrl = CrawlerUtils.completeUrl(route, "https:", "www.mambo.com.br");
+        }
+      }
     }
 
-    return products;
+    return productUrl;
   }
 
+  private JSONObject fetchJsonApi() {
+    JSONObject resultsList = new JSONObject();
+    String url = "https://www.mambo.com.br/ccstoreui/v1/search?Ntt=" + this.keywordWithoutAccents.replace(" ", "%20") + "*&No="
+        + this.arrayProducts.size() + "&Nrpp=12&searchType=simple&totalResults=true"
+        + "&Nr=AND(product.active%3A1%2Csku.location_id%3A208%2CNOT(sku.availabilityStatus%3AOUTOFSTOCK))";
+
+    JSONObject response = CrawlerUtils.stringToJson(fetchGETString(url, cookies));
+
+    if (response.has("resultsList")) {
+      resultsList = response.getJSONObject("resultsList");
+    }
+
+    return resultsList;
+  }
 }

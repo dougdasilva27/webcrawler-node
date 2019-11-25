@@ -47,9 +47,9 @@ public class RappiCrawler extends CrawlerRankingKeywords {
         String internalId = crawlInternalId(product);
         String productUrl = crawlProductUrl(product, internalId);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
           break;

@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -70,7 +71,8 @@ public class ChileGrouponCrawler extends Crawler {
 
         String internalId = crawlInternalId(skuJson);
         String name = crawlName(skuJson);
-        boolean available = skuJson.has("isSoldOut") && !skuJson.getBoolean("isSoldOut");
+        String status = JSONUtils.getStringValue(skuJson, "status");
+        boolean available = skuJson.has("isSoldOut") && !skuJson.getBoolean("isSoldOut") && (status != null && !status.equalsIgnoreCase("closed"));
         Prices prices = crawlPrices(skuJson);
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.VISA, Card.SHOP_CARD));
         String primaryImage =

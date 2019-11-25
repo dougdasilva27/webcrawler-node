@@ -127,14 +127,13 @@ public class B2WCrawler extends Crawler {
 
       String internalPid = this.crawlInternalPid(infoProductJson);
       CategoryCollection categories = crawlCategories(infoProductJson);
-      boolean hasImages = doc.select(".main-area .row > div > span > img:not([src])").first() == null && doc.select(".gallery-product") != null;
-      String primaryImage = hasImages ? this.crawlPrimaryImage(infoProductJson) : null;
-      String secondaryImages = hasImages ? this.crawlSecondaryImages(infoProductJson) : null;
+      String primaryImage = this.crawlPrimaryImage(infoProductJson);
+      String secondaryImages = this.crawlSecondaryImages(infoProductJson);
       String description = this.crawlDescription(internalPid, doc);
       RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
       List<String> eans = crawlEan(infoProductJson);
 
-      Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson, doc);
+      Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson);
 
       for (Entry<String, String> entry : skuOptions.entrySet()) {
         String internalId = entry.getKey();
@@ -148,7 +147,6 @@ public class B2WCrawler extends Crawler {
         Offers offers = assembleOffers(buyBox);
 
         RatingsReviews ratingReviews = crawlRatingReviews(frontPageJson, internalPid);
-
 
         RatingsReviews clonedRatingReviews = ratingReviews.clone();
         clonedRatingReviews.setInternalId(internalId);
@@ -364,8 +362,10 @@ public class B2WCrawler extends Crawler {
           JSONArray eansArray = skus.getJSONArray("eans");
 
           for (Object eansObject : eansArray) {
-            String ean = (String) eansObject;
-            eans.add(ean);
+            if(eansObject instanceof String) {
+              String ean = (String) eansObject;
+              eans.add(ean);
+            }
           }
         }
       }
@@ -511,10 +511,8 @@ public class B2WCrawler extends Crawler {
     return internalPid;
   }
 
-  private Map<String, String> crawlSkuOptions(JSONObject infoProductJson, Document doc) {
+  private Map<String, String> crawlSkuOptions(JSONObject infoProductJson) {
     Map<String, String> skuMap = new HashMap<>();
-
-    boolean unnavailablePage = !doc.select("#title-stock").isEmpty();
 
     if (infoProductJson.has("skus")) {
       JSONArray skus = infoProductJson.getJSONArray("skus");
