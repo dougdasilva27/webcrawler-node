@@ -4,8 +4,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilBuscapeCrawler extends CrawlerRankingKeywords {
@@ -18,25 +16,19 @@ public class BrasilBuscapeCrawler extends CrawlerRankingKeywords {
       this.pageSize = 36;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.buscape.com.br/search?q=" + this.keywordEncoded;
-
-      if (this.currentPage > 1) {
-         url = CrawlerUtils.scrapUrl(this.currentDoc, "a.next", "href", "https", "www.buscape.com.br");
-      }
+      String url = "https://www.buscape.com.br/search?q=" + this.keywordEncoded + "&page=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      CommonMethods.saveDataToAFile(currentDoc, Test.pathWrite + "BUSCAPE.html");
-      Elements products = this.currentDoc.select("li.item[data-id]");
+      Elements products = this.currentDoc.select("[data-id]");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
-            this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".products-amount", true, 0);
-            this.log("Total da busca: " + this.totalProducts);
+            setTotalProducts();
          }
          for (Element e : products) {
-            String internalId = e.attr("data-id");
-            String productUrl = CrawlerUtils.scrapUrl(e, ".prod-name a", "href", "https", "www.buscape.com.br");
+            String internalId = e.attr("data-id").replace("product", ""); // Ex: data-id="product739372" were 739372 is the internalId
+            String productUrl = !internalId.contains("offer") ? CrawlerUtils.scrapUrl(e, "a.name", "href", "https", "www.buscape.com.br") : null;
 
             if (productUrl != null) {
                productUrl = productUrl.split("\\?")[0];
@@ -58,9 +50,8 @@ public class BrasilBuscapeCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage() {
-      String nextUrl = CrawlerUtils.scrapUrl(this.currentDoc, "a.next", "href", "https", "www.buscape.com.br");
-      return super.hasNextPage() && nextUrl != null && !nextUrl.contains("javascript:void(0)");
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#pageSearchResultsBody span", true, 0);
+      this.log("Total: " + this.totalProducts);
    }
-
 }
