@@ -87,7 +87,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
         String ean = crawlEan(jsonSku);
         List<String> eans = new ArrayList<>();
-        if(ean != null) {
+        if(ean != null && !ean.isEmpty()) {
         	eans.add(ean);
         }
         
