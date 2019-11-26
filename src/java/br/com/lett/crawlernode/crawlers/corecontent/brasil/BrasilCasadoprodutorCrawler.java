@@ -86,10 +86,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
         String secondaryImages = crawlSecondaryImages(doc);
 
         String ean = crawlEan(jsonSku);
-        List<String> eans = new ArrayList<>();
-        if(ean != null && !ean.isEmpty()) {
-        	eans.add(ean);
-        }
+        List<String> eans = ean != null && !ean.isEmpty() ? Arrays.asList(ean) : null;
         
         // Creating the product
         Product product = ProductBuilder.create()
@@ -145,10 +142,10 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   }
 
   private String crawlName(JSONObject skuJson) {
-    String name = "";
+    String name = null;
 
     if (skuJson.has("name") && !skuJson.isNull("name")) {
-    	name = skuJson.get("name") instanceof String ? skuJson.getString("name") : new String();
+    	name = skuJson.get("name").toString();
     }
     return name;
   }
