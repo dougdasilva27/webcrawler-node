@@ -137,7 +137,7 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   private String crawlInternalPid(Document doc) {
     String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name .produto_codigo span", false);
 
-    if(internalPid.contains("-") && internalPid != null) {
+    if(internalPid != null && internalPid.contains("-")) {
     	int finalInternalPid = internalPid.indexOf("-");
     	internalPid = internalPid.substring(0, finalInternalPid);
     }
@@ -145,12 +145,12 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   }
 
   private String crawlName(JSONObject skuJson) {
-    StringBuilder name = new StringBuilder();
+    String name = "";
 
     if (skuJson.has("name") && !skuJson.isNull("name")) {
-      name.append(skuJson.getString("name"));
+    	name = skuJson.get("name") instanceof String ? skuJson.getString("name") : new String();
     }
-    return name.toString();
+    return name;
   }
 
   private boolean crawlAvailability(Float price, JSONObject jsonSku) {
@@ -218,7 +218,6 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   private Prices crawlPrices(Float price, JSONObject json) {
 	    Prices prices = new Prices();
 
-	    //available ? crawlPrices(price, jsonSku) : new Prices();
 	    if (price != null) {
 	      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 	      Integer quantityInstallment = JSONUtils.getIntegerValueFromJSON(json, "quantityOfInstallmentsNoInterest", null);
