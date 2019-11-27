@@ -68,7 +68,8 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
       String mainProductId = getMainProductId(dataLayer);
 
       // sku data in json
-      JSONArray arraySkus = dataLayer != null && dataLayer.has("variants") ? dataLayer.getJSONArray("variants") : new JSONArray();
+      Object arrayObject = dataLayer.get("variants");
+      JSONArray arraySkus = dataLayer != null && arrayObject != null && arrayObject instanceof JSONArray ? dataLayer.getJSONArray("variants") : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) { 
         JSONObject jsonSku = arraySkus.getJSONObject(i);
