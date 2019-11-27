@@ -21,10 +21,6 @@ import models.prices.Prices;
 
 public class BrasilEsalpetCrawler extends Crawler {
   
-  // Dis: https://www.esalpet.com.br/caes/Racao-Royal-Canin-Medium-Adulto-15-kg
-  // Ind: https://www.esalpet.com.br/caes/Racao-Royal-Canin-Medium-Ageing-10-anos-15-kg
-  // Sec: https://www.esalpet.com.br/home/Areia-Sanitaria-Gloocat-Cristais-de-Silica-Gloopet-16-KG
-  
   private static final String IMAGE_HOST = "assets.xtechcommerce.com";
   
   public BrasilEsalpetCrawler(Session session) {
