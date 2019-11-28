@@ -460,7 +460,7 @@ public class Processor {
             && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
          Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
-         if (discount > 90) {
+         if (discount > 70) {
             try {
                TemmieWebhook temmie = new TemmieWebhook("https://discordapp.com/api/webhooks/649664372368474125/lAkA0_qZAUux8FbDn20yKdMSX39egWDiwwhr12qj1SmAv1r-SAqVZuppBYSENNZZA_ES");
                // Username, Content, Avatar URL
@@ -468,7 +468,7 @@ public class Processor {
                dm.setUsername("Jacquin");
                dm.setAvatarUrl("https://www.azulis.com.br/wp-content/uploads/2019/10/jac-1-770x471.jpg");
                dm.setTextToSpeech(true);
-               dm.setContent("Desliga freezer a notche!! Promoção com mais de 90% de desonto :0"
+               dm.setContent("Desliga freezer a notche!! Promoção com mais de 70% de desonto :0"
                      + "\nProcessed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
                      + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
                      + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: *R$"
@@ -478,7 +478,7 @@ public class Processor {
             } catch (Exception e) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
-         } else if (discount > 35 && newProcessedProduct.getPrice() > 50) {
+         } else if (discount > 20 && newProcessedProduct.getPrice() > 50) {
             DiscordMessages.reportPriceChanges(session,
                   "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
                         + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
