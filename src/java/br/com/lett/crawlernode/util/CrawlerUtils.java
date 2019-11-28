@@ -34,6 +34,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
@@ -1768,6 +1769,31 @@ public class CrawlerUtils {
       }
 
       return doc;
+   }
+
+   /**
+    * This function calculates the average rating from the model AdvancedRatingReview
+    * 
+    * @param advancedRatingReview {@models.AdvancedRatingReview}
+    * @return Double
+    */
+   public static Double extractRatingAverageFromAdvancedRatingReview(AdvancedRatingReview advancedRatingReview) {
+      int reviewsWith5stars = advancedRatingReview.getTotalStar5();
+      int reviewsWith4stars = advancedRatingReview.getTotalStar4();
+      int reviewsWith3stars = advancedRatingReview.getTotalStar3();
+      int reviewsWith2stars = advancedRatingReview.getTotalStar2();
+      int reviewsWith1star = advancedRatingReview.getTotalStar1();
+
+      int totalOfReviews = reviewsWith5stars + reviewsWith4stars + reviewsWith3stars + reviewsWith2stars + reviewsWith1star;
+      if (totalOfReviews == 0) {
+         return 0.0;
+      }
+
+      return (reviewsWith5stars * 5.0 +
+            reviewsWith4stars * 4.0 +
+            reviewsWith3stars * 3.0 +
+            reviewsWith2stars * 2.0 +
+            reviewsWith1star * 1.0) / totalOfReviews;
    }
 
    public static String toSlug(String input) {
