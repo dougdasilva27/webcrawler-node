@@ -30,6 +30,7 @@ public class BrasilPetnanetCrawler extends Crawler {
   
   public BrasilPetnanetCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);    
   }
 
   private static final String HOME_PAGE = "https://www.petnanet.com.br/";
