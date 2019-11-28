@@ -177,7 +177,7 @@ public class BrasilPetnanetCrawler extends Crawler {
       }
     }
 
-    return totalRating;
+    return totalRating == null ? 0 : totalRating;
   }
   
   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
