@@ -126,7 +126,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
             // creating the redirect strategy so we can get the final redirected URL
             DataFetcherRedirectStrategy redirectStrategy = new DataFetcherRedirectStrategy();
-            HttpHost proxy = randProxy != null ? new HttpHost("haproxy-infatica.lett.global", 3128) : null;
+            HttpHost proxy = randProxy != null ? new HttpHost(randProxy.getAddress(), randProxy.getPort()) : null;
             RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
 
             CloseableHttpClient httpclient =
