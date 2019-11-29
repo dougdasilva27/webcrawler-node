@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.AdvancedRatingReview;
@@ -135,7 +136,7 @@ public class BrasilPetnanetCrawler extends Crawler {
  
   private Document crawlApiRatings(String url, String internalPid) {   
     String[] tokens = url.split("/");
-    String productLinkId = tokens[tokens.length - 2];
+    String productLinkId = tokens.length > 2 ? tokens[tokens.length - 2] : CommonMethods.getLast(tokens);
 
     String payload = "productId=" + internalPid + "&productLinkId=" + productLinkId;
 
