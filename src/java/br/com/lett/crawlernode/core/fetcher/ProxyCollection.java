@@ -27,7 +27,7 @@ public class ProxyCollection {
   public static final String NO_PROXY = "no_proxy";
   public static final String LUMINATI_SERVER_BR = "luminati_server_br";
   public static final String LUMINATI_RESIDENTIAL_BR = "luminati_residential_br";
-  public static final String INFATICA_RESIDENTIAL_BR = "infatica_residential_br";
+  public static final String INFATICA_RESIDENTIAL_BR = "infatica_residential_br_haproxy";
   public static final String BR_OXYLABS = "br-oxylabs";
 
   public static final int MAX_ATTEMPTS_BUY = 2;
