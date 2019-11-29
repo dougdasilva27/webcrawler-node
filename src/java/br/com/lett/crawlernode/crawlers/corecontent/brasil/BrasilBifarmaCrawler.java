@@ -10,7 +10,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -29,7 +32,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
    public BrasilBifarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.WEBDRIVER);
    }
 
    @Override
@@ -39,37 +42,37 @@ public class BrasilBifarmaCrawler extends Crawler {
    }
 
 
-   // @Override
-   // protected Object fetch() {
-   // Document doc = new Document("");
-   // this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-   //
-   // if (this.webdriver != null) {
-   // doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-   //
-   // Element script = doc.select("head script").last();
-   // Element robots = doc.select("meta[name=robots]").first();
-   //
-   // if (script != null && robots != null) {
-   // String eval = script.html().trim();
-   //
-   // if (!eval.isEmpty()) {
-   // Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
-   // this.webdriver.executeJavascript(eval);
-   // }
-   // }
-   //
-   // String requestHash = FetchUtilities.generateRequestHash(session);
-   // this.webdriver.waitLoad(12000);
-   //
-   // doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-   //
-   // // saving request content result on Amazon
-   // S3Service.saveResponseContent(session, requestHash, doc.toString());
-   // }
-   //
-   // return doc;
-   // }
+   @Override
+   protected Object fetch() {
+      Document doc = new Document("");
+      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+
+      if (this.webdriver != null) {
+         doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+         Element script = doc.select("head script").last();
+         Element robots = doc.select("meta[name=robots]").first();
+
+         if (script != null && robots != null) {
+            String eval = script.html().trim();
+
+            if (!eval.isEmpty()) {
+               Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
+               this.webdriver.executeJavascript(eval);
+            }
+         }
+
+         String requestHash = FetchUtilities.generateRequestHash(session);
+         this.webdriver.waitLoad(12000);
+
+         doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+
+         // saving request content result on Amazon
+         S3Service.saveResponseContent(session, requestHash, doc.toString());
+      }
+
+      return doc;
+   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
