@@ -2,9 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilAdoropatasCrawler extends CrawlerRankingKeywords {
@@ -24,7 +24,7 @@ public class BrasilAdoropatasCrawler extends CrawlerRankingKeywords {
     
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".products-grid > li.item");
+    Elements products = this.currentDoc.select(".products .products .product.item");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -32,15 +32,15 @@ public class BrasilAdoropatasCrawler extends CrawlerRankingKeywords {
       }
     	
       for (Element e : products) {
-        String internalPid = scrapInternalPid(e);
+        String internalId = scrapInternalId(e);
         String productUrl = CrawlerUtils.scrapUrl(e, "a.product-image", "href", "http:", HOME_PAGE);
 
-        saveDataProduct(null, internalPid, productUrl);
+        saveDataProduct(internalId, null, productUrl);
 
         this.log(
             "Position: " + this.position + 
-            " - InternalId: " + null +
-            " - InternalPid: " + internalPid + 
+            " - InternalId: " + internalId +
+            " - InternalPid: " + null + 
             " - Url: " + productUrl);
         
         if (this.arrayProducts.size() == productsLimit)
@@ -58,24 +58,25 @@ public class BrasilAdoropatasCrawler extends CrawlerRankingKeywords {
   }
 
 
-  private String scrapInternalPid(Element e) {
-    String internalPid = null;
+  private String scrapInternalId(Element e) {
+    String internalId = null;
     Element pidElement = e.selectFirst("[id*=product-price-]");
     
     if(pidElement != null) {
       String pid = pidElement.id();
       
       if(pid.startsWith("product-price-")) {
-    	internalPid = pid.substring("product-price-".length()).trim();
+        internalId = pid.substring("product-price-".length()).trim();
       }
     }
 
-    return internalPid;
+    return internalId;
   }
   
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".count-container .amount", "de", "", true, true, 0);
+    Elements amounts = this.currentDoc.select("#toolbar-amount .toolbar-number");
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(CommonMethods.getLast(amounts), null, null, null, true, true, 0);
 
     this.log("Total de produtos: " + this.totalProducts);
   }
