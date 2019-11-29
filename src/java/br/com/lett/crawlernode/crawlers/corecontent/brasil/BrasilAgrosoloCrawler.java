@@ -128,7 +128,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       RatingsReviews ratingsReviews = scrapRatingReviews(doc);
       
       Element availabilityElement = doc.selectFirst(".product-buy-area");
-      boolean available = availabilityElement != null && !availabilityElement.hasAttr("hidden");
+      boolean available = availabilityElement != null && !availabilityElement.hasClass("hidden");
       
       if(variationName != null && !variationName.isEmpty()) {
     	  name += " - " + variationName;
