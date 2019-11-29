@@ -5,10 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -39,7 +41,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[data-product-id]", "data-product-id");
       String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=sku]", true);
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title", false);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".special-price .price-wrapper .price", null, false, ',', session);
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "[data-price-type=finalPrice] .price", null, false, ',', session);
       Prices prices = scrapPrices(doc, price);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li:not(:last-child)", true);
       String primaryImage = imagesArr.length() > 0 ? (String) imagesArr.remove(0) : null;
