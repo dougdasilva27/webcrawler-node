@@ -32,7 +32,6 @@ public class BrasilLojacolgateCrawler extends Crawler {
   
   public BrasilLojacolgateCrawler(Session session) {
     super(session);
-    super.config.setMustSendRatingToKinesis(true);
     super.config.setFetcher(FetchMode.FETCHER);
   }
   @Override
@@ -73,20 +72,22 @@ public class BrasilLojacolgateCrawler extends Crawler {
       
       Elements variations = doc.select(".js-variant-select > option");
       
-      for(Element sku : variations) {
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details .name", true).replace("|", "");
+      CategoryCollection categories = scrapCategories(doc);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-gallery__image .lazyOwl", Arrays.asList("data-zoom-image", "src"), "https", HOST);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".image-gallery__image .lazyOwl", Arrays.asList("data-zoom-image", "src"), "https", HOST, primaryImage);
+      String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tabhead", ".tabbody .tab-details"));
+      RatingsReviews ratingsReviews = null;
+      
+      if(variations.isEmpty()) {
         
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sku, null, "value");
+        String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".js-variant-sku", true);
         String internalPid = null;
-        String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details .name", true).replace("|", "");
-        Float price = CrawlerUtils.scrapFloatPriceFromHtml(sku, null, "data-formatted", false, ',', session);
+        Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".js-variant-price", null, false, ',', session);
         Prices prices = scrapPrices(doc, price);
-        CategoryCollection categories = scrapCategories(doc);
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-gallery__image .lazyOwl", Arrays.asList("data-zoom-image", "src"), "https", HOST);
-        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".image-gallery__image .lazyOwl", Arrays.asList("data-zoom-image", "src"), "https", HOST, primaryImage);
-        String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tabhead", ".tabbody .tab-details"));
-        Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(sku, null, "data-maxqty", 0);
-        boolean available = sku.hasAttr("data-stock") && sku.attr("data-stock").equalsIgnoreCase("");
-        RatingsReviews ratingsReviews = null;
+        Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, "[id*=productMaxQty-]", "data-max", 0);
+        boolean available = doc.selectFirst("#outofstock.hidden") != null;
+        List<String> eans = Arrays.asList(internalId);
             
         // Creating the product
         Product product = ProductBuilder.create()
@@ -104,10 +105,46 @@ public class BrasilLojacolgateCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setStock(stock)
+            .setEans(eans)
             .setRatingReviews(ratingsReviews)
             .build();
         
         products.add(product);
+      
+      } else {
+        for(Element sku : variations) {
+          
+          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sku, null, "value");
+          String internalPid = null;
+          String variationName = sku.hasText() ? name + " - " + sku.text().split("-")[0].trim() : name;
+          Float price = CrawlerUtils.scrapFloatPriceFromHtml(sku, null, "data-formatted", false, ',', session);
+          Prices prices = scrapVariationPrices(sku, price);
+          Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(sku, null, "data-maxqty", 0);
+          boolean available = sku.hasAttr("data-stock") && sku.attr("data-stock").equalsIgnoreCase("inStock");
+          List<String> eans = Arrays.asList(internalId);
+              
+          // Creating the product
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(variationName)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(stock)
+              .setEans(eans)
+              .setRatingReviews(ratingsReviews)
+              .build();
+          
+          products.add(product);
+        }
       }      
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -134,7 +171,18 @@ public class BrasilLojacolgateCrawler extends Crawler {
     return categoryCollection;
   }
   
-  private Prices scrapPrices(Element e, Float price) {
+  private Prices scrapPrices(Document doc, Float price) {
+    Prices prices = new Prices();
+    
+    if(price != null) {
+      prices.setBankTicketPrice(price);  
+      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".js-variant-discount", null, false, ',', session));
+    }
+    
+    return prices;
+  }
+  
+  private Prices scrapVariationPrices(Element e, Float price) {
     Prices prices = new Prices();
     
     if(price != null) {
