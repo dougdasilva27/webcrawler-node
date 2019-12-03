@@ -34,32 +34,33 @@ public class BrasilLojacolgateCrawler extends Crawler {
     super(session);
     super.config.setFetcher(FetchMode.FETCHER);
   }
+  
   @Override
   protected Object fetch() {
-     try {
-    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, session);
-    this.webdriver.waitLoad(10000);
-
-    WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
-    email.sendKeys(CNPJ);
-    this.webdriver.waitLoad(2000);
-
-    WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#j_password"));
-    pass.sendKeys(PASSWORD);
-    this.webdriver.waitLoad(2000);
-
-    WebElement login = this.webdriver.driver.findElement(By.cssSelector("#loginForm .btn-primary"));
-    this.webdriver.clickOnElementViaJavascript(login);
-    this.webdriver.waitLoad(2000);
-
-    this.webdriver.loadUrl(session.getOriginalURL());
-    this.webdriver.waitLoad(10000);
-
-    return Jsoup.parse(this.webdriver.getCurrentPageSource());
-     } catch (Exception e) {
-        Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-        return super.fetch();
-     }
+    try {
+      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, session);
+      this.webdriver.waitLoad(10000);
+      
+      WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
+      email.sendKeys(CNPJ);
+      this.webdriver.waitLoad(2000);
+      
+      WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#j_password"));
+      pass.sendKeys(PASSWORD);
+      this.webdriver.waitLoad(2000);
+      
+      WebElement login = this.webdriver.driver.findElement(By.cssSelector("#loginForm .btn-primary"));
+      this.webdriver.clickOnElementViaJavascript(login);
+      this.webdriver.waitLoad(2000);
+      
+      this.webdriver.loadUrl(session.getOriginalURL());
+      this.webdriver.waitLoad(10000);
+      
+      return Jsoup.parse(this.webdriver.getCurrentPageSource());
+    } catch (Exception e) {
+      Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+      return super.fetch();
+    }
   }
 
   @Override
