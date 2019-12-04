@@ -38,11 +38,11 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = captureInternalid(doc);
          String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name h1", false);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-essential .regular-price", null, false, ',', session);
          Prices prices = crawlPrices(doc, price);
          boolean available = !doc.select(".product-info .in-stock").isEmpty();
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:first-child) a");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-essential .product-img-box a", Arrays.asList("href"), "https",
                "www.supermercadodospets.com.br");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
@@ -80,10 +80,13 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
    }
 
    private String captureInternalid(Element doc) {
-      String internalid = null;
-      Document dc = (Document) (doc);
-      internalid = dc.select(".data-table tr:not(:last-child)").text().replaceAll("[^0-9,]", "");
-      return internalid;
+      String internalId = null;
+
+      Element id = doc.selectFirst(".data-table tr:not(:first-child)");
+      if (id != null) {
+         internalId = id.text().split("U")[1];
+      }
+      return internalId;
    }
 
 
@@ -116,18 +119,29 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      String totComments = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .ratings .rating-links a", false).replaceAll("[^0-9,]", "");
+
+
+      Integer totComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".product-essential .ratings .rating-links a", false);
       Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .product-shop [itemprop=ratingValue]", null, false, ',', session);
-      String totWrittenReviews = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .ratings .rating-links a", false).replaceAll("[^0-9,]", "");
+      if (avgRating != null) {
+         ratingReviews.setAverageOverallRating(avgRating);
+      } else {
+         ratingReviews.setAverageOverallRating((double) 0);
+      }
+
+      Integer totWrittenReviews = CrawlerUtils.scrapIntegerFromHtml(doc, ".product-essential .ratings .rating-links a", false);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
-      ratingReviews.setTotalRating(Integer.parseInt(totComments));
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setTotalWrittenReviews(Integer.parseInt(totWrittenReviews));
+
+      ratingReviews.setTotalRating(totComments);
+      ratingReviews.setTotalWrittenReviews(totWrittenReviews);
+
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
    }
+
+
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
       Integer star1 = 0;
@@ -139,7 +153,7 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
       Elements reviews = doc.select("#tab_review_tabbed_contents #product-customer-reviews .review-area .ratings-list .rating-item .rating-box .rating");
 
       for (Element review : reviews) {
-         if (review.hasAttr("style")) {
+         if (review != null && review.hasAttr("style")) {
             Integer val = Integer.parseInt(review.attr("style").replaceAll("[^0-9]+", ""));
 
             switch (val) {
