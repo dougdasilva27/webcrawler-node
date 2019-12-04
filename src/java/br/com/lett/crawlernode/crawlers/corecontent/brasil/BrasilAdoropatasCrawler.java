@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -36,6 +37,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       
       JSONObject variationJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\"#product_addtocart_form\": ", ",", false, true);
+      JSONObject stockJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\".input-text.qty\": ", "}", false, true);
       JSONObject imagesJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\"[data-gallery-role=gallery-placeholder]\": ", "}", false, true);
       JSONArray imagesArr = scrapImages(imagesJson);
       
@@ -71,7 +73,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
       if (variationJson != null && !variationJson.keySet().isEmpty()) {
         variationJson = rebuildVariationJson(variationJson);
         
-        products.addAll(buildVariationProducts(variationJson, product, imagesArr));
+        products.addAll(buildVariationProducts(variationJson, product, imagesArr, extractStockFromJson(stockJson)));
         
       } else {
         products.add(product);
@@ -87,7 +89,28 @@ public class BrasilAdoropatasCrawler extends Crawler {
     return doc.selectFirst(".catalog-product-view") != null;
   }
   
-  private List<Product> buildVariationProducts(JSONObject json, Product product, JSONArray imagesArr) {
+  private Map<String, Integer> extractStockFromJson(JSONObject json) {
+    Map<String, Integer> map = new HashMap<>();
+    
+    JSONArray arr = JSONUtils.getJSONArrayValue(json, "Swissup_QuantitySwitcher/js/product");
+    
+    for(Object obj : arr) {
+      if(obj instanceof JSONObject) {
+        JSONObject subJson = (JSONObject) obj;
+        
+        String id = JSONUtils.getStringValue(subJson, "id");
+        Integer stock = JSONUtils.getIntegerValueFromJSON(subJson, "maxQty", 0);
+        
+        if(id != null) {
+          map.put(id, stock);
+        }
+      }
+    }
+    
+    return map;
+  }
+  
+  private List<Product> buildVariationProducts(JSONObject json, Product product, JSONArray imagesArr, Map<String, Integer> stocks) {
     List<Product> products = new ArrayList<>();
     
     for(String key : json.keySet()) {
@@ -120,6 +143,10 @@ public class BrasilAdoropatasCrawler extends Crawler {
         }
         
         clone.setSecondaryImages(images.length() > 0 ? images.toString() : null);
+        
+        Integer stock = stocks.get(key);
+        clone.setStock(stock);
+        clone.setAvailable(stock > 0);
         
         products.add(clone);
       }
