@@ -8,6 +8,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -190,7 +191,7 @@ public class RappiCrawler extends Crawler {
   private String crawlName(JSONObject json) {
     String name = null;
 
-    if (json.has("name")) {
+    if (json.has("name")) {     
       name = json.getString("name");
     }
 
@@ -346,7 +347,7 @@ public class RappiCrawler extends Crawler {
       String url = "https://services.rappi.com.br/windu/products/store/" + storeId + "/product/" + productId;
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
 
-      String page = this.dataFetcher.get(session, request).getBody();
+      String page =  new FetcherDataFetcher().get(session, request).getBody();
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
