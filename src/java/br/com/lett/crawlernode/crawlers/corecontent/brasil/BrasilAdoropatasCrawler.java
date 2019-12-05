@@ -2,15 +2,14 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,7 +17,9 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
 
 public class BrasilAdoropatasCrawler extends Crawler {
@@ -35,11 +36,13 @@ public class BrasilAdoropatasCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
       
+      JSONObject variationJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\"#product_addtocart_form\": ", ",", false, true);
+      JSONObject stockJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\".input-text.qty\": ", "}", false, true);
       JSONObject imagesJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\"[data-gallery-role=gallery-placeholder]\": ", "}", false, true);
       JSONArray imagesArr = scrapImages(imagesJson);
-          
+      
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[data-product-id]", "data-product-id");
-      String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=sku]", true);
+      String internalPid = internalId;
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title", false);
       Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "[data-price-type=finalPrice] .price", null, false, ',', session);
       Prices prices = scrapPrices(doc, price);
@@ -67,8 +70,14 @@ public class BrasilAdoropatasCrawler extends Crawler {
           .setDescription(description)
           .build();
       
-      products.add(product);
-      
+      if (variationJson != null && !variationJson.keySet().isEmpty()) {
+        variationJson = rebuildVariationJson(variationJson);
+        
+        products.addAll(buildVariationProducts(variationJson, product, imagesArr, extractStockFromJson(stockJson)));
+        
+      } else {
+        products.add(product);
+      }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
@@ -78,6 +87,182 @@ public class BrasilAdoropatasCrawler extends Crawler {
   
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".catalog-product-view") != null;
+  }
+  
+  private Map<String, Integer> extractStockFromJson(JSONObject json) {
+    Map<String, Integer> map = new HashMap<>();
+    
+    JSONArray arr = JSONUtils.getJSONArrayValue(json, "Swissup_QuantitySwitcher/js/product");
+    
+    for(Object obj : arr) {
+      if(obj instanceof JSONObject) {
+        JSONObject subJson = (JSONObject) obj;
+        
+        String id = JSONUtils.getStringValue(subJson, "id");
+        Integer stock = JSONUtils.getIntegerValueFromJSON(subJson, "maxQty", 0);
+        
+        if(id != null) {
+          map.put(id, stock);
+        }
+      }
+    }
+    
+    return map;
+  }
+  
+  private List<Product> buildVariationProducts(JSONObject json, Product product, JSONArray imagesArr, Map<String, Integer> stocks) {
+    List<Product> products = new ArrayList<>();
+    
+    for(String key : json.keySet()) {
+      if(json.get(key) instanceof JSONObject) {
+        JSONObject skuJson = json.getJSONObject(key);
+        
+        Product clone = product.clone();
+        
+        Float varPrice = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
+        
+        String varCode = JSONUtils.getStringValue(skuJson, "code");
+        String varLabel = JSONUtils.getStringValue(skuJson, "label");
+        
+        String varName = varCode != null && varLabel != null ? product.getName() + " - " + varCode + " " + varLabel : product.getName();
+        
+        JSONArray images = JSONUtils.getJSONArrayValue(skuJson, "images");
+        
+        clone.setInternalId(key);
+        clone.setPrice(varPrice);
+        clone.setName(varName);
+        clone.setPrices(buildVariationPrices(skuJson, varPrice));
+        clone.setPrimaryImage(images.length() > 0 ? (String) images.remove(0) : null);
+        
+        if(product.getPrimaryImage() != null) {
+          images.put(product.getPrimaryImage());
+        }
+        
+        for(Object obj : imagesArr) {
+          images.put(obj);
+        }
+        
+        clone.setSecondaryImages(images.length() > 0 ? images.toString() : null);
+        
+        Integer stock = stocks.get(key);
+        clone.setStock(stock);
+        clone.setAvailable(stock > 0);
+        
+        products.add(clone);
+      }
+    }
+    
+    return products;
+  }
+  
+  private JSONObject rebuildVariationJson(JSONObject json) {
+    JSONObject variations = new JSONObject();
+    
+    json = JSONUtils.getJSONValue(json, "configurable");
+    json = JSONUtils.getJSONValue(json, "spConfig");
+    
+    JSONObject attributes = JSONUtils.getJSONValue(json, "attributes");
+    for(String key : attributes.keySet()) {      
+      if(attributes.get(key) instanceof JSONObject) {
+        JSONObject attributesJson = attributes.getJSONObject(key);
+        JSONArray options = JSONUtils.getJSONArrayValue(attributesJson, "options");
+        
+        String code = JSONUtils.getStringValue(attributesJson, "code");
+        
+        for (Object o : options) {
+          if (o instanceof JSONObject) {
+            JSONObject variationJson = (JSONObject) o;
+            
+            String label = JSONUtils.getStringValue(variationJson, "label");
+            
+            if (variationJson.has("products") && variationJson.get("products") instanceof JSONArray) {
+              for (Object obj : variationJson.getJSONArray("products")) {
+                if (obj instanceof String) {
+                  variations.put((String) obj, new JSONObject().put("label", label).put("code", code));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    JSONObject prices = JSONUtils.getJSONValue(json, "optionPrices");
+    for(String key : prices.keySet()) {
+      if(prices.get(key) instanceof JSONObject) {
+        JSONObject pricesJson = prices.getJSONObject(key);
+        
+        JSONObject priceJson = JSONUtils.getJSONValue(pricesJson, "finalPrice");
+        Float price = JSONUtils.getFloatValueFromJSON(priceJson, "amount", true);
+        
+        JSONObject oldPriceJson = JSONUtils.getJSONValue(pricesJson, "oldPrice");
+        Float oldPrice = JSONUtils.getFloatValueFromJSON(oldPriceJson, "amount", true);
+        
+        if(variations.has(key) && variations.get(key) instanceof JSONObject) {
+          variations.getJSONObject(key).put("price", price).put("oldPrice", oldPrice);
+        }
+      }
+    }
+    
+    JSONObject images = JSONUtils.getJSONValue(json, "images");
+    for(String key : images.keySet()) {
+      JSONArray variationImagesArray = new JSONArray();
+      
+      if(images.get(key) instanceof JSONArray) {
+        JSONArray imagesArray = images.getJSONArray(key);
+        
+        for(Object obj : imagesArray) {
+          if(obj instanceof JSONObject) {
+            JSONObject image = (JSONObject) obj;
+            
+            String imageUrl = JSONUtils.getStringValue(image, "img");
+            if(image.has("isMain") && image.get("isMain") instanceof Boolean) {
+              
+              if(image.getBoolean("isMain")) {
+                JSONArray newArr = new JSONArray().put(imageUrl);
+                
+                for(Object arrObj : variationImagesArray) {
+                  newArr.put(arrObj);
+                }
+                
+                variationImagesArray = newArr;
+                
+              } else {
+                variationImagesArray.put(imageUrl);
+              }
+            }
+          }
+        }
+      }
+      
+      if(variations.has(key) && variations.get(key) instanceof JSONObject) {
+        variations.getJSONObject(key).put("images", variationImagesArray);
+      }
+    }
+    
+    return variations;   
+  }
+  
+  private Prices buildVariationPrices(JSONObject json, Float price) {
+    Prices prices = new Prices();
+    
+    if(price != null) {
+      Float oldPrice = JSONUtils.getFloatValueFromJSON(json, "oldPrice", true);
+      
+      if(oldPrice.floatValue() != price.floatValue()) {
+        prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(oldPrice.doubleValue()));
+      }
+      
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
+      
+      List<Card> cards = Arrays.asList(Card.VISA, Card.MASTERCARD, Card.MAESTRO);
+      for(Card card : cards) {
+        prices.insertCardInstallment(card.toString(), installmentPriceMap);
+      }
+    }
+    
+    return prices;
   }
   
   private boolean scrapAvailability(Document doc) {
