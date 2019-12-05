@@ -360,7 +360,6 @@ public class VTEXCrawlersUtils {
   }
 
   /**
-   * 
    * @param json
    * @param internalId
    * @param usePriceApi -> if you need acces price api for crawl installments ex: homePage +
@@ -395,6 +394,11 @@ public class VTEXCrawlersUtils {
     return marketplace;
   }
 
+  /**
+   * @deprecated Use CrawlerUtils
+   * @param marketplaceMap
+   * @return
+   */
   public Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
     return CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(sellerNameLower), Card.VISA, session);
   }
