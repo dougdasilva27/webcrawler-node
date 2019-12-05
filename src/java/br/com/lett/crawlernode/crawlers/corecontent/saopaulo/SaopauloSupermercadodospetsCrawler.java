@@ -92,6 +92,7 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
       return internalId;
    }
 
+
    private Prices crawlPrices(Document doc, Float price) {
       Prices prices = new Prices();
 

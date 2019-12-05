@@ -54,7 +54,6 @@ public class SaopauloSupermercadodospetsCrawler extends CrawlerRankingKeywords {
 
    }
 
-
    private String scrapId(Element e) {
       String pid = null;
 
