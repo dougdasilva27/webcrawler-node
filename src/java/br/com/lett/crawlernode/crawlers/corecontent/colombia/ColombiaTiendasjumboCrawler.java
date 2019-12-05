@@ -47,7 +47,7 @@ public class ColombiaTiendasjumboCrawler extends Crawler {
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList(".description", "#caracteristicas"));
+          Arrays.asList(".description", "#caracteristicas table:not(.Gr-Configuraciones)"));
 
       // sku data in json
       JSONArray arraySkus =
