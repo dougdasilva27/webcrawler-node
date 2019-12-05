@@ -24,7 +24,6 @@ public class ColombiaTiendasjumboCrawler extends CrawlerRankingKeywords {
 
 		this.log("Link onde são feitos os crawlers: " + url);
 		this.currentDoc = fetchDocument(url);
-		// System.err.println(url);
 		Elements products = this.currentDoc.select("ul.neemu-products-container.nm-view-type-grid > li");
 
 		Elements helper = this.currentDoc.select("ul.neemu-products-container.nm-view-type-grid > li");
@@ -32,9 +31,7 @@ public class ColombiaTiendasjumboCrawler extends CrawlerRankingKeywords {
 		if (!products.isEmpty()) {
 			for (int i = 0; i < pageSize; i++) {
 				Element prod = products.get(i);
-				// System.err.println(prod);
 				Element help = helper.get(i);
-				// System.err.println(helper);
 
 				String internalPid = scrapInternalPid(help);
 				String productUrl = CrawlerUtils.scrapUrl(prod,
@@ -61,13 +58,11 @@ public class ColombiaTiendasjumboCrawler extends CrawlerRankingKeywords {
 
 	private String scrapInternalPid(Element doc) {
 		String internalPid = null;
-		// System.err.println(doc);
 
 		if (doc != null) {
 			internalPid = doc.attr("id");
 			internalPid = internalPid.replace("nm-product-", "").trim();
 		}
-
 		return internalPid;
 	}
 
@@ -75,7 +70,6 @@ public class ColombiaTiendasjumboCrawler extends CrawlerRankingKeywords {
 	protected boolean hasNextPage() {
 		Integer productCount = this.currentDoc
 				.select(".nm-main-search-container ul.neemu-products-container.nm-view-type-grid > li").size();
-
 		return productCount >= this.pageSize;
 	}
 }

@@ -43,7 +43,6 @@ public class ColombiaTiendasjumboCrawler extends Crawler {
       
       
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
-      //System.err.println(internalPid);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
@@ -59,7 +58,6 @@ public class ColombiaTiendasjumboCrawler extends Crawler {
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
-        //System.err.println(jsonSku);
         
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
