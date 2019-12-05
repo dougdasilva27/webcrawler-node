@@ -420,8 +420,15 @@ public class Crawler extends Task {
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, ((SeedCrawlerSession) session));
-            }
 
+               // This code block send a processed Id to elastic replicator,
+               // who is responsable to show products suggestions on winter for unifications
+               String replicatorUrl = GlobalConfigurations.executionParameters.getReplicatorUrl();
+               if (replicatorUrl != null) {
+                  replicatorUrl += newProcessedProduct.getId();
+                  new ApacheDataFetcher().getAsyncHttp(replicatorUrl, session);
+               }
+            }
          } else if (previousProcessedProduct == null) {
             // if we haven't a previous processed, and the new processed was null,
             // we don't have anything to give a trucada!
@@ -435,7 +442,6 @@ public class Crawler extends Task {
          }
       }
    }
-
 
    private void scheduleImages(PersistenceResult persistenceResult, Processed processed) {
       Long createdId = null;
