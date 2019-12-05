@@ -4,6 +4,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class SaopauloSupermercadodospetsCrawler extends CrawlerRankingKeywords {
@@ -28,8 +29,7 @@ public class SaopauloSupermercadodospetsCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box .regular-price", "id").split("-")[2];
+            String internalPid = scrapId(e);
             String productUrl = CrawlerUtils.scrapUrl(e, ".item-area .product-image-area > a", "href", "https", HOST);
 
             saveDataProduct(null, internalPid, productUrl);
@@ -55,6 +55,16 @@ public class SaopauloSupermercadodospetsCrawler extends CrawlerRankingKeywords {
    }
 
 
+   private String scrapId(Element e) {
+      String pid = null;
+
+      String att = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".price-box .regular-price", "id");
+      if (att != null) {
+         pid = CommonMethods.getLast(att.split("-"));
+      }
+
+      return pid;
+   }
 
    @Override
    protected boolean hasNextPage() {

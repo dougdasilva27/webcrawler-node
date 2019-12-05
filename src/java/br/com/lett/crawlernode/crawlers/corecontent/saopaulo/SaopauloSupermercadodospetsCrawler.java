@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
@@ -36,8 +37,9 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String internalId = captureInternalid(doc);
-         String internalPid = internalId;
+
+         String internalId = scrapInternalId(doc);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name h1", false);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-essential .regular-price", null, false, ',', session);
          Prices prices = crawlPrices(doc, price);
@@ -79,16 +81,16 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
 
    }
 
-   private String captureInternalid(Element doc) {
+   private String scrapInternalId(Document doc) {
       String internalId = null;
 
-      Element id = doc.selectFirst(".data-table tr:not(:first-child)");
-      if (id != null) {
-         internalId = id.text().split("U")[1];
+      String att = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-info meta[itemprop=productID][content]", "content");
+      if (att != null) {
+         internalId = CommonMethods.getLast(att.split(":"));
       }
+
       return internalId;
    }
-
 
    private Prices crawlPrices(Document doc, Float price) {
       Prices prices = new Prices();
@@ -119,29 +121,28 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-
-
-      Integer totComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".product-essential .ratings .rating-links a", false);
-      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .product-shop [itemprop=ratingValue]", null, false, ',', session);
-      if (avgRating != null) {
-         ratingReviews.setAverageOverallRating(avgRating);
-      } else {
-         ratingReviews.setAverageOverallRating((double) 0);
-      }
-
-      Integer totWrittenReviews = CrawlerUtils.scrapIntegerFromHtml(doc, ".product-essential .ratings .rating-links a", false);
+      Integer totalComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".product-essential .ratings .rating-links a", false, 0);
+      Double avgRating = scrapAvgRating(doc);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
-
-      ratingReviews.setTotalRating(totComments);
-      ratingReviews.setTotalWrittenReviews(totWrittenReviews);
-
+      ratingReviews.setTotalRating(totalComments);
+      ratingReviews.setTotalWrittenReviews(totalComments);
+      ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
    }
 
+   private Double scrapAvgRating(Document doc) {
+      Double avg = 0d;
 
+      Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .product-shop [itemprop=ratingValue]", null, false, ',', session);
+      if (percentage != null) {
+         avg = (percentage / 100) * 5;
+      }
+
+      return avg;
+   }
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
       Integer star1 = 0;
@@ -154,7 +155,10 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
 
       for (Element review : reviews) {
          if (review != null && review.hasAttr("style")) {
-            Integer val = Integer.parseInt(review.attr("style").replaceAll("[^0-9]+", ""));
+            // On a html this value will be like this: 100%
+            String percentageString = review.attr("style").replaceAll("[^0-9]+", ""); // "100" or ""
+
+            Integer val = !percentageString.isEmpty() ? Integer.parseInt(percentageString) : 0;
 
             switch (val) {
                case 20:
@@ -171,6 +175,8 @@ public class SaopauloSupermercadodospetsCrawler extends Crawler {
                   break;
                case 100:
                   star5 += 1;
+                  break;
+               default:
                   break;
             }
          }
