@@ -151,8 +151,8 @@ public class ColombiaMerqueoCrawler extends Crawler {
 	    	jsonArrImg = new JSONArray();
 	    System.err.println(jsonArrImg);
 	    for(int i = 0; i < jsonArrImg.length();i++ ) {
-	    	JSONObject jsonObjImg = jsonArrImg.get(i) != null && jsonArrImg.get(i) instanceof JSONObject ? (JSONObject) jsonArrImg.get(i): new JSONObject();
-	    	
+	    	JSONObject jsonObjImg = (jsonArrImg.get(i) != null && jsonArrImg.get(i) instanceof JSONObject) ? jsonArrImg.getJSONObject(i): new JSONObject();
+	    	System.err.println(jsonObjImg);
 	    	if (jsonObjImg.has("imageLargeUrl") && !jsonObjImg.isNull("imageLargeUrl") && !jsonObjImg.get("imageLargeUrl").equals(primaryImage)) {
 		    	secondaryImage = jsonObjImg.getString("imageLargeUrl");
 
@@ -161,7 +161,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
 		    } else if (jsonObjImg.has("imageSmallUrl") && !jsonObjImg.isNull("imageSmallUrl") && !jsonObjImg.getString("imageSmallUrl").equals(primaryImage)) {
 		    	secondaryImage = jsonObjImg.getString("imageSmallUrl");
-
 		    }
 
 	    }
