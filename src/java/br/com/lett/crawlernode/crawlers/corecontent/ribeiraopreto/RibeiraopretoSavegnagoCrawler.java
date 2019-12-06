@@ -98,6 +98,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
          for (int i = 0; i < arraySkus.length(); i++) {
             JSONObject jsonSku = arraySkus.getJSONObject(i);
 
+
             String internalId = vtexUtil.crawlInternalId(jsonSku);
             JSONObject apiJSON = vtexUtil.crawlApi(internalId, "sc=2");
             String name = vtexUtil.crawlName(jsonSku, skuJson, " ");

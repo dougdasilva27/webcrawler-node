@@ -632,6 +632,7 @@ public class VTEXCrawlersUtils {
    }
 
    public JSONObject crawlApi(String internalId, String queryString) {
+
       String url = homePage + "produto/sku/" + internalId + "?" + queryString;
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();

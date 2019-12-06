@@ -256,6 +256,7 @@ public class BrasilPetzCrawler extends Crawler {
       for (Element e : images) {
          String image = CrawlerUtils.sanitizeUrl(e, "href", "https:", "www.petz.com.br");
 
+
          if (!image.equals(primaryImage)) {
             secondaryImagesArray.put(image);
          }
