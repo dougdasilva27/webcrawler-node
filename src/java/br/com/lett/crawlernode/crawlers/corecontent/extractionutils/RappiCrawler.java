@@ -8,6 +8,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -41,6 +42,7 @@ public class RappiCrawler extends Crawler {
   public RappiCrawler(Session session, String storeType) {
     super(session);
     this.storeType = storeType;
+    this.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
@@ -190,7 +192,7 @@ public class RappiCrawler extends Crawler {
   private String crawlName(JSONObject json) {
     String name = null;
 
-    if (json.has("name")) {
+    if (json.has("name")) {     
       name = json.getString("name");
     }
 
