@@ -644,6 +644,7 @@ public class VTEXCrawlersUtils {
       return new JSONObject();
    }
 
+
    public Integer crawlStock(JSONObject json) {
       Integer stock = null;
 
