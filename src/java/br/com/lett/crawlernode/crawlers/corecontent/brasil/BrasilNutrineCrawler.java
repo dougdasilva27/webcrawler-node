@@ -211,6 +211,7 @@ public class BrasilNutrineCrawler extends Crawler {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
+
       JSONObject descontoPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "porcentagemDescontoVista=", "},", true, false);
       if (descontoPrice.has("valorComDesconto")) {
         prices.setBankTicketPrice(

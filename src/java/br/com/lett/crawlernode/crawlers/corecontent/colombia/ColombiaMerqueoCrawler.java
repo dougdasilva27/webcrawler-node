@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -49,7 +51,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
       CategoryCollection categories = crawlCategories(data);
       Prices prices = crawlPrices(price);
       String primaryImage = crawlPrimaryImage(data);
-      String secondaryImages = null;
+      String secondaryImages = crawlSecondaryImage(data, primaryImage);
       String description = crawlDescription(data);
       Integer stock = crawlStock(data);
 
@@ -138,6 +140,34 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
     return primaryImage;
   }
+  
+  private String crawlSecondaryImage(JSONObject data, String primaryImage) {
+	    String secondaryImage = null;
+	    JSONArray jsonArrImg = null;
+	    
+	    if(data.has("images") && !data.isNull("images") && data.get("images") instanceof JSONArray)  
+	    	jsonArrImg = data.getJSONArray("images");
+	    else
+	    	jsonArrImg = new JSONArray();
+	    System.err.println(jsonArrImg);
+	    for(int i = 0; i < jsonArrImg.length();i++ ) {
+	    	JSONObject jsonObjImg = jsonArrImg.get(i) != null && jsonArrImg.get(i) instanceof JSONObject ? (JSONObject) jsonArrImg.get(i): new JSONObject();
+	    	
+	    	if (jsonObjImg.has("imageLargeUrl") && !jsonObjImg.isNull("imageLargeUrl") && !jsonObjImg.get("imageLargeUrl").equals(primaryImage)) {
+		    	secondaryImage = jsonObjImg.getString("imageLargeUrl");
+
+		    } else if (jsonObjImg.has("imageMediumUrl") && !jsonObjImg.isNull("imageMediumUrl") && !jsonObjImg.getString("imageMediumUrl").equals(primaryImage)) {
+		    	secondaryImage = jsonObjImg.getString("imageMediumUrl");
+
+		    } else if (jsonObjImg.has("imageSmallUrl") && !jsonObjImg.isNull("imageSmallUrl") && !jsonObjImg.getString("imageSmallUrl").equals(primaryImage)) {
+		    	secondaryImage = jsonObjImg.getString("imageSmallUrl");
+
+		    }
+
+	    }
+	    
+	    return secondaryImage;
+	  }
 
   private boolean crawlAvailable(JSONObject data) {
     boolean availability = false;
