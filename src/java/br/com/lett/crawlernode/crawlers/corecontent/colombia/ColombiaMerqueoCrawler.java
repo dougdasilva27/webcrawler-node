@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -25,242 +26,252 @@ import models.prices.Prices;
 
 public class ColombiaMerqueoCrawler extends Crawler {
 
-  public ColombiaMerqueoCrawler(Session session) {
-    super(session);
-  }
+	public ColombiaMerqueoCrawler(Session session) {
+		super(session);
+	}
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
-    JSONObject apiJson = scrapApiJson(session.getOriginalURL());
-    JSONObject data = new JSONObject();
+	@Override
+	public List<Product> extractInformation(Document doc) throws Exception {
+		super.extractInformation(doc);
+		List<Product> products = new ArrayList<>();
+		JSONObject apiJson = scrapApiJson(session.getOriginalURL());
+		JSONObject data = new JSONObject();
 
-    if (apiJson.has("data") && !apiJson.isNull("data")) {
-      data = apiJson.getJSONObject("data");
-    }
+		if (apiJson.has("data") && !apiJson.isNull("data")) {
+			data = apiJson.getJSONObject("data");
+		}
 
-    if (isProductPage(data)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+		if (isProductPage(data)) {
+			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(data);
-      String name = crawlName(data);
-      Float price = crawlPrice(data);
-      boolean available = crawlAvailable(data);
+			String internalId = crawlInternalId(data);
+			String name = crawlName(data);
+			Float price = crawlPrice(data);
+			boolean available = crawlAvailable(data);
 
-      CategoryCollection categories = crawlCategories(data);
-      Prices prices = crawlPrices(price);
-      String primaryImage = crawlPrimaryImage(data);
-      String secondaryImages = crawlSecondaryImage(data, primaryImage);
-      String description = crawlDescription(data);
-      Integer stock = crawlStock(data);
+			CategoryCollection categories = crawlCategories(data);
+			Prices prices = crawlPrices(price);
+			String primaryImage = crawlPrimaryImage(data);
+			String secondaryImages = crawlSecondaryImage(data);
+			String description = crawlDescription(data);
+			Integer stock = crawlStock(data);
 
-      // Creating the product
-      Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setMarketplace(new Marketplace())
-          .setStock(stock)
-          .build();
+			// Creating the product
+			Product product = ProductBuilder.create()
+					.setUrl(session.getOriginalURL())
+					.setInternalId(internalId)
+					.setName(name)
+					.setPrice(price)
+					.setPrices(prices)
+					.setAvailable(available)
+					.setCategory1(categories.getCategory(0))
+					.setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2))
+					.setPrimaryImage(primaryImage)
+					.setSecondaryImages(secondaryImages)
+					.setDescription(description)
+					.setMarketplace(new Marketplace())
+					.setStock(stock)
+					.build();
 
-      products.add(product);
+			products.add(product);
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
+		} else {
+			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+		}
 
-    return products;
+		return products;
 
-  }
+	}
 
-  private Integer crawlStock(JSONObject data) {
-    Integer stock = null;
+	private Integer crawlStock(JSONObject data) {
+		Integer stock = null;
 
-    if (data.has("quantity")) {
-      stock = MathUtils.parseInt(data.get("quantity").toString());
-    }
+		if (data.has("quantity")) {
+			stock = MathUtils.parseInt(data.get("quantity").toString());
+		}
 
-    return stock;
-  }
+		return stock;
+	}
 
-  private CategoryCollection crawlCategories(JSONObject data) {
-    CategoryCollection categories = new CategoryCollection();
-    JSONObject shelf = new JSONObject();
+	private CategoryCollection crawlCategories(JSONObject data) {
+		CategoryCollection categories = new CategoryCollection();
+		JSONObject shelf = new JSONObject();
 
-    if (data.has("shelf") && !data.isNull("shelf")) {
-      shelf = data.getJSONObject("shelf");
-      if (shelf.has("name") && !shelf.isNull("name")) {
-        categories.add(shelf.getString("name"));
-      }
-    }
+		if (data.has("shelf") && !data.isNull("shelf")) {
+			shelf = data.getJSONObject("shelf");
+			if (shelf.has("name") && !shelf.isNull("name")) {
+				categories.add(shelf.getString("name"));
+			}
+		}
 
-    if (data.has("department") && !data.isNull("department")) {
-      shelf = data.getJSONObject("department");
-      if (shelf.has("name") && !shelf.isNull("name")) {
-        categories.add(shelf.getString("name"));
-      }
-    }
+		if (data.has("department") && !data.isNull("department")) {
+			shelf = data.getJSONObject("department");
+			if (shelf.has("name") && !shelf.isNull("name")) {
+				categories.add(shelf.getString("name"));
+			}
+		}
 
-    return categories;
-  }
+		return categories;
+	}
 
-  private String crawlDescription(JSONObject data) {
-    String description = null;
+	private String crawlDescription(JSONObject data) {
+		String description = null;
 
-    if (data.has("description") && !data.isNull("description")) {
-      description = data.getString("description");
-    }
+		if (data.has("description") && !data.isNull("description")) {
+			description = data.getString("description");
+		}
 
-    return description;
-  }
+		return description;
+	}
 
-  private String crawlPrimaryImage(JSONObject data) {
-    String primaryImage = null;
+	private String crawlPrimaryImage(JSONObject data) {
+		String primaryImagesString = null;
+		JSONArray jsonArrImg = JSONUtils.getJSONArrayValue(data, "images");
 
-    if (data.has("imageLargeUrl") && !data.isNull("imageLargeUrl")) {
-      primaryImage = data.getString("imageLargeUrl");
+		JSONArray primaryImages = new JSONArray();
 
-    } else if (data.has("imageMediumUrl") && !data.isNull("imageMediumUrl")) {
-      primaryImage = data.getString("imageMediumUrl");
+		for(int i = 0; i < 1;i++ ) {
+			JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i): new JSONObject();
+			primaryImages.put(getSecondaryImg(jsonObjImg));
+		}
 
-    } else if (data.has("imageSmallUrl") && !data.isNull("imageSmallUrl")) {
-      primaryImage = data.getString("imageSmallUrl");
+		if(primaryImages.length() > 0) {
+			primaryImagesString = primaryImages.toString();
+			primaryImagesString = primaryImagesString.substring(2, primaryImagesString.length()-2);
+		}
 
-    }
+		return primaryImagesString;
+	}
 
-    return primaryImage;
-  }
-  
-  private String crawlSecondaryImage(JSONObject data, String primaryImage) {
-	    String secondaryImage = null;
-	    JSONArray jsonArrImg = null;
-	    
-	    if(data.has("images") && !data.isNull("images") && data.get("images") instanceof JSONArray)  
-	    	jsonArrImg = data.getJSONArray("images");
-	    else
-	    	jsonArrImg = new JSONArray();
-	    System.err.println(jsonArrImg);
-	    for(int i = 0; i < jsonArrImg.length();i++ ) {
-	    	JSONObject jsonObjImg = (jsonArrImg.get(i) != null && jsonArrImg.get(i) instanceof JSONObject) ? jsonArrImg.getJSONObject(i): new JSONObject();
-	    	System.err.println(jsonObjImg);
-	    	if (jsonObjImg.has("imageLargeUrl") && !jsonObjImg.isNull("imageLargeUrl") && !jsonObjImg.get("imageLargeUrl").equals(primaryImage)) {
-		    	secondaryImage = jsonObjImg.getString("imageLargeUrl");
+	private String crawlSecondaryImage(JSONObject data) {
+		String secondaryImagesString = null;
+		JSONArray jsonArrImg = JSONUtils.getJSONArrayValue(data, "images");
 
-		    } else if (jsonObjImg.has("imageMediumUrl") && !jsonObjImg.isNull("imageMediumUrl") && !jsonObjImg.getString("imageMediumUrl").equals(primaryImage)) {
-		    	secondaryImage = jsonObjImg.getString("imageMediumUrl");
+		JSONArray secondaryImages = new JSONArray();
 
-		    } else if (jsonObjImg.has("imageSmallUrl") && !jsonObjImg.isNull("imageSmallUrl") && !jsonObjImg.getString("imageSmallUrl").equals(primaryImage)) {
-		    	secondaryImage = jsonObjImg.getString("imageSmallUrl");
-		    }
+		for(int i = 1; i < jsonArrImg.length();i++ ) {
+			JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i): new JSONObject();
+			secondaryImages.put(getSecondaryImg(jsonObjImg));
+		}
 
-	    }
-	    
-	    return secondaryImage;
-	  }
+		if(secondaryImages.length() > 0) {
+			secondaryImagesString = secondaryImages.toString();
+		}
 
-  private boolean crawlAvailable(JSONObject data) {
-    boolean availability = false;
+		return secondaryImagesString;
+	}
 
-    if (data.has("availability") && !data.isNull("availability")) {
-      availability = data.getBoolean("availability");
-    }
+	private String getSecondaryImg(JSONObject jsonObjImg) {
+		String secondaryImage = null;
 
-    return availability;
-  }
+		if (jsonObjImg.has("imageLargeUrl") && !jsonObjImg.isNull("imageLargeUrl")) {
+			secondaryImage = jsonObjImg.getString("imageLargeUrl");
 
-  private Float crawlPrice(JSONObject data) {
-    Float price = null;
+		} else if (jsonObjImg.has("imageMediumUrl") && !jsonObjImg.isNull("imageMediumUrl")) {
+			secondaryImage = jsonObjImg.getString("imageMediumUrl");
 
-    if (data.has("price") && !data.isNull("price")) {
-      price = CrawlerUtils.getFloatValueFromJSON(data, "price");
-    }
+		} else if (jsonObjImg.has("imageSmallUrl") && !jsonObjImg.isNull("imageSmallUrl")) {
+			secondaryImage = jsonObjImg.getString("imageSmallUrl");
+		}
+		return secondaryImage;
+	}
 
-    return price;
-  }
+	private boolean crawlAvailable(JSONObject data) {
+		boolean availability = false;
 
-  private String crawlName(JSONObject data) {
-    String name = null;
+		if (data.has("availability") && !data.isNull("availability")) {
+			availability = data.getBoolean("availability");
+		}
 
-    if (data.has("name") && !data.isNull("name")) {
-      name = data.getString("name");
-    }
+		return availability;
+	}
 
-    return name;
-  }
+	private Float crawlPrice(JSONObject data) {
+		Float price = null;
+		System.err.println(data);
+		if (data.has("specialPrice") && !data.isNull("specialPrice")) {
+			price = CrawlerUtils.getFloatValueFromJSON(data, "specialPrice");
+		}else if(data.has("price") && !data.isNull("price")){
+			price = CrawlerUtils.getFloatValueFromJSON(data, "price");
+		}
 
-  private JSONObject scrapApiJson(String originalURL) {
-    List<String> slugs = scrapSlugs(originalURL);
+		return price;
+	}
 
-    String apiUrl =
-        "https://merqueo.com/api/2.0/stores/63/find?department_slug=" + slugs.get(1)
-            + "&shelf_slug=" + slugs.get(2)
-            + "&product_slug=" + slugs.get(3)
-            + "&limit=7";
+	private String crawlName(JSONObject data) {
+		String name = null;
 
-    Request request = RequestBuilder
-        .create()
-        .setUrl(apiUrl)
-        .mustSendContentEncoding(false)
-        .build();
+		if (data.has("name") && !data.isNull("name")) {
+			name = data.getString("name");
+		}
 
-    return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
-  }
+		return name;
+	}
 
-  /*
-   * Url exemple:
-   * https://merqueo.com/bogota/aseo-del-hogar/detergentes/ariel-concentrado-doble-poder-detergente-la
-   * -quido-2-lt
-   */
-  private List<String> scrapSlugs(String originalURL) {
-    List<String> slugs = new ArrayList<>();
-    String[] slug = originalURL.split("/");
+	private JSONObject scrapApiJson(String originalURL) {
+		List<String> slugs = scrapSlugs(originalURL);
 
-    for (int i = 3; i < slug.length; i++) {
-      slugs.add(slug[i]);
-    }
+		String apiUrl =
+				"https://merqueo.com/api/2.0/stores/63/find?department_slug=" + slugs.get(1)
+				+ "&shelf_slug=" + slugs.get(2)
+				+ "&product_slug=" + slugs.get(3)
+				+ "&limit=7";
 
-    return slugs;
-  }
+		Request request = RequestBuilder
+				.create()
+				.setUrl(apiUrl)
+				.mustSendContentEncoding(false)
+				.build();
 
-  private boolean isProductPage(JSONObject data) {
-    return data.has("id");
-  }
+		return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
+	}
 
-  private String crawlInternalId(JSONObject data) {
-    String internalId = null;
+	/*
+	 * Url exemple:
+	 * https://merqueo.com/bogota/aseo-del-hogar/detergentes/ariel-concentrado-doble-poder-detergente-la
+	 * -quido-2-lt
+	 */
+	private List<String> scrapSlugs(String originalURL) {
+		List<String> slugs = new ArrayList<>();
+		String[] slug = originalURL.split("/");
 
-    if (data.has("id") && !data.isNull("id")) {
-      internalId = data.get("id").toString();
-    }
+		for (int i = 3; i < slug.length; i++) {
+			slugs.add(slug[i]);
+		}
 
-    return internalId;
-  }
+		return slugs;
+	}
 
-  /**
-   * In the time when this crawler was made, this market hasn't installments informations
-   * 
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Float price) {
-    Prices prices = new Prices();
+	private boolean isProductPage(JSONObject data) {
+		return data.has("id");
+	}
 
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
-      installmentPriceMapShop.put(1, price);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMapShop);
-    }
+	private String crawlInternalId(JSONObject data) {
+		String internalId = null;
 
-    return prices;
-  }
+		if (data.has("id") && !data.isNull("id")) {
+			internalId = data.get("id").toString();
+		}
+
+		return internalId;
+	}
+
+	/**
+	 * In the time when this crawler was made, this market hasn't installments informations
+	 * 
+	 * @param price
+	 * @return
+	 */
+	private Prices crawlPrices(Float price) {
+		Prices prices = new Prices();
+
+		if (price != null) {
+			Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
+			installmentPriceMapShop.put(1, price);
+			prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMapShop);
+		}
+
+		return prices;
+	}
 }
