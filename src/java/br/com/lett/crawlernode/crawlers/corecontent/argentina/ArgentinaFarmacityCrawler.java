@@ -38,7 +38,7 @@ public class ArgentinaFarmacityCrawler extends Crawler {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
+      System.err.println(skuJson);
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
@@ -102,9 +102,12 @@ public class ArgentinaFarmacityCrawler extends Crawler {
   
   private String scrapName(VTEXCrawlersUtils vtexUtil, JSONObject json, JSONObject skuJson) {
     String name = JSONUtils.getStringValue(json, "name");
+    String variationName = vtexUtil.crawlName(skuJson, json, " ");
     
-    if(name != null) {
+    if(name != null && variationName != null && !variationName.contains(name)) {
       name += " " + vtexUtil.crawlName(skuJson, json, " ");
+    } else {
+      name = variationName;
     }
     
     return name;
