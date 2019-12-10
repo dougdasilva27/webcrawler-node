@@ -9,7 +9,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -32,7 +31,6 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
 
   public ColombiaRappiexitobogotaCrawler(Session session) {
     super(session);
-    this.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
