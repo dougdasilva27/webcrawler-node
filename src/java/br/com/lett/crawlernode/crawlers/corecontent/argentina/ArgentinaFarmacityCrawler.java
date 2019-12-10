@@ -38,7 +38,7 @@ public class ArgentinaFarmacityCrawler extends Crawler {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-      
+
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
@@ -53,7 +53,7 @@ public class ArgentinaFarmacityCrawler extends Crawler {
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
+        String name = scrapName(vtexUtil, skuJson, jsonSku);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
@@ -98,5 +98,15 @@ public class ArgentinaFarmacityCrawler extends Crawler {
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".product-info-container") != null;
+  }
+  
+  private String scrapName(VTEXCrawlersUtils vtexUtil, JSONObject json, JSONObject skuJson) {
+    String name = JSONUtils.getStringValue(json, "name");
+    
+    if(name != null) {
+      name += " " + vtexUtil.crawlName(skuJson, json, " ");
+    }
+    
+    return name;
   }
 }
