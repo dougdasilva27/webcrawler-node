@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -201,14 +202,11 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
 
       p.setPriceFrom(priceFrom);
       p.setBankTicketPrice(price);
-
-      p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      p.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      p.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      p.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      p.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-
+      
+      List<Card> cards = Arrays.asList(Card.VISA, Card.MASTERCARD, Card.DINERS, Card.AMEX, Card.ELO, Card.SHOP_CARD);
+      for(Card card : cards) {
+        p.insertCardInstallment(card.toString(), installmentPriceMap);
+      }
     }
 
     return p;
@@ -253,6 +251,8 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
       Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL + "?page=1").setCookies(cookies).setHeaders(headers).setPayload(payload)
           .mustSendContentEncoding(false).build();
       String page = this.dataFetcher.post(session, request).getBody().trim();
+      
+      page = Normalizer.normalize(page, Normalizer.Form.NFD);
 
       if (page.startsWith("{") && page.endsWith("}")) {
         try {
