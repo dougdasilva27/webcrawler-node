@@ -11,17 +11,23 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class GeracaopetCrawler extends Crawler {
+	private static final String YOURVIEWS_API_KEY = "86ceddc8-6468-456a-a862-aad27453c9ae";
 
   protected String cep;
 
@@ -67,15 +73,15 @@ public class GeracaopetCrawler extends Crawler {
           Float price = crawlPriceWithVariation(options, internalId, available);
           Prices prices = crawlPricesWithVariation(options, internalId, available, price);
           Integer stock = null;
+          RatingsReviews ratingsReviews = scrapRatingsReviews(skuJson, internalPid);
 
           // Creating the product
           Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
               .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(null).setCategory2(null).setCategory3(null)
               .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock)
-              .setMarketplace(new Marketplace()).setEans(null).build();
+              .setMarketplace(new Marketplace()).setEans(null).setRatingReviews(ratingsReviews).build();
 
           products.add(product);
-
         }
       } else {
         String internalId = crawlInternalId(doc);
@@ -85,12 +91,14 @@ public class GeracaopetCrawler extends Crawler {
         boolean available = crawlAvailability(doc);
         String primaryImage = crawlPrimaryImage(jsonHtml);
         String secondaryImages = crawlSecondaryImages(jsonHtml);
+        RatingsReviews ratingsReviews = scrapRatingsReviews(jsonHtml, internalPid);
+
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(null).setCategory2(null).setCategory3(null)
             .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(null)
-            .setMarketplace(new Marketplace()).setEans(null).build();
+            .setMarketplace(new Marketplace()).setEans(null).setRatingReviews(ratingsReviews).build();
 
         products.add(product);
       }
@@ -101,6 +109,54 @@ public class GeracaopetCrawler extends Crawler {
 
     return products;
   }
+  
+  private RatingsReviews scrapRatingsReviews(JSONObject json, String internalPid) {
+	    RatingsReviews ratingReviews = new RatingsReviews();
+	    ratingReviews.setDate(session.getDate());
+	    
+	    YourreviewsRatingCrawler yr =
+	        new YourreviewsRatingCrawler(session, cookies, logger, YOURVIEWS_API_KEY, this.dataFetcher);
+	    
+	    Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, YOURVIEWS_API_KEY, this.dataFetcher);
+	    
+	    Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
+	    Double avgRating = getTotalAvgRating(docRating);
+	    AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
+	    
+	    ratingReviews.setTotalRating(totalNumOfEvaluations);
+	    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+	    ratingReviews.setAverageOverallRating(avgRating);
+	    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+	    
+	    return ratingReviews;
+	  }
+
+	  private Double getTotalAvgRating(Document docRating) {
+	    Double avgRating = null;
+	    Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
+	    System.err.println(docRating);
+	    if (rating != null) {
+	      avgRating = Double.parseDouble(rating.attr("content"));
+	     
+	    }
+
+	    return avgRating;
+	  }
+	  
+	  private Integer getTotalNumOfRatings(Document doc) {
+	    Integer totalRating = null;
+	    Element totalRatingElement = doc.select("strong[itemprop=ratingCount]").first();
+
+	    if (totalRatingElement != null) {
+	      String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
+
+	      if (!totalText.isEmpty()) {
+	        totalRating = Integer.parseInt(totalText);
+	      }
+	    }
+
+	    return totalRating;
+	  }
 
   private String crawlSecondaryImages(JSONObject jsonHtml) {
     JSONArray secondaryImages = new JSONArray();
