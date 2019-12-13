@@ -88,12 +88,13 @@ public class PortoalegreBichopetstoreCrawler extends Crawler {
                Product variationProduct = product.clone();
 
                String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "value");
-               Prices variationPrices = scrapVariationPrices(doc, price, variationId);
+               Float variationPrice = scrapVariationPrice(variation);
+               Prices variationPrices = scrapVariationPrices(doc, variationPrice, variationId);
 
                variationProduct.setInternalId(internalId + "-" + variationId);
                variationProduct.setName(name + " - " + CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "title"));
+               variationProduct.setPrice(variationPrice);
                variationProduct.setPrices(variationPrices);
-               variationProduct.setPrice(CrawlerUtils.extractPriceFromPrices(variationPrices, Arrays.asList(Card.MASTERCARD, Card.VISA, Card.MAESTRO)));
 
                products.add(variationProduct);
             }
@@ -125,6 +126,25 @@ public class PortoalegreBichopetstoreCrawler extends Crawler {
       }
 
       return internalPid;
+   }
+   
+   private Float scrapVariationPrice(Element element) {
+     Float price = null;
+     
+     if(element != null) {
+        String elementText = element.text();
+        
+        if(elementText.contains("R$")) {
+          elementText = elementText.substring(elementText.indexOf("R$"));
+          elementText = elementText.replaceAll("[^0-9,]+", "").replace(".", "").replace(",", ".");
+          
+          if(!elementText.isEmpty()) {
+            price = Float.parseFloat(elementText);
+          }
+        }
+     }
+     
+     return price;
    }
 
    private Prices scrapVariationPrices(Document doc, Float price, String variationId) {
