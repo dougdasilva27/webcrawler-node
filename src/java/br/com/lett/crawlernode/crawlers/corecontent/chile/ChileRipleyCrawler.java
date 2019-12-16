@@ -5,9 +5,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -18,7 +22,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -34,6 +40,7 @@ public class ChileRipleyCrawler extends Crawler {
 
   public ChileRipleyCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   private Map<Float, Map<Integer, Float>> installmentsMap = new HashMap<>();
@@ -62,11 +69,11 @@ public class ChileRipleyCrawler extends Crawler {
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject skuJson = arraySkus.getJSONObject(i);
-
         String internalId = crawlInternalId(skuJson);
         String name = crawlName(productJson, skuJson);
 
         JSONObject prodAPI = fetchProductAPI(internalId);
+        //System.err.println(arraySkus);
         Map<String, Prices> marketplaceMap = crawlMarketplaceMap(prodAPI, skuJson);
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER), Card.AMEX, session);
         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
@@ -75,12 +82,13 @@ public class ChileRipleyCrawler extends Crawler {
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Arrays.asList(Card.AMEX, Card.SHOP_CARD));
         String primaryImage = prodAPI.has("fullImage") ? CrawlerUtils.completeUrl(prodAPI.getString("fullImage"), "https:", "home.ripley.cl") : null;
         String secondaryImages = crawlSecondaryImages(prodAPI.has("images") ? prodAPI.getJSONArray("images") : new JSONArray(), primaryImage);
+        RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
         // Creating the product
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available && price != null).setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace).build();
+            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setRatingReviews(ratingsReviews).setMarketplace(marketplace).build();
 
         products.add(product);
       }
@@ -120,6 +128,107 @@ public class ChileRipleyCrawler extends Crawler {
 
     return productJson;
   }
+  
+  private Double scrapAvgRating(Document doc) {
+      Double avg = 0d;
+      Double avgRating = 0d;
+      Integer ratingReviews = 0;
+	  Elements ratings = doc.select(".pr-review-summary article");
+	  Elements reviews = doc.select(".pr-review-summary article div[itemprop] span");
+
+	  
+	  for(Element rating : ratings) {
+		  avgRating++;
+	  }
+
+      for (Element review : reviews) {
+
+         ratingReviews += review != null ? Integer.parseInt(review.text()) : 0;
+      }
+	  
+	  avg = ratingReviews/avgRating;
+
+      return avg;
+   }
+  
+  private Integer scrapTotalComments (Document doc) {
+	  Integer totalComments = 0;
+	  Elements comments = doc.select(".pr-review-summary article");
+	  
+	  for(Element comment : comments) {
+		  totalComments++;
+	  }
+	  
+	  return totalComments;
+  }
+  
+  private RatingsReviews scrapRatingReviews(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalComments = scrapTotalComments(doc);
+      Double avgRating = scrapAvgRating(doc);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+
+      ratingReviews.setTotalRating(totalComments);
+      ratingReviews.setTotalWrittenReviews(totalComments);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+
+      return ratingReviews;
+   }
+  
+  private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".pr-review-summary article div[itemprop] span");
+
+
+
+      for (Element review : reviews) {
+
+         Integer val1 = review != null ? Integer.parseInt(review.text()) : 0;
+
+
+         // On a html this value will be like this: (1)
+
+
+         switch (val1) {
+            case 5:
+               star5 ++;
+               break;
+            case 4:
+               star4 ++;
+               break;
+            case 3:
+               star3 ++;
+               break;
+            case 2:
+               star2 ++;
+               break;
+            case 1:
+               star1 ++;
+               break;
+            default:
+               break;
+         }
+
+
+
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+   }
 
   /**
    * @param skuJson

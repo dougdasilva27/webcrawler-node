@@ -5,11 +5,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -21,13 +23,16 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class ChileSalcobrandCrawler extends Crawler {
 
   public ChileSalcobrandCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -59,6 +64,7 @@ public class ChileSalcobrandCrawler extends Crawler {
         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"),
             "https:", "salcobrand.cl", primaryImage);
         String url = buildUrl(session.getOriginalURL(), internalId);
+        RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
         Product product = ProductBuilder.create()
             .setUrl(url)
@@ -75,6 +81,7 @@ public class ChileSalcobrandCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setMarketplace(new Marketplace())
+            .setRatingReviews(ratingsReviews)
             .setStock(stock)
             .build();
 
@@ -118,6 +125,105 @@ public class ChileSalcobrandCrawler extends Crawler {
 
     return CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
   }
+  
+  private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".reviews > li");
+      Elements stars = doc.select(".review > ul  > li .fa.fa-star.selected");
+
+      int val1;
+      for (Element review : reviews) {
+    	  val1 = 0;
+    	  for(Element i :stars) {
+    		  val1++;
+    	  }
+    	  switch (val1) {
+            case 5:
+               star5++;
+               break;
+            case 4:
+               star4++;
+               break;
+            case 3:
+               star3++;
+               break;
+            case 2:
+               star2++;
+               break;
+            case 1:
+               star1++;
+               break;
+            default:
+               break;
+      }
+
+         // On a html this value will be like this: (1)
+
+
+         
+        
+
+
+
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+   }
+  
+  private RatingsReviews scrapRatingReviews(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalComments = scrapTotalComents(doc);
+      Double avgRating = scrapAvgRating(doc);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+
+      ratingReviews.setTotalRating(totalComments);
+      ratingReviews.setTotalWrittenReviews(totalComments);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+
+      return ratingReviews;
+   }
+  private Integer scrapTotalComents(Document doc) {
+	  Integer total = 0;
+	  Elements comentsReviews = doc.select(".reviews span p");
+	  	for(Element el : comentsReviews) {
+	  		total++;
+	  	}
+	  
+	  return total;
+  }
+ 
+  private Double scrapAvgRating(Document doc) {
+      Double avg = 0d;
+
+      Elements reviews = doc.select(".reviews > li");
+      Elements stars = doc.select(".review > ul  > li .fa.fa-star.selected");
+
+      int val1 = 0;
+      int val2 = 0;
+      for (Element review : reviews) {
+    	  val2++;
+    	  for(Element i :stars) {
+    		  val1++;
+    	  }
+      }
+      avg = (double) (val1/val2);
+
+      return avg;
+   }
 
   private String scrapInternalPid(Document doc) {
     String internalPid = null;

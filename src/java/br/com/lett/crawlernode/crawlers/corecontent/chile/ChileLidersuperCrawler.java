@@ -18,11 +18,14 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -37,6 +40,7 @@ public class ChileLidersuperCrawler extends Crawler {
 
   public ChileLidersuperCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -64,6 +68,8 @@ public class ChileLidersuperCrawler extends Crawler {
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
       String secondaryImages = crawlSecondaryImages(images);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-features"));
+      RatingsReviews ratingReviews = null;
+      //RatingsReviews ratingReviews = scrapRating(doc,internalId);
 
       JSONObject jsonEan = selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]");
       List<String> eans = scrapEans(jsonEan);
@@ -71,7 +77,7 @@ public class ChileLidersuperCrawler extends Crawler {
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
           .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
+          .setStock(stock).setMarketplace(new Marketplace()).setRatingReviews(ratingReviews).setEans(eans).build();
 
       products.add(product);
 
@@ -191,7 +197,7 @@ public class ChileLidersuperCrawler extends Crawler {
 
     return stock;
   }
-
+  
   /**
    * In the time when this crawler was made, this market hasn't installments informations
    * 
