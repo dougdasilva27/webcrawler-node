@@ -73,7 +73,6 @@ public class ChileRipleyCrawler extends Crawler {
         String name = crawlName(productJson, skuJson);
 
         JSONObject prodAPI = fetchProductAPI(internalId);
-        //System.err.println(arraySkus);
         Map<String, Prices> marketplaceMap = crawlMarketplaceMap(prodAPI, skuJson);
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME_LOWER), Card.AMEX, session);
         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);

@@ -69,7 +69,6 @@ public class ChileLidersuperCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(images);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-features"));
       RatingsReviews ratingReviews = null;
-      //RatingsReviews ratingReviews = scrapRating(doc,internalId);
 
       JSONObject jsonEan = selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]");
       List<String> eans = scrapEans(jsonEan);
