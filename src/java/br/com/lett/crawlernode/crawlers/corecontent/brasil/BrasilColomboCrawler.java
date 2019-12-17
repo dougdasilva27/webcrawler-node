@@ -39,13 +39,10 @@ public class BrasilColomboCrawler extends Crawler {
       super.config.setMustSendRatingToKinesis(true);
    }
 
-
-   @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
    }
-
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
