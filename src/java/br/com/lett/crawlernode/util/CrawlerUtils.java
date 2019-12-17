@@ -205,20 +205,26 @@ public class CrawlerUtils {
 
       if (priceStr != null) {
 
-         int first = priceStr.indexOf(firstDelimiter);
-         if (first != -1) {
-            priceStr = priceStr.substring(first);
-         }
+         if (priceStr.contains(firstDelimiter)) {
+            int firstIndex = priceStr.indexOf(firstDelimiter);
 
-         int last = priceStr.indexOf(lastDelimiter);
-         if (last != -1) {
-            priceStr = priceStr.substring(0, last);
+            if (priceStr.contains(lastDelimiter)) {
+               int lastIndex = priceStr.indexOf(lastDelimiter, firstIndex);
+
+               priceStr = priceStr.substring(firstIndex, lastIndex);
+            } else {
+               priceStr = priceStr.substring(firstIndex);
+            }
+         } else if (priceStr.contains(lastDelimiter)) {
+            int lastIndex = priceStr.indexOf(lastDelimiter);
+            priceStr = priceStr.substring(0, lastIndex);
          }
 
          try {
             if (priceFormat == '.') {
                price = MathUtils.parseFloatWithDots(priceStr);
             } else if (priceFormat == ',') {
+               System.err.println(priceFormat);
                price = MathUtils.parseFloatWithComma(priceStr);
             }
          } catch (NumberFormatException e) {

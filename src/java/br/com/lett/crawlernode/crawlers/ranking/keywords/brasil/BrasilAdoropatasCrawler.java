@@ -32,15 +32,15 @@ public class BrasilAdoropatasCrawler extends CrawlerRankingKeywords {
       }
     	
       for (Element e : products) {
-        String internalId = scrapInternalId(e);
+        String internalPid = scrapInternalPid(e);
         String productUrl = CrawlerUtils.scrapUrl(e, "a.product-image", "href", "http:", HOME_PAGE);
 
-        saveDataProduct(internalId, null, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
         this.log(
             "Position: " + this.position + 
-            " - InternalId: " + internalId +
-            " - InternalPid: " + null + 
+            " - InternalId: " + null +
+            " - InternalPid: " + internalPid + 
             " - Url: " + productUrl);
         
         if (this.arrayProducts.size() == productsLimit)
@@ -58,19 +58,19 @@ public class BrasilAdoropatasCrawler extends CrawlerRankingKeywords {
   }
 
 
-  private String scrapInternalId(Element e) {
-    String internalId = null;
+  private String scrapInternalPid(Element e) {
+    String internalPid = null;
     Element pidElement = e.selectFirst("[id*=product-price-]");
     
     if(pidElement != null) {
       String pid = pidElement.id();
       
       if(pid.startsWith("product-price-")) {
-        internalId = pid.substring("product-price-".length()).trim();
+        internalPid = pid.substring("product-price-".length()).trim();
       }
     }
 
-    return internalId;
+    return internalPid;
   }
   
   @Override

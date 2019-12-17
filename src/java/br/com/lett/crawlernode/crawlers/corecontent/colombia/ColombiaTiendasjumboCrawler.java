@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.argentina;
+package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,6 +7,8 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -14,18 +16,18 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
-
-public class ArgentinaFarmacityCrawler extends Crawler {
+public class ColombiaTiendasjumboCrawler extends Crawler {
   
-  private static final String HOME_PAGE = "http://www.farmacity.com/";
-  private static final String MAIN_SELLER_NAME_LOWER = "farmacity sa";
+  private static final String HOME_PAGE = "https://www.tiendasjumbo.co/";
+  private static final String MAIN_SELLER_NAME_LOWER = "jumbo colombia";
+  private static final String MAIN_SELLER_NAME_LOWER_2 = "jumbo colombia food";
+  private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2);
 
-  public ArgentinaFarmacityCrawler(Session session) {
+  public ColombiaTiendasjumboCrawler(Session session) {
     super(session);
   }
 
@@ -38,34 +40,42 @@ public class ArgentinaFarmacityCrawler extends Crawler {
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
       JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-      System.err.println(skuJson);
+      
+      
       String internalPid = vtexUtil.crawlInternalPid(skuJson);
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
       String description = CrawlerUtils.scrapSimpleDescription(doc,
-          Arrays.asList("div.product-description-box", "div.product-specification-box", ".product-description-container .productDescription"));
+          Arrays.asList(".description", "#caracteristicas table:not(.Gr-Configuraciones)"));
 
       // sku data in json
-      JSONArray arraySkus = JSONUtils.getJSONArrayValue(skuJson, "skus");
+      JSONArray arraySkus =
+          skuJson != null &&
+              skuJson.has("skus") &&
+              !skuJson.isNull("skus")
+                  ? skuJson.getJSONArray("skus")
+                  : new JSONArray();
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
-
+        
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = scrapName(vtexUtil, skuJson, jsonSku);
-        String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
+        String primaryImage = jsonSku.getString("image");
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-        boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-        Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, SELLERS, Card.VISA, session);
+        boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, SELLERS);
+        Prices prices = CrawlerUtils.getPrices(marketplaceMap, SELLERS);
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
-        String ean = i < eanArray.length() && eanArray.get(i) instanceof String ? eanArray.getString(i) : null;
-        List<String> eans = ean != null && !ean.isEmpty() ? Arrays.asList(ean) : null;
+        String ean = i < eanArray.length() ? eanArray.getString(i) : null;
+
+        List<String> eans = new ArrayList<>();
+        eans.add(ean);
         
         // Creating the product
         Product product = ProductBuilder.create()
@@ -97,19 +107,6 @@ public class ArgentinaFarmacityCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".product-info-container") != null;
-  }
-  
-  private String scrapName(VTEXCrawlersUtils vtexUtil, JSONObject json, JSONObject skuJson) {
-    String name = JSONUtils.getStringValue(json, "name");
-    String variationName = vtexUtil.crawlName(skuJson, json, " ");
-    
-    if(name != null && variationName != null && !variationName.contains(name)) {
-      name += " " + vtexUtil.crawlName(skuJson, json, " ");
-    } else {
-      name = variationName;
-    }
-    
-    return name;
+    return doc.selectFirst(".inner.product") != null;
   }
 }

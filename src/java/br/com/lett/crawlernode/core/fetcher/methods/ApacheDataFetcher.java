@@ -5,11 +5,16 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import org.apache.http.Header;
@@ -20,10 +25,13 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.fluent.Async;
+import org.apache.http.client.fluent.Content;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -348,5 +356,55 @@ public class ApacheDataFetcher implements DataFetcher {
          }
       }
       return cookieStore;
+   }
+
+   /**
+    * This function make a asynchronous get request on a url
+    * 
+    * @param url
+    * @param session
+    * @return Future<Content>
+    */
+   public Future<Content> getAsyncHttp(final String url, Session session) {
+      try {
+         Logging.printLogDebug(logger, session, "Performing a async request on: " + url);
+         URI requestURL = null;
+         try {
+            requestURL = new URI(url);
+         } catch (URISyntaxException use) {
+            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(use));
+         }
+
+         ExecutorService threadpool = Executors.newFixedThreadPool(1);
+         Async async = Async.newInstance().use(threadpool);
+         final org.apache.http.client.fluent.Request request = org.apache.http.client.fluent.Request
+               .Get(requestURL)
+               .socketTimeout(5000)
+               .connectTimeout(5000);
+
+
+         return async.execute(request, new FutureCallback<Content>() {
+            @Override
+            public void failed(final Exception e) {
+               Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+               threadpool.shutdown();
+            }
+
+            @Override
+            public void completed(final Content content) {
+               Logging.printLogInfo(logger, "Request: " + request.toString() + " is completed!");
+               threadpool.shutdown();
+            }
+
+            @Override
+            public void cancelled() {
+               threadpool.shutdown();
+            }
+         });
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+      }
+
+      return null;
    }
 }

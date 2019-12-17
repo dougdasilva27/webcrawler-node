@@ -14,6 +14,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -84,7 +85,13 @@ public class BrasilCarrefourCrawler extends Crawler {
                   ProxyCollection.BONANZA
             ))
             .build();
-      return this.dataFetcher.get(session, request).getBody();
+
+      String response = this.dataFetcher.get(session, request).getBody();
+      if (response == null || !response.isEmpty()) {
+         response = new ApacheDataFetcher().get(session, request).getBody();
+      }
+
+      return response;
    }
 
    @Override
@@ -159,8 +166,6 @@ public class BrasilCarrefourCrawler extends Crawler {
    private boolean isProductPage(Document doc) {
       return doc.select(".product-details-panel").first() != null;
    }
-
-
 
    /*******************
     * General methods *
