@@ -7,6 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,6 +18,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
   public RiodejaneiroZonasulCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
@@ -94,7 +96,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
     } else {
       String postUrl = "https://www.zonasul.com.br/Global/VitrinePaginada";
       StringBuilder payload = new StringBuilder().append("codSubSecao=").append("&filtroNomeComposicao=").append("&numeroPagina=")
-          .append(this.currentPage).append("&ordenacao=1").append("&pagina=5").append("&subFiltros=");
+          .append(this.currentPage).append("&ordenacao=1").append("&pagina=6").append("&subFiltros=");
 
       Map<String, String> headers = new HashMap<>();
       headers.put("referer", url);
