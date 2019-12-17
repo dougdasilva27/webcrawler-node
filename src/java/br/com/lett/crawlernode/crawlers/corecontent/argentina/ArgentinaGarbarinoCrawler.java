@@ -257,30 +257,34 @@ public class ArgentinaGarbarinoCrawler extends Crawler {
 
          if (starNumber != null) {
             String sN = starNumber.text().replaceAll("[^0-9]", "");
-            Integer val1 = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
+            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
 
-            Elements voteNumber = review.select(".product-calif");
-            String vN = voteNumber.text().replaceAll("[^0-9]", "");
-            Integer val2 = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+            Element voteNumber = review.selectFirst(".product-calif:not(:empty)");
 
-            switch (val1) {
-               case 5:
-                  star5 = val2;
-                  break;
-               case 4:
-                  star4 = val2;
-                  break;
-               case 3:
-                  star3 = val2;
-                  break;
-               case 2:
-                  star2 = val2;
-                  break;
-               case 1:
-                  star1 = val2;
-                  break;
-               default:
-                  break;
+            if (voteNumber != null) {
+
+               String vN = voteNumber.text().replaceAll("[^0-9]", "");
+               Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+
+               switch (numberOfStars) {
+                  case 5:
+                     star5 = numberOfVotes;
+                     break;
+                  case 4:
+                     star4 = numberOfVotes;
+                     break;
+                  case 3:
+                     star3 = numberOfVotes;
+                     break;
+                  case 2:
+                     star2 = numberOfVotes;
+                     break;
+                  case 1:
+                     star1 = numberOfVotes;
+                     break;
+                  default:
+                     break;
+               }
             }
          }
       }

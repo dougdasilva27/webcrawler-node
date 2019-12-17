@@ -476,7 +476,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
    private Integer getTotalNumOfRatings(Document docRating) {
       Integer totalRating = null;
-      Element totalRatingElement = docRating.select(".media em > span").first();
+      Element totalRatingElement = docRating.selectFirst(".media em > span");
 
       if (totalRatingElement != null) {
          String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();

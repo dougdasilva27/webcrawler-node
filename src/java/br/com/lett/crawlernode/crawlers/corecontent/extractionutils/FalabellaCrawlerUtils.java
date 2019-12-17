@@ -22,6 +22,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.AdvancedRatingReview;
@@ -45,6 +46,7 @@ public class FalabellaCrawlerUtils extends Crawler {
 
    public FalabellaCrawlerUtils(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
 
    }
 
@@ -280,37 +282,39 @@ public class FalabellaCrawlerUtils extends Crawler {
       return new JSONObject();
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject JsonRating) {
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject jsonRating) {
       Integer star1 = 0;
       Integer star2 = 0;
       Integer star3 = 0;
       Integer star4 = 0;
       Integer star5 = 0;
 
-      if (JsonRating.has("RatingDistribution")) {
-         JSONArray ratingDistribution = JsonRating.getJSONArray("RatingDistribution");
+      if (jsonRating.has("RatingDistribution")) {
+         JSONArray ratingDistribution = JSONUtils.getJSONArrayValue(jsonRating, "RatingDistribution");
 
          for (int i = 0; i < ratingDistribution.length(); i++) {
-            JSONObject valueCount = ratingDistribution.getJSONObject(i);
 
-            int val1 = valueCount.getInt("RatingValue");
-            int val2 = valueCount.getInt("Count");
+            JSONObject valueCount = ratingDistribution.get(i) instanceof JSONObject ? ratingDistribution.getJSONObject(i) : new JSONObject();
 
-            switch (val1) {
+            int numberOfStars = JSONUtils.getIntegerValueFromJSON(valueCount, "RatingValue", 0);
+            int numberOfVotes = JSONUtils.getIntegerValueFromJSON(valueCount, "Count", 0);
+
+
+            switch (numberOfStars) {
                case 5:
-                  star5 = val2;
+                  star5 = numberOfVotes;
                   break;
                case 4:
-                  star4 = val2;
+                  star4 = numberOfVotes;
                   break;
                case 3:
-                  star3 = val2;
+                  star3 = numberOfVotes;
                   break;
                case 2:
-                  star2 = val2;
+                  star2 = numberOfVotes;
                   break;
                case 1:
-                  star1 = val2;
+                  star1 = numberOfVotes;
                   break;
                default:
                   break;
