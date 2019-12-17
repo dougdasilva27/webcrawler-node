@@ -360,7 +360,6 @@ public class VTEXCrawlersUtils {
    }
 
    /**
-    * 
     * @param json
     * @param internalId
     * @param usePriceApi -> if you need acces price api for crawl installments ex: homePage +
@@ -395,6 +394,11 @@ public class VTEXCrawlersUtils {
       return marketplace;
    }
 
+   /**
+    * @deprecated Use CrawlerUtils
+    * @param marketplaceMap
+    * @return
+    */
    public Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
       return CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(sellerNameLower), Card.VISA, session);
    }
@@ -618,6 +622,12 @@ public class VTEXCrawlersUtils {
       return mapInstallments;
    }
 
+   /**
+    * Fetch api data on Ex: "https://www.somesite.com/produto/sku/someid"
+    * 
+    * @param internalId
+    * @return
+    */
    public JSONObject crawlApi(String internalId) {
       String url = homePage + "produto/sku/" + internalId;
 
@@ -631,9 +641,15 @@ public class VTEXCrawlersUtils {
       return new JSONObject();
    }
 
-   public JSONObject crawlApi(String internalId, String queryString) {
-
-      String url = homePage + "produto/sku/" + internalId + "?" + queryString;
+   /**
+    * Fetch api data on Ex: "https://www.somesite.com/produto/sku/someid"
+    * 
+    * @param internalId
+    * @param apiParameters - if you need send a location for example: "?sc=2"
+    * @return
+    */
+   public JSONObject crawlApi(String internalId, String apiParameters) {
+      String url = homePage + "produto/sku/" + internalId + apiParameters;
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());

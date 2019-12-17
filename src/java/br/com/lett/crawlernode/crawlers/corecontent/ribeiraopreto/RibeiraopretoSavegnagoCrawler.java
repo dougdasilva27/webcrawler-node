@@ -13,6 +13,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -100,11 +101,11 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
 
             String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId, "sc=2");
+            JSONObject apiJSON = vtexUtil.crawlApi(internalId, "?sc=2");
             String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
             String description = scrapDescription(doc, internalId);
             Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
-            Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
+            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
             boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
             String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
             String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
