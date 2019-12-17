@@ -106,65 +106,30 @@ public class ArgentinaWalmartCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         // Pid
          String internalPid = crawlInternalPid(doc);
-
-         // Categories
          CategoryCollection categories = crawlCategories(doc);
-
-         // Description
          String description = crawlDescription(doc);
-
-         // Stock
          Integer stock = null;
-
-         // rating
-
          RatingsReviews ratingReviews = scrapRatingReviews(doc);
-
-         // Marketplace map
          Map<String, Float> marketplaceMap = crawlMarketplace();
-
-         // Marketplace
          Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
-
-         // sku data in json
          JSONArray arraySkus = crawlSkuJsonArray(doc);
-
          JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
-
-
 
          for (int i = 0; i < arraySkus.length(); i++) {
             JSONObject jsonSku = arraySkus.getJSONObject(i);
 
-            // Availability
             boolean available = crawlAvailability(jsonSku);
-
-            // InternalId
             String internalId = crawlInternalId(jsonSku);
-
-            // Price
             Float price = crawlMainPagePrice(jsonSku, available);
-
-            // Primary image
             String primaryImage = crawlPrimaryImage(doc);
-
-            // Name
             String name = crawlName(doc, jsonSku);
-
-            // Secondary images
             String secondaryImages = crawlSecondaryImages(doc);
-
-            // Prices
             Prices prices = crawlPrices(price);
-            // ean
             String ean = i < eanArray.length() ? eanArray.getString(i) : null;
-
             List<String> eans = new ArrayList<>();
             eans.add(ean);
 
-            // Creating the product
             Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalId)
@@ -195,20 +160,12 @@ public class ArgentinaWalmartCrawler extends Crawler {
       return products;
    }
 
-   /*******************************
-    * Product page identification *
-    *******************************/
-
    private boolean isProductPage(Document document) {
       if (document.select(".productName").first() != null) {
          return true;
       }
       return false;
    }
-
-   /*******************
-    * General methods *
-    *******************/
 
    private String crawlInternalId(JSONObject json) {
       String internalId = null;
@@ -219,7 +176,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
       return internalId;
    }
-
 
    private String crawlInternalPid(Document document) {
       String internalPid = null;
@@ -328,7 +284,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
       return categories;
    }
 
-
    private String crawlDescription(Document document) {
       String description = "";
 
@@ -360,11 +315,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
       return prices;
    }
 
-   /**
-    * Get the script having a json with the availability information
-    * 
-    * @return
-    */
    private JSONArray crawlSkuJsonArray(Document document) {
       Elements scriptTags = document.getElementsByTag("script");
       JSONObject skuJson = null;
@@ -390,8 +340,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
       return skuJsonArray;
    }
 
-
-
    private RatingsReviews scrapRatingReviews(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
@@ -412,12 +360,8 @@ public class ArgentinaWalmartCrawler extends Crawler {
             ratingReviews.setAverageOverallRating(avgRating);
             ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
             ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-
-
          }
-
       }
-
       return ratingReviews;
    }
 
@@ -425,13 +369,10 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
       String[] tokens = url.split("/");
       String productLinkId = tokens[tokens.length - 2];
-
       String payload = "productId=" + internalPid + "&productLinkId=" + productLinkId;
-
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
-
       Request request =
             RequestBuilder.create().setUrl("https://www.walmart.com.ar/userreview").setCookies(cookies).setHeaders(headers).setPayload(payload).build();
       return Jsoup.parse(this.dataFetcher.post(session, request).getBody());
@@ -475,8 +416,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
       return avgRating;
    }
 
-
-
    private AdvancedRatingReview scrapAdvancedRatingReview(Document docRating, Document doc) {
       Integer star1 = 0;
       Integer star2 = 0;
@@ -487,39 +426,43 @@ public class ArgentinaWalmartCrawler extends Crawler {
       Elements reviews = docRating.select(".rating li");
 
       for (Element review : reviews) {
-         Element starNumber = review.selectFirst("Strong");
-         String stt = starNumber.attr("class");
-         String sN = stt.replaceAll("[^0-9]", "").trim();
-         Integer val1 = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
 
-         Elements voteNumber = review.select("li > span:last-child");
-         String vN = voteNumber.text().replaceAll("[^0-9]", "").trim();
-         Integer val2 = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
-         // On a html this value will be like this: (1)
+         Element elementStarNumber = review.selectFirst("Strong"); // <strong class="rating-demonstrativo avaliacao50"></strong>
 
+         if (elementStarNumber != null) {
 
-         switch (val1) {
-            case 50:
-               star5 = val2;
-               break;
-            case 44:
-               star4 = val2;
-               break;
-            case 30:
-               star3 = val2;
-               break;
-            case 20:
-               star2 = val2;
-               break;
-            case 10:
-               star1 = val2;
-               break;
-            default:
-               break;
+            String stringStarNumber = elementStarNumber.attr("class"); // rating-demonstrativo avaliacao50
+            String sN = stringStarNumber.replaceAll("[^0-9]", "").trim(); // String 50
+            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0; // Integer 50
+
+            Element elementVoteNumber = review.selectFirst("li > span:last-child"); // <span> 1 Voto</span>
+
+            if (elementVoteNumber != null) {
+
+               String vN = elementVoteNumber.text().replaceAll("[^0-9]", "").trim(); // 1 our ""
+               Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0; // 1 our 0
+
+               switch (numberOfStars) {
+                  case 50:
+                     star5 = numberOfVotes;
+                     break;
+                  case 44:
+                     star4 = numberOfVotes;
+                     break;
+                  case 30:
+                     star3 = numberOfVotes;
+                     break;
+                  case 20:
+                     star2 = numberOfVotes;
+                     break;
+                  case 10:
+                     star1 = numberOfVotes;
+                     break;
+                  default:
+                     break;
+               }
+            }
          }
-
-
-
       }
 
       return new AdvancedRatingReview.Builder()
@@ -530,8 +473,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
             .totalStar5(star5)
             .build();
    }
-
-
 
    private Integer getTotalNumOfRatings(Document docRating) {
       Integer totalRating = null;
