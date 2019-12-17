@@ -42,7 +42,7 @@ public class BrasilAgilmedCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li", true);
       Prices prices = crawlPrices(doc, price);
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagemProduto", Arrays.asList("src"), "https:", "www.cdn.awsli.com.br");
-
+      String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".produto-thumbs.thumbs-horizontal ul > li:not(:first-child) a", Arrays.asList("data-imagem-grande"), "https:", "www.cdn.awsli.com.br", primaryImage);
       // Creating the product
       Product product = ProductBuilder.create()
           .setUrl(session.getOriginalURL())
@@ -56,6 +56,7 @@ public class BrasilAgilmedCrawler extends Crawler {
           .setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2))
           .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImage)
           .setDescription(description)
           .build();
 
