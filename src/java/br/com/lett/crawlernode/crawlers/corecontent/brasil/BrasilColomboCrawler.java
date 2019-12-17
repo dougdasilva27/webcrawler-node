@@ -36,6 +36,7 @@ public class BrasilColomboCrawler extends Crawler {
 
    public BrasilColomboCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
 
@@ -208,7 +209,6 @@ public class BrasilColomboCrawler extends Crawler {
       Double avgRating = scrapAvgRating(doc);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
-      // Double o = CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview);
 
       ratingReviews.setTotalRating(totalComments);
       ratingReviews.setTotalWrittenReviews(totalComments);
@@ -237,41 +237,45 @@ public class BrasilColomboCrawler extends Crawler {
 
       Elements reviews = doc.select(".avalicoes .info-item-body .tabela-barras-progresso tr");
 
-
-
       for (Element review : reviews) {
 
          Element starNumber = review.selectFirst("td:first-child");
-         String sN = starNumber.text().replaceAll("[^0-9]", ""); // "1" or ""
-         Integer val1 = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
 
-         Element voteNumber = review.selectFirst("td:last-child");
-         String vN = voteNumber.text().replaceAll("[^0-9]", "");
-         Integer val2 = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+         if (starNumber != null) {
 
-         // On a html this value will be like this: (1)
+            String sN = starNumber.text().replaceAll("[^0-9]", ""); // "1" or ""
+            Integer val1 = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
 
-         switch (val1) {
-            case 5:
-               star5 = val2;
-               break;
-            case 4:
-               star4 = val2;
-               break;
-            case 3:
-               star3 = val2;
-               break;
-            case 2:
-               star2 = val2;
-               break;
-            case 1:
-               star1 = val2;
-               break;
-            default:
-               break;
+            Element voteNumber = review.selectFirst("td:last-child");
+
+            if (voteNumber != null) {
+
+               String vN = voteNumber.text().replaceAll("[^0-9]", "");
+               Integer val2 = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+
+               // On a html this value will be like this: (1)
+
+               switch (val1) {
+                  case 5:
+                     star5 = val2;
+                     break;
+                  case 4:
+                     star4 = val2;
+                     break;
+                  case 3:
+                     star3 = val2;
+                     break;
+                  case 2:
+                     star2 = val2;
+                     break;
+                  case 1:
+                     star1 = val2;
+                     break;
+                  default:
+                     break;
+               }
+            }
          }
-
-
 
       }
 
@@ -283,7 +287,6 @@ public class BrasilColomboCrawler extends Crawler {
             .totalStar5(star5)
             .build();
    }
-
 
 
    private Marketplace scrapMarketplace(Element variation, Prices prices) {
@@ -320,7 +323,6 @@ public class BrasilColomboCrawler extends Crawler {
          if (sellerIdElement != null) {
             internalSellerId = sellerIdElement.attr("value");
          }
-
 
          if (elementPrice != null) {
             mainPrice = MathUtils.parseDoubleWithComma(elementPrice.ownText());
