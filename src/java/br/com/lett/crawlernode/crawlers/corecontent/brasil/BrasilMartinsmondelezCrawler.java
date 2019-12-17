@@ -45,8 +45,11 @@ public class BrasilMartinsmondelezCrawler extends Crawler {
    @Override
    protected Object fetch() {
       try {
-         this.webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.martinsatacado.com.br/login", session);
-         this.webdriver.waitLoad(10000);
+         this.webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.martinsatacado.com.br/login/topo/request", session);
+         this.webdriver.waitLoad(5000);
+
+         this.webdriver.clickOnElementViaJavascript(this.webdriver.driver.findElement(By.cssSelector("#go-login")));
+         this.webdriver.waitLoad(5000);
 
          WebElement email = this.webdriver.driver.findElement(By.cssSelector("#js_username_login"));
          email.sendKeys(EMAIL_LOGIN);
@@ -60,7 +63,7 @@ public class BrasilMartinsmondelezCrawler extends Crawler {
          pass.sendKeys(PASSWORD);
          this.webdriver.waitLoad(2000);
 
-         WebElement login = this.webdriver.driver.findElement(By.cssSelector(".sectionButtons .btn-primary"));
+         WebElement login = this.webdriver.driver.findElement(By.cssSelector(".c-login__button"));
          this.webdriver.clickOnElementViaJavascript(login);
          this.webdriver.waitLoad(6000);
 
