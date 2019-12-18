@@ -17,10 +17,10 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
   
   private static final String HOST = "lojacolgate.com.br";
   
-  private static final String LOGIN_URL = "https://lojacolgate.com.br/cpb2bglobalstorefront/colgateSite/pt/login";
-  private static final String CNPJ = " 45543915000181";
+  private static final String LOGIN_URL = "https://lojacolgate.com.br/cpb2bglobalstorefront/pt/login";
+  private static final String CNPJ = "45.543.915/0001-81";
   private static final String PASSWORD = "12345678";
-
+  
   public BrasilLojacolgateCrawler(Session session) {
     super(session);
   }
@@ -70,7 +70,7 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    String url = "https://lojacolgate.com.br/cpb2bglobalstorefront/colgateSite/pt/search?q=" 
+    String url = "https://lojacolgate.com.br/cpb2bglobalstorefront/pt/search?q=" 
         + this.keywordEncoded + "%3Arelevance&view=Grid&page=" + (this.currentPage-1);
     
     this.log("Link onde são feitos os crawlers: " + url);
