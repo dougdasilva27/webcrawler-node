@@ -19,23 +19,24 @@ public class BrasilPolitintasCrawler extends CrawlerRankingKeywords {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + "/buscapagina?ft=" + this.keywordEncoded +
-            "&PS=12&sl=ef3fcb99-de72-4251-aa57-71fe5b6e149f&cc=6&sm=0&PageNumber=" + this.currentPage;
+      String url = HOME_PAGE + this.keywordEncoded +
+            "#" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select("ul > li:not(.helperComplement)");
+      Elements products = this.currentDoc.select(".box-item");
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".idProd", "data-id");
-            String productUrl = CrawlerUtils.scrapUrl(e, "a.productImage", Arrays.asList("href"), "https", HOME_PAGE);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".wrapper-buy-button-asynchronous .btn", "data-template").replaceAll("[^0-9]+", "");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".box-item", "data-id");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".box-item .product-image", Arrays.asList("href"), "https", HOME_PAGE);
 
             saveDataProduct(null, internalPid, productUrl);
 
             this.log(
                   "Position: " + this.position +
-                        " - InternalId: " + null +
+                        " - InternalId: " + internalId +
                         " - InternalPid: " + internalPid +
                         " - Url: " + productUrl);
 
@@ -55,8 +56,7 @@ public class BrasilPolitintasCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      Integer productCount = this.currentDoc.select("ul > li:not(.helperComplement)").size();
-
+      Integer productCount = this.currentDoc.select(".box-item").size();
       return productCount >= this.pageSize;
    }
 }
