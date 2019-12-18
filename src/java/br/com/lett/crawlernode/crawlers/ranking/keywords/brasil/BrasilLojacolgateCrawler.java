@@ -4,6 +4,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.session.Session;
@@ -30,6 +31,16 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
       this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, session);
       this.webdriver.waitLoad(10000);
       
+      if (this.webdriver.driver instanceof JavascriptExecutor) {
+        JavascriptExecutor jsExecutor = (JavascriptExecutor) this.webdriver.driver;
+        
+        // Javascript code to delete loader that goes over the page and
+        // Show the main contents of the page by removing the hidden class from it
+        jsExecutor.executeScript("return document.getElementsByClassName('loader-contain')[0].remove();");
+        jsExecutor.executeScript("document.querySelector('.main__inner-wrapper').classList.remove('hidden')");
+        this.webdriver.waitLoad(2000);
+      }
+            
       WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
       email.sendKeys(CNPJ);
       this.webdriver.waitLoad(2000);
