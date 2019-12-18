@@ -46,6 +46,7 @@ public class ChileSalcobrandCrawler extends Crawler {
          JSONObject skusPrices = CrawlerUtils.selectJsonFromHtml(doc, "script", "var prices = ", ";", false, true);
          String description = crawlDesciption(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li  a:not([href=\"/\"])");
+         RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
          // Json skusPrices Ex:
          // {"4750152":{"normal":"$3.299","oferta":null,"internet":null,"tarjeta":null},"4750155":{"normal":"$5.599","oferta":null,"internet":null,"tarjeta":null}}
@@ -62,7 +63,6 @@ public class ChileSalcobrandCrawler extends Crawler {
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "img[alt^=" + internalId + "]", Arrays.asList("data-src", "src"),
                   "https:", "salcobrand.cl", primaryImage);
             String url = buildUrl(session.getOriginalURL(), internalId);
-            RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
             Product product = ProductBuilder.create()
                   .setUrl(url)
@@ -124,64 +124,13 @@ public class ChileSalcobrandCrawler extends Crawler {
       return CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
-
-      Elements reviews = doc.select(".reviews > li");
-      Elements stars = doc.select(".review > ul  > li .fa.fa-star.selected");
-
-      int val1;
-      for (Element review : reviews) {
-         val1 = 0;
-         for (Element i : stars) {
-            val1++;
-         }
-         switch (val1) {
-            case 5:
-               star5++;
-               break;
-            case 4:
-               star4++;
-               break;
-            case 3:
-               star3++;
-               break;
-            case 2:
-               star2++;
-               break;
-            case 1:
-               star1++;
-               break;
-            default:
-               break;
-         }
-
-         // On a html this value will be like this: (1)
-
-
-
-      }
-
-      return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
-   }
-
    private RatingsReviews scrapRatingReviews(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Integer totalComments = scrapTotalComents(doc);
-      Double avgRating = scrapAvgRating(doc);
+      Integer totalComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".number-of-reviews span", null, null, false, true, 0);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+      Double avgRating = CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview);
 
       ratingReviews.setTotalRating(totalComments);
       ratingReviews.setTotalWrittenReviews(totalComments);
@@ -191,33 +140,39 @@ public class ChileSalcobrandCrawler extends Crawler {
       return ratingReviews;
    }
 
-   private Integer scrapTotalComents(Document doc) {
-      Integer total = 0;
-      Elements comentsReviews = doc.select(".reviews span p");
-      for (Element el : comentsReviews) {
-         total++;
-      }
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
 
-      return total;
-   }
+      Elements reviews = doc.select(".ratings .row");
 
-   private Double scrapAvgRating(Document doc) {
-      Double avg = 0d;
-
-      Elements reviews = doc.select(".reviews > li");
-      Elements stars = doc.select(".review > ul  > li .fa.fa-star.selected");
-
-      int val1 = 0;
-      int val2 = 0;
       for (Element review : reviews) {
-         val2++;
-         for (Element i : stars) {
-            val1++;
+         Integer star = CrawlerUtils.scrapIntegerFromHtml(review, "span", true, null);
+         Integer starCount = CrawlerUtils.scrapIntegerFromHtml(review, ".progress-bar", true, null);
+
+         if (star == 5) {
+            star5 = starCount;
+         } else if (star == 4) {
+            star4 = starCount;
+         } else if (star == 3) {
+            star3 = starCount;
+         } else if (star == 2) {
+            star2 = starCount;
+         } else if (star == 1) {
+            star1 = starCount;
          }
       }
-      avg = (double) (val1 / val2);
 
-      return avg;
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private String scrapInternalPid(Document doc) {
