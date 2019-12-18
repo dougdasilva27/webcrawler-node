@@ -125,22 +125,16 @@ public class ColombiaMerqueoCrawler extends Crawler {
    }
 
    private String crawlPrimaryImage(JSONObject data) {
-      String primaryImagesString = null;
+      String primaryImage = null;
+
       JSONArray jsonArrImg = JSONUtils.getJSONArrayValue(data, "images");
-
-      JSONArray primaryImages = new JSONArray();
-
-      for (int i = 0; i < 1; i++) {
-         JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i) : new JSONObject();
-         primaryImages.put(getSecondaryImg(jsonObjImg));
+      if (jsonArrImg.length() > 0) {
+         primaryImage = getLargestImage(jsonArrImg.get(0) instanceof JSONObject ? jsonArrImg.getJSONObject(0) : new JSONObject());
+      } else {
+         primaryImage = getLargestImage(data);
       }
 
-      if (primaryImages.length() > 0) {
-         primaryImagesString = primaryImages.toString();
-         primaryImagesString = primaryImagesString.substring(2, primaryImagesString.length() - 2);
-      }
-
-      return primaryImagesString;
+      return primaryImage;
    }
 
    private String crawlSecondaryImage(JSONObject data) {
@@ -151,7 +145,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       for (int i = 1; i < jsonArrImg.length(); i++) {
          JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i) : new JSONObject();
-         secondaryImages.put(getSecondaryImg(jsonObjImg));
+         secondaryImages.put(getLargestImage(jsonObjImg));
       }
 
       if (secondaryImages.length() > 0) {
@@ -161,19 +155,19 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return secondaryImagesString;
    }
 
-   private String getSecondaryImg(JSONObject jsonObjImg) {
-      String secondaryImage = null;
+   private String getLargestImage(JSONObject jsonObjImg) {
+      String image = null;
 
       if (jsonObjImg.has("imageLargeUrl") && !jsonObjImg.isNull("imageLargeUrl")) {
-         secondaryImage = jsonObjImg.getString("imageLargeUrl");
+         image = jsonObjImg.getString("imageLargeUrl");
 
       } else if (jsonObjImg.has("imageMediumUrl") && !jsonObjImg.isNull("imageMediumUrl")) {
-         secondaryImage = jsonObjImg.getString("imageMediumUrl");
+         image = jsonObjImg.getString("imageMediumUrl");
 
       } else if (jsonObjImg.has("imageSmallUrl") && !jsonObjImg.isNull("imageSmallUrl")) {
-         secondaryImage = jsonObjImg.getString("imageSmallUrl");
+         image = jsonObjImg.getString("imageSmallUrl");
       }
-      return secondaryImage;
+      return image;
    }
 
    private boolean crawlAvailable(JSONObject data) {
