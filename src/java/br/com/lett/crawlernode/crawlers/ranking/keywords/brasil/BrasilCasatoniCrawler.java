@@ -21,7 +21,7 @@ public class BrasilCasatoniCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String url = HOME_PAGE + this.keywordEncoded +
-            "#" + this.currentPage;
+            "?PageNumber=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
