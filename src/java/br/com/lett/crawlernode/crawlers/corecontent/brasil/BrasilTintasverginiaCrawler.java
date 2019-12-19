@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilTintasverginiaCrawler extends Crawler {
@@ -47,6 +48,9 @@ public class BrasilTintasverginiaCrawler extends Crawler {
         String secondaryImages = scrapSecondaryImages(doc, ".product-img-box .more-views li > a", Arrays.asList("href"), "https", HOST, primaryImage);
         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".product-collateral .abas", ".product-collateral .desc"));
         boolean available = doc.selectFirst(".esgotado") == null;
+        
+        // Site has reviews but it doesn't have any rated product
+        RatingsReviews ratingReviews = null;
 
         // Creating the product
         Product product = ProductBuilder.create()
@@ -63,6 +67,7 @@ public class BrasilTintasverginiaCrawler extends Crawler {
               .setPrimaryImage(primaryImage)
               .setSecondaryImages(secondaryImages)
               .setDescription(description)
+              .setRatingReviews(ratingReviews)
               .build();
 
 
