@@ -153,21 +153,21 @@ public class BrasilSodimacCrawler extends Crawler {
       String endpointRequest = requestRatingStr(PASS_KEY, sku);
       JSONObject ratingReviewsEndpoint = sendRequestRating(endpointRequest);
       Optional<JSONObject> opt = Optional.of(ratingReviewsEndpoint)
-            .filter(x -> !x.isNull("BatchedResults"))
+            .filter(x -> x.getJSONObject("BatchedResults") instanceof JSONObject)
             .map(x -> x.getJSONObject("BatchedResults"))
-            .filter(x -> !x.isNull("q1"))
+            .filter(x -> x.getJSONObject("q1") instanceof JSONObject)
             .map(x -> x.getJSONObject("q1"))
-            .filter(x -> !x.isNull("Includes"))
+            .filter(x -> x.getJSONObject("Includes") instanceof JSONObject)
             .map(x -> x.getJSONObject("Includes"));
 
       JSONObject jsonRatingInc = opt.get();
 
       Optional<JSONObject> optional = Optional.of(jsonRatingInc)
-            .filter(x -> !x.isNull("Products"))
+            .filter(x -> x.getJSONObject("Products") instanceof JSONObject)
             .map(x -> x.getJSONObject("Products"))
-            .filter(x -> !x.isNull(sku))
+            .filter(x -> x.getJSONObject(sku) instanceof JSONObject)
             .map(x -> x.getJSONObject(sku))
-            .filter(x -> !x.isNull("FilteredReviewStatistics"))
+            .filter(x -> x.getJSONObject("FilteredReviewStatistics") instanceof JSONObject)
             .map(x -> x.getJSONObject("FilteredReviewStatistics"));
       if (optional.isPresent()) {
          JSONObject jsonProduct = optional.get();
@@ -217,11 +217,11 @@ public class BrasilSodimacCrawler extends Crawler {
    }
 
    private Double getAverageOverallRating(JSONObject reviewStatistics) {
-      return ifElse(reviewStatistics.getDouble("AverageOverallRating"), 0D);
+      return (reviewStatistics.get("AverageOverallRating") instanceof Double) ? reviewStatistics.getDouble("AverageOverallRating") : 0D;
    }
 
    private Integer getTotalReviewCount(JSONObject ratingReviewsEndpointResponse) {
-      return ifElse(ratingReviewsEndpointResponse.getInt("TotalReviewCount"), 0);
+      return (ratingReviewsEndpointResponse.get("TotalReviewCount") instanceof Integer) ? ratingReviewsEndpointResponse.getInt("TotalReviewCount") : 0;
    }
 
    private String crawlDescription(Document doc) {
@@ -359,10 +359,6 @@ public class BrasilSodimacCrawler extends Crawler {
          secondaryImages = secondaryImagesArray.toString();
       }
       return secondaryImages;
-   }
-
-   public static <T> T ifElse(T one, T two) {
-      return one != null ? one : two;
    }
 
 }
