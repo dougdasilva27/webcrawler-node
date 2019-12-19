@@ -45,8 +45,7 @@ public class BrasilTintasmcCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      // TODO
-      Element element = this.currentDoc.selectFirst(".page-number.pgCurrent + li");
-      return element.text().matches("[0-9]");
+      Integer size = this.currentDoc.select(".box-item").size();
+      return size >= this.pageSize;
    }
 }
