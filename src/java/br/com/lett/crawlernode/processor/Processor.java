@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.processor;
 
+import java.text.DecimalFormat;
+import java.text.MessageFormat;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -456,9 +458,18 @@ public class Processor {
       // an instance of mongo panel must be passed, so we can schedule url to take screenshot
       newProcessedProduct.registerChanges(previousProcessedProduct);
 
-      if (newProcessedProduct.getPrice() != null && previousProcessedProduct != null && previousProcessedProduct.getPrice() != null
-            && newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
+      if (newProcessedProduct.getPrice() != null &&
+         previousProcessedProduct != null &&
+         previousProcessedProduct.getPrice() != null &&
+         newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()
+         ) {
+         
          Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
+
+         Boolean shouldSend = false;
+         String quote;
+         String author;
+         String avatar;
 
          if (discount > 70) {
             try {
@@ -478,13 +489,26 @@ public class Processor {
             } catch (Exception e) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
-         } else if (discount > 20 && newProcessedProduct.getPrice() > 50) {
-            DiscordMessages.reportPriceChanges(session,
-                  "Processed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
-                        + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
-                        + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: *R$"
-                        + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + "* !!!! Corra, no link: " + newProcessedProduct.getUrl());
 
+         if (shouldSend) {
+            String DISCORD_MSG_TEMPLATE = (
+               "*{0}*\n" + 
+               ":shopping_bags: **{1}**\n" + 
+               ":moneybag: ~~{2}~~ **{3}** (-{4}%) [ℹ️](http://localhost?processed:{5}/session:{6}/)\n" + 
+               ":link: {7}"
+            );
+            DecimalFormat priceFormat = new DecimalFormat("#,##0.00");
+            String msg = MessageFormat.format(DISCORD_MSG_TEMPLATE, new Object[]{
+               quote,
+               newProcessedProduct.getOriginalName(),
+               priceFormat.format(previousProcessedProduct.getPrice()),
+               priceFormat.format(newProcessedProduct.getPrice()),
+               MathUtils.normalizeTwoDecimalPlaces(discount),
+               String.valueOf(newProcessedProduct.getId()),
+               session.getSessionId(),
+               newProcessedProduct.getUrl()
+            });
+            DiscordMessages.reportPriceChanges(session, msg, author, avatar);
          }
       }
    }
