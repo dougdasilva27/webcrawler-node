@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -27,6 +28,7 @@ import models.prices.Prices;
 
 public class BrasilSodimacCrawler extends Crawler {
 
+   private static final String PASS_KEY = "caqjqAaqxCYDSdSy6LKE5VYUt0QtY88namGrRtuTkSSvU";
    private static final String HOME_PAGE = "https://www.sodimac.com.br/sodimac-br/";
    public static final String PRODUCT_API = "https://www.sodimac.com.br/sodimac-br/productDetail/ajax/switchSKU.jsp";
 
@@ -40,7 +42,6 @@ public class BrasilSodimacCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
@@ -48,7 +49,7 @@ public class BrasilSodimacCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalPid = crawlInternalPid(doc);
-         String[] skuIDs = getJSONArray(doc);
+         String[] skuIDs = getSkusStr(doc);
          String description = crawlDescription(doc);
          CategoryCollection categories = extractCategories(doc);
          if (skuIDs != null) {
@@ -57,7 +58,8 @@ public class BrasilSodimacCrawler extends Crawler {
                String name = crawlName(fetchedData);
                Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',', session);
                Prices prices = crawlPrices(price);
-
+               Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".PDP-EVENT_BASE_PRICE-3.font-bold > span", null, false, ',', session);
+               prices.setPriceFrom(priceFrom);
                boolean available = crawlAvailability(fetchedData) && price != null;
                List<String> imagesArr = getImagesFromAPI(internalId);
                String primaryImage = crawlPrimaryImage(imagesArr);
@@ -91,7 +93,11 @@ public class BrasilSodimacCrawler extends Crawler {
    private Document fetchAPIProduct(String id) {
       Document fetchedData = new Document("");
       if (id != null) {
-         String payload = "?type=html&relatedProductcolorDimension=false&relatedProductsizeDimension=false&productId=" + id;
+         StringBuilder aux = new StringBuilder();
+         aux.append("?type=html")
+               .append("&relatedProductcolorDimension=false")
+               .append("&relatedProductsizeDimension=false&productId=" + id);
+         String payload = aux.toString();
          Request request = RequestBuilder.create().setUrl(PRODUCT_API + payload).setCookies(cookies).build();
          fetchedData = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       }
@@ -99,16 +105,21 @@ public class BrasilSodimacCrawler extends Crawler {
    }
 
    private CategoryCollection extractCategories(Document doc) {
+
       CategoryCollection categories = new CategoryCollection();
-      doc.select("span[itemprop=\"itemListElement\"]:not(:first-child):not(:last-child) > a > span").forEach(elem -> categories.add(elem.text().trim()));
+      doc.select("span[itemprop=\"itemListElement\"]:not(:first-child):not(:last-child) > a > span")
+            .forEach(elem -> categories.add(elem.text().trim()));
+
       return categories;
    }
 
    private String requestRatingStr(String passkey, String sku) {
+
       StringBuilder requestString = new StringBuilder();
+
       requestString.append("https://api.bazaarvoice.com/data/batch.json?apiversion=5.5")
-            .append("&passkey=" + passkey)
             .append("&displaycode=13566-pt_br")
+            .append("&passkey=" + passkey)
             .append("&resource.q0=products")
             .append("&filter.q0=id%3Aeq%3A" + sku)
             .append("&stats.q0=reviews")
@@ -130,20 +141,36 @@ public class BrasilSodimacCrawler extends Crawler {
             .append("&offset.q1=0")
             .append("&limit_comments.q1=3")
             .append("&callback=BV._internal.dataHandler0");
+
       return requestString.toString();
    }
 
    private RatingsReviews crawlRating(String sku) {
       RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
-      final String passKey = "caqjqAaqxCYDSdSy6LKE5VYUt0QtY88namGrRtuTkSSvU";
-      String endpointRequest = requestRatingStr(passKey, sku);
-      JSONObject ratingReviewsEndpoint = sendRequestRating(endpointRequest);
-      JSONObject jsonRatingInc = ratingReviewsEndpoint.getJSONObject("BatchedResults").getJSONObject("q1").getJSONObject("Includes");
       Integer total = 0;
       Double overallRating = 0D;
-      if (jsonRatingInc.has("Products")) {
-         JSONObject jsonProduct = jsonRatingInc.getJSONObject("Products").getJSONObject(sku).getJSONObject("FilteredReviewStatistics");
+      ratingReviews.setDate(session.getDate());
+      String endpointRequest = requestRatingStr(PASS_KEY, sku);
+      JSONObject ratingReviewsEndpoint = sendRequestRating(endpointRequest);
+      Optional<JSONObject> opt = Optional.of(ratingReviewsEndpoint)
+            .filter(x -> !x.isNull("BatchedResults"))
+            .map(x -> x.getJSONObject("BatchedResults"))
+            .filter(x -> !x.isNull("q1"))
+            .map(x -> x.getJSONObject("q1"))
+            .filter(x -> !x.isNull("Includes"))
+            .map(x -> x.getJSONObject("Includes"));
+
+      JSONObject jsonRatingInc = opt.get();
+
+      Optional<JSONObject> optional = Optional.of(jsonRatingInc)
+            .filter(x -> !x.isNull("Products"))
+            .map(x -> x.getJSONObject("Products"))
+            .filter(x -> !x.isNull(sku))
+            .map(x -> x.getJSONObject(sku))
+            .filter(x -> !x.isNull("FilteredReviewStatistics"))
+            .map(x -> x.getJSONObject("FilteredReviewStatistics"));
+      if (optional.isPresent()) {
+         JSONObject jsonProduct = optional.get();
          total = getTotalReviewCount(jsonProduct);
          overallRating = getAverageOverallRating(jsonProduct);
          AdvancedRatingReview advancedRatingReview = extractAdvancedRating(jsonProduct);
@@ -157,20 +184,21 @@ public class BrasilSodimacCrawler extends Crawler {
 
    private AdvancedRatingReview extractAdvancedRating(JSONObject jsonProduct) {
       AdvancedRatingReview advancedRating = new AdvancedRatingReview();
-
-      for (Object obj : jsonProduct.getJSONArray("RatingDistribution")) {
-         JSONObject jsonRating = (JSONObject) obj;
-         int int1 = jsonRating.getInt("RatingValue");
-         if (int1 == 1) {
-            advancedRating.setTotalStar1(jsonRating.getInt("Count"));
-         } else if (int1 == 2) {
-            advancedRating.setTotalStar2(jsonRating.getInt("Count"));
-         } else if (int1 == 3) {
-            advancedRating.setTotalStar3(jsonRating.getInt("Count"));
-         } else if (int1 == 4) {
-            advancedRating.setTotalStar4(jsonRating.getInt("Count"));
-         } else if (int1 == 5) {
-            advancedRating.setTotalStar5(jsonRating.getInt("Count"));
+      if (jsonProduct.getJSONArray("RatingDistribution") instanceof JSONArray) {
+         for (Object obj : jsonProduct.getJSONArray("RatingDistribution")) {
+            JSONObject jsonRating = (JSONObject) obj;
+            int int1 = jsonRating.get("RatingValue") instanceof Integer ? jsonRating.getInt("RatingValue") : 0;
+            if (int1 == 1) {
+               advancedRating.setTotalStar1(jsonRating.getInt("Count"));
+            } else if (int1 == 2) {
+               advancedRating.setTotalStar2(jsonRating.getInt("Count"));
+            } else if (int1 == 3) {
+               advancedRating.setTotalStar3(jsonRating.getInt("Count"));
+            } else if (int1 == 4) {
+               advancedRating.setTotalStar4(jsonRating.getInt("Count"));
+            } else if (int1 == 5) {
+               advancedRating.setTotalStar5(jsonRating.getInt("Count"));
+            }
          }
       }
       return advancedRating;
@@ -189,11 +217,11 @@ public class BrasilSodimacCrawler extends Crawler {
    }
 
    private Double getAverageOverallRating(JSONObject reviewStatistics) {
-      return reviewStatistics.getDouble("AverageOverallRating");
+      return ifElse(reviewStatistics.getDouble("AverageOverallRating"), 0D);
    }
 
    private Integer getTotalReviewCount(JSONObject ratingReviewsEndpointResponse) {
-      return ratingReviewsEndpointResponse.getInt("TotalReviewCount");
+      return ifElse(ratingReviewsEndpointResponse.getInt("TotalReviewCount"), 0);
    }
 
    private String crawlDescription(Document doc) {
@@ -218,13 +246,13 @@ public class BrasilSodimacCrawler extends Crawler {
     * @param doc
     * @return json with all product content
     */
-   private String[] getJSONArray(Document doc) {
+   private String[] getSkusStr(Document doc) {
       Element infoDocs = doc.selectFirst("#JsonArray");
       String[] idArray = null;
       if (infoDocs != null) {
-         JSONArray skuObjArr = new JSONArray(infoDocs.text());
-         JSONObject skuObject = skuObjArr.getJSONObject(0);
-         if (skuObject.has("pickupInStore")) {
+         JSONArray skuObjArr = JSONUtils.stringToJsonArray(infoDocs.text());
+         JSONObject skuObject = skuObjArr.getJSONObject(0) instanceof JSONObject ? skuObjArr.getJSONObject(0) : null;
+         if (skuObject.get("pickupInStore") instanceof String) {
             String valueId = skuObject.getString("pickupInStore");
             valueId = valueId.substring(1, valueId.length() - 1).replace("=true", "").replace("=false", "").replace(" ", "");
             idArray = valueId.split(",");
@@ -252,7 +280,7 @@ public class BrasilSodimacCrawler extends Crawler {
       String internalId = null;
       Element id = doc.selectFirst("#currentSkuId");
       if (id != null) {
-         internalId = id.attr("value");
+         internalId = id.val();
       }
       return internalId;
    }
@@ -271,7 +299,6 @@ public class BrasilSodimacCrawler extends Crawler {
       if (price != null) {
          Map<Integer, Float> installmentPriceMap = new TreeMap<>();
          installmentPriceMap.put(1, price);
-         prices.setPriceFrom(Double.parseDouble(price.toString()));
          prices.setBankTicketPrice(price);
          prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
@@ -294,8 +321,8 @@ public class BrasilSodimacCrawler extends Crawler {
       if (id != null) {
          Request request = RequestBuilder.create().setUrl(productAPI).setCookies(cookies).build();
          imagesFetched = this.dataFetcher.get(session, request).getBody();
-         imagesFetched = imagesFetched.substring(31, imagesFetched.length() - 6);
-         JSONObject imagesObj = new JSONObject(imagesFetched);
+         imagesFetched = CrawlerUtils.extractSpecificStringFromScript(imagesFetched, "\"set\":", true, "},\"\");", false);
+         JSONObject imagesObj = JSONUtils.stringToJson(imagesFetched);
          String imageURL = null;
          Object obj = imagesObj.get("item");
          if (obj instanceof JSONArray) {
@@ -304,8 +331,8 @@ public class BrasilSodimacCrawler extends Crawler {
                imageURL = "http://sodimac.scene7.com/is/image/" + imagesObjArray.getJSONObject(i).getJSONObject("s").get("n").toString();
                imagesArr.add(imageURL);
             }
-         } else if (obj instanceof JSONObject) {
-            imagesObj = imagesObj.getJSONObject("item");
+         }
+         if (imagesObj.getJSONObject("item") instanceof JSONObject) {
             imageURL = "http://sodimac.scene7.com/is/image/" + imagesObj.getJSONObject("s").get("n").toString();
             imagesArr.add(imageURL);
          }
@@ -323,8 +350,9 @@ public class BrasilSodimacCrawler extends Crawler {
 
    private String crawlSecondaryImages(List<String> images) {
       String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+      JSONArray secondaryImagesArray = null;
       if (!images.isEmpty()) {
+         secondaryImagesArray = new JSONArray();
          for (int i = 1; i < images.size(); i++) {
             secondaryImagesArray.put(images.get(i));
          }
@@ -332,4 +360,9 @@ public class BrasilSodimacCrawler extends Crawler {
       }
       return secondaryImages;
    }
+
+   public static <T> T ifElse(T one, T two) {
+      return one != null ? one : two;
+   }
+
 }
