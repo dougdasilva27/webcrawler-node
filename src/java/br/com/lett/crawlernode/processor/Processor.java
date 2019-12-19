@@ -465,30 +465,51 @@ public class Processor {
          ) {
          
          Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
-
+         
          Boolean shouldSend = false;
          String quote;
          String author;
          String avatar;
 
          if (discount > 70) {
-            try {
-               TemmieWebhook temmie = new TemmieWebhook("https://discordapp.com/api/webhooks/649664372368474125/lAkA0_qZAUux8FbDn20yKdMSX39egWDiwwhr12qj1SmAv1r-SAqVZuppBYSENNZZA_ES");
-               // Username, Content, Avatar URL
-               DiscordMessage dm = new DiscordMessage();
-               dm.setUsername("Jacquin");
-               dm.setAvatarUrl("https://www.azulis.com.br/wp-content/uploads/2019/10/jac-1-770x471.jpg");
-               dm.setTextToSpeech(true);
-               dm.setContent("Desliga freezer a notche!! Promoção com mais de 70% de desonto :0"
-                     + "\nProcessed ID: " + newProcessedProduct.getId() + "\nO preço do " + newProcessedProduct.getOriginalName() + " caiu *"
-                     + MathUtils.normalizeTwoDecimalPlaces(discount) + "%* \nDe: R$"
-                     + MathUtils.normalizeTwoDecimalPlaces(previousProcessedProduct.getPrice()) + "\nPara: *R$"
-                     + MathUtils.normalizeTwoDecimalPlaces(newProcessedProduct.getPrice()) + "* !!!! Corra, no link: " + newProcessedProduct.getUrl()
-                     + "\n *SESSION:* " + session.getSessionId());
-               temmie.sendMessage(dm);
-            } catch (Exception e) {
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-            }
+            shouldSend = true;
+            author = "Jacquin";
+            avatar = "https://www.azulis.com.br/wp-content/uploads/2019/10/jac-1-770x471.jpg";
+            String[] quotes = {
+               "Desligan o freezer a notch!",
+               "esse cheddár tem um gost esquisit",
+               "O que é isso?",
+               "Eu que deciso se isso é bom",
+               "Voce está brincando comig? é pegadinha?",
+               "Problema é seu",
+               "É conta isso para os outros e nao para mim",
+               "Estou preocupado, ein.",
+               "O já como estou",
+               "Voce vai precisar de uma consultoria, viu",
+               "Eu acho que está tudo muito ruim",
+               "Me senti dentro do filme misson impossive",
+               "Quê?",
+               "Mes parabens gente está horrivell",
+               "Não da pra perdoar non",
+               "Está feliz mesmo?",
+               "Ele aprendeu a economizar 50% na conta de luz",
+               "eu gostei da sua ousadia",
+               ""
+            };
+	         quote = quotes[new Random().nextInt(quotes.length)];
+         } else if (discount > 20 && newProcessedProduct.getPrice() > 50) {
+            shouldSend = true;
+            author = "Julius";
+            avatar = "https://i.imgur.com/T65AjlE.png";
+            String[] quotes = {
+               "Se você não comprar o desconte é maior",
+               "Esta mensagem custou 12 centavos de energia",
+               "Pra que gastar, se temos opção de não gastar",
+               "Você nem precisa disso...",
+               ""
+            };
+	         quote = quotes[new Random().nextInt(quotes.length)];
+         }
 
          if (shouldSend) {
             String DISCORD_MSG_TEMPLATE = (
