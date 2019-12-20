@@ -655,7 +655,7 @@ public class VTEXCrawlersUtils {
       JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
       if (jsonArray.length() > 0) {
-         return jsonArray.getJSONObject(0);
+         return jsonArray.get(0) instanceof JSONObject ? jsonArray.getJSONObject(0) : new JSONObject();
       }
 
       return new JSONObject();
