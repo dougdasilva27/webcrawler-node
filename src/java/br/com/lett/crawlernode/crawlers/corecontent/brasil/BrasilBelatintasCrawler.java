@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
@@ -34,8 +35,8 @@ public class BrasilBelatintasCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".produtoInfo-title .fbits-sku", false).replaceAll("[^0-9]", "").trim();
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".produto-comprar a", "id").replaceAll("[^0-9]", "").trim();
+         String internalPid = scrapInternalPid(doc);
+         String internalId = scrapInternalId(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produtoInfo-title h1", false);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#fbits-forma-pagamento #divFormaPagamento .precoPor", null, false, ',', session);
          Prices prices = crawlPrices(doc, price);
@@ -111,5 +112,28 @@ public class BrasilBelatintasCrawler extends Crawler {
    private boolean isProductPage(Document doc) {
       return !doc.select(".content.produto").isEmpty();
    }
+
+   private String scrapInternalPid(Document doc) {
+      String internalPid = null;
+
+      String pid = CrawlerUtils.scrapStringSimpleInfo(doc, ".produtoInfo-title .fbits-sku", false);
+      if (pid != null) {
+         internalPid = CommonMethods.getLast(pid.split(" "));
+      }
+
+      return internalPid;
+   }
+
+   private String scrapInternalId(Document doc) {
+      String internalId = null;
+
+      String idAtt = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div #hdnProdutoId", "value");
+      if (idAtt != null) {
+         internalId = idAtt;
+      }
+
+      return internalId;
+   }
+
 
 }
