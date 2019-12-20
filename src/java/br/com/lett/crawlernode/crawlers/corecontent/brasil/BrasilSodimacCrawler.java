@@ -45,6 +45,7 @@ public class BrasilSodimacCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
+
       List<Product> products = new ArrayList<>();
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -58,7 +59,7 @@ public class BrasilSodimacCrawler extends Crawler {
                String name = crawlName(fetchedData);
                Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',', session);
                Prices prices = crawlPrices(price);
-               Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".PDP-EVENT_BASE_PRICE-3.font-bold > span", null, false, ',', session);
+               Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".font-bold > span", null, false, ',', session);
                prices.setPriceFrom(priceFrom);
                boolean available = crawlAvailability(fetchedData) && price != null;
                List<String> imagesArr = getImagesFromAPI(internalId);
@@ -152,24 +153,20 @@ public class BrasilSodimacCrawler extends Crawler {
       ratingReviews.setDate(session.getDate());
       String endpointRequest = requestRatingStr(PASS_KEY, sku);
       JSONObject ratingReviewsEndpoint = sendRequestRating(endpointRequest);
+      // Optional.map checa nulo sem dar exception, independente de quantos map's há encadeado
       Optional<JSONObject> opt = Optional.of(ratingReviewsEndpoint)
-            .filter(x -> x.getJSONObject("BatchedResults") instanceof JSONObject)
-            .map(x -> x.getJSONObject("BatchedResults"))
-            .filter(x -> x.getJSONObject("q1") instanceof JSONObject)
-            .map(x -> x.getJSONObject("q1"))
-            .filter(x -> x.getJSONObject("Includes") instanceof JSONObject)
-            .map(x -> x.getJSONObject("Includes"));
+            .map(x -> JSONUtils.getJSONValue(x, "BatchedResults"))
+            .map(x -> JSONUtils.getJSONValue(x, "q1"))
+            .map(x -> JSONUtils.getJSONValue(x, "Includes"));
 
       JSONObject jsonRatingInc = opt.get();
 
       Optional<JSONObject> optional = Optional.of(jsonRatingInc)
-            .filter(x -> x.getJSONObject("Products") instanceof JSONObject)
-            .map(x -> x.getJSONObject("Products"))
-            .filter(x -> x.getJSONObject(sku) instanceof JSONObject)
-            .map(x -> x.getJSONObject(sku))
-            .filter(x -> x.getJSONObject("FilteredReviewStatistics") instanceof JSONObject)
-            .map(x -> x.getJSONObject("FilteredReviewStatistics"));
-      if (optional.isPresent()) {
+            .map(x -> JSONUtils.getJSONValue(x, "Products"))
+            .map(x -> JSONUtils.getJSONValue(x, sku))
+            .map(x -> JSONUtils.getJSONValue(x, "FilteredReviewStatistics"));
+      JSONObject jsonObject = optional.get();
+      if (JSONUtils.getValue(jsonObject, "AverageOverallRating") != null) {
          JSONObject jsonProduct = optional.get();
          total = getTotalReviewCount(jsonProduct);
          overallRating = getAverageOverallRating(jsonProduct);
@@ -184,7 +181,7 @@ public class BrasilSodimacCrawler extends Crawler {
 
    private AdvancedRatingReview extractAdvancedRating(JSONObject jsonProduct) {
       AdvancedRatingReview advancedRating = new AdvancedRatingReview();
-      if (jsonProduct.getJSONArray("RatingDistribution") instanceof JSONArray) {
+      if (JSONUtils.getValue(jsonProduct, "RatingDistribution") instanceof JSONArray) {
          for (Object obj : jsonProduct.getJSONArray("RatingDistribution")) {
             JSONObject jsonRating = (JSONObject) obj;
             int int1 = jsonRating.get("RatingValue") instanceof Integer ? jsonRating.getInt("RatingValue") : 0;
@@ -217,11 +214,11 @@ public class BrasilSodimacCrawler extends Crawler {
    }
 
    private Double getAverageOverallRating(JSONObject reviewStatistics) {
-      return (reviewStatistics.get("AverageOverallRating") instanceof Double) ? reviewStatistics.getDouble("AverageOverallRating") : 0D;
+      return JSONUtils.getDoubleValueFromJSON(reviewStatistics, "AverageOverallRating", false);
    }
 
    private Integer getTotalReviewCount(JSONObject ratingReviewsEndpointResponse) {
-      return (ratingReviewsEndpointResponse.get("TotalReviewCount") instanceof Integer) ? ratingReviewsEndpointResponse.getInt("TotalReviewCount") : 0;
+      return JSONUtils.getIntegerValueFromJSON(ratingReviewsEndpointResponse, "TotalReviewCount", 0);
    }
 
    private String crawlDescription(Document doc) {
@@ -324,17 +321,31 @@ public class BrasilSodimacCrawler extends Crawler {
          imagesFetched = CrawlerUtils.extractSpecificStringFromScript(imagesFetched, "\"set\":", true, "},\"\");", false);
          JSONObject imagesObj = JSONUtils.stringToJson(imagesFetched);
          String imageURL = null;
-         Object obj = imagesObj.get("item");
+         Object obj = imagesObj.opt("item");
          if (obj instanceof JSONArray) {
             JSONArray imagesObjArray = (JSONArray) obj;
             for (int i = 0; i < imagesObjArray.length(); i++) {
-               imageURL = "http://sodimac.scene7.com/is/image/" + imagesObjArray.getJSONObject(i).getJSONObject("s").get("n").toString();
-               imagesArr.add(imageURL);
+               Object object = imagesObjArray.get(i);
+               if (object instanceof JSONObject) {
+                  Object object2 = imagesObjArray.getJSONObject(i).get("s");
+                  if (object2 instanceof JSONObject) {
+                     Object object3 = imagesObjArray.getJSONObject(i).getJSONObject("s").get("n");
+                     if (object3 != null) {
+                        imageURL = "http://sodimac.scene7.com/is/image/" + imagesObjArray.getJSONObject(i).getJSONObject("s").get("n").toString();
+                        imagesArr.add(imageURL);
+                     }
+                  }
+               }
             }
-         }
-         if (imagesObj.getJSONObject("item") instanceof JSONObject) {
-            imageURL = "http://sodimac.scene7.com/is/image/" + imagesObj.getJSONObject("s").get("n").toString();
-            imagesArr.add(imageURL);
+         } else if (obj instanceof JSONObject) {
+            JSONObject json = (JSONObject) obj;
+            if (!json.isNull("s")) {
+               JSONObject jsonValue = JSONUtils.getJSONValue(json, "s");
+               if (!jsonValue.isNull("n")) {
+                  imageURL = "http://sodimac.scene7.com/is/image/" + jsonValue.get("n").toString();
+                  imagesArr.add(imageURL);
+               }
+            }
          }
       }
       return imagesArr;
