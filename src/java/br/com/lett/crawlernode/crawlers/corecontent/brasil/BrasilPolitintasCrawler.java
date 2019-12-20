@@ -35,8 +35,10 @@ public class BrasilPolitintasCrawler extends Crawler {
       if (isProductPage(doc)) {
          VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
          vtexUtil.setBankTicketDiscount(5);
-         // When this crawler was created, the discount value could not be found;
-         // Therefore, to correct the problem, it was necessary to set the discount value manually.
+         /**
+          * When this crawler was created, the discount value could not be found; Therefore, to correct the
+          * problem, it was necessary to set the discount value manually.
+          **/
          JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);

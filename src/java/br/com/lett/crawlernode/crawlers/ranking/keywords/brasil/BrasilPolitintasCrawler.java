@@ -20,7 +20,7 @@ public class BrasilPolitintasCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String url = HOME_PAGE + this.keywordEncoded +
-            "#" + this.currentPage;
+            "?PageNumber=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
@@ -51,12 +51,11 @@ public class BrasilPolitintasCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
             + this.arrayProducts.size() + " produtos crawleados");
-
    }
 
    @Override
    protected boolean hasNextPage() {
-      Integer productCount = this.currentDoc.select(".box-item").size();
+      Integer productCount = this.currentDoc.select(".pager.bottom .pages .page-number:not(.pgCurrent)").size();
       return productCount >= this.pageSize;
    }
 }
