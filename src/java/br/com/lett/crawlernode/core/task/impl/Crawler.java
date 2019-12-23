@@ -409,13 +409,8 @@ public class Crawler extends Task {
          Processed newProcessedProduct =
                Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
-            if (previousProcessedProduct == null) {
-               PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
-               scheduleImages(persistenceResult, newProcessedProduct);
-            } else {
-               PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
-               scheduleImages(persistenceResult, newProcessedProduct);
-            }
+            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
+            scheduleImages(persistenceResult, newProcessedProduct);
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, ((SeedCrawlerSession) session));
