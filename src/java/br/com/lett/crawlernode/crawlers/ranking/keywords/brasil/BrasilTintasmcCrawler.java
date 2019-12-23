@@ -13,25 +13,33 @@ public class BrasilTintasmcCrawler extends CrawlerRankingKeywords {
 
    public BrasilTintasmcCrawler(Session session) {
       super(session);
-      this.pageSize = 12;
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
+      this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + "/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "?" +
-            "PS=" + this.pageSize + "#" + this.currentPage;
+      String url = HOME_PAGE + "/buscapagina?ft=" + this.keywordEncoded +
+            "&PS=12&sl=ef3fcb99-de72-4251-aa57-71fe5b6e149f&cc=6&sm=0&PageNumber=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".box-item.text-center");
+      Elements products = this.currentDoc.select("ul > li:not(.helperComplement)");
+
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".wrapper-buy-button-asynchronous :nth-child(3)", "value");
-            String productUrl = CrawlerUtils.scrapUrl(e, "a.product-image", Arrays.asList("href"), "https", HOME_PAGE);
-            saveDataProduct(null, internalId, productUrl);
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input:nth-child(3)", "value");
+            String productUrl = CrawlerUtils.scrapUrl(e, "a.productImage", Arrays.asList("href"), "https", HOME_PAGE);
+
+            saveDataProduct(null, internalPid, productUrl);
+
+            this.log(
+                  "Position: " + this.position +
+                        " - InternalId: " + null +
+                        " - InternalPid: " + internalPid +
+                        " - Url: " + productUrl);
+
             if (this.arrayProducts.size() == productsLimit)
                break;
          }
@@ -45,7 +53,8 @@ public class BrasilTintasmcCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      Integer size = this.currentDoc.select(".box-item").size();
-      return size >= this.pageSize;
+      Integer productCount = this.currentDoc.select("ul > li:not(.helperComplement)").size();
+
+      return productCount >= this.pageSize;
    }
 }
