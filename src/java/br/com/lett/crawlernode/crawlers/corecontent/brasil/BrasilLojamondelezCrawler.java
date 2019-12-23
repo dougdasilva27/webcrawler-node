@@ -105,7 +105,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#info-abas-mobile"));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"),
                "https", IMAGES_HOST);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href",
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".miniaturas-container.my-3 a:not(:first-child) img", Arrays.asList("src", "href",
                "src"),
                "https", IMAGES_HOST, primaryImage);
 

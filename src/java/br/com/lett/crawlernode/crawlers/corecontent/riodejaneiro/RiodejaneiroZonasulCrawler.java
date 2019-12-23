@@ -164,7 +164,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
   private Float crawlPrice(Document doc) {
     Float price = null;
 
-    Element priceElement = doc.selectFirst(".content_price > div.price_desconto");
+    Element priceElement = doc.selectFirst(".content_price.hide_mobile > div.price");
 
     if (priceElement != null) {
       price = MathUtils.parseFloatWithComma(priceElement.ownText());

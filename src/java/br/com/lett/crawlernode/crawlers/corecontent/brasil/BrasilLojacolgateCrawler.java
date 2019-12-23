@@ -8,6 +8,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -26,8 +27,8 @@ public class BrasilLojacolgateCrawler extends Crawler {
   
   private static final String HOST = "lojacolgate.com.br";
 
-  private static final String LOGIN_URL = "https://lojacolgate.com.br/cpb2bglobalstorefront/colgateSite/pt/login";
-  private static final String CNPJ = " 45543915000181";
+  private static final String LOGIN_URL = "https://lojacolgate.com.br/cpb2bglobalstorefront/pt/login";
+  private static final String CNPJ = "45.543.915/0001-81";
   private static final String PASSWORD = "12345678";
   
   public BrasilLojacolgateCrawler(Session session) {
@@ -41,6 +42,16 @@ public class BrasilLojacolgateCrawler extends Crawler {
       this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, session);
       this.webdriver.waitLoad(10000);
       
+      if (this.webdriver.driver instanceof JavascriptExecutor) {
+        JavascriptExecutor jsExecutor = (JavascriptExecutor) this.webdriver.driver;
+        
+        // Javascript code to delete loader that goes over the page and
+        // Show the main contents of the page by removing the hidden class from it
+        jsExecutor.executeScript("return document.getElementsByClassName('loader-contain')[0].remove();");
+        jsExecutor.executeScript("document.querySelector('.main__inner-wrapper').classList.remove('hidden')");
+        this.webdriver.waitLoad(2000);
+      }
+            
       WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
       email.sendKeys(CNPJ);
       this.webdriver.waitLoad(2000);

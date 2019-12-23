@@ -401,7 +401,6 @@ public class Crawler extends Task {
     * @param product
     */
    private void processProduct(Product product) throws Exception {
-      Persistence.persistProduct(product, session);
       Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
 
       if ((previousProcessedProduct == null && (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession))

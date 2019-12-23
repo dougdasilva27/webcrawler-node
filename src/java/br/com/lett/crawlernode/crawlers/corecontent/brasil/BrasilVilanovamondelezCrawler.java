@@ -117,7 +117,9 @@ public class BrasilVilanovamondelezCrawler extends Crawler {
 
             String internalId = crawlInternalId(skuJson);
             String name = crawlName(skuJson);
-            Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
+            Integer stock = JSONUtils.getIntegerValueFromJSON(skuJson, "stock", 0);
+            boolean available = stock > 0;
+            Float price = available ? JSONUtils.getFloatValueFromJSON(skuJson, "price", true) : null;
             Prices prices = scrapPrices(price);
 
             Product product = ProductBuilder.create()
@@ -127,7 +129,7 @@ public class BrasilVilanovamondelezCrawler extends Crawler {
                   .setName(name)
                   .setPrice(price)
                   .setPrices(prices)
-                  .setAvailable(price != null && price > 0)
+                  .setAvailable(available)
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
@@ -135,6 +137,7 @@ public class BrasilVilanovamondelezCrawler extends Crawler {
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
                   .setEans(eans)
+                  .setStock(stock)
                   .build();
 
             products.add(product);
