@@ -50,41 +50,42 @@ public class BrasilSodimacCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
       String internalPid = crawlInternalPid(doc);
-      List<String> skuIDs = getSkusStr(doc);
       String description = crawlDescription(doc);
       CategoryCollection categories = extractCategories(doc);
-      if (skuIDs != null) {
-        for (String internalId : skuIDs) {
-          Document fetchedData = fetchAPIProduct(internalId);
-          String name = crawlName(fetchedData);
-          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',', session);
-          Prices prices = crawlPrices(price);
-          Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".font-bold > span", null, false, ',', session);
-          prices.setPriceFrom(priceFrom);
-          boolean available = crawlAvailability(fetchedData) && price != null;
-          List<String> imagesArr = getImagesFromAPI(internalId);
-          String primaryImage = crawlPrimaryImage(imagesArr);
-          String secondaryImages = crawlSecondaryImages(imagesArr);
-          RatingsReviews ratingReviews = crawlRating(internalId);
-          Product product = ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalId)
-              .setInternalPid(internalPid)
-              .setName(name)
-              .setPrice(price)
-              .setPrices(prices)
-              .setAvailable(available)
-              .setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages)
-              .setDescription(description)
-              .setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2))
-              .setMarketplace(new Marketplace())
-              .setRatingReviews(ratingReviews).build();
-          products.add(product);
-        }
+
+      List<String> skuIDs = scrapSkusList(doc);
+
+      for (String internalId : skuIDs) {
+        Document fetchedData = fetchAPIProduct(internalId);
+        String name = crawlName(fetchedData);
+        Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".t-black.bold.price, .mt2-price", null, false, ',', session);
+        Prices prices = crawlPrices(price);
+        Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".font-bold > span", null, false, ',', session);
+        prices.setPriceFrom(priceFrom);
+        boolean available = crawlAvailability(fetchedData) && price != null;
+        List<String> imagesArr = getImagesFromAPI(internalId);
+        String primaryImage = crawlPrimaryImage(imagesArr);
+        String secondaryImages = crawlSecondaryImages(imagesArr);
+        RatingsReviews ratingReviews = crawlRating(internalId);
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setMarketplace(new Marketplace())
+            .setRatingReviews(ratingReviews).build();
+        products.add(product);
       }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -95,12 +96,16 @@ public class BrasilSodimacCrawler extends Crawler {
   private Document fetchAPIProduct(String id) {
     Document fetchedData = new Document("");
     if (id != null) {
-      StringBuilder aux = new StringBuilder();
-      aux.append("?type=html")
+      StringBuilder parameters = new StringBuilder();
+      parameters.append("?type=html")
           .append("&relatedProductcolorDimension=false")
           .append("&relatedProductsizeDimension=false&productId=" + id);
-      String payload = aux.toString();
-      Request request = RequestBuilder.create().setUrl(PRODUCT_API + payload).setCookies(cookies).build();
+
+      Request request = RequestBuilder.create()
+          .setUrl(PRODUCT_API + parameters.toString())
+          .setCookies(cookies)
+          .build();
+
       fetchedData = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
     }
     return fetchedData;
@@ -154,6 +159,7 @@ public class BrasilSodimacCrawler extends Crawler {
     ratingReviews.setDate(session.getDate());
     String endpointRequest = requestRatingStr(PASS_KEY, sku);
     JSONObject ratingReviewsEndpoint = sendRequestRating(endpointRequest);
+
     // Optional.map checa nulo sem dar exception, independente de quantos map's há encadeado
     Optional<JSONObject> opt = Optional.of(ratingReviewsEndpoint)
         .map(x -> JSONUtils.getJSONValue(x, "BatchedResults"))
@@ -166,17 +172,21 @@ public class BrasilSodimacCrawler extends Crawler {
         .map(x -> JSONUtils.getJSONValue(x, "Products"))
         .map(x -> JSONUtils.getJSONValue(x, sku))
         .map(x -> JSONUtils.getJSONValue(x, "FilteredReviewStatistics"));
+
     JSONObject jsonObject = optional.get();
     if (JSONUtils.getValue(jsonObject, "AverageOverallRating") != null) {
       JSONObject jsonProduct = optional.get();
       total = getTotalReviewCount(jsonProduct);
       overallRating = getAverageOverallRating(jsonProduct);
+
       AdvancedRatingReview advancedRatingReview = extractAdvancedRating(jsonProduct);
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
     }
+
     ratingReviews.setTotalRating(total);
     ratingReviews.setTotalWrittenReviews(total);
     ratingReviews.setAverageOverallRating(overallRating);
+
     return ratingReviews;
   }
 
@@ -211,13 +221,13 @@ public class BrasilSodimacCrawler extends Crawler {
     Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
     String ratingReviewsEndpointResponseStr = CrawlerUtils.extractSpecificStringFromScript(this.dataFetcher.get(session, request).getBody(),
         "dataHandler0(", false, "})", true);
+
     return JSONUtils.stringToJson(ratingReviewsEndpointResponseStr);
   }
 
   private Double getAverageOverallRating(JSONObject reviewStatistics) {
-    Double avgOverall = 0D;
-    avgOverall = JSONUtils.getDoubleValueFromJSON(reviewStatistics, "AverageOverallRating", false);
-    return avgOverall;
+    Double avgOverall = JSONUtils.getDoubleValueFromJSON(reviewStatistics, "AverageOverallRating", false);
+    return avgOverall != null ? avgOverall : 0d;
   }
 
   private Integer getTotalReviewCount(JSONObject ratingReviewsEndpointResponse) {
@@ -226,18 +236,22 @@ public class BrasilSodimacCrawler extends Crawler {
 
   private String crawlDescription(Document doc) {
     StringBuilder description = new StringBuilder();
+
     Element descriptionHeader = doc.selectFirst("section.prod-car > header > h3 > span");
     if (descriptionHeader != null) {
       description.append(descriptionHeader.outerHtml());
     }
+
     Element descriptionBody = doc.selectFirst(".row.prod-desc > div");
     if (descriptionBody != null) {
       description.append(descriptionBody.outerHtml());
     }
+
     Element descriptionTecnic = doc.selectFirst("section.car-body > table.prod-ficha");
     if (descriptionTecnic != null) {
       description.append(descriptionTecnic.outerHtml());
     }
+
     return description.toString();
   }
 
@@ -246,28 +260,33 @@ public class BrasilSodimacCrawler extends Crawler {
    * @param doc
    * @return json with all product content
    */
-  private List<String> getSkusStr(Document doc) {
+  private List<String> scrapSkusList(Document doc) {
     Element infoDocs = doc.selectFirst("#JsonArray");
     List<String> idArray = new ArrayList<>();
+
     if (infoDocs != null) {
       JSONArray skuObjArr = JSONUtils.stringToJsonArray(infoDocs.text());
       JSONObject skuObject = skuObjArr.getJSONObject(0) instanceof JSONObject ? skuObjArr.getJSONObject(0) : null;
+
       if (skuObject.get("pickupInStore") instanceof String) {
         String valueId = skuObject.getString("pickupInStore");
         valueId = valueId.substring(1, valueId.length() - 1).replace("=true", "").replace("=false", "").replace(" ", "");
+
         Stream.of(valueId.split(","))
             .forEach(idArray::add);
-        return idArray;
       }
     } else {
       JSONObject skuObj = CrawlerUtils.selectJsonFromHtml(doc, ".pdp script[language=\"JavaScript\"]", "var digitalData =", "};", false, false);
+
       if (skuObj.has("ecom") && !skuObj.isNull("ecom")) {
         JSONObject ecom = skuObj.getJSONObject("ecom");
+
         if (ecom.has("sku") && !ecom.isNull("sku")) {
           idArray.add(ecom.get("sku").toString());
         }
       }
     }
+
     return idArray;
 
   }
