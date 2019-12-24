@@ -16,13 +16,13 @@ public class DiscordMessages {
 
    private static Logger logger = LoggerFactory.getLogger(DiscordMessages.class);
 
-   public static void reportPriceChanges(Session session, String msg) {
+   public static void reportPriceChanges(Session session, String msg, String author, String avatar) {
       try {
          TemmieWebhook temmie = new TemmieWebhook("https://discordapp.com/api/webhooks/649664372368474125/lAkA0_qZAUux8FbDn20yKdMSX39egWDiwwhr12qj1SmAv1r-SAqVZuppBYSENNZZA_ES");
-         // Username, Content, Avatar URL
          DiscordMessage dm = new DiscordMessage();
-         dm.setUsername("Nicolas");
-         dm.setContent(msg + "\n *SESSION:* " + session.getSessionId());
+         dm.setUsername(author);
+         dm.setAvatarUrl(avatar);
+         dm.setContent(msg);
          temmie.sendMessage(dm);
          Logging.printLogDebug(logger, session, "Send one message to Discord.");
       } catch (Exception ex) {
