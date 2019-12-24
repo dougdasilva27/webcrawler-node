@@ -338,7 +338,7 @@ public class BrasilBifarmaCrawler extends Crawler {
    private JSONObject crawlProductInfo(Document doc) {
       JSONObject info = new JSONObject();
 
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "chaordicProduct=", "};", false, false);
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "chaordicProduct =", "};", false, false);
       if (json.has("product")) {
          info = json.getJSONObject("product");
       }
