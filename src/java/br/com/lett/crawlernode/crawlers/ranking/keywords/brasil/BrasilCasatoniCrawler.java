@@ -9,55 +9,58 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilCasatoniCrawler extends CrawlerRankingKeywords {
 
-   private static final String HOME_PAGE = "https://www.casatoni.com.br/";
+  private static final String HOME_PAGE = "https://www.casatoni.com.br/";
 
-   public BrasilCasatoniCrawler(Session session) {
-      super(session);
-   }
+  public BrasilCasatoniCrawler(Session session) {
+    super(session);
+  }
 
-   @Override
-   protected void extractProductsFromCurrentPage() {
-      this.pageSize = 24;
-      this.log("Página " + this.currentPage);
+  @Override
+  protected void extractProductsFromCurrentPage() {
+    this.pageSize = 24;
+    this.log("Página " + this.currentPage);
 
-      String url = HOME_PAGE + this.keywordEncoded +
-            "?PageNumber=" + this.currentPage;
+    String url = HOME_PAGE + this.keywordEncoded +
+        "?PageNumber=" + this.currentPage;
 
-      this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".prateleira.vitrine.n4colunas ul > li:not(.helperComplement)");
+    this.log("Link onde são feitos os crawlers: " + url);
+    this.currentDoc = fetchDocument(url);
+    Elements products = this.currentDoc.select(".prateleira.vitrine.n4colunas ul > li:not(.helperComplement)");
 
-      if (!products.isEmpty()) {
-         for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".box-item.text-center div.wrapper-buy-button-asynchronous input.buy-button-asynchronous-product-id", "value");
-            String productUrl = CrawlerUtils.scrapUrl(e, "span b a", Arrays.asList("href"), "https", HOME_PAGE);
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
+      }
+      for (Element e : products) {
+        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,
+            ".box-item.text-center div.wrapper-buy-button-asynchronous input.buy-button-asynchronous-product-id", "value");
+        String productUrl = CrawlerUtils.scrapUrl(e, "span b a", Arrays.asList("href"), "https", HOME_PAGE);
 
-            saveDataProduct(internalId, null, productUrl);
+        saveDataProduct(internalId, null, productUrl);
 
-            this.log(
-                  "Position: " + this.position +
-                        " - InternalId: " + internalId +
-                        " - InternalPid: " + null +
-                        " - Url: " + productUrl);
+        this.log(
+            "Position: " + this.position +
+                " - InternalId: " + internalId +
+                " - InternalPid: " + null +
+                " - Url: " + productUrl);
 
-            if (this.arrayProducts.size() == productsLimit)
-               break;
-         }
-
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
+        if (this.arrayProducts.size() == productsLimit)
+          break;
       }
 
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-            + this.arrayProducts.size() + " produtos crawleados");
+    } else {
+      this.result = false;
+      this.log("Keyword sem resultado!");
+    }
 
-   }
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
 
-   @Override
-   protected boolean hasNextPage() {
-      boolean hasNext = this.currentDoc.select(".prateleira.vitrine.n4colunas ul > li:not(.helperComplement)").hasClass(".pgEmpty");
+  }
 
-      return hasNext;
-   }
+  @Override
+  protected void setTotalProducts() {
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", true, 0);
+    this.log("Total: " + this.totalProducts);
+  }
 }
