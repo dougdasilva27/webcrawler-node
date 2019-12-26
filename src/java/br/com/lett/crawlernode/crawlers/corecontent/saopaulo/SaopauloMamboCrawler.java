@@ -231,11 +231,10 @@ public class SaopauloMamboCrawler extends Crawler {
 
    private String crawlDescription(JSONObject json, JSONObject jsonSku) {
       StringBuilder description = new StringBuilder();
-      System.err.println(json);
+
       if (json.has("description") && !json.isNull("description")) {
          description.append(json.get("description").toString());
       }
-      System.err.println(description);
 
       return description.toString();
    }
