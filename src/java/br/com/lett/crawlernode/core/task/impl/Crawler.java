@@ -236,7 +236,6 @@ public class Crawler extends Task {
          // only print statistics of void and truco if we are running an Insights session crawling
          if (session instanceof InsightsCrawlerSession) {
             Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
-            Logging.printLogDebug(logger, session, "[TRUCO_ATTEMPTS]" + session.getTrucoAttempts());
          }
 
 
@@ -328,8 +327,6 @@ public class Crawler extends Task {
       // an URL scheduled manually, we won't run active void and
       // we must process each crawled product
       else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
-         Logging.printLogDebug(logger, session, "Processing session of type: " + session.getClass().getName());
-
          // Before process and save to PostgreSQL
          // we must send the raw crawled data to Kinesis
          for (Product p : products) {
@@ -424,8 +421,6 @@ public class Crawler extends Task {
                }
             }
          } else if (previousProcessedProduct == null) {
-            // if we haven't a previous processed, and the new processed was null,
-            // we don't have anything to give a trucada!
             Logging.printLogDebug(logger, session,
                   "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 
@@ -598,7 +593,6 @@ public class Crawler extends Task {
     * @return The product with the desired internal id, or an empty product if it was not found.
     */
    private Product filter(List<Product> products, String desiredInternalId) {
-      Logging.printLogDebug(logger, session, "Desired internalId " + desiredInternalId);
       for (Product product : products) {
          String crawledInternalId = product.getInternalId();
          if (crawledInternalId != null && crawledInternalId.equals(desiredInternalId)) {
@@ -606,7 +600,7 @@ public class Crawler extends Task {
          }
       }
 
-      Logging.printLogDebug(logger, session, "Product with internalId " + desiredInternalId + " not found.");
+      Logging.printLogDebug(logger, session, "Product with internalId " + desiredInternalId + " was not found.");
       return new Product();
    }
 
@@ -626,19 +620,15 @@ public class Crawler extends Task {
       // we won't perform new attempts to extract the current product
       Processed previousProcessedProduct = processor.fetchPreviousProcessed(product, session);
       if (previousProcessedProduct != null && previousProcessedProduct.isVoid()) {
-         Logging.printLogDebug(logger, session, "The previous processed is void. Returning...");
-
-         Logging.printLogDebug(logger, session, "Updating LRT ...");
          Persistence.updateProcessedLRT(nowISO, session);
-
-         Logging.printLogDebug(logger, session, "Updating behavior of processedId: " + previousProcessedProduct.getId());
          processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
          Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
 
+         Logging.printLogDebug(logger, session, "The previous processed is also void. Finishing active void.");
          return product;
       }
 
-      Logging.printLogDebug(logger, session, "Starting active void attempts...");
+      Logging.printLogDebug(logger, session, "The previous processed is not void, starting active void attempts...");
 
       // starting the active void iterations
       // until a maximum number of attempts, we will rerun the extract
@@ -647,15 +637,15 @@ public class Crawler extends Task {
       // when attempts reach it's maximum, we interrupt the loop and return the last extracted
       // product, even if it's void
       Product currentProduct = product;
-      while (true) {
+      while (session.getVoidAttempts() < MAX_VOID_ATTEMPTS) {
          session.incrementVoidAttemptsCounter();
 
          Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
          List<Product> products = extract();
-         Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
          currentProduct = filter(products, ((InsightsCrawlerSession) session).getInternalId());
 
-         if (session.getVoidAttempts() >= MAX_VOID_ATTEMPTS || !currentProduct.isVoid()) {
+         if (!currentProduct.isVoid()) {
+            Logging.printLogDebug(logger, session, "Product is not void anymore. Finishing active void.");
             break;
          }
       }
@@ -663,20 +653,15 @@ public class Crawler extends Task {
       // if we ended with a void product after all the attempts
       // we must set void status of the existent processed product to true
       if (currentProduct.isVoid()) {
-         Logging.printLogDebug(logger, session, "Product is void.");
+         Logging.printLogDebug(logger, session, "Product still void. Finishing active void.");
 
          // set previous processed as void
          if (previousProcessedProduct != null && !previousProcessedProduct.isVoid()) {
-            Logging.printLogDebug(logger, session, "Setting previous processed void status to true...");
+            Logging.printLogDebug(logger, session, "Updating (status, lrt, lms) ...");
             Persistence.setProcessedVoidTrue(session);
-
-            Logging.printLogDebug(logger, session, "Updating LRT ...");
             Persistence.updateProcessedLRT(nowISO, session);
-
-            Logging.printLogDebug(logger, session, "Updating LMS ...");
             Persistence.updateProcessedLMS(nowISO, session);
 
-            Logging.printLogDebug(logger, session, "Updating behavior of processedId: " + previousProcessedProduct.getId());
             processor.updateBehaviorTest(previousProcessedProduct, nowISO, null, false, "void", null, new Prices(), null, session);
             Persistence.updateProcessedBehaviour(previousProcessedProduct.getBehaviour(), session, previousProcessedProduct.getId());
          }
