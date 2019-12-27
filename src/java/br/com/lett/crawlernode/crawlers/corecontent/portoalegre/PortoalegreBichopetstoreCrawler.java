@@ -54,7 +54,7 @@ public class PortoalegreBichopetstoreCrawler extends Crawler {
                Arrays.asList("href"), "https:", HOME_PAGE);
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".thumbnails > li.image-additional > a.thumbnail",
                Arrays.asList("href"), "https:", HOME_PAGE, primaryImage);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#content p"));
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#content .col-sm-8 p"));
          boolean available = doc.selectFirst("#content #otp-stock") != null && !doc.selectFirst("#content #otp-stock").text().contains(" a ");
          Integer stock = null;
          Marketplace marketplace = null;
@@ -127,24 +127,24 @@ public class PortoalegreBichopetstoreCrawler extends Crawler {
 
       return internalPid;
    }
-   
+
    private Float scrapVariationPrice(Element element) {
-     Float price = null;
-     
-     if(element != null) {
-        String elementText = element.text();
-        
-        if(elementText.contains("R$")) {
-          elementText = elementText.substring(elementText.indexOf("R$"));
-          elementText = elementText.replaceAll("[^0-9,]+", "").replace(".", "").replace(",", ".");
-          
-          if(!elementText.isEmpty()) {
-            price = Float.parseFloat(elementText);
-          }
-        }
-     }
-     
-     return price;
+      Float price = null;
+
+      if (element != null) {
+         String elementText = element.text();
+
+         if (elementText.contains("R$")) {
+            elementText = elementText.substring(elementText.indexOf("R$"));
+            elementText = elementText.replaceAll("[^0-9,]+", "").replace(".", "").replace(",", ".");
+
+            if (!elementText.isEmpty()) {
+               price = Float.parseFloat(elementText);
+            }
+         }
+      }
+
+      return price;
    }
 
    private Prices scrapVariationPrices(Document doc, Float price, String variationId) {

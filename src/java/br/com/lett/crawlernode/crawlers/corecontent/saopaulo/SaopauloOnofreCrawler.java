@@ -197,7 +197,7 @@ public class SaopauloOnofreCrawler extends Crawler {
          Map<Integer, Float> installmentPriceMap = new HashMap<>();
          installmentPriceMap.put(1, price);
          prices.setBankTicketPrice(price);
-         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session));
+         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .live_price .old-price .price", null, true, ',', session));
 
          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
          prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
