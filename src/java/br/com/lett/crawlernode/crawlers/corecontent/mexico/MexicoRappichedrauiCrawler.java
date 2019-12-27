@@ -58,7 +58,7 @@ public class MexicoRappichedrauiCrawler extends Crawler {
       String description = crawlDescription(jsonSku);
       boolean available = crawlAvailability(jsonSku);
       Float price = available ? CrawlerUtils.getFloatValueFromJSON(jsonSku, "price") : null;
-      Double priceFrom = available ? CrawlerUtils.getDoubleValueFromJSON(jsonSku, "real_price") : null;
+      Double priceFrom = available ? CrawlerUtils.getDoubleValueFromJSON(jsonSku, "real_price", true, null) : null;
       String primaryImage = crawlPrimaryImage(jsonSku);
       String name = crawlName(jsonSku);
       Prices prices = crawlPrices(price, priceFrom);
