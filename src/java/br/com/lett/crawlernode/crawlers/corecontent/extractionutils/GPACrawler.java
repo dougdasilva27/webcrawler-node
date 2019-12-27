@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -20,11 +19,14 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class GPACrawler extends Crawler {
@@ -50,6 +52,9 @@ public class GPACrawler extends Crawler {
     this.cookies.add(cookie);
   }
 
+  /**
+   * @see Given a CEP it send a request to an API then returns the id used by GPA.
+   */
   private void fetchStoreId() {
     Request request = RequestBuilder.create()
         .setUrl(END_POINT_REQUEST + this.store + "/delivery/options?zipCode=" + this.cep.replace("-", ""))
@@ -60,24 +65,29 @@ public class GPACrawler extends Crawler {
 
 
     JSONObject jsonObjectGPA = JSONUtils.stringToJson(response.getBody());
-    Optional<JSONObject> optionalJson = Optional.of(jsonObjectGPA);
-    if (jsonObjectGPA.optJSONObject("content") != null) {
-      JSONArray jsonDeliveryTypes = optionalJson
-          .map(x -> x.optJSONObject("content"))
-          .map(x -> x.optJSONArray("deliveryTypes")).get();
-      if (jsonDeliveryTypes.optJSONObject(0) != null) {
-        this.storeId = jsonDeliveryTypes.optJSONObject(0).optString("storeid");
-      }
-      for (Object object : jsonDeliveryTypes) {
-        JSONObject deliveryType = (JSONObject) object;
-        if (deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
-          this.storeId = deliveryType.optString("storeid");
-          break;
+    if (jsonObjectGPA.optJSONObject("content") instanceof JSONObject) {
+      JSONObject jsonObject = jsonObjectGPA.optJSONObject("content");
+      if (jsonObject.optJSONArray("deliveryTypes") instanceof JSONArray) {
+        JSONArray jsonDeliveryTypes = jsonObject.optJSONArray("deliveryTypes");
+
+
+        if (jsonDeliveryTypes.optJSONObject(0) instanceof JSONObject) {
+          this.storeId = jsonDeliveryTypes.optJSONObject(0).optString("storeid");
+        }
+        for (Object object : jsonDeliveryTypes) {
+          JSONObject deliveryType = (JSONObject) object;
+          if (deliveryType.optString("name") instanceof String && deliveryType.optString("name").contains("TRADICIONAL")) {
+            this.storeId = deliveryType.optString("storeid");
+            break;
+          }
         }
       }
     }
   }
 
+  /**
+   * @see Infers classes' fields by reflection
+   */
   private void inferFields() {
     String className = this.getClass().getSimpleName().toLowerCase();
     if (className.contains("paodeacucar")) {
@@ -108,20 +118,31 @@ public class GPACrawler extends Crawler {
       Double priceFrom = available ? crawlPriceFrom(jsonSku) : null;
       String primaryImage = crawlPrimaryImage(jsonSku);
       String name = crawlName(jsonSku);
+      RatingsReviews ratingsReviews = extractRatingAndReviews(jsonSku);
       String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
       Prices prices = crawlPrices(price, priceFrom);
       Integer stock = null;
-
-      // Pid não sendo null, o produto não está void
       if (internalPid != null && session.getRedirectedToURL(productUrl) != null) {
         productUrl = session.getRedirectedToURL(productUrl);
       }
 
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(productUrl)
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setRatingReviews(ratingsReviews)
+          .setMarketplace(new Marketplace()).build();
 
       products.add(product);
 
@@ -499,5 +520,119 @@ public class GPACrawler extends Crawler {
     }
 
     return productsInfo;
+  }
+
+  /**
+   * Number of ratings appear in key rating in json
+   * 
+   * @param docRating
+   * @return
+   */
+  private Integer getTotalNumOfReviews(JSONObject rating) {
+    Integer totalReviews = 0;
+
+    if (rating.has("rating")) {
+      JSONObject ratingValues = rating.getJSONObject("rating");
+
+      totalReviews = 0;
+
+      for (int i = 1; i <= ratingValues.length(); i++) {
+        if (ratingValues.has(Integer.toString(i))) {
+          totalReviews += ratingValues.getInt(Integer.toString(i));
+        }
+      }
+    }
+    return totalReviews;
+  }
+
+  /**
+   * Number of ratings appear in key rating in json
+   * 
+   * @param docRating
+   * @return
+   */
+  private Integer getTotalNumOfRatings(JSONObject rating) {
+    return rating.getInt("total");
+  }
+
+  private boolean isProductPage(String url) {
+    return url.contains(this.homePageHttps + "produto/");
+  }
+
+  protected RatingsReviews extractRatingAndReviews(JSONObject rating) throws Exception {
+    RatingsReviews ratingReviews = new RatingsReviews();
+
+    if (isProductPage(session.getOriginalURL())) {
+
+      ratingReviews.setDate(session.getDate());
+      Integer totalNumOfEvaluations = getTotalNumOfRatings(rating);
+      Integer totalReviews = getTotalNumOfReviews(rating);
+      Double avgRating = getTotalAvgRating(rating);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalReviews);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setInternalId(crawlInternalId(session.getOriginalURL()));
+
+      AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(rating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    }
+    return ratingReviews;
+  }
+
+  public static AdvancedRatingReview getTotalStarsFromEachValue(JSONObject rating) {
+    Integer star1 = 0;
+    Integer star2 = 0;
+    Integer star3 = 0;
+    Integer star4 = 0;
+    Integer star5 = 0;
+
+    if (rating.has("rating")) {
+
+      JSONObject histogram = rating.getJSONObject("rating");
+
+      if (histogram.has("1") && histogram.get("1") instanceof Integer) {
+        star1 = histogram.getInt("1");
+      }
+
+      if (histogram.has("2") && histogram.get("2") instanceof Integer) {
+        star2 = histogram.getInt("2");
+      }
+
+      if (histogram.has("3") && histogram.get("3") instanceof Integer) {
+        star3 = histogram.getInt("3");
+      }
+
+      if (histogram.has("4") && histogram.get("4") instanceof Integer) {
+        star4 = histogram.getInt("4");
+      }
+
+      if (histogram.has("5") && histogram.get("5") instanceof Integer) {
+        star5 = histogram.getInt("5");
+      }
+    }
+
+    return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
+  }
+
+
+  private String crawlInternalId(String productUrl) {
+    return CommonMethods.getLast(productUrl.replace(this.homePageHttps, "").split("produto/")).split("/")[0];
+  }
+
+  /**
+   * Average is in html element
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(JSONObject rating) {
+    Double avgRating = 0D;
+
+    if (rating.has("average") && !rating.get("average").toString().equalsIgnoreCase("nan")) {
+      avgRating = rating.getDouble("average");
+    }
+
+    return avgRating;
   }
 }

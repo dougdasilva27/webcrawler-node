@@ -5,10 +5,10 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GPACrawler;
 
 public class CuritibaPaodeacucarCrawler extends GPACrawler {
 
-  private static final String CEP = "80010-080";
+  private static final String CEP1 = "80010-080";
 
   public CuritibaPaodeacucarCrawler(Session session) {
     super(session);
-    this.cep = CEP;
+    this.cep = CEP1;
   }
 }
