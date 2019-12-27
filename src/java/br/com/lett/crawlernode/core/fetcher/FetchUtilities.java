@@ -370,7 +370,7 @@ public class FetchUtilities {
                   .put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress())).put("user_agent", userAgent).put("req_method", method)
                   .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status);
 
-      Logging.logDebug(logger, session, requestMetadata, "[ATTEMPT ][REQUEST INFORMATION] " + request.getUrl());
+      Logging.logDebug(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
    }
 
    public static void sendRequestInfoLog(int attempt, Request request, Response response, String proxy, String method, String userAgent, Session session,
@@ -380,7 +380,7 @@ public class FetchUtilities {
             .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
             .put("res_http_code", status);
 
-      Logging.logDebug(logger, session, requestMetadata, "[REQUEST INFORMATION] " + request.getUrl());
+      Logging.logDebug(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
    }
 
    public static class TrustManager implements X509TrustManager {
