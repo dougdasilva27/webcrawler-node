@@ -104,13 +104,13 @@ public class ApacheDataFetcher implements DataFetcher {
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
             if (randProxy != null) {
-               Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + " (proxy) for this request.");
+               Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Using " + randProxy.getSource() + " (proxy) for this request.");
                if (randProxy.getUser() != null) {
                   credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
                         new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
-               Logging.printLogWarn(logger, session, "Using no proxy for this request.");
+               Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "]Using no proxy for this request.");
             }
 
             List<Header> reqHeaders = new ArrayList<>();
@@ -231,7 +231,7 @@ public class ApacheDataFetcher implements DataFetcher {
             FetchUtilities.sendRequestInfoLog(attempt, request, response, randProxy, method, randUserAgent, session, code, requestHash);
             requestStats.setHasPassedValidation(false);
 
-            Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing " + method + " request. Error: " + e.getMessage());
+            Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "] Error performing " + method + " request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
