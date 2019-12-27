@@ -18,127 +18,127 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 
 public class Logging {
 
-  private static final String VERSION = new Version().getVersion();
+   private static final String VERSION = new Version().getVersion();
 
-  private static final String METADATA_TAG = "[METADATA]";
+   private static final String METADATA_TAG = "[METADATA]";
 
-  private Logging() {
-    super();
-  }
+   private Logging() {
+      super();
+   }
 
-  /* INFO */
-  public static void printLogInfo(Logger logger, String msg) {
-    printLogInfo(logger, null, msg);
-  }
+   /* INFO */
+   public static void printLogInfo(Logger logger, String msg) {
+      printLogInfo(logger, null, msg);
+   }
 
-  public static void printLogInfo(Logger logger, Session session, String msg) {
-    logInfo(logger, session, null, msg);
-  }
+   public static void printLogInfo(Logger logger, Session session, String msg) {
+      logInfo(logger, session, null, msg);
+   }
 
-  public static void logInfo(Logger logger, Session session, JSONObject metadata, String msg) {
-    logger.info(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
-  }
+   public static void logInfo(Logger logger, Session session, JSONObject metadata, String msg) {
+      logger.info(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
+   }
 
-  /* ERROR */
-  public static void printLogError(Logger logger, String msg) {
-    printLogError(logger, null, msg);
-  }
+   /* ERROR */
+   public static void printLogError(Logger logger, String msg) {
+      printLogError(logger, null, msg);
+   }
 
-  public static void printLogError(Logger logger, Session session, String msg) {
-    logError(logger, session, null, msg);
-  }
+   public static void printLogError(Logger logger, Session session, String msg) {
+      logError(logger, session, null, msg);
+   }
 
-  public static void logError(Logger logger, Session session, JSONObject metadata, String msg) {
-    logger.error(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
-  }
-
-
-  /* DEBUG */
-  public static void printLogDebug(Logger logger, String msg) {
-    printLogDebug(logger, null, msg);
-  }
-
-  public static void printLogDebug(Logger logger, Session session, String msg) {
-    logDebug(logger, session, null, msg);
-  }
-
-  public static void logDebug(Logger logger, Session session, JSONObject metadata, String msg) {
-    logger.debug(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
-  }
+   public static void logError(Logger logger, Session session, JSONObject metadata, String msg) {
+      logger.error(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
+   }
 
 
-  /* WARN */
-  public static void printLogWarn(Logger logger, String msg) {
-    printLogWarn(logger, null, msg);
-  }
+   /* DEBUG */
+   public static void printLogDebug(Logger logger, String msg) {
+      printLogDebug(logger, null, msg);
+   }
 
-  public static void printLogWarn(Logger logger, Session session, String msg) {
-    logWarn(logger, session, null, msg);
-  }
+   public static void printLogDebug(Logger logger, Session session, String msg) {
+      logDebug(logger, session, null, msg);
+   }
 
-  public static void logWarn(Logger logger, Session session, JSONObject metadata, String msg) {
-    logger.warn(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
-  }
-
-
-  /* TRACE */
-  public static void printLogTrace(Logger logger, String msg) {
-    printLogTrace(logger, null, msg);
-  }
-
-  public static void printLogTrace(Logger logger, Session session, String msg) {
-    logTrace(logger, session, null, msg);
-  }
-
-  public static void logTrace(Logger logger, Session session, JSONObject metadata, String msg) {
-    logger.warn(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
-  }
+   public static void logDebug(Logger logger, Session session, JSONObject metadata, String msg) {
+      logger.debug(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
+   }
 
 
-  private static JSONObject createMetadata(JSONObject metadata, Session session) {
-    if (!(metadata instanceof JSONObject)) {
-      metadata = new JSONObject();
-    }
+   /* WARN */
+   public static void printLogWarn(Logger logger, String msg) {
+      printLogWarn(logger, null, msg);
+   }
 
-    metadata.put("version", VERSION);
+   public static void printLogWarn(Logger logger, Session session, String msg) {
+      logWarn(logger, session, null, msg);
+   }
 
-    if (session != null) {
-      metadata.put("city", session.getMarket().getCity());
-      metadata.put("market", session.getMarket().getName());
-      metadata.put("market_id", session.getMarket().getNumber());
+   public static void logWarn(Logger logger, Session session, JSONObject metadata, String msg) {
+      logger.warn(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
+   }
 
 
-      String originalUrl = session.getOriginalURL();
-      if (originalUrl != null) {
-        metadata.put("url", originalUrl);
+   /* TRACE */
+   public static void printLogTrace(Logger logger, String msg) {
+      printLogTrace(logger, null, msg);
+   }
+
+   public static void printLogTrace(Logger logger, Session session, String msg) {
+      logTrace(logger, session, null, msg);
+   }
+
+   public static void logTrace(Logger logger, Session session, JSONObject metadata, String msg) {
+      logger.warn(sanitizeMessage(msg) + " " + METADATA_TAG + createMetadata(metadata, session).toString());
+   }
+
+
+   private static JSONObject createMetadata(JSONObject metadata, Session session) {
+      if (!(metadata instanceof JSONObject)) {
+         metadata = new JSONObject();
       }
 
-      metadata.put("session", session.getSessionId());
-      metadata.put("session_type", session.getClass().getSimpleName());
-      metadata.put("env", GlobalConfigurations.executionParameters.getEnvironment());
+      metadata.put("version", VERSION);
 
-      if (session instanceof RankingKeywordsSession) {
-        metadata.put("location", ((RankingKeywordsSession) session).getLocation());
+      if (session != null) {
+         metadata.put("city", session.getMarket().getCity());
+         metadata.put("market", session.getMarket().getName());
+         metadata.put("market_id", session.getMarket().getNumber());
+
+
+         String originalUrl = session.getOriginalURL();
+         if (originalUrl != null) {
+            metadata.put("url", originalUrl);
+         }
+
+         metadata.put("session", session.getSessionId());
+         metadata.put("session_type", session.getClass().getSimpleName());
+         metadata.put("env", GlobalConfigurations.executionParameters.getEnvironment());
+
+         if (session instanceof RankingKeywordsSession) {
+            metadata.put("location", ((RankingKeywordsSession) session).getLocation());
+         }
       }
-    }
 
-    return metadata;
-  }
+      return metadata;
+   }
 
-  /**
-   * Sanitize message before logging then
-   * 
-   * @param msg
-   */
-  public static String sanitizeMessage(String msg) {
-    if (msg == null) {
-      return "";
-    } else {
-      msg = Normalizer.normalize(msg, Normalizer.Form.NFD);
-      msg = msg.replaceAll("[^\\p{ASCII}]", "").trim();
+   /**
+    * Sanitize message before logging then
+    * 
+    * @param msg
+    */
+   public static String sanitizeMessage(String msg) {
+      if (msg == null) {
+         return "";
+      } else {
+         msg = Normalizer.normalize(msg, Normalizer.Form.NFD);
+         msg = msg.replaceAll("[^\\p{ASCII}]", "").trim();
 
-      return msg;
-    }
-  }
+         return msg;
+      }
+   }
 
 }
