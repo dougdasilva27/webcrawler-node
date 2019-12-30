@@ -33,6 +33,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
    public BrasilMadeiramadeiraCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
