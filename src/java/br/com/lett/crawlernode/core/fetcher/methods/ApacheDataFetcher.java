@@ -283,11 +283,23 @@ public class ApacheDataFetcher implements DataFetcher {
                reqHeaders.add(new BasicHeader(mapEntry.getKey(), mapEntry.getValue()));
             }
 
+            // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
+            // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
+            // verification to happen the capture
+            HostnameVerifier hostNameVerifier = new HostnameVerifier() {
+               @Override
+               public boolean verify(String hostname, SSLSession session) {
+                  return true;
+               }
+            };
+
+
             HttpHost proxy = randProxy != null ? new HttpHost(randProxy.getAddress(), randProxy.getPort()) : null;
             RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
 
             CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
-                  .setDefaultRequestConfig(requestConfig).setDefaultHeaders(reqHeaders).setDefaultCredentialsProvider(credentialsProvider).build();
+                  .setDefaultRequestConfig(requestConfig).setDefaultHeaders(reqHeaders).setSSLHostnameVerifier(hostNameVerifier)
+                  .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory()).setDefaultCredentialsProvider(credentialsProvider).build();
 
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -326,6 +338,7 @@ public class ApacheDataFetcher implements DataFetcher {
          } catch (Exception e) {
             int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
             Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + e.getMessage());
+
             FetchUtilities.sendRequestInfoLog(attempt, request, null, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
 
             if (localFile != null && localFile.exists()) {
