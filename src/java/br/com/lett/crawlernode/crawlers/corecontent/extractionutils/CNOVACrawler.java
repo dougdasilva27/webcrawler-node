@@ -345,7 +345,7 @@ public abstract class CNOVACrawler extends Crawler {
       String secondaryImages = null;
       JSONArray secondaryImagesArray = new JSONArray();
 
-      Elements elements = doc.select(".carouselBox .thumbsImg li a");
+      Elements elements = doc.select(".carouselBox .thumbsImg li:not(:first-child) a");
 
       for (Element imageElement : elements) {
 
