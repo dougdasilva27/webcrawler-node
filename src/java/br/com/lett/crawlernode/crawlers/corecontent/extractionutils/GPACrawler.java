@@ -553,7 +553,7 @@ public class GPACrawler extends Crawler {
     * @return
     */
    private Integer getTotalNumOfRatings(JSONObject rating) {
-      return rating.getInt("total");
+      return JSONUtils.getIntegerValueFromJSON(rating, "total", 0);
    }
 
    private boolean isProductPage(String url) {
@@ -628,12 +628,7 @@ public class GPACrawler extends Crawler {
     * @return
     */
    private Double getTotalAvgRating(JSONObject rating) {
-      Double avgRating = 0D;
-
-      if (rating.has("average") && !rating.get("average").toString().equalsIgnoreCase("nan")) {
-         avgRating = rating.getDouble("average");
-      }
-
-      return avgRating;
+      Double avgRating = JSONUtils.getDoubleValueFromJSON(rating, "average", true);
+      return avgRating != null ? avgRating : 0d;
    }
 }
