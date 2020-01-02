@@ -19,10 +19,12 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
@@ -79,16 +81,30 @@ public class SaopauloAraujoCrawler extends Crawler {
         Prices prices = crawlPrices(internalId, price, jsonSku);
         Integer stock = crawlStock(jsonProduct);
         String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
-
+        RatingsReviews ratingReviews = crawlRating(doc, skuJson.optString("productId"));
         List<String> eans = new ArrayList<>();
         eans.add(ean);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
-
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setRatingReviews(ratingReviews)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setEans(eans)
+            .build();
         products.add(product);
       }
 
@@ -97,6 +113,11 @@ public class SaopauloAraujoCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private RatingsReviews crawlRating(Document doc, String id) {
+    TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "78444", logger);
+    return trustVox.extractRatingAndReviews(id, doc, dataFetcher);
   }
 
   /*******************************
