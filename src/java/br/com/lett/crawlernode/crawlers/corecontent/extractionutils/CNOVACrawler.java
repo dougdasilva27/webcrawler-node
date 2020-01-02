@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -262,9 +263,10 @@ public abstract class CNOVACrawler extends Crawler {
           * crawling data of only one product in page
           */
          else {
-            String internalIdSecondPart = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ctl00_Conteudo_hdnIdSkuSelecionado", "value");
-            String internalId = internalPid + "-" + internalIdSecondPart;
-            Document docMarketplace = fetchDocumentMarketPlace(internalIdSecondPart, modifiedURL);
+            JSONObject metadataJSON = CrawlerUtils.selectJsonFromHtml(doc, "script", "varsiteMetadata=", ";", true, true);
+            String idSKU = scrapSkuIdForSingleProductPage(metadataJSON);
+            String internalId = internalPid + (idSKU != null ? "-" + idSKU : "");
+            Document docMarketplace = fetchDocumentMarketPlace(idSKU, modifiedURL);
             Map<String, Prices> marketplaceMap = crawlMarketplaces(docMarketplace, doc);
             Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, sellersNameList, Card.VISA, session);
             boolean available = !unnavailableForAll && CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, sellersNameList);
@@ -306,6 +308,20 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapSkuIdForSingleProductPage(JSONObject metadata) {
+      String skuId = null;
+
+      JSONObject page = metadata.optJSONObject("page");
+      if (page != null) {
+         JSONObject product = page.optJSONObject("product");
+         if (product != null) {
+            skuId = product.optString("idSku", null);
+         }
+      }
+
+      return skuId;
    }
 
    private String scrapPrimaryImage(Document doc) {
