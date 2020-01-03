@@ -212,6 +212,7 @@ public class BrasilDicasaCrawler extends Crawler {
       if (bankTicketPriceElement != null) {
         bankTicketPrice = MathUtils.parseDoubleWithComma(bankTicketPriceElement.text());
       }
+      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.content > div > del", null, false, ',', session));
 
       prices.setBankTicketPrice(bankTicketPrice);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
