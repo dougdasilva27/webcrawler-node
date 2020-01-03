@@ -20,7 +20,7 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilSempreemcasaCrawler extends Crawler {
-  
+
   private static final String IMAGES_HOST = "cdn.shopify.com";
   private static final String HOME_PAGE = "sempreemcasa.com.br";
 
@@ -41,7 +41,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
       String primaryImage =
           CrawlerUtils.scrapSimplePrimaryImage(productItem, ".product-item__img img", Arrays.asList("data-src"), "https", IMAGES_HOST);
       String name = CrawlerUtils.scrapStringSimpleInfo(productItem, ".product-item__title-text", false);
-
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.container > div.product-item__img > div"));
       Elements variations = productItem.select(".product-item__variants-item[data-variant]");
       for (Element e : variations) {
         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "data-id");
@@ -59,8 +59,10 @@ public class BrasilSempreemcasaCrawler extends Crawler {
         // Creating the product
         Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
-            .setInternalId(internalId).setInternalPid(internalPid)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
             .setName(nameVariation)
+            .setDescription(description)
             .setPrice(price)
             .setPrices(prices)
             .setAvailable(available)
@@ -70,11 +72,11 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setMarketplace(new Marketplace())
             .build();
-        
+
         // Fixing wrong urls on postgres
-        if(session.getOriginalURL().contains("/search?q=")) {
+        if (session.getOriginalURL().contains("/search?q=")) {
           String fullUrl = CrawlerUtils.scrapUrl(doc, "#PID" + internalPid + " > a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
-          if(fullUrl != null) {
+          if (fullUrl != null) {
             product.setUrl(fullUrl.split("\\?")[0]);
           }
         }
