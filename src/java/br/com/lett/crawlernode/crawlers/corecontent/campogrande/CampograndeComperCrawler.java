@@ -29,7 +29,6 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
@@ -104,7 +103,7 @@ public class CampograndeComperCrawler extends Crawler {
       String name = crawlName(productJson);
       boolean available = crawlAvailability(productJson);
       Float price = available ? crawlPrice(productJson) : null;
-      Prices prices = available ? crawlPrices(price, doc) : new Prices();
+      Prices prices = available ? crawlPrices(price, productJson) : new Prices();
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".images .thumbs li[style~=block] img", Arrays.asList("src"), "https",
@@ -253,23 +252,20 @@ public class CampograndeComperCrawler extends Crawler {
   /**
    * In this market, installments not appear in product page
    * 
-   * @param doc
+   * @param productJson
    * @param price
    * @return
    */
-  private Prices crawlPrices(Float price, Document doc) {
+  private Prices crawlPrices(Float price, JSONObject productJson) {
     Prices prices = new Prices();
 
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
       installmentPriceMap.put(1, price);
-      // prices.setBankTicketPrice(price);
 
-      Element priceFrom = doc.select("#lblPreco.price-from").first();
-      if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
-      }
+      double priceFrom = !Double.isNaN(productJson.optDouble("RKProductOffer")) ? productJson.optDouble("RKProductOffer") + price : null;
+      prices.setPriceFrom(priceFrom);
 
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
