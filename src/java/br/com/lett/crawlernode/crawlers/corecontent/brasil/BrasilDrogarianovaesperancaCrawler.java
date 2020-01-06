@@ -96,10 +96,10 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
          Prices prices = crawlPrices(price, internalId, doc);
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = crawlPrimaryImage(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#thumbs-produto div a", Arrays.asList("data-image"), "https", "www.drogarianovaesperanca.com.br/");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
                "#thumbs-produto div a",
-               Arrays.asList("rel"), "https", "www.drogarianovaesperanca.com.br/", primaryImage);
+               Arrays.asList("data-image"), "https", "www.drogarianovaesperanca.com.br/", primaryImage);
          String description = crawlDescription(doc);
          Integer stock = null;
          Marketplace marketplace = crawlMarketplace();
@@ -169,17 +169,6 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
    private Marketplace crawlMarketplace() {
       return new Marketplace();
-   }
-
-   private String crawlPrimaryImage(Document doc) {
-      String primaryImage = null;
-      Element elementPrimaryImage = doc.select("#imgProduto").first();
-
-      if (elementPrimaryImage != null) {
-         primaryImage = elementPrimaryImage.attr("src");
-      }
-
-      return primaryImage;
    }
 
    /**
