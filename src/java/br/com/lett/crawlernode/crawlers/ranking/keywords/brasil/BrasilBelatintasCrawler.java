@@ -35,11 +35,11 @@ public class BrasilBelatintasCrawler extends CrawlerRankingKeywords {
             String internalId = scrapId(e);
             String productUrl = CrawlerUtils.scrapUrl(e, ".spotContent > a", "href", "https", HOST);
 
-            saveDataProduct(null, internalId, productUrl);
+            saveDataProduct(internalId, null, productUrl);
 
             this.log(
                   "Position: " + this.position +
-                        " - InternalPid: " + internalId +
+                        " - InternalId: " + internalId +
                         " - Url: " + productUrl
             );
 
