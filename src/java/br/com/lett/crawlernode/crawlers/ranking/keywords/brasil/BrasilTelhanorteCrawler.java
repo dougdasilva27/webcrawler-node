@@ -9,88 +9,87 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilTelhanorteCrawler extends CrawlerRankingKeywords {
 
-  public BrasilTelhanorteCrawler(Session session) {
-    super(session);
-  }
+   public BrasilTelhanorteCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 20;
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 20;
 
-    this.log("Página " + this.currentPage);
+      this.log("Página " + this.currentPage);
 
-    String url = "https://busca.telhanorte.com.br/searchapi/v3/search?apikey=telhanorte&page=" + this.currentPage + "&salesChannel=1" + "&terms="
-        + this.keywordWithoutAccents.replace(" ", "%20");
-    this.log("Link onde são feitos os crawlers: " + url);
+      String url = "https://api.linximpulse.com/engage/search/v3/search?terms=" + this.keywordEncoded + "&origin=&apiKey=telhanorte&salesChannel=1&sortBy=relevance&showOnlyAvailable=true";
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    Map<String, String> headers = new HashMap<>();
-    headers.put("origin", "https://www.telhanorte.com.br");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("origin", "https://www.telhanorte.com.br");
 
-    JSONObject json = new JSONObject(fetchGetFetcher(url, null, headers, null));
+      JSONObject json = new JSONObject(fetchGetFetcher(url, null, headers, null));
 
-    if (json.has("products") && json.get("products") instanceof JSONArray) {
-      JSONArray products = json.getJSONArray("products");
+      if (json.has("products") && json.get("products") instanceof JSONArray) {
+         JSONArray products = json.getJSONArray("products");
 
-      if (products.length() >= 1) {
-        if (this.totalProducts == 0) {
-          setTotalBusca(json);
-        }
+         if (products.length() >= 1) {
+            if (this.totalProducts == 0) {
+               setTotalBusca(json);
+            }
 
-        for (Object o : products) {
-          JSONObject jsonProduct = (JSONObject) o;
+            for (Object o : products) {
+               JSONObject jsonProduct = (JSONObject) o;
 
-          String internalPid = getInternalPid(jsonProduct);
-          String productUrl = getUrl(jsonProduct);
-          saveDataProduct(null, internalPid, productUrl);
+               String internalPid = getInternalPid(jsonProduct);
+               String productUrl = getUrl(jsonProduct);
+               saveDataProduct(null, internalPid, productUrl);
 
-          this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-          if (this.arrayProducts.size() == productsLimit) {
-            break;
-          }
-        }
-      } else {
-        this.result = false;
-        this.log("Keyword sem resultado!");
+               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
+            }
+         } else {
+            this.result = false;
+            this.log("Keyword sem resultado!");
+         }
       }
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-  private String getInternalPid(JSONObject product) {
-    String pid = null;
+   private String getInternalPid(JSONObject product) {
+      String pid = null;
 
-    if (product.has("id")) {
-      pid = product.get("id").toString();
-    }
-
-    return pid;
-  }
-
-  private String getUrl(JSONObject product) {
-    String url = null;
-
-    if (product.has("url")) {
-      url = product.get("url").toString();
-
-      if (!url.startsWith("http") && url.contains("telhanorte")) {
-        url = "https:" + url;
-      } else if (!url.contains("telhanorte")) {
-        url = "https://www.telhanorte.com.br" + url;
+      if (product.has("id")) {
+         pid = product.get("id").toString();
       }
-    }
 
-    return url;
-  }
+      return pid;
+   }
 
-  private void setTotalBusca(JSONObject json) {
-    try {
-      if (json.has("size")) {
-        this.totalProducts = json.getInt("size");
+   private String getUrl(JSONObject product) {
+      String url = null;
+
+      if (product.has("url")) {
+         url = product.get("url").toString();
+
+         if (!url.startsWith("http") && url.contains("telhanorte")) {
+            url = "https:" + url;
+         } else if (!url.contains("telhanorte")) {
+            url = "https://www.telhanorte.com.br" + url;
+         }
       }
-    } catch (Exception e) {
-      this.logError(e.getMessage() + " Erro ao parsear jsonTotal");
-    }
-    this.log("Total da busca: " + this.totalProducts);
-  }
+
+      return url;
+   }
+
+   private void setTotalBusca(JSONObject json) {
+      try {
+         if (json.has("size")) {
+            this.totalProducts = json.getInt("size");
+         }
+      } catch (Exception e) {
+         this.logError(e.getMessage() + " Erro ao parsear jsonTotal");
+      }
+      this.log("Total da busca: " + this.totalProducts);
+   }
 }
