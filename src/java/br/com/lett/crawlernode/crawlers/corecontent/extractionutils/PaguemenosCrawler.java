@@ -22,6 +22,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
   public PaguemenosCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   private static final String HOME_PAGE = "https://www.paguemenos.com.br/";

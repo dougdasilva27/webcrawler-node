@@ -34,6 +34,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
   public BelohorizonteSupernossoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
