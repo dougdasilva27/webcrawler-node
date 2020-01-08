@@ -28,6 +28,7 @@ public class PeruMetroCrawler extends Crawler {
 
    public PeruMetroCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    private static final String HOME_PAGE = "https://www.metro.pe/";
