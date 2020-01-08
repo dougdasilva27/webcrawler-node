@@ -26,7 +26,7 @@ public class BrasilCarrefourCrawler extends CrawlerRankingKeywords {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
-      String url = "https://busca.carrefour.com.br/busca?q=ninho" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = "https://busca.carrefour.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = Jsoup.parse(fetchPage(url));
