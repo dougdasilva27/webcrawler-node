@@ -14,9 +14,11 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.VtexRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -32,6 +34,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
   public BelohorizonteSupernossoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -39,7 +42,6 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
     String href = this.session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
-
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
@@ -77,6 +79,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
+        RatingsReviews ratingReviews = crawlRating(doc, internalId);
 
         List<String> eans = new ArrayList<>();
         eans.add(ean);
@@ -89,6 +92,7 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
             .setName(name)
             .setPrice(price)
             .setPrices(prices)
+            .setRatingReviews(ratingReviews)
             .setAvailable(available)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
@@ -109,6 +113,11 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private RatingsReviews crawlRating(Document document, String id) {
+    return new VtexRatingCrawler(session, HOME_PAGE, logger, cookies)
+        .extractRatingAndReviews(id, document, dataFetcher);
   }
 
 
