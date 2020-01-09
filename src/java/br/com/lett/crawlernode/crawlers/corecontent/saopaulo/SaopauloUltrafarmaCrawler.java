@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class SaopauloUltrafarmaCrawler extends Crawler {
@@ -104,10 +105,23 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
       String secondaryImages = scrapSecondaryImages(images);
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setRatingReviews(crawlRatingReviews(doc))
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
@@ -221,6 +235,25 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
     return prices;
   }
 
+  private RatingsReviews crawlRatingReviews(Document doc) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    Integer totalReviews = computeTotalReviewsCount(doc);
+
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setTotalRating(totalReviews);
+    ratingReviews.setTotalWrittenReviews(totalReviews);
+    ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
+
+    return ratingReviews;
+  }
+
+  private Integer computeTotalReviewsCount(Document doc) {
+    return doc.select("#reviews > blockquote").size();
+  }
+
+  private Double crawlAverageOverallRating(Document doc) {
+    return CrawlerUtils.scrapDoublePriceFromHtml(doc, "p > em:nth-child(1)", null, false, ',', session);
+  }
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".product") != null;
