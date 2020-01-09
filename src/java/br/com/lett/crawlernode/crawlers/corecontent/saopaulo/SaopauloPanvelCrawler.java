@@ -17,7 +17,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class SaopauloPanvelCrawler extends Crawler {
@@ -27,6 +29,8 @@ public class SaopauloPanvelCrawler extends Crawler {
 
    public SaopauloPanvelCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
+
    }
 
    @Override
@@ -60,6 +64,7 @@ public class SaopauloPanvelCrawler extends Crawler {
          String name = crawlName(productJson, dataLayer);
          Float price = available ? crawlPrice(productJson, dataLayer) : null;
          Prices prices = crawlPrices(price, productJson, dataLayer);
+         RatingsReviews ratingReviews = crawlRatingsReviews(doc, internalId);
          String url = internalId != null ? CrawlerUtils.getRedirectedUrl(session.getOriginalURL(), session) : session.getOriginalURL();
 
          // Creating the product
@@ -78,6 +83,7 @@ public class SaopauloPanvelCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setMarketplace(new Marketplace())
+               .setRatingReviews(ratingReviews)
                .build();
 
          products.add(product);
@@ -147,6 +153,39 @@ public class SaopauloPanvelCrawler extends Crawler {
       }
 
       return internalId;
+   }
+
+   private RatingsReviews crawlRatingsReviews(Document doc, String internalId) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      ratingReviews.setDate(session.getDate());
+
+      Integer commentsNumber = crawlCommentsNumber(doc);
+
+      ratingReviews.setTotalRating(commentsNumber);
+      ratingReviews.setTotalWrittenReviews(commentsNumber);
+      ratingReviews.setAverageOverallRating(crawlTotalRating(doc, commentsNumber));
+
+      return ratingReviews;
+   }
+
+   private Double crawlTotalRating(Document document, Integer commentsNumber) {
+      Double stars = 0d;
+
+      if (commentsNumber > 0) {
+         Double values = 0d;
+         Elements comments = document.select(".box-comment .comment-title__rating");
+         for (Element e : comments) {
+            values += e.select("i.active").size();
+         }
+
+         stars = MathUtils.normalizeTwoDecimalPlaces(values / commentsNumber);
+      }
+      return stars;
+   }
+
+   private Integer crawlCommentsNumber(Document doc) {
+      return doc.select(".box-comment").size();
    }
 
    private String crawlName(JSONObject product, JSONObject dataLayer) {
