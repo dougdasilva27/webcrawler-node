@@ -20,9 +20,12 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class RibeiraopretoSavegnagoCrawler extends Crawler {
@@ -37,6 +40,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
    public RibeiraopretoSavegnagoCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -113,6 +117,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
             Float price = vtexUtil.crawlMainPagePrice(prices);
             Integer stock = vtexUtil.crawlStock(apiJSON);
             String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
+            RatingsReviews ratingReviews = crawlRatingReviews(internalId);
 
             List<String> eans = new ArrayList<>();
             eans.add(ean);
@@ -121,7 +126,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
                   .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-                  .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+                  .setStock(stock).setMarketplace(marketplace).setEans(eans).setRatingReviews(ratingReviews).build();
 
             products.add(product);
          }
@@ -136,6 +141,27 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
    private boolean isProductPage(Document document) {
       return document.selectFirst(".productName") != null;
+   }
+
+   private RatingsReviews crawlRatingReviews(String internalId) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      YourreviewsRatingCrawler yr = new YourreviewsRatingCrawler(session, cookies, logger, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
+      Document docRating = yr.crawlPageRatingsFromYourViews(internalId, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
+
+      Integer totalNumOfEvaluations = yr.getTotalNumOfRatingsFromYourViews(docRating);
+      Double avgRating = yr.getTotalAvgRatingFromYourViews(docRating);
+      AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalId);
+
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      System.err.println(ratingReviews);
+
+      return ratingReviews;
+
    }
 
    private String scrapDescription(Document doc, String internalId) {
