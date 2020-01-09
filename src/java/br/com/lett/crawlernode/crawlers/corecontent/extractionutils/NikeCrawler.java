@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class NikeCrawler extends Crawler {
@@ -31,6 +32,7 @@ public class NikeCrawler extends Crawler {
   public NikeCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.APACHE);
+    super.config.setMustSendRatingToKinesis(true);
 
     defaultHeaders = new HashMap<>();
     defaultHeaders.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
@@ -86,11 +88,22 @@ public class NikeCrawler extends Crawler {
             String internalId = sku.getString("id");
             String skuId = sku.has("skuId") ? sku.getString("skuId") : null;
             boolean available = getAvailability(availableSkus, skuId);
+            RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
 
             // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-                .setName(skuName).setPrice(price).setPrices(prices).setDescription(description).setPrimaryImage(primaryImage)
-                .setSecondaryImages(secondaryImages).setAvailable(available).build();
+            Product product = ProductBuilder.create()
+                .setUrl(session.getOriginalURL())
+                .setInternalId(internalId)
+                .setInternalPid(internalPid)
+                .setRatingReviews(ratingsReviews)
+                .setName(skuName)
+                .setPrice(price)
+                .setPrices(prices)
+                .setDescription(description)
+                .setPrimaryImage(primaryImage)
+                .setSecondaryImages(secondaryImages)
+                .setAvailable(available)
+                .build();
 
             products.add(product);
           }
@@ -200,6 +213,26 @@ public class NikeCrawler extends Crawler {
     }
 
     return available;
+  }
+
+  protected RatingsReviews scrapRatingAndReviews(Document doc, String internalId) {
+
+    Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.INITIAL_REDUX_STATE=", ";", false, true);
+    JSONObject reviewsJson = json.has("reviews") ? json.getJSONObject("reviews") : new JSONObject();
+
+    Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(reviewsJson, "total", 0);
+    Double avgRating = CrawlerUtils.getDoubleValueFromJSON(reviewsJson, "averageRating", true, null);
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating == null ? 0D : avgRating);
+
+    return ratingReviews;
   }
 
 }
