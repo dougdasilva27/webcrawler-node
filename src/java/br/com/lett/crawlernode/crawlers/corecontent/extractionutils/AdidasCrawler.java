@@ -20,6 +20,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class AdidasCrawler extends Crawler {
@@ -49,8 +51,11 @@ public class AdidasCrawler extends Crawler {
       JSONObject pricingInformation = productJson.has("pricing_information") ? productJson.getJSONObject("pricing_information") : new JSONObject();
       JSONObject available = CrawlerUtils.stringToJson(fetchApi(apiUrl + "/availability"));
       JSONArray variations = available.has("variation_list") ? available.getJSONArray("variation_list") : new JSONArray();
-
       String internalPid = scrapInternalPid(productJson);
+      String ratingUrl = homePage + "/api/models/" + internalPid + "/ratings";
+
+      JSONObject ratingJson = CrawlerUtils.stringToJson(fetchApi(ratingUrl));
+
       Float price = scrapPrice(pricingInformation);
       Prices prices = scrapPrices(pricingInformation, price);
       CategoryCollection categories = scrapCategories(productJson);
@@ -64,12 +69,26 @@ public class AdidasCrawler extends Crawler {
         Integer stock = variation.has("availability") ? variation.getInt("availability") : null;
         boolean availability = scrapAvailability(variation);
         String internalId = scrapInternalId(variation);
+        RatingsReviews ratingAndReviews = scrapRatingAndReviews(internalId, available, variation, ratingJson);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-            .setPrice(price).setPrices(prices).setAvailable(availability).setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(null).build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(availability)
+            .setCategory1(categories.getCategory(0))
+            .setRatingReviews(ratingAndReviews)
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .build();
 
         products.add(product);
       }
@@ -154,12 +173,14 @@ public class AdidasCrawler extends Crawler {
   }
 
   private Float scrapPrice(JSONObject pricingInformation) {
-    return pricingInformation.has("currentPrice") ? MathUtils.parseFloatWithDots(pricingInformation.get("currentPrice").toString()) : null;
+    return pricingInformation.has("currentPrice") ? MathUtils
+        .parseFloatWithDots(pricingInformation.get("currentPrice").toString()) : null;
   }
 
   private Prices scrapPrices(JSONObject pricingInformation, Float price) {
     Prices prices = new Prices();
-    prices.setPriceFrom(pricingInformation.has("standard_price") ? CrawlerUtils.getDoubleValueFromJSON(pricingInformation, "standard_price") : null);
+    prices.setPriceFrom(pricingInformation.has("standard_price") ? CrawlerUtils
+        .getDoubleValueFromJSON(pricingInformation, "standard_price", true, null) : null);
 
     Map<Integer, Float> installmentPriceMap = new HashMap<>();
     installmentPriceMap.put(1, price);
@@ -203,7 +224,7 @@ public class AdidasCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".pdpBar  > div[data-auto-id=\"product-information\"]") != null;
+    return doc.selectFirst(".pdpBar > div[data-auto-id=\"product-information\"]") != null;
   }
 
   private String fetchApi(String url) {
@@ -218,5 +239,57 @@ public class AdidasCrawler extends Crawler {
     return new JavanetDataFetcher().get(session, request).getBody();
   }
 
+  protected RatingsReviews scrapRatingAndReviews(String internalId, JSONObject available, JSONObject variation, JSONObject ratingJson) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
 
+    Integer totalNumOfEvaluations = getTotalNumOfRatings(ratingJson);
+    Double avgRating = getTotalAvgRating(ratingJson);
+
+    Map<Integer, Integer> stars = getStars(ratingJson);
+    AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+
+    advancedRatingReview.setTotalStar1(stars.get(1));
+    advancedRatingReview.setTotalStar2(stars.get(2));
+    advancedRatingReview.setTotalStar3(stars.get(3));
+    advancedRatingReview.setTotalStar4(stars.get(4));
+    advancedRatingReview.setTotalStar5(stars.get(5));
+
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+
+    return ratingReviews;
+
+  }
+
+  private Map<Integer, Integer> getStars(JSONObject ratingJson) {
+    JSONArray jsonArray = ratingJson.optJSONArray("ratingDistribution");
+    Map<Integer, Integer> stars = new HashMap<>();
+    for (Object object : jsonArray) {
+      JSONObject jsonStars = (JSONObject) object;
+      int star = jsonStars.optInt("rating");
+      int count = jsonStars.optInt("count");
+      stars.put(star, count);
+    }
+    return stars;
+  }
+
+  private Double getTotalAvgRating(JSONObject ratingJson) {
+    Double avg = 0d;
+    if (ratingJson.opt("overallRating") instanceof Double) {
+      avg = MathUtils.parseDoubleWithDot(ratingJson.opt("overallRating").toString());
+    }
+    return avg;
+  }
+
+  private Integer getTotalNumOfRatings(JSONObject ratingJson) {
+    Integer total = 0;
+    if (ratingJson.opt("reviewCount") instanceof Integer) {
+      total = ratingJson.optInt("reviewCount");
+    }
+    return total;
+  }
 }
