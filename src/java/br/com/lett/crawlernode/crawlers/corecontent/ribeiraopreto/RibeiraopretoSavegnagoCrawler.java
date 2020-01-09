@@ -35,7 +35,6 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
     * Bebedouro - 9 Monte Alto - 12 Araraquara - 4 São carlos - 5 Matão - 8
     */
 
-
    private static final String HOME_PAGE = "https://www.savegnago.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "savegnago supermercados";
 
@@ -159,7 +158,6 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      System.err.println(ratingReviews);
 
       return ratingReviews;
 
