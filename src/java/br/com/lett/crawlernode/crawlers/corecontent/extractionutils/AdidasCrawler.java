@@ -30,6 +30,7 @@ public class AdidasCrawler extends Crawler {
   public AdidasCrawler(Session session, String homePage) {
     super(session);
     this.homePage = homePage;
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
