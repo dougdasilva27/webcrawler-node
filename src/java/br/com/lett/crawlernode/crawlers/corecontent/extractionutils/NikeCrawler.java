@@ -32,6 +32,7 @@ public class NikeCrawler extends Crawler {
   public NikeCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.APACHE);
+    super.config.setMustSendRatingToKinesis(true);
 
     defaultHeaders = new HashMap<>();
     defaultHeaders.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
