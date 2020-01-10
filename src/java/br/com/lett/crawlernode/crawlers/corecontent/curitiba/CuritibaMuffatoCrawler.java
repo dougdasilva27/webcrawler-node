@@ -63,6 +63,8 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
   public CuritibaMuffatoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
+
   }
 
   @Override
