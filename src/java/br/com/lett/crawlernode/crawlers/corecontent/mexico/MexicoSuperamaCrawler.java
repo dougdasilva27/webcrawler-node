@@ -41,6 +41,8 @@ public class MexicoSuperamaCrawler extends Crawler {
 
    public MexicoSuperamaCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
+
    }
 
    @Override
