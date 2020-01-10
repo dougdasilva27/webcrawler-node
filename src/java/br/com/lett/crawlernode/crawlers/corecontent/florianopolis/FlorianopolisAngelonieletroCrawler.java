@@ -26,7 +26,9 @@ import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.Angelon
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -49,320 +51,390 @@ import models.prices.Prices;
 
 public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
-  public FlorianopolisAngelonieletroCrawler(Session session) {
-    super(session);
-  }
+   public FlorianopolisAngelonieletroCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    boolean shouldVisit = false;
-    shouldVisit = !FILTERS.matcher(href).matches()
-        && (href.startsWith("http://www.angeloni.com.br/eletro/") || href.startsWith("https://www.angeloni.com.br/eletro/"));
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      boolean shouldVisit = false;
+      shouldVisit = !FILTERS.matcher(href).matches()
+            && (href.startsWith("http://www.angeloni.com.br/eletro/") || href.startsWith("https://www.angeloni.com.br/eletro/"));
 
-    return shouldVisit;
-  }
+      return shouldVisit;
+   }
+
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
+
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
+
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
+         String mainId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-sku]", "data-sku");
+
+         Document voltageAPi = AngelonieletroUtils.fetchVoltageApi(internalPid, mainId, session, cookies, dataFetcher);
+         Elements voltageVariation = voltageAPi.select("#formGroupVoltage input[name=voltagem]");
 
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+         if (!voltageVariation.isEmpty()) {
+            for (Element e : voltageVariation) {
+               Product p = crawlProduct(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies, dataFetcher));
+               String variationName = CrawlerUtils.scrapStringSimpleInfo(voltageAPi, "label[for=" + e.attr("id") + "]", true);
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
+               if (variationName != null && !p.getName().toLowerCase().contains(variationName.toLowerCase())) {
+                  p.setName(p.getName() + " " + variationName);
+               }
+               products.add(p);
+            }
+         } else {
+            products.add(crawlProduct(doc));
+         }
 
-      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
-      String mainId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-sku]", "data-sku");
-
-      Document voltageAPi = AngelonieletroUtils.fetchVoltageApi(internalPid, mainId, session, cookies, dataFetcher);
-      Elements voltageVariation = voltageAPi.select("#formGroupVoltage input[name=voltagem]");
-
-      if (!voltageVariation.isEmpty()) {
-        for (Element e : voltageVariation) {
-          Product p = crawlProduct(AngelonieletroUtils.fetchSkuHtml(doc, e, mainId, session, cookies, dataFetcher));
-          String variationName = CrawlerUtils.scrapStringSimpleInfo(voltageAPi, "label[for=" + e.attr("id") + "]", true);
-
-          if (variationName != null && !p.getName().toLowerCase().contains(variationName.toLowerCase())) {
-            p.setName(p.getName() + " " + variationName);
-          }
-          products.add(p);
-        }
       } else {
-        products.add(crawlProduct(doc));
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
+      return products;
+   }
 
-    return products;
-  }
+   /*******************************
+    * Product page identification *
+    *******************************/
 
-  /*******************************
-   * Product page identification *
-   *******************************/
+   private boolean isProductPage(Document doc) {
+      return !doc.select("#titulo").isEmpty();
+   }
 
-  private boolean isProductPage(Document doc) {
-    return !doc.select("#titulo").isEmpty();
-  }
+   private Product crawlProduct(Document doc) {
+      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
+      String internalId = AngelonieletroUtils.crawlInternalId(doc);
+      String name = crawlName(doc);
+      Float price = crawlPrice(doc);
+      Prices prices = crawlPrices(doc, internalPid);
+      boolean available = crawlAvailability(doc);
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-grande > div[data-zoom-image]", Arrays.asList("data-zoom-image"),
+            "https:", "dy3cxdqdg9dx0.cloudfront.net");
+      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+      Integer stock = null;
+      String description = crawlDescription(doc);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) a span");
+      RatingsReviews ratingReviews = crawlRating(doc);
+      List<String> eans = crawlEan(doc);
 
-  private Product crawlProduct(Document doc) {
-    String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
-    String internalId = AngelonieletroUtils.crawlInternalId(doc);
-    String name = crawlName(doc);
-    Float price = crawlPrice(doc);
-    Prices prices = crawlPrices(doc, internalPid);
-    boolean available = crawlAvailability(doc);
-    String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-grande > div[data-zoom-image]", Arrays.asList("data-zoom-image"),
-        "https:", "dy3cxdqdg9dx0.cloudfront.net");
-    String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-    Integer stock = null;
-    String description = crawlDescription(doc);
-    CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) a span");
+      return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).setRatingReviews(ratingReviews).build();
+   }
 
-    List<String> eans = crawlEan(doc);
+   /**
+    * The payment options are the same across variations. So the same prices object e set to all the
+    * crawled products.
+    * 
+    * To crawl the card payment options we must request for the list of all card brands that can be
+    * used. The, for each card brand we must request for the payment options. They can change between
+    * card brands.
+    *
+    * @param document
+    * @return
+    */
+   private Prices crawlPrices(Document document, String internalPid) {
+      Prices prices = new Prices();
 
-    return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-        .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-        .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-        .setStock(stock).setMarketplace(new Marketplace()).setEans(eans).build();
-  }
+      boolean isAvailable = crawlAvailability(document);
 
-  /**
-   * The payment options are the same across variations. So the same prices object e set to all the
-   * crawled products.
-   * 
-   * To crawl the card payment options we must request for the list of all card brands that can be
-   * used. The, for each card brand we must request for the payment options. They can change between
-   * card brands.
-   *
-   * @param document
-   * @return
-   */
-  private Prices crawlPrices(Document document, String internalPid) {
-    Prices prices = new Prices();
+      if (isAvailable) {
 
-    boolean isAvailable = crawlAvailability(document);
+         Float price = crawlPrice(document);
+         prices.setBankTicketPrice(price);
 
-    if (isAvailable) {
+         Map<String, Map<Integer, Float>> cardsInstallments = crawlCardInstallmentsMap(document, internalPid);
+         for (Entry<String, Map<Integer, Float>> entry : cardsInstallments.entrySet()) {
+            prices.insertCardInstallment(entry.getKey(), entry.getValue());
+         }
+      }
 
+      return prices;
+   }
+
+   /**
+    * 
+    * @param document
+    */
+   private Map<String, Map<Integer, Float>> crawlCardInstallmentsMap(Document document, String internalPid) {
+      Map<String, Map<Integer, Float>> cardInstallmentsMap = new HashMap<>();
+
+      Set<Card> cards = crawlSetOfCards(internalPid);
       Float price = crawlPrice(document);
-      prices.setBankTicketPrice(price);
 
-      Map<String, Map<Integer, Float>> cardsInstallments = crawlCardInstallmentsMap(document, internalPid);
-      for (Entry<String, Map<Integer, Float>> entry : cardsInstallments.entrySet()) {
-        prices.insertCardInstallment(entry.getKey(), entry.getValue());
+      for (Card card : cards) {
+         String compatibleCardName = createCompatibleName(card);
+         if (compatibleCardName != null) {
+
+            StringBuilder url = new StringBuilder();
+            url.append("https://www.angeloni.com.br/eletro/modais/installmentsRender.jsp").append("?");
+            url.append("cardTypeKey=").append(compatibleCardName);
+            url.append("&totalValue=").append(price);
+            url.append("&useTheBestInstallment=false");
+
+            Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
+            Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+            Map<Integer, Float> installments = crawlInstallmentsFromPaymentRequestResponse(response);
+            cardInstallmentsMap.put(card.toString(), installments);
+         }
       }
-    }
 
-    return prices;
-  }
+      return cardInstallmentsMap;
+   }
 
-  /**
-   * 
-   * @param document
-   */
-  private Map<String, Map<Integer, Float>> crawlCardInstallmentsMap(Document document, String internalPid) {
-    Map<String, Map<Integer, Float>> cardInstallmentsMap = new HashMap<>();
+   /**
+    * 
+    * Get all the installments numbers and values from the content of the POST request to payment
+    * methods on a certain card brand.
+    * 
+    * e.g:
+    * 
+    * Nº de parcelas á vista 2 vezes sem juros 3 vezes sem juros 4 vezes sem juros 5 vezes sem juros
+    *
+    * Valor de cada parcela R$ 439,90 R$ 219,95 R$ 146,63 R$ 109,98 R$ 87,98
+    *
+    * @param document
+    * @return
+    */
+   private Map<Integer, Float> crawlInstallmentsFromPaymentRequestResponse(Document document) {
+      Map<Integer, Float> installments = new HashMap<>();
 
-    Set<Card> cards = crawlSetOfCards(internalPid);
-    Float price = crawlPrice(document);
+      Elements installmentNumberTextElements = document.select("div.numero-parcelas ul li");
+      Elements installmentPriceTextElements = document.select("div.valor-parcelas ul li");
 
-    for (Card card : cards) {
-      String compatibleCardName = createCompatibleName(card);
-      if (compatibleCardName != null) {
+      if (installmentNumberTextElements.size() == installmentPriceTextElements.size()) {
+         for (int i = 0; i < installmentNumberTextElements.size(); i++) {
+            String installmentNumberText = installmentNumberTextElements.get(i).text();
+            String installmentPriceText = installmentPriceTextElements.get(i).text();
 
-        StringBuilder url = new StringBuilder();
-        url.append("https://www.angeloni.com.br/eletro/modais/installmentsRender.jsp").append("?");
-        url.append("cardTypeKey=").append(compatibleCardName);
-        url.append("&totalValue=").append(price);
-        url.append("&useTheBestInstallment=false");
-
-        Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
-        Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-        Map<Integer, Float> installments = crawlInstallmentsFromPaymentRequestResponse(response);
-        cardInstallmentsMap.put(card.toString(), installments);
+            List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
+            if (parsedNumbers.size() == 0) {
+               installments.put(1, MathUtils.parseFloatWithComma(installmentPriceText));
+            } else {
+               installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installmentPriceText));
+            }
+         }
       }
-    }
 
-    return cardInstallmentsMap;
-  }
+      return installments;
+   }
 
-  /**
-   * 
-   * Get all the installments numbers and values from the content of the POST request to payment
-   * methods on a certain card brand.
-   * 
-   * e.g:
-   * 
-   * Nº de parcelas á vista 2 vezes sem juros 3 vezes sem juros 4 vezes sem juros 5 vezes sem juros
-   *
-   * Valor de cada parcela R$ 439,90 R$ 219,95 R$ 146,63 R$ 109,98 R$ 87,98
-   *
-   * @param document
-   * @return
-   */
-  private Map<Integer, Float> crawlInstallmentsFromPaymentRequestResponse(Document document) {
-    Map<Integer, Float> installments = new HashMap<>();
+   private String createCompatibleName(Card card) {
+      String compatibleName = null;
 
-    Elements installmentNumberTextElements = document.select("div.numero-parcelas ul li");
-    Elements installmentPriceTextElements = document.select("div.valor-parcelas ul li");
+      if (card == Card.AMEX) {
+         compatibleName = "americanExpress";
+      } else if (card == Card.MASTERCARD) {
+         compatibleName = "masterCard";
+      } else if (card == Card.DINERS) {
+         compatibleName = "dinersClub";
+      } else
+         compatibleName = card.toString();
 
-    if (installmentNumberTextElements.size() == installmentPriceTextElements.size()) {
-      for (int i = 0; i < installmentNumberTextElements.size(); i++) {
-        String installmentNumberText = installmentNumberTextElements.get(i).text();
-        String installmentPriceText = installmentPriceTextElements.get(i).text();
+      return compatibleName;
+   }
 
-        List<String> parsedNumbers = MathUtils.parseNumbers(installmentNumberText);
-        if (parsedNumbers.size() == 0) {
-          installments.put(1, MathUtils.parseFloatWithComma(installmentPriceText));
-        } else {
-          installments.put(Integer.parseInt(parsedNumbers.get(0)), MathUtils.parseFloatWithComma(installmentPriceText));
-        }
+   private Set<Card> crawlSetOfCards(String internalId) {
+      Set<Card> cards = new HashSet<>();
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+
+      Request request = RequestBuilder.create().setUrl("https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp").setCookies(cookies)
+            .setHeaders(headers).setPayload("productId=" + internalId).build();
+      Document response = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
+
+      Elements cardsElements = response.select("div.box-cartao h2");
+
+      for (Element card : cardsElements) {
+         String text = card.text().trim().toLowerCase();
+         if (text.contains(Card.DINERS.toString())) {
+            cards.add(Card.DINERS);
+         } else if (text.contains(Card.MASTERCARD.toString())) {
+            cards.add(Card.MASTERCARD);
+         } else if (text.contains(Card.VISA.toString())) {
+            cards.add(Card.VISA);
+         } else if (text.contains("americanexpress")) {
+            cards.add(Card.AMEX);
+         } else if (text.contains(Card.HIPERCARD.toString())) {
+            cards.add(Card.HIPERCARD);
+         } else if (text.contains("angeloni")) {
+            cards.add(Card.SHOP_CARD);
+         }
       }
-    }
 
-    return installments;
-  }
+      return cards;
+   }
 
-  private String createCompatibleName(Card card) {
-    String compatibleName = null;
+   private String crawlName(Document document) {
+      String name = null;
 
-    if (card == Card.AMEX) {
-      compatibleName = "americanExpress";
-    } else if (card == Card.MASTERCARD) {
-      compatibleName = "masterCard";
-    } else if (card == Card.DINERS) {
-      compatibleName = "dinersClub";
-    } else
-      compatibleName = card.toString();
-
-    return compatibleName;
-  }
-
-  private Set<Card> crawlSetOfCards(String internalId) {
-    Set<Card> cards = new HashSet<>();
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
-
-    Request request = RequestBuilder.create().setUrl("https://www.angeloni.com.br/eletro/modais/paymentMethods.jsp").setCookies(cookies)
-        .setHeaders(headers).setPayload("productId=" + internalId).build();
-    Document response = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
-
-    Elements cardsElements = response.select("div.box-cartao h2");
-
-    for (Element card : cardsElements) {
-      String text = card.text().trim().toLowerCase();
-      if (text.contains(Card.DINERS.toString())) {
-        cards.add(Card.DINERS);
-      } else if (text.contains(Card.MASTERCARD.toString())) {
-        cards.add(Card.MASTERCARD);
-      } else if (text.contains(Card.VISA.toString())) {
-        cards.add(Card.VISA);
-      } else if (text.contains("americanexpress")) {
-        cards.add(Card.AMEX);
-      } else if (text.contains(Card.HIPERCARD.toString())) {
-        cards.add(Card.HIPERCARD);
-      } else if (text.contains("angeloni")) {
-        cards.add(Card.SHOP_CARD);
+      Element elementName = document.select("#titulo [itemprop=name]").first();
+      if (elementName != null) {
+         name = elementName.text();
       }
-    }
 
-    return cards;
-  }
+      return name;
+   }
 
-  private String crawlName(Document document) {
-    String name = null;
+   private Float crawlPrice(Document document) {
+      Float price = null;
 
-    Element elementName = document.select("#titulo [itemprop=name]").first();
-    if (elementName != null) {
-      name = elementName.text();
-    }
+      // Element elementPrice = document.select("div#descricao .esquerda .valores .preco-por
+      // .microFormatoProduto").first();
+      Element elementPrice = document.select("div#descricao .esquerda .valores .parcelamento span:not(:first-child)").first();
 
-    return name;
-  }
-
-  private Float crawlPrice(Document document) {
-    Float price = null;
-
-    // Element elementPrice = document.select("div#descricao .esquerda .valores .preco-por
-    // .microFormatoProduto").first();
-    Element elementPrice = document.select("div#descricao .esquerda .valores .parcelamento span:not(:first-child)").first();
-
-    if (elementPrice != null) {
-      price = MathUtils.parseFloatWithComma(elementPrice.text());
-    }
-
-    return price;
-  }
-
-  private boolean crawlAvailability(Document document) {
-    boolean available = true;
-
-    Element elementAvailable = document.select("div#descricao .esquerda .produto-esgotado").first();
-    if (elementAvailable != null) {
-      available = false;
-    }
-
-    return available;
-  }
-
-  private String crawlSecondaryImages(Document document, String primaryImage) {
-    String secondaryImages = null;
-
-    Elements elementsSecondaryImages = document.select("#galeria .thumbImage:not(.active) div[onclick]");
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    for (Element e : elementsSecondaryImages) {
-      String onclick = e.attr("onclick");
-
-      if (onclick.contains("'//")) {
-        int x = onclick.indexOf("('") + 2;
-        int y = onclick.indexOf("',", x);
-
-        String image = CrawlerUtils.completeUrl(onclick.substring(x, y), "https:", "dy3cxdqdg9dx0.cloudfront.net");
-        if (!image.equalsIgnoreCase(primaryImage)) {
-          secondaryImagesArray.put(image);
-        }
+      if (elementPrice != null) {
+         price = MathUtils.parseFloatWithComma(elementPrice.text());
       }
-    }
 
+      return price;
+   }
 
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
+   private boolean crawlAvailability(Document document) {
+      boolean available = true;
 
-    return secondaryImages;
-  }
-
-  private String crawlDescription(Document document) {
-    String description = null;
-    Elements elementsDescription = document.select("section#abas .tab-content div[role=tabpanel]:not([id=tab-avaliacoes-clientes])");
-    description = elementsDescription.html();
-
-    return description;
-  }
-
-  private List<String> crawlEan(Document doc) {
-    String ean = null;
-    Elements elmnts = doc.select(".tab-content .tab-pane .caracteristicas tbody tr");
-
-    for (Element e : elmnts) {
-      String aux = e.text();
-
-      if (aux.contains("EAN")) {
-        aux = aux.replaceAll("[^0-9]+", "");
-
-        if (!aux.isEmpty()) {
-          ean = aux;
-        }
+      Element elementAvailable = document.select("div#descricao .esquerda .produto-esgotado").first();
+      if (elementAvailable != null) {
+         available = false;
       }
-    }
 
-    return Arrays.asList(ean);
-  }
+      return available;
+   }
+
+   private String crawlSecondaryImages(Document document, String primaryImage) {
+      String secondaryImages = null;
+
+      Elements elementsSecondaryImages = document.select("#galeria .thumbImage:not(.active) div[onclick]");
+      JSONArray secondaryImagesArray = new JSONArray();
+
+      for (Element e : elementsSecondaryImages) {
+         String onclick = e.attr("onclick");
+
+         if (onclick.contains("'//")) {
+            int x = onclick.indexOf("('") + 2;
+            int y = onclick.indexOf("',", x);
+
+            String image = CrawlerUtils.completeUrl(onclick.substring(x, y), "https:", "dy3cxdqdg9dx0.cloudfront.net");
+            if (!image.equalsIgnoreCase(primaryImage)) {
+               secondaryImagesArray.put(image);
+            }
+         }
+      }
+
+
+      if (secondaryImagesArray.length() > 0) {
+         secondaryImages = secondaryImagesArray.toString();
+      }
+
+      return secondaryImages;
+   }
+
+   private String crawlDescription(Document document) {
+      String description = null;
+      Elements elementsDescription = document.select("section#abas .tab-content div[role=tabpanel]:not([id=tab-avaliacoes-clientes])");
+      description = elementsDescription.html();
+
+      return description;
+   }
+
+   private List<String> crawlEan(Document doc) {
+      String ean = null;
+      Elements elmnts = doc.select(".tab-content .tab-pane .caracteristicas tbody tr");
+
+      for (Element e : elmnts) {
+         String aux = e.text();
+
+         if (aux.contains("EAN")) {
+            aux = aux.replaceAll("[^0-9]+", "");
+
+            if (!aux.isEmpty()) {
+               ean = aux;
+            }
+         }
+      }
+
+      return Arrays.asList(ean);
+   }
+
+   private RatingsReviews crawlRating(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      String internalId = AngelonieletroUtils.crawlInternalId(doc);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapSimpleInteger(doc, ".avaliacoes > span", true);
+      Double avgRating = CrawlerUtils.scrapSimplePriceDoubleWithDots(doc, "#starsProductDescription > span", true);
+      AdvancedRatingReview advacedRatingReview = scrapAdvancedRatingReview(doc);
+
+      ratingReviews.setInternalId(internalId);
+      ratingReviews.setTotalRating(totalNumOfEvaluations != null ? totalNumOfEvaluations : 0);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations != null ? totalNumOfEvaluations : 0);
+      ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0);
+      ratingReviews.setAdvancedRatingReview(advacedRatingReview);
+
+      return ratingReviews;
+   }
+
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".avaliacoes li .avaliacao");
+      for (Element review : reviews) {
+
+         Element elementStarNumber = review.selectFirst(".estrelas");
+
+         if (elementStarNumber != null) {
+
+            String stringStarNumber = elementStarNumber.attr("data-estrelas");
+            String sN = stringStarNumber.replaceAll("[^0-9]", "").trim();
+            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
+
+            switch (numberOfStars) {
+               case 5:
+                  star5 += 1;
+                  break;
+               case 4:
+                  star4 += 1;
+                  break;
+               case 3:
+                  star3 += 1;
+                  break;
+               case 2:
+                  star2 += 1;
+                  break;
+               case 1:
+                  star1 += 1;
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+   }
+
+
 }
 
 
