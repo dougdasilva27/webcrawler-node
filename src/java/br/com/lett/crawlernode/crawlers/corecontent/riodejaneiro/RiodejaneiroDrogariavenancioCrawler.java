@@ -26,6 +26,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
    public RiodejaneiroDrogariavenancioCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
 
