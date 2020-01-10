@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -17,6 +18,9 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -25,7 +29,9 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlers
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
@@ -66,7 +72,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
 
       try {
         String url = curURL;
-        List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF8");
+        List<NameValuePair> paramsOriginal = URLEncodedUtils.parse(new URI(url), "UTF-8");
         List<NameValuePair> paramsNew = new ArrayList<>();
 
         for (NameValuePair param : paramsOriginal) {
@@ -135,11 +141,11 @@ public class CuritibaMuffatoCrawler extends Crawler {
       JSONObject apiJSON = vtexUtil.crawlApi(internalId);
       String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
       String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-
       String description = crawlDescription(doc, internalId);
       Integer stock = null;
       Marketplace marketplace = new Marketplace();
       Prices prices = crawlPrices(doc, price);
+      RatingsReviews ratingReviews = scrapRatingAndReviews(doc, internalId);
 
       // ean data in html
       JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
@@ -159,6 +165,7 @@ public class CuritibaMuffatoCrawler extends Crawler {
       product.setCategory1(category1);
       product.setCategory2(category2);
       product.setCategory3(category3);
+      product.setRatingReviews(ratingReviews);
       product.setPrimaryImage(primaryImage);
       product.setSecondaryImages(secondaryImages);
       product.setDescription(description);
@@ -343,5 +350,96 @@ public class CuritibaMuffatoCrawler extends Crawler {
     }
 
     return skuJson;
+  }
+
+  private JSONObject getRating(Document doc, String internalId) {
+    JSONObject ratingJson = new JSONObject();
+    String idWebsite = getIdWebsite(doc);
+    JSONObject response = CrawlerUtils.stringToJson(sendRequestToAPI(internalId, "rating", idWebsite));
+
+    if (response.optJSONArray(internalId) instanceof JSONArray) {
+      JSONArray rate = response.getJSONArray(internalId);
+
+      if (rate.length() > 0) {
+        ratingJson = rate.getJSONObject(0);
+      }
+    }
+
+    return ratingJson;
+  }
+
+  /**
+   * 
+   * @param doc
+   * @param internalId
+   * @return json representing an AdvancedRatingReview object as provided in its documentation.
+   */
+  private JSONObject getReview(Document doc, String internalId) {
+    JSONObject ratingJson = new JSONObject();
+    String idWebsite = getIdWebsite(doc);
+    JSONArray response = CrawlerUtils.stringToJsonArray(sendRequestToAPI(internalId, "reviews", idWebsite));
+    if (response.optJSONObject(0) instanceof JSONObject) {
+      JSONObject jsonReviews = response.optJSONObject(0);
+      if (jsonReviews.optJSONArray("stats") instanceof JSONArray) {
+        JSONArray starts = jsonReviews.optJSONArray("stats");
+        ratingJson.put(AdvancedRatingReview.RATING_STAR_1_FIELD, starts.get(0));
+        ratingJson.put(AdvancedRatingReview.RATING_STAR_2_FIELD, starts.get(1));
+        ratingJson.put(AdvancedRatingReview.RATING_STAR_3_FIELD, starts.get(2));
+        ratingJson.put(AdvancedRatingReview.RATING_STAR_4_FIELD, starts.get(3));
+        ratingJson.put(AdvancedRatingReview.RATING_STAR_5_FIELD, starts.get(4));
+      }
+    }
+
+    return ratingJson;
+  }
+
+  /**
+   * 
+   * @param internalId
+   * @param type can be only "rating" or "reviews"
+   * @param idWebsite
+   * @return
+   */
+  private String sendRequestToAPI(String internalId, String type, String idWebsite) {
+    String apiUrl = "https://awsapis3.netreviews.eu/product";
+    String payload =
+        "{\"query\":\"" + type + "\",\"products\":\"" + internalId + "\",\"idWebsite\":\"" + idWebsite + "\",\"plateforme\":\"br\"}";
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Content-Type", "application/json; charset=UTF-8");
+    Request request =
+        RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
+    return new FetcherDataFetcher().post(session, request).getBody();
+  }
+
+  private String getIdWebsite(Document doc) {
+    // Filtra os elementos script pela url correta e atributo.
+
+    Optional<Element> optionalUrlToken = doc.select("body > script").stream()
+        .filter(x -> (x.hasAttr("src") &&
+            (x.attr("src").startsWith("https://cl.avis-verifies.com"))))
+        .findFirst();
+
+    String attr = optionalUrlToken.get().attr("src");
+
+    String[] strings = attr.substring(attr.indexOf("br/")).split("/");
+
+    return strings[strings.length - 4];
+  }
+
+  protected RatingsReviews scrapRatingAndReviews(Document doc, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    JSONObject rating = getRating(doc, internalId);
+    Integer totalReviews = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
+    Double avgRating = CrawlerUtils.getDoubleValueFromJSON(rating, "rate", true, false);
+    AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview(getReview(doc, internalId));
+    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setTotalRating(totalReviews);
+    ratingReviews.setTotalWrittenReviews(totalReviews);
+    ratingReviews.setAverageOverallRating(avgRating == null ? 0d : avgRating);
+    ratingReviews.setInternalId(internalId);
+
+    return ratingReviews;
+
   }
 }
