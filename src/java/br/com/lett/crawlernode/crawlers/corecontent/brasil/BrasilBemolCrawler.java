@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -23,7 +25,9 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 
@@ -33,6 +37,7 @@ public class BrasilBemolCrawler extends Crawler {
 
   public BrasilBemolCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -63,15 +68,29 @@ public class BrasilBemolCrawler extends Crawler {
         primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".wd-product-media-selector .image.selected img, .wd-product-media-selector .image:not(.selected) img",
             Arrays.asList("data-image-big", "data-small", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net");
       }
-
+      RatingsReviews ratingsReviews = scrapRating(doc, internalId);
       String secondaryImages = scrapSimpleSecondaryImages(doc, ".wd-product-media-selector .image:not(.selected) img", Arrays.asList("data-image-large", "data-image-big", "data-small", "src"),
           "https:", "d3ddx6b2p2pevg.cloudfront.net", primaryImage);
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wrapper-detalhe-produto .descriptions", ".wrapper-detalhe-produto .caracteristicas"));
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices)
-          .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setRatingReviews(ratingsReviews)
+          .setMarketplace(new Marketplace())
+          .build();
 
       products.add(product);
 
@@ -142,7 +161,7 @@ public class BrasilBemolCrawler extends Crawler {
     Prices prices = new Prices();
 
     if (price != null) {
-      Request request = RequestBuilder.create().setUrl("https://www.bemol.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
+      Request request = RequestBuilder.create().setUrl(HOME_PAGE + "widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalId
           + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true&nocache=1108472214").setCookies(cookies).build();
       Document docPrices = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
@@ -180,7 +199,7 @@ public class BrasilBemolCrawler extends Crawler {
 
             Elements installments = e.select("tbody tr td");
             for (Element i : installments) {
-              Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, i, false, "de", "juros", true);
+              Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, i, false, "de", "juros", true, ',');
 
               if (!pair.isAnyValueNull()) {
                 installmentPriceMap.put(pair.getFirst(), pair.getSecond());
@@ -200,5 +219,103 @@ public class BrasilBemolCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private RatingsReviews scrapRating(Document document, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+    Double avgRating = getTotalAvgRating(document);
+    AdvancedRatingReview advancedRating = getAdvancedRating(internalId);
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    ratingReviews.setAdvancedRatingReview(advancedRating);
+
+    return ratingReviews;
+  }
+
+  private AdvancedRatingReview getAdvancedRating(String internalId) {
+    int i = 0;
+    AdvancedRatingReview advancedRating = new AdvancedRatingReview();
+    advancedRating.setTotalStar1(0);
+    advancedRating.setTotalStar2(0);
+    advancedRating.setTotalStar3(0);
+    advancedRating.setTotalStar4(0);
+    advancedRating.setTotalStar5(0);
+    String response = null;
+    Document document = null;
+    do {
+      String url = new StringBuilder().append("https://www.bemol.com.br/widget/product_reviews?ProductID=").append(internalId)
+          .append("&PageIndex=").append(i)
+          .append("&PageSize=").append("20")
+          .append("&Template=").append("wd.product.reviews.paginate.template")
+          .append("&DisplayEmail=").append("false")
+          .toString();
+      Map<String, String> headers = new HashMap<>();
+
+      headers.put("Content-Type", "application/x-www-form-urlencoded");
+      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36");
+      Request request = RequestBuilder.create().setUrl(url).setHeaders(headers).mustSendContentEncoding(false).build();
+      response = this.dataFetcher.get(session, request).getBody();
+
+      if (!response.isEmpty()) {
+        document = Jsoup.parse(response);
+
+
+        for (Iterator<Element> iterator = document.select(".avaliacao :nth-child(2)").iterator(); iterator.hasNext();) {
+          Element element = iterator.next();
+          int star = MathUtils.parseInt(element.text());
+          switch (star) {
+            case 1:
+
+              advancedRating.setTotalStar1(advancedRating.getTotalStar1() + 1);
+              break;
+            case 2:
+              advancedRating.setTotalStar2(advancedRating.getTotalStar2() + 1);
+              break;
+            case 3:
+              advancedRating.setTotalStar3(advancedRating.getTotalStar3() + 1);
+              break;
+            case 4:
+              advancedRating.setTotalStar4(advancedRating.getTotalStar4() + 1);
+              break;
+            case 5:
+              advancedRating.setTotalStar5(advancedRating.getTotalStar5() + 1);
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      i++;
+    } while (!response.isEmpty() && (document instanceof Document));
+    return advancedRating;
+  }
+
+  private Double getTotalAvgRating(Document docRating) {
+    Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(docRating, ".wd-product-rating .rating-average", null, true, ',', session);
+
+    if (avgRating == null) {
+      avgRating = 0d;
+    }
+
+    return avgRating;
+  }
+
+  private Integer getTotalNumOfRatings(Document doc) {
+    Integer totalRating = 0;
+    Elements rating = doc.select(".wd-product-rating [itemprop=reviewCount]");
+
+    if (rating != null) {
+      String votes = rating.attr("content").replaceAll("[^0-9]", "").trim();
+
+      if (!votes.isEmpty()) {
+        totalRating += Integer.parseInt(votes);
+      }
+    }
+
+    return totalRating;
   }
 }
