@@ -53,6 +53,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
    public FlorianopolisAngelonieletroCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -122,7 +123,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
       Integer stock = null;
       String description = crawlDescription(doc);
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) a span");
-      RatingsReviews ratingReviews = crawlRating(doc);
+      RatingsReviews ratingReviews = crawlRating(doc, internalId);
       List<String> eans = crawlEan(doc);
 
       return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
@@ -331,7 +332,6 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
          }
       }
 
-
       if (secondaryImagesArray.length() > 0) {
          secondaryImages = secondaryImagesArray.toString();
       }
@@ -366,11 +366,10 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
       return Arrays.asList(ean);
    }
 
-   private RatingsReviews crawlRating(Document doc) {
+   private RatingsReviews crawlRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      String internalId = AngelonieletroUtils.crawlInternalId(doc);
       Integer totalNumOfEvaluations = CrawlerUtils.scrapSimpleInteger(doc, ".avaliacoes > span", true);
       Double avgRating = CrawlerUtils.scrapSimplePriceDoubleWithDots(doc, "#starsProductDescription > span", true);
       AdvancedRatingReview advacedRatingReview = scrapAdvancedRatingReview(doc);
@@ -383,7 +382,6 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
       return ratingReviews;
    }
-
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
       Integer star1 = 0;
@@ -433,8 +431,6 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
             .totalStar5(star5)
             .build();
    }
-
-
 }
 
 
