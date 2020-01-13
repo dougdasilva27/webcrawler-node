@@ -104,7 +104,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
          Marketplace marketplace = new Marketplace();
          Prices prices = crawlPrices(doc, price, internalPid);
          String ean = scrapEan(doc);
-         RatingsReviews ratingReviews = crawRating(doc);
+         RatingsReviews ratingReviews = crawRating(doc, internalId);
          List<String> eans = new ArrayList<>();
          eans.add(ean);
 
@@ -303,10 +303,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return ean;
    }
 
-   private RatingsReviews crawRating(Document doc) {
+   private RatingsReviews crawRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
-
-      String internalId = crawlInternalId(doc);
 
       ratingReviews.setDate(session.getDate());
       ratingReviews.setInternalId(internalId);
