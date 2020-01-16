@@ -34,6 +34,7 @@ import models.Marketplace;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /************************************************************************************************************************************************************************************
@@ -101,6 +102,7 @@ public abstract class CNOVACrawler extends Crawler {
    public CNOVACrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    protected String mainSellerNameLower;
@@ -212,6 +214,7 @@ public abstract class CNOVACrawler extends Crawler {
                String variationInternalID = internalPid + "-" + sku.val();
                boolean unnavailable = sku.text().contains("Esgotado");
                String variationName = assembleVariationName(name, sku);
+               RatingsReviews ratingReviews = crawRating(doc, variationInternalID);
 
                Document variationDocument = sku.hasAttr("selected") ? doc
                      : Jsoup.parse(fetchPage(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost)));
@@ -254,6 +257,7 @@ public abstract class CNOVACrawler extends Crawler {
                      .setMarketplace(marketplace)
                      .setEans(eans)
                      .setOffers(offers)
+                     .setRatingReviews(ratingReviews)
                      .build();
 
                products.add(product);
@@ -273,6 +277,8 @@ public abstract class CNOVACrawler extends Crawler {
             Prices prices = CrawlerUtils.getPrices(marketplaceMap, sellersNameList);
             Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
             Offers offers = scrapBuyBox(doc, docMarketplace);
+            RatingsReviews ratingReviews = crawRating(doc, internalId);
+
             List<String> eans = new ArrayList<>();
             String ean = scrapEan(doc);
             if (ean != null) {
@@ -297,6 +303,7 @@ public abstract class CNOVACrawler extends Crawler {
                   .setMarketplace(marketplace)
                   .setEans(eans)
                   .setOffers(offers)
+                  .setRatingReviews(ratingReviews)
                   .build();
 
             products.add(product);
@@ -864,4 +871,65 @@ public abstract class CNOVACrawler extends Crawler {
 
       return ean;
    }
+
+
+
+   private RatingsReviews crawRating(Document doc, String internalId) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalNumOfEvaluations = getTotalRating(doc);
+      Double avgRating = getTotalAvgRating(doc);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+      return ratingReviews;
+   }
+
+   private Integer getTotalRating(Document doc) {
+      Integer total = 0;
+
+      Element finalElement = null;
+      Element rating = doc.select(".pr-snapshot-average-based-on-text .count").first();
+      Element ratingOneEvaluation = doc.select(".pr-snapshot-average-based-on-text").first();
+      Element specialEvaluation = doc.select(".rating-count[itemprop=\"reviewCount\"]").first();
+
+      if (rating != null) {
+         finalElement = rating;
+      } else if (ratingOneEvaluation != null) {
+         finalElement = ratingOneEvaluation;
+      } else if (specialEvaluation != null) {
+         finalElement = specialEvaluation;
+      }
+
+      if (finalElement != null) {
+         total = Integer.parseInt(finalElement.ownText().replaceAll("[^0-9]", ""));
+      }
+
+      return total;
+   }
+
+   /**
+    * @param Double
+    * @return
+    */
+   private Double getTotalAvgRating(Document doc) {
+      Double avgRating = 0d;
+
+      Element avg = doc.select(".pr-snapshot-rating.rating .pr-rounded.average").first();
+
+      if (avg == null) {
+         avg = doc.select(".rating .rating-value").first();
+      }
+
+      if (avg != null) {
+         avgRating = Double.parseDouble(avg.ownText().replace(",", "."));
+      }
+
+      return avgRating;
+   }
+
+
 }
