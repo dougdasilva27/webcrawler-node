@@ -17,8 +17,10 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilKabumCrawler extends Crawler {
@@ -27,7 +29,6 @@ public class BrasilKabumCrawler extends Crawler {
 
   public BrasilKabumCrawler(Session session) {
     super(session);
-    // super.config.setFetcher(Fetcher.WEBDRIVER);
   }
 
   @Override
@@ -42,7 +43,7 @@ public class BrasilKabumCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(this.session.getOriginalURL())) {
+    if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       /**
@@ -65,21 +66,20 @@ public class BrasilKabumCrawler extends Crawler {
       }
 
       // internalId
-      String internalID = null;
+      String internalId = null;
       Element elementInternalID = doc.select(".boxs .links_det").first();
       if (elementInternalID != null) {
         String text = elementInternalID.ownText();
-        internalID = text.substring(text.indexOf(':') + 1).trim();
+        internalId = text.substring(text.indexOf(':') + 1).trim();
 
-        if (internalID.isEmpty()) {
+        if (internalId.isEmpty()) {
           Element e = elementInternalID.select("span[itemprop=sku]").first();
 
           if (e != null) {
-            internalID = e.ownText().trim();
+            internalId = e.ownText().trim();
           }
         }
       }
-
       Element elementProduct = doc.select("#pag-detalhes").first();
 
       // internalPid
@@ -148,15 +148,29 @@ public class BrasilKabumCrawler extends Crawler {
       // stock
       Integer stock = null;
 
+      RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
+
       // marketplace
       Marketplace marketplace = new Marketplace();
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalID).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
-
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price).setPrices(prices)
+          .setAvailable(available)
+          .setCategory1(categories.getCategory(0))
+          .setCategory2(categories.getCategory(1))
+          .setRatingReviews(ratingsReviews)
+          .setCategory3(categories.getCategory(2))
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(marketplace)
+          .build();
       products.add(product);
 
     } else {
@@ -256,6 +270,8 @@ public class BrasilKabumCrawler extends Crawler {
       installmentPriceMap.put(installment, value);
     }
 
+    prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(product, ".preco_antigo-cm", null, false, ',', session));
+
     if (installmentPriceMap.size() > 0) {
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
@@ -264,15 +280,69 @@ public class BrasilKabumCrawler extends Crawler {
       prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
     }
-
     return prices;
+  }
+
+  private RatingsReviews scrapRatingAndReviews(Document document, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+    Double avgRating = getTotalAvgRating(document);
+
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+
+    return ratingReviews;
+  }
+
+  /**
+   * Avg appear in html element
+   * 
+   * @param document
+   * @return
+   */
+  private Double getTotalAvgRating(Document doc) {
+    Double avgRating = null;
+    Element rating = doc.select(".avaliacao table tr td div.H-estrelas").first();
+
+    if (rating != null) {
+      String text = rating.attr("class").replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        avgRating = Double.parseDouble(text);
+      }
+    }
+
+    return avgRating;
+  }
+
+  /**
+   * Number of ratings appear in html element
+   * 
+   * @param doc
+   * @return
+   */
+  private Integer getTotalNumOfRatings(Document doc) {
+    Integer number = null;
+
+    Element rating = doc.select(".avaliacao table tr td").first();
+
+    if (rating != null) {
+      String text = rating.ownText().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        number = Integer.parseInt(text);
+      }
+    }
+
+    return number;
   }
 
   /*******************************
    * Product page identification *
    *******************************/
-
-  private boolean isProductPage(String url) {
-    return true;
+  private boolean isProductPage(Document doc) {
+    return doc.selectFirst("#pag-detalhes") != null;
   }
 }
