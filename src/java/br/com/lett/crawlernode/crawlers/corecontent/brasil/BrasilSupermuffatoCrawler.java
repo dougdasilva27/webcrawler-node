@@ -2,11 +2,16 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -16,6 +21,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlers
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilSupermuffatoCrawler extends Crawler {
@@ -25,6 +31,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
 
   public BrasilSupermuffatoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -61,7 +68,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
         String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-        Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
+        Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
         boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
         String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
         String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
@@ -69,6 +76,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
         Float price = vtexUtil.crawlMainPagePrice(prices);
         Integer stock = vtexUtil.crawlStock(apiJSON);
         String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
+        RatingsReviews ratingReviews = extractRatingAndReviews(doc);
 
         List<String> eans = new ArrayList<>();
         eans.add(ean);
@@ -77,7 +85,7 @@ public class BrasilSupermuffatoCrawler extends Crawler {
         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).setRatingReviews(ratingReviews).build();
 
         products.add(product);
       }
@@ -91,5 +99,61 @@ public class BrasilSupermuffatoCrawler extends Crawler {
 
   private boolean isProductPage(Document document) {
     return document.selectFirst(".productName") != null;
+  }
+
+
+
+  protected RatingsReviews extractRatingAndReviews(Document doc) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+
+    if (skuJson.has("productId")) {
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+      List<String> idList = VTEXCrawlersUtils.crawlIdList(skuJson);
+      for (String internalId : idList) {
+
+        JSONObject rating = crawlProductInformatioApi(internalId);
+
+        Integer totalReviews = CrawlerUtils.getIntegerValueFromJSON(rating, "count", 0);
+
+        Double avgRating = CrawlerUtils.getDoubleValueFromJSON(rating, "rate", true, false);
+
+        ratingReviews.setTotalRating(totalReviews);
+        ratingReviews.setTotalWrittenReviews(totalReviews);
+        ratingReviews.setAverageOverallRating(avgRating == null ? 0d : avgRating);
+        ratingReviews.setInternalId(internalId);
+      }
+
+    }
+
+    return ratingReviews;
+
+  }
+
+  private JSONObject crawlProductInformatioApi(String internalId) {
+    JSONObject ratingJson = new JSONObject();
+
+    String apiUrl = "https://awsapis3.netreviews.eu/product";
+    String payload =
+        "{\"query\":\"average\",\"products\":[\"" + internalId + "\"],\"idWebsite\":\"4f870cb3-d6ef-5664-2950-de136d5b471e\",\"plateforme\":\"br\"}";
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Content-Type", "application/json; charset=UTF-8");
+
+    Request request =
+        RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
+    JSONObject response = CrawlerUtils.stringToJson(new FetcherDataFetcher().post(session, request).getBody());
+
+    if (response.has(internalId)) {
+      JSONArray rate = response.getJSONArray(internalId);
+
+      if (rate.length() > 0) {
+        ratingJson = rate.getJSONObject(0);
+      }
+    }
+
+    return ratingJson;
   }
 }
