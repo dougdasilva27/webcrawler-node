@@ -225,7 +225,7 @@ public class BrasilBemolCrawler extends Crawler {
     RatingsReviews ratingReviews = new RatingsReviews();
     Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
     Double avgRating = getTotalAvgRating(document);
-    AdvancedRatingReview advancedRating = getAdvancedRating(internalId);
+    AdvancedRatingReview advancedRating = getAdvancedRating(internalId, totalNumOfEvaluations);
     ratingReviews.setDate(session.getDate());
     ratingReviews.setInternalId(internalId);
     ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -236,8 +236,8 @@ public class BrasilBemolCrawler extends Crawler {
     return ratingReviews;
   }
 
-  private AdvancedRatingReview getAdvancedRating(String internalId) {
-    int i = 0;
+  private AdvancedRatingReview getAdvancedRating(String internalId, int totalNumOfEvaluations) {
+    int i = 0, total = 0;
     AdvancedRatingReview advancedRating = new AdvancedRatingReview();
     advancedRating.setTotalStar1(0);
     advancedRating.setTotalStar2(0);
@@ -263,13 +263,11 @@ public class BrasilBemolCrawler extends Crawler {
       if (!response.isEmpty()) {
         document = Jsoup.parse(response);
 
-
         for (Iterator<Element> iterator = document.select(".avaliacao :nth-child(2)").iterator(); iterator.hasNext();) {
           Element element = iterator.next();
           int star = MathUtils.parseInt(element.text());
           switch (star) {
             case 1:
-
               advancedRating.setTotalStar1(advancedRating.getTotalStar1() + 1);
               break;
             case 2:
@@ -287,10 +285,11 @@ public class BrasilBemolCrawler extends Crawler {
             default:
               break;
           }
+          total++;
         }
       }
       i++;
-    } while (!response.isEmpty() && (document instanceof Document));
+    } while (total < totalNumOfEvaluations && !response.isEmpty() && (document instanceof Document));
     return advancedRating;
   }
 
