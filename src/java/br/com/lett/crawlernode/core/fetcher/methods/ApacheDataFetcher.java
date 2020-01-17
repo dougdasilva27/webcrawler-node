@@ -249,7 +249,7 @@ public class ApacheDataFetcher implements DataFetcher {
       File localFile = null;
       int attempt = 1;
 
-      while (attempt <= session.getMaxConnectionAttemptsCrawler() && localFile == null) {
+      while (attempt <= session.getMaxConnectionAttemptsImages() && localFile == null) {
          LettProxy randProxy = null;
          String url = request.getUrl();
          Map<String, String> headers = request.getHeaders();
