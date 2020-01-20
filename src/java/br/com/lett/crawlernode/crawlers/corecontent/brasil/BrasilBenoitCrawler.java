@@ -23,12 +23,14 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilBenoitCrawler extends Crawler {
 
   public BrasilBenoitCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -61,13 +63,27 @@ public class BrasilBenoitCrawler extends Crawler {
           String internalId = sku.has("ProductID") ? sku.get("ProductID").toString() : null;
           Prices prices = crawlPrices(internalId, internalPid, price);
           String name = crawlName(sku);
+          RatingsReviews ratingsReviews = scrapRatingAndReviews(json, internalId);
           boolean available = crawlAvailability(sku);
 
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-              .setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages).setDescription(description).setStock(null).setMarketplace(new Marketplace()).build();
-
+          Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setRatingReviews(ratingsReviews)
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(null)
+              .setMarketplace(new Marketplace())
+              .build();
           products.add(product);
         }
       }
@@ -100,7 +116,7 @@ public class BrasilBenoitCrawler extends Crawler {
           Map<Integer, Float> installments = new HashMap<>();
 
           for (Element e : table) {
-            Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "juros", true);
+            Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "juros", true, ',');
 
             if (!pair.isAnyValueNull()) {
               installments.put(pair.getFirst(), pair.getSecond());
@@ -318,5 +334,26 @@ public class BrasilBenoitCrawler extends Crawler {
     }
 
     return finalDescription;
+  }
+
+  private RatingsReviews scrapRatingAndReviews(JSONObject json, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    ratingReviews.setDate(session.getDate());
+
+    if (json.optJSONObject("Model") instanceof JSONObject) {
+      JSONObject model = json.getJSONObject("Model");
+
+      Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(json, "RatingCount", 0);
+      Double avgRating = CrawlerUtils.getDoubleValueFromJSON(model, "RatingAverage", true, null);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0D);
+
+      ratingReviews.setInternalId(internalId);
+    }
+
+    return ratingReviews;
+
   }
 }
