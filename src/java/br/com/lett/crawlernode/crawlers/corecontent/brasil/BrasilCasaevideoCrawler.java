@@ -30,6 +30,7 @@ public class BrasilCasaevideoCrawler extends Crawler {
 
    public BrasilCasaevideoCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

@@ -29,6 +29,7 @@ public class BrasilCasatemaCrawler extends Crawler {
 
    public BrasilCasatemaCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    private static final String HOME_PAGE = "https://www.casatema.com.br/";
