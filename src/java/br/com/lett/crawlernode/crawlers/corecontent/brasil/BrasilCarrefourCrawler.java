@@ -15,6 +15,7 @@ import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -85,10 +86,19 @@ public class BrasilCarrefourCrawler extends Crawler {
             ProxyCollection.BONANZA
         ))
         .build();
-
-    String response = this.dataFetcher.get(session, request).getBody();
-    if (response == null || !response.isEmpty()) {
-      response = new ApacheDataFetcher().get(session, request).getBody();
+    int tries = 0;
+    String response = null;
+    while (response == null || !response.isEmpty()) {
+      if (tries == 0)
+        response = this.dataFetcher.get(session, request).getBody();
+      else if (tries == 1) {
+        response = new ApacheDataFetcher().get(session, request).getBody();
+      } else if (tries == 2) {
+        response = new JavanetDataFetcher().get(session, request).getBody();
+      } else {
+        break;
+      }
+      tries++;
     }
 
     return response;
