@@ -78,10 +78,10 @@ public class BelohorizontePetlifeCrawler extends Crawler {
         for (Object o : variations) {
           JSONObject skuJson = o instanceof JSONObject ? (JSONObject) o : new JSONObject();
 
-          if (skuJson.get("variation_id") instanceof String) {
+          if (skuJson.optString("variation_id") instanceof String) {
             Product clone = product.clone();
 
-            String variationId = skuJson.get("variation_id").toString();
+            String variationId = skuJson.optString("variation_id");
             String variationName = scrapVariationName(clone.getName(), skuJson);
             Float priceVariation = JSONUtils.getFloatValueFromJSON(skuJson, "display_price", true);
             Object availabilityObj = JSONUtils.getValue(skuJson, "is_in_stock");
