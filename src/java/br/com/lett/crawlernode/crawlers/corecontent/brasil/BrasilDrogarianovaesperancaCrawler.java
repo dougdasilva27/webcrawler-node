@@ -33,281 +33,281 @@ import models.prices.Prices;
  */
 public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
-  private final String HOME_PAGE = "https://www.drogarianovaesperanca.com.br/";
+   private final String HOME_PAGE = "https://www.drogarianovaesperanca.com.br/";
 
-  public BrasilDrogarianovaesperancaCrawler(Session session) {
-    super(session);
-  }
+   public BrasilDrogarianovaesperancaCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
+   @Override
+   public boolean shouldVisit() {
+      String href = session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(doc);
-      String internalPid = null;
-      String name = crawlName(doc);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.preco-final span.valor, span.preco-por span.valor", null, true, ',', session);
-      Prices prices = crawlPrices(price, internalId, doc);
-      boolean available = crawlAvailability(doc);
-      CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#thumbs-produto div a", Arrays.asList("data-image"), "https",
-          "www.drogarianovaesperanca.com.br/");
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
-          "#thumbs-produto div a",
-          Arrays.asList("data-image"), "https", "www.drogarianovaesperanca.com.br/", primaryImage);
-      String description = crawlDescription(doc);
-      Integer stock = null;
-      Marketplace marketplace = crawlMarketplace();
+         String internalId = crawlInternalId(doc);
+         String internalPid = null;
+         String name = crawlName(doc);
+         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.preco-final span.valor, span.preco-por span.valor", null, true, ',', session);
+         Prices prices = crawlPrices(price, internalId, doc);
+         boolean available = crawlAvailability(doc);
+         CategoryCollection categories = crawlCategories(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .img-zoom img", Arrays.asList("src"), "https",
+               "www.drogarianovaesperanca.com.br/");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
+               "#thumbs-produto div a",
+               Arrays.asList("data-image"), "https", "www.drogarianovaesperanca.com.br/", primaryImage);
+         String description = crawlDescription(doc);
+         Integer stock = null;
+         Marketplace marketplace = crawlMarketplace();
 
-      String ean = crawlEan(doc);
-      List<String> eans = new ArrayList<>();
-      eans.add(ean);
+         String ean = crawlEan(doc);
+         List<String> eans = new ArrayList<>();
+         eans.add(ean);
 
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+         // Creating the product
+         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+               .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
-      products.add(product);
+         products.add(product);
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
-
-    return products;
-
-  }
-
-  private boolean isProductPage(Document doc) {
-    if (doc.select("#ID_SubProduto").first() != null) {
-      return true;
-    }
-    return false;
-  }
-
-  private String crawlInternalId(Document doc) {
-    String internalId = null;
-
-    Element internalIdElement = doc.select("#ID_SubProduto").first();
-    if (internalIdElement != null) {
-      internalId = internalIdElement.val();
-    }
-
-    return internalId;
-  }
-
-  private String crawlName(Document document) {
-    String name = null;
-    Element nameElement = document.select(".produto-detalhes h1").first();
-
-    if (nameElement != null) {
-      name = nameElement.text().trim();
-    }
-
-    return name;
-  }
-
-  private Marketplace crawlMarketplace() {
-    return new Marketplace();
-  }
-
-  /**
-   * In the time when this crawler was made, this market hasn't secondary Images
-   * 
-   * @param doc
-   * @return
-   */
-
-
-  /**
-   * @param document
-   * @return
-   */
-  private CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select("span[property=itemListElement] > a span");
-
-    for (int i = 1; i < elementCategories.size(); i++) {
-      String cat = elementCategories.get(i).ownText().replace("/", "").trim();
-
-      if (!cat.isEmpty()) {
-        categories.add(cat);
-      }
-    }
-
-    return categories;
-  }
-
-  private String crawlDescription(Document doc) {
-    StringBuilder description = new StringBuilder();
-
-    Element elementDescription = doc.select(".ficha-produto").first();
-
-    if (elementDescription != null) {
-      description.append(elementDescription.html());
-    }
-
-    Element elementInfo = doc.select(".tabs-produto #tabs").first();
-
-    if (elementInfo != null) {
-      description.append(elementInfo.html());
-    }
-
-    Element aviso = doc.select(".aviso-medicamento").first();
-
-    if (aviso != null) {
-      description.append(aviso.html());
-    }
-
-    return description.toString();
-  }
-
-  private boolean crawlAvailability(Document doc) {
-    return doc.select("#BtComprarProduto").first() != null;
-  }
-
-  /**
-   * 
-   * @param doc
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Float price, String internalId, Document doc) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      prices.setBankTicketPrice(price);
-      Element priceFrom = doc.select(".preco-de").first();
-      if (priceFrom != null) {
-        prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      String pricesUrl = "https://www.drogarianovaesperanca.com.br/Funcoes_Ajax.aspx/CarregaFormaPagamento";
+      return products;
 
-      JSONObject payloadJson = new JSONObject();
-      payloadJson.put("ID_OpcaoPagamento", 0);
-      payloadJson.put("ID_FormaPagamento", 0);
-      payloadJson.put("ID_SubProduto", internalId);
-      payloadJson.put("IsMobile", true);
+   }
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+   private boolean isProductPage(Document doc) {
+      if (doc.select("#ID_SubProduto").first() != null) {
+         return true;
+      }
+      return false;
+   }
 
-      Request request = RequestBuilder.create()
-          .setUrl(pricesUrl)
-          .setCookies(this.cookies)
-          .setHeaders(headers)
-          .setPayload(payloadJson.toString())
-          .build();
+   private String crawlInternalId(Document doc) {
+      String internalId = null;
 
-      JSONObject pricesJson = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
-
-      if (pricesJson.has("d")) {
-        JSONArray cards = pricesJson.getJSONArray("d");
-
-        for (int i = 0; i < cards.length() - 1; i++) {
-          JSONObject card = cards.getJSONObject(i);
-          String cardName = crawlCardName(card);
-
-          if (cardName != null && card.has("Itens")) {
-            setInstallments(cardName, card, prices);
-          }
-        }
-
+      Element internalIdElement = doc.select("#ID_SubProduto").first();
+      if (internalIdElement != null) {
+         internalId = internalIdElement.val();
       }
 
+      return internalId;
+   }
 
-    }
+   private String crawlName(Document document) {
+      String name = null;
+      Element nameElement = document.select(".produto-detalhes h1").first();
 
-    return prices;
-  }
-
-  private String crawlCardName(JSONObject card) {
-    String officalCardName = null;
-
-    if (card.has("Icon")) {
-      String cardName = card.getString("Icon").trim();
-
-      switch (cardName) {
-        case "visa":
-          officalCardName = Card.VISA.toString();
-          break;
-        case "mastercard":
-          officalCardName = Card.MASTERCARD.toString();
-          break;
-        case "diners":
-          officalCardName = Card.DINERS.toString();
-          break;
-        case "american-express":
-          officalCardName = Card.AMEX.toString();
-          break;
-        case "elo":
-          officalCardName = Card.ELO.toString();
-          break;
-        case "boleto-bancario":
-          officalCardName = "boleto";
-          break;
-        default:
-          break;
+      if (nameElement != null) {
+         name = nameElement.text().trim();
       }
-    }
 
-    return officalCardName;
-  }
+      return name;
+   }
 
-  private void setInstallments(String cardName, JSONObject card, Prices prices) {
-    JSONArray installments = card.getJSONArray("Itens");
+   private Marketplace crawlMarketplace() {
+      return new Marketplace();
+   }
 
-    if (cardName.equals("boleto") && installments.length() > 0) {
-      prices.setBankTicketPrice(installments.getJSONObject(0).getDouble("TotalGeral"));
-    } else {
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
+   /**
+    * In the time when this crawler was made, this market hasn't secondary Images
+    * 
+    * @param doc
+    * @return
+    */
 
-      for (int i = 0; i < installments.length(); i++) {
-        JSONObject installmentJson = installments.getJSONObject(i);
 
-        if (installmentJson.has("Nparcel")) {
-          Integer installment = installmentJson.getInt("Nparcel");
+   /**
+    * @param document
+    * @return
+    */
+   private CategoryCollection crawlCategories(Document document) {
+      CategoryCollection categories = new CategoryCollection();
+      Elements elementCategories = document.select("span[property=itemListElement] > a span");
 
-          if (installmentJson.has("TotalParcela")) {
-            String parcelText = installmentJson.getString("TotalParcela").trim();
-            Float value = parcelText.isEmpty() ? null : MathUtils.parseFloatWithComma(parcelText);
+      for (int i = 1; i < elementCategories.size(); i++) {
+         String cat = elementCategories.get(i).ownText().replace("/", "").trim();
 
-            if (value != null) {
-              installmentPriceMap.put(installment, value);
+         if (!cat.isEmpty()) {
+            categories.add(cat);
+         }
+      }
+
+      return categories;
+   }
+
+   private String crawlDescription(Document doc) {
+      StringBuilder description = new StringBuilder();
+
+      Element elementDescription = doc.select(".ficha-produto").first();
+
+      if (elementDescription != null) {
+         description.append(elementDescription.html());
+      }
+
+      Element elementInfo = doc.select(".tabs-produto #tabs").first();
+
+      if (elementInfo != null) {
+         description.append(elementInfo.html());
+      }
+
+      Element aviso = doc.select(".aviso-medicamento").first();
+
+      if (aviso != null) {
+         description.append(aviso.html());
+      }
+
+      return description.toString();
+   }
+
+   private boolean crawlAvailability(Document doc) {
+      return doc.select("#BtComprarProduto").first() != null;
+   }
+
+   /**
+    * 
+    * @param doc
+    * @param price
+    * @return
+    */
+   private Prices crawlPrices(Float price, String internalId, Document doc) {
+      Prices prices = new Prices();
+
+      if (price != null) {
+         prices.setBankTicketPrice(price);
+         Element priceFrom = doc.select(".preco-de").first();
+         if (priceFrom != null) {
+            prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.text()));
+         }
+
+         String pricesUrl = "https://www.drogarianovaesperanca.com.br/Funcoes_Ajax.aspx/CarregaFormaPagamento";
+
+         JSONObject payloadJson = new JSONObject();
+         payloadJson.put("ID_OpcaoPagamento", 0);
+         payloadJson.put("ID_FormaPagamento", 0);
+         payloadJson.put("ID_SubProduto", internalId);
+         payloadJson.put("IsMobile", true);
+
+         Map<String, String> headers = new HashMap<>();
+         headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+
+         Request request = RequestBuilder.create()
+               .setUrl(pricesUrl)
+               .setCookies(this.cookies)
+               .setHeaders(headers)
+               .setPayload(payloadJson.toString())
+               .build();
+
+         JSONObject pricesJson = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+
+         if (pricesJson.has("d")) {
+            JSONArray cards = pricesJson.getJSONArray("d");
+
+            for (int i = 0; i < cards.length() - 1; i++) {
+               JSONObject card = cards.getJSONObject(i);
+               String cardName = crawlCardName(card);
+
+               if (cardName != null && card.has("Itens")) {
+                  setInstallments(cardName, card, prices);
+               }
             }
-          }
-        }
+
+         }
+
+
       }
 
-      prices.insertCardInstallment(cardName, installmentPriceMap);
-    }
-  }
+      return prices;
+   }
 
-  private String crawlEan(Document doc) {
-    String ean = null;
-    Elements elmnts = doc.select(".ficha-produto ul li div ul li");
+   private String crawlCardName(JSONObject card) {
+      String officalCardName = null;
 
-    for (Element e : elmnts) {
-      String aux = e.text();
+      if (card.has("Icon")) {
+         String cardName = card.getString("Icon").trim();
 
-      if (aux.contains("Código EAN")) {
-        ean = aux.replaceAll("[^0-9]+", "");
-        break;
+         switch (cardName) {
+            case "visa":
+               officalCardName = Card.VISA.toString();
+               break;
+            case "mastercard":
+               officalCardName = Card.MASTERCARD.toString();
+               break;
+            case "diners":
+               officalCardName = Card.DINERS.toString();
+               break;
+            case "american-express":
+               officalCardName = Card.AMEX.toString();
+               break;
+            case "elo":
+               officalCardName = Card.ELO.toString();
+               break;
+            case "boleto-bancario":
+               officalCardName = "boleto";
+               break;
+            default:
+               break;
+         }
       }
-    }
 
-    return ean;
-  }
+      return officalCardName;
+   }
+
+   private void setInstallments(String cardName, JSONObject card, Prices prices) {
+      JSONArray installments = card.getJSONArray("Itens");
+
+      if (cardName.equals("boleto") && installments.length() > 0) {
+         prices.setBankTicketPrice(installments.getJSONObject(0).getDouble("TotalGeral"));
+      } else {
+         Map<Integer, Float> installmentPriceMap = new HashMap<>();
+
+         for (int i = 0; i < installments.length(); i++) {
+            JSONObject installmentJson = installments.getJSONObject(i);
+
+            if (installmentJson.has("Nparcel")) {
+               Integer installment = installmentJson.getInt("Nparcel");
+
+               if (installmentJson.has("TotalParcela")) {
+                  String parcelText = installmentJson.getString("TotalParcela").trim();
+                  Float value = parcelText.isEmpty() ? null : MathUtils.parseFloatWithComma(parcelText);
+
+                  if (value != null) {
+                     installmentPriceMap.put(installment, value);
+                  }
+               }
+            }
+         }
+
+         prices.insertCardInstallment(cardName, installmentPriceMap);
+      }
+   }
+
+   private String crawlEan(Document doc) {
+      String ean = null;
+      Elements elmnts = doc.select(".ficha-produto ul li div ul li");
+
+      for (Element e : elmnts) {
+         String aux = e.text();
+
+         if (aux.contains("Código EAN")) {
+            ean = aux.replaceAll("[^0-9]+", "");
+            break;
+         }
+      }
+
+      return ean;
+   }
 }
