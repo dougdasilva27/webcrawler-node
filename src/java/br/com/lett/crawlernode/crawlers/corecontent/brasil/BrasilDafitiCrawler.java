@@ -282,7 +282,7 @@ public class BrasilDafitiCrawler extends Crawler {
       int a = avgr.indexOf("nota");
       int b = avgr.indexOf("de");
       avg = Double.parseDouble(avgr.substring(a + 5, b - 1));
-      System.err.println(avg);
+
       return avg;
    }
 
