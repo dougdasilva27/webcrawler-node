@@ -133,7 +133,6 @@ public class GeracaopetCrawler extends Crawler {
    private Double getTotalAvgRating(Document docRating) {
       Double avgRating = null;
       Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
-      System.err.println(docRating);
       if (rating != null) {
          avgRating = Double.parseDouble(rating.attr("content"));
 
