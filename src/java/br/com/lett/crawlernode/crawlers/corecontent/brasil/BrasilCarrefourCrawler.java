@@ -16,8 +16,11 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -79,29 +82,45 @@ public class BrasilCarrefourCrawler extends Crawler {
         .setUrl(url)
         .setCookies(cookies)
         .setHeaders(headers)
+        .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+                .mustUseMovingAverage(false)
+                .build())
         .setProxyservice(Arrays.asList(
             ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.STORM_RESIDENTIAL_EU,
-            ProxyCollection.STORM_RESIDENTIAL_US,
-            ProxyCollection.BONANZA
-        ))
+            ProxyCollection.STORM_RESIDENTIAL_EU))
         .build();
-    int tries = 0;
-    String response = null;
-    while (response == null || !response.isEmpty()) {
-      if (tries == 0)
-        response = this.dataFetcher.get(session, request).getBody();
-      else if (tries == 1) {
-        response = new ApacheDataFetcher().get(session, request).getBody();
-      } else if (tries == 2) {
-        response = new JavanetDataFetcher().get(session, request).getBody();
-      } else {
-        break;
-      }
-      tries++;
+
+    int attempts = 0;
+    Response response = this.dataFetcher.get(session, request);
+    String body = response.getBody();
+
+    Integer statusCode = 0;
+    List<RequestsStatistics> requestsStatistics = response.getRequests();
+    if (!requestsStatistics.isEmpty()) {
+      statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
     }
 
-    return response;
+    boolean retry = statusCode == null ||
+        (Integer.toString(statusCode).charAt(0) != '2'
+            && Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404);
+
+    // If fetcher don't return the expected response we try with apache
+    // If apache do the same, we try with javanet
+    if (retry) {
+      do {
+        if (attempts == 0) {
+          body = new ApacheDataFetcher().get(session, request).getBody();
+        } else if (attempts == 1) {
+          body = new JavanetDataFetcher().get(session, request).getBody();
+        }
+
+        attempts++;
+      } while (attempts < 2 && (body == null || body.isEmpty()));
+    }
+
+    return body;
   }
 
   @Override
