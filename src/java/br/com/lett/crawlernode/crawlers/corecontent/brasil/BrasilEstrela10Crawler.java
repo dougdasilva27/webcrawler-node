@@ -39,6 +39,7 @@ public class BrasilEstrela10Crawler extends Crawler {
 
    public BrasilEstrela10Crawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

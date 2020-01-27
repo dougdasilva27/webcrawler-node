@@ -26,6 +26,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
    public BrasilFarmadeliveryCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
