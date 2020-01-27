@@ -338,7 +338,7 @@ public class BrasilElonutricaoCrawler extends Crawler {
       Double avgRating = 0d;
 
       if (ratingCount > 0) {
-         Element avg = doc.select(".prod_box_avaliacao_bg_geral[style]").first();
+         Element avg = doc.selectFirst(".prod_box_avaliacao_bg_geral[style]");
 
          if (avg != null) {
             Double percentage = MathUtils
@@ -386,29 +386,31 @@ public class BrasilElonutricaoCrawler extends Crawler {
          if (elementStarNumber != null) {
 
             String stringStarNumber = elementStarNumber.attr("style");
-            int i = stringStarNumber.indexOf("width");
-            String StringStarNumberSub = stringStarNumber.substring(i);
-            String sN = StringStarNumberSub.replaceAll("[^0-9]", "").trim();
-            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
+            if (stringStarNumber.contains("width")) {
+               int i = stringStarNumber.indexOf("width");
+               String StringStarNumberSub = stringStarNumber.substring(i);
+               String sN = StringStarNumberSub.replaceAll("[^0-9]", "").trim();
+               Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
 
-            switch (numberOfStars) {
-               case 100:
-                  star5 += 1;
-                  break;
-               case 80:
-                  star4 += 1;
-                  break;
-               case 60:
-                  star3 += 1;
-                  break;
-               case 40:
-                  star2 += 1;
-                  break;
-               case 20:
-                  star1 += 1;
-                  break;
-               default:
-                  break;
+               switch (numberOfStars) {
+                  case 100:
+                     star5 += 1;
+                     break;
+                  case 80:
+                     star4 += 1;
+                     break;
+                  case 60:
+                     star3 += 1;
+                     break;
+                  case 40:
+                     star2 += 1;
+                     break;
+                  case 20:
+                     star1 += 1;
+                     break;
+                  default:
+                     break;
+               }
             }
          }
       }

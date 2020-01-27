@@ -286,7 +286,8 @@ public class BrasilEnutriCrawler extends Crawler {
       Double number = 0d;
 
       if (element.hasAttr("style")) {
-         number = Double.parseDouble(element.attr("style").replaceAll("[^0-9]", ""));
+         number = MathUtils.parseDoubleWithComma(element.attr("style"));
+
       }
 
       return number;

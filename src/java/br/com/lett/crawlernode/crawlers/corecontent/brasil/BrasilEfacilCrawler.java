@@ -471,7 +471,7 @@ public class BrasilEfacilCrawler extends Crawler {
       Double totalRating = getTotalRating(trustVoxResponse);
       AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(trustVoxResponse);
 
-      Double avgRating = null;
+      Double avgRating = 0d;
       if (totalNumOfEvaluations > 0) {
          avgRating = MathUtils.normalizeTwoDecimalPlaces(totalRating / totalNumOfEvaluations);
       }
