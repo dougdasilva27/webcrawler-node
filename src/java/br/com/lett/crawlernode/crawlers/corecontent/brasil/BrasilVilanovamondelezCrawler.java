@@ -41,7 +41,7 @@ public class BrasilVilanovamondelezCrawler extends Crawler {
 
    private static final String LOGIN_URL = "https://www.vilanova.com.br/Cliente/Logar";
    private static final String CNPJ = "33033028004090";
-   private static final String PASSWORD = "681543";
+   private static final String PASSWORD = "521542";
 
    public BrasilVilanovamondelezCrawler(Session session) {
       super(session);
