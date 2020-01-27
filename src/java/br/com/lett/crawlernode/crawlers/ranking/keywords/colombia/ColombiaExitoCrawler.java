@@ -27,13 +27,13 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
   private static final String HOME_PAGE = "https://www.exito.com/";
   private String keySHA256;
   private static final Integer API_VERSION = 1;
-  private static final String SENDER = "vtex.store-resources@0.x";
-  private static final String PROVIDER = "vtex.search-graphql@0.x";
+  private static final String SENDER = "vtex.search@0.x";
+  private static final String PROVIDER = "vtex.search@0.x";
 
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
-    this.pageSize = 20;
+    this.pageSize = 21;
 
     if (this.currentPage == 1) {
       this.keySHA256 = fetchSHA256Key();
@@ -71,7 +71,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
   }
 
   private void setTotalProducts(JSONObject data) {
-    this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "recordsFiltered", 0);
+    this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "total", 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 
@@ -92,7 +92,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     url.append("&appsEtag=remove");
     url.append("&domain=store");
     url.append("&locale=es-CO");
-    url.append("&operationName=productSearchV2");
+    url.append("&operationName=searchResult");
 
 
     JSONObject extensions = new JSONObject();
@@ -130,8 +130,8 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
     if (response.has("data") && !response.isNull("data")) {
       JSONObject data = response.getJSONObject("data");
 
-      if (data.has("productSearch") && !data.isNull("productSearch")) {
-        searchApi = data.getJSONObject("productSearch");
+      if (data.has("searchResult") && !data.isNull("searchResult")) {
+        searchApi = data.getJSONObject("searchResult");
       }
     }
 
@@ -139,16 +139,14 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
   }
 
   private String createVariablesBase64() {
-    int capturedProductsNumber = this.arrayProducts.size();
-
     JSONObject search = new JSONObject();
-    search.put("withFacets", true);
-    search.put("hideUnavailableItems", true);
-    search.put("skusFilter", "ALL_AVAILABLE");
+    search.put("productOrigin", "VTEX");
     search.put("query", this.location);
-    search.put("orderBy", "OrderByTopSaleDESC");
-    search.put("from", capturedProductsNumber);
-    search.put("to", capturedProductsNumber + (this.pageSize - 1));
+    search.put("page", this.currentPage);
+    search.put("attributePath", "");
+    search.put("sort", "");
+    search.put("count", this.pageSize);
+    search.put("leap", false);
 
     return Base64.getEncoder().encodeToString(search.toString().getBytes());
   }
@@ -166,38 +164,25 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    * @return
    */
   private String fetchSHA256Key() {
-
     // When sha256Hash is not found, this key below works (on 03/02/2020)
     String hash = "c934a0763acad40d4c1377dec290a91ea4b99d425c194c893360009dc5488c0e";
-    // String url = "https://www.exito.com/afeitar?map=ft";
-    //
-    // Request request =
-    // RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
-    // String response = this.dataFetcher.get(session, request).getBody();
-    //
-    // if (response != null) {
-    // Document doc = Jsoup.parse(response);
-    // JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "script:nth-child(3)",
-    // "__RUNTIME__=",
-    // "__STATE__", true, false);
-    // for (String key : stateJson.keySet()) {
-    // String firstIndexString = "@runtimeMeta(";
-    // String keyIdentifier = "$ROOT_QUERY.searchResult";
-    //
-    // if (key.contains(firstIndexString) && key.contains(keyIdentifier) && key.endsWith(")")) {
-    // int x = key.indexOf(firstIndexString) + firstIndexString.length();
-    // int y = key.indexOf(')', x);
-    //
-    // JSONObject hashJson = CrawlerUtils.stringToJson(key.substring(x, y));
-    //
-    // if (hashJson.has("hash") && !hashJson.isNull("hash")) {
-    // hash = hashJson.get("hash").toString();
-    // }
-    //
-    // break;
-    // }
-    // }
-    // }
+    String url = "https://exitocol.vtexassets.com/_v/public/assets/v1/published/bundle/public/react/asset.min.js"
+        + "?v=1&files=exito.home-components@1.0.12,0,4,WrapperGalleryGrid,GalleryGird,CategoryBanner,Shelf,5,"
+        + "CarouselByMoments,7,PatternLink,TitlePage&files=vtex.search@0.6.2,common,1,0,Autocomplete&files=vtex.shelf@1.35.1,"
+        + "common,1,0,2,Shelf&files=exito.category-menu@3.0.6,common&workspace=master";
+
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).mustSendContentEncoding(false).build();
+    String response = this.dataFetcher.get(session, request).getBody().replace(" ", "");
+
+    String searchProducts = CrawlerUtils.extractSpecificStringFromScript(response, "searchResult(", false, "',", false);
+    String firstIndexString = "@runtimeMeta(hash:";
+    if (searchProducts.contains(firstIndexString) && searchProducts.contains(")")) {
+      int x = searchProducts.indexOf(firstIndexString) + firstIndexString.length();
+      int y = searchProducts.indexOf(')', x);
+
+      hash = searchProducts.substring(x, y).replace("\"", "");
+
+    }
 
     return hash;
   }
