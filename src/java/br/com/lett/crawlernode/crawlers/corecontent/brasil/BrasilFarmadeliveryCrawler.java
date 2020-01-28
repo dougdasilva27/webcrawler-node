@@ -43,34 +43,27 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       if (isProductPage(this.session.getOriginalURL(), doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         // ID interno
          String internalId = null;
          Element elementID = doc.select("input[name=product]").first();
          if (elementID != null) {
             internalId = Integer.toString(Integer.parseInt(elementID.val()));
          }
 
-         // Pid
          String internalPid = null;
          Elements elementInternalPid = doc.select("#product-attribute-specs-table tr.sku td.data");
          if (elementInternalPid != null && elementInternalPid.size() > 1) {
             internalPid = elementInternalPid.get(0).text().trim();
          }
 
-         // Nome
          Element elementName = doc.select(".product-name h1").first();
          String name = elementName.text().replace("'", "").replace("’", "").trim();
-
          Float price = crawlPrice(doc);
-
-         // Disponibilidade
          boolean available = true;
          Element buttonUnavailable = doc.select("a.btn-esgotado").first();
          if (buttonUnavailable != null) {
             available = false;
          }
 
-         // Categorias
          String category1 = "";
          String category2 = "";
          String category3 = "";
@@ -309,11 +302,9 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       Element totalRatingElement = docRating.select(".rating-box-product .amount a").first();
 
       if (totalRatingElement != null) {
-         String text = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
+         String text = totalRatingElement.toString();
+         totalRating = MathUtils.parseInt(text);
 
-         if (!text.isEmpty()) {
-            totalRating = Integer.parseInt(text);
-         }
       }
 
       return totalRating;
@@ -335,8 +326,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
          if (elementStarNumber != null) {
 
             String stringStarNumber = elementStarNumber.attr("style");
-            String sN = stringStarNumber.replaceAll("[^0-9]", "").trim();
-            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
+            Integer numberOfStars = MathUtils.parseInt(stringStarNumber);
 
             switch (numberOfStars) {
                case 100:
