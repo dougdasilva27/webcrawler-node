@@ -95,7 +95,7 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(session.getOriginalURL())) {
+      if (isProductPage(session.getOriginalURL()) || doc.selectFirst(".secondary_page_wrapper") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
