@@ -22,6 +22,7 @@ import models.prices.Prices;
 public class BrasilEpocacosmeticosCrawler extends Crawler {
    public BrasilEpocacosmeticosCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
 
