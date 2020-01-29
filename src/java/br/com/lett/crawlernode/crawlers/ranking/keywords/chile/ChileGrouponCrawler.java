@@ -102,9 +102,9 @@ public class ChileGrouponCrawler extends CrawlerRankingKeywords {
             element = aux;
          }
       }
-
       int a = element.indexOf("=") + 3;
-      element = element.substring(a, element.length() - 10);
+      int b = element.indexOf("\"<");
+      element = element.substring(a, b);
       String decodedString = new String(Base64.getDecoder().decode(element.getBytes()));
       JSONObject initialState = CrawlerUtils.stringToJson(decodedString);
 
