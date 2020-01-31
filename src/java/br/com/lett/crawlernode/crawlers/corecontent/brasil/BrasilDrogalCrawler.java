@@ -61,7 +61,8 @@ public class BrasilDrogalCrawler extends Crawler {
          Prices prices = crawlPrices(price, doc);
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
+         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories
+               .getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
 
          products.add(product);
 
@@ -214,6 +215,11 @@ public class BrasilDrogalCrawler extends Crawler {
    private String crawlDescription(Document document) {
       StringBuilder description = new StringBuilder();
       Element descriptionElement = document.select(".container .float > .center:not(.product) > .row").first();
+      Element descriptionFirst = document.selectFirst(".row .float.size12 p");
+
+      if (descriptionFirst != null) {
+         description.append(descriptionFirst.html());
+      }
 
       if (descriptionElement != null) {
          description.append(descriptionElement.html());
