@@ -119,7 +119,7 @@ public class BrasilMarabrazCrawler extends Crawler {
    private String getUrlFromStyle(String style) {
       String url = null;
 
-      if (style.contains("url") && style.contains("('") && style.contains("')")) {
+      if (style.contains("url('") && style.contains("')")) {
          url = style.substring(style.indexOf("url('") + 5, style.indexOf("')"));
       }
 
