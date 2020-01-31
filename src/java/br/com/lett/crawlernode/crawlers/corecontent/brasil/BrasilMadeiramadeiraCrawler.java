@@ -94,7 +94,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
    private boolean crawlAvailable(Document doc) {
       boolean available = false;
-      String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString();
+      String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
 
       if (availableEl.contains("Comprar")) {
          available = true;
