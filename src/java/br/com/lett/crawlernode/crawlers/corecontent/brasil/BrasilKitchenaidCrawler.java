@@ -7,6 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -29,6 +30,7 @@ public class BrasilKitchenaidCrawler extends Crawler {
 
    public BrasilKitchenaidCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override

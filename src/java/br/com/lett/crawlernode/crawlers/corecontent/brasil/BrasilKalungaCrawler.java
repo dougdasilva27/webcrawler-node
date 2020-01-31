@@ -247,7 +247,7 @@ public class BrasilKalungaCrawler extends Crawler {
    }
 
    private Double getTotalAvgRating(Document doc) {
-      Double avgRating = null;
+      Double avgRating = 0.0;
       Element rating = doc.selectFirst("span[itemprop=ratingValue]");
 
       if (rating != null) {
@@ -263,7 +263,7 @@ public class BrasilKalungaCrawler extends Crawler {
 
 
    private Integer getTotalNumOfRatings(Document doc) {
-      Integer rating = null;
+      Integer rating = 0;
       Element ratingElement = doc.selectFirst("span[itemprop=reviewCount]");
 
       if (ratingElement != null) {
