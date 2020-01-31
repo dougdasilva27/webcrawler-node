@@ -1,20 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BrasilDolcegustoCrawler extends Crawler {
 
@@ -22,6 +26,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
   public BrasilDolcegustoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -42,9 +47,9 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
       // internalId
       Element elementInternalID = doc.select(".no-display [name=product]").first();
-      String internalID = null;
+      String internalId = null;
       if (elementInternalID != null) {
-        internalID = elementInternalID.attr("value");
+        internalId = elementInternalID.attr("value");
       }
 
       // name
@@ -87,7 +92,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
         for (int i = 1; i < elementImages.size(); i++) { // primeira imagem eh primaria
           Element e = elementImages.get(i);
           if (!e.attr("class").equals("show-video")) { // nao pegar se for video
-            String attrRel = e.attr("rel").toString();
+            String attrRel = e.attr("rel");
             secundaryImagesArray.put(parseImage(attrRel));
           }
         }
@@ -124,6 +129,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
         available = false;
       }
 
+      RatingsReviews ratingsReviews = scrapRatingReviews(doc, internalId);
       // stock
       Integer stock = null;
 
@@ -135,8 +141,9 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
       Product product = new Product();
       product.setUrl(this.session.getOriginalURL());
-      product.setInternalId(internalID);
+      product.setInternalId(internalId);
       product.setName(name);
+      product.setRatingReviews(ratingsReviews);
       product.setPrice(price);
       product.setPrices(prices);
       product.setCategory1(category1);
@@ -161,7 +168,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
   private String parseImage(String text) {
     int begin = text.indexOf("largeimage:") + 11;
     String img = text.substring(begin);
-    img = img.replace("\'", " ").replace('}', ' ').trim();
+    img = img.replace("'", " ").replace('}', ' ').trim();
 
     return img;
   }
@@ -192,8 +199,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
   /**
    * In this market, installments not appear in product page
-   * 
-   * @param doc
+   *
    * @param price
    * @return
    */
@@ -212,6 +218,49 @@ public class BrasilDolcegustoCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private RatingsReviews scrapRatingReviews(Document doc, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setTotalRating(computeTotalReviewsCount(doc));
+    ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
+
+    return ratingReviews;
+  }
+
+  private Integer computeTotalReviewsCount(Document doc) {
+    int totalReviewsCount = 0;
+    Element total = doc.select("meta[itemprop=reviewCount]").first();
+
+    if (total != null) {
+      try {
+        totalReviewsCount = Integer.parseInt(total.attr("content"));
+      } catch (Exception e) {
+        Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+      }
+    }
+
+    return totalReviewsCount;
+  }
+
+  private Double crawlAverageOverallRating(Document document) {
+    Double avgOverallRating = null;
+
+    Element percentageElement = document.select("meta[itemprop=ratingValue]").first();
+    if (percentageElement != null) {
+
+      double percentage = Double.parseDouble(percentageElement.attr("content"));
+
+      if (percentage > 0F) {
+        avgOverallRating = MathUtils.normalizeTwoDecimalPlaces(5 * (percentage / 100f));
+      }
+
+    }
+
+    return avgOverallRating;
   }
 
 }
