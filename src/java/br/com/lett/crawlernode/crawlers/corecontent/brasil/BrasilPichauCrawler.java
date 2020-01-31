@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -19,6 +11,11 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.*;
 
 /**
  * Date: 15/10/2018
@@ -98,7 +95,7 @@ public class BrasilPichauCrawler extends Crawler {
 
     if (metaImage != null) {
       String attr = metaImage.attr("content");
-      token = attr.substring(attr.lastIndexOf("/"), attr.length());
+        token = attr.substring(attr.lastIndexOf("/"));
     }
     for (Object object : images) {
       String image = (String) object;

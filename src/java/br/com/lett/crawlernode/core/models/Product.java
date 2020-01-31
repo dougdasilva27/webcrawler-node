@@ -1,20 +1,21 @@
 package br.com.lett.crawlernode.core.models;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import org.apache.commons.lang3.SerializationUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import com.google.common.base.CharMatcher;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.base.CharMatcher;
 import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.apache.commons.lang3.SerializationUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Product implements Serializable {
 
@@ -273,11 +274,7 @@ public class Product implements Serializable {
     if (internalId == null || internalId.isEmpty()) {
       return true;
     }
-    if (name == null || name.isEmpty()) {
-      return true;
-    }
-
-    return false;
+    return name == null || name.isEmpty();
   }
 
   @Override

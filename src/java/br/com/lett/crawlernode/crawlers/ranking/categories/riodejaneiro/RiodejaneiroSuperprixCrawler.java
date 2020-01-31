@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.riodejaneiro;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class RiodejaneiroSuperprixCrawler extends CrawlerRankingCategories {
 
@@ -73,11 +72,7 @@ public class RiodejaneiroSuperprixCrawler extends CrawlerRankingCategories {
 
 	@Override
 	protected boolean hasNextPage() {
-		if (arrayProducts.size() < this.totalProducts) {
-			return true;
-		}
-
-		return false;
+		return arrayProducts.size() < this.totalProducts;
 	}
 
 	@Override

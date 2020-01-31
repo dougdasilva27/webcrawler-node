@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,6 +8,12 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (16/08/2016):
@@ -151,8 +146,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".headerProduct").first() != null ) return true;
-		return false;
+		return document.select(".headerProduct").first() != null;
 	}
 	
 	
@@ -165,7 +159,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 		Element internalIdElement = document.select("input.idProduct").first();
 
 		if (internalIdElement != null) {
-			internalId = internalIdElement.attr("value").toString().trim();			
+			internalId = internalIdElement.attr("value").trim();
 		}
 
 		return internalId;
@@ -182,7 +176,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 		Element nameElement = document.select("#dsNameProduct").first();
 
 		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
+			name = nameElement.text().trim();
 		}
 
 		return name;
@@ -193,7 +187,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 		Element specialPrice = document.select(".price strong").first();		
 		
 		if (specialPrice != null) {
-			price = Float.parseFloat( specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".") );
+			price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 		} 
 
 		return price;
@@ -258,12 +252,8 @@ public class BrasilCamicadoCrawler extends Crawler {
 	
 	private boolean crawlAvailability(Document document) {
 		Element notifyMeElement = document.select(".reminder-label").first();
-		
-		if (notifyMeElement != null) {
-			return false;
-		}
-		
-		return true;
+
+		return notifyMeElement == null;
 	}
 
 	private Map<String, Float> crawlMarketplace(Document document) {

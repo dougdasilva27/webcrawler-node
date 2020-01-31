@@ -1,16 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class BrasilNovomundoRatingReviewCrawler extends RatingReviewCrawler {
@@ -43,7 +44,7 @@ public class BrasilNovomundoRatingReviewCrawler extends RatingReviewCrawler {
 
         List<String> idList = crawlIdList(skuJson);
         for (String internalId : idList) {
-          RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+          RatingsReviews clonedRatingReviews = ratingReviews.clone();
           clonedRatingReviews.setInternalId(internalId);
           ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
         }

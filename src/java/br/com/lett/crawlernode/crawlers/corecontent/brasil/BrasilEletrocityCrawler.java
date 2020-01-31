@@ -1,19 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -25,6 +12,20 @@ import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public class BrasilEletrocityCrawler extends Crawler {
 
@@ -137,9 +138,7 @@ public class BrasilEletrocityCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    if (url.endsWith("/p"))
-      return true;
-    return false;
+    return url.endsWith("/p");
   }
 
 
@@ -163,7 +162,7 @@ public class BrasilEletrocityCrawler extends Crawler {
     Element internalPidElement = document.select("#___rc-p-id").first();
 
     if (internalPidElement != null) {
-      internalPid = internalPidElement.attr("value").toString().trim();
+      internalPid = internalPidElement.attr("value").trim();
     }
 
     return internalPid;
@@ -176,7 +175,7 @@ public class BrasilEletrocityCrawler extends Crawler {
     String nameVariation = jsonSku.getString("skuname");
 
     if (nameElement != null) {
-      name = nameElement.text().toString().trim();
+      name = nameElement.text().trim();
 
       if (!name.contains(nameVariation)) {
         name = name + " - " + nameVariation;
@@ -198,10 +197,7 @@ public class BrasilEletrocityCrawler extends Crawler {
 
   private boolean crawlAvailability(Map<String, Float> marketplace) {
 
-    if (marketplace.containsKey(ELETROCITY_SELLER_NAME_LOWER_CASE))
-      return true;
-
-    return false;
+    return marketplace.containsKey(ELETROCITY_SELLER_NAME_LOWER_CASE);
   }
 
   private boolean crawlAvailabilityMarketPlace(JSONObject json) {

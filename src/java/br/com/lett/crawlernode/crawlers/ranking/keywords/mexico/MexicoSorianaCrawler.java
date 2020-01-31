@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class MexicoSorianaCrawler extends CrawlerRankingKeywords{
 	
@@ -64,15 +64,11 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		Element page = this.currentDoc.select("li.last").first();
-		
+
 		//se  elemeno page não obtiver nenhum resultado
-		if( page == null ) {
-			//não tem próxima página
-			return false;
-		}
-		
-		return true;
-		
+		//não tem próxima página
+		return page != null;
+
 	}
 	
 	@Override

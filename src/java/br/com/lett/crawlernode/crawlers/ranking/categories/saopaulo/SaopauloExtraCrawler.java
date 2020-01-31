@@ -1,16 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
-import br.com.lett.crawlernode.util.CommonMethods;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SaopauloExtraCrawler extends CrawlerRankingCategories {
 
@@ -119,11 +118,7 @@ public class SaopauloExtraCrawler extends CrawlerRankingCategories {
 		Element page = this.currentDoc.select(".nextPage > a").first();
 
 		// se elemento page obtiver algum resultado
-		if (page != null) {
-			return true;
-		}
-
-		return false;
+		return page != null;
 	}
 
 	@Override

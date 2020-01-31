@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -26,6 +17,12 @@ import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (27/06/2019):
@@ -276,9 +273,7 @@ public class BrasilKoerichCrawler extends Crawler {
       if (json.has(key) && json.get(key) instanceof JSONArray) {
          JSONArray array = json.getJSONArray(key);
 
-         if (array.length() > 0) {
-            return true;
-         }
+          return array.length() > 0;
       }
 
       return false;

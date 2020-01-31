@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -23,6 +14,16 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class PeruMetroCrawler extends Crawler {
 
@@ -128,7 +129,7 @@ public class PeruMetroCrawler extends Crawler {
                totalNumOfEvaluations += 1;
 
                if (innerJson.has("rating")) {
-                  avgRating = (double) (avgRating + innerJson.getInt("rating"));;
+                  avgRating = avgRating + innerJson.getInt("rating");
                }
             }
 

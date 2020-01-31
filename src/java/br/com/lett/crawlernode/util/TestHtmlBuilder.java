@@ -1,29 +1,21 @@
 package br.com.lett.crawlernode.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.session.Session;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Resources;
-import br.com.lett.crawlernode.core.session.Session;
 import enums.OfferField;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class TestHtmlBuilder {
 
@@ -65,7 +57,7 @@ public class TestHtmlBuilder {
 
     Mustache mustache = null;
     try {
-      mustache = mustacheFactory.compile(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")), file.getName());
+        mustache = mustacheFactory.compile(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), file.getName());
     } catch (FileNotFoundException e) {
       Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
     }

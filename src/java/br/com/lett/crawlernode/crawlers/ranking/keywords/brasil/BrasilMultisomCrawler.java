@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilMultisomCrawler extends CrawlerRankingKeywords {
 
@@ -65,11 +65,7 @@ public class BrasilMultisomCrawler extends CrawlerRankingKeywords {
   protected boolean hasNextPage() {
     Element lastPage = this.currentDoc.select(".navigation li").last();
 
-    if (lastPage != null && !lastPage.hasClass("current")) {
-      return true;
-    }
-
-    return false;
+    return lastPage != null && !lastPage.hasClass("current");
   }
 
   @Override

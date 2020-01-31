@@ -1,14 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 
@@ -85,11 +86,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 		Element page = this.currentDoc.select("li.next a").first();
 
 		// se elemeno page obtiver algum resultado
-		if (page != null) {
-			return true;
-		}
-
-		return false;
+		return page != null;
 
 	}
 
@@ -105,7 +102,7 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingCategories {
 	}
 
 	private boolean isThePrincipalCategorie(String url) {
-		return url.replace(HOME_PAGE, "").split("/").length == 1 ? true : false;
+		return url.replace(HOME_PAGE, "").split("/").length == 1;
 	}
 
 	private List<String> crawlShareJSON(JSONObject shareInfo) {

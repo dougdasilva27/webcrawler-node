@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,6 +7,16 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BrasilCitylarCrawler extends Crawler {
 
@@ -60,9 +59,9 @@ public class BrasilCitylarCrawler extends Crawler {
 				
 				if(nameVariation != null){
 					String textName = nameVariation.text();
-					
-					if(textName.contains("|")){						
-						name = name + " " + textName.split("\\|")[0].trim();;
+
+					if (textName.contains("|")) {
+						name = name + " " + textName.split("\\|")[0].trim();
 					} else {
 						name = name + " " + textName.trim();
 					}

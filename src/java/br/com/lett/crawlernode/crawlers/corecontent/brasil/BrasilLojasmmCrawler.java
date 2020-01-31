@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,6 +8,12 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (19/08/2016):
@@ -161,12 +156,8 @@ public class BrasilLojasmmCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select("span[itemprop=productID]").first() != null ) {
-			return true;
-		}
-
-		return false;
-	}
+        return document.select("span[itemprop=productID]").first() != null;
+    }
 
 
 	/*******************
@@ -179,8 +170,8 @@ public class BrasilLojasmmCrawler extends Crawler {
 		Element internalPidElement = document.select("span[itemprop=productID]").first();
 
 		if (internalPidElement != null) {
-			internalPid = internalPidElement.text().toString().trim();			
-		}
+            internalPid = internalPidElement.text().trim();
+        }
 
 		return internalPid;
 	}
@@ -311,11 +302,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 
 					String element = script.substring(x + ifScrpit.length(), y);
 
-					if(element.contains("outofstock")){
-						return false;
-					} else {
-						return true;
-					}
+                    return !element.contains("outofstock");
 				}
 			}
 		}

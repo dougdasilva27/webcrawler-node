@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
@@ -10,6 +7,9 @@ import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 /**
  * Date: 13/12/16
@@ -116,10 +116,7 @@ public class BrasilDufrioRatingReviewCrawler extends RatingReviewCrawler {
 
 
   private boolean isProductPage(Document doc) {
-    if (doc.select(".detalheProduto").first() != null) {
-      return true;
-    }
-    return false;
+    return doc.select(".detalheProduto").first() != null;
   }
 
 }

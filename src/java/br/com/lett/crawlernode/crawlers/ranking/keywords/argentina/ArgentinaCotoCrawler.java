@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords{
 
@@ -62,12 +61,8 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalProducts){
-			//tem próxima página
-			return true;
-		} 
-			
-		return false;
+		//tem próxima página
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 	
 	@Override

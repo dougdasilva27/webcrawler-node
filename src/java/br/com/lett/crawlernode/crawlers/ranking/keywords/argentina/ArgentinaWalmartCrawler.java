@@ -1,15 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ArgentinaWalmartCrawler extends CrawlerRankingKeywords{
 
@@ -68,11 +67,7 @@ public class ArgentinaWalmartCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		if(arrayProducts.size() < this.totalProducts){
-			return true;
-		}
-		
-		return false;
+		return arrayProducts.size() < this.totalProducts;
 	}
 	
 	@Override

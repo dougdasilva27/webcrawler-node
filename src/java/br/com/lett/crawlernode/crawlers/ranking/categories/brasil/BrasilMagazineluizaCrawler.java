@@ -1,15 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.brasil;
 
-import java.util.Iterator;
-
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
-import br.com.lett.crawlernode.util.CommonMethods;
+import java.util.Iterator;
 
 public class BrasilMagazineluizaCrawler extends CrawlerRankingCategories {
 
@@ -115,12 +114,8 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingCategories {
 		Element page = this.currentDoc.select("a.last-page").first();
 
 		// se elemeno page obtiver algum resultado
-		if (page != null && !this.cat1) {
-			// tem próxima página
-			return true;
-		}
-
-		return false;
+		// tem próxima página
+		return page != null && !this.cat1;
 	}
 
 	@Override

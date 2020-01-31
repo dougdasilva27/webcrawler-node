@@ -1,12 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.florianopolis;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class FlorianopolisAngeloniCrawler extends CrawlerRankingCategories {
 
@@ -89,12 +88,10 @@ public class FlorianopolisAngeloniCrawler extends CrawlerRankingCategories {
 	protected boolean hasNextPage() {
 		if(this.arrayProducts.size() < this.totalProducts) {
 			Elements page = this.currentDoc.select("a.lnkPagNext");
-			
+
 			//se  elemeno page obtiver algum resultado.
-			if(page.size() > 0) {
-				//tem próxima página
-				return true;
-			} 
+			//tem próxima página
+			return page.size() > 0;
 		}	
 		
 		return false;
