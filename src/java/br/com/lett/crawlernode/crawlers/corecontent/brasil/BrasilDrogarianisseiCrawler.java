@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -19,11 +10,22 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Date: 08/06/2018
- * 
+ *
  * @author Gabriel Dornelas
  *
  */
@@ -62,12 +64,26 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+      RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
 
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+      Product product = ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setRatingReviews(ratingsReviews)
+              .setStock(stock)
+              .setMarketplace(marketplace)
+              .build();
 
       products.add(product);
 
@@ -197,10 +213,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     return primaryImage;
   }
 
-  /**
-   * @param doc
-   * @return
-   */
   private String crawlSecondaryImages(JSONObject images) {
     String secondaryImages = null;
     JSONArray secondaryImagesArray = new JSONArray();
@@ -216,10 +228,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     return secondaryImages;
   }
 
-  /**
-   * @param document
-   * @return
-   */
   private CategoryCollection crawlCategories(Document document) {
     CategoryCollection categories = new CategoryCollection();
     Elements elementCategories = document.select(".items .item:not(.home):not(.product)");
@@ -251,12 +259,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
     return doc.select(".stock.available").first() != null;
   }
 
-  /**
-   * 
-   * @param doc
-   * @param price
-   * @return
-   */
   private Prices crawlPrices(Float price, Document doc) {
     Prices prices = new Prices();
 
@@ -288,5 +290,57 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
     return prices;
   }
+
+  private RatingsReviews scrapRatingAndReviews(Document document, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+    Double avgRating = getTotalAvgRating(document);
+
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+
+    return ratingReviews;
+
+  }
+
+  /**
+   * Avg appear in html element
+   */
+  private Double getTotalAvgRating(Document doc) {
+    double avgRating = 0D;
+    Element reviews = doc.select(".rate-geral > .star-avaliacao").first();
+
+    if (reviews != null) {
+      String text = reviews.attr("rate-avaliacao").replaceAll("[^0-9.]", "").trim();
+
+      if (!text.isEmpty()) {
+        avgRating = Double.parseDouble(text);
+      }
+    }
+
+    return avgRating;
+  }
+
+  /**
+   * Number of ratings appear in html element
+   */
+  private Integer getTotalNumOfRatings(Document doc) {
+    int ratingNumber = 0;
+    Element reviews = doc.select(".rate-geral > small").first();
+
+    if (reviews != null) {
+      String text = reviews.ownText().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        ratingNumber = Integer.parseInt(text);
+      }
+    }
+
+    return ratingNumber;
+  }
+
 
 }

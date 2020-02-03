@@ -4,8 +4,12 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -23,6 +27,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
   public BrasilDolcegustoCrawler(Session session) {
     super(session);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -43,9 +48,9 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
       // internalId
       Element elementInternalID = doc.select(".no-display [name=product]").first();
-      String internalID = null;
+      String internalId = null;
       if (elementInternalID != null) {
-        internalID = elementInternalID.attr("value");
+        internalId = elementInternalID.attr("value");
       }
 
       // name
@@ -125,6 +130,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
         available = false;
       }
 
+      RatingsReviews ratingsReviews = scrapRatingReviews(doc, internalId);
       // stock
       Integer stock = null;
 
@@ -136,8 +142,9 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
       Product product = new Product();
       product.setUrl(this.session.getOriginalURL());
-      product.setInternalId(internalID);
+      product.setInternalId(internalId);
       product.setName(name);
+      product.setRatingReviews(ratingsReviews);
       product.setPrice(price);
       product.setPrices(prices);
       product.setCategory1(category1);
@@ -193,8 +200,7 @@ public class BrasilDolcegustoCrawler extends Crawler {
 
   /**
    * In this market, installments not appear in product page
-   * 
-   * @param doc
+   *
    * @param price
    * @return
    */
@@ -213,6 +219,44 @@ public class BrasilDolcegustoCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private RatingsReviews scrapRatingReviews(Document doc, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setTotalRating(computeTotalReviewsCount(doc));
+    ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
+
+    return ratingReviews;
+  }
+
+  private Integer computeTotalReviewsCount(Document doc) {
+    int totalReviewsCount = 0;
+    Element total = doc.select("meta[itemprop=reviewCount]").first();
+
+    if (total != null) {
+      try {
+        totalReviewsCount = Integer.parseInt(total.attr("content"));
+      } catch (Exception e) {
+        Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
+      }
+    }
+
+    return totalReviewsCount;
+  }
+
+  private Double crawlAverageOverallRating(Document document) {
+    Double avgOverallRating = null;
+
+    Integer percentage = CrawlerUtils.scrapIntegerFromHtmlAttr(document, "meta[itemprop=ratingValue]", "content", 0);
+
+    if (percentage > 0) {
+      avgOverallRating = MathUtils.normalizeTwoDecimalPlaces(5 * (percentage.doubleValue() / 100));
+    }
+
+    return avgOverallRating;
   }
 
 }
