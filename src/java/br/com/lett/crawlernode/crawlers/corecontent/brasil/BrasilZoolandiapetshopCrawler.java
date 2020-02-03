@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -24,6 +15,12 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class BrasilZoolandiapetshopCrawler extends Crawler {
 
@@ -72,19 +69,53 @@ public class BrasilZoolandiapetshopCrawler extends Crawler {
             boolean available = docPrices.selectFirst("#nao_disp") == null;
             Float price = JSONUtils.getFloatValueFromJSON(productJson, "price", true);
             Prices prices = scrapPrices(skuJson, price);
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docImages, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST);
-            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docImages, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST,
-                primaryImage);
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docImages, IMAGES_SELECTOR, Collections.singletonList("href"), "https", IMAGES_HOST);
+            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docImages, IMAGES_SELECTOR, Collections.singletonList("href"), "https", IMAGES_HOST,
+                    primaryImage);
 
             String ean = JSONUtils.getStringValue(skuJson, "EAN");
-            List<String> eans = ean != null ? Arrays.asList(ean) : null;
+            List<String> eans = ean != null ? Collections.singletonList(ean) : null;
 
             // Creating the product
             Product product = ProductBuilder.create()
+                    .setUrl(session.getOriginalURL())
+                    .setInternalId(internalId)
+                    .setInternalPid(internalPid)
+                    .setName(variationName != null ? name + " " + variationName : name)
+                    .setPrice(price)
+                    .setPrices(prices)
+                    .setAvailable(available)
+                    .setCategory1(categories.getCategory(0))
+                    .setCategory2(categories.getCategory(1))
+                    .setCategory3(categories.getCategory(2))
+                    .setPrimaryImage(primaryImage)
+                    .setSecondaryImages(secondaryImages)
+                    .setDescription(description)
+                    .setMarketplace(new Marketplace())
+                    .setEans(eans)
+                    .setRatingReviews(ratingReviews)
+                    .build();
+
+            products.add(product);
+          }
+        }
+      } else {
+
+        Float price = JSONUtils.getFloatValueFromJSON(productJson, "price", true);
+        Prices prices = scrapPrices(productJson, price);
+        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, IMAGES_SELECTOR, Collections.singletonList("href"), "https", IMAGES_HOST);
+        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, IMAGES_SELECTOR, Collections.singletonList("href"), "https", IMAGES_HOST,
+                primaryImage);
+        boolean available = doc.selectFirst("#nao_disp") == null;
+        String ean = JSONUtils.getStringValue(productJson, "EAN");
+        List<String> eans = ean != null ? Collections.singletonList(ean) : null;
+
+        // Creating the product
+        Product product = ProductBuilder.create()
                 .setUrl(session.getOriginalURL())
-                .setInternalId(internalId)
+                .setInternalId(internalPid)
                 .setInternalPid(internalPid)
-                .setName(variationName != null ? name + " " + variationName : name)
+                .setName(name)
                 .setPrice(price)
                 .setPrices(prices)
                 .setAvailable(available)
@@ -98,41 +129,6 @@ public class BrasilZoolandiapetshopCrawler extends Crawler {
                 .setEans(eans)
                 .setRatingReviews(ratingReviews)
                 .build();
-
-            products.add(product);
-          }
-        }
-      } else {
-
-        String internalId = internalPid;
-        Float price = JSONUtils.getFloatValueFromJSON(productJson, "price", true);
-        Prices prices = scrapPrices(productJson, price);
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST);
-        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST,
-            primaryImage);
-        boolean available = doc.selectFirst("#nao_disp") == null;
-        String ean = JSONUtils.getStringValue(productJson, "EAN");
-        List<String> eans = ean != null ? Arrays.asList(ean) : null;
-
-        // Creating the product
-        Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setMarketplace(new Marketplace())
-            .setEans(eans)
-            .setRatingReviews(ratingReviews)
-            .build();
 
         products.add(product);
       }
