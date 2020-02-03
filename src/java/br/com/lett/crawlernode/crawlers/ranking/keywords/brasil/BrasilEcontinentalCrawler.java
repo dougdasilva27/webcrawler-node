@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilEcontinentalCrawler extends CrawlerRankingKeywords{
 
@@ -59,13 +58,9 @@ public class BrasilEcontinentalCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		Element nextPage = this.currentDoc.select(".item.last").first();
-		
-		if(nextPage != null){
-			return true;
-		}
-			
-		return false;
-		
+
+		return nextPage != null;
+
 	}
 
 	private String crawlInternalId(Element e){

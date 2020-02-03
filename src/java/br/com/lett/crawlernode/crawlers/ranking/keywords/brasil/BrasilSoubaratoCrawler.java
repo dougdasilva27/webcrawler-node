@@ -1,12 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
 
@@ -75,8 +74,7 @@ public class BrasilSoubaratoCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		//se os produtos cadastrados não atingiram o total tem proxima pagina
-		if(this.arrayProducts.size() < this.totalProducts) return true;
-		else									  		return false;
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 
 

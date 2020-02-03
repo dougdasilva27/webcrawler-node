@@ -1,13 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
-import models.RatingsReviews;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 /**
  * Date: 24/08/17
@@ -86,10 +85,7 @@ public class BrasilPluscareRatingReviewCrawler extends RatingReviewCrawler {
 
 
 	private boolean isProductPage(Document doc) {
-		if ( doc.select("#IdProduto").first() != null ) {
-			return true;
-		}
-		return false;
+		return doc.select("#IdProduto").first() != null;
 	}
 	
 }

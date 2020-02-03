@@ -1,19 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
-import org.openqa.selenium.support.ui.Select;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -26,6 +12,17 @@ import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.support.ui.Select;
+
+import java.util.*;
 
 /**
  * Date: 08/12/2016
@@ -119,10 +116,7 @@ public class ColombiaCarullaCrawler extends Crawler {
   }
 
   private boolean isProductPage(String url) {
-    if (url.startsWith(HOME_PAGE + "product")) {
-      return true;
-    }
-    return false;
+    return url.startsWith(HOME_PAGE + "product");
   }
 
   private String crawlInternalId(Document document) {

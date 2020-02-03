@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -22,6 +11,14 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 
 /************************************************************************************************************************************************************************************
@@ -241,33 +238,30 @@ public class BrasilSipolattiCrawler extends Crawler {
       }
 
     } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+        Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
-    return products;
+      return products;
   }
 
 
-
-  /*******************************
-   * Product page identification *
-   *******************************/
-
-  private boolean isProductPage(String url, Document doc) {
-    Element producElement = doc.select("#info-product").first();
-
-    if (producElement != null && (url.endsWith("/p") || (url.contains("/p?attempt="))))
-      return true;
-    return false;
-  }
+    /**
+     * Integer
+     *
+     * @param object
+     * @return Boolean - se é Integer ou não
+     */
+    public static boolean isInteger(Object object) {
+        return object instanceof Integer;
+    }
 
 
-  /*********************************
-   * Multiple product page methods *
-   *********************************/
+    /*********************************
+     * Multiple product page methods *
+     *********************************/
 
-  private Float crawlPriceVariation(JSONObject jsonSku, boolean availbale) {
-    Float price = null;
+    private Float crawlPriceVariation(JSONObject jsonSku, boolean availbale) {
+        Float price = null;
 
     if (jsonSku.has("price") && availbale) {
       price = Float.parseFloat(jsonSku.getString("price"));
@@ -568,28 +562,29 @@ public class BrasilSipolattiCrawler extends Crawler {
   }
 
   private String crawlInternalId(Document doc) {
-    String internalID = null;
-    Element internalIdElement = doc.select("#ProdutoCodigo").first();
+      String internalID = null;
+      Element internalIdElement = doc.select("#ProdutoCodigo").first();
 
-    if (internalIdElement != null) {
-      internalID = internalIdElement.attr("value").trim();
+      if (internalIdElement != null) {
+          internalID = internalIdElement.attr("value").trim();
+      }
+
+      return internalID;
+  }
+
+    /*******************************
+     * Product page identification *
+     *******************************/
+
+    private boolean isProductPage(String url, Document doc) {
+        Element producElement = doc.select("#info-product").first();
+
+        return producElement != null && (url.endsWith("/p") || (url.contains("/p?attempt=")));
     }
 
-    return internalID;
-  }
-
-  private boolean crawlAvailability(Document doc) {
-    Element availableElement = doc.select("#lblPrecos #lblPrecoPor strong").first();
-
-    if (availableElement != null)
-      return true;
-
-    return false;
-  }
-
-  private String crawlPrimaryImage(Document document) {
-    String primaryImage = null;
-    Element primaryImageElements = document.select("#big_photo_container a").first();
+    private String crawlPrimaryImage(Document document) {
+        String primaryImage = null;
+        Element primaryImageElements = document.select("#big_photo_container a").first();
 
     if (primaryImageElements != null) {
       primaryImage = primaryImageElements.attr("href");
@@ -699,27 +694,19 @@ public class BrasilSipolattiCrawler extends Crawler {
           int x = script.indexOf("token =") + 7;
           int y = script.indexOf(";", x);
 
-          token = script.substring(x, y).replaceAll("\"", "").trim();
+            token = script.substring(x, y).replaceAll("\"", "").trim();
         }
-        break;
+          break;
       }
     }
 
-    return token;
+      return token;
   }
 
-  /**
-   * Integer
-   * 
-   * @param object
-   * @return Boolean - se é Integer ou não
-   */
-  public static boolean isInteger(Object object) {
-    if (object instanceof Integer) {
-      return true;
-    }
+    private boolean crawlAvailability(Document doc) {
+        Element availableElement = doc.select("#lblPrecos #lblPrecoPor strong").first();
 
-    return false;
+        return availableElement != null;
   }
 
 }

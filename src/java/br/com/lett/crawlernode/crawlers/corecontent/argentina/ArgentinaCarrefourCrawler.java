@@ -1,19 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.apache.commons.lang3.tuple.Pair;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.remote.JsonException;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -25,6 +11,17 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Util;
 import models.prices.Prices;
+import org.apache.commons.lang3.tuple.Pair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.remote.JsonException;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ArgentinaCarrefourCrawler extends Crawler {
 
@@ -108,10 +105,7 @@ public class ArgentinaCarrefourCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(Document doc) {
-    if (doc.select("div.add-to-cart-buttons p.out-of-stock").first() != null) {
-      return false;
-    }
-    return true;
+    return doc.select("div.add-to-cart-buttons p.out-of-stock").first() == null;
   }
 
   /**

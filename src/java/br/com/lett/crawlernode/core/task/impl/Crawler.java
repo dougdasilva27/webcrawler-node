@@ -1,17 +1,5 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -49,6 +37,19 @@ import models.DateConstants;
 import models.Processed;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit
@@ -285,8 +286,8 @@ public class Crawler extends Task {
       if (session instanceof InsightsCrawlerSession) {
 
          // get crawled product by it's internalId
-         Logging.printLogDebug(logger, session, "Selecting product with internalId " + ((InsightsCrawlerSession) session).getInternalId());
-         Product crawledProduct = filter(products, ((InsightsCrawlerSession) session).getInternalId());
+         Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
+         Product crawledProduct = filter(products, session.getInternalId());
 
          // if the product is void run the active void analysis
          Product activeVoidResultProduct = crawledProduct;
@@ -400,11 +401,10 @@ public class Crawler extends Task {
    private void processProduct(Product product) throws Exception {
       Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
 
-      if ((previousProcessedProduct == null && (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession))
-            || previousProcessedProduct != null) {
+      if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+                 Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             scheduleImages(persistenceResult, newProcessedProduct);
@@ -642,7 +642,7 @@ public class Crawler extends Task {
 
          Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPT]" + session.getVoidAttempts());
          List<Product> products = extract();
-         currentProduct = filter(products, ((InsightsCrawlerSession) session).getInternalId());
+         currentProduct = filter(products, session.getInternalId());
 
          if (!currentProduct.isVoid()) {
             Logging.printLogDebug(logger, session, "Product is not void anymore. Finishing active void.");

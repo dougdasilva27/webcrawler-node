@@ -148,8 +148,8 @@ public class MathUtils {
   public static Float formatStringToFloat(String input) {
     int index = input.length() - 2;
     String firstPart = input.substring(0, index);
-    String secondPart = input.substring(index, input.length());
-    String formatedValue = firstPart + "." + secondPart;
+      String secondPart = input.substring(index);
+      String formatedValue = firstPart + "." + secondPart;
     return new Float(formatedValue);
   }
 

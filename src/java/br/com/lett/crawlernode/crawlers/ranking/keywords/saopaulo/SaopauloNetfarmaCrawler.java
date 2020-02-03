@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 
@@ -87,14 +86,10 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		Element pageInactive = this.currentDoc.select("li.neemu-pagination-last.neemu-pagination-inactive").first();
-		Element page = this.currentDoc.select("li.neemu-pagination-last").first();;
+		Element page = this.currentDoc.select("li.neemu-pagination-last").first();
 
 		// se elemeno page obtiver algum resultado
-		if (pageInactive != null || page == null){
-			return false;
-		}
-
-		return true;
+		return pageInactive == null && page != null;
 	}
 
 }

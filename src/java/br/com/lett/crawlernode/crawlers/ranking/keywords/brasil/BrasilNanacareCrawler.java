@@ -1,14 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilNanacareCrawler extends CrawlerRankingKeywords {
 
@@ -84,11 +85,7 @@ public class BrasilNanacareCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    if (this.nextUrl != null) {
-      return true;
-    }
-
-    return false;
+    return this.nextUrl != null;
   }
 
   private String crawlInternalId(Element e) {

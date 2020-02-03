@@ -1,15 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -21,6 +12,16 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * date: 27/03/2018
@@ -65,9 +66,9 @@ public class BrasilPetloveCrawler extends Crawler {
           JSONObject jsonSku = (JSONObject) obj;
   
           String internalId = JSONUtils.getStringValue(jsonSku, "sku");
-          String name = crawlName(jsonSku);
-          boolean available = jsonSku.has("in_stock") && jsonSku.get("in_stock") instanceof Boolean ? jsonSku.getBoolean("in_stock") : false;
-          Float price = JSONUtils.getFloatValueFromJSON(jsonSku, "price", true);
+            String name = crawlName(jsonSku);
+            boolean available = (jsonSku.has("in_stock") && jsonSku.get("in_stock") instanceof Boolean) && jsonSku.getBoolean("in_stock");
+            Float price = JSONUtils.getFloatValueFromJSON(jsonSku, "price", true);
           String primaryImage = crawlPrimaryImage(jsonSku);
           String secondaryImages = crawlSecondaryImages(jsonSku);
           Prices prices = crawlPrices(price, jsonSku);

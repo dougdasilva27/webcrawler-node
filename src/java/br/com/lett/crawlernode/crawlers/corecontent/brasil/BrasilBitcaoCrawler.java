@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -23,6 +12,13 @@ import br.com.lett.crawlernode.util.Logging;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class BrasilBitcaoCrawler extends Crawler {
   
@@ -139,12 +135,12 @@ public class BrasilBitcaoCrawler extends Crawler {
           
           for(Object o : skus) {
             if(o instanceof String) {
-              if(!idNameMap.containsKey((String) o)) {                
+              if (!idNameMap.containsKey(o)) {
                 idNameMap.put((String) o, " -");
               }
               
               if(productJson.has("label") && productJson.get("label") instanceof String) {
-                idNameMap.put((String) o, idNameMap.get((String) o) + " " + productJson.getString("label"));
+                idNameMap.put((String) o, idNameMap.get(o) + " " + productJson.getString("label"));
               }
               
               if(price != null) {

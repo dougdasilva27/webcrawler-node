@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,6 +8,12 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (20/07/2016):
@@ -147,9 +144,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
   private boolean isProductPage(Document doc) {
     Element productPage = doc.select(".product-view").first();
 
-    if (productPage != null)
-      return true;
-    return false;
+    return productPage != null;
   }
 
 
@@ -162,7 +157,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
     Element internalIdElement = document.select("input[name=product]").first();
 
     if (internalIdElement != null) {
-      internalId = internalIdElement.attr("value").toString().trim();
+      internalId = internalIdElement.attr("value").trim();
     }
 
     return internalId;
@@ -179,7 +174,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
     Element nameElement = document.select(".product-name h1").first();
 
     if (nameElement != null) {
-      name = nameElement.text().toString().trim();
+      name = nameElement.text().trim();
     }
 
     return name;
@@ -190,7 +185,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
     Element mainPagePriceElement = document.select(".box-buy .regular-price span").first();
 
     if (mainPagePriceElement != null) {
-      price = Float.parseFloat(mainPagePriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(mainPagePriceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     if (price == null && prices.getCardInstallmentValue(Card.VISA.toString(), 1) != null) {
@@ -215,7 +210,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
       if (firstInstallment != null) {
         String line = firstInstallment.text().trim(); // 1x de R$2.399,00 sem juros
         int indexOfX = line.indexOf('x') + 1;
-        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(line.substring(indexOfX, line.length())));
+        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(line.substring(indexOfX)));
       }
     }
 
@@ -232,7 +227,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
       installmentNumber = Integer.parseInt(MathUtils.parseNumbers(installmentNumberString).get(0));
 
       // parsing the installment price
-      String installmentPriceString = line.substring(indexOfX, line.length()); // " de R$2.399,00 sem juros"
+      String installmentPriceString = line.substring(indexOfX); // " de R$2.399,00 sem juros"
       installmentPrice = Float.parseFloat(installmentPriceString.replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
       // the payment options are the same for all cards brands
@@ -254,11 +249,7 @@ public class BrasilUnicaarcondicionadoCrawler extends Crawler {
   private boolean crawlAvailability(Document document) {
     Element notifyMeElement = document.select(".availability.in-stock").first();
 
-    if (notifyMeElement != null) {
-      return true;
-    }
-
-    return false;
+    return notifyMeElement != null;
   }
 
   private Map<String, Float> crawlMarketplace(Document document) {

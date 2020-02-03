@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilLojasmmCrawler extends CrawlerRankingKeywords{
 
@@ -59,11 +58,9 @@ public class BrasilLojasmmCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		Element nextPage = this.currentDoc.select(".ProxAnte form[name=p1]").first();
-		
-		if(nextPage != null) return true;
-			
-		return false;
-		
+
+		return nextPage != null;
+
 	}
 	
 	@Override

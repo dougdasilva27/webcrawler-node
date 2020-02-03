@@ -1,29 +1,27 @@
 package br.com.lett.crawlernode.aws.kinesis;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.kinesis.producer.Attempt;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
-import com.amazonaws.services.kinesis.producer.UserRecordFailedException;
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
-import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.kinesis.producer.*;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import models.RatingsReviews;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class KPLProducer {
 
@@ -94,7 +92,7 @@ public class KPLProducer {
 
       Logging.printLogDebug(LOGGER, session, "Received event " + countCreated);
 
-      ByteBuffer data = ByteBuffer.wrap(new StringBuilder().append(r.serializeToKinesis()).append(RECORD_SEPARATOR).toString().getBytes("UTF-8"));
+      ByteBuffer data = ByteBuffer.wrap(new StringBuilder().append(r.serializeToKinesis()).append(RECORD_SEPARATOR).toString().getBytes(StandardCharsets.UTF_8));
 
       FutureCallback<UserRecordResult> myCallback = new FutureCallback<UserRecordResult>() {
 
@@ -148,7 +146,7 @@ public class KPLProducer {
 
       Logging.printLogDebug(LOGGER, session, "Received event " + countCreated);
 
-      ByteBuffer data = ByteBuffer.wrap(new StringBuilder().append(p.serializeToKinesis()).append(RECORD_SEPARATOR).toString().getBytes("UTF-8"));
+      ByteBuffer data = ByteBuffer.wrap(new StringBuilder().append(p.serializeToKinesis()).append(RECORD_SEPARATOR).toString().getBytes(StandardCharsets.UTF_8));
 
       FutureCallback<UserRecordResult> myCallback = new FutureCallback<UserRecordResult>() {
 

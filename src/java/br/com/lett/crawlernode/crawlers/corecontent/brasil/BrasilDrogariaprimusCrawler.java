@@ -1,22 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
-import org.apache.http.client.utils.URIBuilder;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -30,6 +13,20 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Date: 14/08/2017 Refeito por Samir Leão na data: 04/10/2017 (Site mudou)
@@ -90,10 +87,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      if (doc.select("div.product-contents").first() != null) {
-         return true;
-      }
-      return false;
+      return doc.select("div.product-contents").first() != null;
    }
 
    private Float crawlPrice(Document doc) {

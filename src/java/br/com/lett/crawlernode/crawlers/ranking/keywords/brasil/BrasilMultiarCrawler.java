@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilMultiarCrawler extends CrawlerRankingKeywords {
 
@@ -41,10 +41,7 @@ public class BrasilMultiarCrawler extends CrawlerRankingKeywords {
     Element elementIsCategory = this.currentDoc.select("div.bread-crumb > ul > li.last").first();
 
     if (this.currentPage == 1) {
-      if (elementIsCategory != null)
-        this.isCategory = true;
-      else
-        this.isCategory = false;
+      this.isCategory = elementIsCategory != null;
     }
 
     Elements products = this.currentDoc.select("div.prateleira.vitrine > ul > li");
@@ -84,20 +81,12 @@ public class BrasilMultiarCrawler extends CrawlerRankingKeywords {
     Elements ids = this.currentDoc.select("div.prateleira.vitrine > ul > li[layout]");
 
     if (this.currentPage > 1) {
-      if (ids.size() < 24) {
-        return false;
-      } else {
-        return true;
-      }
+      return ids.size() >= 24;
     } else {
       if (this.isCategory) {
         return false;
       } else {
-        if (ids.size() < 24) {
-          return false;
-        } else {
-          return true;
-        }
+        return ids.size() >= 24;
       }
     }
   }

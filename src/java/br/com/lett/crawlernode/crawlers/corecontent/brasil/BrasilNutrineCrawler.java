@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -20,6 +11,16 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class BrasilNutrineCrawler extends Crawler {
   private static final String HOME_PAGE = "https://www.nutrine.com.br/";
@@ -60,9 +61,9 @@ public class BrasilNutrineCrawler extends Crawler {
             String varName = name + getVariationName(variation);
             String internalId = variation.has("idVariacao") && !variation.isNull("idVariacao") ? variation.get("idVariacao").toString() : null;
             String internalPid = JSONUtils.getStringValue(json, "sku");
-            Integer stock = JSONUtils.getIntegerValueFromJSON(variation, "quantidadeEstoque", 0);
-            boolean available = variation.has("disponivel") && variation.get("disponivel") instanceof Boolean ? variation.getBoolean("disponivel") : false;
-            Float price = JSONUtils.getFloatValueFromJSON(json, "precoAtual", true);
+              Integer stock = JSONUtils.getIntegerValueFromJSON(variation, "quantidadeEstoque", 0);
+              boolean available = (variation.has("disponivel") && variation.get("disponivel") instanceof Boolean) && variation.getBoolean("disponivel");
+              Float price = JSONUtils.getFloatValueFromJSON(json, "precoAtual", true);
             Prices prices = scrapPrices(price, variation, doc);
 
             // Creating the product
@@ -91,8 +92,8 @@ public class BrasilNutrineCrawler extends Crawler {
           String internalPid = JSONUtils.getStringValue(json, "sku");
           Integer stock = JSONUtils.getIntegerValueFromJSON(json, "quantidadeEstoque", 0);
           Float price = JSONUtils.getFloatValueFromJSON(json, "precoAtual", true);
-          Prices prices = scrapPrices(price, json, doc);
-          boolean available = json.has("disponivel") && json.get("disponivel") instanceof Boolean ? json.getBoolean("disponivel") : false;
+            Prices prices = scrapPrices(price, json, doc);
+            boolean available = (json.has("disponivel") && json.get("disponivel") instanceof Boolean) && json.getBoolean("disponivel");
 
           // Creating the product
           Product product = ProductBuilder.create()
