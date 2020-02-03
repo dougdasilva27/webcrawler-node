@@ -1,9 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
@@ -11,9 +10,9 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.Select;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class ColombiaCarullaCrawler extends CrawlerRankingKeywords{
 
@@ -96,12 +95,8 @@ public class ColombiaCarullaCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		//se  elemeno page obtiver algum resultado
-		if(this.arrayProducts.size() < this.totalProducts){
-			//tem próxima página
-			return true;
-		} 
-			
-		return false;
+		//tem próxima página
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 	
 	@Override

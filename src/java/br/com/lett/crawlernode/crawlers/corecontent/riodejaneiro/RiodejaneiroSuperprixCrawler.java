@@ -1,20 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -25,8 +10,24 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.net.HttpHeaders;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 /**
  * Date: 05/06/2017
@@ -152,10 +153,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    if (document.select(".productName").first() != null) {
-      return true;
-    }
-    return false;
+    return document.select(".productName").first() != null;
   }
 
   /*******************
@@ -178,7 +176,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     Element internalPidElement = document.select("#___rc-p-id").first();
 
     if (internalPidElement != null) {
-      internalPid = internalPidElement.attr("value").toString().trim();
+      internalPid = internalPidElement.attr("value").trim();
     }
 
     return internalPid;
@@ -191,7 +189,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
     String nameVariation = jsonSku.getString("skuname");
 
     if (nameElement != null) {
-      name = nameElement.text().toString().trim();
+      name = nameElement.text().trim();
 
       if (name.length() > nameVariation.length()) {
         name += " " + nameVariation;

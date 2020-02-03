@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -21,6 +11,13 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /*************************************************************************************************************************
  * Crawling notes (01/08/2016):
@@ -246,9 +243,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    if (document.select(".content-product").first() != null || document.select(".promotion-product-container").first() != null)
-      return true;
-    return false;
+    return document.select(".content-product").first() != null || document.select(".promotion-product-container").first() != null;
   }
 
   /*********************
@@ -333,14 +328,10 @@ public class BrasilEcontinentalCrawler extends Crawler {
   private boolean crawlAvailabilityVariation(Element e) {
     if (e.hasAttr("maxqtdcompratam") && !e.attr("maxqtdcompratam").isEmpty()) {
       int stock = Integer.parseInt(e.attr("maxqtdcompratam").replaceAll("[^0-9]", "").trim());
-      if (stock > 0) {
-        return true;
-      }
+      return stock > 0;
     } else if (e.hasAttr("maxqtdcompra") && !e.attr("maxqtdcompra").isEmpty()) {
       int stock = Integer.parseInt(e.attr("maxqtdcompra").replaceAll("[^0-9]", "").trim());
-      if (stock > 0) {
-        return true;
-      }
+      return stock > 0;
     }
 
     return false;
@@ -386,7 +377,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
     Element internalPidElement = document.select(".submensagem").first();
 
     if (internalPidElement != null) {
-      internalPid = internalPidElement.text().toString().trim();
+      internalPid = internalPidElement.text().trim();
 
       if (internalPid.contains(":")) {
         int x = internalPid.indexOf(":");
@@ -403,7 +394,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
     Element nameElement = document.select("h1[itemprop=name]").first();
 
     if (nameElement != null) {
-      name = nameElement.ownText().toString().trim();
+      name = nameElement.ownText().trim();
     }
 
     return name;
@@ -414,7 +405,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
     Element specialPrice = document.select(".new-value-by .ctrValorMoeda").first();
 
     if (specialPrice != null && available) {
-      price = Float.parseFloat(specialPrice.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
@@ -468,11 +459,7 @@ public class BrasilEcontinentalCrawler extends Crawler {
   private boolean crawlAvailability(Document document) {
     Element notifyMeElement = document.select(".produto-indisponivel").first();
 
-    if (notifyMeElement != null) {
-      return false;
-    }
-
-    return true;
+    return notifyMeElement == null;
   }
 
   private Map<String, Float> crawlMarketplace(Document document) {

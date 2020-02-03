@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.main;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.server.PoolExecutor;
 import br.com.lett.crawlernode.util.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExecutionParameters {
 
@@ -122,18 +122,12 @@ public class ExecutionParameters {
 
    private boolean getEnvDebug() {
       String debugEnv = System.getenv(EnvironmentVariables.ENV_DEBUG);
-      if (debugEnv != null) {
-         return true;
-      }
-      return false;
+      return debugEnv != null;
    }
 
    private boolean getEnvSendToKinesis() {
       String sendToKinesis = System.getenv(EnvironmentVariables.SEND_TO_KINESIS);
-      if (Boolean.TRUE.toString().equals(sendToKinesis)) {
-         return true;
-      }
-      return false;
+      return Boolean.TRUE.toString().equals(sendToKinesis);
    }
 
    private String getEnvReplicatorUrl() {
@@ -170,10 +164,7 @@ public class ExecutionParameters {
 
    private boolean getEnvForceImgUpdate() {
       String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
-      if (forceImgUpdate != null) {
-         return true;
-      }
-      return false;
+      return forceImgUpdate != null;
    }
 
    private String getEnvKinesisStream() {
@@ -186,10 +177,7 @@ public class ExecutionParameters {
 
    private boolean getEnvUseFetcher() {
       String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
-      if (useFetcher != null && useFetcher.equals("true")) {
-         return true;
-      }
-      return false;
+      return useFetcher != null && useFetcher.equals("true");
    }
 
    private int getEnvCoreThreads() {

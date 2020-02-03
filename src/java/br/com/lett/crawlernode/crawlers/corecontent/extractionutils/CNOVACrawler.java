@@ -1,19 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -36,6 +22,17 @@ import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (18/08/2016):
@@ -541,9 +538,7 @@ public abstract class CNOVACrawler extends Crawler {
                prodTwo = prodTwo.split("\\|")[0].trim();
             }
 
-            if (prodOne.equals(prodTwo)) {
-               return false;
-            }
+            return !prodOne.equals(prodTwo);
          }
          return true;
       }

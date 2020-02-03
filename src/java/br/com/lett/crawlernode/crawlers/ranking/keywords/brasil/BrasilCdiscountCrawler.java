@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilCdiscountCrawler extends CrawlerRankingKeywords {
 
@@ -36,11 +35,7 @@ public class BrasilCdiscountCrawler extends CrawlerRankingKeywords {
 		Elements products =  this.currentDoc.select("ul.vitrineProdutos > li > div > a[data-id]");
 		
 		if(this.currentPage == 1){
-			if(!this.currentDoc.baseUri().equals(url)){
-				isCategory = true;
-			} else {
-				isCategory = false;
-			}
+			isCategory = !this.currentDoc.baseUri().equals(url);
 		}
 		
 		if(isCategory) products = this.currentDoc.select("ul.vitrineProdutos > li");
@@ -150,10 +145,9 @@ public class BrasilCdiscountCrawler extends CrawlerRankingKeywords {
 		return str;
 	}
 	
-	private boolean nextPageFromCategory(){
+	private boolean nextPageFromCategory() {
 		Element pageAtual = this.currentDoc.select("li.atual > strong").first();
-		
-		if(!pageAtual.text().equals(Integer.toString(this.currentPage))) 	return false;
-		else																return true;
+
+		return pageAtual.text().equals(Integer.toString(this.currentPage));
 	}
 }

@@ -5,3 +5,4 @@
 .classpath
 .DS_Store
 /src/java/br/com/lett/crawlernode/test
+.idea

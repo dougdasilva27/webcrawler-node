@@ -1,19 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.WebElement;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -25,6 +11,17 @@ import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.WebElement;
+
+import java.util.*;
+import java.util.regex.Pattern;
 
 public class BrasilCdiscountCrawler extends Crawler {
 
@@ -106,9 +103,7 @@ public class BrasilCdiscountCrawler extends Crawler {
    */
   private boolean isValidOption(WebElement skuOption) {
     List<String> parsedIds = MathUtils.parseNumbers(skuOption.getAttribute("value").trim());
-    if (parsedIds.size() > 0)
-      return true;
-    return false;
+    return parsedIds.size() > 0;
   }
 
   /**
@@ -121,9 +116,7 @@ public class BrasilCdiscountCrawler extends Crawler {
    */
   private boolean containsId(String id, WebElement skuOption) {
     List<String> parsedIds = MathUtils.parseNumbers(skuOption.getAttribute("value").trim());
-    if (parsedIds.size() > 0 && parsedIds.get(0).contains(id))
-      return true;
-    return false;
+    return parsedIds.size() > 0 && parsedIds.get(0).contains(id);
   }
 
   private Product crawlSKU(Document document) {
@@ -256,10 +249,10 @@ public class BrasilCdiscountCrawler extends Crawler {
    */
   private String parseImageURL(String imageSize, String relAttribute) {
     String imageURL = null;
-    int beginIndex = relAttribute.indexOf(imageSize + ": \'");
-    String largeImageSubstring = relAttribute.substring(beginIndex, relAttribute.length());
+    int beginIndex = relAttribute.indexOf(imageSize + ": '");
+    String largeImageSubstring = relAttribute.substring(beginIndex);
 
-    int srcIndex = largeImageSubstring.indexOf("\'");
+    int srcIndex = largeImageSubstring.indexOf("'");
     int endIndex = largeImageSubstring.indexOf(".jpg"); // must append the extension on the final url
 
     if (endIndex > srcIndex) {

@@ -1,16 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -20,6 +10,15 @@ import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (03/01/2017):
@@ -152,11 +151,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document doc) {
-		if (doc.select(".product-name") != null ){
-			return true;
-		}
-		
-		return false;
+		return doc.select(".product-name") != null;
 	}
 
 
@@ -184,7 +179,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 		Element nameElement = document.select(".product-name h1").first();
 
 		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
+			name = nameElement.text().trim();
 		}
 
 		Element modelName = document.select("span.sku").first();
@@ -211,11 +206,7 @@ public class BrasilAbxclimatizacaoCrawler extends Crawler {
 	private boolean crawlAvailability(Document document) {
 		Element notifyMeElement = document.select(".availability.out-of-stock").first();
 
-		if (notifyMeElement != null) {
-			return false;
-		}
-
-		return true;
+		return notifyMeElement == null;
 	}
 
 	private Marketplace assembleMarketplaceFromMap() {

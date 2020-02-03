@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilEtnamoveisCrawler extends CrawlerRankingKeywords{
 
@@ -58,12 +57,8 @@ public class BrasilEtnamoveisCrawler extends CrawlerRankingKeywords{
 
 	@Override
 	protected boolean hasNextPage() {
-		
-		if(this.arrayProducts.size() < this.totalProducts){
-			return true;
-		} else {
-			return false;
-		}
+
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 	
 	@Override

@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilDimedCrawler extends CrawlerRankingKeywords{
 
@@ -64,16 +63,9 @@ public class BrasilDimedCrawler extends CrawlerRankingKeywords{
 	protected boolean hasNextPage() {
 		Elements page = this.currentDoc.select("a.nextLink");
 		//se  elemeno page obtiver algum resultado
-		if(page.size() >= 1)
-		{
-			//tem próxima página
-			return true;
-		}
-		else
-		{
-			//não tem próxima página
-			return false;
-		}
+		//tem próxima página
+		//não tem próxima página
+		return page.size() >= 1;
 	}
 	
 	@Override

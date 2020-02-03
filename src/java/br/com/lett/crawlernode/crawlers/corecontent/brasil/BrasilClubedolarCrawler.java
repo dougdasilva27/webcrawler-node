@@ -1,19 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -26,6 +13,20 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (29/08/2016):
@@ -165,9 +166,7 @@ public class BrasilClubedolarCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    if (url.endsWith("/p") || url.contains("/p?attempt="))
-      return true;
-    return false;
+    return url.endsWith("/p") || url.contains("/p?attempt=");
   }
 
   /*******************
@@ -190,7 +189,7 @@ public class BrasilClubedolarCrawler extends Crawler {
     Element internalPidElement = document.select("#___rc-p-id").first();
 
     if (internalPidElement != null) {
-      internalPid = internalPidElement.attr("value").toString().trim();
+      internalPid = internalPidElement.attr("value").trim();
     }
 
     return internalPid;
@@ -203,7 +202,7 @@ public class BrasilClubedolarCrawler extends Crawler {
     String nameVariation = jsonSku.getString("skuname");
 
     if (nameElement != null) {
-      name = nameElement.text().toString().trim();
+      name = nameElement.text().trim();
 
       if (nameVariation.length() > name.length()) {
         name = nameVariation;

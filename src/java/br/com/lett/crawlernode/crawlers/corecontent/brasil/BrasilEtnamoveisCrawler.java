@@ -1,14 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,6 +9,15 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /************************************************************************************************************************************************************************************
@@ -159,8 +160,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
     *******************************/
 
    private boolean isProductPage(String url) {
-      if (url.startsWith(HOME_PAGE + "etna/p/")) return true;
-      return false;
+       return url.startsWith(HOME_PAGE + "etna/p/");
    }
 
 
@@ -205,7 +205,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
       Element nameElement = document.select("#sku-name").first();
 
       if (nameElement != null) {
-         name = nameElement.ownText().toString().trim();
+          name = nameElement.ownText().trim();
       }
 
       return name;
@@ -216,7 +216,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
       Element mainPagePriceElement = document.select(".finalValueDescription").first();
 
       if (mainPagePriceElement != null) {
-         price = Float.parseFloat(mainPagePriceElement.text().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+          price = Float.parseFloat(mainPagePriceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
       }
 
       return price;
@@ -225,11 +225,7 @@ public class BrasilEtnamoveisCrawler extends Crawler {
    private boolean crawlAvailability(Document document) {
       Element notifyMeElement = document.select("#stock-buy h2").first();
 
-      if (notifyMeElement != null) {
-         return false;
-      }
-
-      return true;
+       return notifyMeElement == null;
    }
 
    private Map<String, Float> crawlMarketplace(Document document) {

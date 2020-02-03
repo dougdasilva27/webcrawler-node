@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class RiodejaneiroExtraplusCrawler extends CrawlerRankingKeywords {
 	
@@ -70,20 +69,12 @@ public class RiodejaneiroExtraplusCrawler extends CrawlerRankingKeywords {
 	}
 	
 	@Override
-	protected boolean hasNextPage()
-	{
+	protected boolean hasNextPage() {
 		Elements page = this.currentDoc.select("span.next_page.disabled");
-		
+
 		//se  elemeno page obtiver algum resultado
-		if(page.size() > 0)
-		{
-			//não tem próxima página
-			return false;
-		}
-		else
-		{
-			//tem próxima página
-			return true;
-		}
+		//não tem próxima página
+		//tem próxima página
+		return page.size() <= 0;
 	}
 }
