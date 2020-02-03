@@ -100,7 +100,7 @@ public class Categories {
 	}
 
 	public void setDataCreated() {
-		this.dataCreated =  new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");;
+		this.dataCreated = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 	}
 
 	public String getDataUpdated() {
@@ -108,21 +108,17 @@ public class Categories {
 	}
 
 	public void setDataUpdated() {
-		this.dataUpdated =  new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");;
+		this.dataUpdated = new DateTime(DateTimeZone.forID("America/Sao_Paulo")).toString("yyyy-MM-dd HH:mm:ss.SSS");
 	}
 	
 	@Override
-	public boolean equals(Object obj)
-	{
+	public boolean equals(Object obj) {
 		if (getClass() != obj.getClass())
-	      return false;
-	 
-		Categories other = (Categories) obj;
-		
-		if (getChave().equals(other.getChave()))
-	      return true;
-		else
 			return false;
+
+		Categories other = (Categories) obj;
+
+		return getChave().equals(other.getChave());
 	}
 	
 	@Override

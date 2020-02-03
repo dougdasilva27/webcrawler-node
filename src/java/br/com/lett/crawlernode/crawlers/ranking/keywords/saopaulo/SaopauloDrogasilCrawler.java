@@ -1,15 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 
@@ -192,11 +191,7 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		// se não peguei todos os produtos tem próxima página
-		if (this.arrayProducts.size() < this.totalProducts) {
-			return true;
-		}
-
-		return false;
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 
 	@Override

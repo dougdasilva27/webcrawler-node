@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,6 +10,11 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.prices.Prices;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class BrasilAgilmedCrawler extends Crawler {
 
@@ -89,7 +86,7 @@ public class BrasilAgilmedCrawler extends Crawler {
       for (Element element : pricesElements) {
         String priceText = element.text();
 
-        Float priceI = MathUtils.parseFloatWithComma(priceText.substring(priceText.indexOf("R"), priceText.length()));
+        Float priceI = MathUtils.parseFloatWithComma(priceText.substring(priceText.indexOf("R")));
         Integer quantityInstallments = MathUtils.parseInt(priceText.substring(0, priceText.indexOf("x")));
 
         installmentPriceMap.put(quantityInstallments, priceI);

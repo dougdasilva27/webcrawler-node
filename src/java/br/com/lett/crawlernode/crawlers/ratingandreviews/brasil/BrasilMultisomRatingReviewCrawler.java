@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.RatingReviewCrawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import models.RatingsReviews;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 public class BrasilMultisomRatingReviewCrawler extends RatingReviewCrawler {
 
@@ -44,9 +44,7 @@ public class BrasilMultisomRatingReviewCrawler extends RatingReviewCrawler {
   }
 
   private boolean isProductPage(Document document) {
-    if (document.select(".detailProduct").first() != null)
-      return true;
-    return false;
+    return document.select(".detailProduct").first() != null;
   }
 
   private String crawlInternalId(Document document) {
@@ -54,7 +52,7 @@ public class BrasilMultisomRatingReviewCrawler extends RatingReviewCrawler {
     Element internalIdElement = document.select("input[name=data[Produto][rating][id_produto]]").first();
 
     if (internalIdElement != null) {
-      internalId = internalIdElement.attr("value").toString().trim();
+      internalId = internalIdElement.attr("value").trim();
     }
 
     return internalId;

@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -14,6 +8,14 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BrasilRogeCrawler extends Crawler {
 
@@ -45,6 +47,7 @@ public class BrasilRogeCrawler extends Crawler {
       Float price = null;
       Prices prices = new Prices();
       CategoryCollection categories = crawlCategories(doc);
+      List<String> eans = scrapEan(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc);
       String description = crawlDescription(doc);
@@ -53,9 +56,9 @@ public class BrasilRogeCrawler extends Crawler {
 
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
+              .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setEans(eans)
+              .setStock(stock).setMarketplace(marketplace).build();
 
       products.add(product);
 
@@ -64,6 +67,20 @@ public class BrasilRogeCrawler extends Crawler {
     }
 
     return products;
+  }
+
+  private List<String> scrapEan(Document doc) {
+    List<String> eans = new ArrayList<>();
+    for (Node node : doc.selectFirst(".short-description").childNodes()) {
+      if (node.outerHtml().contains("Código de Barras")) {
+        Node nextSibling = node.nextSibling();
+        if (nextSibling != null) {
+          eans.add(nextSibling.toString().replaceAll("[^0-9]", "").trim());
+          break;
+        }
+      }
+    }
+    return eans;
   }
 
   private boolean isProductPage(Document doc) {

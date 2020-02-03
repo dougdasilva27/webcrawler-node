@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -25,6 +14,13 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * Date: 29/08/2017
@@ -95,7 +91,7 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(session.getOriginalURL())) {
+      if (isProductPage(session.getOriginalURL(), doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
@@ -127,8 +123,8 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
    }
 
-   private boolean isProductPage(String url) {
-      return url.contains("detalhes_produto/");
+   private boolean isProductPage(String url, Document doc) {
+      return url.contains("detalhes_produto/") || doc.selectFirst(".secondary_page_wrapper") != null;
    }
 
    private String crawlInternalId(Document doc) {

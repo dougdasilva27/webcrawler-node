@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
@@ -73,11 +73,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		if (this.arrayProducts.size() < this.totalProducts) {
-			return true;
-		}
-
-		return false;
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 
 	protected void setTotalBusca(JSONObject search) {

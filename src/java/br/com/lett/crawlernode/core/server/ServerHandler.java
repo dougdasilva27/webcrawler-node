@@ -1,25 +1,19 @@
 package br.com.lett.crawlernode.core.server;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
+import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
+import br.com.lett.crawlernode.core.server.request.*;
+import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
+import br.com.lett.crawlernode.util.Logging;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
-import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
-import br.com.lett.crawlernode.core.server.request.CrawlerRankingCategoriesRequest;
-import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
-import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
-import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
-import br.com.lett.crawlernode.core.server.request.Request;
-import br.com.lett.crawlernode.core.server.request.checkers.CrawlerTaskRequestChecker;
-import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public class ServerHandler implements HttpHandler {
 
@@ -157,7 +151,7 @@ public class ServerHandler implements HttpHandler {
   }
 
   private String getRequestBody(InputStream t) throws IOException {
-    InputStreamReader isr = new InputStreamReader(t, "utf-8");
+    InputStreamReader isr = new InputStreamReader(t, StandardCharsets.UTF_8);
     BufferedReader br = new BufferedReader(isr);
 
     int b;

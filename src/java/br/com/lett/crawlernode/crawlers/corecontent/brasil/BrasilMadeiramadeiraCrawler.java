@@ -60,7 +60,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-attributes-tab-information .product-description"));
          Map<String, Prices> marketplaceMap = assembleMarketplaceMap(doc);
          Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList("MadeiraMadeira"), Card.VISA, session);
-         boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList("MadeiraMadeira"));
+         boolean available = crawlAvailable(doc);// CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList("MadeiraMadeira"));
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -90,6 +90,19 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private boolean crawlAvailable(Document doc) {
+      boolean available = false;
+      String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
+
+      if (availableEl.contains("Comprar")) {
+         available = true;
+      } else {
+         available = false;
+      }
+
+      return available;
    }
 
    private Map<String, Prices> assembleMarketplaceMap(Document doc) {

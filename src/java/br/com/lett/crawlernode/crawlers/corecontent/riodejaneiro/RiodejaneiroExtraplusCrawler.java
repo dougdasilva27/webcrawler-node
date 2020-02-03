@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,6 +8,14 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RiodejaneiroExtraplusCrawler extends Crawler {
 	
@@ -143,7 +142,7 @@ public class RiodejaneiroExtraplusCrawler extends Crawler {
 
 		for(int i = 1; i < elementCategories.size(); i++) { // starts with index 1 because the first item is the home page
 			Element e = elementCategories.get(i);
-			String tmp = e.text().toString();
+			String tmp = e.text();
 
 			categories.add(tmp);
 		}

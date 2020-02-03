@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilElectroluxCrawler extends CrawlerRankingKeywords {
 
@@ -62,19 +61,11 @@ public class BrasilElectroluxCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected boolean hasNextPage() {
-		
+
 		//se  elemeno page não obtiver nenhum resultado
-		if(this.arrayProducts.size() < this.totalProducts)
-		{
-			//tem próxima página
-			return true;
-		}
-		else
-		{
-			//não tem próxima página
-			return false;
-			
-		}
+		//tem próxima página
+		//não tem próxima página
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 	
 	@Override

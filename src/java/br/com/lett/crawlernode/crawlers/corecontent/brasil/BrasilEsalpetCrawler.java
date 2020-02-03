@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,6 +11,10 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class BrasilEsalpetCrawler extends Crawler {
   
@@ -48,7 +45,7 @@ public class BrasilEsalpetCrawler extends Crawler {
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".prod-image-thumbs > a", Arrays.asList("data-zoom-image", "data-image"), "https", IMAGE_HOST, primaryImage);
       String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".prod-excerpt", ".prod-description"));
       Integer stock = json.has("overall_quantity") && json.get("overall_quantity") instanceof Integer ? json.getInt("overall_quantity") : 0;
-      boolean available = stock > 0 || (json.has("allow_os_purchase") && json.get("allow_os_purchase") instanceof Boolean ? json.getBoolean("allow_os_purchase") : false);
+      boolean available = stock > 0 || ((json.has("allow_os_purchase") && json.get("allow_os_purchase") instanceof Boolean) && json.getBoolean("allow_os_purchase"));
       RatingsReviews ratingsReviews = scrapRating(internalId, doc);
           
       // Creating the product

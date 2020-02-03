@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -21,10 +11,22 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * 
+ *
  * @author gabriel date: 2018-05-25
  */
 public class BrasilDrogalCrawler extends Crawler {
@@ -59,10 +61,25 @@ public class BrasilDrogalCrawler extends Crawler {
          String secondaryImages = crawlSecondaryImages(doc);
          String description = crawlDescription(doc);
          Prices prices = crawlPrices(price, doc);
+         RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories
-               .getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).build();
+         Product product = ProductBuilder.create()
+                 .setUrl(session.getOriginalURL())
+                 .setInternalId(internalId)
+                 .setRatingReviews(ratingsReviews)
+                 .setName(name)
+                 .setPrice(price)
+                 .setPrices(prices)
+                 .setAvailable(available)
+                 .setCategory1(categories.getCategory(0))
+                 .setCategory2(categories.getCategory(1))
+                 .setCategory3(categories.getCategory(2))
+                 .setPrimaryImage(primaryImage)
+                 .setSecondaryImages(secondaryImages)
+                 .setDescription(description)
+                 .setMarketplace(new Marketplace())
+                 .build();
 
          products.add(product);
 
@@ -73,7 +90,6 @@ public class BrasilDrogalCrawler extends Crawler {
       return products;
 
    }
-
 
 
    /*******************************
@@ -87,18 +103,17 @@ public class BrasilDrogalCrawler extends Crawler {
 
    /**
     * We extract internalId on script like this:
-    * 
+    *
     * Key: productId
-    * 
+    *
     * In that case below, internalId will be "kityenzahshleave"
-    * 
+    *
     * ;var dataLayer=dataLayer||[];dataLayer.push({device:"d"})
     * dataLayer.push({pageName:"product",productId:"kityenzahshleave",productName:"Kit Yenzah Sou+
     * Cachos Shampoo Lowpoo 240ml + Leave In Suave
     * 365ml",productPrice:"63.24",productDepartment:"CUIDADOS COM CABELOS",productCategory:"CUIDADOS
     * COM CABELOS",productSubCategory:"KIT CABELOS",productBrand:"Yenzah"});
-    * 
-    * @param document
+    *
     * @return
     */
    private String crawlInternalId(Document document) {
@@ -193,10 +208,6 @@ public class BrasilDrogalCrawler extends Crawler {
       return secondaryImages;
    }
 
-   /**
-    * @param document
-    * @return
-    */
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
       Elements elementCategories = document.select("#breadcrumb li:not(.home) > a");
@@ -215,11 +226,6 @@ public class BrasilDrogalCrawler extends Crawler {
    private String crawlDescription(Document document) {
       StringBuilder description = new StringBuilder();
       Element descriptionElement = document.select(".container .float > .center:not(.product) > .row").first();
-      Element descriptionFirst = document.selectFirst(".row .float.size12 p");
-
-      if (descriptionFirst != null) {
-         description.append(descriptionFirst.html());
-      }
 
       if (descriptionElement != null) {
          description.append(descriptionElement.html());
@@ -233,12 +239,6 @@ public class BrasilDrogalCrawler extends Crawler {
       return description.toString();
    }
 
-   /**
-    * 
-    * @param price
-    * @param doc
-    * @return
-    */
    private Prices crawlPrices(Float price, Document doc) {
       Prices prices = new Prices();
 
@@ -271,5 +271,53 @@ public class BrasilDrogalCrawler extends Crawler {
       }
 
       return prices;
+   }
+
+   private RatingsReviews scrapRatingAndReviews(Document document, String internalId) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+      Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
+      ratingReviews.setDate(session.getDate());
+
+      ratingReviews.setInternalId(internalId);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      return ratingReviews;
+   }
+
+   private Double getTotalAvgRating(Document doc, Integer ratingCount) {
+      double avgRating = 0D;
+
+      if (ratingCount > 0) {
+         Element avg = doc.select("[itemprop=aggregateRating] .rating-star [itemprop=ratingValue]").first();
+
+         if (avg != null) {
+            String text = avg.ownText().replaceAll("[^0-9.]", "").replace(",", ".").trim();
+
+            if (!text.isEmpty()) {
+               avgRating = Double.parseDouble(text);
+            }
+         }
+      }
+
+      return avgRating;
+   }
+
+   /**
+    * Number of ratings appear in html
+    */
+   private Integer getTotalNumOfRatings(Document docRating) {
+      int totalRating = 0;
+      Element totalRatingElement = docRating.select("[itemprop=aggregateRating] [itemprop=reviewCount]").first();
+
+      if (totalRatingElement != null) {
+         String text = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
+
+         if (!text.isEmpty()) {
+            totalRating = Integer.parseInt(text);
+         }
+      }
+
+      return totalRating;
    }
 }

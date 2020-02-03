@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -21,6 +14,14 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * 
@@ -96,10 +97,7 @@ public class MexicoSorianasuperCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document doc) {
-    if (doc.select("#DivDesc").first() != null) {
-      return true;
-    }
-    return false;
+    return doc.select("#DivDesc").first() != null;
   }
 
   private String crawlInternalId(Document document) {

@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,6 +8,13 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (19/07/2016):
@@ -222,9 +219,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
 
   private boolean isProductPage(String url) {
 
-    if (url.startsWith(HOME_PAGE + "produto/") && !url.contains("?"))
-      return true;
-    return false;
+    return url.startsWith(HOME_PAGE + "produto/") && !url.contains("?");
   }
 
 
@@ -233,10 +228,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
    ***********************************/
   private boolean isCategorySpecial(String category) {
 
-    if (category.equals(CATEGORY_SPECIAL))
-      return true;
-
-    return false;
+    return category.equals(CATEGORY_SPECIAL);
   }
 
 
@@ -247,11 +239,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
   private boolean hasProductVariations(Document document) {
     Elements skuChooser = document.select(".pure-select select option[data-stock]");
 
-    if (skuChooser.size() > 0) {
-      return true;
-    } else {
-      return false;
-    }
+    return skuChooser.size() > 0;
   }
 
   private String crawlInternalPid(Document document) {
@@ -314,11 +302,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
     if (availableFirst) {
       Element availabilityElement = doc.select(".pure-select select option[value=\"" + internalId + "\"]").first();
 
-      if (availabilityElement.attr("data-stock").trim().equals("true")) {
-        return true;
-      }
-
-      return false;
+      return availabilityElement.attr("data-stock").trim().equals("true");
     } else {
       return false;
     }
@@ -367,7 +351,7 @@ public class BrasilSoubaratoCrawler extends Crawler {
     Element priceElement = doc.select(".p-price .value").first();
 
     if (priceElement != null && available)
-      price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));;
+      price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
 
     return price;
   }

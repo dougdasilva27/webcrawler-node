@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords{
 
@@ -65,14 +64,10 @@ public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords{
 	@Override
 	protected boolean hasNextPage() {
 		Elements page = this.currentDoc.select(".prd-list-item-desc > a");
-		
+
 		//se  elemeno page obtiver algum resultado
-		if(page.size() >= 24){
-			//tem próxima página
-			return true;
-		}
-		
-		return false;
+		//tem próxima página
+		return page.size() >= 24;
 	}
 	
 

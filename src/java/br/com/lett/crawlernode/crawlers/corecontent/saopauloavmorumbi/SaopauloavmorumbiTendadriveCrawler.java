@@ -1,17 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopauloavmorumbi;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -28,6 +16,19 @@ import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Date: 04/09/17
@@ -117,10 +118,7 @@ public class SaopauloavmorumbiTendadriveCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    if (document.select(".produto").first() != null) {
-      return true;
-    }
-    return false;
+    return document.select(".produto").first() != null;
   }
 
   /*******************

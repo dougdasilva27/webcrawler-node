@@ -1,11 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilCallfarmaCrawler extends CrawlerRankingKeywords {
 
@@ -65,9 +65,7 @@ public class BrasilCallfarmaCrawler extends CrawlerRankingKeywords {
     if (finalPage != null) {
       String page = finalPage.ownText().replaceAll("[^0-9]", "").trim();
 
-      if (!page.isEmpty() && (this.currentPage < Integer.parseInt(page))) {
-        return true;
-      }
+      return !page.isEmpty() && (this.currentPage < Integer.parseInt(page));
     }
 
     return false;

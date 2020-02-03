@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,6 +10,15 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Date: 10/08/2017
@@ -77,10 +78,7 @@ public class BrasilPluscareCrawler extends Crawler {
   }
 
   private boolean isProductPage(String url) {
-    if (url.startsWith(HOME_PAGE + "/produto/")) {
-      return true;
-    }
-    return false;
+      return url.startsWith(HOME_PAGE + "/produto/");
   }
 
   private String crawlInternalId(Document doc) {

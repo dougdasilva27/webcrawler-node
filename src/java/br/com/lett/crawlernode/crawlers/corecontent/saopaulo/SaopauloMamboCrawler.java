@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -16,14 +9,18 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Date: 30/08/17
@@ -221,9 +218,7 @@ public class SaopauloMamboCrawler extends Crawler {
       if (json.has(key) && json.get(key) instanceof JSONArray) {
          JSONArray array = json.getJSONArray(key);
 
-         if (array.length() > 0) {
-            return true;
-         }
+         return array.length() > 0;
       }
 
       return false;

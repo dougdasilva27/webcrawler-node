@@ -1,23 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -33,6 +15,25 @@ import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Date: 07/12/2016
@@ -161,10 +162,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document document) {
-      if (document.select(".productName").first() != null) {
-         return true;
-      }
-      return false;
+      return document.select(".productName").first() != null;
    }
 
    private String crawlInternalId(JSONObject json) {
@@ -182,7 +180,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
       Element internalPidElement = document.select("#___rc-p-id").first();
 
       if (internalPidElement != null) {
-         internalPid = internalPidElement.attr("value").toString().trim();
+         internalPid = internalPidElement.attr("value").trim();
       }
 
       return internalPid;
@@ -195,7 +193,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
       String nameVariation = jsonSku.getString("skuname");
 
       if (nameElement != null) {
-         name = nameElement.text().toString().trim();
+         name = nameElement.text().trim();
 
          if (name.length() > nameVariation.length()) {
             name += " " + nameVariation;

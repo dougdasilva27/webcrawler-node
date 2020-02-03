@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,6 +8,12 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (22/08/2016):
@@ -188,8 +183,7 @@ public class BrasilCopaferCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".productbox").first() != null ) return true;
-		return false;
+		return document.select(".productbox").first() != null;
 	}
 
 	/*********************
@@ -299,11 +293,7 @@ public class BrasilCopaferCrawler extends Crawler {
 	private boolean crawlAvailability(Document doc) {
 		Element e = doc.select(".text_produto_indisponivel").first();
 
-		if (e != null) {
-			return false;
-		}
-
-		return true;
+		return e == null;
 	}
 
 	/*******************
@@ -326,7 +316,7 @@ public class BrasilCopaferCrawler extends Crawler {
 		Element nameElement = document.select("#dsProductName").first();
 
 		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
+			name = nameElement.text().trim();
 		}
 
 		return name;

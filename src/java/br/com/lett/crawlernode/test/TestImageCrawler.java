@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.test;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter;
@@ -17,19 +8,22 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;
+import org.apache.commons.cli.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestImageCrawler {
 
-	public static 	DatabaseManager 	dbManager;
-	public static 	ProxyCollection 	proxies;
-	private static 	Options 			options;
+	public static DatabaseManager dbManager;
+	public static ProxyCollection proxies;
+	private static Options options;
 
 	private static String marketName;
 	private static String cityName;
 
 	private static Logger logger = LoggerFactory.getLogger(TestImageCrawler.class);
 
-	public static void main(String args[]) {
+	public static void main(String[] args) {
 
 		// adding command line options
 		options = new Options();

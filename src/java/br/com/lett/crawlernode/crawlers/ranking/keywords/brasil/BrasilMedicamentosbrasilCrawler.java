@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilMedicamentosbrasilCrawler extends CrawlerRankingKeywords {
 
@@ -59,11 +59,7 @@ public class BrasilMedicamentosbrasilCrawler extends CrawlerRankingKeywords {
   protected boolean hasNextPage() {
     Element lastPage = this.currentDoc.select(".pager ul li > a").last();
 
-    if (lastPage != null && !lastPage.hasAttr("style")) {
-      return true;
-    }
-
-    return false;
+    return lastPage != null && !lastPage.hasAttr("style");
   }
 
   private String crawlInternalId(Element e) {
