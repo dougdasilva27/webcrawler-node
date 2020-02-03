@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
@@ -249,15 +250,10 @@ public class BrasilDolcegustoCrawler extends Crawler {
   private Double crawlAverageOverallRating(Document document) {
     Double avgOverallRating = null;
 
-    Element percentageElement = document.select("meta[itemprop=ratingValue]").first();
-    if (percentageElement != null) {
+    Integer percentage = CrawlerUtils.scrapIntegerFromHtmlAttr(document, "meta[itemprop=ratingValue]", "content", 0);
 
-      double percentage = Double.parseDouble(percentageElement.attr("content"));
-
-      if (percentage > 0F) {
-        avgOverallRating = MathUtils.normalizeTwoDecimalPlaces(5 * (percentage / 100f));
-      }
-
+    if (percentage > 0) {
+      avgOverallRating = MathUtils.normalizeTwoDecimalPlaces(5 * (percentage.doubleValue() / 100));
     }
 
     return avgOverallRating;
