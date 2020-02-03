@@ -1,25 +1,16 @@
 package br.com.lett.crawlernode.core.task.base;
 
-import java.lang.reflect.Constructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingCategoriesSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverCategoriesSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingCategoriesSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.crawler.*;
+import br.com.lett.crawlernode.core.session.ranking.*;
 import br.com.lett.crawlernode.core.task.impl.ImageCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Constructor;
 
 /**
  * This class is used to instantiate crawler tasks of an arbitrary type.
@@ -209,9 +200,9 @@ public class TaskFactory {
   private static String assembleRankingClassName(Market market, String rankType) {
     String crawlerClassName = "br.com.lett.crawlernode.crawlers.ranking." + rankType + "." + market.getCity() + ".";
     crawlerClassName += market.getCity().substring(0, 1).toUpperCase();
-    crawlerClassName += market.getCity().substring(1, market.getCity().length());
+    crawlerClassName += market.getCity().substring(1);
     crawlerClassName += market.getName().substring(0, 1).toUpperCase();
-    crawlerClassName += market.getName().substring(1, market.getName().length());
+    crawlerClassName += market.getName().substring(1);
     crawlerClassName += "Crawler";
     return crawlerClassName;
   }

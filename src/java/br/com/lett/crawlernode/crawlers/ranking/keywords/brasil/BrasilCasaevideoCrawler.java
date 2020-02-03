@@ -1,13 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BrasilCasaevideoCrawler extends CrawlerRankingKeywords {
 
@@ -76,11 +77,7 @@ public class BrasilCasaevideoCrawler extends CrawlerRankingKeywords {
   protected boolean hasNextPage() {
     Elements lastPage = this.currentDoc.select(".prateleira ul li[id].helperComplement");
 
-    if (lastPage.size() < this.pageSize) {
-      return false;
-    }
-
-    return true;
+    return lastPage.size() >= this.pageSize;
   }
 
   private String crawlInternalId(Element e) {

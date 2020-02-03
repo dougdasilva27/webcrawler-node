@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.saopaulo;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class SaopauloMamboCrawler extends CrawlerRankingCategories {
 
@@ -74,11 +73,7 @@ public class SaopauloMamboCrawler extends CrawlerRankingCategories {
 
 	@Override
 	protected boolean hasNextPage() {
-		if (this.pageSize >= this.currentDoc.select(".prateleira.principal > ul > li[layout]").size()) {
-			return true;
-		}
-
-		return false;
+		return this.pageSize >= this.currentDoc.select(".prateleira.principal > ul > li[layout]").size();
 	}
 
 

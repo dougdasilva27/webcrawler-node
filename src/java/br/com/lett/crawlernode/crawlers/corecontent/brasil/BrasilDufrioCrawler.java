@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -26,7 +15,16 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /*****************************************************************************************************************************
  * Crawling notes (12/07/2016):
@@ -53,6 +51,7 @@ public class BrasilDufrioCrawler extends Crawler {
   public BrasilDufrioCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.WEBDRIVER);
+    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -102,6 +101,7 @@ public class BrasilDufrioCrawler extends Crawler {
       String description = crawlDescription(doc);
       Integer stock = null;
       Marketplace marketplace = crawlMarketplace();
+      RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
 
       String productUrl = session.getOriginalURL();
       if (internalId != null && session.getRedirectedToURL(productUrl) != null) {
@@ -109,11 +109,24 @@ public class BrasilDufrioCrawler extends Crawler {
       }
 
       // Creating the product
-      Product product = ProductBuilder.create().setUrl(productUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setStock(stock).setMarketplace(marketplace).build();
-
+      Product product = ProductBuilder.create()
+              .setUrl(productUrl)
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setRatingReviews(ratingsReviews)
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(stock)
+              .setMarketplace(marketplace)
+              .build();
       products.add(product);
 
     } else {
@@ -340,4 +353,62 @@ public class BrasilDufrioCrawler extends Crawler {
     return prices;
   }
 
+  private RatingsReviews scrapRatingAndReviews(Document document, String internalId) {
+    RatingsReviews ratingReviews = new RatingsReviews();
+    Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+    Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
+
+    ratingReviews.setDate(session.getDate());
+    ratingReviews.setInternalId(internalId);
+    ratingReviews.setTotalRating(totalNumOfEvaluations);
+    ratingReviews.setAverageOverallRating(avgRating);
+    return ratingReviews;
+  }
+
+  /**
+   * Number of ratings appear in html element
+   *
+   * @param doc
+   * @return
+   */
+  private Integer getTotalNumOfRatings(Document doc) {
+    int ratingNumber = 0;
+    Elements evaluations = doc.select(".boxBarras .p3");
+
+    for (Element e : evaluations) {
+      String text = e.ownText().replaceAll("[^0-9]", "").trim();
+
+      if (!text.isEmpty()) {
+        ratingNumber += Integer.parseInt(text);
+      }
+    }
+
+    return ratingNumber;
+  }
+
+  private Double getTotalAvgRating(Document doc, Integer totalRatings) {
+    Double avgRating = 0D;
+
+    if (totalRatings != null && totalRatings > 0) {
+      Elements ratings = doc.select(".boxBarras .item");
+
+      int values = 0;
+
+      for (Element e : ratings) {
+        Element stars = e.select(".p1").first();
+        Element value = e.select(".p3").first();
+
+        if (stars != null && value != null) {
+          Integer star = Integer.parseInt(stars.ownText().replaceAll("[^0-9]", "").trim());
+          Integer countStars = Integer.parseInt(value.ownText().replaceAll("[^0-9]", "").trim());
+
+          values += star * countStars;
+        }
+      }
+
+      avgRating = MathUtils.normalizeTwoDecimalPlaces(((double) values) / totalRatings);
+    }
+
+    return avgRating;
+  }
 }

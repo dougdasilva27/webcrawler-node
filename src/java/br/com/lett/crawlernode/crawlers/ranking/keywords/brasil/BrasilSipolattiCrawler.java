@@ -1,16 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilSipolattiCrawler extends CrawlerRankingKeywords{
 	
@@ -78,8 +77,7 @@ public class BrasilSipolattiCrawler extends CrawlerRankingKeywords{
 		}
 		else
 		{
-			if(this.arrayProducts.size() < this.totalProducts) return true;
-			else											return false;
+			return this.arrayProducts.size() < this.totalProducts;
 			
 		}
 	}

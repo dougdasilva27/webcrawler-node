@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -21,6 +10,14 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (16/08/2016):
@@ -158,9 +155,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(String url) {
-    if (url.startsWith(HOME_PAGE + "produtos/") || url.startsWith(HOME_PAGE + "/produtos/"))
-      return true;
-    return false;
+    return url.startsWith(HOME_PAGE + "produtos/") || url.startsWith(HOME_PAGE + "/produtos/");
   }
 
   /*********************
@@ -169,10 +164,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
 
   private boolean hasVariations(Document doc) {
     Element variation = doc.select(".variacao").first();
-    if (variation != null)
-      return true;
-
-    return false;
+    return variation != null;
   }
 
   private Document crawlVariationsFromApi(String internalID) {
@@ -222,7 +214,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
     Element internalIdElement = document.select("#ls_id_produto").first();
 
     if (internalIdElement != null) {
-      internalId = internalIdElement.attr("value").toString().trim();
+      internalId = internalIdElement.attr("value").trim();
     }
 
     return internalId;
@@ -239,7 +231,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
     Element nameElement = document.select("#mainCenterProdutos .titulo").first();
 
     if (nameElement != null) {
-      name = nameElement.text().toString().trim();
+      name = nameElement.text().trim();
     }
 
     return name;
@@ -250,7 +242,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
     Element mainPagePriceElement = document.select(".valor div.preco").first();
 
     if (mainPagePriceElement != null) {
-      price = Float.parseFloat(mainPagePriceElement.ownText().toString().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+      price = Float.parseFloat(mainPagePriceElement.ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
     }
 
     return price;
@@ -348,11 +340,7 @@ public class BrasilDutramaquinasCrawler extends Crawler {
   private boolean crawlAvailability(Document document) {
     Element notifyMeElement = document.select(".btn_aviseme").first();
 
-    if (notifyMeElement != null) {
-      return false;
-    }
-
-    return true;
+    return notifyMeElement == null;
   }
 
   private Map<String, Float> crawlMarketplace(Document document) {

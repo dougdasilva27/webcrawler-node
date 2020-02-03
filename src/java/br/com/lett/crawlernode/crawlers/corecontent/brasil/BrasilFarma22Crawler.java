@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -25,6 +15,17 @@ import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Date: 15/08/2017
@@ -135,10 +136,7 @@ public class BrasilFarma22Crawler extends Crawler {
    *******************************/
 
   private boolean isProductPage(Document document) {
-    if (document.select(".productName").first() != null) {
-      return true;
-    }
-    return false;
+      return document.select(".productName").first() != null;
   }
 
   /*******************
@@ -173,7 +171,7 @@ public class BrasilFarma22Crawler extends Crawler {
     String nameVariation = jsonSku.getString("skuname");
 
     if (nameElement != null) {
-      name = nameElement.text().toString().trim();
+        name = nameElement.text().trim();
 
       if (name.length() > nameVariation.length()) {
         name += " " + nameVariation;

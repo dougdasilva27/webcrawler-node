@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.core.server.request.checkers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.server.ServerHandler;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingCategoriesRequest;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
@@ -10,6 +8,8 @@ import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CrawlerTaskRequestChecker {
 
@@ -63,10 +63,7 @@ public class CrawlerTaskRequestChecker {
   }
 
   public static boolean checkRequestMethod(Request request) {
-    if (ServerHandler.POST.equals(request.getRequestMethod())) {
-      return true;
-    }
-    return false;
+    return ServerHandler.POST.equals(request.getRequestMethod());
   }
 
   private static boolean checkImageTaskRequest(Request request) {

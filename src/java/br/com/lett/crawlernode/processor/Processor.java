@@ -1,22 +1,5 @@
 package br.com.lett.crawlernode.processor;
 
-import java.sql.Array;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.DecimalFormat;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DiscordMessages;
@@ -28,16 +11,23 @@ import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.IllegalBehaviorElementValueException;
 import exceptions.MalformedPricesException;
 import exceptions.MalformedRatingModel;
-import models.Behavior;
-import models.BehaviorElement;
+import models.*;
 import models.BehaviorElement.BehaviorElementBuilder;
-import models.Marketplace;
-import models.Offers;
-import models.Processed;
-import models.RatingsReviews;
-import models.Seller;
-import models.Util;
 import models.prices.Prices;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.*;
+import java.text.DecimalFormat;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 public class Processor {
 
@@ -509,20 +499,18 @@ public class Processor {
 
       if (shouldSend) {
         String DISCORD_MSG_TEMPLATE = ("*{0}*\n" +
-            ":shopping_bags: **{1}**\n" +
-            ":moneybag: ~~{2}~~ **{3}** (-{4}%) [ℹ️](http://localhost?processed:{5}/session:{6}/)\n" +
-            ":link: {7}");
+                ":shopping_bags: **{1}**\n" +
+                ":moneybag: ~~{2}~~ **{3}** (-{4}%) [ℹ️](http://localhost?processed:{5}/session:{6}/)\n" +
+                ":link: {7}");
         DecimalFormat priceFormat = new DecimalFormat("#,##0.00");
-        String msg = MessageFormat.format(DISCORD_MSG_TEMPLATE, new Object[] {
-            quote,
-            newProcessedProduct.getOriginalName(),
-            priceFormat.format(previousProcessedProduct.getPrice()),
-            priceFormat.format(newProcessedProduct.getPrice()),
-            MathUtils.normalizeTwoDecimalPlaces(discount),
-            String.valueOf(newProcessedProduct.getId()),
-            session.getSessionId(),
-            newProcessedProduct.getUrl()
-        });
+        String msg = MessageFormat.format(DISCORD_MSG_TEMPLATE, quote,
+                newProcessedProduct.getOriginalName(),
+                priceFormat.format(previousProcessedProduct.getPrice()),
+                priceFormat.format(newProcessedProduct.getPrice()),
+                MathUtils.normalizeTwoDecimalPlaces(discount),
+                String.valueOf(newProcessedProduct.getId()),
+                session.getSessionId(),
+                newProcessedProduct.getUrl());
         DiscordMessages.reportPriceChanges(session, msg, author, avatar);
       }
     }

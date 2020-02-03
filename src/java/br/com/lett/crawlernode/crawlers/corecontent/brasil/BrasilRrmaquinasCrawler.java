@@ -1,17 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -20,6 +8,13 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 
 /************************************************************************************************************************************
@@ -205,9 +200,8 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 	 *******************************/
 
 	private boolean isProductPage(Document document) {
-		if ( document.select(".product-view").first() != null ) return true;
-		return false;
-	}
+        return document.select(".product-view").first() != null;
+    }
 
 	/*********************
 	 * Variation methods *
@@ -316,14 +310,10 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 	}
 
 	private boolean crawlAvailability(Document doc) {
-		Element e = doc.select(".alert-stock").first();
+        Element e = doc.select(".alert-stock").first();
 
-		if (e != null) {
-			return false;
-		}
-
-		return true;
-	}
+        return e == null;
+    }
 
 	private String crawlInternalPid(Document document) {
 		String internalPid = null;
@@ -331,11 +321,11 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 		Element internalPidElement = document.select(".product-essential p.right").first();
 
 		if (internalPidElement != null) {
-			String pid = internalPidElement.text().toString().trim();	
+            String pid = internalPidElement.text().trim();
 
-			int x = pid.indexOf(":");
-			internalPid = pid.substring(x+1).trim();
-		}
+            int x = pid.indexOf(":");
+            internalPid = pid.substring(x + 1).trim();
+        }
 
 		return internalPid;
 	}
@@ -345,8 +335,8 @@ public class BrasilRrmaquinasCrawler extends Crawler {
 		Element nameElement = document.select(".product-name").first();
 
 		if (nameElement != null) {
-			name = nameElement.text().toString().trim();
-		}
+            name = nameElement.text().trim();
+        }
 
 		return name;
 	}

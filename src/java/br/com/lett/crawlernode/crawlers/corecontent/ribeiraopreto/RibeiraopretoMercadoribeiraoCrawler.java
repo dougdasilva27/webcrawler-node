@@ -1,17 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.ribeiraopreto;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RibeiraopretoMercadoribeiraoCrawler extends Crawler {
 	
@@ -63,7 +62,7 @@ public class RibeiraopretoMercadoribeiraoCrawler extends Crawler {
 			int j=0;
 			for(int i=0; i < element_categories.size(); i++) {
 				Element e = element_categories.get(i);
-				cat[j] = e.text().toString();
+				cat[j] = e.text();
 				cat[j] = cat[j].replace(">", "");
 				j++;
 			}

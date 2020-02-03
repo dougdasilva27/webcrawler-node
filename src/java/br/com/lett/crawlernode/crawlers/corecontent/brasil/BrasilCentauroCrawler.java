@@ -1,17 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -25,6 +14,14 @@ import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * date: 27/03/2018
@@ -97,7 +94,7 @@ public class BrasilCentauroCrawler extends Crawler {
         String name = crawlName(chaordicJson, jsonSku, specsMap);
         boolean availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equals("available");
         Map<String, Prices> marketplaceMap = availableToBuy ? crawlMarketplace(doc, jsonSku) : new HashMap<>();
-        boolean available = availableToBuy ? marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) : false;
+        boolean available = availableToBuy && marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
 
         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
         Prices prices = available ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();

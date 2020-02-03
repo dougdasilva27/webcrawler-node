@@ -1,12 +1,13 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
   public BrasilServnutriCrawler(Session session) {
@@ -60,11 +61,7 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    if (this.arrayProducts.size() < this.totalProducts) {
-      return true;
-    }
-
-    return false;
+    return this.arrayProducts.size() < this.totalProducts;
   }
 
   @Override

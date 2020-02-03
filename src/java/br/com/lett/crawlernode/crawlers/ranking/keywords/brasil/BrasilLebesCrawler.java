@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilLebesCrawler extends CrawlerRankingKeywords {
 
@@ -70,11 +70,7 @@ public class BrasilLebesCrawler extends CrawlerRankingKeywords {
   @Override
   protected boolean hasNextPage() {
 
-    if (arrayProducts.size() < this.totalProducts) {
-      return true;
-    }
-
-    return false;
+    return arrayProducts.size() < this.totalProducts;
   }
 
   @Override

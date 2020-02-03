@@ -1,16 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilEsalpetCrawler extends CrawlerRankingKeywords {
   
@@ -67,8 +68,8 @@ public class BrasilEsalpetCrawler extends CrawlerRankingKeywords {
     if (!products.isEmpty() && ids.length() == products.size()) {
       for(int i = 0; i < products.size(); i++) {
         Element e = products.get(i);
-        
-        String internalId = ids.getString(i).toString();
+
+        String internalId = ids.getString(i);
         String productUrl = CrawlerUtils.scrapUrl(e, "> a[href]", "href", "https", HOME_PAGE);
 
         saveDataProduct(internalId, null, productUrl);

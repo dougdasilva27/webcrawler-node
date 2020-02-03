@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilDufrioCrawler extends CrawlerRankingKeywords {
 
@@ -69,11 +69,7 @@ public class BrasilDufrioCrawler extends CrawlerRankingKeywords {
   protected boolean hasNextPage() {
     Element nextPage = this.currentDoc.select("a.ultima[disabled]").first();
 
-    if (nextPage != null) {
-      return false;
-    }
-
-    return true;
+    return nextPage == null;
 
   }
 

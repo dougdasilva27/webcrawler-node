@@ -137,14 +137,12 @@ public class BrasilVilanovaCrawler extends Crawler {
           "src"),
           "https", IMAGES_HOST, primaryImage);
 
-      JSONArray productsArray =
-          productJson.has("productSKUList") && !productJson.isNull("productSKUList") ? productJson.getJSONArray("productSKUList") : new JSONArray();
-
+      JSONArray productsArray = productJson.optJSONArray("productSKUList");
       for (Object obj : productsArray) {
         JSONObject skuJson = (JSONObject) obj;
 
-        String internalId = crawlInternalId(skuJson);
-        String name = crawlName(skuJson);
+        String internalId = skuJson.optString("sku");
+        String name = skuJson.optString("name");
         Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
 
         Product product = ProductBuilder.create()
@@ -193,16 +191,6 @@ public class BrasilVilanovaCrawler extends Crawler {
     return !doc.select(".container #detalhes-container").isEmpty();
   }
 
-  private String crawlInternalId(JSONObject skuJson) {
-    String internalId = null;
-
-    if (skuJson.has("sku") && !skuJson.isNull("sku")) {
-      internalId = skuJson.get("sku").toString();
-    }
-
-    return internalId;
-  }
-
   private String crawlInternalPid(JSONObject productJson) {
     String internalPid = null;
 
@@ -211,15 +199,5 @@ public class BrasilVilanovaCrawler extends Crawler {
     }
 
     return internalPid;
-  }
-
-  private String crawlName(JSONObject skuJson) {
-    String name = null;
-
-    if (skuJson.has("name") && skuJson.get("name") instanceof String) {
-      name = skuJson.getString("name");
-    }
-
-    return name;
   }
 }

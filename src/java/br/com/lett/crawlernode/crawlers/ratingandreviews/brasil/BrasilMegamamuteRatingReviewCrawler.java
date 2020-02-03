@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ratingandreviews.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
@@ -17,6 +9,15 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilMegamamuteRatingReviewCrawler extends RatingReviewCrawler {
 
@@ -49,7 +50,7 @@ public class BrasilMegamamuteRatingReviewCrawler extends RatingReviewCrawler {
       String[] internalIds = crawlInternalIds(document);
 
       for (String skuId : internalIds) {
-        RatingsReviews clonedRatingReviews = (RatingsReviews) ratingReviews.clone();
+        RatingsReviews clonedRatingReviews = ratingReviews.clone();
         clonedRatingReviews.setInternalId(skuId);
         ratingReviewsCollection.addRatingReviews(clonedRatingReviews);
       }

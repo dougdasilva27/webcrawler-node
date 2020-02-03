@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilNuspaceCrawler extends CrawlerRankingKeywords {
 
@@ -62,18 +61,11 @@ public class BrasilNuspaceCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		Elements page = this.currentDoc.select("a.next.i-next");
-		
+
 		//se  elemeno page obtiver algum resultado
-		if(page.size() > 0)
-		{
-			//tem próxima página
-			return true;
-		}
-		else
-		{
-			//não tem próxima página
-			return false;
-		}
+		//tem próxima página
+		//não tem próxima página
+		return page.size() > 0;
 	}
 	
 	private String makePid(Element e)

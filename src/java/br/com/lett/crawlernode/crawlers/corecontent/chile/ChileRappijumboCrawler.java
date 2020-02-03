@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -32,6 +34,7 @@ public class ChileRappijumboCrawler extends Crawler {
 
    public ChileRappijumboCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -326,6 +329,8 @@ public class ChileRappijumboCrawler extends Crawler {
          Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
 
          String page = this.dataFetcher.get(session, request).getBody();
+         page = Normalizer.normalize(page, Normalizer.Form.NFD);
+
          if (page.startsWith("{") && page.endsWith("}")) {
             try {
                JSONObject apiResponse = new JSONObject(page);
