@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -23,6 +12,13 @@ import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.*;
 
 public class GeracaopetCrawler extends Crawler {
    private static final String YOURVIEWS_API_KEY = "86ceddc8-6468-456a-a862-aad27453c9ae";
@@ -424,7 +420,7 @@ public class GeracaopetCrawler extends Crawler {
 
    private String crawlPrimaryImageWithVariation(JSONObject skuJson, String internalId, boolean available) {
       String primaryImage = null;
-      if (available && skuJson.has("jsonConfig")) {
+      if (skuJson.has("jsonConfig")) {
          JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
          if (jsonConfig.has("images")) {
             JSONObject images = jsonConfig.getJSONObject("images");
@@ -435,7 +431,7 @@ public class GeracaopetCrawler extends Crawler {
                for (Object object : image) {
                   JSONObject img = (JSONObject) object;
 
-                  if (img.has("isMain") && img.getBoolean("isMain") && img.has("img")) {
+                  if (img.optBoolean("isMain")) {
                      primaryImage = img.getString("img");
                   }
                }
