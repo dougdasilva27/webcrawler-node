@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -23,6 +14,16 @@ import models.RatingsReviews;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BrasilDafitiCrawler extends Crawler {
 
@@ -122,7 +123,7 @@ public class BrasilDafitiCrawler extends Crawler {
                String name = preName + " (tamanho " + sizes.getJSONObject(i).getString("name") + ")";
 
                Map<String, Prices> marketplaceMap = crawlMarketplace(doc, json);
-               Integer stock = Integer.parseInt(sizes.getJSONObject(i).get("stock").toString());
+               int stock = Integer.parseInt(sizes.getJSONObject(i).get("stock").toString());
                boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) && stock > 0;
 
                Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
@@ -267,10 +268,12 @@ public class BrasilDafitiCrawler extends Crawler {
    private Integer scrapTotalComments(Document doc) {
       Integer totalComments = 0;
       String total = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ratings-reviews-component.ratings-aggregated a", "title");
-      int a = total.indexOf("com") + 4;
-      int b = total.indexOf("avaliações") - 1;
-      totalComments = Integer.parseInt(total.substring(a, b));
-      System.err.println(totalComments);
+      if (total != null) {
+         int a = total.indexOf("com") + 4;
+         int b = total.indexOf("avaliações") - 1;
+         if (a < b) totalComments = MathUtils.parseInt(total.substring(a, b));
+      }
+
 
       return totalComments;
    }
@@ -279,9 +282,9 @@ public class BrasilDafitiCrawler extends Crawler {
       Double avg = 0d;
 
       String avgr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ratings-reviews-component.ratings-aggregated a", "title");
-      int a = avgr.indexOf("nota");
-      int b = avgr.indexOf("de");
-      avg = Double.parseDouble(avgr.substring(a + 5, b - 1));
+      if (avgr != null) {
+         avg = MathUtils.parseDoubleWithDot(avgr.substring(avgr.indexOf("nota") + 5, avgr.indexOf("de") - 1));
+      }
 
       return avg;
    }
