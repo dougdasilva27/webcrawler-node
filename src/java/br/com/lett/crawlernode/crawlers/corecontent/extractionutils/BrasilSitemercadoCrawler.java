@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -15,12 +9,17 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 
@@ -34,8 +33,11 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
   private String homePage = getHomePage();
   private String loadPayload = getLoadPayload();
+  private Map<String, Integer> lojaInfo = getLojaInfo();
 
   protected abstract String getHomePage();
+
+  protected abstract Map<String, Integer> getLojaInfo();
 
   protected abstract String getLoadPayload();
 
@@ -308,24 +310,26 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
    * @return
    */
   private JSONObject crawlProductInformatioFromApi(String productUrl) {
-    String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
-    String url = "https://www.sitemercado.com.br/core/api/v1/b2c/product/load?url=" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
+    String loadUrl = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/page/LoadSchedulesUnavailable";
+    String url = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/product/load?url=" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
 
     Map<String, String> headers = new HashMap<>();
-    headers.put("referer", productUrl);
-    headers.put("accept", "application/json, text/plain, */*");
-    headers.put("content-type", "application/json");
-    headers.put("sm-mmc", fetchApiVersion(session, session.getOriginalURL()));
+    headers.put(HttpHeaders.REFERER, productUrl);
+    headers.put(HttpHeaders.ACCEPT, "application/json, text/plain, */*");
+    headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+    headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
 
     Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(loadPayload).build();
     Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
 
-    if (responseHeaders.containsKey("sm-token")) {
-      headers.put("sm-token", responseHeaders.get("sm-token"));
-    }
-
-    headers.remove("content-type");
-
+    JSONObject jsonObject = JSONUtils.stringToJson(responseHeaders.get("sm-token"));
+//    jsonObject.remove("IdLoja");
+//    jsonObject.remove("IdRede");
+    jsonObject.put("IdLoja", lojaInfo.get("IdLoja"));
+    jsonObject.put("IdRede", lojaInfo.get("IdRede"));
+    headers.put("sm-token", jsonObject.toString());
+    headers.put("sm-mmc", responseHeaders.get("sm-mmc"));
+    headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
     Request requestApi = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
     return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
   }
