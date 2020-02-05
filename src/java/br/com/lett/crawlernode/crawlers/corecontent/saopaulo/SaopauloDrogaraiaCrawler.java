@@ -157,7 +157,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       if (firstName != null) {
          name.append(firstName.text());
 
-         Elements attributes = doc.select(".product-attributes .show-hover:not(:last-child)");
+         Elements attributes = doc.select(".product-attributes .show-hover");
          for (Element e : attributes) {
             name.append(" ").append(e.ownText().trim());
          }
