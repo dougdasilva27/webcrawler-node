@@ -151,9 +151,9 @@ public class BrasilCarrefourCrawler extends Crawler {
 
          Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, marketplaceMap.size() > 1 ? null : priceFrom);
 
-         boolean available = !marketplaceMap.containsKey(SELLER_NAME_LOWER);
+         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
          Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
-         Float price = available ? crawlPrice(prices) : null;
+         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".priceBig", null, false, ',', session);
 
          RatingsReviews rating = crawlRatingReviews(doc);
 
