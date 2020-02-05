@@ -1,17 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -22,6 +10,14 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * date: 02/04/2019
@@ -83,7 +79,7 @@ public class BrasilGazinCrawler extends Crawler {
       } else {
         for (Entry<String, String> entry : skus.entrySet()) {
           String variationId = entry.getKey();
-          String variationName = entry.getValue() != null ? (name + " " + entry.getValue()).trim() : name;
+          String variationName = entry.getValue() != null ? (name + " " + entry.getValue().substring(0, entry.getValue().indexOf("V") + 1)).trim() : name;
           String internalId = internalPid + "-" + variationId;
           String primaryImage =
               CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] > a", Arrays.asList("href"), PROTOCOL, HOST);
