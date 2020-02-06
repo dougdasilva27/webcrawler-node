@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -23,6 +12,13 @@ import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.*;
 
 public class GeracaopetCrawler extends Crawler {
    private static final String YOURVIEWS_API_KEY = "86ceddc8-6468-456a-a862-aad27453c9ae";
@@ -219,10 +215,14 @@ public class GeracaopetCrawler extends Crawler {
       Map<Integer, Float> installmentPrice = new HashMap<>();
 
       if (price != null) {
+         Double priceOriginal = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[data-price-amount]", "data-price-amount", false, '.', session);
+         priceOriginal = priceOriginal == null ? 0 : priceOriginal;
+         prices.setBankTicketPrice(price);
+         if (price.doubleValue() != priceOriginal) {
+            prices.setPriceFrom(priceOriginal);
+         }
 
          installmentPrice.put(1, price);
-         prices.setBankTicketPrice(price);
-
          prices.insertCardInstallment(Card.VISA.toString(), installmentPrice);
          prices.insertCardInstallment(Card.ELO.toString(), installmentPrice);
          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPrice);
@@ -233,7 +233,7 @@ public class GeracaopetCrawler extends Crawler {
    }
 
    private Float crawlPrice(Document doc) {
-      return CrawlerUtils.scrapFloatPriceFromHtml(doc, "span[data-price-amount]", "data-price-amount", false, '.', session);
+      return CrawlerUtils.scrapFloatPriceFromHtml(doc, "span[data-price-type=finalPrice]", "data-price-amount", false, '.', session);
    }
 
    private String crawlName(Document doc) {
