@@ -1,11 +1,13 @@
 package br.com.lett.crawlernode.core.models;
 
-import java.util.List;
 import br.com.lett.crawlernode.util.DateUtils;
 import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
+
+import java.util.Collection;
+import java.util.List;
 
 public class ProductBuilder {
 
@@ -61,6 +63,17 @@ public class ProductBuilder {
 
   public ProductBuilder setAvailable(boolean available) {
     this.available = available;
+    return this;
+  }
+
+  public ProductBuilder setCategories(Collection<String> categories) {
+    int i = 1;
+    for (String category : categories) {
+      if (i == 1) setCategory1(category);
+      else if (i == 2) setCategory2(category);
+      else setCategory3(category);
+      i++;
+    }
     return this;
   }
 
