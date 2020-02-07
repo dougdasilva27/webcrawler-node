@@ -150,11 +150,9 @@ public class BrasilCarrefourCrawler extends Crawler {
          }
 
          Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, marketplaceMap.size() > 1 ? null : priceFrom);
-
-         boolean available = crawlAvailability(doc);
+         boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
          Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".priceBig", null, false, ',', session);
-
+         Float price = available ? CrawlerUtils.scrapFloatPriceFromHtml(doc, ".priceBig", null, false, ',', session) : null;
          RatingsReviews rating = crawlRatingReviews(doc);
 
          Product product = ProductBuilder.create()
@@ -239,10 +237,6 @@ public class BrasilCarrefourCrawler extends Crawler {
       }
 
       return name;
-   }
-
-   private boolean crawlAvailability(Document doc) {
-      return doc.selectFirst("#buyProductButtonBottom") != null;
    }
 
    // private Integer scrapStock(String internalId, String internalPid, Document doc) {
