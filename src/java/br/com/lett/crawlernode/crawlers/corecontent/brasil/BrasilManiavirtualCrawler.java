@@ -53,6 +53,7 @@ public class BrasilManiavirtualCrawler extends Crawler {
 
    public BrasilManiavirtualCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
