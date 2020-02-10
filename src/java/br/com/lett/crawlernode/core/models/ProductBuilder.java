@@ -69,9 +69,12 @@ public class ProductBuilder {
   public ProductBuilder setCategories(Collection<String> categories) {
     int i = 1;
     for (String category : categories) {
-      if (i == 1) setCategory1(category);
-      else if (i == 2) setCategory2(category);
-      else setCategory3(category);
+      if (i == 1)
+        setCategory1(category);
+      else if (i == 2)
+        setCategory2(category);
+      else if (i == 3)
+        setCategory3(category);
       i++;
     }
     return this;
