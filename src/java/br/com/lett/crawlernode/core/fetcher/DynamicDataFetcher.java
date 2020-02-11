@@ -52,6 +52,10 @@ public class DynamicDataFetcher {
          if (session.getMarket().getName().equals("bifarma")) {
             proxyString = ProxyCollection.BONANZA;
          }
+         // Carrefour block
+         if (session.getMarket().getName().equals("carrefour")) {
+            proxyString = ProxyCollection.INFATICA_RESIDENTIAL_BR;
+         }
 
          // Dufrio block luminati_server
          if (session.getMarket().getName().equals("dufrio") || session.getMarket().getName().equals("petz")) {
