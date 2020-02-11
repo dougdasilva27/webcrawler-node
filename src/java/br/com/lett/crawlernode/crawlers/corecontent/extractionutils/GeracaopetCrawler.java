@@ -215,10 +215,14 @@ public class GeracaopetCrawler extends Crawler {
       Map<Integer, Float> installmentPrice = new HashMap<>();
 
       if (price != null) {
+         Double priceOriginal = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[data-price-amount]", "data-price-amount", false, '.', session);
+         priceOriginal = priceOriginal == null ? 0 : priceOriginal;
+         prices.setBankTicketPrice(price);
+         if (price.doubleValue() != priceOriginal) {
+            prices.setPriceFrom(priceOriginal);
+         }
 
          installmentPrice.put(1, price);
-         prices.setBankTicketPrice(price);
-
          prices.insertCardInstallment(Card.VISA.toString(), installmentPrice);
          prices.insertCardInstallment(Card.ELO.toString(), installmentPrice);
          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPrice);
@@ -229,7 +233,7 @@ public class GeracaopetCrawler extends Crawler {
    }
 
    private Float crawlPrice(Document doc) {
-      return CrawlerUtils.scrapFloatPriceFromHtml(doc, "span[data-price-amount]", "data-price-amount", false, '.', session);
+      return CrawlerUtils.scrapFloatPriceFromHtml(doc, "span[data-price-type=finalPrice]", "data-price-amount", false, '.', session);
    }
 
    private String crawlName(Document doc) {
