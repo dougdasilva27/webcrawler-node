@@ -22,6 +22,7 @@ public class BrasilMpozenatoCrawler extends Crawler {
 
    public BrasilMpozenatoCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

@@ -60,6 +60,7 @@ public class BrasilMultiarCrawler extends Crawler {
 
    public BrasilMultiarCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

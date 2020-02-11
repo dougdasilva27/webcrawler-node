@@ -60,6 +60,7 @@ public class BrasilMultisomCrawler extends Crawler {
 
    public BrasilMultisomCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

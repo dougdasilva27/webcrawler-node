@@ -35,6 +35,7 @@ public class BrasilNagemCrawler extends Crawler {
 
    public BrasilNagemCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
