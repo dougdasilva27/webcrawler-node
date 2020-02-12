@@ -24,6 +24,7 @@ public class BrasilThebeautyboxCrawler extends Crawler {
 
   public BrasilThebeautyboxCrawler(Session session) {
     super(session);
+    this.config.setMustSendRatingToKinesis(true);
   }
 
   private static final String HOME_PAGE = "https://www.beautybox.com.br/";
