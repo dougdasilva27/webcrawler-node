@@ -50,7 +50,7 @@ public class DynamicDataFetcher {
 
          // // Bifarma block luminati_server
          if (session.getMarket().getName().equals("bifarma")) {
-            proxyString = ProxyCollection.BONANZA;
+            proxyString = ProxyCollection.LUMINATI_SERVER_BR;
          }
          // Carrefour block
          if (session.getMarket().getName().equals("carrefour")) {
