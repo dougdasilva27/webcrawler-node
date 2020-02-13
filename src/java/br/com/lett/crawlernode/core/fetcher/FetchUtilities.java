@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
@@ -350,6 +351,22 @@ public class FetchUtilities {
       }, null);
 
       return new SSLConnectionSocketFactory(sslContext);
+   }
+
+   /**
+    * 
+    * @return
+    * @throws NoSuchAlgorithmException
+    * @throws KeyManagementException
+    */
+   public static SSLSocketFactory createSSLSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
+      TrustManager trustManager = new TrustManager();
+      SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+      sslContext.init(null, new TrustManager[] {
+               trustManager
+      }, null);
+
+      return sslContext.getSocketFactory();
    }
 
    /**

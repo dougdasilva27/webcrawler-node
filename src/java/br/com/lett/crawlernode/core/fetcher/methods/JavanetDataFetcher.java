@@ -1,5 +1,24 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import org.apache.http.cookie.Cookie;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -13,19 +32,6 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.cookie.Cookie;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class JavanetDataFetcher implements DataFetcher {
 
@@ -61,8 +67,21 @@ public class JavanetDataFetcher implements DataFetcher {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
             }
 
+
+            // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
+            // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
+            // verification to happen the capture
+            HostnameVerifier hostNameVerifier = new HostnameVerifier() {
+               @Override
+               public boolean verify(String hostname, SSLSession session) {
+                  return true;
+               }
+            };
+
             URL url = new URL(targetURL);
-            HttpURLConnection connection = proxy != null ? (HttpURLConnection) url.openConnection(proxy) : (HttpURLConnection) url.openConnection();
+            HttpsURLConnection connection = proxy != null ? (HttpsURLConnection) url.openConnection(proxy) : (HttpsURLConnection) url.openConnection();
+            connection.setHostnameVerifier(hostNameVerifier);
+            connection.setSSLSocketFactory(FetchUtilities.createSSLSocketFactory());
             connection.setRequestMethod(FetchUtilities.GET_REQUEST);
             connection.setInstanceFollowRedirects(true);
             connection.setUseCaches(false);
