@@ -12,6 +12,9 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import org.apache.http.cookie.Cookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,8 +66,21 @@ public class JavanetDataFetcher implements DataFetcher {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
             }
 
+
+            // http://www.nakov.com/blog/2009/07/16/disable-certificate-validation-in-java-ssl-connections/
+            // on July 23, the comper site expired the ssl certificate, with that I had to ignore ssl
+            // verification to happen the capture
+            HostnameVerifier hostNameVerifier = new HostnameVerifier() {
+               @Override
+               public boolean verify(String hostname, SSLSession session) {
+                  return true;
+               }
+            };
+
             URL url = new URL(targetURL);
-            HttpURLConnection connection = proxy != null ? (HttpURLConnection) url.openConnection(proxy) : (HttpURLConnection) url.openConnection();
+            HttpsURLConnection connection = proxy != null ? (HttpsURLConnection) url.openConnection(proxy) : (HttpsURLConnection) url.openConnection();
+            connection.setHostnameVerifier(hostNameVerifier);
+            connection.setSSLSocketFactory(FetchUtilities.createSSLSocketFactory());
             connection.setRequestMethod(FetchUtilities.GET_REQUEST);
             connection.setInstanceFollowRedirects(true);
             connection.setUseCaches(false);
