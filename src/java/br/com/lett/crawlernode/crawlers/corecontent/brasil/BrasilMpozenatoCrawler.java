@@ -30,9 +30,8 @@ public class BrasilMpozenatoCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
       if (isProductPage(doc)) {
-
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoVarianteId", "value");
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoVarianteId", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.fbits-produto-nome.prodTitle.title", false);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".produtoInfo-precos .precoPor", null, false, ',', session);
          Prices prices = scrapPrices(doc, price);
