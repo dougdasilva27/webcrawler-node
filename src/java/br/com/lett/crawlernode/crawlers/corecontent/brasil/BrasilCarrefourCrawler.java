@@ -67,7 +67,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   @Override
+
    protected Object fetch() {
       return Jsoup.parse(fetchPage(session.getOriginalURL()));
    }
