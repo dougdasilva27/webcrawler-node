@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilMegamamuteCrawler extends CrawlerRankingKeywords {
 
@@ -61,9 +60,7 @@ public class BrasilMegamamuteCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		//se  o número de produtos pegos for menor que o resultado total da busca, existe proxima pagina
-		if(this.arrayProducts.size() < this.totalProducts) return true;
-		
-		return false;
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 	
 	@Override

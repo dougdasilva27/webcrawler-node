@@ -1,16 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.saopaulo;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 
@@ -91,11 +90,7 @@ public class SaopauloPaodeacucarCrawler extends CrawlerRankingCategories {
 
 	@Override
 	protected boolean hasNextPage() {
-		if (this.arrayProducts.size() < this.totalProducts) {
-			return true;
-		}
-
-		return false;
+		return this.arrayProducts.size() < this.totalProducts;
 	}
 
 	@Override

@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -18,6 +11,14 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.prices.Prices;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class BrasilLefarmaCrawler extends Crawler {
 
@@ -163,7 +164,7 @@ public class BrasilLefarmaCrawler extends Crawler {
   }
 
   private boolean crawlAvailability(JSONObject obj) {
-    return obj.has("available") ? obj.getBoolean("available") : false;
+      return obj.has("available") && obj.getBoolean("available");
   }
 
   private Prices crawlPrices(JSONObject obj) {

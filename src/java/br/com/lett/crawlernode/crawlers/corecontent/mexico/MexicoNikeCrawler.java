@@ -1,8 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.NikeCrawler;
+import org.json.JSONObject;
 
 public class MexicoNikeCrawler extends NikeCrawler {
 
@@ -11,8 +11,8 @@ public class MexicoNikeCrawler extends NikeCrawler {
 
   public MexicoNikeCrawler(Session session) {
     super(session);
-    super.HOME_PAGE = HOME_PAGE;
-    super.COUNTRY_URL = COUNTRY_URL;
+    NikeCrawler.HOME_PAGE = HOME_PAGE;
+    NikeCrawler.COUNTRY_URL = COUNTRY_URL;
   }
 
   @Override

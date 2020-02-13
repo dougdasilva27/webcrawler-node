@@ -1,11 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -64,14 +64,15 @@ public class BrasilEnutriCrawler extends Crawler {
 
          String internalId = crawlInternalId(doc);
          String internalPid = crawlInternalPid(doc);
-         String name = crawlName(doc);
-         Float price = crawlPrice(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod__name h1", false);
+         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".prod__shop:last-child .price span", null, false, ',', session);
          Prices prices = crawlPrices(price, doc);
+         System.err.println(prices);
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = crawlSecondaryImages(doc);
-         String description = crawlDescription(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img", Arrays.asList("src"), "https://", "www.enutri.com.br");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-thumbs li:not(:first-child) a img", Arrays.asList("src"), "https://", "www.enutri.com.br", primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".tabs__content .std"));
          RatingsReviews ratingReviews = crawlRating(internalId, doc);
          // Creating the product
          Product product = ProductBuilder
@@ -104,7 +105,7 @@ public class BrasilEnutriCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select("input[name=product]").isEmpty();
+      return !doc.select(".add-to-cart-buttons").isEmpty();
    }
 
    private String crawlInternalId(Document doc) {
@@ -129,65 +130,9 @@ public class BrasilEnutriCrawler extends Crawler {
       return internalPid;
    }
 
-   private String crawlName(Document document) {
-      String name = null;
-      Element nameElement = document.select("#display_product_name").first();
-
-      if (nameElement != null) {
-         name = nameElement.ownText().trim();
-      }
-
-      return name;
-   }
-
-   private Float crawlPrice(Document doc) {
-      Float price = null;
-      Element elementPrice = doc.selectFirst(".product-infos .price-box .regular-price .price");
-      if (elementPrice == null) {
-         elementPrice = doc.selectFirst(".product-infos .price-box .special-price .price");
-      }
-
-      Element elementSpecialPrice = doc.selectFirst(".product-infos .product-discount .price");
-
-      if (elementPrice != null) {
-         price = MathUtils.parseFloatWithComma(elementPrice.text());
-      } else if (elementSpecialPrice != null) {
-         price = MathUtils.parseFloatWithComma(elementSpecialPrice.ownText());
-      }
-
-      return price;
-   }
-
-   private String crawlPrimaryImage(Document doc) {
-      String primaryImage = null;
-      Element elementPrimaryImage = doc.selectFirst(".product-img-box li > a");
-
-      if (elementPrimaryImage != null) {
-         primaryImage = elementPrimaryImage.attr("href");
-      }
-
-      return primaryImage;
-   }
-
-   private String crawlSecondaryImages(Document doc) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      Elements images = doc.select(".product-img-box li" + CrawlerUtils.CSS_SELECTOR_IGNORE_FIRST_CHILD + " > a");
-      for (Element e : images) {
-         secondaryImagesArray.put(e.attr("href"));
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
-   }
-
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
-      Elements elementCategories = document.select(".breadcrumbs li:not(.home):not(.product)");
+      Elements elementCategories = document.select(".breadcrumb ul li span");
 
       for (Element e : elementCategories) {
          String cat = e.ownText().trim();
@@ -200,26 +145,8 @@ public class BrasilEnutriCrawler extends Crawler {
       return categories;
    }
 
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
-
-      Element elementShortdescription = doc.selectFirst(".short-description");
-
-      if (elementShortdescription != null) {
-         description.append(elementShortdescription.html());
-      }
-
-      Element elementDescription = doc.selectFirst(".product-view > .product-collateral");
-
-      if (elementDescription != null) {
-         description.append(elementDescription.html());
-      }
-
-      return description.toString();
-   }
-
    private boolean crawlAvailability(Document doc) {
-      return !doc.select(".availability.in-stock").isEmpty();
+      return !doc.select(".add-to-cart-buttons").isEmpty();
    }
 
    /**
@@ -232,40 +159,23 @@ public class BrasilEnutriCrawler extends Crawler {
       Prices prices = new Prices();
 
       if (price != null) {
-         Element bank = doc.selectFirst(".product-infos .product-discount .price");
+         Map<Integer, Float> installments = new HashMap<>();
+         installments.put(1, price);
+         prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, ".col2 .price-box-avista .price span", null, false, ',', session));
+         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod__shop:last-child .price span", null, true, ',', session));
 
-         if (bank != null) {
-            Float discount = MathUtils.parseFloatWithComma(bank.ownText());
+         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".col2 .price-box-parcelado .preco-parcelado span", doc, true, "x", "sem", false, ',');
 
-            if (discount != null) {
-               prices.setBankTicketPrice(discount);
-            } else {
-               prices.setBankTicketPrice(price);
-            }
-         } else {
-            prices.setBankTicketPrice(price);
+         if (!pair.isAnyValueNull()) {
+            installments.put(pair.getFirst(), pair.getSecond());
          }
 
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         Elements installmentsElements = doc.select("#productPlots ul li");
-
-         for (Element e : installmentsElements) {
-            Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false);
-            installmentPriceMap.put(pair.getFirst(), pair.getSecond());
-         }
-
-         if (installmentPriceMap.isEmpty()) {
-            installmentPriceMap.put(1, price);
-         }
-
-         if (!installmentPriceMap.isEmpty()) {
-            prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         }
+         prices.insertCardInstallment(Card.VISA.toString(), installments);
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+         prices.insertCardInstallment(Card.DINERS.toString(), installments);
+         prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+         prices.insertCardInstallment(Card.AMEX.toString(), installments);
+         prices.insertCardInstallment(Card.ELO.toString(), installments);
       }
 
       return prices;
@@ -292,7 +202,6 @@ public class BrasilEnutriCrawler extends Crawler {
 
       return number;
    }
-
 
    private Double getAverageOverallRating(Document document) {
 

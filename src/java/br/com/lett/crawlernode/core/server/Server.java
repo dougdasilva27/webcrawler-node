@@ -1,17 +1,18 @@
 package br.com.lett.crawlernode.core.server;
 
+import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
+import com.sun.net.httpserver.HttpServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.net.httpserver.HttpServer;
-import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
 
 public class Server {
 
@@ -92,10 +93,7 @@ public class Server {
 
   public boolean isAcceptingWebdriverTasks() {
     synchronized (webdriverInstancesCounterLock) {
-      if (webdriverInstances >= DEFAULT_MAX_WEBDRIVER_INSTANCES) {
-        return false;
-      }
-      return true;
+      return webdriverInstances < DEFAULT_MAX_WEBDRIVER_INSTANCES;
     }
   }
 

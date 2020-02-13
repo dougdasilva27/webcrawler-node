@@ -23,125 +23,123 @@ import models.Marketplace;
 import models.prices.Prices;
 
 public class BrasilCatdogshopCrawler extends Crawler {
-  
-  public BrasilCatdogshopCrawler(Session session) {
-    super(session);
-  }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
-    
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      
-      JSONArray jsonArr = extractPageJSON(doc);
+   public BrasilCatdogshopCrawler(Session session) {
+      super(session);
+   }
 
-      for(int i = 0; i < jsonArr.length(); i++) {
-        JSONObject skuJson = jsonArr.getJSONObject(i);
-        
-        String internalId = skuJson.has("product_id") && !skuJson.isNull("product_id") ? skuJson.get("product_id").toString() : null;
-        String internalPid = skuJson.has("sku") && !skuJson.isNull("sku") ? skuJson.get("sku").toString() : null;
-        String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-form-container .product-name", true);
-        Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price_number", true);
-        Prices prices = scrapPrices(doc, skuJson, price);
-        CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > a.breadcrumb-crumb", true);
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, 
-            "#product-slider-container .product-slide > a", Arrays.asList("href"), "https:", "d26lpennugtm8s.cloudfront.net");
-        String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, 
-            "#product-slider > .product-slide > a", Arrays.asList("href"), "https:", "d26lpennugtm8s.cloudfront.net", primaryImage);
-        String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".description", false);
-        Integer stock = skuJson.has("stock") && skuJson.get("stock") instanceof Integer ? skuJson.getInt("stock") : null;
-        boolean available = skuJson.has("available") && skuJson.get("available") instanceof Boolean 
-            ? skuJson.getBoolean("available") 
-            : false;
-        Marketplace marketplace = null;
-            
-        // Creating the product
-        Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setStock(stock)
-            .setMarketplace(marketplace)
-            .build();
-  
-          products.add(product);
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
+
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+         JSONArray jsonArr = extractPageJSON(doc);
+
+         for (int i = 0; i < jsonArr.length(); i++) {
+            JSONObject skuJson = jsonArr.getJSONObject(i);
+
+            String internalId = skuJson.has("product_id") && !skuJson.isNull("product_id") ? skuJson.get("product_id").toString() : null;
+            String internalPid = skuJson.has("sku") && !skuJson.isNull("sku") ? skuJson.get("sku").toString() : null;
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-form-container .product-name", true);
+            Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price_number", true);
+            Prices prices = scrapPrices(doc, skuJson, price);
+            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > a.breadcrumb-crumb", true);
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
+                  "#product-slider-container .product-slide > a", Arrays.asList("href"), "https:", "d26lpennugtm8s.cloudfront.net");
+            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
+                  "#product-slider > .product-slide > a", Arrays.asList("href"), "https:", "d26lpennugtm8s.cloudfront.net", primaryImage);
+            String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".description", false);
+            Integer stock = skuJson.has("stock") && skuJson.get("stock") instanceof Integer ? skuJson.getInt("stock") : null;
+            boolean available = (skuJson.has("available") && skuJson.get("available") instanceof Boolean) && skuJson.getBoolean("available");
+            Marketplace marketplace = null;
+
+            // Creating the product
+            Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPrice(price)
+                  .setPrices(prices)
+                  .setAvailable(available)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setStock(stock)
+                  .setMarketplace(marketplace)
+                  .build();
+
+            products.add(product);
+         }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
-    
-    return products;
-  }
-  
-  private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".template-product") != null;
-  }
-  
-  private JSONArray extractPageJSON(Document doc) {
-    String arrString = "[]";
-    Element jsonElement = doc.selectFirst("#single-product-container");
-    
-    if(jsonElement != null && jsonElement.hasAttr("data-variants")) {
-      arrString = jsonElement.attr("data-variants");
-    }
-    
-    return CrawlerUtils.stringToJsonArray(arrString);
-  }
-  
-  private Prices scrapPrices(Document doc, JSONObject skuJson, Float price) {
-    Prices prices = new Prices();
-    
-    if(price != null) {
-      prices.setBankTicketPrice(price);
-      
-      Float priceFrom = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#compare_price_display", null, false, ',', session);
-      if(priceFrom != null) {
-        Double priceFromDouble = MathUtils.normalizeTwoDecimalPlaces(priceFrom.doubleValue());
-        prices.setPriceFrom(priceFromDouble);
+
+      return products;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".template-product") != null;
+   }
+
+   private JSONArray extractPageJSON(Document doc) {
+      String arrString = "[]";
+      Element jsonElement = doc.selectFirst(".js-product-container");
+
+      if (jsonElement != null && jsonElement.hasAttr("data-variants")) {
+         arrString = jsonElement.attr("data-variants");
       }
-      
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-      
-      if(skuJson.has("installments_data") && !skuJson.isNull("installments_data") && skuJson.get("installments_data") instanceof String) {
-        String installmentsJsonString = skuJson.getString("installments_data");
-        JSONObject installmentsJson = JSONUtils.stringToJson(installmentsJsonString);
-        
-        installmentsJson = JSONUtils.getJSONValue(installmentsJson, "Wirecard");
-        
-        for(String key : installmentsJson.keySet()) {
-          Integer first = MathUtils.parseInt(key);
-          JSONObject installmentJson = installmentsJson.get(key) instanceof JSONObject ? installmentsJson.getJSONObject(key) : new JSONObject();
-          Float second = JSONUtils.getFloatValueFromJSON(installmentJson, "installment_value", true);
-          
-          if(first != null && second != null) {
-            installmentPriceMap.put(first, second);
-          }
-        }
+
+      return CrawlerUtils.stringToJsonArray(arrString);
+   }
+
+   private Prices scrapPrices(Document doc, JSONObject skuJson, Float price) {
+      Prices prices = new Prices();
+
+      if (price != null) {
+         prices.setBankTicketPrice(price);
+
+         Float priceFrom = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#compare_price_display", null, false, ',', session);
+         if (priceFrom != null) {
+            Double priceFromDouble = MathUtils.normalizeTwoDecimalPlaces(priceFrom.doubleValue());
+            prices.setPriceFrom(priceFromDouble);
+         }
+
+         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+         installmentPriceMap.put(1, price);
+
+         if (skuJson.has("installments_data") && !skuJson.isNull("installments_data") && skuJson.get("installments_data") instanceof String) {
+            String installmentsJsonString = skuJson.getString("installments_data");
+            JSONObject installmentsJson = JSONUtils.stringToJson(installmentsJsonString);
+
+            installmentsJson = JSONUtils.getJSONValue(installmentsJson, "Wirecard");
+
+            for (String key : installmentsJson.keySet()) {
+               Integer first = MathUtils.parseInt(key);
+               JSONObject installmentJson = installmentsJson.get(key) instanceof JSONObject ? installmentsJson.getJSONObject(key) : new JSONObject();
+               Float second = JSONUtils.getFloatValueFromJSON(installmentJson, "installment_value", true);
+
+               if (first != null && second != null) {
+                  installmentPriceMap.put(first, second);
+               }
+            }
+         }
+
+         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
       }
-      
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
-    }
-    
-    return prices;
-  }
+
+      return prices;
+   }
 }

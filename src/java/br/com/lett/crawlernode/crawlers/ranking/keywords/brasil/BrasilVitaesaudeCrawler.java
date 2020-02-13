@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilVitaesaudeCrawler extends CrawlerRankingKeywords {
 
@@ -67,9 +67,7 @@ public class BrasilVitaesaudeCrawler extends CrawlerRankingKeywords {
     if (lastPageElement != null) {
       String text = lastPageElement.text().replaceAll("[^0-9]", "");
 
-      if (!text.isEmpty() && (this.currentPage < Integer.parseInt(text))) {
-        return true;
-      }
+      return !text.isEmpty() && (this.currentPage < Integer.parseInt(text));
     }
 
     return false;

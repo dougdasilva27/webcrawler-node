@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.saopaulo;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class SaopauloNetfarmaCrawler extends CrawlerRankingCategories {
 
@@ -68,14 +67,10 @@ public class SaopauloNetfarmaCrawler extends CrawlerRankingCategories {
 		Element page = this.currentDoc.select(".product-pagination > a").last();
 
 		// se elemeno page obtiver algum resultado
-		if (page != null){
+		if (page != null) {
 			int lastPage = Integer.parseInt(page.attr("data-pagina"));
-			
-			if(this.currentPage < lastPage) {
-				return true;
-			}
-			
-			return false;
+
+			return this.currentPage < lastPage;
 		}
 
 		return false;

@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -21,6 +14,10 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.*;
 
 public class BrasilEletrozemaCrawler extends Crawler {
 
@@ -209,9 +206,7 @@ public class BrasilEletrozemaCrawler extends Crawler {
     if (json.has(key) && json.get(key) instanceof JSONArray) {
       JSONArray array = json.getJSONArray(key);
 
-      if (array.length() > 0) {
-        return true;
-      }
+      return array.length() > 0;
     }
 
     return false;

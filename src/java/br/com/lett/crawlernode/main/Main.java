@@ -1,14 +1,15 @@
 package br.com.lett.crawlernode.main;
 
-import java.io.File;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
 import br.com.lett.crawlernode.core.server.Server;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 
 
 /**
@@ -42,7 +43,7 @@ public class Main {
   public static Resources globalResources;
   public static Server server;
 
-  public static void main(String args[]) {
+  public static void main(String[] args) {
     Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
     // Setting global configuraions

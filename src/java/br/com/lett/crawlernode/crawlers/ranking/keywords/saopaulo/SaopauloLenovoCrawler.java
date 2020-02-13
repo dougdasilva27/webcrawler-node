@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class SaopauloLenovoCrawler extends CrawlerRankingKeywords {
 
@@ -110,12 +109,8 @@ public class SaopauloLenovoCrawler extends CrawlerRankingKeywords {
 	@Override
 	protected boolean hasNextPage() {
 		// se tiver menos que 12 posições na página, não há proxima página
-		if (this.currentDoc.select("#resultList li.listview").size() < 12) {
-			// não tem próxima página
-			return false;
-		}
-
-		return true;
+		// não tem próxima página
+		return this.currentDoc.select("#resultList li.listview").size() >= 12;
 	}
 
 	@Override

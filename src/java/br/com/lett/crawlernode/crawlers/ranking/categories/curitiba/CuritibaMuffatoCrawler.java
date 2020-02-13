@@ -1,11 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.categories.curitiba;
 
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingCategories;
 
 public class CuritibaMuffatoCrawler extends CrawlerRankingCategories{
 	
@@ -97,12 +96,8 @@ public class CuritibaMuffatoCrawler extends CrawlerRankingCategories{
 	@Override
 	protected boolean hasNextPage() {
 		Elements products = this.currentDoc.select(".vitrine div[id^=ResultItems_] ul > li[layout] > div");
-		
-		if(products.size() >= this.pageSize && !this.cat1){
-			return true;
-		}
-		
-		return false;
+
+		return products.size() >= this.pageSize && !this.cat1;
 	}
 	
 	private String crawlInternalId(Element e){

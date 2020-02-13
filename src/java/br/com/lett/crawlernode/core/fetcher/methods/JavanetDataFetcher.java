@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -184,7 +185,7 @@ public class JavanetDataFetcher implements DataFetcher {
             connection.setRequestProperty("Cookie", buildCookiesString(request.getCookies()));
 
             // Inserting payload
-            OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
+            OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8);
             writer.write(request.getPayload());
             writer.close();
 

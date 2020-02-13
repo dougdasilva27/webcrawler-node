@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class SaopauloWalmartCrawler extends CrawlerRankingKeywords {
 
@@ -101,12 +100,8 @@ public class SaopauloWalmartCrawler extends CrawlerRankingKeywords {
 		Element page = this.currentDoc.select("a.btn.btn-primary.shelf-view-more.next").first();
 
 		// se elemeno page não obtiver nenhum resultado
-		if (page == null) {
-			// não tem próxima página
-			return false;
-		}
-
-		return true;
+		// não tem próxima página
+		return page != null;
 
 	}
 
