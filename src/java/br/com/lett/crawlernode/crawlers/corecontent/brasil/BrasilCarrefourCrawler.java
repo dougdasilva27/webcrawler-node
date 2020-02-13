@@ -85,6 +85,7 @@ public class BrasilCarrefourCrawler extends Crawler {
             .setFetcheroptions(
                   FetcherOptionsBuilder.create()
                         .mustUseMovingAverage(false)
+                        .mustRetrieveStatistics(true)
                         .build())
             .setProxyservice(Arrays.asList(
                   ProxyCollection.INFATICA_RESIDENTIAL_BR,
