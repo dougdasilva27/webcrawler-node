@@ -1,29 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import exceptions.IllegalSellerValueException;
 import models.Marketplace;
-import models.Seller;
 import models.prices.Prices;
-import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Date: 22/06/2018
@@ -36,7 +31,6 @@ public class GpsfarmaCrawler extends Crawler {
 
 	public GpsfarmaCrawler(Session session) {
 		super(session);
-		super.config.setFetcher(FetchMode.FETCHER);
 	}
 
 	@Override
@@ -64,20 +58,17 @@ public class GpsfarmaCrawler extends Crawler {
 			String secondaryImages = crawlSecondaryImages(doc);
 			String description = crawlDescription(doc);
 			Integer stock = null;
-
-			Marketplace marketplace = scrapMarketplace(doc, internalId, prices);
+			Marketplace marketplace = crawlMarketplace();
 
 			String ean = crawlEan(doc);
 			List<String> eans = new ArrayList<>();
 			eans.add(ean);
 
 			// Creating the product
-			Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId)
-					.setInternalPid(internalPid).setName(name).setPrice(price).setPrices(prices).setAvailable(available)
-					.setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-					.setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-					.setSecondaryImages(secondaryImages).setDescription(description).setStock(stock)
-					.setMarketplace(marketplace).setEans(eans).build();
+			Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+					.setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+					.setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+					.setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
 			products.add(product);
 
@@ -92,6 +83,7 @@ public class GpsfarmaCrawler extends Crawler {
 	private boolean isProductPage(Document doc) {
 		return doc.select("input[name=\"product\"]").first() != null;
 	}
+
 
 	private String crawlInternalId(Document doc) {
 		String internalId = null;
@@ -144,6 +136,11 @@ public class GpsfarmaCrawler extends Crawler {
 	private boolean crawlAvailability(Document doc) {
 		return !doc.select(".btn-cart").isEmpty();
 	}
+
+	private Marketplace crawlMarketplace() {
+		return new Marketplace();
+	}
+
 
 	private String crawlPrimaryImage(Document doc) {
 		String primaryImage = null;
@@ -243,38 +240,5 @@ public class GpsfarmaCrawler extends Crawler {
 		}
 
 		return ean;
-	}
-
-	private Marketplace scrapMarketplace(Document doc, String internalId, Prices prices)
-			throws IllegalSellerValueException {
-		String formKey = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,
-				"#product_addtocart_form > input[type=hidden]", "value");
-		Marketplace marketplace = new Marketplace();
-
-		String url = "https://www.gpsfarma.com/drugstore/drugstores/getdrugstores/";
-		String payload = "form_key=" + formKey + "&product=" + internalId;
-		Map<String, String> headers = new HashMap<>();
-
-		headers.put(HttpHeaders.USER_AGENT,
-				"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.100 Safari/537.36");
-		headers.put("x-requested-with", "XMLHttpRequest");
-		headers.put("x-prototype-version", "1.7");
-		headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded;");
-
-		Request request = Request.RequestBuilder.create().setUrl(url)// .setCookies(cookies)
-				.setPayload(payload).setHeaders(headers).mustSendContentEncoding(false).setFollowRedirects(false)
-				.build();
-		String body = this.dataFetcher.post(session, request).getBody();
-		JSONObject jsonMarketplace = JSONUtils.stringToJson(body);
-
-		JSONArray sellersArray = jsonMarketplace.optJSONArray("drugstores");
-		if (sellersArray != null) {
-			for (Object obj : sellersArray) {
-				JSONObject jsonSeller = (JSONObject) obj;
-				marketplace.add(new Seller.SellerBuilder().setName(jsonSeller.optString("name")).setPrices(prices)
-						.setUrl(jsonSeller.optString("landing")).build());
-			}
-		}
-		return marketplace;
 	}
 }
