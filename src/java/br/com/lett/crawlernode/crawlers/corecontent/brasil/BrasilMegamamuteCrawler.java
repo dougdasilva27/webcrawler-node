@@ -52,7 +52,6 @@ public class BrasilMegamamuteCrawler extends Crawler {
          vtexUtil.setDiscountWithDocument(doc, ".flagPromos-v1 p[class^=flag desconto-]", false, true);
 
          JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-         System.err.println(skuJson);
 
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li:not(:first-child) a");

@@ -59,7 +59,6 @@ public class BrasilLojacotyCrawler extends Crawler {
 
          for (int i = 0; i < arraySkus.length(); i++) {
             JSONObject jsonSku = arraySkus.getJSONObject(i);
-            System.err.println(jsonSku);
 
             String internalId = vtexUtil.crawlInternalId(jsonSku);
             String description = crawlDescription(internalId, vtexUtil);
