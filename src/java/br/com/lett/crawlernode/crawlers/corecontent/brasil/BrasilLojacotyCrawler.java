@@ -12,11 +12,10 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.VtexRatingCrawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -75,7 +74,7 @@ public class BrasilLojacotyCrawler extends Crawler {
             Float price = vtexUtil.crawlMainPagePrice(prices);
             Integer stock = vtexUtil.crawlStock(apiJSON);
             String ean = i < eanArray.length() ? eanArray.getString(i) : null;
-            RatingsReviews ratingReviews = crawlRating(doc, internalId);
+            RatingsReviews ratingReviews = scrapRating(internalId, doc);
 
             List<String> eans = new ArrayList<>();
             eans.add(ean);
@@ -101,16 +100,9 @@ public class BrasilLojacotyCrawler extends Crawler {
       return document.selectFirst(".productName") != null;
    }
 
-   private RatingsReviews crawlRating(Document doc, String internalId) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-      ratingReviews.setDate(session.getDate());
-
-      VtexRatingCrawler vtex = new VtexRatingCrawler(session, "https://www.lojacoty.com.br/", logger, cookies);
-      ratingReviewsCollection = vtex.extractRatingAndReviewsForVtex(doc, dataFetcher);
-      ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
-
-      return ratingReviews;
+   private RatingsReviews scrapRating(String internalId, Document doc) {
+      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "107587", logger);
+      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 
    private String crawlDescription(String internalId, VTEXCrawlersUtils vtexUtil) {
