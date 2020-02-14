@@ -25,6 +25,7 @@ import models.prices.Prices;
 public class BrasilLojacotyCrawler extends Crawler {
    public BrasilLojacotyCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    private static final String HOME_PAGE = "https://www.lojacoty.com.br/";
