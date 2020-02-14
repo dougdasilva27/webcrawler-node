@@ -42,6 +42,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
    public BrasilSephoraCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

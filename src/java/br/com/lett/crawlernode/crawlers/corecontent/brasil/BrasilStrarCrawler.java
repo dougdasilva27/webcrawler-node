@@ -33,6 +33,7 @@ public class BrasilStrarCrawler extends Crawler {
 
    public BrasilStrarCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

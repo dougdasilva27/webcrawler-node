@@ -45,6 +45,7 @@ public class BrasilSaraivaCrawler extends Crawler {
 
    public BrasilSaraivaCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

@@ -28,6 +28,7 @@ public class BrasilShopfacilCrawler extends Crawler {
 
    public BrasilShopfacilCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
