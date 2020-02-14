@@ -11,16 +11,16 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ArgentinaCar
  */
 public class ArgentinaCarrefoursuperCrawler extends ArgentinaCarrefoursuper {
 
-  public ArgentinaCarrefoursuperCrawler(Session session) {
-    super(session);
-  }
+   public ArgentinaCarrefoursuperCrawler(Session session) {
+      super(session);
+   }
 
-  private static final String CEP = "1646";
+   public static final String CEP = "1646";
 
-  @Override
-  protected String getCep() {
-    return CEP;
-  }
+   @Override
+   protected String getCep() {
+      return CEP;
+   }
 
 
 }
