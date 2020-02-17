@@ -26,6 +26,31 @@ public class DynamicDataFetcher {
 
    protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
+
+   @Deprecated
+   /**
+    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
+    * @param url
+    * @param session
+    * @return
+    */
+   public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
+      // choose a proxy randomly
+      String proxyString = ProxyCollection.LUMINATI_SERVER_BR;
+
+      // // Bifarma block luminati_server
+      if (session.getMarket().getName().equals("bifarma")) {
+         proxyString = ProxyCollection.BONANZA;
+      }
+
+      // Dufrio block luminati_server
+      if (session.getMarket().getName().equals("dufrio") || session.getMarket().getName().equals("petz")) {
+         proxyString = ProxyCollection.BUY;
+      }
+
+      return fetchPageWebdriver(url, proxyString, session);
+   }
+
    /**
     * Use the webdriver to fetch a page.
     * 
@@ -33,7 +58,7 @@ public class DynamicDataFetcher {
     * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -45,24 +70,7 @@ public class DynamicDataFetcher {
             phantomjsPath = GlobalConfigurations.executionParameters.getPhantomjsPath();
          }
 
-         // choose a proxy randomly
-         String proxyString = ProxyCollection.LUMINATI_SERVER_BR;
-
-         // // Bifarma block luminati_server
-         if (session.getMarket().getName().equals("bifarma")) {
-            proxyString = ProxyCollection.BONANZA;
-         }
-         // Carrefour block
-         if (session.getMarket().getName().equals("carrefour")) {
-            proxyString = ProxyCollection.INFATICA_RESIDENTIAL_BR;
-         }
-
-         // Dufrio block luminati_server
-         if (session.getMarket().getName().equals("dufrio") || session.getMarket().getName().equals("petz")) {
-            proxyString = ProxyCollection.BUY;
-         }
-
-         LettProxy proxy = randomProxy(proxyString);
+         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR);
 
          DesiredCapabilities caps = DesiredCapabilities.phantomjs();
          caps.setJavascriptEnabled(true);

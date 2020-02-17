@@ -111,7 +111,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
             Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
             Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
             boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div .image-zoom", Arrays.asList("href"), "https:", "www.savegnago.com.br/");
             String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
             Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
             Float price = vtexUtil.crawlMainPagePrice(prices);
