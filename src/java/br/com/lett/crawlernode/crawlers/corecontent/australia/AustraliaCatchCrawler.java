@@ -22,8 +22,6 @@ import java.util.*;
 
 public class AustraliaCatchCrawler extends Crawler {
 
-    private static String HOME_PAGE = "https://www.catch.com.au/";
-
     public AustraliaCatchCrawler(Session session) {
         super(session);
         super.config.setMustSendRatingToKinesis(true);
@@ -88,8 +86,9 @@ public class AustraliaCatchCrawler extends Crawler {
         Integer totalReview = CrawlerUtils.scrapIntegerFromHtml(doc, ".hidden > span[itemprop=reviewCount]", false, 0);
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.100 Safari/537.36");
+        String homePage = "https://www.catch.com.au/";
         Request request = Request.RequestBuilder.create()
-                .setUrl(HOME_PAGE + "product/" + internalPid + "/review_list_ajax?limit=10000")
+                .setUrl(homePage + "product/" + internalPid + "/review_list_ajax?limit=10000")
                 .setCookies(cookies)
                 .setHeaders(headers)
                 .build();
