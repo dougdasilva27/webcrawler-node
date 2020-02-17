@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,6 +26,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -41,6 +43,7 @@ public class BrasilPetzCrawler extends Crawler {
    public BrasilPetzCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.WEBDRIVER);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -143,10 +146,11 @@ public class BrasilPetzCrawler extends Crawler {
          String primaryImage = crawlPrimaryImage(doc);
          String secondaryImages = crawlSecondaryImages(doc, primaryImage);
          List<String> eans = crawlEans(doc);
+         RatingsReviews ratingReviews = crawlRating(doc);
 
          return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price).setPrices(prices)
                .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setEans(eans)
-               .setMarketplace(new Marketplace()).build();
+               .setMarketplace(new Marketplace()).setRatingReviews(ratingReviews).build();
       }
 
       return new Product();
@@ -184,6 +188,39 @@ public class BrasilPetzCrawler extends Crawler {
       }
 
       return nameVariation;
+   }
+
+   private RatingsReviews crawlRating(Document docProduct) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setInternalId(crawlInternalId(docProduct));
+      ratingReviews.setDate(session.getDate());
+      Integer totalRating = getTotalNumOfRatings(docProduct);
+      ratingReviews.setTotalRating(totalRating);
+      ratingReviews.setTotalWrittenReviews(totalRating);
+      ratingReviews.setAverageOverallRating(totalRating > 0 ? getTotalAvgRating(docProduct) : 0d);
+
+      return ratingReviews;
+   }
+
+   private Integer getTotalNumOfRatings(Document doc) {
+      return doc.select(".ancora-depoimento").size();
+   }
+
+   /**
+    * 
+    * @param document
+    * @return
+    */
+   private Double getTotalAvgRating(Document doc) {
+      Double avgRating = 0d;
+
+      JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "\"extraInfo\":", ",", true, false);
+
+      if (productJson.has("rating")) {
+         avgRating = productJson.getDouble("rating");
+      }
+
+      return avgRating;
    }
 
    private String crawlInternalId(Document doc) {
