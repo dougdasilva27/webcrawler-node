@@ -16,7 +16,7 @@ public class MexicoHebCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 12;
+      this.pageSize = 56;
       this.log("Página " + this.currentPage);
 
       String url = "https://www.heb.com.mx/catalogsearch/result/index/?limit=36&p=" + this.currentPage + "&q=" + this.keywordEncoded;
