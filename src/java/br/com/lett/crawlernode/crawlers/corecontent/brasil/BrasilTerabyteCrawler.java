@@ -36,6 +36,7 @@ public class BrasilTerabyteCrawler extends Crawler {
 
    public BrasilTerabyteCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -218,7 +219,7 @@ public class BrasilTerabyteCrawler extends Crawler {
          }
       }
 
-      if (obj.has("aggregateRating")) {
+      if (obj.optJSONObject("aggregateRating") != null) {
          return obj.getJSONObject("aggregateRating");
       }
 

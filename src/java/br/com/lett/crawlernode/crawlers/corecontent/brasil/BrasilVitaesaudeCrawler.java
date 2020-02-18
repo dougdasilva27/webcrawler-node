@@ -39,6 +39,7 @@ public class BrasilVitaesaudeCrawler extends Crawler {
 
    public BrasilVitaesaudeCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -441,8 +442,8 @@ public class BrasilVitaesaudeCrawler extends Crawler {
             Element value = e.selectFirst("> span");
 
             if (stars != null && value != null) {
-               Integer star = Integer.parseInt(CommonMethods.getLast(stars.attr("class").split("-")));
-               Integer countStars = Integer.parseInt(value.ownText().replaceAll("[^0-9]", "").trim());
+               Integer star = MathUtils.parseInt(CommonMethods.getLast(stars.attr("class").split("-")));
+               Integer countStars = MathUtils.parseInt(value.ownText().replaceAll("[^0-9]", "").trim());
 
                count += countStars;
                values += star * countStars;
@@ -489,7 +490,6 @@ public class BrasilVitaesaudeCrawler extends Crawler {
          if (elementStarNumber != null) {
 
             String stringStarNumber = elementStarNumber.attr("class").split("-")[4];
-            System.err.println(stringStarNumber);
             String sN = stringStarNumber.replaceAll("[^0-9]", "").trim();
             Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
 

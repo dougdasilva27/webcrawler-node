@@ -26,6 +26,7 @@ public class BrasilTelhanorteCrawler extends Crawler {
 
    public BrasilTelhanorteCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
