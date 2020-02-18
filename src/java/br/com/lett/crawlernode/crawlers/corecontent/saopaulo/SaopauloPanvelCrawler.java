@@ -56,7 +56,7 @@ public class SaopauloPanvelCrawler extends Crawler {
          String secondaryImages = crawlSecondaryImages(doc);
          String description = crawlDescription(doc);
 
-         JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta =", ";", false);
+         JSONObject chaordic = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.chaordic_meta =", ";", false, false);
          JSONObject dataLayer = scrapSpecialJSON(doc);
          JSONObject productJson = chaordic.has("product") ? chaordic.getJSONObject("product") : new JSONObject();
 
@@ -199,21 +199,17 @@ public class SaopauloPanvelCrawler extends Crawler {
       Integer star4 = 0;
       Integer star5 = 0;
 
-      Elements reviews = doc.select(".comment-title__rating .material-icons.active");
+      Elements reviews = doc.select(".box-comment .comment-title__rating");
 
       for (Element review : reviews) {
 
-         Element elementStarNumber = review.attr("class", ".material-icons.active");
+         Integer elementStarNumber = review.select("i.active").size();
 
          if (elementStarNumber != null) {
 
-            String stringStarNumber = elementStarNumber.ownText();
-            System.err.println(stringStarNumber);
-            Integer numberOfStars = MathUtils.parseInt(stringStarNumber);
-            Integer stars = numberOfStars.SIZE;
+            Integer numberOfStars = elementStarNumber;
 
-
-            switch (stars) {
+            switch (numberOfStars) {
                case 5:
                   star5 += 1;
                   break;
