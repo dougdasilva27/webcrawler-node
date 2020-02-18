@@ -25,323 +25,347 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilIbyteCrawler extends Crawler {
 
-  private final String HOME_PAGE = "http://www.ibyte.com.br/";
+   private final String HOME_PAGE = "http://www.ibyte.com.br/";
 
-  public BrasilIbyteCrawler(Session session) {
-    super(session);
-  }
+   public BrasilIbyteCrawler(Session session) {
+      super(session);
+      super.config.setMustSendRatingToKinesis(true);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
 
-  private static final String USER_AGENT = FetchUtilities.randUserAgent();
-  private LettProxy proxyToBeUsed = null;
+   private static final String USER_AGENT = FetchUtilities.randUserAgent();
+   private LettProxy proxyToBeUsed = null;
 
-  @Override
-  protected Object fetch() {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+   @Override
+   protected Object fetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
 
-    Request request =
-        RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyToBeUsed).build();
-    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-  }
+      Request request =
+            RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyToBeUsed).build();
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+   }
 
-  /**
-   * Esse market possui um verificador de javascript Esse verificador é uma função que monta o cookie
-   * e da um reload na página Com isso pegamos este script, trocamos o reload da página pelo retorno
-   * do cookie Para isso usamos o ScriptEngineManager para rodar o código javascript.
-   * 
-   * Para acessar o site deve se usar o cookie pego aqui e usar o mesmo user agent.
-   */
-  @Override
-  public void handleCookiesBeforeFetch() {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
-    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).build();
-    Response response = this.dataFetcher.get(session, request);
+   /**
+    * Esse market possui um verificador de javascript Esse verificador é uma função que monta o cookie
+    * e da um reload na página Com isso pegamos este script, trocamos o reload da página pelo retorno
+    * do cookie Para isso usamos o ScriptEngineManager para rodar o código javascript.
+    * 
+    * Para acessar o site deve se usar o cookie pego aqui e usar o mesmo user agent.
+    */
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+      Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).build();
+      Response response = this.dataFetcher.get(session, request);
 
-    Document doc = Jsoup.parse(response.getBody());
+      Document doc = Jsoup.parse(response.getBody());
 
-    this.proxyToBeUsed = response.getProxyUsed();
+      this.proxyToBeUsed = response.getProxyUsed();
 
-    if (!isProductPage(doc)) {
-      Element script = doc.select("script").first();
+      if (!isProductPage(doc)) {
+         Element script = doc.select("script").first();
 
-      if (script != null) {
-        String eval = script.html().trim();
+         if (script != null) {
+            String eval = script.html().trim();
 
-        if (eval.endsWith(";")) {
-          int y = eval.indexOf(";}}") + 3;
-          int x = eval.indexOf(';', y) + 1;
+            if (eval.endsWith(";")) {
+               int y = eval.indexOf(";}}") + 3;
+               int x = eval.indexOf(';', y) + 1;
 
-          String b = eval.substring(y, x);
+               String b = eval.substring(y, x);
 
-          if (b.contains("(")) {
-            int z = b.indexOf('(') + 1;
-            int u = b.indexOf(')', z);
+               if (b.contains("(")) {
+                  int z = b.indexOf('(') + 1;
+                  int u = b.indexOf(')', z);
 
-            String result = b.substring(z, u);
+                  String result = b.substring(z, u);
 
-            eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result + ".replace(\"location.reload();\", \"\"); " + b;
-          }
-        }
-
-        ScriptEngineManager factory = new ScriptEngineManager();
-        ScriptEngine engine = factory.getEngineByName("js");
-        try {
-          String cookieString = engine.eval(eval).toString();
-          if (cookieString != null && cookieString.contains("=")) {
-            String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
-
-            String[] tokens = cookieValues.split("=");
-
-            if (tokens.length > 1) {
-              BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
-              cookie.setDomain("www.ibyte.com.br");
-              cookie.setPath("/");
-              this.cookies.add(cookie);
+                  eval = "var document = {};" + eval.replace(b, "") + " " + result + " = " + result + ".replace(\"location.reload();\", \"\"); " + b;
+               }
             }
-          }
 
-        } catch (ScriptException e) {
-          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-        }
+            ScriptEngineManager factory = new ScriptEngineManager();
+            ScriptEngine engine = factory.getEngineByName("js");
+            try {
+               String cookieString = engine.eval(eval).toString();
+               if (cookieString != null && cookieString.contains("=")) {
+                  String cookieValues = cookieString.contains(";") ? cookieString.split(";")[0] : cookieString;
+
+                  String[] tokens = cookieValues.split("=");
+
+                  if (tokens.length > 1) {
+                     BasicClientCookie cookie = new BasicClientCookie(tokens[0], tokens[1]);
+                     cookie.setDomain("www.ibyte.com.br");
+                     cookie.setPath("/");
+                     this.cookies.add(cookie);
+                  }
+               }
+
+            } catch (ScriptException e) {
+               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+            }
+         }
       }
-    }
-  }
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // ID interno
-      String internalId = null;
-      Element elementId = doc.select(".view-sku").first();
-      if (elementId != null && elementId.text().contains(":")) {
-        internalId = elementId.text().split(":")[1].replace(")", "").trim();
-      }
+         // ID interno
+         String internalId = null;
+         Element elementId = doc.select(".view-sku").first();
+         if (elementId != null && elementId.text().contains(":")) {
+            internalId = elementId.text().split(":")[1].replace(")", "").trim();
+         }
 
-      // Pid
-      String internalPid = null;
-      Element elementPid = doc.select("input[name=product]").first();
-      if (elementPid != null) {
-        internalPid = elementPid.attr("value").trim();
-      }
+         // Pid
+         String internalPid = null;
+         Element elementPid = doc.select("input[name=product]").first();
+         if (elementPid != null) {
+            internalPid = elementPid.attr("value").trim();
+         }
 
-      // Nome
-      String name = null;
-      Element elementName = doc.select(".product-name h1").first();
-      if (elementName != null) {
-        name = elementName.text().trim();
-      }
+         // Nome
+         String name = null;
+         Element elementName = doc.select(".product-name h1").first();
+         if (elementName != null) {
+            name = elementName.text().trim();
+         }
 
-      // Disponibilidade
-      boolean available = false;
-      Element elementBuyButton = doc.select(".back-in-stock-form.avise_me").first();
-      if (elementBuyButton == null) {
-        available = true;
-      }
+         // Disponibilidade
+         boolean available = false;
+         Element elementBuyButton = doc.select(".back-in-stock-form.avise_me").first();
+         if (elementBuyButton == null) {
+            available = true;
+         }
 
-      // Preço
-      Float price = null;
-      if (available) {
-        Element elementPrice = doc.select(".regular-price .price").first();
-        Element specialPrice = doc.select(".special-price .price").first();
+         // Preço
+         Float price = null;
+         if (available) {
+            Element elementPrice = doc.select(".regular-price .price").first();
+            Element specialPrice = doc.select(".special-price .price").first();
 
-        if (specialPrice != null) {
-          price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-        } else if (elementPrice != null) {
-          price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-        }
-      }
+            if (specialPrice != null) {
+               price = Float.parseFloat(specialPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+            } else if (elementPrice != null) {
+               price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+            }
+         }
 
-      // Categoria
-      String category1 = "";
-      String category2 = "";
-      String category3 = "";
-      Elements elementCategories = doc.select(".breadcrumbs li a");
-      for (int i = 1; i < elementCategories.size() - 1; i++) {
-        String c = elementCategories.get(i).text().trim();
-        if (category1.isEmpty()) {
-          category1 = c;
-        } else if (category2.isEmpty()) {
-          category2 = c;
-        } else if (category3.isEmpty()) {
-          category3 = c;
-        }
-      }
+         // Categoria
+         String category1 = "";
+         String category2 = "";
+         String category3 = "";
+         Elements elementCategories = doc.select(".breadcrumbs li a");
+         for (int i = 1; i < elementCategories.size() - 1; i++) {
+            String c = elementCategories.get(i).text().trim();
+            if (category1.isEmpty()) {
+               category1 = c;
+            } else if (category2.isEmpty()) {
+               category2 = c;
+            } else if (category3.isEmpty()) {
+               category3 = c;
+            }
+         }
 
-      // Imagem primária
-      String primaryImage = null;
-      Element elementPrimaryImage = doc.select(".product-image .cloud-zoom").first();
-      if (elementPrimaryImage != null) {
-        primaryImage = elementPrimaryImage.attr("href");
-      }
+         // Imagem primária
+         String primaryImage = null;
+         Element elementPrimaryImage = doc.select(".product-image .cloud-zoom").first();
+         if (elementPrimaryImage != null) {
+            primaryImage = elementPrimaryImage.attr("href");
+         }
 
-      // Imagens secundárias
-      Elements elementImages = doc.select("#galeria div a");
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+         // Imagens secundárias
+         Elements elementImages = doc.select("#galeria div a");
+         String secondaryImages = null;
+         JSONArray secondaryImagesArray = new JSONArray();
 
-      for (Element image : elementImages) {
-        if (!image.attr("href").equals(primaryImage)) {
-          secondaryImagesArray.put(image.attr("href"));
-        }
-      }
-      if (secondaryImagesArray.length() > 0) {
-        secondaryImages = secondaryImagesArray.toString();
-      }
+         for (Element image : elementImages) {
+            if (!image.attr("href").equals(primaryImage)) {
+               secondaryImagesArray.put(image.attr("href"));
+            }
+         }
+         if (secondaryImagesArray.length() > 0) {
+            secondaryImages = secondaryImagesArray.toString();
+         }
 
-      // Descrição
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#descricao", "#atributos", ".infoEanGarantia"));
+         // Descrição
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#descricao", "#atributos", ".infoEanGarantia"));
 
-      // Estoque
-      Integer stock = null;
+         // Estoque
+         Integer stock = null;
 
-      // Marketplace
-      Marketplace marketplace = new Marketplace();
+         // Marketplace
+         Marketplace marketplace = new Marketplace();
 
-      // Prices
-      Prices prices = crawlPrices(doc, price);
+         // Prices
+         Prices prices = crawlPrices(doc, price);
 
-      // Ean
-      String ean = crawlEan(doc);
-      List<String> eans = new ArrayList<>();
-      eans.add(ean);
+         // Rating
+         RatingsReviews ratingReviews = crawlRating(doc, internalId, internalPid);
 
-      Product product = ProductBuilder.create().setUrl(this.session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-          .setName(name).setPrice(price).setPrices(prices).setCategory1(category1).setCategory2(category2).setCategory3(category3)
-          .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace)
-          .setAvailable(available).setEans(eans).build();
+         // Ean
+         String ean = crawlEan(doc);
+         List<String> eans = new ArrayList<>();
+         eans.add(ean);
 
-      products.add(product);
+         Product product = ProductBuilder.create().setUrl(this.session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
+               .setName(name).setPrice(price).setPrices(prices).setCategory1(category1).setCategory2(category2).setCategory3(category3)
+               .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(marketplace)
+               .setAvailable(available).setRatingReviews(ratingReviews).setEans(eans).build();
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
+         products.add(product);
 
-    return products;
-  }
-
-
-  private Prices crawlPrices(Document doc, Float price) {
-    Prices prices = new Prices();
-    Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
-    if (price != null) {
-      installmentPriceMap.put(1, price);
-
-      Element boleto = doc.select(".boletoBox .price").first();
-
-      if (boleto != null) {
-        Float value = MathUtils.parseFloatWithComma(boleto.ownText());
-
-        if (value != null) {
-          prices.setBankTicketPrice(value);
-        } else {
-          prices.setBankTicketPrice(price);
-        }
       } else {
-        prices.setBankTicketPrice(price);
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      Elements installments = doc.select(".formas li #simularParcelamento tr");
+      return products;
+   }
 
-      if (!installments.isEmpty()) {
-        for (Element e : installments) {
-          Elements values = e.select("td");
 
-          if (values.size() > 1) {
-            Integer installment = Integer.parseInt(values.first().ownText().replaceAll("[^0-9]", ""));
-            Float value = Float.parseFloat(values.get(1).ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+   private Prices crawlPrices(Document doc, Float price) {
+      Prices prices = new Prices();
+      Map<Integer, Float> installmentPriceMap = new HashMap<>();
 
-            if (installment == 1) {
-              value = MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f));
+      if (price != null) {
+         installmentPriceMap.put(1, price);
+
+         Element boleto = doc.select(".boletoBox .price").first();
+
+         if (boleto != null) {
+            Float value = MathUtils.parseFloatWithComma(boleto.ownText());
+
+            if (value != null) {
+               prices.setBankTicketPrice(value);
+            } else {
+               prices.setBankTicketPrice(price);
+            }
+         } else {
+            prices.setBankTicketPrice(price);
+         }
+
+         Elements installments = doc.select(".formas li #simularParcelamento tr");
+
+         if (!installments.isEmpty()) {
+            for (Element e : installments) {
+               Elements values = e.select("td");
+
+               if (values.size() > 1) {
+                  Integer installment = Integer.parseInt(values.first().ownText().replaceAll("[^0-9]", ""));
+                  Float value = Float.parseFloat(values.get(1).ownText().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
+
+                  if (installment == 1) {
+                     value = MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f));
+                  }
+
+                  installmentPriceMap.put(installment, value);
+               }
+            }
+         } else {
+            installments = doc.select(".product-shop .parcelaBloco div[class^=parcela-]");
+
+            for (Element e : installments) {
+               Element installmentElement = e.select(".parcela").last();
+               Element valueElement = e.select(".price").last();
+
+               if (valueElement != null && installmentElement != null) {
+                  String installment = installmentElement.ownText().replaceAll("[^0-9]", "").trim();
+                  Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
+
+                  if (!installment.isEmpty() && value != null) {
+                     int installmentNumber = Integer.parseInt(installment);
+
+                     if (installmentNumber == 1) {
+                        value = MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f));
+                     }
+
+                     installmentPriceMap.put(installmentNumber, value);
+                  }
+               }
+            }
+         }
+
+         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+      }
+
+      return prices;
+   }
+
+   private RatingsReviews crawlRating(Document document, String internalId, String internalPid) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger);
+
+      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "92581cf1-146e-48cd-853a-1873e0e3fee1", dataFetcher);
+      Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
+      Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+
+      ratingReviews.setInternalId(internalId);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+      return ratingReviews;
+   }
+
+   /***********
+    * Product page identification *
+    ***********/
+
+   private boolean isProductPage(Document document) {
+      Element elementProduct = document.select(".view-sku").first();
+      return (elementProduct != null);
+   }
+
+   private String crawlEan(Document doc) {
+      String ean = null;
+      Elements elmnts = doc.select(".infoEanGarantia b");
+
+      for (Element e : elmnts) {
+         String aux = e.text();
+
+         if (aux.contains("EAN")) {
+            aux = aux.replaceAll("[^0-9]+", "");
+
+            if (!aux.isEmpty()) {
+               ean = aux;
             }
 
-            installmentPriceMap.put(installment, value);
-          }
-        }
-      } else {
-        installments = doc.select(".product-shop .parcelaBloco div[class^=parcela-]");
-
-        for (Element e : installments) {
-          Element installmentElement = e.select(".parcela").last();
-          Element valueElement = e.select(".price").last();
-
-          if (valueElement != null && installmentElement != null) {
-            String installment = installmentElement.ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathUtils.parseFloatWithComma(valueElement.ownText());
-
-            if (!installment.isEmpty() && value != null) {
-              int installmentNumber = Integer.parseInt(installment);
-
-              if (installmentNumber == 1) {
-                value = MathUtils.normalizeTwoDecimalPlaces(value - (value * 0.07f));
-              }
-
-              installmentPriceMap.put(installmentNumber, value);
-            }
-          }
-        }
+            break;
+         }
       }
 
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-    }
-
-    return prices;
-  }
-
-  /*******************************
-   * Product page identification *
-   *******************************/
-
-  private boolean isProductPage(Document document) {
-    Element elementProduct = document.select(".view-sku").first();
-    return (elementProduct != null);
-  }
-
-  private String crawlEan(Document doc) {
-    String ean = null;
-    Elements elmnts = doc.select(".infoEanGarantia b");
-
-    for (Element e : elmnts) {
-      String aux = e.text();
-
-      if (aux.contains("EAN")) {
-        aux = aux.replaceAll("[^0-9]+", "");
-
-        if (!aux.isEmpty()) {
-          ean = aux;
-        }
-
-        break;
-      }
-    }
-
-    return ean;
-  }
+      return ean;
+   }
 }
