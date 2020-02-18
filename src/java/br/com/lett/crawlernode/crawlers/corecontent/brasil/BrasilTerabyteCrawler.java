@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -170,10 +171,12 @@ public class BrasilTerabyteCrawler extends Crawler {
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(productInfo);
       Double avgRating = getTotalAvgRating(productInfo);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
 
@@ -224,6 +227,58 @@ public class BrasilTerabyteCrawler extends Crawler {
       }
 
       return obj;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".box-aval");
+
+      for (Element review : reviews) {
+
+         Element elementStarNumber = review.selectFirst(".srating img");
+
+         if (elementStarNumber != null) {
+
+            String stringStarNumber = elementStarNumber.attr("alt");
+            String sN = stringStarNumber.replaceAll("[^0-9]", "").split("_")[0].trim();
+            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0;
+
+
+            switch (numberOfStars) {
+               case 50:
+                  star5 += 1;
+                  break;
+               case 40:
+                  star4 += 1;
+                  break;
+               case 30:
+                  star3 += 1;
+                  break;
+               case 20:
+                  star2 += 1;
+                  break;
+               case 10:
+                  star1 += 1;
+                  break;
+               default:
+                  break;
+            }
+         }
+
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
 }

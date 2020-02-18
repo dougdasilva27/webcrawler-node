@@ -445,8 +445,12 @@ public class BrasilVitaesaudeCrawler extends Crawler {
                Integer star = MathUtils.parseInt(CommonMethods.getLast(stars.attr("class").split("-")));
                Integer countStars = MathUtils.parseInt(value.ownText().replaceAll("[^0-9]", "").trim());
 
-               count += countStars;
-               values += star * countStars;
+               if (star != null && countStars != null) {
+
+                  count += countStars;
+                  values += star * countStars;
+
+               }
             }
          }
 
