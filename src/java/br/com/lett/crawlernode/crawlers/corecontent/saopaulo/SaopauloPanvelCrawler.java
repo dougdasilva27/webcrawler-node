@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -160,16 +161,18 @@ public class SaopauloPanvelCrawler extends Crawler {
 
       ratingReviews.setDate(session.getDate());
 
-      Integer commentsNumber = crawlCommentsNumber(doc);
+      Integer commentsNumber = getTotalNumOfRatings(doc);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
       ratingReviews.setTotalRating(commentsNumber);
       ratingReviews.setTotalWrittenReviews(commentsNumber);
-      ratingReviews.setAverageOverallRating(crawlTotalRating(doc, commentsNumber));
+      ratingReviews.setAverageOverallRating(getTotalAvgRating(doc, commentsNumber));
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
    }
 
-   private Double crawlTotalRating(Document document, Integer commentsNumber) {
+   private Double getTotalAvgRating(Document document, Integer commentsNumber) {
       Double stars = 0d;
 
       if (commentsNumber > 0) {
@@ -184,8 +187,61 @@ public class SaopauloPanvelCrawler extends Crawler {
       return stars;
    }
 
-   private Integer crawlCommentsNumber(Document doc) {
+   private Integer getTotalNumOfRatings(Document doc) {
       return doc.select(".box-comment").size();
+   }
+
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".comment-title__rating .material-icons.active");
+
+      for (Element review : reviews) {
+
+         Element elementStarNumber = review.attr("class", ".material-icons.active");
+
+         if (elementStarNumber != null) {
+
+            String stringStarNumber = elementStarNumber.ownText();
+            System.err.println(stringStarNumber);
+            Integer numberOfStars = MathUtils.parseInt(stringStarNumber);
+            Integer stars = numberOfStars.SIZE;
+
+
+            switch (stars) {
+               case 5:
+                  star5 += 1;
+                  break;
+               case 4:
+                  star4 += 1;
+                  break;
+               case 3:
+                  star3 += 1;
+                  break;
+               case 2:
+                  star2 += 1;
+                  break;
+               case 1:
+                  star1 += 1;
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private String crawlName(JSONObject product, JSONObject dataLayer) {
