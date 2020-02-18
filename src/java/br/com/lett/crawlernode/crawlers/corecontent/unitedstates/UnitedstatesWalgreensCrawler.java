@@ -37,6 +37,7 @@ public class UnitedstatesWalgreensCrawler extends Crawler {
 
    public UnitedstatesWalgreensCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
