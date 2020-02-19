@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.Yourrev
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -121,10 +122,12 @@ public class BrasilNovomundoCrawler extends Crawler {
 
       Integer totalNumOfEvaluations = yrRC.getTotalNumOfRatingsFromYourViews(docRating);
       Double avgRating = yrRC.getTotalAvgRatingFromYourViews(docRating);
+      AdvancedRatingReview adRating = yrRC.getTotalStarsFromEachValue(internalPid);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAdvancedRatingReview(adRating);
 
       return ratingReviews;
    }
