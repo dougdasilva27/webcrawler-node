@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -20,6 +21,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -145,12 +147,64 @@ public class BrasilGazinCrawler extends Crawler {
 
       Integer totalNumOfEvaluations = CrawlerUtils.getIntegerValueFromJSON(ratingJson, "reviewCount", 0);
       Double avgRating = CrawlerUtils.getDoubleValueFromJSON(ratingJson, "ratingValue", true, false);
+      // AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(jsonInfo);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0d);
+      // ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject JsonRating) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+
+      if (JsonRating.has("review")) {
+         JSONArray ratingDistribution = JsonRating.getJSONArray("review");
+
+         for (int i = 0; i < ratingDistribution.length(); i++) {
+            JSONObject rV = ratingDistribution.getJSONObject(i);
+
+
+            int val1 = rV.getInt("ratingValue");
+
+            switch (val1) {
+               case 5:
+                  star5 += 1;
+                  break;
+               case 4:
+                  star4 += 1;
+                  break;
+               case 3:
+                  star3 += 1;
+                  break;
+               case 2:
+                  star2 += 1;
+                  break;
+               case 1:
+                  star1 += 1;
+                  break;
+               default:
+                  break;
+            }
+         }
+
+      }
+
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private Float crawlPrice(JSONObject json) {
