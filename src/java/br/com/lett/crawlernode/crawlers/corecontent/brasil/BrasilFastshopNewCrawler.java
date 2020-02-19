@@ -26,6 +26,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -193,6 +194,8 @@ public class BrasilFastshopNewCrawler {
 
    private RatingsReviews crawlRatingReviews(String partnerId) {
       RatingsReviews ratingReviews = new RatingsReviews();
+      Integer count = 0;
+      Integer ratingValue = 0;
 
       ratingReviews.setDate(session.getDate());
 
@@ -202,14 +205,67 @@ public class BrasilFastshopNewCrawler {
       Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
       JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
       JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, partnerId);
-
+      System.err.println(reviewStatistics);
+      AdvancedRatingReview advRating = scrapAdvancedRatingReview(reviewStatistics);
       Integer total = getTotalReviewCount(ratingReviewsEndpointResponse);
 
       ratingReviews.setTotalRating(total);
       ratingReviews.setTotalWrittenReviews(total);
       ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
+      ratingReviews.setAdvancedRatingReview(advRating);
 
       return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject JsonRating) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+
+      if (JsonRating.has("RatingDistribution")) {
+         JSONArray ratingDistribution = JsonRating.getJSONArray("RatingDistribution");
+
+         for (int i = 0; i < ratingDistribution.length(); i++) {
+            JSONObject rV = ratingDistribution.getJSONObject(i);
+
+
+            int val1 = rV.getInt("RatingValue");
+            int val2 = rV.getInt("Count");
+
+            switch (val1) {
+               case 5:
+                  star5 = val2;
+                  break;
+               case 4:
+                  star4 = val2;
+                  break;
+               case 3:
+                  star3 = val2;
+                  break;
+               case 2:
+                  star2 = val2;
+                  break;
+               case 1:
+                  star1 = val2;
+                  break;
+               default:
+                  break;
+            }
+         }
+
+      }
+
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private Integer getTotalReviewCount(JSONObject reviewStatistics) {
