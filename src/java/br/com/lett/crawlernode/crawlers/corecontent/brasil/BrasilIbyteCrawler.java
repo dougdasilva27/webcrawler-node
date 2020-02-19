@@ -30,6 +30,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -330,11 +331,12 @@ public class BrasilIbyteCrawler extends Crawler {
       Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "92581cf1-146e-48cd-853a-1873e0e3fee1", dataFetcher);
       Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
       Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+      AdvancedRatingReview adRating = yourReviews.getTotalStarsFromEachValue(internalPid);
 
-      ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAdvancedRatingReview(adRating);
 
       return ratingReviews;
    }
