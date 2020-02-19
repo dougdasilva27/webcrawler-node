@@ -16,6 +16,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlers
 import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -83,7 +84,7 @@ public class BrasilHavanCrawler extends Crawler {
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
                   .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-                  .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+                  .setStock(stock).setMarketplace(marketplace).setRatingReviews(ratingReviews).setEans(eans).build();
 
             products.add(product);
          }
@@ -103,10 +104,12 @@ public class BrasilHavanCrawler extends Crawler {
       Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "e26e19e6-eb4c-4e0f-b1e6-a11e8a461160", dataFetcher);
       Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
       Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+      AdvancedRatingReview adRating = yourReviews.getTotalStarsFromEachValue(internalPid);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAdvancedRatingReview(adRating);
 
       return ratingReviews;
    }
