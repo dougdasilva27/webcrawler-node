@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.australia;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -46,9 +47,13 @@ public class AustraliaCatchCrawler extends Crawler {
             Prices prices = crawlPrices(price, doc);
             String description = crawlDescription(doc);
 
+            String primaryImage = null;
+
             JSONArray images = scrapImages(doc);
-            String primaryImage = images.optString(0);
-            images.remove(0);
+            if (images.optString(0) != null) {
+                primaryImage = images.optString(0);
+                images.remove(0);
+            }
 
             Elements variation = doc.select(".attribute-dropdown__option");
             Map<String, String> skus = scrapSkuVariations(variation, internalPid);
@@ -73,7 +78,6 @@ public class AustraliaCatchCrawler extends Crawler {
                         .setDescription(description)
                         .build());
             }
-
         } else {
             Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
         }
@@ -188,9 +192,13 @@ public class AustraliaCatchCrawler extends Crawler {
 
     private Prices crawlPrices(Float price, Element doc) {
         Prices prices = new Prices();
+        Map<Integer, Float> installmentMap = new HashMap<>();
 
         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price--strike", null, false, '.', session));
         prices.setBankTicketPrice(price);
+        installmentMap.put(1, price);
+        prices.insertCardInstallment(Card.VISA.toString(), installmentMap);
+        prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMap);
         return prices;
     }
 }
