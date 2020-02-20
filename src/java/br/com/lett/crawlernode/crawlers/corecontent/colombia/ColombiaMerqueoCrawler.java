@@ -192,13 +192,19 @@ public class ColombiaMerqueoCrawler extends Crawler {
    }
 
    private String crawlName(JSONObject data) {
-      String name = null;
+      StringBuilder name = new StringBuilder();
 
       if (data.has("name") && !data.isNull("name")) {
-         name = data.getString("name");
+         name.append(data.getString("name") + " ");
+      }
+      if (data.has("quantity") && !data.isNull("quantity")) {
+         name.append(data.getString("quantity") + " ");
+      }
+      if (data.has("unit") && !data.isNull("unit")) {
+         name.append(data.getString("unit"));
       }
 
-      return name;
+      return name.toString();
    }
 
    private JSONObject scrapApiJson(String originalURL) {
