@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -23,6 +16,14 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * 
@@ -66,11 +67,17 @@ public class MexicoWalmartsuperCrawler extends Crawler {
     }
 
     String apiUrl =
-        "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
-            + finalParameter + "&skuId=" + finalParameter;
+            "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
+                    + finalParameter + "&skuId=" + finalParameter;
 
     Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
-    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+    Response response = dataFetcher.get(session, request);
+
+
+    while (response.getRequests().stream().noneMatch(requestsStatistics -> requestsStatistics.getStatusCode() == 200))
+      response = dataFetcher.get(session, request);
+
+    return CrawlerUtils.stringToJson(response.getBody());
   }
 
   @Override
@@ -287,7 +294,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
    */
   private Prices crawlPrices(Float price) {
     Prices prices = new Prices();
-
+    prices.setBankTicketPrice(price);
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
