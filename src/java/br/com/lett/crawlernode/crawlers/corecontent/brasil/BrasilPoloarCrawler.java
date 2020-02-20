@@ -265,7 +265,7 @@ public class BrasilPoloarCrawler extends Crawler {
          String ratingString = rating.ownText().split(">")[0];
 
          if (ratingString != null) {
-            avgRating = Double.valueOf(ratingString);
+            avgRating = MathUtils.parseDoubleWithComma(ratingString);
          }
       }
       return avgRating;

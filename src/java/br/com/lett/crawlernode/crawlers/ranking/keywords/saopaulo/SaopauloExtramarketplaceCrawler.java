@@ -1,17 +1,20 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
@@ -37,15 +40,17 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
         setTotalProducts();
       }
       for (Element e : products) {
-        // InternalPid
-        String internalPid = crawlInternalPid(e);
+        JSONObject jsonObject = JSONUtils.stringToJson(e.attr("data-metadata-json"));
+
+        String internalPid = jsonObject.optString("idProduct");
+        String internalId = jsonObject.optString("idSku");
 
         // Url do produto
         String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(null, internalPid, productUrl);
+        saveDataProduct(internalId, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
@@ -61,10 +66,6 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
   @Override
   protected boolean hasNextPage() {
     return !this.currentDoc.select(".neemu-pagination-next a").isEmpty();
-  }
-
-  private String crawlInternalPid(Element e) {
-    return e.attr("data-productid");
   }
 
   private String crawlProductUrl(Element e) {

@@ -19,15 +19,20 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 public class BrasilMarabrazCrawler extends Crawler {
+   private static final String API_KEY = "4a94a68c-e34e-48a9-a648-8a7720f32b02";
 
    public BrasilMarabrazCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -48,6 +53,7 @@ public class BrasilMarabrazCrawler extends Crawler {
          String secondaryImages = scrapSecondaryImages(doc);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-collateral"));
          List<String> eans = new ArrayList<>();
+         RatingsReviews ratingReviews = crawlRating(internalPid);
 
          eans.add(CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=\"gtin13\"]", false));
 
@@ -66,6 +72,7 @@ public class BrasilMarabrazCrawler extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
+               .setRatingReviews(ratingReviews)
                .setMarketplace(new Marketplace())
                .setEans(eans)
                .build();
@@ -124,6 +131,26 @@ public class BrasilMarabrazCrawler extends Crawler {
       }
 
       return url;
+   }
+
+   private RatingsReviews crawlRating(String internalPid) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger, API_KEY,
+            this.dataFetcher);
+
+      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, API_KEY, dataFetcher);
+      Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
+      Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
+      AdvancedRatingReview advancedRatingReview = yourReviews.getTotalStarsFromEachValue(internalPid);
+
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+
+      return ratingReviews;
    }
 
    private boolean scrapAvailability(Document doc) {

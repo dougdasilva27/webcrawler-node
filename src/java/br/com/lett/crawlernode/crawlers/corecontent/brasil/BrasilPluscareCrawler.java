@@ -273,10 +273,10 @@ public class BrasilPluscareCrawler extends Crawler {
 
    private Double getTotalAvgRating(Document doc) {
       Double avgRating = 0d;
-      Element avg = doc.select("#nota").first();
+      Element avg = doc.selectFirst("#nota");
 
       if (avg != null) {
-         avgRating = avg.val().isEmpty() ? 0d : Double.parseDouble(avg.val());
+         avgRating = MathUtils.parseDoubleWithComma(avg.val());
       }
 
       return avgRating;
