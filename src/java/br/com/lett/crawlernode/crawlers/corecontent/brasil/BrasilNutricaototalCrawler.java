@@ -83,7 +83,6 @@ public class BrasilNutricaototalCrawler extends Crawler {
       Integer totalNumOfEvaluations = crawlNumOfEvaluations(doc, "meta[itemprop=ratingCount]");
       Double avgRating = crawlAvgRating(doc, "meta[itemprop=ratingValue]");
 
-      ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
 
