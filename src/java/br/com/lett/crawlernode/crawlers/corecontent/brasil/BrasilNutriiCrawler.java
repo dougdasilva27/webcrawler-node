@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -107,12 +108,69 @@ public class BrasilNutriiCrawler extends Crawler {
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
       Double avgRating = getTotalAvgRating(document);
+      AdvancedRatingReview adRating = scrapAdvancedRatingReview(document);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(adRating);
 
       return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select("#customer-reviews > dl > dd table > tbody > tr > td > div > div");
+
+
+
+      for (Element review : reviews) {
+         String el = review.attr("style").replace("%", "");
+         el = el.replace("width:", "");
+         el = el.replace(";", "");
+         Integer val = Integer.parseInt(el);
+         val = (val * 5) / 100;
+
+
+         // On a html this value will be like this: (1)
+
+
+         switch (val) {
+            case 5:
+               star5 += 1;
+               break;
+            case 4:
+               star4 += 1;
+               break;
+            case 3:
+               star3 += 1;
+               break;
+            case 2:
+               star2 += 1;
+               break;
+            case 1:
+               star1 += 1;
+               break;
+            default:
+               break;
+         }
+
+
+
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private Double getTotalAvgRating(Document doc) {
