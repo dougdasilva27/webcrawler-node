@@ -119,6 +119,7 @@ public class BrasilNutriiCrawler extends Crawler {
    }
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer val = 0;
       Integer star1 = 0;
       Integer star2 = 0;
       Integer star3 = 0;
@@ -133,7 +134,9 @@ public class BrasilNutriiCrawler extends Crawler {
          String el = review.attr("style").replace("%", "");
          el = el.replace("width:", "");
          el = el.replace(";", "");
-         Integer val = Integer.parseInt(el);
+         if (!el.isEmpty()) {
+            val = Integer.parseInt(el);
+         }
          val = (val * 5) / 100;
 
 
@@ -178,7 +181,12 @@ public class BrasilNutriiCrawler extends Crawler {
       Element avg = doc.select("div.rating").first();
 
       if (avg != null) {
-         avgRating = (MathUtils.parseDoubleWithDot(avg.attr("style")) / 100) * 5;
+         avgRating = MathUtils.parseDoubleWithDot(avg.attr("style"));
+         if (avgRating != null) {
+            avgRating = (avgRating / 100) * 5;
+         } else {
+            avgRating = (double) 0;
+         }
       }
 
       return avgRating;

@@ -191,6 +191,7 @@ public class BrasilNetshoesCrawler extends Crawler {
    }
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer stars = 0;
       Integer star1 = 0;
       Integer star2 = 0;
       Integer star3 = 0;
@@ -203,7 +204,11 @@ public class BrasilNetshoesCrawler extends Crawler {
 
       for (Element review : reviews) {
 
-         Integer stars = Integer.parseInt(review.text());
+         String reviewText = review.text();
+         reviewText = reviewText.replaceAll("[^0-9]", "");
+         if (!reviewText.isEmpty()) {
+            stars = Integer.parseInt(review.text());
+         }
 
          // On a html this value will be like this: (1)
 
@@ -242,14 +247,15 @@ public class BrasilNetshoesCrawler extends Crawler {
    }
 
    private Double getTotalAvgRating(Document docRating) {
+      String reviewText = "";
       Double avgRating = 0d;
       Element rating = docRating.select("span[itemprop=ratingValue]").first();
 
       if (rating != null) {
          String text = rating.text().trim();
-
-         if (!text.isEmpty()) {
-            avgRating = Double.parseDouble(text);
+         reviewText = text.replaceAll("[^0-9]", "");
+         if (!reviewText.isEmpty()) {
+            avgRating = Double.parseDouble(reviewText);
          }
       }
 
@@ -263,14 +269,15 @@ public class BrasilNetshoesCrawler extends Crawler {
     * @return
     */
    private Integer getTotalNumOfRatings(Document doc) {
+      String reviewText = "";
       Integer totalRating = 0;
       Element rating = doc.select("meta[itemprop=reviewCount]").first();
 
       if (rating.hasAttr("content")) {
          String votes = rating.attr("content");
-
-         if (!votes.isEmpty()) {
-            totalRating = Integer.parseInt(votes);
+         reviewText = votes.replaceAll("[^0-9]", "");
+         if (!reviewText.isEmpty()) {
+            totalRating = Integer.parseInt(reviewText);
          }
       }
 

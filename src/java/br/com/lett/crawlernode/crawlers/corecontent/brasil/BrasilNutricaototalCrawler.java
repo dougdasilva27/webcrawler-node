@@ -90,13 +90,14 @@ public class BrasilNutricaototalCrawler extends Crawler {
    }
 
    private Integer crawlNumOfEvaluations(Document doc, String selector) {
+      String reviewText = "";
       Element e = doc.selectFirst(selector);
 
       if (e != null) {
          String aux = e.attr("content");
-
-         if (!aux.isEmpty()) {
-            return Integer.parseInt(aux);
+         reviewText = aux.replaceAll("[^0-9]", "");
+         if (!reviewText.isEmpty()) {
+            return Integer.parseInt(reviewText);
          }
       }
 
@@ -104,12 +105,13 @@ public class BrasilNutricaototalCrawler extends Crawler {
    }
 
    private Double crawlAvgRating(Document doc, String selector) {
+      String reviewText = "";
       Element e = doc.selectFirst(selector);
 
       if (e != null) {
          String aux = e.attr("content");
-
-         if (!aux.isEmpty()) {
+         reviewText = aux.replaceAll("[^0-9]", "");
+         if (!reviewText.isEmpty()) {
             return Double.parseDouble(aux);
          }
       }
