@@ -137,6 +137,9 @@ public class BrasilNutriiCrawler extends Crawler {
          if (!el.isEmpty()) {
             val = Integer.parseInt(el);
          }
+
+         // o numero vem em porcentagem, entao, como a avaliação vai de 1 até 5 fazemos o calculo valor * 5 e
+         // dps / 100 para acharmos o numero da votação da pessoa em numeros de 1 a 5
          val = (val * 5) / 100;
 
 

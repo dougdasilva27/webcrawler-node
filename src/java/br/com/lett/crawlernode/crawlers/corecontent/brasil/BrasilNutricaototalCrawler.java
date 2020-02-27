@@ -110,7 +110,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
 
       if (e != null) {
          String aux = e.attr("content");
-         reviewText = aux.replaceAll("[^0-9]", "");
+         reviewText = aux.replaceAll("[^0-9.,]", "");
          if (!reviewText.isEmpty()) {
             return Double.parseDouble(aux);
          }
