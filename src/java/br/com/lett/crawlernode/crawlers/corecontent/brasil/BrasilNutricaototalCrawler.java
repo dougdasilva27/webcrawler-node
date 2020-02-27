@@ -41,20 +41,19 @@ public class BrasilNutricaototalCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-essential .no-display input[name=product]", "value");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-shop .sku", true);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-essential .product-name h1", true);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-box.price-final_price", "data-product-id");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title > span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li[class^=category]");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productImage", Arrays.asList("src"), "https", "www.nutricaototal.com.br");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "head > meta[property=\"og:image\"]", Arrays.asList("content"), "https", "www.nutricaototal.com.br");
          String secondaryImages =
                CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
                      Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-essential .short-description .std",
-               "#product_tabs_description_tabbed_contents", "#product_tabs_additional_tabbed_contents"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.attribute.overview > div > b", "div.product.attribute.overview > div"));
          Integer stock = null;
-         Float price = CrawlerUtils.scrapSimplePriceFloat(doc, ".product-essential .regular-price .price", true);
+         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.price", null, true, ',', session);
          Prices prices = crawlPrices(price, doc);
-         boolean available = checkAvaliability(doc, ".add-to-box .add-to-cart");
+         boolean available = checkAvaliability(doc, "#product-addtocart-button > span");
          RatingsReviews ratingReviews = crawlRating(doc, internalId);
 
          // Creating the product
@@ -73,7 +72,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".product-essential") != null;
+      return doc.selectFirst(".product-info-main") != null;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalId) {
@@ -112,7 +111,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
          String aux = e.attr("content");
          reviewText = aux.replaceAll("[^0-9.,]", "");
          if (!reviewText.isEmpty()) {
-            return Double.parseDouble(aux);
+            return MathUtils.parseDoubleWithDot(reviewText);// Double.parseDouble(aux);
          }
       }
 
@@ -126,11 +125,10 @@ public class BrasilNutricaototalCrawler extends Crawler {
          Map<Integer, Float> installmentPriceMap = new TreeMap<>();
          installmentPriceMap.put(1, price);
 
-         Element priceFrom = doc.select(".product-essential .regular-price strong").first();
+         Element priceFrom = doc.select("div.price-box.price-final_price > span > span.preco-desconto > b > span").first();
          if (priceFrom != null) {
             prices.setBankTicketPrice(MathUtils.parseDoubleWithComma(priceFrom.text()));
          }
-
          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
          prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);

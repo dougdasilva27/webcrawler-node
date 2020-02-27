@@ -255,7 +255,7 @@ public class BrasilNetshoesCrawler extends Crawler {
          String text = rating.text().trim();
          reviewText = text.replaceAll("[^0-9.,]", "");
          if (!reviewText.isEmpty()) {
-            avgRating = Double.parseDouble(reviewText);
+            avgRating = MathUtils.parseDoubleWithDot(reviewText);
          }
       }
 
