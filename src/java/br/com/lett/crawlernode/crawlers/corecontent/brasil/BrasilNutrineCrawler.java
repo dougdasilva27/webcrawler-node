@@ -17,6 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
 import models.AdvancedRatingReview;
 import models.Marketplace;
@@ -135,7 +136,7 @@ public class BrasilNutrineCrawler extends Crawler {
 
       Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .product-shop [itemprop=ratingValue]", null, false, ',', session);
       if (percentage != null) {
-         avg = (percentage / 100) * 5;
+         avg = (MathUtils.normalizeTwoDecimalPlaces(percentage / 100) * 5);
       }
 
       return avg;
@@ -153,31 +154,28 @@ public class BrasilNutrineCrawler extends Crawler {
       for (Element review : reviews) {
          if (review != null && review.hasAttr("style")) {
 
-            String percentageString = review.attr("style").replaceAll("[^0-9]+", ""); // "100" or ""
+            String percentageString = review.attr("style").replaceAll("[^0-9]+", "");
 
-            if (percentageString != null) {
+            Integer val = !percentageString.isEmpty() ? Integer.parseInt(percentageString) : 0;
 
-               Integer val = !percentageString.isEmpty() ? Integer.parseInt(percentageString) : 0;
-
-               switch (val) {
-                  case 20:
-                     star1 += 1;
-                     break;
-                  case 40:
-                     star2 += 1;
-                     break;
-                  case 60:
-                     star3 += 1;
-                     break;
-                  case 80:
-                     star4 += 1;
-                     break;
-                  case 100:
-                     star5 += 1;
-                     break;
-                  default:
-                     break;
-               }
+            switch (val) {
+               case 20:
+                  star1 += 1;
+                  break;
+               case 40:
+                  star2 += 1;
+                  break;
+               case 60:
+                  star3 += 1;
+                  break;
+               case 80:
+                  star4 += 1;
+                  break;
+               case 100:
+                  star5 += 1;
+                  break;
+               default:
+                  break;
             }
          }
       }
