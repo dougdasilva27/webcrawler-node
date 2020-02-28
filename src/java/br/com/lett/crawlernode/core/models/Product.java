@@ -25,25 +25,31 @@ public class Product implements Serializable {
    private String internalPid;
    private String name;
 
-   @Deprecated
+   @Deprecated // Use Offers instead
    private Float price;
 
+   @Deprecated // Use Offers instead
    private Prices prices;
+
+   @Deprecated // Use Offers instead
+   private Marketplace marketplace;
+
+   @Deprecated // Use Offers instead
    private boolean available;
+
+   private Offers offers;
    private String category1;
    private String category2;
    private String category3;
    private String primaryImage;
    private String secondaryImages;
    private String description;
-   private Marketplace marketplace;
+
    private Integer stock;
-   private String ean;
    private List<String> eans;
    private String timestamp;
    private Integer marketId;
    private SkuStatus status;
-   private Offers offers;
    private RatingsReviews ratingReviews;
 
    public Product() {
@@ -201,14 +207,6 @@ public class Product implements Serializable {
       this.prices = prices;
    }
 
-   public String getEan() {
-      return ean;
-   }
-
-   public void setEan(String ean) {
-      this.ean = ean;
-   }
-
    public List<String> getEans() {
       return this.eans;
    }
@@ -353,4 +351,6 @@ public class Product implements Serializable {
             // serializacao para kinesis
             .toString();
    }
+
+
 }

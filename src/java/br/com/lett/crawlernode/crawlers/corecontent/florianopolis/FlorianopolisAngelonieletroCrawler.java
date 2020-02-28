@@ -110,7 +110,7 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
       return !doc.select("#titulo").isEmpty();
    }
 
-   private Product crawlProduct(Document doc) {
+   private Product crawlProduct(Document doc) throws Exception {
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#titulo[data-productid]", "data-productid");
       String internalId = AngelonieletroUtils.crawlInternalId(doc);
       String name = crawlName(doc);

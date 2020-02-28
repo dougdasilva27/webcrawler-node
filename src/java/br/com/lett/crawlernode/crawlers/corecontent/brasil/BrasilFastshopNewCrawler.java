@@ -52,7 +52,7 @@ public class BrasilFastshopNewCrawler {
 
    private static final String SELLER_NAME_LOWER = "fastshop";
 
-   public List<Product> crawlProductsNewWay() {
+   public List<Product> crawlProductsNewWay() throws Exception {
       List<Product> products = new ArrayList<>();
       String internalPid = BrasilFastshopCrawlerUtils.crawlPartnerId(session);
       JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(internalPid, session, cookies, dataFetcher);

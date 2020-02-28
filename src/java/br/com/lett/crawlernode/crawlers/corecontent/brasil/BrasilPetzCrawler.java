@@ -133,7 +133,7 @@ public class BrasilPetzCrawler extends Crawler {
       return products;
    }
 
-   private Product crawlProduct(Document doc, String nameVariation) {
+   private Product crawlProduct(Document doc, String nameVariation) throws Exception {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 

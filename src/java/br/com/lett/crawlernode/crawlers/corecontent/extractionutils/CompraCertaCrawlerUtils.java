@@ -35,7 +35,7 @@ public class CompraCertaCrawlerUtils {
       this.dataFetcher = dataFetcher;
    }
 
-   public List<Product> extractProducts(Document doc) {
+   public List<Product> extractProducts(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
       VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, null, dataFetcher);
