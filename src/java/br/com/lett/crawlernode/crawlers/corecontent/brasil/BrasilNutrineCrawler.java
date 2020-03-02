@@ -1,5 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -7,234 +16,180 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
+import models.AdvancedRatingReview;
+import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class BrasilNutrineCrawler extends Crawler {
-  private static final String HOME_PAGE = "https://www.nutrine.com.br/";
+   private static final String HOME_PAGE = "https://www.nutrine.com.br/";
 
-  public BrasilNutrineCrawler(Session session) {
-    super(session);
-  }
+   public BrasilNutrineCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
 
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "produto = ", ",\n    urano = ", false, false);
+         String internalId = jsonInfo.has("sku") ? jsonInfo.get("sku").toString() : null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".fixed-info .product-name", false);
+         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".PrecoPrincipal input", "value", false, '.', session);
+         Prices prices = crawlPrices(doc, price);
+         boolean available = !doc.select(".botao-comprar").isEmpty();
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".f-wrap .breadcrumb-item", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoom img", Arrays.asList("src"), "https",
+               "www.nutrine.com.br");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
+               ".item:not(:first-child) .box-img img",
+               Arrays.asList("src"), "https", "www.nutrine.com.br", primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".page-info-product"));
+         RatingsReviews ratingsReviews = scrapRatingReviews(doc);
+         // Creating the product
+         Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(available)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setMarketplace(new Marketplace())
+               .setRatingReviews(ratingsReviews)
+               .build();
 
-      String name = JSONUtils.getStringValue(json, "nome");
-      String description = getDescription(json);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".detalheHeader a.nivel1:not(:first-child)");
-      String primaryImage = scrapPrimaryImage(doc, "#product .halfLeft .thumbs .cloudzoom-gallery");
-      String secondaryImages = scrapSecondaryImage(doc, "#product .halfLeft .thumbs .cloudzoom-gallery", primaryImage);
+         products.add(product);
 
-      if (json.has("variacoes")) {
-        JSONArray variations = json.getJSONArray("variacoes");
-
-        if (variations.length() > 0) {
-          for (int i = 0; i < variations.length(); i++) {
-            JSONObject variation = variations.getJSONObject(i);
-
-            String varName = name + getVariationName(variation);
-            String internalId = variation.has("idVariacao") && !variation.isNull("idVariacao") ? variation.get("idVariacao").toString() : null;
-            String internalPid = JSONUtils.getStringValue(json, "sku");
-              Integer stock = JSONUtils.getIntegerValueFromJSON(variation, "quantidadeEstoque", 0);
-              boolean available = (variation.has("disponivel") && variation.get("disponivel") instanceof Boolean) && variation.getBoolean("disponivel");
-              Float price = JSONUtils.getFloatValueFromJSON(json, "precoAtual", true);
-            Prices prices = scrapPrices(price, variation, doc);
-
-            // Creating the product
-            Product product = ProductBuilder.create()
-                .setUrl(session.getOriginalURL())
-                .setInternalId(internalId)
-                .setInternalPid(internalPid)
-                .setName(varName)
-                .setPrice(price)
-                .setPrices(prices)
-                .setAvailable(available)
-                .setCategory1(categories.getCategory(0))
-                .setCategory2(categories.getCategory(1))
-                .setCategory3(categories.getCategory(2))
-                .setPrimaryImage(primaryImage)
-                .setSecondaryImages(secondaryImages)
-                .setDescription(description)
-                .setStock(stock)
-                .build();
-
-            products.add(product);
-          }
-        } else {
-
-          String internalId = json.has("id") && !json.isNull("id") ? json.get("id").toString() : null;
-          String internalPid = JSONUtils.getStringValue(json, "sku");
-          Integer stock = JSONUtils.getIntegerValueFromJSON(json, "quantidadeEstoque", 0);
-          Float price = JSONUtils.getFloatValueFromJSON(json, "precoAtual", true);
-            Prices prices = scrapPrices(price, json, doc);
-            boolean available = (json.has("disponivel") && json.get("disponivel") instanceof Boolean) && json.getBoolean("disponivel");
-
-          // Creating the product
-          Product product = ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalId)
-              .setInternalPid(internalPid)
-              .setName(name)
-              .setPrice(price)
-              .setPrices(prices)
-              .setAvailable(available)
-              .setCategory1(categories.getCategory(0))
-              .setCategory2(categories.getCategory(1))
-              .setCategory3(categories.getCategory(2))
-              .setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages)
-              .setDescription(description)
-              .setStock(stock)
-              .build();
-
-          products.add(product);
-        }
-      }
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
-
-    return products;
-  }
-
-  private boolean isProductPage(Document doc) {
-    return doc.selectFirst(".produtoDetalhes") != null;
-  }
-
-  private String getVariationName(JSONObject json) {
-    String name = "";
-    JSONArray opcoes = JSONUtils.getJSONArrayValue(json, "opcoes");
-    
-    for(Object obj : opcoes) {
-      if(obj instanceof JSONObject) {
-        JSONObject subObj = (JSONObject) obj;
-  
-        name += (subObj.has("nome") && !subObj.isNull("nome") ? subObj.get("nome") + " " : "");
-      }
-    }
-
-    return name;
-  }
-
-  private String getDescription(JSONObject json) {
-    StringBuilder sb = new StringBuilder();
-    JSONArray arr = json.has("descricoes") ? json.getJSONArray("descricoes") : new JSONArray();
-    
-    for(Object obj : arr) {
-      if(obj instanceof JSONObject) {
-        JSONObject subObj = (JSONObject) obj;
-  
-        if (subObj.has("titulo") && subObj.get("titulo") instanceof String) {
-          sb.append(subObj.getString("titulo"));
-        }
-  
-        if (subObj.has("conteudo") && subObj.get("conteudo") instanceof String) {
-          sb.append(subObj.getString("conteudo"));
-        }
-      }
-    }
-
-    return sb.toString();
-  }
-
-  private String scrapPrimaryImage(Document doc, String selector) {
-    Element e = doc.selectFirst(selector);
-    String imageUrl = null;
-
-    if (e != null) {
-      JSONObject json = CrawlerUtils.stringToJson(e.attr("data-cloudzoom"));
-
-      if (json.has("zoomImage") && json.get("zoomImage") instanceof String) {
-        imageUrl = CrawlerUtils.completeUrl(json.getString("zoomImage"), "https", "cdn.nutrine.com.br");
-      }
-    }
-
-
-    return imageUrl;
-  }
-
-  private String scrapSecondaryImage(Document doc, String selector, String primaryImage) {
-    Elements elmnts = doc.select(selector);
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    for (Element e : elmnts) {
-      if (e != null) {
-        JSONObject json = CrawlerUtils.stringToJson(e.attr("data-cloudzoom"));
-
-        if (json.has("zoomImage") && json.get("zoomImage") instanceof String) {
-          String img = CrawlerUtils.completeUrl(json.getString("zoomImage"), "https", "cdn.nutrine.com.br");
-
-          if ((primaryImage == null || !primaryImage.equals(img)) && img != null) {
-            secondaryImagesArray.put(img);
-          }
-        }
-      }
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
-  private Prices scrapPrices(Float price, JSONObject json, Document doc) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-
-
-      JSONObject descontoPrice = CrawlerUtils.selectJsonFromHtml(doc, "script", "porcentagemDescontoVista=", "},", true, false);
-      if (descontoPrice.has("valorComDesconto")) {
-        prices.setBankTicketPrice(
-            MathUtils.normalizeTwoDecimalPlaces(CrawlerUtils.getDoubleValueFromJSON(descontoPrice, "valorComDesconto", true, false)));
-      } else if (json.has("precoAtual") && json.get("precoAtual") instanceof Double) {
-        prices.setBankTicketPrice(json.getDouble("precoAtual"));
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      if (json.has("parcelaSemJuros") && json.get("parcelaSemJuros") instanceof JSONObject) {
-        JSONObject o = json.getJSONObject("parcelaSemJuros");
+      return products;
 
-        if (o.has("valor") && o.get("valor") instanceof Integer && o.has("quantidade") && (o.get("quantidade") instanceof Float || o.get("quantidade") instanceof Double)) {
-          installmentPriceMap.put(o.getInt("quantidade"), o.getFloat("valor"));
-        }
+   }
+
+
+
+   private Prices crawlPrices(Document doc, Float price) {
+      Prices prices = new Prices();
+
+      if (price != null) {
+         Map<Integer, Float> installments = new HashMap<>();
+         installments.put(1, price);
+         prices.setBankTicketPrice(price);
+         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".PrecoPrincipal input", "value", true, '.', session));
+
+         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment("#produto_preco #info_preco", doc, false, "x", "Sem", false, '.');
+         if (!pair.isAnyValueNull()) {
+            installments.put(pair.getFirst(), pair.getSecond());
+         }
+
+         prices.insertCardInstallment(Card.VISA.toString(), installments);
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
+         prices.insertCardInstallment(Card.DINERS.toString(), installments);
+         prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
+         prices.insertCardInstallment(Card.AMEX.toString(), installments);
+         prices.insertCardInstallment(Card.ELO.toString(), installments);
       }
 
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-    }
+      return prices;
+   }
 
-    return prices;
-  }
+   private RatingsReviews scrapRatingReviews(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".product-essential .ratings .rating-links a", false, 0);
+      Double avgRating = scrapAvgRating(doc);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+
+      ratingReviews.setTotalRating(totalComments);
+      ratingReviews.setTotalWrittenReviews(totalComments);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+
+      return ratingReviews;
+   }
+
+   private Double scrapAvgRating(Document doc) {
+      Double avg = 0d;
+
+      Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .product-shop [itemprop=ratingValue]", null, false, ',', session);
+      if (percentage != null) {
+         avg = (MathUtils.normalizeTwoDecimalPlaces(percentage / 100) * 5);
+      }
+
+      return avg;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select("#tab_review_tabbed_contents #product-customer-reviews .review-area .ratings-list .rating-item .rating-box .rating");
+
+      for (Element review : reviews) {
+         if (review != null && review.hasAttr("style")) {
+
+            String percentageString = review.attr("style").replaceAll("[^0-9]+", "");
+
+            Integer val = !percentageString.isEmpty() ? Integer.parseInt(percentageString) : 0;
+
+            switch (val) {
+               case 20:
+                  star1 += 1;
+                  break;
+               case 40:
+                  star2 += 1;
+                  break;
+               case 60:
+                  star3 += 1;
+                  break;
+               case 80:
+                  star4 += 1;
+                  break;
+               case 100:
+                  star5 += 1;
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+   }
+
+   private boolean isProductPage(Document doc) {
+      return !doc.select("#product-container").isEmpty();
+   }
 }
