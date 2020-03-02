@@ -29,6 +29,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
@@ -38,8 +39,8 @@ import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
-import models.pricing.BankTicket;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment;
@@ -391,8 +392,9 @@ public class B2WCrawler extends Crawler {
                String slugName = CommonMethods.toSlug(name);
                Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
                Integer sellersPagePosition = null;
-               Pricing pricing = scrapPricing(info, sellersPagePosition, slugName, mapOfSellerIdAndPrice);
+               Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice);
                Double mainPrice = pricing.getSpotlightPrice();
+               boolean isMainRetailer = isMainRetailer(name);
 
                Offer offer = OfferBuilder.create()
                      .setInternalSellerId(internalSellerId)
@@ -403,6 +405,7 @@ public class B2WCrawler extends Crawler {
                      .setSellersPagePosition(sellersPagePosition)
                      .setPricing(pricing)
                      .setIsBuybox(isBuyBox)
+                     .setIsMainRetailer(isMainRetailer)
                      .build();
 
                offers.add(offer);
@@ -430,65 +433,78 @@ public class B2WCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice) throws MalformedPricingException {
-      Pricing pricing = null;
+   private boolean isMainRetailer(String sellerName) {
+      boolean isMainRetailer = false;
 
+      if (sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER) || sellerName.equalsIgnoreCase(sellerNameLower)) {
+         isMainRetailer = true;
+      } else {
+         for (String seller : subSellers) {
+            if (sellerName.equalsIgnoreCase(seller)) {
+               isMainRetailer = true;
+               break;
+            }
+         }
+      }
+
+      return isMainRetailer;
+   }
+
+   private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice)
+         throws MalformedPricingException {
       Double priceFrom = scrapPriceFrom();
       CreditCards creditCards = scrapCreditCards(info);
-      Double spotlightPrice = null;
-      Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
+      Double spotlightPrice = scrapSpotlightPrice(info, creditCards, offerIndex);
+      BankSlip bt = scrapBankTicket(info);
 
       mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(new CreditCards())
-            .setBankTicket(new BankTicket())
+            .setCreditCards(creditCards)
+            .setBankSlip(bt)
             .build();
    }
 
    private Double scrapPriceFrom() {
       return null;
    }
-   //
-   // private Double scrapSpotlightPrice(JSONObject info, CreditCards creditCards, int offerIndex) {
-   // Double price1x =
-   // creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
-   // Float bankTicket = CrawlerUtils.getFloatValueFromJSON(info, "bakTicket", true, false);
-   // Float defaultPrice = CrawlerUtils.getFloatValueFromJSON(info, "defaultPrice", true, false);
-   //
-   //
-   // if (offerIndex + 1 <= 3) {
-   // Float featuredPrice = null;
-   //
-   // for (Float value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
-   // if (featuredPrice == null || (value != null && value < featuredPrice)) {
-   // featuredPrice = value;
-   // }
-   // }
-   //
-   // buyBoxJson.put(OfferField.MAIN_PRICE.toString(), featuredPrice);
-   // mapOfSellerIdAndPrice.put(internalSellerId, featuredPrice);
-   //
-   //
-   // } else {
-   // Float featuredPrice = null;
-   //
-   // if (defaultPrice != null) {
-   // featuredPrice = defaultPrice;
-   // } else if (price1x != null) {
-   // featuredPrice = price1x;
-   // } else if (bankTicket != null) {
-   // featuredPrice = bankTicket;
-   // }
-   //
-   // mapOfSellerIdAndPrice.put(internalSellerId, featuredPrice);
-   //
-   // buyBoxJson.put(OfferField.MAIN_PRICE.toString(), featuredPrice);
-   // buyBoxJson.put(OfferField.MAIN_PAGE_POSITION.toString(), JSONObject.NULL);
-   // }
-   // }
+
+   private BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
+      return BankSlipBuilder.create()
+            .setFinalPrice(CrawlerUtils.getDoubleValueFromJSON(info, "bankTicket", true, false))
+            .build();
+   }
+
+   private Double scrapSpotlightPrice(JSONObject info, CreditCards creditCards, int offerIndex) {
+      Double featuredPrice = null;
+
+      Double price1x =
+            creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
+      Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
+      Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
+
+
+      if (offerIndex + 1 <= 3) {
+         for (Double value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
+            if (featuredPrice == null || (value != null && value < featuredPrice)) {
+               featuredPrice = value;
+            }
+         }
+      } else {
+
+         if (defaultPrice != null) {
+            featuredPrice = defaultPrice;
+         } else if (price1x != null) {
+            featuredPrice = price1x;
+         } else if (bankTicket != null) {
+            featuredPrice = bankTicket;
+         }
+      }
+
+      return featuredPrice;
+   }
 
    /**
     * Sort map by Value
@@ -585,7 +601,7 @@ public class B2WCrawler extends Crawler {
          // Para pegar esse preço, dividimos ele por 2 e adicionamos nas parcelas como 2x esse preço
          Installment cashInstallment = installments.getInstallment(1);
          if (cashInstallment != null && seller.has("defaultPrice")) {
-            Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(seller, "defaultPrice");
+            Double defaultPrice = JSONUtils.getDoubleValueFromJSON(seller, "defaultPrice", true);
 
             if (!defaultPrice.equals(cashInstallment.getInstallmentPrice())) {
                installments.add(InstallmentBuilder.create()
@@ -597,7 +613,7 @@ public class B2WCrawler extends Crawler {
 
          for (String flag : cards) {
             creditCards.add(CreditCardBuilder.create()
-                  .setFlag(flag)
+                  .setBrand(flag)
                   .setIsShopCard(false)
                   .setInstallments(installments)
                   .build());
@@ -623,7 +639,7 @@ public class B2WCrawler extends Crawler {
          }
 
          creditCards.add(CreditCardBuilder.create()
-               .setFlag(Card.SHOP_CARD.toString())
+               .setBrand(Card.SHOP_CARD.toString())
                .setIsShopCard(true)
                .setInstallments(installments)
                .build());
@@ -734,30 +750,4 @@ public class B2WCrawler extends Crawler {
 
       return Normalizer.normalize(description.toString(), Normalizer.Form.NFD).replaceAll("[^\n\t\r\\p{Print}]", "");
    }
-
-   /**
-    * se retornar null o produto nao e vendido pela loja
-    * 
-    * @param marketplaceMap
-    * @return
-    */
-   private String getPrincipalSellerName(Map<String, Prices> marketplaceMap) {
-      String sellerName = null;
-
-      if (marketplaceMap.containsKey(sellerNameLower)) {
-         sellerName = sellerNameLower;
-      } else if (marketplaceMap.containsKey(MAIN_B2W_NAME_LOWER)) {
-         sellerName = MAIN_B2W_NAME_LOWER;
-      } else {
-         for (String seller : subSellers) {
-            if (marketplaceMap.containsKey(seller)) {
-               sellerName = seller;
-               break;
-            }
-         }
-      }
-
-      return sellerName;
-   }
-
 }
