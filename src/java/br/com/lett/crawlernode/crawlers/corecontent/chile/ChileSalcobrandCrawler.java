@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -25,6 +15,13 @@ import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class ChileSalcobrandCrawler extends Crawler {
 
@@ -150,8 +147,8 @@ public class ChileSalcobrandCrawler extends Crawler {
       Elements reviews = doc.select(".ratings .row");
 
       for (Element review : reviews) {
-         Integer star = CrawlerUtils.scrapIntegerFromHtml(review, "span", true, null);
-         Integer starCount = CrawlerUtils.scrapIntegerFromHtml(review, ".progress-bar", true, null);
+         Integer star = CrawlerUtils.scrapIntegerFromHtml(review, "span", true, 0);
+         Integer starCount = CrawlerUtils.scrapIntegerFromHtml(review, ".progress-bar", true, 0);
 
          if (star == 5) {
             star5 = starCount;
