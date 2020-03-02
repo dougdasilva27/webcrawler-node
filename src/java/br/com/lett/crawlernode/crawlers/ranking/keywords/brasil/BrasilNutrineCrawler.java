@@ -20,8 +20,7 @@ public class BrasilNutrineCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String key = this.keywordWithoutAccents;
-      String url = "https://www.nutrine.com.br/loja/busca.php?loja=722608&palavra_busca=" + key;
+      String url = "https://www.nutrine.com.br/loja/busca.php?loja=722608&palavra_busca=" + this.keywordWithoutAccents + "&pg=" + this.currentPage;
 
       this.log("Url: " + url);
 
