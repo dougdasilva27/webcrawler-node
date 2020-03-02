@@ -1,13 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
@@ -23,16 +18,24 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * 
+ *
  * 1) Only one sku per page.
- * 
+ *
  * Price crawling notes: 1) In time crawler was made, there no product unnavailable. 2) There is no
  * bank slip (boleto bancario) payment option. 3) There is no installments for card payment. So we
  * only have 1x payment, and to this value we use the cash price crawled from the sku page. (nao
  * existe divisao no cartao de credito).
- * 
+ *
  * @author Gabriel Dornelas
  *
  */
@@ -66,11 +69,35 @@ public class MexicoWalmartsuperCrawler extends Crawler {
     }
 
     String apiUrl =
-        "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
-            + finalParameter + "&skuId=" + finalParameter;
+            "https://super.walmart.com.mx/api/rest/model/atg/commerce/catalog/ProductCatalogActor/getSkuSummaryDetails?storeId=0000009999&upc="
+                    + finalParameter + "&skuId=" + finalParameter;
 
     Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
-    return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+    Response response = this.dataFetcher.get(session, request);
+
+    int statusCode = 0, attempts = 0;
+    List<RequestsStatistics> requestsStatistics = response.getRequests();
+    if (!requestsStatistics.isEmpty()) {
+      statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
+    }
+
+    boolean retry = Integer.toString(statusCode).charAt(0) != '2'
+            && Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404;
+
+    if (retry) {
+      do {
+        if (attempts == 0) {
+          response = new ApacheDataFetcher().get(session, request);
+        } else if (attempts == 1) {
+          response = new JavanetDataFetcher().get(session, request);
+        }
+
+        attempts++;
+      } while (attempts < 2 && (response.getBody() == null || response.getBody().isEmpty()));
+    }
+
+    return CrawlerUtils.stringToJson(response.getBody());
   }
 
   @Override
@@ -164,7 +191,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
   /**
    * Não achei imagens secundarias
-   * 
+   *
    * @param document
    * @return
    */
@@ -276,18 +303,18 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
   /**
    * There is no bankSlip price.
-   * 
+   *
    * There is no card payment options, other than cash price. So for installments, we will have only
    * one installment for each card brand, and it will be equals to the price crawled on the sku main
    * page.
-   * 
+   *
    * @param doc
    * @param price
    * @return
    */
   private Prices crawlPrices(Float price) {
     Prices prices = new Prices();
-
+    prices.setBankTicketPrice(price);
     if (price != null) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
