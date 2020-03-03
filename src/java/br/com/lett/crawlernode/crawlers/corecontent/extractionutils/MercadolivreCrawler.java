@@ -27,6 +27,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -42,6 +43,8 @@ public class MercadolivreCrawler extends Crawler {
    private String homePage;
    private String mainSellerNameLower;
    private char separator;
+
+
 
    protected MercadolivreCrawler(Session session) {
       super(session);
@@ -80,6 +83,8 @@ public class MercadolivreCrawler extends Crawler {
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
 
+
+
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
@@ -87,6 +92,8 @@ public class MercadolivreCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+
 
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=itemId], #productInfo input[name=\"item_id\"]", "value");
 
@@ -145,6 +152,7 @@ public class MercadolivreCrawler extends Crawler {
                   .build();
 
             products.add(product);
+
          }
 
       } else {
@@ -155,17 +163,22 @@ public class MercadolivreCrawler extends Crawler {
 
    }
 
+
+
    private RatingsReviews crawlRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
       Double avgRating = getTotalAvgRating(doc);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc, internalId);
 
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
    }
@@ -210,6 +223,91 @@ public class MercadolivreCrawler extends Crawler {
 
       return totalRating;
    }
+
+
+   private Document acessHtmlWithAdvanedRating(String internalId) {
+
+      Document docRating = new Document("");
+
+      String url =
+            "https://produto.mercadolivre.com.br/noindex/catalog/reviews/" + internalId + "?noIndex=true&itemId=" + internalId + "&modal=true&modalWidth=840&modalHeight=400&access=stars&parent_url=" + this.homePage;
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      String response = dataFetcher.get(session, request).getBody().trim();
+
+      docRating = Jsoup.parse(response);
+
+      return docRating;
+
+   }
+
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, String internalId) {
+      Document docRating;
+
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      docRating = acessHtmlWithAdvanedRating(internalId);
+
+      Elements reviews = docRating.select(".reviews-rating .review-rating-row.is-rated");
+
+      for (Element review : reviews) {
+
+         Element elementStarNumber = review.selectFirst(".review-rating-label");
+
+         if (elementStarNumber != null) {
+
+
+            String stringStarNumber = elementStarNumber.text().replaceAll("[^0-9]", "").trim();
+            Integer numberOfStars = !stringStarNumber.isEmpty() ? Integer.parseInt(stringStarNumber) : 0;
+
+            Element elementVoteNumber = review.selectFirst(".review-rating-total");
+
+            if (elementVoteNumber != null) {
+
+               String vN = elementVoteNumber.text().replaceAll("[^0-9]", "").trim();
+               Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+
+               switch (numberOfStars) {
+                  case 5:
+                     star5 = numberOfVotes;
+                     break;
+                  case 4:
+                     star4 = numberOfVotes;
+                     break;
+                  case 3:
+                     star3 = numberOfVotes;
+                     break;
+                  case 2:
+                     star2 = numberOfVotes;
+                     break;
+                  case 1:
+                     star1 = numberOfVotes;
+                     break;
+                  default:
+                     break;
+               }
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+   }
+
 
    private boolean isProductPage(Document doc) {
       return !doc.select(".vip-nav-bounds .layout-main").isEmpty();
@@ -331,7 +429,6 @@ public class MercadolivreCrawler extends Crawler {
          prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
       }
 
-      // }
 
       return prices;
    }

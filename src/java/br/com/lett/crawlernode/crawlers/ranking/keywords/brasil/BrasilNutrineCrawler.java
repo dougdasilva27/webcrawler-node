@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.Arrays;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,77 +8,57 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilNutrineCrawler extends CrawlerRankingKeywords {
-  public BrasilNutrineCrawler(Session session) {
-    super(session);
-  }
+   public BrasilNutrineCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 36;
+   private static final String HOME_PAGE = "https://www.nutrine.com.br";
 
-    this.log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 36;
 
-    String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    String url = "https://www.nutrine.com.br/Busca?q=" + key + "&Enviar=OK&tamanho=36&pagina="
-        + this.currentPage;
+      this.log("Página " + this.currentPage);
 
-    this.log("Url: " + url);
+      String url = "https://www.nutrine.com.br/loja/busca.php?loja=722608&palavra_busca=" + this.keywordWithoutAccents + "&pg=" + this.currentPage;
 
-    this.currentDoc = fetchDocument(url);
+      this.log("Url: " + url);
 
-    Elements products = this.currentDoc.select(".linha .produtoItem");
+      this.currentDoc = fetchDocument(url);
 
-    if (products.size() >= 1) {
+      Elements products = this.currentDoc.select(".list .item .product");
 
-      for (Element e : products) {
-        String internalPid = null;
-        String internalId = getProductInternalId(e, "data-id");
-        String productUrl = getProductUrl(e, "a.produtoImagem");
+      if (products.size() >= 1) {
 
-        saveDataProduct(internalId, internalPid, productUrl);
+         for (Element e : products) {
+            String internalPid = null;
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".variants .list-variants", "data-id");
+            String productUrl = CrawlerUtils.scrapUrl(e, " .image a", Arrays.asList("href"), "https", HOME_PAGE);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
 
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+            saveDataProduct(internalId, internalPid, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+                  + internalPid + " - Url: " + productUrl);
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+         }
+
+
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+            + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select(".paginate-links .page-link:not(:first-child)").isEmpty();
+   }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    Element e = this.currentDoc.select(".paginacao p a").last();
-    boolean answer = false;
-
-    if (e != null) {
-      answer = !e.hasClass("atual");
-    }
-
-    return answer;
-  }
-
-  private String getProductInternalId(Element e, String selector) {
-    return e.attr(selector);
-  }
-
-  private String getProductUrl(Element e, String selector) {
-    Element el = e.selectFirst(selector);
-    String url = null;
-
-    if (el != null) {
-      url = CrawlerUtils.sanitizeUrl(el, "href", "https", "www.nutrine.com.br");
-    }
-
-    return url;
-  }
 }
