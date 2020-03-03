@@ -227,7 +227,6 @@ public class BrasilRicardoeletroCrawler extends Crawler {
             try {
                Offer offer = new OfferBuilder()
                      .setSellerFullName(sellerName)
-                     .setSlugSellerName(CrawlerUtils.toSlug(sellerName))
                      .setInternalSellerId(sellerId)
                      .setMainPagePosition(position)
                      .setIsBuybox(htmls.size() > 1)

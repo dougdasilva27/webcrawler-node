@@ -1,5 +1,19 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -22,17 +36,6 @@ import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (18/08/2016):
@@ -412,11 +415,10 @@ public abstract class CNOVACrawler extends Crawler {
 
                if (sellerFullNameElement != null && mainPriceElement != null) {
                   String sellerFullName = sellerFullNameElement.text();
-                  String slugSellerName = CrawlerUtils.toSlug(sellerFullName);
                   String internalSellerId = sellerFullNameElement.attr("data-tooltiplojista-id");
                   Double mainPrice = MathUtils.parseDoubleWithComma(mainPriceElement.text());
 
-                  Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+                  Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
                         .setMainPagePosition(mainPagePosition)
                         .setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
 
@@ -441,11 +443,10 @@ public abstract class CNOVACrawler extends Crawler {
 
                if (sellerFullNameElement != null && mainPriceElement != null) {
                   String sellerFullName = sellerFullNameElement.attr("title");
-                  String slugSellerName = CrawlerUtils.toSlug(sellerFullName);
                   Double mainPrice = MathUtils.parseDoubleWithComma(mainPriceElement.text());
                   Integer mainPagePosition = offers.isEmpty() ? 1 : null;
 
-                  Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+                  Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
                         .setSellersPagePosition(position)
                         .setMainPagePosition(mainPagePosition).setIsBuybox(isBuyBoxPage).setMainPrice(mainPrice).build();
 
@@ -467,7 +468,6 @@ public abstract class CNOVACrawler extends Crawler {
       Offer offer = null;
 
       String sellerFullName = null;
-      String slugSellerName = null;
       String internalSellerId = scrapSellerIdFromButton(doc);
       Double mainPrice = null;
       boolean isBuyBoxPage = doc.selectFirst(".sellerList") != null;
@@ -476,7 +476,6 @@ public abstract class CNOVACrawler extends Crawler {
 
       if (elementMainSeller != null) {
          sellerFullName = elementMainSeller.text().trim();
-         slugSellerName = CrawlerUtils.toSlug(sellerFullName);
       }
 
       if (elementPrice != null) {
@@ -484,7 +483,7 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       if (sellerFullName != null && !sellerFullName.isEmpty()) {
-         offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+         offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
                .setMainPrice(mainPrice).setIsBuybox(isBuyBoxPage)
                .setMainPagePosition(1).build();
       }

@@ -8,12 +8,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -27,7 +29,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -56,7 +57,7 @@ public class B2WCrawler extends Crawler {
    protected String sellerNameLower;
    protected List<String> subSellers;
    protected String homePage;
-   protected List<String> cards = Arrays.asList(DEFAULT_CARD.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
+   protected Set<String> cards = Sets.newHashSet(DEFAULT_CARD.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public B2WCrawler(Session session) {
@@ -146,7 +147,7 @@ public class B2WCrawler extends Crawler {
          for (Entry<String, String> entry : skuOptions.entrySet()) {
             String internalId = entry.getKey();
             String name = entry.getValue().trim();
-            Offers offers = scrapBuyBox(doc, internalId, internalPid);
+            Offers offers = scrapOffers(doc, internalId, internalPid);
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -366,7 +367,7 @@ public class B2WCrawler extends Crawler {
       return eans;
    }
 
-   private Offers scrapBuyBox(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
@@ -382,25 +383,19 @@ public class B2WCrawler extends Crawler {
          boolean isBuyBox = sellerInfo.length() > 1;
 
          for (int i = 0; i < sellerInfo.length(); i++) {
-
-
             JSONObject info = (JSONObject) sellerInfo.get(i);
 
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
                String internalSellerId = info.get("id").toString();
-               String slugName = CommonMethods.toSlug(name);
                Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
                Integer sellersPagePosition = null;
                Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice);
-               Double mainPrice = pricing.getSpotlightPrice();
                boolean isMainRetailer = isMainRetailer(name);
 
                Offer offer = OfferBuilder.create()
                      .setInternalSellerId(internalSellerId)
-                     .setSlugSellerName(slugName)
                      .setSellerFullName(name)
-                     .setMainPrice(mainPrice)
                      .setMainPagePosition(mainPagePosition)
                      .setSellersPagePosition(sellersPagePosition)
                      .setPricing(pricing)
@@ -452,7 +447,7 @@ public class B2WCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice)
          throws MalformedPricingException {
-      Double priceFrom = scrapPriceFrom();
+      Double priceFrom = scrapPriceFrom(info);
       CreditCards creditCards = scrapCreditCards(info);
       Double spotlightPrice = scrapSpotlightPrice(info, creditCards, offerIndex);
       BankSlip bt = scrapBankTicket(info);
@@ -467,13 +462,14 @@ public class B2WCrawler extends Crawler {
             .build();
    }
 
-   private Double scrapPriceFrom() {
-      return null;
+   private Double scrapPriceFrom(JSONObject info) {
+      return info.optDouble("priceFrom");
    }
 
    private BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
       return BankSlipBuilder.create()
-            .setFinalPrice(CrawlerUtils.getDoubleValueFromJSON(info, "bankTicket", true, false))
+            .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "bankSlip", true))
+            .setOnPageDiscount(JSONUtils.getDoubleValueFromJSON(info, "bankSlipDiscount", true))
             .build();
    }
 
@@ -585,13 +581,7 @@ public class B2WCrawler extends Crawler {
             JSONObject installment = installmentsArray.getJSONObject(i);
 
             if (installment.has("quantity") && installment.has("value")) {
-               Integer quantity = installment.getInt("quantity");
-               Double value = installment.getDouble("value");
-
-               installments.add(InstallmentBuilder.create()
-                     .setInstallmentNumber(quantity)
-                     .setInstallmentPrice(value)
-                     .build());
+               installments.add(scrapInstallment(installment));
             }
          }
 
@@ -628,13 +618,7 @@ public class B2WCrawler extends Crawler {
             JSONObject installment = installmentsArray.getJSONObject(i);
 
             if (installment.has("quantity") && installment.has("value")) {
-               Integer quantity = installment.getInt("quantity");
-               Double value = installment.getDouble("value");
-
-               installments.add(InstallmentBuilder.create()
-                     .setInstallmentNumber(quantity)
-                     .setInstallmentPrice(value)
-                     .build());
+               installments.add(scrapInstallment(installment));
             }
          }
 
@@ -646,6 +630,24 @@ public class B2WCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private Installment scrapInstallment(JSONObject installmentJson) throws MalformedPricingException {
+      Integer quantity = installmentJson.getInt("quantity");
+      Double value = installmentJson.getDouble("value");
+      Double interest = JSONUtils.getDoubleValueFromJSON(installmentJson, "taxedInterestRate", true);
+      Double finalPrice = JSONUtils.getDoubleValueFromJSON(installmentJson, "total", true);
+
+      JSONObject discountJson = installmentJson.optJSONObject("discount");
+      Double discount = discountJson != null ? discountJson.optDouble("rate", 0d) / 100d : 0d;
+
+      return InstallmentBuilder.create()
+            .setInstallmentNumber(quantity)
+            .setInstallmentPrice(value)
+            .setFinalPrice(finalPrice)
+            .setAmOnPageInterests(interest)
+            .setOnPageDiscount(discount)
+            .build();
    }
 
    /*******************

@@ -111,13 +111,11 @@ public class RappiCrawler extends Crawler {
       Offers offers = new Offers();
       try {
          String sellerFullName = null;
-         String slugSellerName = null;
          String internalSellerId = null;
          Double mainPrice = null;
 
          if (jsonSku.has("store_type")) {
             sellerFullName = jsonSku.getString("store_type");
-            slugSellerName = CrawlerUtils.toSlug(sellerFullName);
          }
 
          if (jsonSku.has("store_id")) {
@@ -128,7 +126,7 @@ public class RappiCrawler extends Crawler {
             mainPrice = CrawlerUtils.getDoubleValueFromJSON(jsonSku, "price", false, false);
          }
 
-         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
                .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
 
          offers.add(offer);

@@ -146,7 +146,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          Element sellerInfo = doc.selectFirst(".seller__indentifier .seller__indentifier-magazine");
          Element priceInfo = doc.selectFirst("meta[itemprop=\"price\"]");
          String sellerFullName = null;
-         String slugSellerName = null;
          String internalSellerId = null;
          Double mainPrice = null;
 
@@ -156,18 +155,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
          if (sellerInfo != null) {
             sellerFullName = sellerInfo.text();
-            slugSellerName = CrawlerUtils.toSlug(sellerFullName);
-            // This market hasn't seller id, then the slug must be this.
-            // I don't think that cnpj can be a good seller id.
-            internalSellerId = slugSellerName;
          }
 
          if (priceInfo != null) {
             mainPrice = MathUtils.parseDoubleWithDot(priceInfo.attr("content"));
          }
 
-         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
-               .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
+         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
+               .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).setUseSlugNameAsInternalSellerId(true).build();
 
          offers.add(offer);
       } catch (OfferException e) {
