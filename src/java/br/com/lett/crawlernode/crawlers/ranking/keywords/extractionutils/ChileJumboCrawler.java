@@ -1,15 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ChileJumboCrawler extends CrawlerRankingKeywords {
 
@@ -27,10 +28,12 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
 
     this.pageSize = 12;
 
-    String url = "https://" + HOST + "/busca/?ft=" + this.keywordWithoutAccents.replace(" ", "%20") + "&page=" + this.currentPage;
-    String apiUrl =
-        "https://api.smdigital.cl:8443/v0/cl/jumbo/vtex/front/dev/proxy/api/v1/catalog_system/pub/products/search?_from=" + this.arrayProducts.size()
-            + "&_to=" + (this.pageSize * this.currentPage) + "&ft=" + this.keywordWithoutAccents.replace(" ", "%20") + "&sc=" + storeCode;
+    String url = "https://" + HOST + "/busca/?ft=" + keywordWithoutAccents.replace(" ", "%20") +
+            "&page=" + currentPage;
+    String apiUrl = "https://api.smdigital.cl:8443/v0/cl/jumbo/vtex/front/prod/proxy/api/v2/products/search/busca?ft=" +
+            keywordWithoutAccents.replace(" ", "%20") +
+            "&page=" + currentPage +
+            "&sc=" + storeCode;
 
     Map<String, String> headers = new HashMap<>();
     headers.put("Referer", url);
