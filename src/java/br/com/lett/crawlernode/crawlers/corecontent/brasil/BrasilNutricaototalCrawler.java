@@ -5,17 +5,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.prices.Prices;
 
@@ -46,9 +54,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title > span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li[class^=category]");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "head > meta[property=\"og:image\"]", Arrays.asList("content"), "https", "www.nutricaototal.com.br");
-         String secondaryImages =
-               CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-img-box .more-views [id=additional-carousel] .slider-item a[href=\"#image\"]",
-                     Arrays.asList("data-rel"), "https", "www.nutricaototal.com.br", primaryImage);
+         String secondaryImages = crawlSecondaryImages(doc, primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.attribute.overview > div > b", "div.product.attribute.overview > div"));
          Integer stock = null;
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.price", null, true, ',', session);
@@ -75,47 +81,148 @@ public class BrasilNutricaototalCrawler extends Crawler {
       return doc.selectFirst(".product-info-main") != null;
    }
 
+   private String crawlSecondaryImages(Document doc, String primaryImage) {
+      String secondaryImages = null;
+      JSONArray secondaryImagesArray = new JSONArray();
+
+      JSONObject productInfo = CrawlerUtils.selectJsonFromHtml(doc, ".product.media [type=\"text/x-magento-init\"]", null, null, true, false);
+
+      if (productInfo.has("[data-gallery-role=gallery-placeholder]")) {
+         productInfo = productInfo.getJSONObject("[data-gallery-role=gallery-placeholder]");
+         if (productInfo.has("mage/gallery/gallery")) {
+            productInfo = productInfo.getJSONObject("mage/gallery/gallery");
+            if (productInfo.has("data")) {
+               JSONArray imagesArray = productInfo.getJSONArray("data");
+               for (int i = 0; i < imagesArray.length(); i++) {
+                  JSONObject jsonImg = imagesArray.getJSONObject(i);
+                  String image = jsonImg.getString("img");
+
+                  if (!primaryImage.contains(image) && !primaryImage.equals(image)) {
+                     if (image.startsWith(HOME_PAGE)) {
+                        secondaryImagesArray.put(CommonMethods.sanitizeUrl(image));
+                     } else {
+                        secondaryImagesArray.put(CommonMethods.sanitizeUrl(HOME_PAGE + image));
+                     }
+                  }
+               }
+            }
+
+
+         }
+
+      }
+
+      if (secondaryImagesArray.length() > 0) {
+         secondaryImages = secondaryImagesArray.toString();
+      }
+
+      return secondaryImages;
+   }
+
    private RatingsReviews crawlRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
+      StringBuilder str = new StringBuilder();
+      str.append("https://www.nutricaototal.com.br/review/product/listAjax/id/");
+      str.append(internalId);
 
-      Integer totalNumOfEvaluations = crawlNumOfEvaluations(doc, "meta[itemprop=ratingCount]");
-      Double avgRating = crawlAvgRating(doc, "meta[itemprop=ratingValue]");
+      Document docRating = sendRequest(str.toString());
+
+      Integer totalNumOfEvaluations = crawlNumOfEvaluations(docRating, "ol > li");
+      Double avgRating = crawlAvgRating(docRating, "ol > li span[itemprop=\"ratingValue\"]");
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(docRating, "ol > li span[itemprop=\"ratingValue\"]");
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
    }
 
-   private Integer crawlNumOfEvaluations(Document doc, String selector) {
-      String reviewText = "";
-      Element e = doc.selectFirst(selector);
+   private Document sendRequest(String str) {
+      Request request = RequestBuilder.create().setUrl(str).setCookies(cookies).build();
+      String endpointResponseStr = this.dataFetcher.get(session, request).getBody();
 
-      if (e != null) {
-         String aux = e.attr("content");
-         reviewText = aux.replaceAll("[^0-9]", "");
-         if (!reviewText.isEmpty()) {
-            return Integer.parseInt(reviewText);
+      return Jsoup.parse(endpointResponseStr);
+   }
+
+   private Integer crawlNumOfEvaluations(Document doc, String selector) {
+      Integer numRating = 0;
+      Elements el = doc.select(selector);
+
+      for (Element reviews : el) {
+         numRating++;
+      }
+      return numRating;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, String selector) {
+      String starsText = "";
+      Integer stars = null;
+
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(selector);
+
+
+      for (Element review : reviews) {
+
+         starsText = review.text().replace("%", "");
+         stars = Integer.parseInt(starsText);
+         stars = (stars * 5) / 100;
+
+
+         // On a html this value will be like this: (1)
+
+
+         switch (stars) {
+            case 5:
+               star5++;
+               break;
+            case 4:
+               star4++;
+               break;
+            case 3:
+               star3++;
+               break;
+            case 2:
+               star2++;
+               break;
+            case 1:
+               star1++;
+               break;
+            default:
+               break;
          }
+
+
+
       }
 
-      return 0;
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private Double crawlAvgRating(Document doc, String selector) {
-      String reviewText = "";
-      Element e = doc.selectFirst(selector);
+      Double num = null;
+      Elements e = doc.select(selector);
 
-      if (e != null) {
-         String aux = e.attr("content");
-         reviewText = aux.replaceAll("[^0-9.,]", "");
-         if (!reviewText.isEmpty()) {
-            return MathUtils.parseDoubleWithDot(reviewText);// Double.parseDouble(aux);
-         }
+      for (Element el : e) {
+         String avRating = e.text().replace("%", "");
+         num = Double.parseDouble(avRating);
+         num = (num * 5) / 100;
       }
 
-      return 0.0;
+      return num;
    }
 
    private Prices crawlPrices(Float price, Document doc) {
