@@ -321,7 +321,7 @@ public class Product implements Serializable {
             .put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
             .put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
             .put("description", (description != null ? description : JSONObject.NULL)).put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
-            .put("offers", (offers != null ? offers.toString() : Collections.EMPTY_LIST))
+            .put("offers", (offers != null ? offers.toStringToKinseis() : Collections.EMPTY_LIST))
             .put("timestamp", timestamp)
             .put("rating", (ratingReviews != null ? ratingReviews.toString() : JSONObject.NULL))
             .toString();
