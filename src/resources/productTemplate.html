@@ -22,7 +22,7 @@
 		
 		  /* Select the text field */
 		  copyText.select();
-		  copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+		  copyText.setSelectionRange(0, 99999999999); 
 		
 		  /* Copy the text inside the text field */
 		  document.execCommand("copy");
@@ -247,9 +247,12 @@
         </div>
         <div class="row">
             <h3> Offers </h3>
-           	<input value="{{offers}}" type="text" id="offers"">
+            <textarea id="offers" cols="50">
+           		{{offers}}
+           	</textarea>
            	<button onclick="copyFunction()">Copy offers</button>
            	<a href="http://json.parser.online.fr/" target="_blank"> Go to JSON PARSER </a>
+           	<br>
         </div>
     </div>
 </body>
