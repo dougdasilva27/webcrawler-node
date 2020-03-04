@@ -415,23 +415,22 @@ public abstract class CNOVACrawler extends Crawler {
 
          if (principalOffer != null && principalOffer.getInternalSellerId().equalsIgnoreCase(internalSellerId)) {
             principalOffer.setSellersPagePosition(position);
-            continue;
+         } else {
+            Integer mainPagePosition = mainSellers.containsKey(internalSellerId) ? mainSellers.get(internalSellerId) : null;
+            String sellerFullName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".lojista > a[title]", "title");
+            boolean isMainRetailer = sellerFullName.equalsIgnoreCase(mainSellerNameLower) || sellerFullName.equalsIgnoreCase(mainSellerNameLower2);
+            Pricing pricing = scrapSellersPricing(e);
+
+            offers.add(OfferBuilder.create()
+                  .setInternalSellerId(internalSellerId)
+                  .setSellerFullName(sellerFullName)
+                  .setMainPagePosition(mainPagePosition)
+                  .setSellersPagePosition(position)
+                  .setIsBuybox(isBuyBoxPage)
+                  .setIsMainRetailer(isMainRetailer)
+                  .setPricing(pricing)
+                  .build());
          }
-
-         Integer mainPagePosition = mainSellers.containsKey(internalSellerId) ? mainSellers.get(internalSellerId) : null;
-         String sellerFullName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".lojista > a[title]", "title");
-         boolean isMainRetailer = sellerFullName.equalsIgnoreCase(mainSellerNameLower) || sellerFullName.equalsIgnoreCase(mainSellerNameLower2);
-         Pricing pricing = scrapSellersPricing(e);
-
-         offers.add(OfferBuilder.create()
-               .setInternalSellerId(internalSellerId)
-               .setSellerFullName(sellerFullName)
-               .setMainPagePosition(mainPagePosition)
-               .setSellersPagePosition(position)
-               .setIsBuybox(isBuyBoxPage)
-               .setIsMainRetailer(isMainRetailer)
-               .setPricing(pricing)
-               .build());
 
          position++;
       }
@@ -495,7 +494,7 @@ public abstract class CNOVACrawler extends Crawler {
       boolean isMainRetailer = sellerFullName.equalsIgnoreCase(mainSellerNameLower) || sellerFullName.equalsIgnoreCase(mainSellerNameLower2);
       Integer sellersPagePosition = null;
       Pricing pricing = scrapPricingForProductPage(doc);
-      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".percentual", true);
+      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".percentual", false);
       List<String> sales = sale != null ? Arrays.asList(sale) : new ArrayList<>();
 
       return OfferBuilder.create()

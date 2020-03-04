@@ -148,6 +148,7 @@ public class B2WCrawler extends Crawler {
             String internalId = entry.getKey();
             String name = entry.getValue().trim();
             Offers offers = scrapOffers(doc, internalId, internalPid);
+            setMainRetailer(offers);
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -173,6 +174,24 @@ public class B2WCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private void setMainRetailer(Offers offers) {
+      if (offers.containsSeller(MAIN_B2W_NAME_LOWER)) {
+         Offer offer = offers.getSellerByName(MAIN_B2W_NAME_LOWER);
+         offer.setIsMainRetailer(true);
+      } else if (offers.containsSeller(sellerNameLower)) {
+         Offer offer = offers.getSellerByName(sellerNameLower);
+         offer.setIsMainRetailer(true);
+      } else {
+         for (String seller : subSellers) {
+            if (offers.containsSeller(seller)) {
+               Offer offer = offers.getSellerByName(seller);
+               offer.setIsMainRetailer(true);
+               break;
+            }
+         }
+      }
    }
 
    /**
@@ -391,7 +410,6 @@ public class B2WCrawler extends Crawler {
                Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
                Integer sellersPagePosition = null;
                Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice);
-               boolean isMainRetailer = isMainRetailer(name);
 
                Offer offer = OfferBuilder.create()
                      .setInternalSellerId(internalSellerId)
@@ -400,7 +418,7 @@ public class B2WCrawler extends Crawler {
                      .setSellersPagePosition(sellersPagePosition)
                      .setPricing(pricing)
                      .setIsBuybox(isBuyBox)
-                     .setIsMainRetailer(isMainRetailer)
+                     .setIsMainRetailer(false)
                      .build();
 
                offers.add(offer);
