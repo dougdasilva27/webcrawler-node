@@ -132,8 +132,7 @@ public class BrasilNutriiCrawler extends Crawler {
 
       for (Element review : reviews) {
          String el = review.attr("style").replace("%", "");
-         el = el.replace("width:", "");
-         el = el.replace(";", "");
+         el = el.replaceAll("[^0-9]", "");
          if (!el.isEmpty()) {
             val = Integer.parseInt(el);
          }

@@ -172,6 +172,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
       for (Element review : reviews) {
 
          starsText = review.text().replace("%", "");
+         starsText = starsText.replaceAll("[^0-9]", "");
          stars = Integer.parseInt(starsText);
          stars = (stars * 5) / 100;
 
