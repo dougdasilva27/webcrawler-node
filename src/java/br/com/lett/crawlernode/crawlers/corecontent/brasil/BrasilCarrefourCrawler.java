@@ -303,7 +303,7 @@ public class BrasilCarrefourCrawler extends Crawler {
    // }
 
    private Float crawlMainPagePrice(Document document) {
-      return CrawlerUtils.scrapFloatPriceFromHtml(document, ".prince-product-default :first-child", null, true, ',', session);
+      return CrawlerUtils.scrapFloatPriceFromHtml(document, ".prince-product-default :not(.only-one-installment)", null, true, ',', session);
    }
 
    private Offers scrapOffers(Document doc, String internalPid) {
