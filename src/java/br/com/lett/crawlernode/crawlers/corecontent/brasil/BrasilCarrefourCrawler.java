@@ -142,7 +142,6 @@ public class BrasilCarrefourCrawler extends Crawler {
          Elements marketplacesElements = doc.select(".list-group-item");
          Map<String, Prices> marketplaceMap;
          Offers offers = scrapOffers(doc, internalPid);
-         Double priceFrom = crawlPriceFrom(doc);
 
          if (marketplacesElements.isEmpty()) {
             marketplaceMap = crawlMarketplaceForSingleSeller(doc, internalPid);
@@ -150,7 +149,7 @@ public class BrasilCarrefourCrawler extends Crawler {
             marketplaceMap = crawlMarketplaceForMutipleSellers(marketplacesElements);
          }
 
-         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, marketplaceMap.size() > 1 ? null : priceFrom);
+         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
          boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
          Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
          Float price = available ? CrawlerUtils.scrapFloatPriceFromHtml(doc, ".priceBig", null, false, ',', session) : null;
@@ -453,7 +452,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       return price;
    }
 
-   private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, Double priceFrom) {
+   private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
       Marketplace marketplace = new Marketplace();
 
       for (String sellerName : marketplaceMap.keySet()) {
