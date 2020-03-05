@@ -18,7 +18,9 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 
 /**
@@ -33,6 +35,7 @@ public class BrasilNutriiCrawler extends Crawler {
 
    public BrasilNutriiCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -63,12 +66,13 @@ public class BrasilNutriiCrawler extends Crawler {
          String description = crawlDescription(doc);
          Integer stock = null;
          Marketplace marketplace = crawlMarketplace();
+         RatingsReviews ratingReviews = crawlRating(doc);
 
          // Creating the product
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
                .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).build();
+               .setStock(stock).setMarketplace(marketplace).setRatingReviews(ratingReviews).build();
 
          products.add(product);
 
@@ -97,6 +101,114 @@ public class BrasilNutriiCrawler extends Crawler {
 
       return internalId;
    }
+
+   private RatingsReviews crawlRating(Document document) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
+      Double avgRating = getTotalAvgRating(document);
+      AdvancedRatingReview adRating = scrapAdvancedRatingReview(document);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(adRating);
+
+      return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer val = 0;
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select("#customer-reviews > dl > dd table > tbody > tr > td > div > div");
+
+
+
+      for (Element review : reviews) {
+         String el = review.attr("style").replace("%", "");
+         el = el.replaceAll("[^0-9]", "");
+         if (!el.isEmpty()) {
+            val = Integer.parseInt(el);
+         }
+
+         // o numero vem em porcentagem, entao, como a avaliação vai de 1 até 5 fazemos o calculo valor * 5 e
+         // dps / 100 para acharmos o numero da votação da pessoa em numeros de 1 a 5
+         val = (val * 5) / 100;
+
+
+         // On a html this value will be like this: (1)
+
+
+         switch (val) {
+            case 5:
+               star5 += 1;
+               break;
+            case 4:
+               star4 += 1;
+               break;
+            case 3:
+               star3 += 1;
+               break;
+            case 2:
+               star2 += 1;
+               break;
+            case 1:
+               star1 += 1;
+               break;
+            default:
+               break;
+         }
+
+
+
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+   }
+
+   private Double getTotalAvgRating(Document doc) {
+      Double avgRating = 0d;
+      Element avg = doc.select("div.rating").first();
+
+      if (avg != null) {
+         avgRating = MathUtils.parseDoubleWithDot(avg.attr("style"));
+         if (avgRating != null) {
+            avgRating = (avgRating / 100) * 5;
+         } else {
+            avgRating = (double) 0;
+         }
+      }
+
+      return avgRating;
+   }
+
+   private Integer getTotalNumOfRatings(Document doc) {
+      Integer ratingNumber = 0;
+      Element reviews = doc.select(".rating-links span.cor").first();
+
+      if (reviews != null) {
+         String text = reviews.ownText().replaceAll("[^0-9]", "").trim();
+
+         if (!text.isEmpty()) {
+            ratingNumber = Integer.parseInt(text);
+         }
+      }
+
+      return ratingNumber;
+   }
+
 
    private String crawlInternalPid(Document doc) {
       String internalPid = null;
