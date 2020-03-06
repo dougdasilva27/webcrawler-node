@@ -61,9 +61,11 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
             .setCookies(cookies)
             .setPayload(payload)
             .setHeaders(headers)
-            .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU))
+            .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
+            .setStatusCodesToIgnore(Arrays.asList(302))
             .setFollowRedirects(false)
             .setBodyIsRequired(false)
+            .mustSendContentEncoding(false)
             .build();
 
       List<Cookie> cookiesResponse = new FetcherDataFetcher().post(session, request).getCookies();
