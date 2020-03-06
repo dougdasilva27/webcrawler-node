@@ -11,6 +11,8 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -35,6 +37,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.JAVANET);
    }
 
    private static final String HOST = "supermercado.carrefour.com.ar";
@@ -58,6 +61,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
             .setCookies(cookies)
             .setPayload(payload)
             .setHeaders(headers)
+            .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.STORM_RESIDENTIAL_EU))
             .setFollowRedirects(false)
             .setBodyIsRequired(false)
             .build();
