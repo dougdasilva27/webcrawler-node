@@ -1,20 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.prices.Prices;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -26,14 +19,32 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.google.common.collect.Sets;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.AdvancedRatingReview;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.RatingsReviews;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 /**
  * Date: 07/12/2016
@@ -48,6 +59,10 @@ import java.util.regex.Pattern;
 public class ArgentinaWalmartCrawler extends Crawler {
 
    private final String HOME_PAGE = "http://www.walmart.com.ar/";
+
+   private static final String SELLER_FULL_NAME = "Walmart";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ArgentinaWalmartCrawler(Session session) {
       super(session);
@@ -112,33 +127,28 @@ public class ArgentinaWalmartCrawler extends Crawler {
          String description = crawlDescription(doc);
          Integer stock = null;
          RatingsReviews ratingReviews = scrapRatingReviews(doc);
-         Map<String, Float> marketplaceMap = crawlMarketplace();
-         Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
          JSONArray arraySkus = crawlSkuJsonArray(doc);
          JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
          for (int i = 0; i < arraySkus.length(); i++) {
             JSONObject jsonSku = arraySkus.getJSONObject(i);
 
-            boolean available = crawlAvailability(jsonSku);
             String internalId = crawlInternalId(jsonSku);
-            Float price = crawlMainPagePrice(jsonSku, available);
             String primaryImage = crawlPrimaryImage(doc);
             String name = crawlName(doc, jsonSku);
             String secondaryImages = crawlSecondaryImages(doc);
-            Prices prices = crawlPrices(price);
             String ean = i < eanArray.length() ? eanArray.getString(i) : null;
             List<String> eans = new ArrayList<>();
             eans.add(ean);
+
+            boolean availableToBuy = jsonSku.optBoolean("available", false);
+            Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
 
             Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
@@ -146,9 +156,9 @@ public class ArgentinaWalmartCrawler extends Crawler {
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
                   .setStock(stock)
-                  .setMarketplace(marketplace)
                   .setEans(eans)
                   .setRatingReviews(ratingReviews)
+                  .setOffers(offers)
                   .build();
 
             products.add(product);
@@ -163,6 +173,180 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
    private boolean isProductPage(Document document) {
       return document.select(".productName").first() != null;
+   }
+
+   private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      List<String> sales = scrapSales(internalId, doc);
+      Pricing pricing = scrapPricing(internalId, doc);
+
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+
+      return offers;
+   }
+
+   private List<String> scrapSales(String internalId, Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      String salesUrl = scrapSalesApiUrl(doc);
+      Request req = RequestBuilder.create()
+            .setUrl(CommonMethods.sanitizeUrl(salesUrl))
+            .setCookies(cookies)
+            .build();
+
+      String response = this.dataFetcher.get(session, req).getBody();
+      JSONArray bdwJsonResult = JSONUtils.stringToJsonArray(CrawlerUtils.extractSpecificStringFromScript(response, "var bdwJsonResult=", false, ";", false));
+
+      for (Object o : bdwJsonResult) {
+         JSONObject saleJson = o instanceof JSONObject ? (JSONObject) o : new JSONObject();
+
+         if (saleJson.has("Sku") && !saleJson.isNull("Sku")) {
+            String skuId = saleJson.get("Sku").toString();
+
+            if (skuId.equalsIgnoreCase(internalId) && saleJson.has("CucardaOferta") && !saleJson.isNull("CucardaOferta")) {
+               sales.add(saleJson.get("CucardaOferta").toString());
+            }
+         }
+      }
+
+      return sales;
+   }
+
+   private String scrapSalesApiUrl(Document doc) {
+      String url = "https://scustom.walmart.com.ar/tracking/track?HASH=walmartar_produccion_scxel&wordsfound=,&buyer={CLIENT.BUYER}&name=&lastname=&gender=&branchOffice=15&country=&state=&city=&email=&u=productoswalmart.braindw.com/catalogo/161/15";
+
+      Elements scripts = doc.select("head > script[src]");
+      for (Element e : scripts) {
+         String src = e.attr("src");
+
+         if (src.contains("/catalogo/")) {
+            url = src;
+            break;
+         }
+      }
+
+      return url;
+   }
+
+   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuListPrice", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuBestPrice", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(internalId, spotlightPrice);
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
+   }
+
+   private CreditCards scrapCreditCards(String internalId, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      String pricesApi = "https://www.walmart.com.ar/productotherpaymentsystems/" + internalId;
+      Request request = RequestBuilder.create().setUrl(pricesApi).setCookies(cookies).build();
+      Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+
+      Elements cardsElements = doc.select("#ddlCartao option");
+
+      if (!cardsElements.isEmpty()) {
+         for (Element e : cardsElements) {
+            String text = e.text().toLowerCase();
+            String idCard = e.val();
+            String card = null;
+            Installments installments = scrapInstallments(doc, idCard, spotlightPrice);
+
+            if (text.contains("visa")) {
+               card = Card.VISA.toString();
+            } else if (text.contains("mastercard")) {
+               card = Card.MASTERCARD.toString();
+            } else if (text.contains("cabal")) {
+               card = Card.CABAL.toString();
+            } else if (text.contains("nativa")) {
+               card = Card.NATIVA.toString();
+            } else if (text.contains("naranja")) {
+               card = Card.NARANJA.toString();
+            } else if (text.contains("american express")) {
+               card = Card.AMEX.toString();
+            }
+
+            if (card != null) {
+               creditCards.add(CreditCardBuilder.create()
+                     .setBrand(card)
+                     .setInstallments(installments)
+                     .setIsShopCard(false)
+                     .build());
+            }
+         }
+      } else {
+         Installments installments = new Installments();
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+
+         for (String card : cards) {
+            creditCards.add(CreditCardBuilder.create()
+                  .setBrand(card)
+                  .setInstallments(installments)
+                  .setIsShopCard(false)
+                  .build());
+         }
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc, String idCard, Double spotlightPrice) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Elements installmentsCard = doc.select(".tbl-payment-system#tbl" + idCard + " tr");
+      for (Element i : installmentsCard) {
+         Element installmentElement = i.select("td.parcelas").first();
+
+         if (installmentElement != null) {
+            String textInstallment = installmentElement.text().toLowerCase();
+            Integer installment = null;
+
+            if (textInstallment.contains("vista")) {
+               installment = 1;
+            } else {
+               String text = textInstallment.replaceAll("[^0-9]", "").trim();
+
+               if (!text.isEmpty()) {
+                  installment = Integer.parseInt(text);
+               }
+            }
+
+            Element valueElement = i.select("td:not(.parcelas)").first();
+
+            if (valueElement != null && installment != null) {
+               Double value = MathUtils.parseDoubleWithComma(valueElement.text());
+
+               installments.add(InstallmentBuilder.create()
+                     .setInstallmentNumber(installment)
+                     .setInstallmentPrice(value)
+                     .build());
+            }
+         }
+      }
+
+      if (installments.getInstallment(1) == null) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
+
+      return installments;
    }
 
    private String crawlInternalId(JSONObject json) {
@@ -203,31 +387,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
       }
 
       return name;
-   }
-
-   private Float crawlMainPagePrice(JSONObject json, boolean available) {
-      Float price = null;
-
-      if (json.has("bestPriceFormated") && available) {
-         price = Float.parseFloat(json.getString("bestPriceFormated").replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-      }
-
-      return price;
-   }
-
-   private boolean crawlAvailability(JSONObject json) {
-      if (json.has("available")) {
-         return json.getBoolean("available");
-      }
-      return false;
-   }
-
-   private Map<String, Float> crawlMarketplace() {
-      return new HashMap<>();
-   }
-
-   private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
-      return new Marketplace();
    }
 
    private String crawlPrimaryImage(Document doc) {
@@ -291,26 +450,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
       }
 
       return description;
-   }
-
-   private Prices crawlPrices(Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> mapInstallments = new HashMap<>();
-         mapInstallments.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.NARANJA.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.NATIVA.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
-
-      }
-
-      return prices;
    }
 
    private JSONArray crawlSkuJsonArray(Document document) {
