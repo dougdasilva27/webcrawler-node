@@ -51,8 +51,6 @@ public class ArgentinaCotoCrawler extends Crawler {
       super(session);
    }
 
-
-
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
@@ -76,7 +74,8 @@ public class ArgentinaCotoCrawler extends Crawler {
          String description = crawlDescription(doc);
          Integer stock = null;
          Offers offers = scrapOffer(doc, internalId);
-         System.err.println(offers);
+
+
          // Creating the product
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -206,8 +205,9 @@ public class ArgentinaCotoCrawler extends Crawler {
 
    private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      List<String> sales = scrapSales(internalId, doc);
       Pricing pricing = scrapPricing(internalId, doc);
+
+      List<String> sales = scrapSales(doc).equals("") ? new ArrayList<>() : scrapSales(doc);
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -220,18 +220,27 @@ public class ArgentinaCotoCrawler extends Crawler {
             .build());
 
       return offers;
+
    }
 
-   private List<String> scrapSales(String internalId, Document doc) {
+   private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
+
+      Elements salesOneElements = doc.select(".first_price_discount_container");
+
+      String salesOne = salesOneElements.text();
+
+      sales.add(salesOne);
+
+
 
       return sales;
    }
 
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".atg_store_oldPrice.price_regular", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".atg_store_oldPrice.price_regular", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio,.atg_store_newPrice,.atg_store_oldPrice.price_regular", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
 
       return PricingBuilder.create()
@@ -239,12 +248,14 @@ public class ArgentinaCotoCrawler extends Crawler {
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
             .build();
+
+
    }
 
    private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(doc, spotlightPrice);
+      Installments installments = scrapInstallments(doc);
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
@@ -257,23 +268,25 @@ public class ArgentinaCotoCrawler extends Crawler {
       return creditCards;
    }
 
-   public Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
 
       Element installmentsCard = doc.selectFirst(".info_productPrice .product_discount_pay span");
 
-      String installmentString = installmentsCard.text().replaceAll("[^0-9]", "").trim();
-      Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : 0;
+      if (installmentsCard != null) {
 
-      Element valueElement = doc.selectFirst(".info_productPrice .product_discount_pay strong");
+         String installmentString = installmentsCard.text().replaceAll("[^0-9]", "").trim();
+         Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : 0;
+         Element valueElement = doc.selectFirst(".info_productPrice .product_discount_pay strong");
 
-      if (valueElement != null && installment != null) {
-         Double value = MathUtils.parseDoubleWithComma(valueElement.text());
+         if (valueElement != null && installment != null) {
+            Double value = MathUtils.parseDoubleWithComma(valueElement.text());
 
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(installment)
-               .setInstallmentPrice(value)
-               .build());
+            installments.add(InstallmentBuilder.create()
+                  .setInstallmentNumber(installment)
+                  .setInstallmentPrice(value)
+                  .build());
+         }
       }
 
       return installments;
