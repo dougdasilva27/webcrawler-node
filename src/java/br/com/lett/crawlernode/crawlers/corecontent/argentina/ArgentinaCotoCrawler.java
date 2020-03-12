@@ -76,6 +76,7 @@ public class ArgentinaCotoCrawler extends Crawler {
          String description = crawlDescription(doc);
          Integer stock = null;
          Offers offers = scrapOffer(doc, internalId);
+         System.err.println(offers);
          // Creating the product
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -229,8 +230,8 @@ public class ArgentinaCotoCrawler extends Crawler {
 
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".atg_store_oldPrice.price_regular", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".atg_store_oldPrice.price_regular", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
 
       return PricingBuilder.create()
