@@ -105,9 +105,13 @@ public class JavanetDataFetcher implements DataFetcher {
 
             S3Service.saveResponseContent(session, requestHash, content);
 
-
-            response = new ResponseBuilder().setBody(content).setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null).build();
+            response = new ResponseBuilder()
+                  .setBody(content)
+                  .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
+                  .setRedirecturl(connection.getURL().toString())
+                  .build();
             requestStats.setHasPassedValidation(true);
+            session.addRedirection(request.getUrl(), connection.getURL().toString());
 
             FetchUtilities.sendRequestInfoLog(attempt, request, response, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   connection.getResponseCode(), requestHash);
