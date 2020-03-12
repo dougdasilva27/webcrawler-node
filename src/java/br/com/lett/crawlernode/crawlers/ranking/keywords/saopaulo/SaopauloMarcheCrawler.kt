@@ -16,10 +16,10 @@ class SaopauloMarcheCrawler(session: Session?) : CrawlerRankingKeywords(session)
         log("Link onde são feitos os crawlers: $url")
 
         Jsoup.parse(dataFetcher.get(session, request).body)?.let { doc ->
-            val json = doc.select("div[data-json]")
-            this.pageSize = json.size
+            val productsElements = doc.select("div[data-infinite-scroll='items'] > div[data-json]")
+            this.pageSize = productsElements.size
 
-            json.asSequence()
+            productsElements.asSequence()
                     .map { JSONUtils.stringToJson(it.attr("data-json")) }
                     .forEachIndexed { index, jsonProd ->
                         val urlProd = home + doc.select("a[class=link]")?.get(index)?.attr("href")
