@@ -31,6 +31,20 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
             val price = it.optFloat("price")
             val prices = scrapPrices(document, price)
 
+            val categories = mutableListOf<String>()
+
+            if (it.optString("parent_category") is String) {
+                categories.add(it.optString("parent_category"))
+            }
+            if (it.optString("category") is String) {
+                categories.add(it.optString("category"))
+            }
+
+            val eans = mutableListOf<String>()
+            if (it.optString("ean") is String) {
+                categories.add(it.optString("ean"))
+            }
+
             products.add(ProductBuilder.create()
                     .setInternalId(it.optString("product_id"))
                     .setInternalPid(it.optString("id"))
@@ -38,9 +52,9 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
                     .setPrice(price)
                     .setPrices(prices)
                     .setAvailable(document?.selectFirst(".btn.btn-block.btn-lg.center-y") != null)
-                    .setCategories(listOf(it.optString("parent_category"), it.optString("category")))
+                    .setCategories(categories)
                     .setPrimaryImage(it.optString("image"))
-                    .setEans(listOf(it.optString("ean")))
+                    .setEans(eans)
                     .build())
         }
         return products
