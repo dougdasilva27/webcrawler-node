@@ -9,7 +9,7 @@ import org.jsoup.Jsoup
 class SaopauloMarcheCrawler(session: Session?) : CrawlerRankingKeywords(session) {
     val home = "https://www.marche.com.br"
     override fun extractProductsFromCurrentPage() {
-        val url = "https://www.marche.com.br/search?utf8=%E2%9C%93&query=$keywordWithoutAccents&page=$currentPage"
+        val url = "https://www.marche.com.br/search?utf8=%E2%9C%93&query=$keywordEncoded&page=$currentPage"
         val request = RequestBuilder.create().setUrl(url)
                 .setCookies(cookies).build()
 

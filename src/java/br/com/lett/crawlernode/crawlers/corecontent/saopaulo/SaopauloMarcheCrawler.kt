@@ -71,5 +71,4 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
         this.insertCardInstallment(Card.MASTERCARD.toString(), installments)
         this.insertCardInstallment(Card.ELO.toString(), installments)
     }
-
 }
