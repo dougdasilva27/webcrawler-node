@@ -46,6 +46,7 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
             }
 
             products.add(ProductBuilder.create()
+                    .setUrl(session.originalURL)
                     .setInternalId(it.optString("product_id"))
                     .setInternalPid(it.optString("id"))
                     .setName(it.optString("full_name"))
