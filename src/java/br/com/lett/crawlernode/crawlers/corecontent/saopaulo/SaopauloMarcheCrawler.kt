@@ -10,7 +10,6 @@ import br.com.lett.crawlernode.util.JSONUtils
 import br.com.lett.crawlernode.util.Logging
 import models.prices.Prices
 import org.jsoup.nodes.Document
-import java.math.BigDecimal
 import java.math.RoundingMode
 
 class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
@@ -65,7 +64,7 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
 
     private fun scrapPrices(doc: Document?, price: Float) = Prices().apply {
         this.priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price> span", null, false, ',', session)
-        this.bankTicketPrice = BigDecimal(price.toDouble()).setScale(2, RoundingMode.HALF_EVEN).toDouble()
+        this.bankTicketPrice = price.toBigDecimal().setScale(2, RoundingMode.HALF_EVEN).toDouble()
         val installments: MutableMap<Int, Float> = HashMap()
         installments[1] = price
         this.insertCardInstallment(Card.VISA.toString(), installments)
