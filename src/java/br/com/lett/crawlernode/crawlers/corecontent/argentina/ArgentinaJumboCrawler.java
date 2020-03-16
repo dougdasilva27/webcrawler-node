@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -23,6 +12,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlers
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -33,6 +23,17 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class ArgentinaJumboCrawler extends Crawler {
 
@@ -101,7 +102,7 @@ public class ArgentinaJumboCrawler extends Crawler {
 
    private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      List<String> sales = scrapSales(internalId, doc);
+      List<String> sales = new ArrayList<>();
       Pricing pricing = scrapPricing(internalId, doc);
 
       offers.add(OfferBuilder.create()
@@ -115,17 +116,6 @@ public class ArgentinaJumboCrawler extends Crawler {
             .build());
 
       return offers;
-   }
-
-   private List<String> scrapSales(String internalId, Document doc) {
-      List<String> sales = new ArrayList<>();
-
-
-      // String sale = doc.selectFirst("div.pangui-flag-wrapper > div").text(); paula
-      // System.err.println(sale);
-      // sales.add(sale);
-
-      return sales;
    }
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
@@ -161,69 +151,57 @@ public class ArgentinaJumboCrawler extends Crawler {
             if (text.contains("visa")) {
                card = Card.VISA.toString();
 
-               if (card != null) {
                   creditCards.add(CreditCardBuilder.create()
                         .setBrand(card)
                         .setInstallments(installments)
                         .setIsShopCard(false)
                         .build());
-               }
 
             } else if (text.contains("mastercard")) {
                card = Card.MASTERCARD.toString();
 
-               if (card != null) {
                   creditCards.add(CreditCardBuilder.create()
                         .setBrand(card)
                         .setInstallments(installments)
                         .setIsShopCard(false)
                         .build());
-               }
 
             } else if (text.contains("cabal")) {
                card = Card.CABAL.toString();
 
-               if (card != null) {
                   creditCards.add(CreditCardBuilder.create()
                         .setBrand(card)
                         .setInstallments(installments)
                         .setIsShopCard(false)
                         .build());
-               }
 
             } else if (text.contains("nativa")) {
                card = Card.NATIVA.toString();
 
-               if (card != null) {
                   creditCards.add(CreditCardBuilder.create()
                         .setBrand(card)
                         .setInstallments(installments)
                         .setIsShopCard(false)
                         .build());
-               }
 
             } else if (text.contains("naranja")) {
                card = Card.NARANJA.toString();
 
-               if (card != null) {
                   creditCards.add(CreditCardBuilder.create()
                         .setBrand(card)
                         .setInstallments(installments)
                         .setIsShopCard(false)
                         .build());
-               }
 
             } else if (text.contains("american express")) {
                card = Card.AMEX.toString();
 
-               if (card != null) {
                   creditCards.add(CreditCardBuilder.create()
                         .setBrand(card)
                         .setInstallments(installments)
                         .setIsShopCard(false)
                         .build());
                }
-            }
          }
       } else {
          Installments installments = new Installments();
