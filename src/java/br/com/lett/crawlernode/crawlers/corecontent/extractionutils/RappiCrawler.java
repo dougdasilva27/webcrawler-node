@@ -31,17 +31,20 @@ import models.prices.Prices;
 
 public class RappiCrawler extends Crawler {
 
+
    private static final String HOME_PAGE = "https://www.rappi.com";
-   private static final String STORES_API_URL = "https://services.rappi.com.br/api/base-crack/principal?lat=-23.584&lng=-46.671&device=2";
+   private static final String STORES_API_URL = "https://services.rappi.com.br/api/base-crack/principal?";
    public static final String PRODUCTS_API_URL = "https://services.rappi.com.br/api/search-client/search/v2/products";
    private static final String DETAILS_API_URL = "https://services.rappi.com.br/api/cpgs-graphql-domain/";
    private static final String IMAGES_DOMAIN = "images.rappi.com.br/products";
 
+   private final String locationParameters;
    private final String storeType;
 
-   public RappiCrawler(Session session, String storeType) {
+   public RappiCrawler(Session session, String storeType, String locationParameters) {
       super(session);
       this.storeType = storeType;
+      this.locationParameters = locationParameters;
       this.config.setFetcher(FetchMode.FETCHER);
    }
 
@@ -424,7 +427,7 @@ public class RappiCrawler extends Crawler {
 
    private Map<String, String> crawlStores() {
       Map<String, String> stores = new HashMap<>();
-      Request request = RequestBuilder.create().setUrl(STORES_API_URL).setCookies(cookies).build();
+      Request request = RequestBuilder.create().setUrl(STORES_API_URL + this.locationParameters + "&device=2").setCookies(cookies).build();
       JSONArray options = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
       for (Object o : options) {

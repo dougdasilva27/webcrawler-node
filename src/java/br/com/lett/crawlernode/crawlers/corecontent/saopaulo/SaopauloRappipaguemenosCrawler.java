@@ -5,8 +5,8 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.RappiCrawler
 
 public class SaopauloRappipaguemenosCrawler extends RappiCrawler {
 
-  public SaopauloRappipaguemenosCrawler(Session session) {
-    super(session, "pague_menos");
-  }
+   public SaopauloRappipaguemenosCrawler(Session session) {
+      super(session, "pague_menos", "lat=-23.584&lng=-46.671");
+   }
 
 }

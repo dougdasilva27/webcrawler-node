@@ -5,9 +5,9 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.RappiCrawler
 
 public class SaopauloRappiCrawler extends RappiCrawler {
 
-  public SaopauloRappiCrawler(Session session) {
-    // I will not change this crawler because it was just a test;
-    super(session, "");
-  }
+   public SaopauloRappiCrawler(Session session) {
+      // I will not change this crawler because it was just a test;
+      super(session, "", "lat=-23.584&lng=-46.671");
+   }
 
 }
