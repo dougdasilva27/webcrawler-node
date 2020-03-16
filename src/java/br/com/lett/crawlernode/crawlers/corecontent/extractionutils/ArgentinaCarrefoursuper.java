@@ -40,7 +40,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JAVANET);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    private static final String HOST = "supermercado.carrefour.com.ar";
@@ -54,7 +54,12 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
    @Override
    protected Object fetch() {
-      Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+      Request request = RequestBuilder.create()
+            .setCookies(cookies)
+            .setUrl(session.getOriginalURL())
+            .mustSendContentEncoding(false)
+            .build();
+
       Response response = dataFetcher.get(session, request);
 
       String html = Normalizer.normalize(response.getBody(), Normalizer.Form.NFD);
