@@ -1,21 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import com.google.common.collect.Sets;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -26,11 +29,12 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
 import models.Offer.OfferBuilder;
 import models.Offers;
-import models.prices.Prices;
+import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 
@@ -44,6 +48,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.JAVANET);
    }
 
    private static final String HOST = "supermercado.carrefour.com.ar";
@@ -59,6 +64,15 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
    protected abstract String getCep();
 
    @Override
+   protected Object fetch() {
+      Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+      Response response = dataFetcher.get(session, request);
+
+      String html = Normalizer.normalize(response.getBody(), Normalizer.Form.NFD);
+      return Jsoup.parse(html);
+   }
+
+   @Override
    public void handleCookiesBeforeFetch() {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
@@ -70,8 +84,11 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
             .setCookies(cookies)
             .setPayload(payload)
             .setHeaders(headers)
+            .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
+            .setStatusCodesToIgnore(Arrays.asList(302))
             .setFollowRedirects(false)
             .setBodyIsRequired(false)
+            .mustSendContentEncoding(false)
             .build();
 
       List<Cookie> cookiesResponse = new FetcherDataFetcher().post(session, request).getCookies();
@@ -99,10 +116,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
                "data-zoom-image", "src"), "https:", HOST, primaryImage);
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
-         Prices prices = crawlPrices(doc);
-         Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.MASTERCARD);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".descripcion-texto", ".descripcion-content.clearfix", ".especificaciones-wrapper h2", ".especificaciones-wrapper ul > li"));
-         boolean available = price != null;
          Offers offers = scrapOffers(doc);
 
          // Creating the product
@@ -110,9 +124,6 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
                .setOffers(offers)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
@@ -120,7 +131,6 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
-               .setMarketplace(new Marketplace())
                .build();
 
          products.add(product);
@@ -136,29 +146,12 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
       return doc.selectFirst(".product-view") != null;
    }
 
-   private Prices crawlPrices(Element doc) {
-      Prices prices = new Prices();
-
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-shop .precio-regular-productos-destacados, .product-shop .regular-price, "
-            + ".product-shop [id^=product-price-]", null,
-            true, ',', session);
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-         prices.setBankTicketPrice(price);
-
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      }
-
-      return prices;
-   }
-
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      List<String> sales = scrapSales(doc);
+      List<String> salesVariable = scrapSales(doc);
+      List<String> sales = salesVariable.isEmpty() ? new ArrayList<>() : salesVariable;
       Pricing pricing = scrapPricing(doc);
 
 
@@ -172,8 +165,6 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
             .setSales(sales)
             .build());
 
-
-
       return offers;
 
    }
@@ -181,26 +172,64 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
    private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
 
-      String firstSales = CrawlerUtils.scrapStringSimpleInfo(doc, "..product-shop .offer", false);
+      String firstSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-shop .offer", false);
       String secondSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".price-info .price.precio-oferta-productos-destacados", true);
 
-      sales.add(1, firstSales);
 
+      if (firstSales != null) {
+         if (!firstSales.isEmpty()) {
+            sales.add(firstSales);
+         }
+      }
+
+      if (secondSales != null) {
+         if (!secondSales.isEmpty()) {
+            sales.add(secondSales);
+         }
+      }
       return sales;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .regular-price", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .regular-price", null, false, ',', session);
-      CreditCards creditCards = (CreditCards) this.cards;
 
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .regular-price", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
+            .setPriceFrom(null)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
             .build();
 
+   }
+
+   private CreditCards scrapCreditCards(Double spotligthPrice) throws MalformedPricingException {
+
+      CreditCards creditCards = new CreditCards();
+      Installments installments = scrapInstallment(spotligthPrice);
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+
+   }
+
+   private Installments scrapInstallment(Double spotlightPrice) throws MalformedPricingException {
+
+      Installments installments = new Installments();
+
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+      return installments;
    }
 
 }
