@@ -5,12 +5,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -22,8 +24,15 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.Marketplace;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 /**
  * Date: 2019-08-28
@@ -38,6 +47,9 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
    }
 
    private static final String HOST = "supermercado.carrefour.com.ar";
+   private static final String SELLER_FULL_NAME = "Carrefoursuper";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    /**
     * This function might return a cep from specific store
@@ -91,6 +103,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
          Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.MASTERCARD);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".descripcion-texto", ".descripcion-content.clearfix", ".especificaciones-wrapper h2", ".especificaciones-wrapper ul > li"));
          boolean available = price != null;
+         Offers offers = scrapOffers(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -100,6 +113,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
                .setPrice(price)
                .setPrices(prices)
                .setAvailable(available)
+               .setOffers(offers)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
@@ -139,4 +153,54 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
       return prices;
    }
+
+
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+
+      List<String> sales = scrapSales(doc);
+      Pricing pricing = scrapPricing(doc);
+
+
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+
+
+
+      return offers;
+
+   }
+
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      String firstSales = CrawlerUtils.scrapStringSimpleInfo(doc, "..product-shop .offer", false);
+      String secondSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".price-info .price.precio-oferta-productos-destacados", true);
+
+      sales.add(1, firstSales);
+
+      return sales;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .regular-price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .regular-price", null, false, ',', session);
+      CreditCards creditCards = (CreditCards) this.cards;
+
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
+
+   }
+
 }
