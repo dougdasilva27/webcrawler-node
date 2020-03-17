@@ -226,13 +226,12 @@ public class ArgentinaCotoCrawler extends Crawler {
    private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
 
-      Elements salesOneElements = doc.select(".first_price_discount_container");
+      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
 
-      String salesOne = salesOneElements.text();
-
-      sales.add(salesOne);
-
-
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
 
       return sales;
    }
@@ -276,7 +275,7 @@ public class ArgentinaCotoCrawler extends Crawler {
       if (installmentsCard != null) {
 
          String installmentString = installmentsCard.text().replaceAll("[^0-9]", "").trim();
-         Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : 0;
+         Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : null;
          Element valueElement = doc.selectFirst(".info_productPrice .product_discount_pay strong");
 
          if (valueElement != null && installment != null) {
