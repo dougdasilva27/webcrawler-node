@@ -9,67 +9,53 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class ColombiaTiendasjumboCrawler extends CrawlerRankingKeywords {
 
-	private static final String HOME_PAGE = "https://busqueda.tiendasjumbo.co/";
+   private static final String HOME_PAGE = "https://busqueda.tiendasjumbo.co/";
 
-	public ColombiaTiendasjumboCrawler(Session session) {
-		super(session);
-	}
+   public ColombiaTiendasjumboCrawler(Session session) {
+      super(session);
+   }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		this.pageSize = 24;
-		this.log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 24;
+      this.log("Página " + this.currentPage);
 
-		String url = HOME_PAGE + "/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = HOME_PAGE + "busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
 
-		this.log("Link onde são feitos os crawlers: " + url);
-		this.currentDoc = fetchDocument(url);
-		Elements products = this.currentDoc.select("ul.neemu-products-container.nm-view-type-grid > li");
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select("ul.neemu-products-container.nm-view-type-grid > li");
 
-		Elements helper = this.currentDoc.select("ul.neemu-products-container.nm-view-type-grid > li");
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
+         for (Element e : products) {
+            String internalPid = e.attr("data-sku");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".nm-product-name a", Arrays.asList("href"), "https", HOME_PAGE);
 
-		if (!products.isEmpty()) {
-			for (int i = 0; i < pageSize; i++) {
-				Element prod = products.get(i);
-				Element help = helper.get(i);
+            saveDataProduct(null, internalPid, productUrl);
 
-				String internalPid = scrapInternalPid(help);
-				String productUrl = CrawlerUtils.scrapUrl(prod,
-						".nm-product-item .nm-product-img-container a.nm-product-img-link", Arrays.asList("href"),
-						"https", HOME_PAGE);
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid
+                  + " - Url: " + productUrl);
 
-				saveDataProduct(null, internalPid, productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+         }
 
-				this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid
-						+ " - Url: " + productUrl);
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
 
-				if (this.arrayProducts.size() == productsLimit)
-					break;
-			}
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+            + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
-
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-				+ this.arrayProducts.size() + " produtos crawleados");
-	}
-
-	private String scrapInternalPid(Element doc) {
-		String internalPid = null;
-
-		if (doc != null) {
-			internalPid = doc.attr("id");
-			internalPid = internalPid.replace("nm-product-", "").trim();
-		}
-		return internalPid;
-	}
-
-	@Override
-	protected boolean hasNextPage() {
-		Integer productCount = this.currentDoc
-				.select(".nm-main-search-container ul.neemu-products-container.nm-view-type-grid > li").size();
-		return productCount >= this.pageSize;
-	}
+   @Override
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".neemu-mb-total-products-container", true, 0);
+      this.log("Total: " + this.totalProducts);
+   }
 }
