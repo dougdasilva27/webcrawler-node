@@ -206,8 +206,7 @@ public class ArgentinaCotoCrawler extends Crawler {
    private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(internalId, doc);
-
-      List<String> sales = scrapSales(doc).equals("") ? new ArrayList<>() : scrapSales(doc);
+      List<String> sales = scrapSales(doc);
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -235,7 +234,6 @@ public class ArgentinaCotoCrawler extends Crawler {
 
       return sales;
    }
-
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, ',', session);
