@@ -221,20 +221,14 @@ public class ArgentinaWalmartCrawler extends Crawler {
    }
 
    private String scrapSalesApiUrl(Document doc) {
-      String url = "https://scustom.walmart.com.ar/tracking/track?HASH=walmartar_produccion_scxel&wordsfound=,&buyer={CLIENT.BUYER}&name=&lastname=&gender=&branchOffice=15&country=&state=&city=&email=&u=productoswalmart.braindw.com/catalogo/161/15";
 
-      Elements scripts = doc.select("head > script[src]");
-      for (Element e : scripts) {
-         String src = e.attr("src");
-
-         if (src.contains("/catalogo/")) {
-            url = src;
-            break;
-         }
-      }
+      String catalogoNumber = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-user-review-category-id", "value");
+      String url = "https://scustom.walmart.com.ar/tracking/track?HASH=walmartar_produccion_scxel&wordsfound=,&buyer={CLIENT.BUYER}&name=&lastname=&gender=&branchOffice=15&country=&state=&city=&email=&u=productoswalmart.braindw.com/catalogo/"
+            + catalogoNumber + "/15";
 
       return url;
    }
+
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuListPrice", null, false, ',', session);
