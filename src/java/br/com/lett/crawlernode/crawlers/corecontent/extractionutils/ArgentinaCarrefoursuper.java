@@ -149,10 +149,8 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      List<String> salesVariable = scrapSales(doc);
-      List<String> sales = salesVariable;
+      List<String> sales = scrapSales(doc);
       Pricing pricing = scrapPricing(doc);
-
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -173,7 +171,6 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
       String firstSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-shop .offer", false);
       String secondSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".price-info .price.precio-oferta-productos-destacados", true);
-
 
       if (firstSales != null && !firstSales.isEmpty()) {
          sales.add(firstSales);
