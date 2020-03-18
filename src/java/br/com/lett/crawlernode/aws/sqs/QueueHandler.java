@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import br.com.lett.crawlernode.util.Logging;
-
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -30,7 +30,7 @@ public class QueueHandler {
 		sqsClient = AmazonSQSClientBuilder
 				.standard()
 				.withRegion(Regions.US_EAST_1)
-				.withCredentials(new EnvironmentVariableCredentialsProvider())
+				.withCredentials(new DefaultAWSCredentialsProviderChain())
 				.build();
 	}
 
