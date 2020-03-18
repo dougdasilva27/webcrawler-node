@@ -45,6 +45,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
+
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
@@ -56,7 +57,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
          String primaryImage = crawlPrimaryImage(doc);
          // NO SECONDARY IMAGES
          String description = crawlDescription(doc);
-         boolean available = doc.select(".content-produto-indisponivel").isEmpty();
+         boolean available = doc.select(".miolo_info .content-produto-indisponivel").isEmpty();
          Float price = available ? crawlPrice(doc) : null;
          Prices prices = crawlPrices(doc, price);
 
@@ -177,12 +178,12 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
       Element discountPrice = doc.selectFirst(".content_price.hide_mobile > div.price_desconto");
 
       if (discountPrice != null) {
-         price = MathUtils.parseFloatWithComma(discountPrice.ownText());
+         price = MathUtils.parseFloatWithComma(discountPrice.text());
       } else {
          Element normalPrice = doc.selectFirst(".content_price.hide_mobile > div.price");
 
          if (normalPrice != null) {
-            price = MathUtils.parseFloatWithComma(normalPrice.ownText());
+            price = MathUtils.parseFloatWithComma(normalPrice.text());
          }
       }
 
@@ -200,7 +201,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
       Element priceDiv = doc.selectFirst(".content_price.hide_mobile > div.price");
       if (priceDiv != null) {
-         price = MathUtils.parseDoubleWithComma(priceDiv.ownText());
+         price = MathUtils.parseDoubleWithComma(priceDiv.text());
       }
 
       return price;

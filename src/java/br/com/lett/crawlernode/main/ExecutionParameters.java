@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.main;
 
-import br.com.lett.crawlernode.core.server.PoolExecutor;
-import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.server.PoolExecutor;
+import br.com.lett.crawlernode.util.Logging;
 
 public class ExecutionParameters {
 
@@ -40,11 +40,10 @@ public class ExecutionParameters {
    private Boolean useFetcher;
    private String kinesisStream;
    private String kinesisRatingStream = null;
-   private String newAwsAccessKey;
-   private String newAwsSecretKey;
    private Boolean sendToKinesis;
 
    private String logsBucketName;
+   private String imagesBucketName;
 
    public ExecutionParameters() {
       debug = null;
@@ -61,8 +60,7 @@ public class ExecutionParameters {
       kinesisRatingStream = getEnvKinesisRatingStream();
       sendToKinesis = getEnvSendToKinesis();
       logsBucketName = getEnvLogsBucketName();
-      newAwsAccessKey = getEnvNewAwsAccessKey();
-      newAwsSecretKey = getEnvNewAwsSecretKey();
+      imagesBucketName = getEnvImagesBucketName();
       setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
       setFetcherUrl(getEnvFetcherUrl());
       setPhantomjsPath(getEnvPhantomjsPath());
@@ -78,14 +76,6 @@ public class ExecutionParameters {
       Logging.printLogDebug(logger, this.toString());
    }
 
-
-   private String getEnvNewAwsSecretKey() {
-      return System.getenv(EnvironmentVariables.NEW_AWS_SECRET_KEY);
-   }
-
-   private String getEnvNewAwsAccessKey() {
-      return System.getenv(EnvironmentVariables.NEW_AWS_ACCESS_KEY);
-   }
 
    public Boolean mustSendToKinesis() {
       return sendToKinesis;
@@ -192,6 +182,18 @@ public class ExecutionParameters {
       String logsBucketName = System.getenv(EnvironmentVariables.LOGS_BUCKET_NAME);
       if (logsBucketName == null || logsBucketName.isEmpty()) {
          Logging.logWarn(logger, null, null, "LOGS_BUCKET_NAME not set");
+
+         // Return empty string to avoid null pointers
+         return "";
+      }
+
+      return logsBucketName;
+   }
+
+   private String getEnvImagesBucketName() {
+      String logsBucketName = System.getenv(EnvironmentVariables.IMAGES_BUCKET_NAME);
+      if (logsBucketName == null || logsBucketName.isEmpty()) {
+         Logging.logWarn(logger, null, null, "IMAGES_BUCKET_NAME not set");
 
          // Return empty string to avoid null pointers
          return "";
@@ -308,14 +310,6 @@ public class ExecutionParameters {
       return fetcherUrl;
    }
 
-   public String getNewAwsAccessKey() {
-      return newAwsAccessKey;
-   }
-
-   public String getNewAwsSecretKey() {
-      return newAwsSecretKey;
-   }
-
    public void setFetcherUrl(String fetcherUrl) {
       this.fetcherUrl = fetcherUrl;
    }
@@ -334,5 +328,13 @@ public class ExecutionParameters {
 
    public void setLogsBucketName(String logsBucketName) {
       this.logsBucketName = logsBucketName;
+   }
+
+   public String getImagesBucketName() {
+      return imagesBucketName;
+   }
+
+   public void setImagesBucketName(String imagesBucketName) {
+      this.imagesBucketName = imagesBucketName;
    }
 }

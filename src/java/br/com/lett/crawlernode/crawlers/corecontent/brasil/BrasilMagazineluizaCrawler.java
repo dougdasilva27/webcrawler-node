@@ -149,7 +149,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          String internalSellerId = null;
          Double mainPrice = null;
 
-         if (sellerInfo == null) {
+         if (sellerInfo == null || sellerInfo.text().trim().isEmpty()) {
             sellerInfo = doc.selectFirst(".seller__indentifier .seller-info-button");
          }
 
@@ -163,7 +163,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
          Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
                .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).setUseSlugNameAsInternalSellerId(true).build();
-
          offers.add(offer);
       } catch (OfferException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));

@@ -21,13 +21,10 @@ import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.CanonicalGrantee;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.Permission;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import br.com.lett.crawlernode.core.session.Session;
@@ -56,8 +53,7 @@ public class S3Service {
 
    // Amazon images
    private static AmazonS3 s3clientImages;
-   private static final String IMAGES_BUCKET_NAME = "placeholder-media";
-   public static final String SCREENSHOT_BUCKET_NAME = "placeholder-screenshot";
+   private static final String IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
 
    // Amazon crawler-session
    private static AmazonS3 s3clientCrawlerSessions;
@@ -169,11 +165,6 @@ public class S3Service {
 
             s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
 
-            AccessControlList bucketAcl = s3clientCrawlerSessions.getBucketAcl(LOGS_BUCKET_NAME);
-            AccessControlList acl = s3clientCrawlerSessions.getObjectAcl(LOGS_BUCKET_NAME, amazonLocation);
-            acl.grantPermission(new CanonicalGrantee(bucketAcl.getOwner().getId()), Permission.FullControl);
-
-            s3clientCrawlerSessions.setObjectAcl(LOGS_BUCKET_NAME, amazonLocation, acl);
             Logging.printLogDebug(logger, session, "Content uploaded with success!");
          } catch (AmazonServiceException ase) {
             Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "

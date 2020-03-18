@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,11 +10,15 @@ import java.util.TreeMap;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -35,6 +40,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    private static final String HOST = "supermercado.carrefour.com.ar";
@@ -45,6 +51,20 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
     * @return
     */
    protected abstract String getCep();
+
+   @Override
+   protected Object fetch() {
+      Request request = RequestBuilder.create()
+            .setCookies(cookies)
+            .setUrl(session.getOriginalURL())
+            .mustSendContentEncoding(false)
+            .build();
+
+      Response response = dataFetcher.get(session, request);
+
+      String html = Normalizer.normalize(response.getBody(), Normalizer.Form.NFD);
+      return Jsoup.parse(html);
+   }
 
    @Override
    public void handleCookiesBeforeFetch() {
@@ -58,8 +78,11 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
             .setCookies(cookies)
             .setPayload(payload)
             .setHeaders(headers)
+            .setProxyservice(Arrays.asList(ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
+            .setStatusCodesToIgnore(Arrays.asList(302))
             .setFollowRedirects(false)
             .setBodyIsRequired(false)
+            .mustSendContentEncoding(false)
             .build();
 
       List<Cookie> cookiesResponse = new FetcherDataFetcher().post(session, request).getCookies();

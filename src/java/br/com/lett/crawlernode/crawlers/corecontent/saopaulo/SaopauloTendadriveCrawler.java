@@ -51,11 +51,14 @@ public class SaopauloTendadriveCrawler extends Crawler {
    public void handleCookiesBeforeFetch() {
       Logging.printLogDebug(logger, session, "Adding cookie...");
 
+      this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null,
+            ".www.tendaatacado.com.br", "/", cookies, session, dataFetcher));
+
       // shop id (AV guarapiranga)
-      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=10");
-      cookie.setDomain(".www.tendaatacado.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
+      BasicClientCookie cookie2 = new BasicClientCookie("VTEXSC", "sc=1");
+      cookie2.setDomain(".www.tendaatacado.com.br");
+      cookie2.setPath("/");
+      this.cookies.add(cookie2);
    }
 
    @Override

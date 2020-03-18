@@ -3,16 +3,16 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
@@ -22,36 +22,48 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
+   protected String mainSellerNameLower;
+   protected String mainSellerNameLower2;
+   protected String marketHost = "www.extra.com.br";
+   protected static final String PROTOCOL = "https";
+
    @Override
    protected void extractProductsFromCurrentPage() {
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.extra.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+      String url = "https://www.extra.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage + "&ajaxSearch=1";
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = Jsoup.parse(fetchPage(url));
-      Elements products = this.currentDoc.select(".neemu-products-container li.nm-product-item");
+      JSONObject searchApi = JSONUtils.stringToJson(fetchPage(url));
 
-      this.pageSize = 21;
+      JSONObject jsonProducts = searchApi.has("productsInfo") ? searchApi.getJSONObject("productsInfo") : new JSONObject();
+      JSONArray products = jsonProducts.has("products") ? jsonProducts.getJSONArray("products") : new JSONArray();
 
-      if (!products.isEmpty()) {
+
+      this.pageSize = 24;
+
+      if (products.length() > 0) {
+
          if (this.totalProducts == 0) {
-            setTotalProducts();
+            setTotalProducts(searchApi);
          }
-         for (Element e : products) {
-            JSONObject jsonObject = JSONUtils.stringToJson(e.attr("data-metadata-json"));
 
-            String internalPid = jsonObject.optString("idProduct");
-            String internalId = jsonObject.optString("idSku");
+         for (int i = 0; i < products.length(); i++) {
+            JSONObject product = products.getJSONObject(i);
 
-            // Url do produto
-            String productUrl = crawlProductUrl(e);
+            String internalIdString = crawlInternalId(product);
+            String internalPid = crawlInternalPid(product);
+            String productUrl = crawlProductUrl(product);
 
-            saveDataProduct(internalId, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit)
+            saveDataProduct(null, internalPid, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalIdString + " - InternalPid: " +
+                  internalPid + " - Url: " + productUrl);
+
+            if (this.arrayProducts.size() == productsLimit) {
                break;
+            }
          }
       } else {
          this.result = false;
@@ -62,33 +74,64 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
    }
 
-   @Override
-   protected boolean hasNextPage() {
-      return !this.currentDoc.select(".neemu-pagination-next a").isEmpty();
+   private String crawlInternalId(JSONObject product) {
+      String internalId = null;
+
+      JSONArray skus = product.has("skus") ? product.getJSONArray("skus") : new JSONArray();
+
+      for (int i = 0; i < skus.length(); i++) {
+
+         JSONObject sku = skus.getJSONObject(i);
+
+         if (sku.has("sku")) {
+            internalId = sku.get("sku").toString();
+
+         }
+
+      }
+      return internalId;
    }
 
-   private String crawlProductUrl(Element e) {
+   private String crawlInternalPid(JSONObject product) {
+      String internalPid = null;
+
+      if (product.has("originalId")) {
+         internalPid = product.get("originalId").toString();
+      }
+
+      return internalPid;
+   }
+
+   private String crawlProductUrl(JSONObject product) {
       String productUrl = null;
 
-      Element url = e.select(".nm-product-name a").first();
-
-      if (url != null) {
-         productUrl = url.attr("href");
-
-         if (!productUrl.startsWith("http")) {
-            productUrl = "https:" + productUrl;
-         }
-
-         if (productUrl.contains("?")) {
-            productUrl = productUrl.split("\\?")[0];
-         }
+      if (product.has("productUrl")) {
+         productUrl = CrawlerUtils.completeUrl(product.get("productUrl").toString(), "https:", "www.extra.com.br");
       }
 
       return productUrl;
    }
 
-   private String fetchPage(String url) {
+   protected void setTotalProducts(JSONObject searchApi) {
+
+      JSONObject totalProducts = searchApi.has("totalProducts") ? searchApi.getJSONObject("totalProducts") : new JSONObject();
+
+      this.totalProducts = JSONUtils.getIntegerValueFromJSON(totalProducts, "totalResults", 0);
+      this.log("Total da busca:" + this.totalProducts);
+
+   }
+
+   protected String fetchPage(String url) {
       Map<String, String> headers = new HashMap<>();
+      headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+      headers.put("Accept-Enconding", "");
+      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("Cache-Control", "no-cache");
+      headers.put("Connection", "keep-alive");
+      headers.put("Host", this.marketHost);
+      headers.put("Referer", PROTOCOL + "://" + this.marketHost + "/");
+      headers.put("Upgrade-Insecure-Requests", "1");
+      headers.put("User-Agent", FetchUtilities.randUserAgent());
 
       Request request = RequestBuilder.create()
             .setUrl(url)
@@ -103,20 +146,5 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
             ).build();
 
       return this.dataFetcher.get(session, request).getBody();
-   }
-
-   @Override
-   protected void setTotalProducts() {
-      Element totalElement = null;
-      totalElement = this.currentDoc.select("span[data-totalresults]").first();
-
-      if (totalElement != null) {
-         String text = totalElement.text().replaceAll("[^0-9]", "");
-         if (!text.isEmpty()) {
-            this.totalProducts = Integer.parseInt(totalElement.text());
-         }
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
    }
 }
