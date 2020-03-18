@@ -5,12 +5,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -21,14 +22,26 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class ArgentinaVeaCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.veadigital.com.ar/";
    private static final String IMAGE_FIRST_PART = HOME_PAGE + "VeaComprasArchivos/Archivos/ArchivosMxM/";
+   private static final String SELLER_FULL_NAME = "veadigital";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ArgentinaVeaCrawler(Session session) {
       super(session);
@@ -58,17 +71,14 @@ public class ArgentinaVeaCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       JSONObject apiJson = crawlProductApi(doc);
-
       if (isProductPage(apiJson)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = crawlInternalPid(apiJson);
          String internalId = crawlInternalId(apiJson);
          String name = crawlName(apiJson);
-         Float price = crawlPrice(apiJson);
          Integer stock = crawlStock(apiJson);
-         Prices prices = crawlPrices(price);
-         boolean available = stock != null && stock > 0;
+         Offers offers = scrapOffer(apiJson);
          CategoryCollection categories = new CategoryCollection();
          String primaryImage = crawlPrimaryImage(apiJson);
          String secondaryImages = crawlSecondaryImages();
@@ -80,9 +90,6 @@ public class ArgentinaVeaCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
@@ -90,7 +97,7 @@ public class ArgentinaVeaCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setStock(stock)
-               .setMarketplace(new Marketplace())
+               .setOffers(offers)
                .build();
 
          products.add(product);
@@ -137,19 +144,6 @@ public class ArgentinaVeaCrawler extends Crawler {
       return name;
    }
 
-   private Float crawlPrice(JSONObject json) {
-      Float price = null;
-
-      if (json.has("Precio")) {
-         String priceText = json.getString("Precio").replaceAll(",", "").trim();
-
-         if (!priceText.isEmpty()) {
-            price = Float.parseFloat(priceText);
-         }
-      }
-
-      return price;
-   }
 
    private Integer crawlStock(JSONObject json) {
       Integer stock = null;
@@ -252,34 +246,6 @@ public class ArgentinaVeaCrawler extends Crawler {
       return description.toString();
    }
 
-   /**
-    * There is no bankSlip price.
-    * 
-    * There is no card payment options, other than cash price. So for installments, we will have only
-    * one installment for each card brand, and it will be equals to the price crawled on the sku main
-    * page.
-    * 
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-      }
-
-      return prices;
-   }
-
    private String crawlNewUrl(String internalId) {
       String url = session.getOriginalURL();
 
@@ -338,4 +304,82 @@ public class ArgentinaVeaCrawler extends Crawler {
 
       return json;
    }
+
+   private Offers scrapOffer(JSONObject json) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      List<String> sales = scrapSales(json);
+      Pricing pricing = scrapPricing(json);
+
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+
+      return offers;
+   }
+
+   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "Precio", true);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+
+      return PricingBuilder.create()
+            .setPriceFrom(null)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
+   }
+
+   private List<String> scrapSales(JSONObject json) {
+      List<String> sales = new ArrayList<>();
+
+      JSONArray descuentos = JSONUtils.getJSONArrayValue(json, "Descuentos");
+      String firstSales = descuentos.getJSONObject(0).getString("Subtipo"); //
+
+      /*
+       * We have to getJSONObject(0) because the JSONArray descuentos count a list of promotions but we
+       * only need the first one which is the promotion that appears on the website
+       */
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = scrapInstallment(spotlightPrice);
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+
+   }
+
+   private Installments scrapInstallment(Double spotlightPrice) throws MalformedPricingException {
+
+      Installments installments = new Installments();
+
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+      return installments;
+   }
+
 }
