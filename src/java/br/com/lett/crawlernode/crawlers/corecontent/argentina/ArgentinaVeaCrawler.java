@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -27,10 +26,8 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
 import models.Offer.OfferBuilder;
 import models.Offers;
-import models.prices.Prices;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -80,10 +77,7 @@ public class ArgentinaVeaCrawler extends Crawler {
          String internalPid = crawlInternalPid(apiJson);
          String internalId = crawlInternalId(apiJson);
          String name = crawlName(apiJson);
-         Float price = crawlPrice(apiJson);
          Integer stock = crawlStock(apiJson);
-         Prices prices = crawlPrices(price);
-         boolean available = stock != null && stock > 0;
          Offers offers = scrapOffer(apiJson);
          CategoryCollection categories = new CategoryCollection();
          String primaryImage = crawlPrimaryImage(apiJson);
@@ -96,9 +90,6 @@ public class ArgentinaVeaCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
@@ -107,7 +98,6 @@ public class ArgentinaVeaCrawler extends Crawler {
                .setDescription(description)
                .setStock(stock)
                .setOffers(offers)
-               .setMarketplace(new Marketplace())
                .build();
 
          products.add(product);
@@ -154,19 +144,6 @@ public class ArgentinaVeaCrawler extends Crawler {
       return name;
    }
 
-   private Float crawlPrice(JSONObject json) {
-      Float price = null;
-
-      if (json.has("Precio")) {
-         String priceText = json.getString("Precio").replaceAll(",", "").trim();
-
-         if (!priceText.isEmpty()) {
-            price = Float.parseFloat(priceText);
-         }
-      }
-
-      return price;
-   }
 
    private Integer crawlStock(JSONObject json) {
       Integer stock = null;
@@ -269,34 +246,6 @@ public class ArgentinaVeaCrawler extends Crawler {
       return description.toString();
    }
 
-   /**
-    * There is no bankSlip price.
-    * 
-    * There is no card payment options, other than cash price. So for installments, we will have only
-    * one installment for each card brand, and it will be equals to the price crawled on the sku main
-    * page.
-    * 
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.CABAL.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-      }
-
-      return prices;
-   }
-
    private String crawlNewUrl(String internalId) {
       String url = session.getOriginalURL();
 
@@ -389,18 +338,18 @@ public class ArgentinaVeaCrawler extends Crawler {
    private List<String> scrapSales(JSONObject json) {
       List<String> sales = new ArrayList<>();
 
-      JSONArray Descuentos = JSONUtils.getJSONArrayValue(json, "Descuentos");
+      JSONArray descuentos = JSONUtils.getJSONArrayValue(json, "Descuentos");
+      String firstSales = descuentos.getJSONObject(0).getString("Subtipo"); //
 
-      for (int i = 0; i < Descuentos.length(); i++) {
-         
-         JSONObject firstSalesJson = Descuentos.getJSONObject(i);
+      /*
+       * We have to getJSONObject(0) because the JSONArray descuentos count a list of promotions but we
+       * only need the first one which is the promotion that appears on the website
+       */
 
-         String firstSales = firstSalesJson.get("Subtipo").toString();
-
-         if (firstSales != null && !firstSales.isEmpty()) {
-            sales.add(firstSales);
-         }
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
       }
+
       return sales;
    }
 
