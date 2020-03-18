@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
@@ -62,10 +63,18 @@ public class S3Service {
 
    static {
       s3clientImages =
-            AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1).withCredentials(new EnvironmentVariableCredentialsProvider()).build();
+            AmazonS3ClientBuilder
+               .standard()
+               .withRegion(Regions.US_EAST_1)
+               .withCredentials(new DefaultAWSCredentialsProviderChain())
+               .build();
 
       s3clientCrawlerSessions =
-            AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1).withCredentials(new EnvironmentVariableCredentialsProvider()).build();
+            AmazonS3ClientBuilder
+               .standard()
+               .withRegion(Regions.US_EAST_1)
+               .withCredentials(new DefaultAWSCredentialsProviderChain())
+               .build();
    }
 
    /**
