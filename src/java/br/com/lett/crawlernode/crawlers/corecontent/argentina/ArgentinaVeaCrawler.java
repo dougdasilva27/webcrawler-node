@@ -391,8 +391,11 @@ public class ArgentinaVeaCrawler extends Crawler {
 
       JSONArray Descuentos = JSONUtils.getJSONArrayValue(json, "Descuentos");
 
-      for (int i = 2; i < Descuentos.length(); i++) {
-         String firstSales = Descuentos.getJSONObject(i).getString("Subtipo");
+      for (int i = 0; i < Descuentos.length(); i++) {
+         
+         JSONObject firstSalesJson = Descuentos.getJSONObject(i);
+
+         String firstSales = firstSalesJson.get("Subtipo").toString();
 
          if (firstSales != null && !firstSales.isEmpty()) {
             sales.add(firstSales);
