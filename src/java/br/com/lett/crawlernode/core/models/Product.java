@@ -25,25 +25,31 @@ public class Product implements Serializable {
    private String internalPid;
    private String name;
 
-   @Deprecated
+   @Deprecated // Use Offers instead
    private Float price;
 
+   @Deprecated // Use Offers instead
    private Prices prices;
+
+   @Deprecated // Use Offers instead
+   private Marketplace marketplace;
+
+   @Deprecated // Use Offers instead
    private boolean available;
+
+   private Offers offers;
    private String category1;
    private String category2;
    private String category3;
    private String primaryImage;
    private String secondaryImages;
    private String description;
-   private Marketplace marketplace;
+
    private Integer stock;
-   private String ean;
    private List<String> eans;
    private String timestamp;
    private Integer marketId;
    private SkuStatus status;
-   private Offers offers;
    private RatingsReviews ratingReviews;
 
    public Product() {
@@ -201,14 +207,6 @@ public class Product implements Serializable {
       this.prices = prices;
    }
 
-   public String getEan() {
-      return ean;
-   }
-
-   public void setEan(String ean) {
-      this.ean = ean;
-   }
-
    public List<String> getEans() {
       return this.eans;
    }
@@ -323,7 +321,7 @@ public class Product implements Serializable {
             .put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
             .put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
             .put("description", (description != null ? description : JSONObject.NULL)).put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
-            .put("offers", (offers != null ? offers.toString() : Collections.EMPTY_LIST))
+            .put("offers", (offers != null ? offers.toStringDebug() : Collections.EMPTY_LIST))
             .put("timestamp", timestamp)
             .put("rating", (ratingReviews != null ? ratingReviews.toString() : JSONObject.NULL))
             .toString();
@@ -337,20 +335,28 @@ public class Product implements Serializable {
          secondaryImagesArray = new JSONArray();
       }
 
-      return new JSONObject().put("url", (url != null ? url : JSONObject.NULL)).put("internalId", (internalId != null ? internalId : JSONObject.NULL))
-            .put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL)).put("marketId", marketId)
-            .put("name", (name != null ? name : JSONObject.NULL)).put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
-            .put("status", status.toString()).put("available", available)
+      return new JSONObject().put("url", (url != null ? url : JSONObject.NULL))
+            .put("internalId", (internalId != null ? internalId : JSONObject.NULL))
+            .put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL))
+            .put("marketId", marketId)
+            .put("name", (name != null ? name : JSONObject.NULL))
+            .put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
+            .put("status", status.toString())
+            .put("available", available)
             .put("category1", (category1 != null && !category1.isEmpty() ? category1 : JSONObject.NULL))
             .put("category2", (category2 != null && !category2.isEmpty() ? category2 : JSONObject.NULL))
             .put("category3", (category3 != null && !category3.isEmpty() ? category3 : JSONObject.NULL))
-            .put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL)).put("secondaryImages", secondaryImagesArray)
+            .put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL))
+            .put("secondaryImages", secondaryImagesArray)
             .put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
-            .put("offers", (offers != null ? offers.toString() : new JSONArray().toString())).put("stock", (stock != null ? stock : JSONObject.NULL))
+            .put("offers", (offers != null ? offers.toStringToKinseis() : new JSONArray().toString()))
+            .put("stock", (stock != null ? stock : JSONObject.NULL))
             .put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
             .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp)
             // TODO quando rating no crawler (e samir devidamente avisado) estiver pronto, adicionar
             // serializacao para kinesis
             .toString();
    }
+
+
 }

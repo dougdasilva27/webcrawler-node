@@ -1,23 +1,32 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 /**
  * Date: 07/12/2016
@@ -34,6 +43,9 @@ import java.util.TreeMap;
 public class ArgentinaCotoCrawler extends Crawler {
 
    private final String HOME_PAGE = "https://www.cotodigital3.com.ar/";
+   private static final String SELLER_FULL_NAME = "Coto";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ArgentinaCotoCrawler(Session session) {
       super(session);
@@ -56,21 +68,29 @@ public class ArgentinaCotoCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = crawlInternalPid(session.getOriginalURL());
          String name = crawlName(doc);
-         Float price = crawlPrice(doc);
-         Prices prices = crawlPrices(price, doc);
-         boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
          String secondaryImages = crawlSecondaryImages(doc);
          String description = crawlDescription(doc);
          Integer stock = null;
-         Marketplace marketplace = crawlMarketplace();
+         Offers offers = scrapOffer(doc, internalId);
+
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).build();
+         Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setOffers(offers)
+               .build();
 
          products.add(product);
 
@@ -119,34 +139,6 @@ public class ArgentinaCotoCrawler extends Crawler {
       }
 
       return name;
-   }
-
-   private Float crawlPrice(Document document) {
-      Float price = null;
-
-      String priceText = null;
-      Element salePriceElement = document.select(".price_discount").first();
-
-      if (salePriceElement != null) {
-         priceText = salePriceElement.ownText();
-         price = Float.parseFloat(priceText.replaceAll("\\$", "").replaceAll(",", "").trim());
-      } else {
-         salePriceElement = document.select(".atg_store_productPrice .atg_store_newPrice").first();
-         if (salePriceElement != null) {
-            priceText = salePriceElement.ownText();
-            price = Float.parseFloat(priceText.replaceAll("\\$", "").replaceAll(",", "").trim());
-         }
-      }
-
-      return price;
-   }
-
-   private boolean crawlAvailability(Document document) {
-      return !document.select(".add_products :not(.product_not_available)").isEmpty();
-   }
-
-   private Marketplace crawlMarketplace() {
-      return new Marketplace();
    }
 
 
@@ -211,43 +203,90 @@ public class ArgentinaCotoCrawler extends Crawler {
       return description.toString();
    }
 
-   /**
-    * There is no bankSlip price.
-    * 
-    * Some cases has this: 6 x $259.83
-    * 
-    * Only card that was found in this market was the market's own
-    * 
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, Document doc) {
-      Prices prices = new Prices();
+   private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(internalId, doc);
+      List<String> sales = scrapSales(doc);
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
-         Element installments = doc.select(".discount_cuotas_container").first();
+      return offers;
 
-         if (installments != null) {
-            Element installmentElement = installments.select(".quantity_cuota").first();
-            Element priceElement = installments.select(".price_cuota").first();
+   }
 
-            if (installmentElement != null && priceElement != null) {
-               Integer installment = Integer.parseInt(installmentElement.text());
-               Float value = Float.parseFloat(priceElement.text().replaceAll(",", "").replaceAll("\\$", "").trim());
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
 
-               installmentPriceMap.put(installment, value);
-            }
+      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
 
-         }
-
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
       }
 
-      return prices;
+      return sales;
+   }
+
+   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio,.atg_store_newPrice,.atg_store_oldPrice.price_regular", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
+
+
+   }
+
+   private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(doc);
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Element installmentsCard = doc.selectFirst(".info_productPrice .product_discount_pay span");
+
+      if (installmentsCard != null) {
+
+         String installmentString = installmentsCard.text().replaceAll("[^0-9]", "").trim();
+         Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : null;
+         Element valueElement = doc.selectFirst(".info_productPrice .product_discount_pay strong");
+
+         if (valueElement != null && installment != null) {
+            Double value = MathUtils.parseDoubleWithComma(valueElement.text());
+
+            installments.add(InstallmentBuilder.create()
+                  .setInstallmentNumber(installment)
+                  .setInstallmentPrice(value)
+                  .build());
+         }
+      }
+
+      return installments;
    }
 
 }

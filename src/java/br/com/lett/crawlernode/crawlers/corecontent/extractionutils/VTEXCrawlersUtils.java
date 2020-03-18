@@ -723,13 +723,11 @@ public class VTEXCrawlersUtils {
             if (CrawlerUtils.getIntegerValueFromJSON(seller, "AvailableQuantity", 0) > 0) {
 
                String sellerFullName = null;
-               String slugSellerName = null;
                String internalSellerId = null;
                Double mainPrice = null;
 
                if (seller.has("Name")) {
                   sellerFullName = seller.get("Name").toString();
-                  slugSellerName = CrawlerUtils.toSlug(sellerFullName);
                }
 
                if (seller.has("SellerId")) {
@@ -742,7 +740,7 @@ public class VTEXCrawlersUtils {
                }
 
                try {
-                  Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+                  Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
                         .setMainPagePosition(position).setIsBuybox(this.isBuyBox).setMainPrice(mainPrice).build();
 
                   offers.add(offer);

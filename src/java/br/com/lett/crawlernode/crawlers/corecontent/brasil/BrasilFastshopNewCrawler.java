@@ -52,7 +52,7 @@ public class BrasilFastshopNewCrawler {
 
    private static final String SELLER_NAME_LOWER = "fastshop";
 
-   public List<Product> crawlProductsNewWay() {
+   public List<Product> crawlProductsNewWay() throws Exception {
       List<Product> products = new ArrayList<>();
       String internalPid = BrasilFastshopCrawlerUtils.crawlPartnerId(session);
       JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(internalPid, session, cookies, dataFetcher);
@@ -352,12 +352,12 @@ public class BrasilFastshopNewCrawler {
 
             Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(sellerName)).setIsBuybox(false).setMainPagePosition(1)
                   .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(sellerName)
-                  .setSlugSellerName(CommonMethods.toSlug(sellerName)).build();
+                  .build();
             offers.add(offer);
          } else if (apiSku.has("priceOffer")) {
             Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(SELLER_NAME_LOWER)).setIsBuybox(false).setMainPagePosition(1)
                   .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(SELLER_NAME_LOWER)
-                  .setSlugSellerName(CommonMethods.toSlug(SELLER_NAME_LOWER)).build();
+                  .build();
             offers.add(offer);
          }
       } catch (Exception e) {

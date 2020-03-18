@@ -174,7 +174,6 @@ public class BrasilTricaeCrawler extends Crawler {
                   .setMainPagePosition(1)
                   .setSellerFullName(sellerName)
                   .setMainPrice(MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()))
-                  .setSlugSellerName(CrawlerUtils.toSlug(sellerName))
                   .setIsBuybox(false)
                   .build());
          } catch (OfferException e) {

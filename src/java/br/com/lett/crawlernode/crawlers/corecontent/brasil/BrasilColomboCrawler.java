@@ -309,12 +309,10 @@ public class BrasilColomboCrawler extends Crawler {
          Element elementPrice = doc.selectFirst(".label-preco-item");
          Double mainPrice = price.doubleValue();
          String sellerFullName = null;
-         String slugSellerName = null;
          String internalSellerId = null;
 
          if (nameElement != null) {
             sellerFullName = nameElement.text();
-            slugSellerName = CrawlerUtils.toSlug(sellerFullName);
          }
 
          if (sellerIdElement != null) {
@@ -325,7 +323,7 @@ public class BrasilColomboCrawler extends Crawler {
             mainPrice = MathUtils.parseDoubleWithComma(elementPrice.ownText());
          }
 
-         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setSlugSellerName(slugSellerName).setInternalSellerId(internalSellerId)
+         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
                .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
 
          offers.add(offer);

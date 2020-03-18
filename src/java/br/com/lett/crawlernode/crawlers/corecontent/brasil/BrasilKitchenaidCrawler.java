@@ -21,7 +21,7 @@ public class BrasilKitchenaidCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected Product extractProduct(String internalPid, CategoryCollection categories, String description, JSONObject jsonSku) {
+   protected Product extractProduct(String internalPid, CategoryCollection categories, String description, JSONObject jsonSku) throws Exception {
       Product product = super.extractProduct(internalPid, categories, description, jsonSku);
       return product;
    }

@@ -330,7 +330,7 @@ public class BrasilCarrefourCrawler extends Crawler {
                      try {
                         Offer offer = new OfferBuilder().setInternalSellerId(miraklVendor.get("code").toString()).setMainPagePosition(position)
                               .setMainPrice(JSONUtils.getDoubleValueFromJSON(priceJson, "value", true)).setSellerFullName(sellerName)
-                              .setSlugSellerName(CommonMethods.toSlug(sellerName)).setIsBuybox(true).build();
+                              .setIsBuybox(true).build();
                         offers.add(offer);
                      } catch (OfferException e) {
                         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -374,11 +374,9 @@ public class BrasilCarrefourCrawler extends Crawler {
             }
          }
 
-         String slugName = CommonMethods.toSlug(sellerName);
-
          try {
             Offer offer = new OfferBuilder().setInternalSellerId(sellerId).setMainPagePosition(1).setMainPrice(price.doubleValue())
-                  .setSellerFullName(sellerName).setSlugSellerName(slugName).setIsBuybox(false).build();
+                  .setSellerFullName(sellerName).setIsBuybox(false).build();
             offers.add(offer);
          } catch (OfferException e) {
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));

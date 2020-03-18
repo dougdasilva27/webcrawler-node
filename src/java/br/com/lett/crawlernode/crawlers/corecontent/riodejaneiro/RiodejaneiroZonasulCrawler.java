@@ -44,7 +44,8 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) {
+   public List<Product> extractInformation(Document doc) throws Exception {
+
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {

@@ -14,6 +14,23 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
         integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
         crossorigin="anonymous"></script>
+    
+    <script>
+    	function copyFunction() {
+		  /* Get the text field */
+		  var copyText = document.getElementById("offers");
+		
+		  /* Select the text field */
+		  copyText.select();
+		  copyText.setSelectionRange(0, 99999999999); 
+		
+		  /* Copy the text inside the text field */
+		  document.execCommand("copy");
+		
+		  /* Alert the copied text */
+		  alert("Copied the text: " + copyText.value);
+		}
+	</script>
 
 </head>
 
@@ -49,7 +66,7 @@
         </ol>
         <div>
             <h1>{{name}}</h1>
-            <a href="{{url}}">Product Page</a>
+            <a href="{{url}}" target="_blank">Product Page</a>
         </div>
         <div class="row">
             <div class="col-md-6">
@@ -230,27 +247,12 @@
         </div>
         <div class="row">
             <h3> Offers </h3>
-            <table class="table">
-                {{#offers}}
-                <tr class="col-md-4">
-                    <td style="text-align:center; vertical-align:middle;">{{key}}</td>
-                    <td>
-                        <table class="table">
-                            {{#value}}
-                            <tr>
-                                <td> {{key}} </td>
-                                <td>
-                                    {{#value}}
-                                    <label>{{value}}</label>
-                                    {{/value}}
-                                </td>
-                            </tr>
-                            {{/value}}
-                        </table>
-                    </td>
-                </tr>
-                {{/offers}}
-            </table>
+            <textarea id="offers" cols="50">
+           		{{offers}}
+           	</textarea>
+           	<button onclick="copyFunction()">Copy offers</button>
+           	<a href="http://json.parser.online.fr/" target="_blank"> Go to JSON PARSER </a>
+           	<br>
         </div>
     </div>
 </body>
