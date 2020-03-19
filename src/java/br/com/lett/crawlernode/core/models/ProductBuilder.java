@@ -183,6 +183,10 @@ public class ProductBuilder {
                   this.prices = new Prices(pricing);
                   this.price = pricing.getSpotlightPrice().floatValue();
                } else {
+                  if (this.marketplace == null) {
+                     this.marketplace = new Marketplace();
+                  }
+
                   this.marketplace.add(new Seller(offer));
                }
             }
