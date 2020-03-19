@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,6 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -21,20 +22,26 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilFastshopCrawlerUtils;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
 import models.Marketplace;
-import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilFastshopNewCrawler {
 
@@ -51,12 +58,13 @@ public class BrasilFastshopNewCrawler {
    }
 
    private static final String SELLER_NAME_LOWER = "fastshop";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public List<Product> crawlProductsNewWay() throws Exception {
       List<Product> products = new ArrayList<>();
       String internalPid = BrasilFastshopCrawlerUtils.crawlPartnerId(session);
       JSONObject productAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(internalPid, session, cookies, dataFetcher);
-
       if (productAPIJSON.length() > 0) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -89,20 +97,25 @@ public class BrasilFastshopNewCrawler {
             boolean pageAvailability = crawlAvailability(skuAPIJSON);
             JSONObject jsonPrices =
                   pageAvailability ? BrasilFastshopCrawlerUtils.fetchPrices(internalPid, true, session, logger, dataFetcher) : new JSONObject();
-
-            Map<String, Prices> marketplaceMap = pageAvailability ? crawlMarketplace(skuAPIJSON, jsonPrices) : new HashMap<>();
-            Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
-            boolean available = marketplaceMap.containsKey(SELLER_NAME_LOWER);
-            Prices prices = available ? marketplaceMap.get(SELLER_NAME_LOWER) : new Prices();
-            Float price = crawlMainPagePrice(prices);
-            Offers offers = available || !marketplace.isEmpty() ? scrapOffers(skuAPIJSON) : new Offers();
+            Offers offers = scrapOffers(jsonPrices, internalPid);
             RatingsReviews ratingReviews = crawlRatingReviews(internalPid);
 
             // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages)
-                  .setDescription(description.toString()).setStock(stock).setMarketplace(marketplace).setRatingReviews(ratingReviews).setOffers(offers).build();
+            Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description.toString())
+                  .setStock(stock)
+                  .setRatingReviews(ratingReviews)
+                  .setOffers(offers)
+                  .build();
 
             products.add(product);
          }
@@ -194,8 +207,6 @@ public class BrasilFastshopNewCrawler {
 
    private RatingsReviews crawlRatingReviews(String partnerId) {
       RatingsReviews ratingReviews = new RatingsReviews();
-      Integer count = 0;
-      Integer ratingValue = 0;
 
       ratingReviews.setDate(session.getDate());
 
@@ -205,7 +216,6 @@ public class BrasilFastshopNewCrawler {
       Request request = RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
       JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
       JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, partnerId);
-      System.err.println(reviewStatistics);
       AdvancedRatingReview advRating = scrapAdvancedRatingReview(reviewStatistics);
       Integer total = getTotalReviewCount(ratingReviewsEndpointResponse);
 
@@ -329,64 +339,6 @@ public class BrasilFastshopNewCrawler {
       return new JSONObject();
    }
 
-   private Map<String, Prices> crawlMarketplace(JSONObject apiSku, JSONObject jsonPrices) {
-      Map<String, Prices> marketplace = new HashMap<>();
-
-      Prices prices = crawlPrices(jsonPrices, apiSku);
-
-      if (apiSku.has("marketPlace") && apiSku.getBoolean("marketPlace") && apiSku.has("marketPlaceText")) {
-         marketplace.put(apiSku.getString("marketPlaceText").toLowerCase(), prices);
-      } else {
-         marketplace.put(SELLER_NAME_LOWER, prices);
-      }
-
-      return marketplace;
-   }
-
-   private Offers scrapOffers(JSONObject apiSku) {
-      Offers offers = new Offers();
-
-      try {
-         if (apiSku.has("marketPlace") && apiSku.getBoolean("marketPlace") && apiSku.has("marketPlaceText") && apiSku.has("priceOffer")) {
-            String sellerName = apiSku.get("marketPlaceText").toString();
-
-            Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(sellerName)).setIsBuybox(false).setMainPagePosition(1)
-                  .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(sellerName)
-                  .build();
-            offers.add(offer);
-         } else if (apiSku.has("priceOffer")) {
-            Offer offer = new OfferBuilder().setInternalSellerId(CommonMethods.toSlug(SELLER_NAME_LOWER)).setIsBuybox(false).setMainPagePosition(1)
-                  .setMainPrice(CrawlerUtils.getDoubleValueFromJSON(apiSku, "priceOffer")).setSellerFullName(SELLER_NAME_LOWER)
-                  .build();
-            offers.add(offer);
-         }
-      } catch (Exception e) {
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      return offers;
-   }
-
-
-   /**
-    * Price "de"
-    * 
-    * @param jsonSku
-    * @return
-    */
-   private Double crawlPriceFrom(JSONObject jsonSku) {
-      Double priceFrom = null;
-
-      if (jsonSku.has("priceTag")) {
-         String price = jsonSku.get("priceTag").toString().replaceAll("[^0-9.]", "");
-
-         if (!price.isEmpty()) {
-            priceFrom = Double.parseDouble(price);
-         }
-      }
-
-      return priceFrom;
-   }
 
    private boolean crawlAvailability(JSONObject json) {
       if (json.has("buyable")) {
@@ -472,59 +424,93 @@ public class BrasilFastshopNewCrawler {
       return description;
    }
 
-   private Prices crawlPrices(JSONObject jsonPrices, JSONObject jsonSku) {
-      Prices prices = new Prices();
+   // new model of offers
 
-      prices.setPriceFrom(crawlPriceFrom(jsonSku));
+   private Offers scrapOffers(JSONObject jsonPrice, String internalPid) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(jsonPrice, internalPid);
+      List<String> sales = new ArrayList<>(); // When this new offer model was implemented, no sales was found
 
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_NAME_LOWER)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
-      if (jsonPrices.has("promotionData")) {
-         JSONArray promotionData = jsonPrices.getJSONArray("promotionData");
-         for (Object object : promotionData) {
-            JSONObject jsonPromotionData = (JSONObject) object;
-            if (jsonPromotionData.has("price")) {
-               prices.setBankTicketPrice(CrawlerUtils.getFloatValueFromJSON(jsonPromotionData, "price"));
-            }
-         }
-
-      }
-
-      if (jsonPrices.has("priceData")) {
-         JSONObject priceData = jsonPrices.getJSONObject("priceData");
-
-         if (priceData.has("offerPrice")) {
-            Float offerPrice = MathUtils.parseFloatWithComma(priceData.getString("offerPrice"));
-
-            // Preço de boleto e 1 vez no cartão são iguais.
-            installmentPriceMap.put(1, offerPrice);
-
-            if (prices.getBankTicketPrice() == null) {
-               prices.setBankTicketPrice(offerPrice);
-            }
-         }
-
-         if (priceData.has("installmentPrice")) {
-            String text = priceData.getString("installmentPrice").toLowerCase();
-
-            if (text.contains("x")) {
-               int x = text.indexOf('x');
-
-               Integer installment = Integer.parseInt(text.substring(0, x));
-               Float value = MathUtils.parseFloatWithComma(text.substring(x));
-
-               installmentPriceMap.put(installment, value);
-            }
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      }
-
-      return prices;
+      return offers;
    }
+
+   private Pricing scrapPricing(JSONObject jsonPrices, String internalPid) throws MalformedPricingException {
+      Double priceFrom = scrapPriceFrom(internalPid);
+      Double spotlightPrice = spotlightPrice(internalPid);
+      CreditCards creditcards = scrapcreditCards(jsonPrices, internalPid);
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditcards)
+            .build();
+   }
+
+
+   private Double scrapPriceFrom(String internalPid) {
+      Double priceFrom = 0d;
+      JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalPid, true, session, logger, dataFetcher);
+      JSONObject jsonPriceFrom = JSONUtils.getJSONValue(jsonPrices, "priceData");
+      priceFrom = jsonPriceFrom.has("offerPriceValue") ? jsonPriceFrom.getDouble("offerPriceValue") : 0d;
+      return priceFrom;
+   }
+
+
+   private Double spotlightPrice(String internalPid) {
+      Double spotlightPrice = 0d;
+      JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalPid, true, session, logger, dataFetcher);
+      JSONArray jsonspotlightPrice = jsonPrices.getJSONArray("promotionData");
+      spotlightPrice = jsonspotlightPrice.getJSONObject(0).getDouble("price");
+      return spotlightPrice;
+   }
+
+   private CreditCards scrapcreditCards(JSONObject jsonPrice, String internalPid) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = scrapInstallment(internalPid);
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+   }
+
+   private Installments scrapInstallment(String internalPid) throws MalformedPricingException {
+      Installments installments = new Installments();
+      JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalPid, true, session, logger, dataFetcher);
+      JSONObject priceData = JSONUtils.getJSONValue(jsonPrices, "priceData");
+
+      if (priceData.has("installmentPrice")) {
+         String text = priceData.getString("installmentPrice").toLowerCase();
+
+         if (text.contains("x")) {
+            int x = text.indexOf('x');
+
+            Integer installment = Integer.parseInt(text.substring(0, x));
+            Double value = MathUtils.parseDoubleWithComma(text.substring(x));
+
+            installments.add(InstallmentBuilder.create()
+                  .setInstallmentNumber(installment)
+                  .setInstallmentPrice(value)
+                  .build());
+         }
+      }
+
+      return installments;
+   }
+
 }
