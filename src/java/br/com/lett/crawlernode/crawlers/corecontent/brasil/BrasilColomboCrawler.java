@@ -5,27 +5,33 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilColomboCrawler extends Crawler {
 
@@ -33,6 +39,8 @@ public class BrasilColomboCrawler extends Crawler {
    private static final String IMAGE_HOST = "images.colombo.com.br";
 
    private static final String SELLER_NAME_LOWER = "colombo";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilColomboCrawler(Session session) {
       super(session);
@@ -54,28 +62,16 @@ public class BrasilColomboCrawler extends Crawler {
 
          Elements variations = doc.select(".dados-itens-table tr[data-item]");
 
-
          for (Element sku : variations) {
             String internalId = sku.attr("data-item");
             String internalPid = scrapInternalPid(doc);
             String name = scrapVariationName(doc, "h1.nome-produto", sku);
-            Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".parcelas-produto-table .parcelas-produto-table-valor", null, false, ',', session);
-            Prices prices = crawlPrices(doc, price);
-            boolean available = doc.selectFirst("#dados-produto-indisponivel.avisoIndisponivel:not(.hide)") == null;
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", true);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "li.js_slide picture img", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST, primaryImage);
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#produto-descricao", "#produto-caracteristicas"));
-            Offers offers = available ? scrapBuyBox(doc, price) : new Offers();
+            Offers offers = scrapOffers(doc);
             RatingsReviews ratingsReviews = scrapRatingReviews(doc);
-
-            // Marketplace logic
-            Marketplace marketplace = available ? scrapMarketplace(sku, prices) : new Marketplace();
-            if (!marketplace.isEmpty() || !available) {
-               price = null;
-               prices = new Prices();
-               available = false;
-            }
 
             // Stuff that were not on site when crawler was made
             Integer stock = null;
@@ -87,9 +83,6 @@ public class BrasilColomboCrawler extends Crawler {
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
@@ -97,7 +90,6 @@ public class BrasilColomboCrawler extends Crawler {
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
                   .setStock(stock)
-                  .setMarketplace(marketplace)
                   .setRatingReviews(ratingsReviews)
                   .setOffers(offers)
                   .setEans(eans)
@@ -153,50 +145,6 @@ public class BrasilColomboCrawler extends Crawler {
       return variationName.toString();
    }
 
-   private Prices crawlPrices(Document doc, Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
-         installmentPriceMap.put(1, price);
-
-         Element bankPrice = doc.selectFirst(".dados-preco-valor");
-
-         if (bankPrice != null) {
-            Float bankTicketPrice = Float.parseFloat(bankPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replace(",", ".").trim());
-            prices.setBankTicketPrice(bankTicketPrice);
-         }
-
-         Elements parcelas = doc.select(".detalhe-produto-dados__dados-comprar .parcelas-produto-table tr");
-
-         for (Element e : parcelas) {
-            Element index = e.select(".parcelas-produto-table-index").first();
-
-            if (index != null) {
-               Integer installment = Integer.parseInt(index.text().replaceAll("[^0-9]", "").trim());
-
-               Element valor = e.select(".parcelas-produto-table-valor").first();
-
-               if (valor != null) {
-                  Float value = Float.parseFloat(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replace(",", ".").trim());
-
-                  installmentPriceMap.put(installment, value);
-               }
-            }
-
-            prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-            prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
-         }
-      }
-
-      return prices;
-   }
 
    private RatingsReviews scrapRatingReviews(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
@@ -285,53 +233,85 @@ public class BrasilColomboCrawler extends Crawler {
             .build();
    }
 
-
-   private Marketplace scrapMarketplace(Element variation, Prices prices) {
-      Marketplace marketplace = new Marketplace();
-      Element sellerElement = variation.selectFirst(".dados-itens-table-estoque .btn-show-info-seller");
-
-      if (sellerElement != null && !sellerElement.ownText().isEmpty() && !sellerElement.ownText().equalsIgnoreCase(SELLER_NAME_LOWER)) {
-         Map<String, Prices> priceMap = new HashMap<>();
-         priceMap.put(sellerElement.ownText().toLowerCase().trim(), prices);
-
-         marketplace = CrawlerUtils.assembleMarketplaceFromMap(priceMap, Arrays.asList(SELLER_NAME_LOWER), Card.VISA, session);
-      }
-
-      return marketplace;
-   }
-
-   private Offers scrapBuyBox(Element doc, Float price) {
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = new ArrayList<>(); // When this new offer model was implemented, no sales was found
 
-      try {
-         Element nameElement = doc.selectFirst(".dados-itens-table-estoque .label-linha-item .btn-show-info-seller");
-         Element sellerIdElement = doc.selectFirst("input[name=codigoSeller]");
-         Element elementPrice = doc.selectFirst(".label-preco-item");
-         Double mainPrice = price.doubleValue();
-         String sellerFullName = null;
-         String internalSellerId = null;
-
-         if (nameElement != null) {
-            sellerFullName = nameElement.text();
-         }
-
-         if (sellerIdElement != null) {
-            internalSellerId = sellerIdElement.attr("value");
-         }
-
-         if (elementPrice != null) {
-            mainPrice = MathUtils.parseDoubleWithComma(elementPrice.ownText());
-         }
-
-         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
-               .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).build();
-
-         offers.add(offer);
-
-      } catch (OfferException e) {
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_NAME_LOWER)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
       return offers;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".parcelas-produto-table .parcelas-produto-table-valor", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".parcelas-produto-table .parcelas-produto-table-valor", null, false, ',', session);
+      BankSlip bankSlip = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
+      CreditCards creditCards = scrapCreditcards(doc, spotlightPrice);
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setBankSlip(bankSlip)
+            .setCreditCards(creditCards)
+            .build();
+
+   }
+
+   private CreditCards scrapCreditcards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(doc, spotlightPrice);
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Map<Integer, Double> installmentPriceMap = new HashMap<>();
+
+      installmentPriceMap.put(1, spotlightPrice);
+      Elements parcelas = doc.select(".detalhe-produto-dados__dados-comprar .parcelas-produto-table tr");
+
+      for (Element e : parcelas) {
+         Element index = e.select(".parcelas-produto-table-index").first();
+
+         if (index != null) {
+            Integer installment = Integer.parseInt(index.text().replaceAll("[^0-9]", "").trim());
+
+            Element valor = e.select(".parcelas-produto-table-valor").first();
+
+            if (valor != null) {
+               Double value = Double.parseDouble(valor.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replace(",", ".").trim());
+
+               installments.add(InstallmentBuilder.create()
+                     .setInstallmentNumber(installment)
+                     .setInstallmentPrice(value)
+                     .build());
+            }
+         }
+
+      }
+
+      return installments;
    }
 }
