@@ -8,65 +8,124 @@ import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 
  * @author Samir Leao
+ *
  */
 public class Test {
 
-	public static final String INSIGHTS_TEST = "insights";
-	public static final String RATING_TEST = "rating";
-	public static final String IMAGES_TEST = "images";
-	public static final String KEYWORDS_TEST = "keywords";
-	public static final String CATEGORIES_TEST = "categories";
-	private static String market;
-	private static String city;
-	public static String pathWrite;
-	public static String testType;
-	public static String phantomjsPath;
+   public static final String INSIGHTS_TEST = "insights";
+   public static final String RATING_TEST = "rating";
+   public static final String IMAGES_TEST = "images";
+   public static final String KEYWORDS_TEST = "keywords";
+   public static final String CATEGORIES_TEST = "categories";
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Test.class);
+   private static Options options;
 
-	public static void main(String[] args) {
-		Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
+   private static String market;
+   private static String city;
+   public static String pathWrite;
+   public static String testType;
+   public static String phantomjsPath;
 
-		GlobalConfigurations.setConfigurations();
-		Test.market = "arcomix";
-		Test.city = "recife";
-		Test.testType = "insights";
-		Test.pathWrite = "/home/charl3ff/htmls/";
-		Test.phantomjsPath = "/home/charles/workspace/phantomjs-2.1.1/bin/phantomjs";
+   private static final Logger LOGGER = LoggerFactory.getLogger(Test.class);
 
-		Market market = fetchMarket();
+   public static void main(String args[]) {
+      Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
-		if (market != null) {
-			Session session;
+      // setting global configuraions
+      GlobalConfigurations.setConfigurations();
 
-			if (testType.equals(KEYWORDS_TEST)) {
-				session = SessionFactory.createTestRankingKeywordsSession("leite moça", market);
-			} else if (testType.equals(CATEGORIES_TEST)) {
-				session = SessionFactory.createTestRankingCategoriesSession(
-						"https://www.farmacity.com/panal-huggies-hiperpack-natural-care-ellas/p",
-						market, "leite");
-			} else {
-				session = SessionFactory
-						.createTestSession(
-								"https://arcomix.com.br/produto/2437/leite-em-po-nestle-ninho-instantaneo-sache-800g",
-								market);
-			}
+      // adding command line options
+      options = new Options();
+      options.addOption("market", true, "Market name");
+      options.addOption("city", true, "City name");
+      options.addOption("pathwrite", true, "Path that product html goes");
+      options.addOption("testType", true, "Test type [insights, rating, images]");
+      options.addOption("phantomjsPath", true, "phantonjs");
 
-			Task task = TaskFactory.createTask(session);
+      // parsing command line options
+      CommandLineParser parser = new DefaultParser();
+      CommandLine cmd = null;
+      try {
+         cmd = parser.parse(options, args);
+      } catch (ParseException e) {
+         e.printStackTrace();
+      }
 
-			task.process();
-		} else {
-			System.err.println("Market não encontrado no banco!");
-		}
-	}
+      // getting command line options
+      if (cmd.hasOption("city"))
+         city = cmd.getOptionValue("city");
+      else {
+         help();
+      }
 
-	private static Market fetchMarket() {
-		DatabaseDataFetcher fetcher = new DatabaseDataFetcher(GlobalConfigurations.dbManager);
-		return fetcher.fetchMarket(city, market);
-	}
+      if (cmd.hasOption("market"))
+         market = cmd.getOptionValue("market");
+      else {
+         help();
+      }
+
+      if (cmd.hasOption("pathwrite"))
+         pathWrite = cmd.getOptionValue("pathwrite");
+      else {
+         pathWrite = null;
+      }
+
+      if (cmd.hasOption("testType"))
+         testType = cmd.getOptionValue("testType");
+      else {
+         help();
+      }
+
+      if (cmd.hasOption("phantomjsPath"))
+         phantomjsPath = cmd.getOptionValue("phantomjsPath");
+
+      // fetch market information
+      Market market = fetchMarket();
+
+      if (market != null) {
+
+         // create a task executor
+         // for testing we use 1 thread, there is no need for more
+         // taskExecutor = new TaskExecutor(1, 1);
+
+         Session session;
+
+         if (testType.equals(KEYWORDS_TEST)) {
+            session = SessionFactory.createTestRankingKeywordsSession("lavadora", market);
+         } else if (testType.equals(CATEGORIES_TEST)) {
+            session = SessionFactory.createTestRankingCategoriesSession(
+                  "https://produto.mercadolivre.com.br/MLB-1225997122-capsula-de-cafe-espresso-melitta-staccato-10-unidades-_JM",
+                  market, "Aparelhos");
+         } else {
+            session = SessionFactory
+                  .createTestSession(
+                        "https://www.zonasul.com.br/leite-longa-vida-integral-ninho-forti-mais-tetra-pak-1-l/49040/p",
+                        market);
+         }
+
+         Task task = TaskFactory.createTask(session);
+
+         task.process();
+      } else {
+         System.err.println("Market não encontrado no banco!");
+      }
+   }
+
+   private static Market fetchMarket() {
+      DatabaseDataFetcher fetcher = new DatabaseDataFetcher(GlobalConfigurations.dbManager);
+      return fetcher.fetchMarket(city, market);
+   }
+
+   private static void help() {
+      new HelpFormatter().printHelp("Main", options);
+      System.exit(0);
+   }
+
 }
