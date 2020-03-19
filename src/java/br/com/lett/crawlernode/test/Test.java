@@ -1,5 +1,13 @@
 package br.com.lett.crawlernode.test;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
@@ -8,9 +16,6 @@ import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.Logging;
-import org.apache.commons.cli.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -98,7 +103,7 @@ public class Test {
          Session session;
 
          if (testType.equals(KEYWORDS_TEST)) {
-            session = SessionFactory.createTestRankingKeywordsSession("lavadora", market);
+            session = SessionFactory.createTestRankingKeywordsSession("jugo ", market);
          } else if (testType.equals(CATEGORIES_TEST)) {
             session = SessionFactory.createTestRankingCategoriesSession(
                   "https://produto.mercadolivre.com.br/MLB-1225997122-capsula-de-cafe-espresso-melitta-staccato-10-unidades-_JM",
@@ -106,7 +111,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.zonasul.com.br/leite-longa-vida-integral-ninho-forti-mais-tetra-pak-1-l/49040/p",
+                        "https://www.carrefour.com.br/Kit-de-Fraldas-Huggies-Hiper-Supreme-Care-XXG-156-Unidades/p/B2-3-5029520",
                         market);
          }
 
