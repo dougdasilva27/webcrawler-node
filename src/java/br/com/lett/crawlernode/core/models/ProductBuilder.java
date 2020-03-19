@@ -175,19 +175,16 @@ public class ProductBuilder {
       product.setOffers(this.offers);
 
       if (this.offers != null) {
-         this.available = false;
-         this.prices = new Prices();
-         this.marketplace = new Marketplace();
-         this.price = null;
-
          for (Offer offer : this.offers.getOffersList()) {
-            if (offer.getIsMainRetailer()) {
-               Pricing pricing = offer.getPricing();
-               this.available = true;
-               this.prices = new Prices(pricing);
-               this.price = pricing.getSpotlightPrice().floatValue();
-            } else {
-               this.marketplace.add(new Seller(offer));
+            if (offer.getPricing() != null) {
+               if (offer.getIsMainRetailer()) {
+                  Pricing pricing = offer.getPricing();
+                  this.available = true;
+                  this.prices = new Prices(pricing);
+                  this.price = pricing.getSpotlightPrice().floatValue();
+               } else {
+                  this.marketplace.add(new Seller(offer));
+               }
             }
          }
       }
