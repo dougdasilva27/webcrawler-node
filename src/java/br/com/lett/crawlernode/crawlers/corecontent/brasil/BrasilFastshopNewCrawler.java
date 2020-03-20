@@ -461,7 +461,7 @@ public class BrasilFastshopNewCrawler {
       Double priceFrom = 0d;
       JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalPid, true, session, logger, dataFetcher);
       JSONObject jsonPriceFrom = JSONUtils.getJSONValue(jsonPrices, "priceData");
-      priceFrom = jsonPriceFrom.has("offerPriceValue") ? jsonPriceFrom.getDouble("offerPriceValue") : 0d;
+      priceFrom = jsonPriceFrom.optDouble("offerPriceValue", 0d);
       return priceFrom;
    }
 
@@ -470,7 +470,7 @@ public class BrasilFastshopNewCrawler {
       Double spotlightPrice = 0d;
       JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalPid, true, session, logger, dataFetcher);
       JSONArray jsonspotlightPrice = jsonPrices.getJSONArray("promotionData");
-      spotlightPrice = jsonspotlightPrice.getJSONObject(0).optDouble("price");
+      spotlightPrice = jsonspotlightPrice.optJSONObject(0).optDouble("price", 0d);
       return spotlightPrice;
    }
 
