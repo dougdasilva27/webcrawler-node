@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -48,7 +49,7 @@ public class PortoalegreBichopetstoreCrawler extends Crawler {
          String internalId = internalPid;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#content .row > div > h1", true);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#otp-price > li", null, false, ',', session);
-         Prices prices = null;
+         Prices prices = scrapPrices(doc, price);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".container > .breadcrumb > li:not(:last-child) > a", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumbnails > li.image-additional > a.thumbnail",
                Arrays.asList("href"), "https:", HOME_PAGE);
@@ -157,6 +158,24 @@ public class PortoalegreBichopetstoreCrawler extends Crawler {
          prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
          prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
          prices.insertCardInstallment(Card.MAESTRO.toString(), installmentPriceMap);
+      }
+
+      return prices;
+   }
+
+   private Prices scrapPrices(Document doc, Float price) {
+      Prices prices = new Prices();
+
+      if (price != null) {
+         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+         installmentPriceMap.put(1, price);
+         prices.setBankTicketPrice(price);
+
+         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
+         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
       }
 
       return prices;
