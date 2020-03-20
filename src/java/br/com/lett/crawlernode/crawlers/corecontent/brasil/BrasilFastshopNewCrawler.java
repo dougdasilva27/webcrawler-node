@@ -470,7 +470,7 @@ public class BrasilFastshopNewCrawler {
       Double spotlightPrice = 0d;
       JSONObject jsonPrices = BrasilFastshopCrawlerUtils.fetchPrices(internalPid, true, session, logger, dataFetcher);
       JSONArray jsonspotlightPrice = jsonPrices.getJSONArray("promotionData");
-      spotlightPrice = jsonspotlightPrice.getJSONObject(0).getDouble("price");
+      spotlightPrice = jsonspotlightPrice.getJSONObject(0).optDouble("price");
       return spotlightPrice;
    }
 
