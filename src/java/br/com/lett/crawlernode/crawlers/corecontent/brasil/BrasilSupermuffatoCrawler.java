@@ -26,8 +26,8 @@ import models.prices.Prices;
 
 public class BrasilSupermuffatoCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://delivery.supermuffato.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "super muffato delivery";
+   private static final String HOME_PAGE = "https://www.supermuffato.com.br/";
+   private static final String MAIN_SELLER_NAME_LOWER = "Super Muffato Eletro";
 
    public BrasilSupermuffatoCrawler(Session session) {
       super(session);
