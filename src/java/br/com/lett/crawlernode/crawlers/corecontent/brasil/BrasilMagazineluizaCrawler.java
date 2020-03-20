@@ -161,8 +161,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
             mainPrice = MathUtils.parseDoubleWithDot(priceInfo.attr("content"));
          }
 
-         Offer offer = new OfferBuilder().setSellerFullName(sellerFullName).setInternalSellerId(internalSellerId)
-               .setMainPagePosition(1).setIsBuybox(false).setMainPrice(mainPrice).setUseSlugNameAsInternalSellerId(true).build();
+         Offer offer = new OfferBuilder()
+               .setSellerFullName(sellerFullName)
+               .setMainPagePosition(1)
+               .setIsBuybox(false)
+               .setMainPrice(mainPrice)
+               .setUseSlugNameAsInternalSellerId(true)
+               .build();
+
          offers.add(offer);
       } catch (OfferException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
