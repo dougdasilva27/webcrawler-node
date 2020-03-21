@@ -476,8 +476,6 @@ public abstract class CNOVACrawler extends Crawler {
       Set<String> allCards = new HashSet<String>(this.cards);
       allCards.add(Card.SHOP_CARD.toString());
 
-      System.err.println(allCards);
-
       for (String brand : allCards) {
          creditCards.add(CreditCardBuilder.create()
                .setBrand(brand)
@@ -518,7 +516,7 @@ public abstract class CNOVACrawler extends Crawler {
       Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".PaymentDiscount .DiscountCondition", null, true, ',', session);
       Double discount = percentage != null ? percentage / 100d : 0d;
 
-      CreditCards creditCards = scrapCreditCardsFromProductPage(doc, discount);
+      CreditCards creditCards = scrapCreditCardsFromProductPage(doc, discount, spotlightPrice);
       BankSlip bankSlip = scrapBankslip(doc, spotlightPrice, discount);
 
       return PricingBuilder.create()
@@ -549,10 +547,16 @@ public abstract class CNOVACrawler extends Crawler {
             .build();
    }
 
-   private CreditCards scrapCreditCardsFromProductPage(Document doc, Double discount) throws MalformedPricingException {
+   private CreditCards scrapCreditCardsFromProductPage(Document doc, Double discount, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments regularCard = scrapInstallments(doc, ".tabsCont #tab01 tr", discount);
+      if (regularCard.getInstallments().isEmpty()) {
+         regularCard.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
