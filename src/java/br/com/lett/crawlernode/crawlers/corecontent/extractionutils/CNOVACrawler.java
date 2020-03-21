@@ -476,6 +476,8 @@ public abstract class CNOVACrawler extends Crawler {
       Set<String> allCards = new HashSet<String>(this.cards);
       allCards.add(Card.SHOP_CARD.toString());
 
+      System.err.println(allCards);
+
       for (String brand : allCards) {
          creditCards.add(CreditCardBuilder.create()
                .setBrand(brand)
@@ -561,6 +563,11 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       Installments shopCard = scrapInstallments(doc, ".tabsCont #tab02 tr", discount);
+
+      if (shopCard.getInstallments().isEmpty()) {
+         shopCard = regularCard;
+      }
+
       creditCards.add(CreditCardBuilder.create()
             .setBrand(Card.SHOP_CARD.toString())
             .setIsShopCard(true)
@@ -577,12 +584,9 @@ public abstract class CNOVACrawler extends Crawler {
 
       Elements installmentsElements = doc.select(selector);
       for (Element e : installmentsElements) {
-         String id = e.id();
-         if (!id.contains("CartaoFlex")) {
-            Element installmentElement = e.selectFirst("> th");
-            if (installmentElement != null) {
-               installments.add(scrapInstallment(e, maxInstallmentsWithDiscount, discount));
-            }
+         Element installmentElement = e.selectFirst("> th");
+         if (installmentElement != null) {
+            installments.add(scrapInstallment(e, maxInstallmentsWithDiscount, discount));
          }
       }
 
