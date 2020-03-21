@@ -190,7 +190,7 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .regular-price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .precio-regular-productos-destacados, .price-info .regular-price", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
