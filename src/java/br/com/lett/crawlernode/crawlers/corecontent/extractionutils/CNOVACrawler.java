@@ -550,7 +550,7 @@ public abstract class CNOVACrawler extends Crawler {
    private CreditCards scrapCreditCardsFromProductPage(Document doc, Double discount, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments regularCard = scrapInstallments(doc, ".tabsCont #tab01 tr", discount);
+      Installments regularCard = scrapInstallments(doc, ".tabsCont #tab01 tr:not(.first)", discount);
       if (regularCard.getInstallments().isEmpty()) {
          regularCard.add(InstallmentBuilder.create()
                .setInstallmentNumber(1)
@@ -566,7 +566,7 @@ public abstract class CNOVACrawler extends Crawler {
                .build());
       }
 
-      Installments shopCard = scrapInstallments(doc, ".tabsCont #tab02 tr", discount);
+      Installments shopCard = scrapInstallments(doc, ".tabsCont #tab02 tr:not(.first)", discount);
 
       if (shopCard.getInstallments().isEmpty()) {
          shopCard = regularCard;
