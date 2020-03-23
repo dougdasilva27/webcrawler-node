@@ -3,12 +3,12 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.MexicoCornershopCrawler;
 
-public class MexicoCornershophebhumbertoloboCrawler extends MexicoCornershopCrawler {
+public class MexicoCornershoplacomerciudadmexicoCrawler extends MexicoCornershopCrawler {
 
-   public static final String STORE_ID = br.com.lett.crawlernode.crawlers.corecontent.mexico.MexicoCornershophebhumbertoloboCrawler.STORE_ID;
-   public static final String PRODUCT_STORE_ID = "25";
+   public static final String STORE_ID = br.com.lett.crawlernode.crawlers.corecontent.mexico.MexicoCornershoplacomerciudadmexicoCrawler.STORE_ID;
+   public static final String PRODUCT_STORE_ID = "1423";
 
-   public MexicoCornershophebhumbertoloboCrawler(Session session) {
+   public MexicoCornershoplacomerciudadmexicoCrawler(Session session) {
       super(session);
    }
 

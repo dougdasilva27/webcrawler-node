@@ -3,13 +3,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CornershopCrawler;
 
-public class MexicoCornershophebhumbertoloboCrawler extends CornershopCrawler {
+public class MexicoCornershopwalmartguadalajaraCrawler extends CornershopCrawler {
 
-   public MexicoCornershophebhumbertoloboCrawler(Session session) {
+   public MexicoCornershopwalmartguadalajaraCrawler(Session session) {
       super(session);
    }
 
-   public static final String STORE_ID = "199";
+   public static final String STORE_ID = "365";
 
    @Override
    protected String getStoreId() {
