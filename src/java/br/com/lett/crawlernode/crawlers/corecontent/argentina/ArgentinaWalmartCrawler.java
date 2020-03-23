@@ -232,11 +232,13 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuListPrice", null, false, ',', session);
+      Double priceFromcheck = priceFrom > 0.0 ? priceFrom : null; // this was necessary becouse the website have some products who doesn't have priceFrom and field
+                                                                  // price_from cannot have this value -> 0.0
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuBestPrice", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(internalId, spotlightPrice);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
+            .setPriceFrom(priceFromcheck)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
             .build();
