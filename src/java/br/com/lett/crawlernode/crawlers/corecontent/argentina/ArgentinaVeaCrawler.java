@@ -341,7 +341,7 @@ public class ArgentinaVeaCrawler extends Crawler {
 
       JSONArray descuentos = JSONUtils.getJSONArrayValue(json, "Descuentos");
       if (descuentos.optJSONObject(0) != null) {
-         String firstSales = descuentos.getJSONObject(0).optString("Subtipo");
+         String firstSales = descuentos.getJSONObject(0).getString("Subtipo");
          /*
           * We have to getJSONObject(0) because the JSONArray descuentos count a list of promotions but we
           * only need the first one which is the promotion that appears on the website
