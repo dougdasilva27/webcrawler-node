@@ -80,7 +80,9 @@ public class ArgentinaDiscoCrawler extends Crawler {
 			String primaryImage = crawlPrimaryImage(apiJson);
 			String secondaryImages = crawlSecondaryImages();
 			String description = crawlDescription(internalId);
-			Offers offers = scrapOffer(apiJson);
+			boolean availableToBuy = stock != null && stock > 0;
+			Offers offers = availableToBuy ? scrapOffer(apiJson) : new Offers();
+
 
 			// Creating the product
 			Product product = ProductBuilder.create()
