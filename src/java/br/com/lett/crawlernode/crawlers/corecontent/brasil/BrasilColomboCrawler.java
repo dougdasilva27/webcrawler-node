@@ -70,7 +70,8 @@ public class BrasilColomboCrawler extends Crawler {
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "li.js_slide picture img", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST, primaryImage);
             String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#produto-descricao", "#produto-caracteristicas"));
-            Offers offers = scrapOffers(doc);
+            boolean availableToBuy = doc.selectFirst(".dados-produto-botoes [value=adicionarCesta]") != null;
+            Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
             RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
             // Stuff that were not on site when crawler was made

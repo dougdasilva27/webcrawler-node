@@ -73,7 +73,8 @@ public class ArgentinaCotoCrawler extends Crawler {
          String secondaryImages = crawlSecondaryImages(doc);
          String description = crawlDescription(doc);
          Integer stock = null;
-         Offers offers = scrapOffer(doc, internalId);
+         boolean availableToBuy = crawlAvailability(doc);
+         Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -291,6 +292,10 @@ public class ArgentinaCotoCrawler extends Crawler {
       }
 
       return installments;
+   }
+
+   private boolean crawlAvailability(Document document) {
+      return !document.select(".add_products :not(.product_not_available)").isEmpty();
    }
 
 }
