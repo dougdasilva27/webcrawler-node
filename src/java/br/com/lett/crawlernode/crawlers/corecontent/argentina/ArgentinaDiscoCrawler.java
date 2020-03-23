@@ -39,7 +39,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.disco.com.ar/";
    private static final String IMAGE_FIRST_PART = HOME_PAGE + "DiscoComprasArchivos/Archivos/ArchivosMxM/";
-   private static final String SELLER_FULL_NAME = "disco";
+   private static final String SELLER_FULL_NAME = "Disco";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -84,7 +84,8 @@ public class ArgentinaDiscoCrawler extends Crawler {
          String primaryImage = crawlPrimaryImage(apiJson);
          String secondaryImages = crawlSecondaryImages();
          String description = crawlDescription(internalId);
-         Offers offers = scrapOffer(apiJson);
+         boolean availableToBuy = stock != null && stock > 0;
+         Offers offers = availableToBuy ? scrapOffer(apiJson) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -188,7 +189,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
    /**
     * There is no secondary Images in this market.
-    * 
+    *
     * @param document
     * @return
     */
@@ -252,7 +253,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
    /**
     * Crawl api of search when probably has only one product
-    * 
+    *
     * @param url
     * @return
     */
@@ -306,7 +307,6 @@ public class ArgentinaDiscoCrawler extends Crawler {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "Precio", true);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
-
       return PricingBuilder.create()
             .setPriceFrom(null)
             .setSpotlightPrice(spotlightPrice)
@@ -318,15 +318,17 @@ public class ArgentinaDiscoCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       JSONArray descuentos = JSONUtils.getJSONArrayValue(json, "Descuentos");
-      String firstSales = descuentos.getJSONObject(0).getString("Subtipo"); //
+      if (descuentos.optJSONObject(0) != null) {
+         String firstSales = descuentos.getJSONObject(0).optString("Subtipo");
 
-      /*
-       * We have to getJSONObject(0) because the JSONArray descuentos count a list of promotions but we
-       * only need the first one which is the promotion that appears on the website
-       */
+         /*
+          * We have to getJSONObject(0) because the JSONArray descuentos count a list of promotions but we
+          * only need the first one which is the promotion that appears on the website
+          */
 
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
+         if (firstSales != null && !firstSales.isEmpty()) {
+            sales.add(firstSales);
+         }
       }
 
       return sales;
