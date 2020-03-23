@@ -122,7 +122,8 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".descripcion-texto", ".descripcion-content.clearfix", ".especificaciones-wrapper h2", ".especificaciones-wrapper ul > li"));
-         Offers offers = scrapOffers(doc);
+         boolean availableToBuy = doc.selectFirst(".info-y-galleria-wrapper .btn.btn-add") != null;
+         Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
