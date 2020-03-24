@@ -1,13 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -15,16 +15,28 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
-import models.Marketplace;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilKalungaCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.kalunga.com.br/";
+   private static final String SELLER_FULL_NAME = "kalunga";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilKalungaCrawler(Session session) {
       super(session);
@@ -48,22 +60,32 @@ public class BrasilKalungaCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = null;
          String name = crawlName(doc);
-         Float price = crawlPrice(doc);
-         Prices prices = crawlPrices(doc, price);
-         boolean available = crawlAvailability(doc);
+
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
          String secondaryImages = crawlSecondaryImages(doc, primaryImage);
          String description = crawlDescription(doc);
          Integer stock = null;
-         Marketplace marketplace = crawlMarketplace();
          RatingsReviews ratingReviews = crawRating(doc);
+         boolean available = crawlAvailability(doc);
+         Offers offers = available ? offers(doc, internalId) : new Offers();
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).setRatingReviews(ratingReviews).build();
+         Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
 
          products.add(product);
 
@@ -100,22 +122,6 @@ public class BrasilKalungaCrawler extends Crawler {
 
       return name;
    }
-
-   private Float crawlPrice(Document document) {
-      Float price = null;
-      Element salePriceElement = document.selectFirst("[itemprop=\"price\"]");
-
-      if (salePriceElement != null && salePriceElement.hasAttr("content")) {
-         price = MathUtils.parseFloatWithDots(salePriceElement.attr("content"));
-      }
-
-      return price;
-   }
-
-   private Marketplace crawlMarketplace() {
-      return new Marketplace();
-   }
-
 
    private String crawlPrimaryImage(Document doc) {
       String primaryImage = null;
@@ -195,40 +201,6 @@ public class BrasilKalungaCrawler extends Crawler {
    private boolean crawlAvailability(Document doc) {
       return doc.select("#ctl00_Body_ibtnComprar").first() != null;
    }
-
-   private Prices crawlPrices(Document doc, Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentsPriceMap = new HashMap<>();
-
-         // Preço de boleto e 1x no cartao são iguais
-         prices.setBankTicketPrice(price);
-         installmentsPriceMap.put(1, price);
-
-         Elements installments = doc.select(".container-price table.table-bordered tr");
-
-         for (Element e : installments) {
-            Element installmentElement = e.select("td").first();
-            Element valueElement = e.select("td").last();
-
-            if (installmentElement != null && valueElement != null) {
-               String text = installmentElement.text().replaceAll("[^0-9]", "");
-               Float value = MathUtils.parseFloatWithComma(valueElement.text());
-
-               if (!text.isEmpty() && value != null) {
-                  installmentsPriceMap.put(Integer.parseInt(text), value);
-               }
-            }
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentsPriceMap);
-      }
-
-      return prices;
-   }
-
-
 
    private RatingsReviews crawRating(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
@@ -322,4 +294,99 @@ public class BrasilKalungaCrawler extends Crawler {
             .totalStar5(star5)
             .build();
    }
+
+   private Offers offers(Document doc, String internalId) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc, internalId);
+      List<String> sales = scrapSales(doc);
+
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+
+      return offers;
+
+   }
+
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst(".badge.badge-success");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
+   private Pricing scrapPricing(Document doc, String internalId) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .text-muted.m-0 del", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .font-weight-bold", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
+   }
+
+   private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(doc);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+      Double finalPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .m-0 .font-weight-bold:last-child", null, false, ',', session);
+
+      Element installmentsCard = doc.selectFirst("#spanSchemaPrice .m-0 .font-weight-bold");
+
+      if (installmentsCard != null) {
+
+         String installmentCard = installmentsCard.text();
+         String installmentString = installmentCard != null ? installmentCard.split("x")[0] : null;
+         int installment = Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
+
+         String valueCard = installmentsCard.text();
+         int de = valueCard.indexOf("de");
+         Double value = MathUtils.parseDoubleWithComma(valueCard.substring(de));
+
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(value)
+               .setFinalPrice(finalPrice)
+               .build());
+
+      }
+
+      return installments;
+   }
+
 }
