@@ -98,7 +98,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject crawlProductInfo() {
-      String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
+      String loadUrl = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/page/load";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("referer", this.homePage);
@@ -115,8 +115,12 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       }
 
       String payloadSearch = "{phrase: \"" + this.keywordWithoutAccents + "\"}";
-      Request requestApi = RequestBuilder.create().setUrl("https://www.sitemercado.com.br/core/api/v1/b2c/product/loadSearch").setCookies(cookies)
-            .setHeaders(headers).setPayload(payloadSearch).build();
+      Request requestApi = RequestBuilder.create()
+            .setUrl("https://sitemercado-b2c-sm-www-api-production2.azurewebsites.net/api/v1/b2c/product/loadSearch")
+            .setCookies(cookies)
+            .setHeaders(headers)
+            .setPayload(payloadSearch)
+            .build();
 
       return CrawlerUtils.stringToJson(this.dataFetcher.post(session, requestApi).getBody());
    }
@@ -124,7 +128,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    private String fetchApiVersion(Session session, String url) {
       String version = null;
 
-      String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
+      String loadUrl = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/page/load";
       Map<String, String> headers = new HashMap<>();
       headers.put("referer", url);
       headers.put("accept", "application/json, text/plain, */*");

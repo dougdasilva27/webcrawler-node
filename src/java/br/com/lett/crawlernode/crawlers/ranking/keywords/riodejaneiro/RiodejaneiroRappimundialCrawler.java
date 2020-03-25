@@ -6,8 +6,8 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.RappiCr
 
 public class RiodejaneiroRappimundialCrawler extends RappiCrawler {
 
-  public RiodejaneiroRappimundialCrawler(Session session) {
-    super(session, Arrays.asList("900020401"));
-  }
+   public RiodejaneiroRappimundialCrawler(Session session) {
+      super(session, Arrays.asList("900020828"));
+   }
 
 }
