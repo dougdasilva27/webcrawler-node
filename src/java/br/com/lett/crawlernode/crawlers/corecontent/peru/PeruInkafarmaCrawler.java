@@ -97,6 +97,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          String internalId = jsonSku.get("id").toString();
          String internalPid = internalId;
+         String newUrl = scrapNewUrl(jsonSku, internalId, session.getOriginalURL());
          String name = JSONUtils.getStringValue(jsonSku, "name").replace("\n", " ");
          Integer stock = JSONUtils.getIntegerValueFromJSON(jsonSku, "stock", 0);
          boolean available = stock > 0;
@@ -109,7 +110,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
+               .setUrl(newUrl)
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
@@ -132,6 +133,16 @@ public class PeruInkafarmaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapNewUrl(JSONObject json, String internalId, String url) {
+      String newUrl = url;
+
+      if (url.contains("sku=") && internalId != null) {
+         newUrl = "https://inkafarma.pe/producto/" + CommonMethods.encondeStringURLToISO8859(json.optString("slug", ""), logger, session) + "/" + internalId;
+      }
+
+      return newUrl;
    }
 
    private String crawlPrimaryImage(JSONObject json) {
