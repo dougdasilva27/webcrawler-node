@@ -1,18 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -22,8 +12,15 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import models.Offers;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.text.Normalizer;
+import java.util.*;
+
+import static br.com.lett.crawlernode.crawlers.corecontent.extractionutils.RappiCrawler.scrapOffers;
 
 public class ChileRappijumboCrawler extends Crawler {
 
@@ -64,15 +61,14 @@ public class ChileRappijumboCrawler extends Crawler {
          CategoryCollection categories = crawlCategories(jsonSku);
          String description = crawlDescription(jsonSku);
          boolean available = crawlAvailability(jsonSku);
-         Float price = available ? CrawlerUtils.getFloatValueFromJSON(jsonSku, "price") : null;
-         Double priceFrom = available ? CrawlerUtils.getDoubleValueFromJSON(jsonSku, "real_price", true, false) : null;
          String primaryImage = crawlPrimaryImage(jsonSku);
          String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
          String ean = JSONUtils.getStringValue(jsonSku, "ean");
          List<String> eans = ean != null && !ean.isEmpty() ? Arrays.asList(ean) : null;
          String name = crawlName(jsonSku);
 
-         Prices prices = crawlPrices(price, priceFrom);
+         Offers offers = available ? scrapOffers(jsonSku) : new Offers();
+
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -80,9 +76,7 @@ public class ChileRappijumboCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
+               .setOffers(offers)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
@@ -90,7 +84,6 @@ public class ChileRappijumboCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setEans(eans)
-               .setMarketplace(new Marketplace())
                .build();
 
          products.add(product);
@@ -276,34 +269,6 @@ public class ChileRappijumboCrawler extends Crawler {
 
 
       return description.toString();
-   }
-
-   /**
-    * In this site has no information of installments
-    * 
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, Double priceFrom) {
-      Prices p = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-
-         p.setPriceFrom(priceFrom);
-         p.setBankTicketPrice(price);
-
-         p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-
-      }
-
-      return p;
    }
 
    /**
