@@ -359,12 +359,12 @@ public class BrasilPetloveCrawler extends Crawler {
       if (installmentsCard != null) {
 
          String installmentCard = installmentsCard;
-         int ou = installmentCard.indexOf("ou");
-         int x = installmentCard.lastIndexOf("x");
+         int ou = installmentCard.contains("ou") ? installmentCard.indexOf("ou") : null;
+         int x = installmentCard.contains("x") ? installmentCard.lastIndexOf("x") : null;
          int installment = Integer.parseInt(installmentCard.substring(ou, x).replaceAll("[^0-9]", "").trim());
 
          String valueCard = installmentsCard;
-         int de = valueCard.indexOf("R$");
+         int de = valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
          Double value = MathUtils.parseDoubleWithComma(valueCard.substring(de));
 
          installments.add(InstallmentBuilder.create()
@@ -372,7 +372,6 @@ public class BrasilPetloveCrawler extends Crawler {
                .setInstallmentPrice(value)
                .build());
       }
-
       return installments;
    }
 }
