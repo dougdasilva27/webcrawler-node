@@ -55,7 +55,6 @@ public class GeracaopetCrawler extends Crawler {
 	public List<Product> extractInformation(Document doc) throws Exception {
 		List<Product> products = new ArrayList<>();
 
-
 		if (isProductPage(doc)) {
 			Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 			JSONObject jsonHtml = crawlJsonHtml(doc);
@@ -74,7 +73,7 @@ public class GeracaopetCrawler extends Crawler {
 
 					boolean available = crawlAvailabilityWithVariation(variationsMap, internalId);
 					String name = crawlNameWithVariation(doc, variationsMap, internalId);
-					String primaryImage = crawlPrimaryImageWithVariation(skuJson, internalId, available);
+					String primaryImage = crawlPrimaryImageWithVariation(skuJson, internalId);
 
 					String secondaryImages = crawlSecondaryImagesWithVariation(skuJson, internalId, available);
 					Integer stock = null;
@@ -138,7 +137,7 @@ public class GeracaopetCrawler extends Crawler {
 			priceFrom = null;
 		}
 
-		String sellerName = "Petland", sale = null;
+		String sellerName = "Petland", sale;
 		Element saleElem = doc.selectFirst(".product-discount");
 		List<String> sales = new ArrayList<>();
 		if (saleElem != null && saleElem.wholeText() != null) {
@@ -430,7 +429,7 @@ public class GeracaopetCrawler extends Crawler {
 		return secondaryImages.toString();
 	}
 
-	private String crawlPrimaryImageWithVariation(JSONObject skuJson, String internalId, boolean available) {
+	private String crawlPrimaryImageWithVariation(JSONObject skuJson, String internalId) {
 		String primaryImage = null;
 		if (skuJson.has("jsonConfig")) {
 			JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
