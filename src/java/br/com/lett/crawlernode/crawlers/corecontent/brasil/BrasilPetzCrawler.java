@@ -419,12 +419,12 @@ public class BrasilPetzCrawler extends Crawler {
       if (installmentsCard != null) {
 
          String installmentCard = installmentsCard.text();
-         int ou = installmentCard.indexOf("OU");
-         int x = installmentCard.lastIndexOf("x");
+         int ou = installmentCard.contains("OU") ? installmentCard.indexOf("OU") : null;
+         int x = installmentCard.contains("x") ? installmentCard.lastIndexOf("x") : null;
          int installment = Integer.parseInt(installmentCard.substring(ou, x).replaceAll("[^0-9]", "").trim());
 
          String valueCard = installmentsCard.text();
-         int de = valueCard.indexOf("R$");
+         int de = valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
          Double value = MathUtils.parseDoubleWithComma(valueCard.substring(de));
 
          installments.add(InstallmentBuilder.create()
