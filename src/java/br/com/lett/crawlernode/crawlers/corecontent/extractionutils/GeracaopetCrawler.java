@@ -26,6 +26,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -116,31 +117,41 @@ public class GeracaopetCrawler extends Crawler {
 
 	private Offers scrapOffers(Document doc, JSONObject json, String internalId) throws MalformedPricingException, OfferException {
 		Offers offers = new Offers();
-		if (doc.selectFirst("#outstock") == null)
+		Double price;
+		if (doc.selectFirst("#outstock") != null || doc.selectFirst("#product-addtocart-button") == null)
 			return offers;
 
-		JSONObject finalPrice = new JSONObject();
 		JSONObject jsonConfig = json.optJSONObject("jsonConfig");
+		JSONObject eachPrice = null;
 		if (jsonConfig != null) {
 			JSONObject optionPrices = jsonConfig.optJSONObject("optionPrices");
-			if (optionPrices != null) {
-				JSONObject eachPrice = optionPrices.optJSONObject(internalId);
-				if (eachPrice != null) finalPrice = eachPrice.optJSONObject("finalPrice");
-			}
+			if (optionPrices != null) eachPrice = optionPrices.optJSONObject(internalId);
 		}
 
-		Double price = CrawlerUtils.getDoubleValueFromJSON(finalPrice, "amount", false, false);
-		Double priceOriginal = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[data-price-amount]", "data-price-amount", false, '.', session);
-		if (price.equals(priceOriginal)) {
-			priceOriginal = null;
+		if (eachPrice != null)
+			price = CrawlerUtils.getDoubleValueFromJSON(eachPrice.optJSONObject("finalPrice"), "amount", false, false);
+		else
+			price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price span[data-price-amount]", "data-price-amount", false, '.', session);
+
+		Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price span[data-price-amount]", "data-price-amount", false, '.', session);
+		if (Objects.equals(price, priceFrom)) {
+			priceFrom = null;
 		}
 
-		String sellerName = "Petland";
+		String sellerName = "Petland", sale = null;
+		Element saleElem = doc.selectFirst(".product-discount");
+		List<String> sales = new ArrayList<>();
+		if (saleElem != null && saleElem.wholeText() != null) {
+			sale = saleElem.wholeText().trim();
+			if (Pattern.matches("[0-9]", sale))
+				sales.add(sale);
+		}
 
 		offers.add(OfferBuilder.create()
+				.setSales(sales)
 				.setPricing(PricingBuilder.create()
 						.setSpotlightPrice(price)
-						.setPriceFrom(priceOriginal)
+						.setPriceFrom(priceFrom)
 						.setBankSlip(BankSlipBuilder
 								.create()
 								.setFinalPrice(price)
@@ -149,6 +160,7 @@ public class GeracaopetCrawler extends Crawler {
 						.build())
 				.setIsMainRetailer(true)
 				.setSellerFullName(sellerName)
+				.setIsBuybox(false)
 				.setUseSlugNameAsInternalSellerId(true)
 				.build());
 
@@ -166,6 +178,7 @@ public class GeracaopetCrawler extends Crawler {
 										Collections.singleton(InstallmentBuilder
 												.create()
 												.setInstallmentNumber(1)
+												.setInstallmentPrice(price)
 												.setFinalPrice(price)
 												.build())
 								))
