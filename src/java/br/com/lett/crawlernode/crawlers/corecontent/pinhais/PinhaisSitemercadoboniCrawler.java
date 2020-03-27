@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.campinagrande;
+package br.com.lett.crawlernode.crawlers.corecontent.pinhais;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,15 +10,15 @@ import br.com.lett.crawlernode.util.CommonMethods;
 /**
  * @author gabriel date: 2019-09-24
  */
-public class CampinagrandedosulSitemercadoboniCrawler extends BrasilSitemercadoCrawler {
+public class PinhaisSitemercadoboniCrawler extends BrasilSitemercadoCrawler {
 
-   public CampinagrandedosulSitemercadoboniCrawler(Session session) {
+   public PinhaisSitemercadoboniCrawler(Session session) {
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadosboni/campina-grande-do-sul-campina-grande-do-sul-jardim-nesita-rua-annibale-ferrarini";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadosboni/pinhais-pinhais-weissopolis-avenida-irai";
 
-   public static final int IDLOJA = 903;
+   public static final int IDLOJA = 904;
    public static final int IDREDE = 790;
 
    @Override
