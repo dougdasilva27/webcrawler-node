@@ -131,7 +131,7 @@ public class GeracaopetCrawler extends Crawler {
 		if (eachPrice != null)
 			price = CrawlerUtils.getDoubleValueFromJSON(eachPrice.optJSONObject("finalPrice"), "amount", false, false);
 		else
-			price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price span[data-price-amount]", "data-price-amount", false, '.', session);
+			price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#product-price-" + internalId, "data-price-amount", false, '.', session);
 
 		Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price span[data-price-amount]", "data-price-amount", false, '.', session);
 		if (Objects.equals(price, priceFrom)) {
