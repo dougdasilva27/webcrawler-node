@@ -1,16 +1,20 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
+package br.com.lett.crawlernode.crawlers.corecontent.campinagrande;
 
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
-public class SaopauloSitemercadobarbosaCrawler extends BrasilSitemercadoCrawler {
-   public SaopauloSitemercadobarbosaCrawler(Session session) {
+/**
+ * @author gabriel date: 2019-09-24
+ */
+public class CampinagrandedosulSitemercadoboniCrawler extends BrasilSitemercadoCrawler {
+
+   public CampinagrandedosulSitemercadoboniCrawler(Session session) {
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://sitemercado.com.br/barbosa/sao-paulo-loja-10-pirituba-vila-pereira-barreto-av-benedito-de-andrade";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadosboni/campina-grande-do-sul-campina-grande-do-sul-jardim-nesita-rua-annibale-ferrarini";
 
    @Override
    protected String getHomePage() {

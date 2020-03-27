@@ -1,16 +1,16 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.teresina;
 
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
-public class SaopauloSitemercadobarbosaCrawler extends BrasilSitemercadoCrawler {
-   public SaopauloSitemercadobarbosaCrawler(Session session) {
+public class TeresinaSitemercadoferreiraportoalegreCrawler extends BrasilSitemercadoCrawler {
+   public TeresinaSitemercadoferreiraportoalegreCrawler(Session session) {
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://sitemercado.com.br/barbosa/sao-paulo-loja-10-pirituba-vila-pereira-barreto-av-benedito-de-andrade";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/ferreira/teresina-loja-porto-alegre-esplanada-avenida-ayrton-sena";
 
    @Override
    protected String getHomePage() {

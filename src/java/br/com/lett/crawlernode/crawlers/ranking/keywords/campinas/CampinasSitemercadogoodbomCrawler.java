@@ -1,16 +1,20 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.campinas;
 
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
-public class SaopauloSitemercadobarbosaCrawler extends BrasilSitemercadoCrawler {
-   public SaopauloSitemercadobarbosaCrawler(Session session) {
+/**
+ * @author gabriel date: 2019-09-24
+ */
+public class CampinasSitemercadogoodbomCrawler extends BrasilSitemercadoCrawler {
+
+   public CampinasSitemercadogoodbomCrawler(Session session) {
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://sitemercado.com.br/barbosa/sao-paulo-loja-10-pirituba-vila-pereira-barreto-av-benedito-de-andrade";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/goodbom/campinas-loja-sousas-jardim-conceicao-sousas-av-doutor-antonio-carlos-couto-de-barros";
 
    @Override
    protected String getHomePage() {
