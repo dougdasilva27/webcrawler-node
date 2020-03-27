@@ -147,7 +147,6 @@ public class BrasilCarrefourCrawler extends Crawler {
          boolean available = doc.selectFirst("#buyProductButtonBottom") != null;
          Offers offers = available ? scrapNewOffers(doc) : new Offers();
 
-
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
@@ -409,11 +408,10 @@ public class BrasilCarrefourCrawler extends Crawler {
    private Offers scrapNewOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      Offer principalOffer = null;
       Map<String, Integer> mainSellers = new HashMap<>();
       if (doc.selectFirst(".product-details") != null) {
 
-         principalOffer = scrapPrincipalOffer(doc);
+         Offer principalOffer = captureOffersWhenDontHaveMoreThanOne(doc);
          mainSellers.put(principalOffer.getInternalSellerId(), 1);
 
          if (principalOffer != null) {
@@ -462,7 +460,6 @@ public class BrasilCarrefourCrawler extends Crawler {
                      .setInternalSellerId(internalSellerId)
                      .setSellerFullName(sellerFullName)
                      .setMainPagePosition(position)
-                     .setSellersPagePosition(position)
                      .setIsBuybox(isBuyBoxPage)
                      .setIsMainRetailer(isMainRetailer)
                      .setPricing(pricing)
@@ -493,9 +490,10 @@ public class BrasilCarrefourCrawler extends Crawler {
 
    // Oferta principal
 
-   private Offer scrapPrincipalOffer(Document doc) throws OfferException, MalformedPricingException {
+   private Offer captureOffersWhenDontHaveMoreThanOne(Document doc) throws OfferException, MalformedPricingException {
       boolean isBuyBoxPage = doc.selectFirst(".list-group.send-results.list-offer-by-box") != null;
-      String sellerFullName = "Carrefour";
+      String sellerNameInMainPage = CrawlerUtils.scrapStringSimpleInfo(doc, ".sellerLink.vendaPorSeller", false);
+      String sellerFullName = sellerNameInMainPage != null ? sellerNameInMainPage : SELLER_NAME_LOWER;
       Integer sellersPagePosition = null;
       Pricing pricing = scrapPricingForProductPage(doc);
       String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".percentual", false);
@@ -512,6 +510,7 @@ public class BrasilCarrefourCrawler extends Crawler {
             .setSales(sales)
             .build();
    }
+
 
    private Pricing scrapPricingForProductPage(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .prince-product-default .priceBig", null, false, ',', session);
@@ -551,11 +550,11 @@ public class BrasilCarrefourCrawler extends Crawler {
 
          String installmentCard = installmentsCard.ownText();
          String installmentString = installmentCard != null ? installmentCard.split("x")[0] : null;
-         int installment = Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
+         int installment = installmentString != null ? Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim()) : null;
 
          String valueCard = installmentsCard.ownText();
-         int de = valueCard.indexOf("R$");
-         Double value = MathUtils.parseDoubleWithComma(valueCard.substring(de));
+         int de = valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
+         Double value = valueCard != null ? MathUtils.parseDoubleWithComma(valueCard.substring(de)) : null;
 
          installments.add(InstallmentBuilder.create()
                .setInstallmentNumber(installment)
@@ -613,12 +612,12 @@ public class BrasilCarrefourCrawler extends Crawler {
          String id = e.toString();
 
          String installmentCard = id;
-         String installmentString = installmentCard != null ? installmentCard.split("x")[0] : null;
-         int installment = Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
+         String installmentString = installmentCard.contains("x") ? installmentCard.split("x")[0] : null;
+         int installment = installmentString != null ? Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim()) : null;
 
          String valueCard = id;
-         int rs = valueCard.indexOf("R$");
-         Double value = MathUtils.parseDoubleWithComma(valueCard.substring(rs));
+         int rs = valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
+         Double value = valueCard != null ? MathUtils.parseDoubleWithComma(valueCard.substring(rs)) : null;
 
 
          installments.add(InstallmentBuilder.create()
