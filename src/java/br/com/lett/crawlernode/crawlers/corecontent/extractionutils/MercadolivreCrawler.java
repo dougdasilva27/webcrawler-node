@@ -393,7 +393,7 @@ public class MercadolivreCrawler extends Crawler {
    private String scrapSellerFullName(Document doc) {
 
       String sellerName = mainSellerNameLower;
-      String sellerNameElement = doc.selectFirst(".official-store-info .title").toString();
+      String sellerNameElement = CrawlerUtils.scrapStringSimpleInfo(doc, ".official-store-info .title", false);
 
       if (sellerName.equalsIgnoreCase(sellerNameElement)) {
          sellerName = mainSellerNameLower;
