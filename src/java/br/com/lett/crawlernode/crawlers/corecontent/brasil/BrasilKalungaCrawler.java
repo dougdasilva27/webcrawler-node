@@ -371,12 +371,12 @@ public class BrasilKalungaCrawler extends Crawler {
       if (installmentsCard != null) {
 
          String installmentCard = installmentsCard.text();
-         String installmentString = installmentCard != null ? installmentCard.split("x")[0] : null;
-         int installment = Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
+         String installmentString = installmentCard.contains("x") ? installmentCard.split("x")[0] : null;
+         int installment = installmentString != null ? Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim()) : null;
 
          String valueCard = installmentsCard.text();
-         int de = valueCard.indexOf("de");
-         Double value = MathUtils.parseDoubleWithComma(valueCard.substring(de));
+         int de = valueCard.contains("de") ? valueCard.indexOf("de") : null;
+         Double value = valueCard != null ? MathUtils.parseDoubleWithComma(valueCard.substring(de)) : null;
 
          installments.add(InstallmentBuilder.create()
                .setInstallmentNumber(installment)
