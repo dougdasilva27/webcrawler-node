@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.muriae;
+package br.com.lett.crawlernode.crawlers.corecontent.ibiuna;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,16 +10,16 @@ import br.com.lett.crawlernode.util.CommonMethods;
 /**
  * @author gabriel date: 2019-09-24
  */
-public class MuriaeSitemercadolourençoCrawler extends BrasilSitemercadoCrawler {
+public class IbiunaSitemercadosupermercadoibiunaCrawler extends BrasilSitemercadoCrawler {
 
-   public MuriaeSitemercadolourençoCrawler(Session session) {
+   public IbiunaSitemercadosupermercadoibiunaCrawler(Session session) {
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/lourenco/muriae-loja-safira-safira-avenida-silverio-campos";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoibiuna/ibiuna-loja-centro-centro-rua-jose-juni";
 
-   public static final int IDLOJA = 109;
-   public static final int IDREDE = 91;
+   public static final int IDLOJA = 1393;
+   public static final int IDREDE = 1258;
 
    @Override
    protected String getHomePage() {

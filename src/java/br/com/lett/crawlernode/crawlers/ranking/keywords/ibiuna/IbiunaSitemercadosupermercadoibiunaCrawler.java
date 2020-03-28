@@ -1,25 +1,22 @@
-package br.com.lett.crawlernode.crawlers.corecontent.ibiúna;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.ibiuna;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
+import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 /**
  * @author gabriel date: 2019-09-24
  */
-public class IbiúnaSitemercadosupermercadoibiunaCrawler extends BrasilSitemercadoCrawler {
+public class IbiunaSitemercadosupermercadoibiunaCrawler extends BrasilSitemercadoCrawler {
 
-   public IbiúnaSitemercadosupermercadoibiunaCrawler(Session session) {
+   public IbiunaSitemercadosupermercadoibiunaCrawler(Session session) {
       super(session);
    }
 
    public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoibiuna/ibiuna-loja-centro-centro-rua-jose-juni";
-
-   public static final int IDLOJA = 1393;
-   public static final int IDREDE = 1258;
 
    @Override
    protected String getHomePage() {
@@ -37,11 +34,4 @@ public class IbiúnaSitemercadosupermercadoibiunaCrawler extends BrasilSitemerca
       return payload.toString();
    }
 
-   @Override
-   protected Map<String, Integer> getLojaInfo() {
-      Map<String, Integer> lojaInfo = new HashMap<>();
-      lojaInfo.put("IdLoja", IDLOJA);
-      lojaInfo.put("IdRede", IDREDE);
-      return lojaInfo;
-   }
 }

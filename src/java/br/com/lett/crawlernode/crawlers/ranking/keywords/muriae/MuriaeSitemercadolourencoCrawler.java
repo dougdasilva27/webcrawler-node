@@ -10,9 +10,9 @@ import br.com.lett.crawlernode.util.CommonMethods;
 /**
  * @author gabriel date: 2019-09-24
  */
-public class MuriaeSitemercadolourençoCrawler extends BrasilSitemercadoCrawler {
+public class MuriaeSitemercadolourencoCrawler extends BrasilSitemercadoCrawler {
 
-   public MuriaeSitemercadolourençoCrawler(Session session) {
+   public MuriaeSitemercadolourencoCrawler(Session session) {
       super(session);
    }
 
