@@ -42,7 +42,15 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
    protected abstract Map<String, Integer> getLojaInfo();
 
-   protected abstract String getLoadPayload();
+   protected String getLoadPayload() {
+      JSONObject payload = new JSONObject();
+      String[] split = homePage.split("/");
+
+      payload.put("lojaUrl", CommonMethods.getLast(split));
+      payload.put("redeUrl", split[split.length - 2]);
+
+      return payload.toString();
+   }
 
    @Override
    public boolean shouldVisit() {
