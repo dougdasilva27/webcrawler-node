@@ -16,10 +16,10 @@ public class JoaopessoaSitemercadosupermercadoiobCrawler extends BrasilSitemerca
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadomanaira/joao-pessoa-loja-manaira-manaira-rua-joao-cancio";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoiob/joao-pessoa-manaira-manaira-rua-major-ciraulo";
 
-   public static final int IDLOJA = 1208;
-   public static final int IDREDE = 1108;
+   public static final int IDLOJA = 927;
+   public static final int IDREDE = 848;
 
    @Override
    protected String getHomePage() {

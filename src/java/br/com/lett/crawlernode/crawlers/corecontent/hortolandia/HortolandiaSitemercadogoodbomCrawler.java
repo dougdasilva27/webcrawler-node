@@ -16,7 +16,7 @@ public class HortolandiaSitemercadogoodbomCrawler extends BrasilSitemercadoCrawl
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/mairinquesupermercado/mairinque-loja-monteiro-lobato-centro-rua-monteiro-lobato";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/goodbom/hortolandia-hortolandia-jardim-do-bosque-avenida-emancipacao";
 
    public static final int IDLOJA = 819;
    public static final int IDREDE = 287;

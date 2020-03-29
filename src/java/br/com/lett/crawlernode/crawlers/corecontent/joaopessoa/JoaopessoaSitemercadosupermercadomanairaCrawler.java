@@ -1,8 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.joaopessoa;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 /**
@@ -15,6 +17,9 @@ public class JoaopessoaSitemercadosupermercadomanairaCrawler extends BrasilSitem
    }
 
    public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadomanaira/joao-pessoa-loja-manaira-manaira-rua-joao-cancio";
+
+   public static final int IDLOJA = 1208;
+   public static final int IDREDE = 1108;
 
    @Override
    protected String getHomePage() {
@@ -30,5 +35,13 @@ public class JoaopessoaSitemercadosupermercadomanairaCrawler extends BrasilSitem
       payload.put("redeUrl", split[split.length - 2]);
 
       return payload.toString();
+   }
+
+   @Override
+   protected Map<String, Integer> getLojaInfo() {
+      Map<String, Integer> lojaInfo = new HashMap<>();
+      lojaInfo.put("IdLoja", IDLOJA);
+      lojaInfo.put("IdRede", IDREDE);
+      return lojaInfo;
    }
 }
