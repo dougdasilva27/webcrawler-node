@@ -18,8 +18,8 @@ public class MairinqueSitemercadomairinquesupermercadoCrawler extends BrasilSite
 
    public static final String HOME_PAGE = "https://www.sitemercado.com.br/mairinquesupermercado/mairinque-loja-monteiro-lobato-centro-rua-monteiro-lobato";
 
-   public static final int IDLOJA = 821;
-   public static final int IDREDE = 287;
+   public static final int IDLOJA = 434;
+   public static final int IDREDE = 377;
 
    @Override
    protected String getHomePage() {
