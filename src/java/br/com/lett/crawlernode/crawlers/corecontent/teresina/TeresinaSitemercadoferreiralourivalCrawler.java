@@ -17,7 +17,7 @@ public class TeresinaSitemercadoferreiralourivalCrawler extends BrasilSitemercad
    }
 
    public static final String HOME_PAGE =
-         "https://www.sitemercado.com.br/ferreira/teresina-loja-porto-alegre-esplanada-avenida-ayrton-sena";
+         "https://www.sitemercado.com.br/ferreira/teresina-lourival-parente-lourival-parente-rua-ivan-tito-de-oliveira";
 
    public static final int IDLOJA = 789;
    public static final int IDREDE = 708;
