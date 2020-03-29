@@ -14,7 +14,7 @@ public class MogimirimSitemercadogoodbomCrawler extends BrasilSitemercadoCrawler
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/mairinquesupermercado/mairinque-loja-monteiro-lobato-centro-rua-monteiro-lobato";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/goodbom/mogi-mirim-loja-mogi-mirim-jardim-scomparim-avenida-pedro-botesi";
 
    @Override
    protected String getHomePage() {
