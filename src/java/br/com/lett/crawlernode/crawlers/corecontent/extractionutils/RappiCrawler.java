@@ -15,6 +15,12 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
@@ -27,9 +33,6 @@ import models.pricing.Pricing.PricingBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-
-import java.math.BigDecimal;
-import java.util.*;
 
 public class RappiCrawler extends Crawler {
 
@@ -116,7 +119,7 @@ public class RappiCrawler extends Crawler {
 		}
 
 		Offer offer = new OfferBuilder().setSellerFullName(sellerName)
-				.setInternalSellerId(jsonSku.opt("store_id").toString())
+				.setInternalSellerId(jsonSku.optString("store_id",null))
 				.setMainPagePosition(1)
 				.setIsBuybox(false)
 				.setPricing(pricing)
