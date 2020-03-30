@@ -1,15 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
+import static models.Offer.OfferBuilder;
+import static models.pricing.BankSlip.BankSlipBuilder;
+import static models.pricing.Installment.InstallmentBuilder;
+import static models.pricing.Pricing.PricingBuilder;
+
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -23,9 +18,25 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilMadeiramadeiraCrawler extends Crawler {
 
@@ -45,7 +56,6 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".buy-box-wrapper div[data-product-sku]", "data-product-sku");
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "data[data-product-id]", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title", false);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".txt-incash-value", null, false, ',', session);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .product-featured-image", Arrays.asList(
                "data-product-image-zoom"),
@@ -55,12 +65,9 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
                Arrays.asList("data-image-zoom"), "https", "images.madeiramadeira.com.br",
                primaryImage);
 
-         Prices prices = scrapPrices(doc, price);
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-attributes-tab-information .product-description"));
-         Map<String, Prices> marketplaceMap = assembleMarketplaceMap(doc);
-         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList("MadeiraMadeira"), Card.VISA, session);
-         boolean available = crawlAvailable(doc);// CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList("MadeiraMadeira"));
+         Offers offers = crawlAvailable(doc)? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -68,18 +75,14 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
+               .setOffers(offers)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
-               .setMarketplace(marketplace)
                .setRatingReviews(ratingsReviews)
-               .setEans(new ArrayList<String>())
                .build();
 
          products.add(product);
@@ -92,74 +95,104 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
    }
 
-   private boolean crawlAvailable(Document doc) {
-      boolean available = false;
-      String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".txt-incash-value", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.section-price > p.text > del", null, false, ',', session);
+      Pair<Integer, Float> pairInst = CrawlerUtils.crawlSimpleInstallment(".installment-payment-info-installments", doc, false, "x");
 
-      if (availableEl.contains("Comprar")) {
-         available = true;
-      } else {
-         available = false;
-      }
+      Pricing pricing = PricingBuilder.create()
+          .setSpotlightPrice(price)
+          .setPriceFrom(priceFrom)
+          .setBankSlip(BankSlipBuilder.create()
+              .setFinalPrice(price)
+              .build())
+          .setCreditCards(new CreditCards(scrapCards(pairInst, price)))
+          .build();
 
-      return available;
-   }
+      List<String> sales = new ArrayList<>();
+      Element saleElem = doc.selectFirst("product-image-seal-promo");
+      if (saleElem != null) sales.add(saleElem.wholeText().trim());
 
-   private Map<String, Prices> assembleMarketplaceMap(Document doc) {
+      String sellerName = doc.selectFirst(".seller-name").text();
+
       String url = session.getOriginalURL().replace(HOME_PAGE, HOME_PAGE + "/parceiros/");
-      Request request = RequestBuilder.create().setCookies(cookies).setUrl(url).build();
-      Response response = dataFetcher.get(session, request);
-      Map<String, Prices> marketplaceMap = new TreeMap<>();
-      Map<Integer, Float> installmentMap = new TreeMap<>();
+      Response response = dataFetcher.get(session, RequestBuilder.create().setCookies(cookies).setUrl(url).build());
       Document sellers = Jsoup.parse(response.getBody());
-      Prices prices = new Prices();
       Elements markets = sellers.select(".buybox-list div[data-product-container]");
 
-      for (Element element : markets) {
+      offers.add(OfferBuilder.create()
+              .setPricing(pricing)
+              .setIsBuybox(markets.size() > 1)
+              .setSellerFullName(sellerName)
+              .setMainPagePosition(1)
+              .setUseSlugNameAsInternalSellerId(true)
+              .setIsMainRetailer(Pattern.matches("(?i)madeiramadeira\\s?|madeira?[\\s]?madeira", sellerName))
+              .setSales(sales)
+              .build());
+
+      for (int i = 0; i < markets.size(); i++) {
+         Element element = markets.get(i);
          Element nameElement = element.selectFirst(".name");
          Element priceElement = element.selectFirst(".price");
-
-         if (nameElement != null) {
-            String name = nameElement.text();
-
-            if (priceElement != null) {
-
-               Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
-               installmentMap.put(1, price);
-               prices.insertCardInstallment(Card.ELO.toString(), installmentMap);
-               prices.insertCardInstallment(Card.VISA.toString(), installmentMap);
-               prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentMap);
-               prices.setBankTicketPrice(price);
-
-               marketplaceMap.put(name, prices);
-            }
+         Double priceNext = MathUtils.parseDoubleWithComma(priceElement.ownText());
+         if (nameElement.text().equalsIgnoreCase(sellerName)) {
+            continue;
          }
+         offers.add(OfferBuilder.create()
+                 .setPricing(PricingBuilder.create()
+                     .setSpotlightPrice(priceNext)
+                     .setPriceFrom(null)
+                     .setBankSlip(BankSlipBuilder.create()
+                         .setFinalPrice(priceNext)
+                         .build())
+                     .setCreditCards(new CreditCards(scrapCards(pairInst, priceNext)))
+                     .build())
+                 .setIsBuybox(markets.size() > 1)
+                 .setSellerFullName(nameElement.text())
+                 .setMainPagePosition(i + 1)
+                 .setUseSlugNameAsInternalSellerId(true)
+                 .setIsMainRetailer(Pattern.matches("(?i)madeiramadeira\\s?|madeira?[\\s]?madeira", sellerName))
+                 .setSales(sales)
+                 .build());
       }
 
-      return marketplaceMap;
+      return offers;
    }
 
-   private Prices scrapPrices(Document doc, Float price) {
-      Prices prices = new Prices();
+   private List<CreditCard> scrapCards(Pair<Integer, Float> pairInst, Double price){
+      return Stream.of(Card.VISA, Card.MASTERCARD, Card.ELO)
+              .map(card -> {
+                 try {
+                    return CreditCard.CreditCardBuilder.create()
+                            .setIsShopCard(false)
+                            .setBrand(card.toString())
+                            .setInstallments(new Installments(
+                                    Sets.newHashSet(InstallmentBuilder.create()
+                                            .setInstallmentNumber(1)
+                                            .setInstallmentPrice(price)
+                                            .setFinalPrice(price)
+                                            .build(), InstallmentBuilder.create()
+                                            .setInstallmentNumber(pairInst.getFirst())
+                                            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pairInst.getSecond().doubleValue()))
+                                            .setFinalPrice(pairInst.getFirst() * pairInst.getSecond().doubleValue())
+                                            .build())
+                            ))
+                            .build();
+                 } catch (MalformedPricingException e) {
+                    throw new RuntimeException(e);
+                 }
+              })
+              .collect(Collectors.toList());
+   }
 
-      if (price != null) {
-         Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.section-price > p.text > del", null, false, ',', session);
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         Pair<Integer, Float> pairInstallment = CrawlerUtils.crawlSimpleInstallment(".installment-payment-info-installments", doc, false, "x");
+   private boolean crawlAvailable(Document doc) {
+      boolean available;
+      String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
 
-         installmentPriceMap.put(1, price);
+      available = availableEl.contains("Comprar");
 
-         if (!pairInstallment.isAnyValueNull()) {
-            installmentPriceMap.put(pairInstallment.getFirst(), pairInstallment.getSecond());
-         }
-         prices.setBankTicketPrice(price);
-         prices.setPriceFrom(priceFrom);
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-
-      }
-
-      return prices;
+      return available;
    }
 
    private boolean isProductPage(Document doc) {
