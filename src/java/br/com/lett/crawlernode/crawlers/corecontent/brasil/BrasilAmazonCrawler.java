@@ -49,6 +49,7 @@ import models.pricing.Pricing.PricingBuilder;
 public class BrasilAmazonCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.amazon.com.br";
+   private static final String SELLER_NAME = "Amazon.com.br";
    private static final String SELLER_NAME_LOWER = "amazon.com.br";
 
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
@@ -145,14 +146,26 @@ public class BrasilAmazonCrawler extends Crawler {
       String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info #sellerProfileTriggerId", false);
       Pricing pricing = scrapMainPagePricing(doc);
       
-      return OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(seller)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(seller.toLowerCase().equals(SELLER_NAME_LOWER))
-            .setPricing(pricing)
-            .build();
+      if(seller == null) {
+         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info", false);
+
+         if(seller != null && seller.trim().toLowerCase().contains(SELLER_NAME_LOWER)) {
+            seller = SELLER_NAME;
+         }
+      }
+      
+      if(seller != null) {
+        return OfferBuilder.create()
+              .setUseSlugNameAsInternalSellerId(true)
+              .setSellerFullName(seller)
+              .setMainPagePosition(1)
+              .setIsBuybox(false)
+              .setIsMainRetailer(SELLER_NAME_LOWER.equals(seller.toLowerCase()))
+              .setPricing(pricing)
+              .build();
+      }
+      
+      return null;
    }
    
    private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
@@ -180,7 +193,7 @@ public class BrasilAmazonCrawler extends Crawler {
                name = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, "h3.olpSellerName img", "alt");
             }
             
-            if(name.equals(mainPageOffer.getSellerFullName())) {
+            if(mainPageOffer != null && name.equals(mainPageOffer.getSellerFullName())) {
                mainPageOffer.setSellersPagePosition(pos);
                
                offers.add(mainPageOffer);
@@ -191,7 +204,7 @@ public class BrasilAmazonCrawler extends Crawler {
                   .setSellerFullName(name)
                   .setSellersPagePosition(pos)
                   .setIsBuybox(false)
-                  .setIsMainRetailer(name.toLowerCase().equals(SELLER_NAME_LOWER))
+                  .setIsMainRetailer(SELLER_NAME_LOWER.equals(name.toLowerCase()))
                   .setPricing(pricing)
                   .build());
             }
