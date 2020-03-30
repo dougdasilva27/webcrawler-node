@@ -29,6 +29,7 @@ import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
+import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -100,8 +101,9 @@ public class BrasilAmazonCrawler extends Crawler {
          String description = crawlDescription(doc);
          Integer stock = null;
 
+         Offer mainPageOffer = scrapMainPageOffer(doc);
          List<Document> docOffers = fetchDocumentsOffers(doc, internalId); // TODO: remove this
-         Offers offers = scrapOffers(doc, docOffers);
+         Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
          
          String ean = crawlEan(doc);
 
@@ -139,7 +141,31 @@ public class BrasilAmazonCrawler extends Crawler {
       return products;
    }
    
-   private Offers scrapOffers(Document doc, List<Document> offersPages) throws OfferException, MalformedPricingException {
+   private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
+      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info #sellerProfileTriggerId", false);
+      Pricing pricing = scrapMainPagePricing(doc);
+      
+      return OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(seller)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(seller.toLowerCase().equals(SELLER_NAME_LOWER))
+            .setPricing(pricing)
+            .build();
+   }
+   
+   private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_ourprice", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
+      
+      return PricingBuilder.create()
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
+   }
+   
+   private Offers scrapOffers(Document doc, List<Document> offersPages, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
       
@@ -148,28 +174,24 @@ public class BrasilAmazonCrawler extends Crawler {
          
          for(Element oferta : ofertas) {
             String name = CrawlerUtils.scrapStringSimpleInfo(oferta, "h3.olpSellerName", false);
-            Pricing pricing = scrapPricing(oferta);
+            Pricing pricing = scrapSellersPagePricing(oferta);
             
             if(name.isEmpty()) {
                name = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, "h3.olpSellerName img", "alt");
             }
             
-            if(name.toLowerCase().equals(SELLER_NAME_LOWER)) {
-              offers.add(OfferBuilder.create()
-                  .setUseSlugNameAsInternalSellerId(true)
-                  .setSellerFullName(name)
-                  .setSellersPagePosition(pos)
-                  .setIsBuybox(false)
-                  .setIsMainRetailer(true)
-                  .setPricing(pricing)
-                  .build());
+            if(name.equals(mainPageOffer.getSellerFullName())) {
+               mainPageOffer.setSellersPagePosition(pos);
+               
+               offers.add(mainPageOffer);
             } else {
+               
               offers.add(OfferBuilder.create()
                   .setUseSlugNameAsInternalSellerId(true)
                   .setSellerFullName(name)
                   .setSellersPagePosition(pos)
                   .setIsBuybox(false)
-                  .setIsMainRetailer(false)
+                  .setIsMainRetailer(name.toLowerCase().equals(SELLER_NAME_LOWER))
                   .setPricing(pricing)
                   .build());
             }
@@ -181,9 +203,9 @@ public class BrasilAmazonCrawler extends Crawler {
       return offers;
    }
    
-   private Pricing scrapPricing(Element doc) throws MalformedPricingException {
+   private Pricing scrapSellersPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".olpOfferPrice", null, false, ',', session);
-      CreditCards creditCards = scrapCreditCardsFromProductPage(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
       
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
@@ -191,10 +213,10 @@ public class BrasilAmazonCrawler extends Crawler {
             .build();
    }
    
-   private CreditCards scrapCreditCardsFromProductPage(Element doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCardsFromSellersPage(Element doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       
-      // TODO: here
+      // TODO: capture cards?
       Installments regularCard = scrapInstallments(doc, "");
       if (regularCard.getInstallments().isEmpty()) {
          regularCard.add(InstallmentBuilder.create()
