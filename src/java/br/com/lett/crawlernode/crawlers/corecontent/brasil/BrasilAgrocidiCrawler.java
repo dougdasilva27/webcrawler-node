@@ -92,14 +92,16 @@ public class BrasilAgrocidiCrawler extends Crawler {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
       
-      offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(MAIN_SELLER_NAME)
-            .setSellersPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .build());
+      if(pricing != null) {
+        offers.add(OfferBuilder.create()
+              .setUseSlugNameAsInternalSellerId(true)
+              .setSellerFullName(MAIN_SELLER_NAME)
+              .setSellersPagePosition(1)
+              .setIsBuybox(false)
+              .setIsMainRetailer(true)
+              .setPricing(pricing)
+              .build());
+      }
       
       return offers;
    }
@@ -109,12 +111,16 @@ public class BrasilAgrocidiCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-venda.titulo", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       
-      return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setPriceFrom(priceFrom)
-            .setCreditCards(creditCards)
-            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
-            .build();
+      if(spotlightPrice != null) {
+        return PricingBuilder.create()
+              .setSpotlightPrice(spotlightPrice)
+              .setPriceFrom(priceFrom)
+              .setCreditCards(creditCards)
+              .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+              .build();
+      }
+      
+      return null;
    }
    
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
