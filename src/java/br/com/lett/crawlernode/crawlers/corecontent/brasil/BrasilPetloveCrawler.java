@@ -25,6 +25,8 @@ import exceptions.OfferException;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -83,7 +85,7 @@ public class BrasilPetloveCrawler extends Crawler {
                String primaryImage = crawlPrimaryImage(jsonSku);
                String secondaryImages = crawlSecondaryImages(jsonSku);
                RatingsReviews ratingReviews = crawlRating(doc);
-               boolean available = (jsonSku.has("in_stock") && jsonSku.get("in_stock") instanceof Boolean) && jsonSku.getBoolean("in_stock");
+               boolean available = jsonSku.optBoolean("in_stock", false);
                Offers offers = available ? scrapOffers(jsonSku, doc) : new Offers();
 
                // Creating the product
@@ -321,11 +323,15 @@ public class BrasilPetloveCrawler extends Crawler {
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(skuJson, "list_price", false);
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(skuJson, "display_price", false);
       CreditCards creditCards = scrapCreditCards(skuJson, spotlightPrice);
+      BankSlip bankSlip = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
             .build();
    }
 
@@ -358,19 +364,21 @@ public class BrasilPetloveCrawler extends Crawler {
 
       if (installmentsCard != null) {
 
-         String installmentCard = installmentsCard;
-         int ou = installmentCard.contains("ou") ? installmentCard.indexOf("ou") : null;
-         int x = installmentCard.contains("x") ? installmentCard.lastIndexOf("x") : null;
-         int installment = Integer.parseInt(installmentCard.substring(ou, x).replaceAll("[^0-9]", "").trim());
+         Integer ouIndex = installmentsCard.contains("ou") ? installmentsCard.indexOf("ou") : null;
+         Integer xIndex = installmentsCard.contains("x") ? installmentsCard.lastIndexOf("x") : null;
 
-         String valueCard = installmentsCard;
-         int de = valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
-         Double value = MathUtils.parseDoubleWithComma(valueCard.substring(de));
+         if (ouIndex != null && xIndex != null) {
 
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(installment)
-               .setInstallmentPrice(value)
-               .build());
+            int installment = Integer.parseInt(installmentsCard.substring(ouIndex, xIndex).replaceAll("[^0-9]", "").trim());
+
+            Integer deIndex = installmentsCard.contains("R$") ? installmentsCard.indexOf("R$") : null;
+            Double value = deIndex != null ? MathUtils.parseDoubleWithComma(installmentsCard.substring(deIndex)) : null;
+
+            installments.add(InstallmentBuilder.create()
+                  .setInstallmentNumber(installment)
+                  .setInstallmentPrice(value)
+                  .build());
+         }
       }
       return installments;
    }
