@@ -24,6 +24,8 @@ import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -331,11 +333,15 @@ public class BrasilKalungaCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .text-muted.m-0 del", null, true, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .font-weight-bold", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+      BankSlip bankSlip = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
             .build();
    }
 
