@@ -32,6 +32,8 @@ import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -382,7 +384,7 @@ public class MercadolivreCrawler extends Crawler {
             .setSellerFullName(sellerFullName)
             .setMainPagePosition(1)
             .setIsBuybox(false)
-            .setIsMainRetailer(true)
+            .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
             .setPricing(pricing)
             .setSales(sales)
             .build());
@@ -391,17 +393,7 @@ public class MercadolivreCrawler extends Crawler {
    }
 
    private String scrapSellerFullName(Document doc) {
-
-      String sellerName = mainSellerNameLower;
-      String sellerNameElement = CrawlerUtils.scrapStringSimpleInfo(doc, ".official-store-info .title", false);
-
-      if (sellerName.equalsIgnoreCase(sellerNameElement)) {
-         sellerName = mainSellerNameLower;
-      } else {
-         sellerName = sellerNameElement;
-      }
-
-      return sellerName;
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".official-store-info .title", false);
    }
 
 
@@ -422,12 +414,15 @@ public class MercadolivreCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-tag.price-tag__del del .price-tag-symbol", "content", false, '.', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del) .price-tag-symbol", "content", false, '.', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-
+      BankSlip bankTicket = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setBankSlip(bankTicket)
             .build();
    }
 
@@ -459,7 +454,7 @@ public class MercadolivreCrawler extends Crawler {
 
       Element installmentsElement = doc.selectFirst(".payment-installments .highlight-info span");
       String installmentString = installmentsElement != null ? installmentsElement.text().replaceAll("[^0-9]", "").trim() : null;
-      int installment = installmentString != null ? Integer.parseInt(installmentString) : null;
+      int installment = installmentString != null && !installmentString.isEmpty() ? Integer.parseInt(installmentString) : null;
 
       Element valueElement = doc.selectFirst(".payment-installments .ch-price");
       String valueString = valueElement != null ? valueElement.ownText().replaceAll("[^0-9]", "").trim() : null;
