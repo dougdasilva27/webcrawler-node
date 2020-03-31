@@ -196,12 +196,14 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
       Double priceFrom = pricing.getPriceFrom();
       Double spotlightPrice = pricing.getSpotlightPrice();
-
-      if (priceFrom > spotlightPrice) {
-         Double discount = MathUtils.normalizeTwoDecimalPlaces((spotlightPrice / priceFrom) - 1) * 100;
-         sales.add(Integer.toString(discount.intValue()).replace("-", "- ".replace(".0", "")) + "%");
+     
+      if (priceFrom != null && spotlightPrice != null) {
+         if (priceFrom > spotlightPrice) {
+            Double discount = MathUtils.normalizeTwoDecimalPlaces((spotlightPrice / priceFrom) - 1) * 100;
+               sales.add(Integer.toString(discount.intValue()).replace("-", "- ".replace(".0", "")) + "%");
+            
+         }
       }
-
       return sales;
    }
 
