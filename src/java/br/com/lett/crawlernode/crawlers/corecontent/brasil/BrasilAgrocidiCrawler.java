@@ -2,10 +2,10 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.jsoup.nodes.Document;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -14,11 +14,26 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilAgrocidiCrawler extends Crawler {
+   
+   private String MAIN_SELLER_NAME = "Agro Cidi";
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
+         Card.MASTERCARD.toString(), Card.DINERS.toString(), Card.HIPERCARD.toString(), 
+         Card.AMEX.toString(), Card.ELO.toString());
 
    public BrasilAgrocidiCrawler(Session session) {
       super(session);
@@ -34,9 +49,6 @@ public class BrasilAgrocidiCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".principal div[data-produto-id]", "data-produto-id");
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=sku]", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".principal .nome-produto", false);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".principal .preco-produto .preco-promocional", null, false, ',', session);
-         Prices prices = crawlPrices(doc, price);
-         boolean available = !doc.select(".principal .disponivel").isEmpty();
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:first-child) a");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
                ".produto-thumbs:not(.thumbs-horizontal) #carouselImagem ul.miniaturas:first-child  a",
@@ -48,6 +60,8 @@ public class BrasilAgrocidiCrawler extends Crawler {
 
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(
                ".row-fluid:not(#comentarios-container) > div.span12  .abas-custom .tab-content"));
+         
+         Offers offers = scrapOffers(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -55,16 +69,13 @@ public class BrasilAgrocidiCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
-               .setMarketplace(new Marketplace())
+               .setOffers(offers)
                .build();
 
          products.add(product);
@@ -76,30 +87,62 @@ public class BrasilAgrocidiCrawler extends Crawler {
       return products;
 
    }
-
-   private Prices crawlPrices(Document doc, Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installments = new HashMap<>();
-         installments.put(1, price);
-         prices.setBankTicketPrice(price);
-         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-venda.titulo", null, true, ',', session));
-
-         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".principal .preco-produto  .preco-parcela", doc, false, "x");
-         if (!pair.isAnyValueNull()) {
-            installments.put(pair.getFirst(), pair.getSecond());
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-         prices.insertCardInstallment(Card.DINERS.toString(), installments);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
-         prices.insertCardInstallment(Card.AMEX.toString(), installments);
-         prices.insertCardInstallment(Card.ELO.toString(), installments);
+   
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(MAIN_SELLER_NAME)
+            .setSellersPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
+      
+      return offers;
+   }
+   
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-produto .preco-promocional", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-venda.titulo", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      
+      return PricingBuilder.create()
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+            .build();
+   }
+   
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      
+      Installments installments = new Installments();
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".principal .preco-produto  .preco-parcela", doc, false, "x");
+      if (!pair.isAnyValueNull()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+               .build());
       }
-
-      return prices;
+      
+      for (String brand : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(brand)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
+      }
+      
+      return creditCards;
    }
 
    private boolean isProductPage(Document doc) {
