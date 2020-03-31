@@ -53,6 +53,7 @@ public class BrasilAmazonCrawler extends Crawler {
    private static final String SELLER_NAME_2 = "amazon.com";
    private static final String SELLER_NAME_3 = "Amazon";
 
+
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
 
@@ -153,6 +154,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (seller != null) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3);
+
          return OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)
                .setSellerFullName(seller)
@@ -196,9 +198,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
                offers.add(mainPageOffer);
             } else {
-
                boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
-
                offers.add(OfferBuilder.create()
                      .setUseSlugNameAsInternalSellerId(true)
                      .setSellerFullName(name)
