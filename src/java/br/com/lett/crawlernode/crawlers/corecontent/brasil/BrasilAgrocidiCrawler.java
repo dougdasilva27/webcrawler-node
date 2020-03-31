@@ -108,10 +108,11 @@ public class BrasilAgrocidiCrawler extends Crawler {
    
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-produto .preco-promocional", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-venda.titulo", null, true, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       
       if(spotlightPrice != null) {
+         Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal .preco-venda.titulo", null, true, ',', session);
+         CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      
         return PricingBuilder.create()
               .setSpotlightPrice(spotlightPrice)
               .setPriceFrom(priceFrom)
