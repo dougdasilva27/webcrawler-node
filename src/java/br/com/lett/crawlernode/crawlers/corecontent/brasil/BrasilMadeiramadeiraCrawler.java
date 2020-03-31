@@ -97,6 +97,8 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
+
+      final String regex = "(?i)madeiramadeira\\s?|madeira?[\\s]?madeira";
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".txt-incash-value", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.section-price > p.text > del", null, false, ',', session);
       Pair<Integer, Float> pairInst = CrawlerUtils.crawlSimpleInstallment(".installment-payment-info-installments", doc, false, "x");
@@ -127,7 +129,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
               .setSellerFullName(sellerName)
               .setMainPagePosition(1)
               .setUseSlugNameAsInternalSellerId(true)
-              .setIsMainRetailer(Pattern.matches("(?i)madeiramadeira\\s?|madeira?[\\s]?madeira", sellerName))
+              .setIsMainRetailer(Pattern.matches(regex, sellerName))
               .setSales(sales)
               .build());
 
@@ -152,7 +154,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
                  .setSellerFullName(nameElement.text())
                  .setMainPagePosition(i + 1)
                  .setUseSlugNameAsInternalSellerId(true)
-                 .setIsMainRetailer(Pattern.matches("(?i)madeiramadeira\\s?|madeira?[\\s]?madeira", sellerName))
+                 .setIsMainRetailer(Pattern.matches(regex, sellerName))
                  .setSales(sales)
                  .build());
       }
