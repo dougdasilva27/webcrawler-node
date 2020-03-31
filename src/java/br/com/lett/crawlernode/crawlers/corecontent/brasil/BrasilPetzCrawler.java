@@ -29,6 +29,8 @@ import exceptions.OfferException;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -382,10 +384,15 @@ public class BrasilPetzCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".opt-box .price-current", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
+      BankSlip bankTicket = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
+
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setBankSlip(bankTicket)
             .build();
    }
 
@@ -416,21 +423,29 @@ public class BrasilPetzCrawler extends Crawler {
 
       Element installmentsCard = doc.selectFirst(".price-current .de-apagado");
 
-      if (installmentsCard != null) {
+      String installmentCard = installmentsCard.text();
 
-         String installmentCard = installmentsCard.text();
-         int ou = installmentCard.contains("OU") ? installmentCard.indexOf("OU") : null;
-         int x = installmentCard.contains("x") ? installmentCard.lastIndexOf("x") : null;
-         int installment = Integer.parseInt(installmentCard.substring(ou, x).replaceAll("[^0-9]", "").trim());
+      if (installmentCard != null) {
 
-         String valueCard = installmentsCard.text();
-         int de = valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
-         Double value = MathUtils.parseDoubleWithComma(valueCard.substring(de));
+         Integer ouIndex = installmentCard.contains("OU") ? installmentCard.indexOf("OU") : null;
+         Integer xIndex = installmentCard.contains("x") ? installmentCard.lastIndexOf("x") : null;
 
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(installment)
-               .setInstallmentPrice(value)
-               .build());
+         if (ouIndex != null && xIndex != null) {
+            int installment = Integer.parseInt(installmentCard.substring(ouIndex, xIndex).replaceAll("[^0-9]", "").trim());
+
+            String valueCard = installmentsCard.text();
+            Integer deIndex = valueCard != null && valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
+
+            if (deIndex != null) {
+
+               Double value = MathUtils.parseDoubleWithComma(valueCard.substring(deIndex));
+
+               installments.add(InstallmentBuilder.create()
+                     .setInstallmentNumber(installment)
+                     .setInstallmentPrice(value)
+                     .build());
+            }
+         }
       }
       return installments;
    }
