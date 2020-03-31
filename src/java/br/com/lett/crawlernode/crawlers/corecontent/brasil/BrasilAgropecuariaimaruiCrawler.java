@@ -124,15 +124,17 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-
-      offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(MAIN_SELLER_NAME)
-            .setSellersPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .build());
+      
+      if(pricing != null) {
+        offers.add(OfferBuilder.create()
+              .setUseSlugNameAsInternalSellerId(true)
+              .setSellerFullName(MAIN_SELLER_NAME)
+              .setSellersPagePosition(1)
+              .setIsBuybox(false)
+              .setIsMainRetailer(true)
+              .setPricing(pricing)
+              .build());
+      }
 
       return offers;
    }
@@ -142,15 +144,20 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-wrapper .product-page-price .woocommerce-Price-amount", null, true, ',', session);
       }
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-wrapper .price del .amount", null, true, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       
-      return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setPriceFrom(priceFrom)
-            .setCreditCards(creditCards)
-            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
-            .build();
+      if(spotlightPrice != null) {
+        Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-wrapper .price del .amount", null, true, ',', session);
+        CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+        
+        return PricingBuilder.create()
+              .setSpotlightPrice(spotlightPrice)
+              .setPriceFrom(priceFrom)
+              .setCreditCards(creditCards)
+              .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+              .build();
+        }
+      
+      return null;
    }
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
