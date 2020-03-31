@@ -27,6 +27,8 @@ import exceptions.OfferException;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -37,7 +39,7 @@ import models.pricing.Pricing.PricingBuilder;
 public class BrasilAdoropatasCrawler extends Crawler {
 
 
-   private static final String SELLER_FULL_NAME = "adoro patas";
+   private static final String SELLER_FULL_NAME = "Adoro Patas";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilAdoropatasCrawler(Session session) {
@@ -138,10 +140,8 @@ public class BrasilAdoropatasCrawler extends Crawler {
             Product clone = product.clone();
 
             Float varPrice = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
-
             String varCode = JSONUtils.getStringValue(skuJson, "code");
             String varLabel = JSONUtils.getStringValue(skuJson, "label");
-
             String varName = varCode != null && varLabel != null ? product.getName() + " - " + varCode + " " + varLabel : product.getName();
 
             JSONArray images = JSONUtils.getJSONArrayValue(skuJson, "images");
@@ -319,12 +319,12 @@ public class BrasilAdoropatasCrawler extends Crawler {
       return secondaryImagesArray;
    }
 
-   /* Inicio da captura de offers para produtos sem variação. */
+   /* Start capturing offers for products without variation. */
 
    private Offers scrapOffers(Document doc, Double priceFrom, Double spotlightPrice) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(priceFrom, spotlightPrice);
+      List<String> sales = scrapSales(pricing);
 
 
       offers.add(OfferBuilder.create()
@@ -341,22 +341,20 @@ public class BrasilAdoropatasCrawler extends Crawler {
 
    }
 
-   private List<String> scrapSales(Double priceFrom, Double spotlightPrice) {
+   private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
 
-      if (priceFrom != null) {
+      Double priceFrom = pricing.getPriceFrom();
+      Double spotlightPrice = pricing.getSpotlightPrice();
 
-         Double firstSalesDouble = priceFrom - spotlightPrice;
-         Double result = MathUtils.normalizeNoDecimalPlacesDown(-(firstSalesDouble * 100) / priceFrom);
-         String firstSales = result.toString();
+      if (priceFrom != null && spotlightPrice != null) {
+         if (priceFrom > spotlightPrice) {
+            Double discount = MathUtils.normalizeTwoDecimalPlaces((spotlightPrice / priceFrom) - 1) * 100;
+            sales.add(Integer.toString(discount.intValue()).replace("-", "- ".replace(".0", "")) + "%");
 
-
-         if (firstSales != null && !firstSales.isEmpty()) {
-            sales.add(firstSales);
          }
       }
       return sales;
-
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
@@ -364,11 +362,15 @@ public class BrasilAdoropatasCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-container .price", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      BankSlip bankSlip = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
             .build();
 
    }
@@ -406,11 +408,9 @@ public class BrasilAdoropatasCrawler extends Crawler {
       return installments;
    }
 
-   /* Fim da captura de offers para produtos sem variação. */
+   /* End of capturing offers for products without variation. */
 
-
-   /* Inicio da captura de offers para produtos com variação. */
-
+   /* Start capturing offers for products with variation. */
 
    private Offers scrapOfferswithVariation(JSONObject json) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
@@ -433,7 +433,6 @@ public class BrasilAdoropatasCrawler extends Crawler {
 
    }
 
-
    private Pricing scrapPricingForProductsWithVariation(JSONObject variationJson) throws MalformedPricingException {
 
       Double spotlightPriceV = JSONUtils.getDoubleValueFromJSON(variationJson, "price", true);
@@ -446,8 +445,6 @@ public class BrasilAdoropatasCrawler extends Crawler {
             .setCreditCards(creditCardsV)
             .build();
    }
-
-
 
    private CreditCards scrapCreditCardsForProductsWithVariation(JSONObject variationJson, Double spotlightPriceV) throws MalformedPricingException {
       CreditCards creditCardsV = new CreditCards();
@@ -483,6 +480,6 @@ public class BrasilAdoropatasCrawler extends Crawler {
       return installments;
    }
 
-   /* Fim da captura de offers para produtos com variação. */
+   /* End of capture of offers for products with variation. */
 
 }
