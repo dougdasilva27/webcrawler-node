@@ -34,7 +34,7 @@ import models.pricing.Pricing.PricingBuilder;
 public class BrasilKalungaCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.kalunga.com.br/";
-   private static final String SELLER_FULL_NAME = "kalunga";
+   private static final String SELLER_FULL_NAME = "Kalunga";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -332,7 +332,6 @@ public class BrasilKalungaCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .font-weight-bold", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
 
-
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
@@ -371,11 +370,11 @@ public class BrasilKalungaCrawler extends Crawler {
       if (installmentsCard != null) {
 
          String installmentCard = installmentsCard.text();
-         String installmentString = installmentCard.contains("x") ? installmentCard.split("x")[0] : null;
-         int installment = installmentString != null ? Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim()) : null;
+         String installmentString = installmentCard.contains("x") && installmentCard != null ? installmentCard.split("x")[0] : null;
+         int installment = installmentString != null && !installmentString.isEmpty() ? Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim()) : null;
 
          String valueCard = installmentsCard.text();
-         int de = valueCard.contains("de") ? valueCard.indexOf("de") : null;
+         int de = valueCard.contains("de") && valueCard != null ? valueCard.indexOf("de") : null;
          Double value = valueCard != null ? MathUtils.parseDoubleWithComma(valueCard.substring(de)) : null;
 
          installments.add(InstallmentBuilder.create()
