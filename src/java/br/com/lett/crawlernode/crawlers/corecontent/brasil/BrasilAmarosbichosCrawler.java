@@ -3,11 +3,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -16,17 +16,29 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
-import models.Marketplace;
+import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilAmarosbichosCrawler extends Crawler {
 
    private static final String HOME_PAGE = "www.petshopamarosbichos.com.br";
-
+   private static final String MAIN_SELLER_NAME = "Amaro's Bichos";
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), 
+         Card.ELO.toString(), Card.DINERS.toString(), Card.AMEX.toString());
+   
    public BrasilAmarosbichosCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
@@ -43,18 +55,13 @@ public class BrasilAmarosbichosCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".cod-sku [itemprop=\"sku\"]", true);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-container[data-product-id]", "data-product-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".container .title-page-product", true);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product .product-sku-information meta[itemprop=\"price\"]", "content", false, ',', session);
-         Prices prices = scrapPrices(doc, price);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrump-container > ul > li span[itemprop=\"title\"]", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-sku-image .image-highlight a.main-product img",
                Arrays.asList("data-zoom-image", "src"), "https:", HOME_PAGE);
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-sku-image .image-highlight a.main-product img",
                Arrays.asList("data-zoom-image", "src"), "https:", HOME_PAGE, primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".descriptions"));
-         Integer stock = null;
-         boolean available = doc.selectFirst(".buybox .compra-wrapper") != null;
-         Marketplace marketplace = null;
-         Offers offers = null;
+         Offers offers = scrapOffers(doc);
          RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
          // Creating the product
@@ -63,17 +70,12 @@ public class BrasilAmarosbichosCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
-               .setStock(stock)
-               .setMarketplace(marketplace)
                .setOffers(offers)
                .setRatingReviews(ratingsReviews)
                .build();
@@ -86,36 +88,73 @@ public class BrasilAmarosbichosCrawler extends Crawler {
 
       return products;
    }
+   
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+
+      if(pricing != null) {
+        offers.add(OfferBuilder.create()
+              .setUseSlugNameAsInternalSellerId(true)
+              .setSellerFullName(MAIN_SELLER_NAME)
+              .setSellersPagePosition(1)
+              .setIsBuybox(false)
+              .setIsMainRetailer(true)
+              .setPricing(pricing)
+              .build());
+      }
+
+      return offers;
+   }
+   
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product .product-sku-information meta[itemprop=\"price\"]", "content", false, ',', session);
+      
+      if(spotlightPrice != null) {
+        Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product .promotion", null, true, ',', session);
+        CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+  
+        return PricingBuilder.create()
+              .setSpotlightPrice(spotlightPrice)
+              .setPriceFrom(priceFrom)
+              .setCreditCards(creditCards)
+              .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+              .build();
+      }
+      
+      return null;
+   }
+   
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".parcel-price .cash-payment span", doc, true, "x de");
+      if (!pair.isAnyValueNull()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+               .build());
+      }
+
+      for (String brand : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(brand)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
+      }
+
+      return creditCards;
+   }
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("#frontend-product .product-container") != null;
-   }
-
-   private Prices scrapPrices(Document doc, Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-
-         prices.setBankTicketPrice(
-               CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product .product-sku-information [itemprop=\"offers\"] .cash-payment", null, false, ',', session));
-
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-
-         Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(".parcel-price .cash-payment span", doc, true, "x de");
-
-         if (!installment.isAnyValueNull()) {
-            installmentPriceMap.put(installment.getFirst(), installment.getSecond());
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      }
-
-      return prices;
    }
 
    private RatingsReviews scrapRatingReviews(Document doc) {
