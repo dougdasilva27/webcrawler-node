@@ -111,7 +111,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.carrefour.com.br/Kit-de-Fraldas-Huggies-Hiper-Supreme-Care-XXG-156-Unidades/p/B2-3-502952",
+                        "https://www.carrefour.com.br/Kit-de-Fraldas-Huggies-Hiper-Supreme-Care-XXG-156-Unidades/p/B2-3-5029520",
                         market);
          }
 
