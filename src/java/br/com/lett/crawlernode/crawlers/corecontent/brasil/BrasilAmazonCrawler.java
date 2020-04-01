@@ -147,14 +147,14 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
       String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info #sellerProfileTriggerId", false);
-      Pricing pricing = scrapMainPagePricing(doc);
 
       if (seller == null) {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info", false);
       }
 
-      if (seller != null) {
+      if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3);
+         Pricing pricing = scrapMainPagePricing(doc);
 
          return OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)
