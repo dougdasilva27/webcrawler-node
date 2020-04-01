@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,7 +19,6 @@ import org.jooq.Result;
 import org.jooq.conf.ParamType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.models.CategoriesRanking;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Ranking;
@@ -32,7 +30,6 @@ import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import dbmodels.Tables;
-import dbmodels.tables.CrawlerCategories;
 import dbmodels.tables.CrawlerRanking;
 import generation.PostgresJsonBinding;
 import models.Behavior;
@@ -43,7 +40,6 @@ import models.prices.Prices;
 public class Persistence {
    private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
 
-   private static final String MONGO_COLLECTION_DISCOVER_STATS = "RankingDiscoverStats";
    private static final String MONGO_COLLECTION_SERVER_TASK = "ServerTask";
 
    // Class generated in project DB to convert an object to gson because dialect postgres not accepted
@@ -632,52 +628,6 @@ public class Persistence {
 
 
    // busca dados no postgres
-   public static CategoriesRanking fecthCategories(int id) {
-      CrawlerCategories crawlerCategories = Tables.CRAWLER_CATEGORIES;
-
-      List<Field<?>> fields = new ArrayList<>();
-      fields.add(crawlerCategories.CAT1);
-      fields.add(crawlerCategories.CAT2);
-      fields.add(crawlerCategories.CAT3);
-      fields.add(crawlerCategories.URL);
-
-      List<Condition> conditions = new ArrayList<>();
-      conditions.add(crawlerCategories.ID.equal((long) id));
-
-      Connection conn = null;
-      Statement sta = null;
-      ResultSet rs = null;
-      try {
-         conn = JdbcConnectionFactory.getInstance().getConnection();
-         sta = conn.createStatement();
-         rs = sta.executeQuery(
-               GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(crawlerCategories).where(conditions).getSQL(ParamType.INLINED));
-
-         Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
-
-         CategoriesRanking cat = new CategoriesRanking();
-
-         for (Record record : records) {
-            cat.setCat1(record.get(crawlerCategories.CAT1));
-            cat.setCat2(record.get(crawlerCategories.CAT2));
-            cat.setCat3(record.get(crawlerCategories.CAT3));
-            cat.setUrl(record.get(crawlerCategories.URL));
-         }
-
-         return cat;
-
-      } catch (Exception e) {
-         Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-      } finally {
-         JdbcConnectionFactory.closeResource(rs);
-         JdbcConnectionFactory.closeResource(sta);
-         JdbcConnectionFactory.closeResource(conn);
-      }
-
-      return null;
-   }
-
-   // busca dados no postgres
    public static List<Processed> fetchProcessedIdsWithInternalId(String id, int market) {
       List<Processed> processeds = new ArrayList<>();
 
@@ -877,37 +827,6 @@ public class Persistence {
       }
    }
 
-
-   /**
-    * Queries in database panel
-    */
-
-   // insere dados do ranking no mongo
-   public static void persistDiscoverStats(Ranking r) {
-      SimpleDateFormat ft = new SimpleDateFormat("yyyy-MM-dd");
-
-      // se não conseguir inserir tenta atualizar
-      try {
-         Document filter = new Document("location", r.getLocation()).append("market", r.getMarketId()).append("rank_type", r.getRankType())
-               .append("date", ft.format(new Date()));
-
-         if (GlobalConfigurations.dbManager.connectionFrozen.countFind(filter, MONGO_COLLECTION_DISCOVER_STATS) > 0) {
-
-            Document update = new Document("$set", new Document(r.getDocumentUpdate()));
-            GlobalConfigurations.dbManager.connectionFrozen.updateOne(filter, update, MONGO_COLLECTION_DISCOVER_STATS);
-            Logging.printLogDebug(logger, "Dados atualizados com sucesso!");
-
-         } else {
-
-            GlobalConfigurations.dbManager.connectionFrozen.insertOne(r.getDocument(), MONGO_COLLECTION_DISCOVER_STATS);
-            Logging.printLogDebug(logger, "Dados cadastrados com sucesso!");
-
-         }
-
-      } catch (Exception e) {
-         Logging.printLogError(logger, CommonMethods.getStackTrace(e));
-      }
-   }
 
 
    /**

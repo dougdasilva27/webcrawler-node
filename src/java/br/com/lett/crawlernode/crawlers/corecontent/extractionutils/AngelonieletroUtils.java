@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils;
+package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
 import java.util.List;
 import org.apache.http.cookie.Cookie;
