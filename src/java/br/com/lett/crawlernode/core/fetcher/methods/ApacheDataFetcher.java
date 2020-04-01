@@ -41,11 +41,14 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -200,6 +203,23 @@ public class ApacheDataFetcher implements DataFetcher {
             }
 
             S3Service.saveResponseContent(session, requestHash, content);
+
+            if (!content.isEmpty()) {
+               FetcherOptions options = request.getFetcherOptions();
+               if (options != null) {
+                  String selector = options.getForbiddenCssSelector();
+
+                  if (selector != null) {
+                     Document doc = Jsoup.parse(content);
+
+                     if (!doc.select(selector).isEmpty()) {
+                        Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "] Error performing " + method + " request. Error: Forbidden Selector detected.");
+                        throw new ResponseCodeException(403);
+                     }
+                  }
+               }
+
+            }
 
             // see if some code error occured
             // sometimes the remote server doesn't send the http error code on the headers

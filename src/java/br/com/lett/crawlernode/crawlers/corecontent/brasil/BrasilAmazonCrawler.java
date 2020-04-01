@@ -14,7 +14,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import com.google.common.collect.Sets;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -26,6 +25,8 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScrape
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -33,6 +34,7 @@ import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -63,7 +65,6 @@ public class BrasilAmazonCrawler extends Crawler {
    public BrasilAmazonCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
-      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -170,11 +171,20 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_ourprice", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_dealprice, #priceblock_saleprice", null, false, ',', session);
+      }
+
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
+      Double savings = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#dealprice_savings .priceBlockSavingsString",
+            null, false, ',', session);
+      Double priceFrom = savings == null ? null : spotlightPrice + savings;
 
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setPriceFrom(priceFrom)
+            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
             .build();
    }
 
@@ -182,35 +192,45 @@ public class BrasilAmazonCrawler extends Crawler {
       Offers offers = new Offers();
       int pos = 1;
 
-      for (Document offerPage : offersPages) {
-         Elements ofertas = offerPage.select("#olpOfferList .olpOffer");
+      if (!offersPages.isEmpty()) {
+         for (Document offerPage : offersPages) {
+            Elements ofertas = offerPage.select("#olpOfferList .olpOffer");
 
-         for (Element oferta : ofertas) {
-            String name = CrawlerUtils.scrapStringSimpleInfo(oferta, "h3.olpSellerName", false);
-            Pricing pricing = scrapSellersPagePricing(oferta);
+            for (Element oferta : ofertas) {
+               String name = CrawlerUtils.scrapStringSimpleInfo(oferta, "h3.olpSellerName", false);
+               Pricing pricing = scrapSellersPagePricing(oferta);
 
-            if (name.isEmpty()) {
-               name = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, "h3.olpSellerName img", "alt");
+               if (name.isEmpty()) {
+                  name = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, "h3.olpSellerName img", "alt");
+               }
+
+               if (mainPageOffer != null && name.equals(mainPageOffer.getSellerFullName())) {
+                  mainPageOffer.setSellersPagePosition(pos);
+
+                  // Caso tenha mais de uma oferta na pagina, ou a oferta da pagina principal
+                  // nao seja a primeira e um indicativo de multiplas ofertas
+                  if (ofertas.size() > 1 || pos > 1) {
+                     mainPageOffer.setIsBuybox(true);
+                  }
+
+                  offers.add(mainPageOffer);
+               } else {
+                  boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
+                  offers.add(OfferBuilder.create()
+                        .setUseSlugNameAsInternalSellerId(true)
+                        .setSellerFullName(name)
+                        .setSellersPagePosition(pos)
+                        .setIsBuybox(false)
+                        .setIsMainRetailer(isMainRetailer)
+                        .setPricing(pricing)
+                        .build());
+               }
+
+               pos++;
             }
-
-            if (mainPageOffer != null && name.equals(mainPageOffer.getSellerFullName())) {
-               mainPageOffer.setSellersPagePosition(pos);
-
-               offers.add(mainPageOffer);
-            } else {
-               boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
-               offers.add(OfferBuilder.create()
-                     .setUseSlugNameAsInternalSellerId(true)
-                     .setSellerFullName(name)
-                     .setSellersPagePosition(pos)
-                     .setIsBuybox(false)
-                     .setIsMainRetailer(isMainRetailer)
-                     .setPricing(pricing)
-                     .build());
-            }
-
-            pos++;
          }
+      } else if (mainPageOffer != null) {
+         offers.add(mainPageOffer);
       }
 
       return offers;
@@ -223,18 +243,26 @@ public class BrasilAmazonCrawler extends Crawler {
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
             .build();
    }
 
    private CreditCards scrapCreditCardsFromSellersPage(Element doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      // TODO: capture cards?
-      Installments regularCard = scrapInstallments(doc, "");
-      if (regularCard.getInstallments().isEmpty()) {
+      Installments regularCard = new Installments();
+      regularCard.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+      Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(
+            "#installmentCalculator_feature_div", doc, false, "x", "juro", false, ',');
+
+      if (!installment.isAnyValueNull()) {
          regularCard.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
+               .setInstallmentNumber(installment.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installment.getSecond().doubleValue()))
                .build());
       }
 
@@ -247,13 +275,6 @@ public class BrasilAmazonCrawler extends Crawler {
       }
 
       return creditCards;
-   }
-
-   // TODO
-   private Installments scrapInstallments(Element doc, String selector) throws MalformedPricingException {
-      Installments installments = new Installments();
-
-      return installments;
    }
 
    private RatingsReviews crawlRating(Document document, String internalId) {
