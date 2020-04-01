@@ -535,7 +535,7 @@ public class BrasilCarrefourCrawler extends Crawler {
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(doc, ".credit-card-installments");
+      Installments installments = scrapInstallments(doc, ".credit-card-installments", spotlightPrice);
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
@@ -545,7 +545,7 @@ public class BrasilCarrefourCrawler extends Crawler {
                .build());
       }
 
-      Installments shopCard = scrapInstallments(doc, ".prince-product-blue");
+      Installments shopCard = scrapInstallments(doc, ".prince-product-blue", spotlightPrice);
       creditCards.add(CreditCardBuilder.create()
             .setBrand(Card.SHOP_CARD.toString())
             .setIsShopCard(true)
@@ -555,8 +555,12 @@ public class BrasilCarrefourCrawler extends Crawler {
       return creditCards;
    }
 
-   public Installments scrapInstallments(Document doc, String selector) throws MalformedPricingException {
+   public Installments scrapInstallments(Document doc, String selector, Double spotlightPrice) throws MalformedPricingException {
       Installments installments = new Installments();
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
       Element installmentsCard = doc.selectFirst(selector);
 
