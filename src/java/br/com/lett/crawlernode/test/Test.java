@@ -103,7 +103,7 @@ public class Test {
          Session session;
 
          if (testType.equals(KEYWORDS_TEST)) {
-            session = SessionFactory.createTestRankingKeywordsSession("comfort ", market);
+            session = SessionFactory.createTestRankingKeywordsSession("jugo ", market);
          } else if (testType.equals(CATEGORIES_TEST)) {
             session = SessionFactory.createTestRankingCategoriesSession(
                   "https://produto.mercadolivre.com.br/MLB-1225997122-capsula-de-cafe-espresso-melitta-staccato-10-unidades-_JM",
@@ -111,7 +111,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.gpsfarma.com/cuidado-personal-1/afeitada/maquina-de-afeitar-prestobarba3-sense-care-x-4-un.html",
+                        "https://www.carrefour.com.br/Kit-de-Fraldas-Huggies-Hiper-Supreme-Care-XXG-156-Unidades/p/B2-3-502952",
                         market);
          }
 
