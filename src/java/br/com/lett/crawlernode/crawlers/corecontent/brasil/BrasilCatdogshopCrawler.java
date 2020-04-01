@@ -3,12 +3,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -19,10 +19,23 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilCatdogshopCrawler extends Crawler {
+   
+   private static final String MAIN_SELLER_NAME = "Cat & Dog Shop";
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), 
+         Card.HIPERCARD.toString(), Card.AMEX.toString(), Card.DINERS.toString(), Card.ELO.toString(), Card.HIPER.toString());
 
    public BrasilCatdogshopCrawler(Session session) {
       super(session);
@@ -44,8 +57,6 @@ public class BrasilCatdogshopCrawler extends Crawler {
             String internalId = skuJson.has("product_id") && !skuJson.isNull("product_id") ? skuJson.get("product_id").toString() : null;
             String internalPid = skuJson.has("sku") && !skuJson.isNull("sku") ? skuJson.get("sku").toString() : null;
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-form-container .product-name", true);
-            Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price_number", true);
-            Prices prices = scrapPrices(doc, skuJson, price);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > a.breadcrumb-crumb", true);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
                   "#product-slider-container .product-slide > a", Arrays.asList("href"), "https:", "d26lpennugtm8s.cloudfront.net");
@@ -53,18 +64,14 @@ public class BrasilCatdogshopCrawler extends Crawler {
                   "#product-slider > .product-slide > a", Arrays.asList("href"), "https:", "d26lpennugtm8s.cloudfront.net", primaryImage);
             String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".description", false);
             Integer stock = skuJson.has("stock") && skuJson.get("stock") instanceof Integer ? skuJson.getInt("stock") : null;
-            boolean available = (skuJson.has("available") && skuJson.get("available") instanceof Boolean) && skuJson.getBoolean("available");
-            Marketplace marketplace = null;
-
+            Offers offers = scrapOffers(doc, skuJson);
+            
             // Creating the product
             Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
@@ -72,7 +79,7 @@ public class BrasilCatdogshopCrawler extends Crawler {
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
                   .setStock(stock)
-                  .setMarketplace(marketplace)
+                  .setOffers(offers)
                   .build();
 
             products.add(product);
@@ -82,6 +89,77 @@ public class BrasilCatdogshopCrawler extends Crawler {
       }
 
       return products;
+   }
+   
+   private Offers scrapOffers(Document doc, JSONObject json) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc, json);
+
+      if(pricing != null) {
+        offers.add(OfferBuilder.create()
+              .setUseSlugNameAsInternalSellerId(true)
+              .setSellerFullName(MAIN_SELLER_NAME)
+              .setSellersPagePosition(1)
+              .setIsBuybox(false)
+              .setIsMainRetailer(true)
+              .setPricing(pricing)
+              .build());
+      }
+      
+      return offers;
+   }
+   
+   private Pricing scrapPricing(Document doc, JSONObject json) throws MalformedPricingException {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "price_number", true);
+
+      if(spotlightPrice != null) {
+        Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#compare_price_display", null, false, ',', session);
+        CreditCards creditCards = scrapCreditCards(doc, json, spotlightPrice);
+
+        return PricingBuilder.create()
+              .setSpotlightPrice(spotlightPrice)
+              .setPriceFrom(priceFrom)
+              .setCreditCards(creditCards)
+              .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+              .build();
+      }
+
+      return null;
+   }
+   
+   private CreditCards scrapCreditCards(Document doc, JSONObject skuJson, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (skuJson.has("installments_data") && !skuJson.isNull("installments_data") && skuJson.get("installments_data") instanceof String) {
+         String installmentsJsonString = skuJson.getString("installments_data");
+         JSONObject installmentsJson = JSONUtils.stringToJson(installmentsJsonString);
+
+         installmentsJson = JSONUtils.getJSONValue(installmentsJson, "Wirecard");
+
+         for (String key : installmentsJson.keySet()) {
+            Integer first = MathUtils.parseInt(key);
+            JSONObject installmentJson = installmentsJson.get(key) instanceof JSONObject ? installmentsJson.getJSONObject(key) : new JSONObject();
+            Double second = JSONUtils.getDoubleValueFromJSON(installmentJson, "installment_value", true);
+
+            if (first != null && second != null) {
+               installments.add(InstallmentBuilder.create()
+                     .setInstallmentNumber(first)
+                     .setInstallmentPrice(second)
+                     .build());
+            }
+         }
+      }
+      
+      for (String brand : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(brand)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
+      }
+      
+      return creditCards;
    }
 
    private boolean isProductPage(Document doc) {
@@ -97,49 +175,5 @@ public class BrasilCatdogshopCrawler extends Crawler {
       }
 
       return CrawlerUtils.stringToJsonArray(arrString);
-   }
-
-   private Prices scrapPrices(Document doc, JSONObject skuJson, Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         prices.setBankTicketPrice(price);
-
-         Float priceFrom = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#compare_price_display", null, false, ',', session);
-         if (priceFrom != null) {
-            Double priceFromDouble = MathUtils.normalizeTwoDecimalPlaces(priceFrom.doubleValue());
-            prices.setPriceFrom(priceFromDouble);
-         }
-
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-
-         if (skuJson.has("installments_data") && !skuJson.isNull("installments_data") && skuJson.get("installments_data") instanceof String) {
-            String installmentsJsonString = skuJson.getString("installments_data");
-            JSONObject installmentsJson = JSONUtils.stringToJson(installmentsJsonString);
-
-            installmentsJson = JSONUtils.getJSONValue(installmentsJson, "Wirecard");
-
-            for (String key : installmentsJson.keySet()) {
-               Integer first = MathUtils.parseInt(key);
-               JSONObject installmentJson = installmentsJson.get(key) instanceof JSONObject ? installmentsJson.getJSONObject(key) : new JSONObject();
-               Float second = JSONUtils.getFloatValueFromJSON(installmentJson, "installment_value", true);
-
-               if (first != null && second != null) {
-                  installmentPriceMap.put(first, second);
-               }
-            }
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
-      }
-
-      return prices;
    }
 }
