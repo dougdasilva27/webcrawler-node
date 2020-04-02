@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -393,7 +396,24 @@ public class MercadolivreCrawler extends Crawler {
    }
 
    private String scrapSellerFullName(Document doc) {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".official-store-info .title", false);
+      String sellerName = null;
+      Element sellerNameElement = doc.selectFirst(".official-store-info .title");
+
+      if (sellerNameElement != null) {
+         sellerName = sellerNameElement.ownText().toLowerCase().trim();
+      } else {
+         sellerNameElement = doc.selectFirst(".new-reputation > a");
+
+         if (sellerNameElement != null) {
+
+            try {
+               sellerName = URLDecoder.decode(CommonMethods.getLast(sellerNameElement.attr("href").split("/")), "UTF-8").toLowerCase();
+            } catch (UnsupportedEncodingException e) {
+               e.printStackTrace();
+            }
+         }
+      }
+      return sellerName;
    }
 
 
