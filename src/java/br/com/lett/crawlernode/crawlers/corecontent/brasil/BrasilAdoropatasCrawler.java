@@ -52,7 +52,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identifiescript[type=\"text/x-magento-init\"]d: " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          JSONObject variationJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\"#product_addtocart_form\": ", ",", false, true);
          JSONObject stockJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/x-magento-init\"]", "\".input-text.qty\": ", "}", false, true);
@@ -69,10 +69,7 @@ public class BrasilAdoropatasCrawler extends Crawler {
                "[itemprop=description]", ".product.info > div > div:not(#tab-label-reviews):not(#reviews):not(#tab-label-questions):not(#questions)"));
          boolean available = scrapAvailability(doc);
 
-         Double priceFrom = scrapPricing(doc).getPriceFrom();
-         Double spotligthPrice = scrapPricing(doc).getSpotlightPrice();
-
-         Offers offers = available ? scrapOffers(doc, priceFrom, spotligthPrice) : new Offers();
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -321,11 +318,12 @@ public class BrasilAdoropatasCrawler extends Crawler {
 
    /* Start capturing offers for products without variation. */
 
-   private Offers scrapOffers(Document doc, Double priceFrom, Double spotlightPrice) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(pricing);
-
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-container .price", null, false, ',', session);
+      Pricing pricing = scrapPricing(doc, priceFrom, spotlightPrice);
+      List<String> sales = scrapSales(priceFrom, spotlightPrice);
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -341,11 +339,8 @@ public class BrasilAdoropatasCrawler extends Crawler {
 
    }
 
-   private List<String> scrapSales(Pricing pricing) {
+   private List<String> scrapSales(Double priceFrom, Double spotlightPrice) {
       List<String> sales = new ArrayList<>();
-
-      Double priceFrom = pricing.getPriceFrom();
-      Double spotlightPrice = pricing.getSpotlightPrice();
 
       if (priceFrom != null && spotlightPrice != null) {
          if (priceFrom > spotlightPrice) {
@@ -357,10 +352,8 @@ public class BrasilAdoropatasCrawler extends Crawler {
       return sales;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc, Double priceFrom, Double spotlightPrice) throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-container .price", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -414,9 +407,11 @@ public class BrasilAdoropatasCrawler extends Crawler {
 
    private Offers scrapOfferswithVariation(JSONObject json) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricingForProductsWithVariation(json);
 
-      List<String> sales = new ArrayList<>();
+      Double spotlightPriceV = JSONUtils.getDoubleValueFromJSON(json, "price", true);
+      Double priceFromV = JSONUtils.getDoubleValueFromJSON(json, "oldPrice", true);
+      Pricing pricing = scrapPricingForProductsWithVariation(json, priceFromV, spotlightPriceV);
+      List<String> sales = scrapSalesWithVariaiton(priceFromV, spotlightPriceV);
 
 
       offers.add(OfferBuilder.create()
@@ -433,16 +428,32 @@ public class BrasilAdoropatasCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricingForProductsWithVariation(JSONObject variationJson) throws MalformedPricingException {
 
-      Double spotlightPriceV = JSONUtils.getDoubleValueFromJSON(variationJson, "price", true);
-      Double priceFromV = JSONUtils.getDoubleValueFromJSON(variationJson, "oldPrice", true);
+   private List<String> scrapSalesWithVariaiton(Double priceFromV, Double spotlightPriceV) {
+      List<String> sales = new ArrayList<>();
+
+      if (priceFromV != null && spotlightPriceV != null) {
+         if (priceFromV > spotlightPriceV) {
+            Double discount = MathUtils.normalizeTwoDecimalPlaces((spotlightPriceV / priceFromV) - 1) * 100;
+            sales.add(Integer.toString(discount.intValue()).replace("-", "- ".replace(".0", "")) + "%");
+
+         }
+      }
+      return sales;
+   }
+
+   private Pricing scrapPricingForProductsWithVariation(JSONObject variationJson, Double priceFromV, Double spotlightPriceV) throws MalformedPricingException {
+
       CreditCards creditCardsV = scrapCreditCardsForProductsWithVariation(variationJson, spotlightPriceV);
+      BankSlip bankSlipV = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPriceV)
+            .build();
 
       return PricingBuilder.create()
             .setPriceFrom(priceFromV)
             .setSpotlightPrice(spotlightPriceV)
             .setCreditCards(creditCardsV)
+            .setBankSlip(bankSlipV)
             .build();
    }
 
