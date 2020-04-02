@@ -330,8 +330,8 @@ public class BrasilKalungaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc, String internalId) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .text-muted.m-0 del", null, true, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .font-weight-bold", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".text-muted.m-0 del", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".text-primary.h6 h3", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -348,20 +348,23 @@ public class BrasilKalungaCrawler extends Crawler {
    private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(doc);
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
-      }
+      if (spotlightPrice != null) {
 
-      for (String card : cards) {
-         creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+         Installments installments = scrapInstallments(doc);
+         if (installments.getInstallments().isEmpty()) {
+            installments.add(InstallmentBuilder.create()
+                  .setInstallmentNumber(1)
+                  .setInstallmentPrice(spotlightPrice)
+                  .build());
+         }
+
+         for (String card : cards) {
+            creditCards.add(CreditCardBuilder.create()
+                  .setBrand(card)
+                  .setInstallments(installments)
+                  .setIsShopCard(false)
+                  .build());
+         }
       }
 
       return creditCards;
@@ -370,9 +373,7 @@ public class BrasilKalungaCrawler extends Crawler {
    public Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
       Double finalPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .m-0 .font-weight-bold:last-child", null, false, ',', session);
-
       Element installmentsCard = doc.selectFirst("#spanSchemaPrice .m-0 .font-weight-bold");
-
       if (installmentsCard != null) {
 
          String installmentCard = installmentsCard.text();
@@ -388,7 +389,6 @@ public class BrasilKalungaCrawler extends Crawler {
                .setInstallmentPrice(value)
                .setFinalPrice(finalPrice)
                .build());
-
       }
 
       return installments;
