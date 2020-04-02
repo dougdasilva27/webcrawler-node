@@ -33,7 +33,7 @@ import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilCatdogshopCrawler extends Crawler {
    
-   private static final String MAIN_SELLER_NAME = "Cat & Dog Shop";
+   private static final String MAIN_SELLER_NAME = "Cat Dog Shop";
    private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), 
          Card.HIPERCARD.toString(), Card.AMEX.toString(), Card.DINERS.toString(), Card.ELO.toString(), Card.HIPER.toString());
 
