@@ -39,6 +39,7 @@ import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
@@ -408,51 +409,47 @@ public class BrasilCarrefourCrawler extends Crawler {
    private Offers scrapNewOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-
-      JSONObject jsonSellers = getJSON(doc);
-
-      boolean isBuyBoxPage = jsonSellers.has("buyBoxOffers") ? true : false;
-
-      String sellerFullName = null;
-      String internalSellerId = null;
-      Double spotlightPriceJson = 0d;
-
+      JSONArray dataLayer = CrawlerUtils.selectJsonArrayFromHtml(doc, "script[type=\"text/javascript\"]", "dataLayer = ", ";", false, false);
+      JSONObject jsonSellers = dataLayer.length() > 0 ? dataLayer.getJSONObject(0) : new JSONObject();
       JSONArray buyBoxOffers = jsonSellers.optJSONArray("buyBoxOffers");
+      boolean isBuyBoxPage = buyBoxOffers != null && !buyBoxOffers.isEmpty();
 
-      if (buyBoxOffers != null && !buyBoxOffers.isEmpty()) {
+      if (isBuyBoxPage) {
          int position = 1;
          for (Object o : buyBoxOffers) {
 
             JSONObject offerJson = (JSONObject) o;
 
-            if (offerJson.has("miraklVendor") && !offerJson.isNull("miraklVendor") && offerJson.has("price") && !offerJson.isNull("price")) {
-               JSONObject miraklVendor = offerJson.getJSONObject("miraklVendor");
-               JSONObject price = offerJson.getJSONObject("price");
-
-               if (miraklVendor.has("name") && miraklVendor.has("code")) {
-                  sellerFullName = miraklVendor.get("name").toString();
-                  internalSellerId = miraklVendor.get("code").toString();
-
+            String offerId = offerJson.optString("code");
+            String sellerFullName = null;
+            String internalSellerId = null;
+            boolean useSlug = false;
+            Double spotlightPriceJson = offerJson.optDouble("pricewithDiscountDouble", 0d);
+            if (spotlightPriceJson == 0d) {
+               JSONObject priceJson = offerJson.optJSONObject("price");
+               if (priceJson != null) {
+                  spotlightPriceJson = priceJson.optDouble("value", 0d);
                }
+            }
 
-               if (price.has("value")) {
-                  spotlightPriceJson = price.getDouble("value");
-               }
+            JSONObject miraklVendor = offerJson.optJSONObject("miraklVendor");
+
+            if (miraklVendor != null) {
+               sellerFullName = miraklVendor.optString("name");
+               internalSellerId = miraklVendor.optString("code");
 
             } else if (offerJson.isNull("miraklVendor")) {
-               JSONObject price = offerJson.getJSONObject("price");
                sellerFullName = "Carrefour";
-               internalSellerId = offerJson.optString("code");
-               spotlightPriceJson = price.optDouble("value");
-
+               useSlug = true;
             }
 
             boolean isMainRetailer = sellerFullName.equalsIgnoreCase(SELLER_NAME);
-            Pricing pricing = scrapPricingOfSellers(doc, spotlightPriceJson);
+            Pricing pricing = scrapPricingOfSellers(doc, spotlightPriceJson, offerId);
             List<String> sales = new ArrayList<>();
 
             Offer offer = new OfferBuilder()
                   .setInternalSellerId(internalSellerId)
+                  .setUseSlugNameAsInternalSellerId(useSlug)
                   .setSellerFullName(sellerFullName)
                   .setMainPagePosition(position)
                   .setIsBuybox(isBuyBoxPage)
@@ -466,12 +463,7 @@ public class BrasilCarrefourCrawler extends Crawler {
          }
 
       } else {
-
-         Map<String, Integer> mainSellers = new HashMap<>();
-
          Offer principalOffer = scrapOffersForSingleSeller(doc);
-         mainSellers.put(principalOffer.getInternalSellerId(), 1);
-
          if (principalOffer != null) {
             offers.add(principalOffer);
          }
@@ -481,21 +473,7 @@ public class BrasilCarrefourCrawler extends Crawler {
       return offers;
    }
 
-   private JSONObject getJSON(Document doc) {
-      JSONObject productInfo = null;
-
-      JSONArray dataLayer = CrawlerUtils.selectJsonArrayFromHtml(doc, "script[type=\"text/javascript\"]", "dataLayer = ", ";", false, false);
-
-      if (dataLayer.length() > 0) {
-         productInfo = dataLayer.getJSONObject(0);
-
-      }
-
-      return productInfo;
-   }
-
    // Oferta principal
-
    private Offer scrapOffersForSingleSeller(Document doc) throws OfferException, MalformedPricingException {
       boolean isBuyBoxPage = doc.selectFirst(".list-group.send-results.list-offer-by-box") != null;
       String sellerNameInMainPage = CrawlerUtils.scrapStringSimpleInfo(doc, ".sellerLink.vendaPorSeller", false);
@@ -523,7 +501,6 @@ public class BrasilCarrefourCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .prince-product-default .priceBig", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .prince-product-default .priceBig", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
@@ -587,22 +564,26 @@ public class BrasilCarrefourCrawler extends Crawler {
 
    // Inicio da captura das lojas externas
 
-   private Pricing scrapPricingOfSellers(Document doc, Double spotlightPriceJson) throws MalformedPricingException {
+   private Pricing scrapPricingOfSellers(Document doc, Double spotlightPriceJson, String offerId) throws MalformedPricingException {
 
       Double spotlightPrice = spotlightPriceJson;
-      CreditCards creditCards = scrapCreditCardsForSellers(doc);
+      CreditCards creditCards = scrapCreditCardsForSellers(doc, offerId, spotlightPriceJson);
 
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
+            .setBankSlip(
+                  BankSlipBuilder.create()
+                        .setFinalPrice(spotlightPrice)
+                        .build())
             .build();
    }
 
 
-   private CreditCards scrapCreditCardsForSellers(Document doc) throws MalformedPricingException {
+   private CreditCards scrapCreditCardsForSellers(Document doc, String offerId, Double spotlightPriceJson) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments regularCard = scrapInstallmentsForSellers(doc, ".installment .credit-card-installments");
+      Installments regularCard = scrapInstallmentsForSellers(doc, "li[data-id-offers=" + offerId + "] .installment p.credit-card-installments", spotlightPriceJson);
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
                .setBrand(brand)
@@ -611,7 +592,7 @@ public class BrasilCarrefourCrawler extends Crawler {
                .build());
       }
 
-      Installments shopCard = scrapInstallmentsForSellers(doc, ".installment-payment .big-price");
+      Installments shopCard = scrapInstallmentsForSellers(doc, "li[data-id-offers=" + offerId + "] .installment-payment .big-price", spotlightPriceJson);
       creditCards.add(CreditCardBuilder.create()
             .setBrand(Card.SHOP_CARD.toString())
             .setIsShopCard(true)
@@ -621,8 +602,12 @@ public class BrasilCarrefourCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallmentsForSellers(Document doc, String selector) throws MalformedPricingException {
+   private Installments scrapInstallmentsForSellers(Document doc, String selector, Double spotlightPrice) throws MalformedPricingException {
       Installments installments = new Installments();
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
       Elements installmentsElements = doc.select(selector);
 
