@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -19,23 +8,33 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
+import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static models.pricing.BankSlip.BankSlipBuilder;
 
 public class BrasilRicardoeletroCrawler extends Crawler {
-
-   private static final String SELLER_NAME = "ricardo eletro";
 
    public BrasilRicardoeletroCrawler(Session session) {
       super(session);
@@ -72,42 +71,33 @@ public class BrasilRicardoeletroCrawler extends Crawler {
                Document docVariation = !internalId.equalsIgnoreCase(mainId) ? scrapVariationHTML(url) : doc;
 
                String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
-                     "https", "www.imgeletro.com.br");
+                       "https", "www.imgeletro.com.br");
                String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
-                     "https", "www.imgeletro.com.br", primaryImage);
+                       "https", "www.imgeletro.com.br", primaryImage);
                CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "#Breadcrumbs a");
                String description = scrapDescription(docVariation);
 
                List<Document> sellersHtmls = scrapProductPagePerSeller(docVariation);
-               Map<String, Prices> marketplaceMap = scrapMarketplaceMap(sellersHtmls);
-               Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(SELLER_NAME), Card.VISA, session);
-               boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, Arrays.asList(SELLER_NAME));
-               Offers offers = !marketplaceMap.isEmpty() ? scrapOffers(sellersHtmls) : new Offers();
-               Prices prices = CrawlerUtils.getPrices(marketplaceMap, Arrays.asList(SELLER_NAME));
-               Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
+               Offers offers = scrapOffers(sellersHtmls);
                Integer stock = JSONUtils.getIntegerValueFromJSON(skuJson, "stock", 0);
                RatingsReviews rating = scrapRating(doc);
 
                Product product = ProductBuilder.create()
-                     .setUrl(url)
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(name)
-                     .setPrice(price)
-                     .setPrices(prices)
-                     .setAvailable(available)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setMarketplace(marketplace)
-                     .setStock(stock)
-                     .setEans(eans)
-                     .setOffers(offers)
-                     .setRatingReviews(rating)
-                     .build();
+                       .setUrl(url)
+                       .setInternalId(internalId)
+                       .setInternalPid(internalPid)
+                       .setName(name)
+                       .setCategory1(categories.getCategory(0))
+                       .setCategory2(categories.getCategory(1))
+                       .setCategory3(categories.getCategory(2))
+                       .setPrimaryImage(primaryImage)
+                       .setSecondaryImages(secondaryImages)
+                       .setDescription(description)
+                       .setStock(stock)
+                       .setEans(eans)
+                       .setOffers(offers)
+                       .setRatingReviews(rating)
+                       .build();
 
                products.add(product);
             }
@@ -142,9 +132,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
    private Document scrapVariationHTML(String url) {
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .build();
+              .setUrl(url)
+              .setCookies(cookies)
+              .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -214,78 +204,68 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       return htmls;
    }
 
-   private Offers scrapOffers(List<Document> htmls) {
+   private Offers scrapOffers(List<Document> htmls) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-
       int position = 1;
       for (Document doc : htmls) {
          String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-price-details .product-price-details-sold-by b", true);
          String sellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ExibeFormasPagamento[data-siteid]", "data-siteid");
+
          Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-details .product-price-details-new-price", null, false, ',', session);
-
+         Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-details .product-price-details-old-price", null, false, ',', session);
          if (price != null) {
-            try {
-               Offer offer = new OfferBuilder()
-                     .setSellerFullName(sellerName)
-                     .setInternalSellerId(sellerId)
-                     .setMainPagePosition(position)
-                     .setIsBuybox(htmls.size() > 1)
-                     .setMainPrice(price)
-                     .build();
-               offers.add(offer);
-            } catch (OfferException e) {
-               Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-            }
+            Pricing pricing = PricingBuilder.create().setSpotlightPrice(price).setCreditCards(scrapCreditCards(doc))
+                    .setPriceFrom(priceFrom)
+                    .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
+                    .build();
+            offers.add(new OfferBuilder()
+                    .setSellerFullName(sellerName)
+                    .setInternalSellerId(sellerId)
+                    .setIsMainRetailer(Pattern.matches("(?i)ricardoeletro\\s?|ricardo?[\\s]?eletro\\s?", sellerName))
+                    .setMainPagePosition(position)
+                    .setPricing(pricing)
+                    .setIsBuybox(htmls.size() > 1)
+                    .build());
          }
-
          position++;
       }
 
       return offers;
    }
 
-   private Map<String, Prices> scrapMarketplaceMap(List<Document> htmls) {
-      Map<String, Prices> marketplaceMap = new HashMap<>();
-
-      for (Document doc : htmls) {
-         String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-price-details .product-price-details-sold-by b", true).toLowerCase();
-         Prices prices = scrapPrices(doc);
-
-         if (!prices.isEmpty()) {
-            marketplaceMap.put(sellerName, prices);
-         }
+   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = scrapInstallment(doc);
+      Set<String> allCards = Arrays.stream(Card.values()).map(Card::toString).collect(Collectors.toSet());
+      Set<String> cards = new HashSet<>();
+      for (Element child : doc.selectFirst(".footer-infos-flags").children()) {
+         allCards.stream().filter(card -> child.className().contains(card)).forEach(cards::add);
+      }
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+                 .setBrand(card)
+                 .setInstallments(installments)
+                 .setIsShopCard(true)
+                 .build());
       }
 
-      return marketplaceMap;
+      return creditCards;
+
    }
 
-   private Prices scrapPrices(Document doc) {
-      Prices prices = new Prices();
-
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-price-details .product-price-details-new-price", null, false, ',', session);
-      if (price != null) {
-         Map<Integer, Float> installments = new HashMap<>();
-         installments.put(1, price);
-
-         prices.setBankTicketPrice(price);
-         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-details .product-price-details-old-price", null, false, ',', session));
-
-         Elements installmentsElements = doc.select(".product-price-details  .product-price-details-installments:not(:last-child) b");
-         for (Element e : installmentsElements) {
-            Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, true);
-            if (!pair.isAnyValueNull()) {
-               installments.put(pair.getFirst(), pair.getSecond());
-            }
+   private Installments scrapInstallment(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+      Elements installmentsElements = doc.select(".product-price-details  .product-price-details-installments:not(:last-child) b");
+      for (Element e : installmentsElements) {
+         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, true);
+         if (!pair.isAnyValueNull()) {
+            installments.add(InstallmentBuilder.create()
+                    .setInstallmentNumber(pair.getFirst())
+                    .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+                    .build());
          }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installments);
-         prices.insertCardInstallment(Card.DINERS.toString(), installments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
-         prices.insertCardInstallment(Card.AMEX.toString(), installments);
       }
-
-      return prices;
+      return installments;
    }
 
    /**
@@ -350,11 +330,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+              .totalStar1(star1)
+              .totalStar2(star2)
+              .totalStar3(star3)
+              .totalStar4(star4)
+              .totalStar5(star5)
+              .build();
    }
 }

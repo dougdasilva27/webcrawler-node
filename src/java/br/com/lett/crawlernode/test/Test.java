@@ -103,7 +103,7 @@ public class Test {
          Session session;
 
          if (testType.equals(KEYWORDS_TEST)) {
-            session = SessionFactory.createTestRankingKeywordsSession("jugo ", market);
+            session = SessionFactory.createTestRankingKeywordsSession("comfort ", market);
          } else if (testType.equals(CATEGORIES_TEST)) {
             session = SessionFactory.createTestRankingCategoriesSession(
                   "https://produto.mercadolivre.com.br/MLB-1225997122-capsula-de-cafe-espresso-melitta-staccato-10-unidades-_JM",
@@ -111,7 +111,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.carrefour.com.br/Kit-de-Fraldas-Huggies-Hiper-Supreme-Care-XXG-156-Unidades/p/B2-3-5029520",
+                        "https://www.carrefour.com.br/Ampola-de-Tratamento-Pantene-Summer-Bomba-de-Reparacao-45ml/p/9555242",
                         market);
          }
 

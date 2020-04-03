@@ -126,6 +126,7 @@ public class B2WCrawler extends Crawler {
 
       // Json da pagina principal
       JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
+
       // Pega só o que interessa do json da api
       JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
@@ -444,23 +445,6 @@ public class B2WCrawler extends Crawler {
       }
 
       return offers;
-   }
-
-   private boolean isMainRetailer(String sellerName) {
-      boolean isMainRetailer = false;
-
-      if (sellerName.equalsIgnoreCase(MAIN_B2W_NAME_LOWER) || sellerName.equalsIgnoreCase(sellerNameLower)) {
-         isMainRetailer = true;
-      } else {
-         for (String seller : subSellers) {
-            if (sellerName.equalsIgnoreCase(seller)) {
-               isMainRetailer = true;
-               break;
-            }
-         }
-      }
-
-      return isMainRetailer;
    }
 
    private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice)

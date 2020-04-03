@@ -107,58 +107,6 @@ public class SaopauloB2WCrawlersUtils {
 
    }
 
-   /**
-    * Para pegar todos os preços acessamos uma api que retorna um json com todos preços de todos os
-    * marketplaces, depois pegamos somente as parcelas e o preço no boleto do shoptime. Em seguida
-    * coloco somente o id do produto com seu preço no boleto e as parcelas no cartão, também coloco as
-    * parcelas do produto com maior quantidade de parcelas, pois foi verificado que produtos com
-    * variações, a segunda variação está vindo com apenas uma parcela no json da api. Vale lembrar que
-    * pegamos as parcelas do Cartão VISA. ex:
-    * 
-    * Endereço api:
-    * http://product-v3.shoptime.com.br/product?q=itemId:(125628846)&responseGroups=medium&limit=5&offer.condition=ALL&paymentOptionIds=CARTAO_VISA,BOLETO
-    * 
-    * Parse Json: http://json.parser.online.fr/
-    * 
-    * { 125628854":{ "installments":[ { "interestRate":0, "total":1699, "quantity":1,
-    * "interestAmount":0, "value":1699, "annualCET":0 }, {...}, {...} ], "bankTicket":1699, "stock":72
-    * }, "moreQuantityOfInstallments":[ { "interestRate":0, "total":1699, "quantity":1,
-    * "interestAmount":0, "value":1699, "annualCET":0 } }
-    */
-   public static JSONObject assembleJsonProductOldWay(JSONObject initialJson) {
-      JSONObject jsonProduct = new JSONObject();
-
-      if (initialJson.has("products") && initialJson.getJSONArray("products").length() > 0) {
-         JSONObject productJson = initialJson.getJSONArray("products").getJSONObject(0);
-
-         JSONArray skus = getJSONSkus(productJson);
-         jsonProduct.put("skus", skus);
-
-         String internalPid = null;
-
-         if (productJson.has("id")) {
-            internalPid = productJson.getString("id");
-            jsonProduct.put("internalPid", internalPid);
-         }
-
-         if (productJson.has("name")) {
-            jsonProduct.put("name", productJson.get("name"));
-         }
-
-         JSONObject jsonPrices = extractJsonOffers(productJson, internalPid);
-         jsonProduct.put("prices", jsonPrices);
-
-         JSONObject jsonImages = getJSONImages(productJson);
-         jsonProduct.put("images", jsonImages);
-
-         JSONArray jsonCategories = getJSONCategories(productJson);
-         jsonProduct.put("categories", jsonCategories);
-      }
-
-      return jsonProduct;
-
-   }
-
    private static JSONArray getJSONSkus(JSONObject initialJson) {
       JSONArray skus = new JSONArray();
 
@@ -266,9 +214,17 @@ public class SaopauloB2WCrawlersUtils {
                offersJsonArray = offerObject.getJSONArray(internalPid);
             }
          }
+
+         if ((offersJsonArray == null || offersJsonArray.length() < 1) && entities.has("pickUpStoreOffers")) {
+            JSONObject offerObject = entities.getJSONObject("pickUpStoreOffers");
+            JSONObject productOffer = offerObject.optJSONObject(internalPid);
+            if (productOffer != null && productOffer.has("result")) {
+               offersJsonArray = productOffer.optJSONArray("result");
+            }
+         }
       }
 
-      if (offersJsonArray.length() > 0) {
+      if (offersJsonArray != null && offersJsonArray.length() > 0) {
          JSONArray moreQuantityOfInstallments = new JSONArray();
 
          for (int i = 0; i < offersJsonArray.length(); i++) {
@@ -280,7 +236,7 @@ public class SaopauloB2WCrawlersUtils {
             jsonSeller.put("priceFrom", jsonOffer.optDouble("salesPrice"));
 
             if (idProduct != null) {
-               manageEmbedded(jsonOffer, jsonSeller, moreQuantityOfInstallments);
+               manageEmbedded(jsonOffer, jsonSeller);
 
                if (jsonOffer.has("paymentOptions")) {
                   JSONObject payment = jsonOffer.getJSONObject("paymentOptions");
@@ -327,7 +283,7 @@ public class SaopauloB2WCrawlersUtils {
       return idProduct;
    }
 
-   private static void manageEmbedded(JSONObject jsonOffer, JSONObject jsonSeller, JSONArray moreQuantityOfInstallments) {
+   private static void manageEmbedded(JSONObject jsonOffer, JSONObject jsonSeller) {
       if (jsonOffer.has("_embedded")) {
          JSONObject embedded = jsonOffer.getJSONObject("_embedded");
 

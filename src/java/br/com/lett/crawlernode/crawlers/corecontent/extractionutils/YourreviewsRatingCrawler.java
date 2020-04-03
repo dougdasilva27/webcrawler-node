@@ -151,7 +151,6 @@ public class YourreviewsRatingCrawler {
     Integer star5 = 0;
 
     do {
-      currentPage++;
       docRating = crawlAllPagesRatingsFromYourViews(internalPid, storeKey, dataFetcher, currentPage);
       Elements reviews = docRating.select(".yv-col-md-8");
       for (Element element : reviews) {
@@ -179,6 +178,7 @@ public class YourreviewsRatingCrawler {
 
       }
 
+      currentPage++;
     } while (hasNextPage(docRating, currentPage));
 
     return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();

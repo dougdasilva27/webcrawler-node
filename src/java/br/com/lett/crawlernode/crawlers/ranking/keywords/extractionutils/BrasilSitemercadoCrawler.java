@@ -25,7 +25,15 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
    protected abstract String getHomePage();
 
-   protected abstract String getLoadPayload();
+   protected String getLoadPayload() {
+      JSONObject payload = new JSONObject();
+      String[] split = homePage.split("/");
+
+      payload.put("lojaUrl", CommonMethods.getLast(split));
+      payload.put("redeUrl", split[split.length - 2]);
+
+      return payload.toString();
+   }
 
    @Override
    public void extractProductsFromCurrentPage() {
