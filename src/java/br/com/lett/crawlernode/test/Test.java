@@ -111,7 +111,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.gpsfarma.com/cuidado-personal-1/afeitada/maquina-de-afeitar-prestobarba3-sense-care-x-4-un.html",
+                        "https://www.carrefour.com.br/Ampola-de-Tratamento-Pantene-Summer-Bomba-de-Reparacao-45ml/p/9555242",
                         market);
          }
 
