@@ -67,7 +67,9 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
 
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-attributes-tab-information .product-description"));
-         Offers offers = crawlAvailable(doc)? scrapOffers(doc) : new Offers();
+
+         String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
+         Offers offers = availableEl.contains("Comprar")? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -144,7 +146,6 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          offers.add(OfferBuilder.create()
                  .setPricing(PricingBuilder.create()
                      .setSpotlightPrice(priceNext)
-                     .setPriceFrom(null)
                      .setBankSlip(BankSlipBuilder.create()
                          .setFinalPrice(priceNext)
                          .build())
@@ -152,7 +153,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
                      .build())
                  .setIsBuybox(markets.size() > 1)
                  .setSellerFullName(nameElement.text())
-                 .setMainPagePosition(i + 1)
+                 .setSellersPagePosition(i + 1)
                  .setUseSlugNameAsInternalSellerId(true)
                  .setIsMainRetailer(Pattern.matches(regex, sellerName))
                  .setSales(sales)
@@ -163,6 +164,9 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    }
 
    private List<CreditCard> scrapCards(Pair<Integer, Float> pairInst, Double price){
+      if (pairInst.isAnyValueNull()) {
+         return new ArrayList<>();
+      }
       return Stream.of(Card.VISA, Card.MASTERCARD, Card.ELO)
               .map(card -> {
                  try {
@@ -186,15 +190,6 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
                  }
               })
               .collect(Collectors.toList());
-   }
-
-   private boolean crawlAvailable(Document doc) {
-      boolean available;
-      String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
-
-      available = availableEl.contains("Comprar");
-
-      return available;
    }
 
    private boolean isProductPage(Document doc) {
