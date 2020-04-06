@@ -27,7 +27,7 @@ import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilDogsdayCrawler extends Crawler {
    
-  private static final String MAIN_SELLER_NAME = "Mercearia do Animal";
+  private static final String MAIN_SELLER_NAME = "Dog's Day";
   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), 
         Card.ELO.toString(), Card.DINERS.toString(), Card.AMEX.toString());
 
