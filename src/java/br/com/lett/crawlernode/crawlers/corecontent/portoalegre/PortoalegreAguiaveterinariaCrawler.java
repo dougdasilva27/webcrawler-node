@@ -64,8 +64,6 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
           String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variationElement, "input[value]", "value");
           String name = CrawlerUtils.scrapStringSimpleInfo(variationElement, "> label", true);
           Offers offers = scrapOffers(variationElement, true);
-//          Float price = scrapPriceVariation(variationElement);
-//          Prices prices = scrapPrices(variationElement, price);
 
           // Creating the product
           Product product = ProductBuilder.create()
@@ -88,8 +86,6 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
         String internalId = CrawlerUtils.extractSpecificStringFromScript(idsScript, INTERNALID_ID, false, "';", false);
         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=\"name\"]", true);
         Offers offers = scrapOffers(doc, false);
-//        Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".final_price", "content", false, ',', session);
-//        Prices prices = scrapPrices(doc, price);
 
         // Creating the product
         Product product = ProductBuilder.create()
