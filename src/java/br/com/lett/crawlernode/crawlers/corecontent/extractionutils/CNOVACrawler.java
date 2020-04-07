@@ -516,7 +516,7 @@ public abstract class CNOVACrawler extends Crawler {
       Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".PaymentDiscount .DiscountCondition", null, true, ',', session);
       Double discount = percentage != null ? percentage / 100d : 0d;
 
-      CreditCards creditCards = scrapCreditCardsFromProductPage(doc, discount);
+      CreditCards creditCards = scrapCreditCardsFromProductPage(doc, discount, spotlightPrice);
       BankSlip bankSlip = scrapBankslip(doc, spotlightPrice, discount);
 
       return PricingBuilder.create()
@@ -547,10 +547,16 @@ public abstract class CNOVACrawler extends Crawler {
             .build();
    }
 
-   private CreditCards scrapCreditCardsFromProductPage(Document doc, Double discount) throws MalformedPricingException {
+   private CreditCards scrapCreditCardsFromProductPage(Document doc, Double discount, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments regularCard = scrapInstallments(doc, ".tabsCont #tab01 tr", discount);
+      Installments regularCard = scrapInstallments(doc, ".tabsCont #tab01 tr:not(.first)", discount);
+      if (regularCard.getInstallments().isEmpty()) {
+         regularCard.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
@@ -560,7 +566,12 @@ public abstract class CNOVACrawler extends Crawler {
                .build());
       }
 
-      Installments shopCard = scrapInstallments(doc, ".tabsCont #tab02 tr", discount);
+      Installments shopCard = scrapInstallments(doc, ".tabsCont #tab02 tr:not(.first)", discount);
+
+      if (shopCard.getInstallments().isEmpty()) {
+         shopCard = regularCard;
+      }
+
       creditCards.add(CreditCardBuilder.create()
             .setBrand(Card.SHOP_CARD.toString())
             .setIsShopCard(true)
@@ -577,12 +588,9 @@ public abstract class CNOVACrawler extends Crawler {
 
       Elements installmentsElements = doc.select(selector);
       for (Element e : installmentsElements) {
-         String id = e.id();
-         if (!id.contains("CartaoFlex")) {
-            Element installmentElement = e.selectFirst("> th");
-            if (installmentElement != null) {
-               installments.add(scrapInstallment(e, maxInstallmentsWithDiscount, discount));
-            }
+         Element installmentElement = e.selectFirst("> th");
+         if (installmentElement != null) {
+            installments.add(scrapInstallment(e, maxInstallmentsWithDiscount, discount));
          }
       }
 

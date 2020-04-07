@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,7 +10,6 @@ import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -38,8 +38,8 @@ public class PeruInkafarmaCrawler extends Crawler {
    protected Object fetch() {
       JSONObject skuJson = new JSONObject();
 
-      String originalUrl = session.getOriginalURL();
-      if (originalUrl.contains("?") && originalUrl.contains("sku=")) {
+      String parameterSku = getSkuFromUrl(session.getOriginalURL());
+      if (parameterSku != null) {
          Map<String, String> headersToken = new HashMap<>();
          headersToken.put(HttpHeaders.CONTENT_TYPE, "application/json");
 
@@ -53,13 +53,6 @@ public class PeruInkafarmaCrawler extends Crawler {
          JSONObject apiTokenJson = JSONUtils.stringToJson(response.getBody());
          if (apiTokenJson.has("idToken") && !apiTokenJson.isNull("idToken")) {
             String accesToken = apiTokenJson.get("idToken").toString();
-            String parameterSku = null;
-
-            for (String parameter : CommonMethods.getLast(originalUrl.split("\\?")).split("&")) {
-               if (parameter.startsWith("sku=")) {
-                  parameterSku = CommonMethods.getLast(parameter.split("="));
-               }
-            }
 
             Map<String, String> headers = new HashMap<>();
             headers.put("x-access-token", accesToken);
@@ -72,11 +65,28 @@ public class PeruInkafarmaCrawler extends Crawler {
                   .mustSendContentEncoding(false)
                   .build();
 
-            skuJson = JSONUtils.stringToJson(new JavanetDataFetcher().get(session, request).getBody());
+            String responseBody = this.dataFetcher.get(session, request).getBody();
+            skuJson = JSONUtils.stringToJson(Normalizer.normalize(responseBody, Normalizer.Form.NFD));
          }
       }
 
       return skuJson;
+   }
+
+   private String getSkuFromUrl(String url) {
+      String parameterSku = null;
+
+      if (url.contains("?") && url.contains("sku=")) {
+         for (String parameter : CommonMethods.getLast(url.split("\\?")).split("&")) {
+            if (parameter.startsWith("sku=")) {
+               parameterSku = CommonMethods.getLast(parameter.split("="));
+            }
+         }
+      } else if (url.contains("/")) {
+         parameterSku = CommonMethods.getLast(url.split("/")).split("\\?")[0];
+      }
+
+      return parameterSku;
    }
 
    public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
@@ -87,6 +97,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          String internalId = jsonSku.get("id").toString();
          String internalPid = internalId;
+         String newUrl = scrapNewUrl(jsonSku, internalId, session.getOriginalURL());
          String name = JSONUtils.getStringValue(jsonSku, "name").replace("\n", " ");
          Integer stock = JSONUtils.getIntegerValueFromJSON(jsonSku, "stock", 0);
          boolean available = stock > 0;
@@ -99,7 +110,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
+               .setUrl(newUrl)
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
@@ -122,6 +133,16 @@ public class PeruInkafarmaCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapNewUrl(JSONObject json, String internalId, String url) {
+      String newUrl = url;
+
+      if (url.contains("sku=") && internalId != null) {
+         newUrl = "https://inkafarma.pe/producto/" + CommonMethods.encondeStringURLToISO8859(json.optString("slug", ""), logger, session) + "/" + internalId;
+      }
+
+      return newUrl;
    }
 
    private String crawlPrimaryImage(JSONObject json) {

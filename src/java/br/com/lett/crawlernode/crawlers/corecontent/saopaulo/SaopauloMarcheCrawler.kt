@@ -45,6 +45,7 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
             if (it.optString("ean") is String) {
                 categories.add(it.optString("ean"))
             }
+            val primaryImage = document?.selectFirst(".product-image img")?.attr("src")
 
             products.add(ProductBuilder.create()
                     .setUrl(session.originalURL)
@@ -55,7 +56,7 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
                     .setPrices(prices)
                     .setAvailable(document?.selectFirst(".btn.btn-block.btn-lg.center-y") != null)
                     .setCategories(categories)
-                    .setPrimaryImage(it.optString("image"))
+                    .setPrimaryImage(primaryImage)
                     .setEans(eans)
                     .build())
         }

@@ -63,7 +63,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
                JSONObject product = JSONUtils.getJSONValue((JSONObject) o, "product");
 
                String internalId = product.has("id") && !product.isNull("id") ? product.get("id").toString() : null;
-               String productUrl = internalId != null ? "https://inkafarma.pe/p/product-detail?sku=" + internalId : null;
+               String productUrl = internalId != null ? "https://inkafarma.pe/producto/" + product.optString("slug", "") + "/" + internalId : null;
 
                saveDataProduct(internalId, internalId, productUrl);
 

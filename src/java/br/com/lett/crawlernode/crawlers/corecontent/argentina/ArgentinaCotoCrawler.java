@@ -73,8 +73,8 @@ public class ArgentinaCotoCrawler extends Crawler {
          String secondaryImages = crawlSecondaryImages(doc);
          String description = crawlDescription(doc);
          Integer stock = null;
-         Offers offers = scrapOffer(doc, internalId);
-
+         boolean availableToBuy = crawlAvailability(doc);
+         Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -253,6 +253,12 @@ public class ArgentinaCotoCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = scrapInstallments(doc);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
@@ -271,7 +277,6 @@ public class ArgentinaCotoCrawler extends Crawler {
       Element installmentsCard = doc.selectFirst(".info_productPrice .product_discount_pay span");
 
       if (installmentsCard != null) {
-
          String installmentString = installmentsCard.text().replaceAll("[^0-9]", "").trim();
          Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : null;
          Element valueElement = doc.selectFirst(".info_productPrice .product_discount_pay strong");
@@ -287,6 +292,10 @@ public class ArgentinaCotoCrawler extends Crawler {
       }
 
       return installments;
+   }
+
+   private boolean crawlAvailability(Document document) {
+      return !document.select(".add_products :not(.product_not_available)").isEmpty();
    }
 
 }

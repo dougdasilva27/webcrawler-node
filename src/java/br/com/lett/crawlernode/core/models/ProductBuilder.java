@@ -24,10 +24,10 @@ public class ProductBuilder {
    private Float price;
 
    @Deprecated // Use Offers instead
-   private Prices prices;
+   private Prices prices = new Prices();
 
    @Deprecated // Use Offers instead
-   private Marketplace marketplace;
+   private Marketplace marketplace = new Marketplace();
 
    @Deprecated // Use Offers instead
    private boolean available;

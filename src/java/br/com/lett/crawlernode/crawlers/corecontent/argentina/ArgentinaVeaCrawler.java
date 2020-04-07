@@ -78,7 +78,8 @@ public class ArgentinaVeaCrawler extends Crawler {
          String internalId = crawlInternalId(apiJson);
          String name = crawlName(apiJson);
          Integer stock = crawlStock(apiJson);
-         Offers offers = scrapOffer(apiJson);
+         boolean availableToBuy = stock != null && stock > 0;
+         Offers offers = availableToBuy ? scrapOffer(apiJson) : new Offers();
          CategoryCollection categories = new CategoryCollection();
          String primaryImage = crawlPrimaryImage(apiJson);
          String secondaryImages = crawlSecondaryImages();
@@ -339,15 +340,16 @@ public class ArgentinaVeaCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       JSONArray descuentos = JSONUtils.getJSONArrayValue(json, "Descuentos");
-      String firstSales = descuentos.getJSONObject(0).getString("Subtipo"); //
+      if (descuentos.optJSONObject(0) != null) {
+         String firstSales = descuentos.getJSONObject(0).optString("Subtipo");
+         /*
+          * We have to getJSONObject(0) because the JSONArray descuentos count a list of promotions but we
+          * only need the first one which is the promotion that appears on the website
+          */
 
-      /*
-       * We have to getJSONObject(0) because the JSONArray descuentos count a list of promotions but we
-       * only need the first one which is the promotion that appears on the website
-       */
-
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
+         if (firstSales != null && !firstSales.isEmpty()) {
+            sales.add(firstSales);
+         }
       }
 
       return sales;

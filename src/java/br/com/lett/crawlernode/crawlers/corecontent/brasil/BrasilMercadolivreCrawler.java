@@ -11,13 +11,13 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.Mercadolivre
  */
 public class BrasilMercadolivreCrawler extends MercadolivreCrawler {
 
-  private static final String HOME_PAGE = "https://www.mercadolivre.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "mercadolivre";
+   private static final String HOME_PAGE = "https://www.mercadolivre.com.br/mercado-livre";
+   private static final String MAIN_SELLER_NAME_LOWER = "mercado livre";
 
-  public BrasilMercadolivreCrawler(Session session) {
-    super(session);
-    super.setHomePage(HOME_PAGE);
-    super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
-    super.setSeparator(',');
-  }
+   public BrasilMercadolivreCrawler(Session session) {
+      super(session);
+      super.setHomePage(HOME_PAGE);
+      super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
+      super.setSeparator(',');
+   }
 }

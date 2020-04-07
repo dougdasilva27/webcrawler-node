@@ -41,7 +41,7 @@ public class SaopauloSondaCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(session.getOriginalURL())) {
+      if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(session.getOriginalURL());
@@ -73,8 +73,8 @@ public class SaopauloSondaCrawler extends Crawler {
 
    }
 
-   private boolean isProductPage(String url) {
-      return url.contains("/delivery/produto/");
+   private boolean isProductPage(Document doc) {
+      return !doc.select("h3.product--title_in").isEmpty();
    }
 
    private String crawlInternalId(String url) {

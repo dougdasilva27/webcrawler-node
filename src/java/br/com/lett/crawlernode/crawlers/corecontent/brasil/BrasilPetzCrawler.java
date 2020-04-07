@@ -2,15 +2,15 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -24,10 +24,19 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 /**
  * date: 27/03/2018
@@ -39,6 +48,10 @@ import models.prices.Prices;
 public class BrasilPetzCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.petz.com.br/";
+   private static final String SELLER_FULL_NAME = "Petz";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+
 
    public BrasilPetzCrawler(Session session) {
       super(session);
@@ -49,7 +62,7 @@ public class BrasilPetzCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Document doc = new Document("");
-      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), null, session);
 
       if (this.webdriver != null) {
          doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
@@ -139,18 +152,27 @@ public class BrasilPetzCrawler extends Crawler {
 
          String name = crawlName(doc, nameVariation);
          String internalId = crawlInternalId(doc);
-         boolean available = doc.select(".is_available").first() != null;
+
          String description = crawlDescription(doc);
-         Float price = crawlPrice(doc);
-         Prices prices = crawlPrices(price, doc);
          String primaryImage = crawlPrimaryImage(doc);
          String secondaryImages = crawlSecondaryImages(doc, primaryImage);
          List<String> eans = crawlEans(doc);
          RatingsReviews ratingReviews = crawlRating(doc);
+         boolean available = doc.select(".is_available").first() != null;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         return ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price).setPrices(prices)
-               .setAvailable(available).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setEans(eans)
-               .setMarketplace(new Marketplace()).setRatingReviews(ratingReviews).build();
+         return ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setEans(eans)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
+
       }
 
       return new Product();
@@ -261,16 +283,6 @@ public class BrasilPetzCrawler extends Crawler {
       return name.toString();
    }
 
-   private Float crawlPrice(Document doc) {
-      Float price = null;
-      Element priceElement = doc.select(".price-current").first();
-
-      if (priceElement != null) {
-         price = MathUtils.parseFloatWithComma(priceElement.ownText());
-      }
-
-      return price;
-   }
 
    private String crawlPrimaryImage(Document doc) {
       String primaryImage = null;
@@ -325,11 +337,6 @@ public class BrasilPetzCrawler extends Crawler {
          description.append(prodInfo.html());
       }
 
-      // Element shortDescription = doc.select("p[dir=ltr]").first();
-      // if (shortDescription != null) {
-      // description.append(shortDescription.html());
-      // }
-
       Elements elementsInformation = doc.select(".infos, #especificacoes");
       for (Element e : elementsInformation) {
          if (e.select(".depoimento, #depoimentos, .depoimentoTexto").isEmpty()) {
@@ -340,43 +347,107 @@ public class BrasilPetzCrawler extends Crawler {
       return description.toString();
    }
 
-   /**
-    * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
-    * à vista R$ 1.790,00
-    * 
-    * @param internalId
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, Document doc) {
-      Prices prices = new Prices();
 
-      if (price != null) {
-         prices.setBankTicketPrice(price);
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(doc);
 
-         Element priceFrom = doc.select(".de-riscado").first();
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
-         if (priceFrom != null) {
-            prices.setPriceFrom(MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloatWithComma(priceFrom.ownText()).doubleValue()));
-         }
+      return offers;
+   }
 
-         Map<Integer, Float> mapInstallments = new HashMap<>();
-         mapInstallments.put(1, price);
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
 
-         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".de-apagado", doc, true, "x", "", true);
-         if (!pair.isAnyValueNull()) {
-            mapInstallments.put(pair.getFirst(), pair.getSecond());
-         }
+      Element salesOneElement = doc.selectFirst(".badgeDesconto.badgeDescontoRed");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
 
-         prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.ELO.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
       }
 
-      return prices;
+      return sales;
    }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".opt-box .de-riscado", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".opt-box .price-current", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+
+      BankSlip bankTicket = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankTicket)
+            .build();
+   }
+
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(doc);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Element installmentsCard = doc.selectFirst(".price-current .de-apagado");
+
+      String installmentCard = installmentsCard != null ? installmentsCard.text() : null;
+
+      if (installmentCard != null) {
+
+         Integer ouIndex = installmentCard.contains("OU") ? installmentCard.indexOf("OU") : null;
+         Integer xIndex = installmentCard.contains("x") ? installmentCard.lastIndexOf("x") : null;
+
+         if (ouIndex != null && xIndex != null) {
+            int installment = Integer.parseInt(installmentCard.substring(ouIndex, xIndex).replaceAll("[^0-9]", "").trim());
+
+            String valueCard = installmentsCard.text();
+            Integer deIndex = valueCard != null && valueCard.contains("R$") ? valueCard.indexOf("R$") : null;
+
+            if (deIndex != null) {
+
+               Double value = MathUtils.parseDoubleWithComma(valueCard.substring(deIndex));
+
+               installments.add(InstallmentBuilder.create()
+                     .setInstallmentNumber(installment)
+                     .setInstallmentPrice(value)
+                     .build());
+            }
+         }
+      }
+      return installments;
+   }
+
 }

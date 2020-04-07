@@ -46,7 +46,7 @@ public class BrasilPluscareCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(session.getOriginalURL())) {
+      if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
@@ -78,8 +78,8 @@ public class BrasilPluscareCrawler extends Crawler {
 
    }
 
-   private boolean isProductPage(String url) {
-      return url.startsWith(HOME_PAGE + "/produto/");
+   private boolean isProductPage(Document doc) {
+      return !doc.select("#IdProduto").isEmpty();
    }
 
    private String crawlInternalId(Document doc) {

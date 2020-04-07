@@ -938,29 +938,31 @@ public class CrawlerUtils {
          boolean lastOccurrenceOfLastIndex) {
       String json = null;
 
-      int x = (lastOccurrenceOfFirstIndex ? script.lastIndexOf(firstIndexString) : script.indexOf(firstIndexString)) + firstIndexString.length();
+      if (script != null && !script.isEmpty()) {
+         int x = (lastOccurrenceOfFirstIndex ? script.lastIndexOf(firstIndexString) : script.indexOf(firstIndexString)) + firstIndexString.length();
 
-      if (lastIndexString != null) {
-         int y;
+         if (lastIndexString != null) {
+            int y;
 
-         if (lastOccurrenceOfLastIndex) {
-            y = script.lastIndexOf(lastIndexString);
+            if (lastOccurrenceOfLastIndex) {
+               y = script.lastIndexOf(lastIndexString);
+            } else {
+               y = script.indexOf(lastIndexString, x);
+            }
+
+            int plusIndex = 0;
+
+            // This happen when we need scrap a specific json on script
+            // Sometime we have more than one json
+            // So the last index in this case will be "},", "})" or "};"
+            if (lastIndexString.equals("};") || lastIndexString.equals("},") || lastIndexString.startsWith("})")) {
+               plusIndex = 1;
+            }
+
+            json = script.substring(x, y + plusIndex).trim();
          } else {
-            y = script.indexOf(lastIndexString, x);
+            json = script.substring(x).trim();
          }
-
-         int plusIndex = 0;
-
-         // This happen when we need scrap a specific json on script
-         // Sometime we have more than one json
-         // So the last index in this case will be "},", "})" or "};"
-         if (lastIndexString.equals("};") || lastIndexString.equals("},") || lastIndexString.startsWith("})")) {
-            plusIndex = 1;
-         }
-
-         json = script.substring(x, y + plusIndex).trim();
-      } else {
-         json = script.substring(x).trim();
       }
 
       return json;

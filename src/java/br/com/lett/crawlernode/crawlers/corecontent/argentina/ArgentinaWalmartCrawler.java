@@ -28,9 +28,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
@@ -177,8 +175,8 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
    private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      List<String> sales = scrapSales(internalId, doc);
       Pricing pricing = scrapPricing(internalId, doc);
+      List<String> sales = scrapSales(pricing);
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -193,50 +191,31 @@ public class ArgentinaWalmartCrawler extends Crawler {
       return offers;
    }
 
-   private List<String> scrapSales(String internalId, Document doc) {
+   private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
 
-      String salesUrl = scrapSalesApiUrl(doc);
-      Request req = RequestBuilder.create()
-            .setUrl(CommonMethods.sanitizeUrl(salesUrl))
-            .setCookies(cookies)
-            .build();
-
-      String response = this.dataFetcher.get(session, req).getBody();
-      JSONArray bdwJsonResult = JSONUtils.stringToJsonArray(CrawlerUtils.extractSpecificStringFromScript(response, "var bdwJsonResult=", false, ";", false));
-
-      for (Object o : bdwJsonResult) {
-         JSONObject saleJson = o instanceof JSONObject ? (JSONObject) o : new JSONObject();
-
-         if (saleJson.has("Sku") && !saleJson.isNull("Sku")) {
-            String skuId = saleJson.get("Sku").toString();
-
-            if (skuId.equalsIgnoreCase(internalId) && saleJson.has("CucardaOferta") && !saleJson.isNull("CucardaOferta")) {
-               sales.add(saleJson.get("CucardaOferta").toString());
-            }
+      Double priceFrom = pricing.getPriceFrom();
+      Double spotlightPrice = pricing.getSpotlightPrice();
+     
+      if (priceFrom != null && spotlightPrice != null) {
+         if (priceFrom > spotlightPrice) {
+            Double discount = MathUtils.normalizeTwoDecimalPlaces((spotlightPrice / priceFrom) - 1) * 100;
+               sales.add(Integer.toString(discount.intValue()).replace("-", "- ".replace(".0", "")) + "%");
+            
          }
       }
-
       return sales;
    }
 
-   private String scrapSalesApiUrl(Document doc) {
-
-      String catalogoNumber = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-user-review-category-id", "value");
-      String url = "https://scustom.walmart.com.ar/tracking/track?HASH=walmartar_produccion_scxel&wordsfound=,&buyer={CLIENT.BUYER}&name=&lastname=&gender=&branchOffice=15&country=&state=&city=&email=&u=productoswalmart.braindw.com/catalogo/"
-            + catalogoNumber + "/15";
-
-      return url;
-   }
-
-
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuListPrice", null, false, ',', session);
+      Double priceFromcheck = priceFrom > 0.0 ? priceFrom : null; // this was necessary becouse the website have some products who doesn't have priceFrom and field
+                                                                  // price_from cannot have this value -> 0.0
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuBestPrice", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(internalId, spotlightPrice);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
+            .setPriceFrom(priceFromcheck)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
             .build();
