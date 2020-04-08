@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilAnimalshowstoreCrawler extends CrawlerRankingKeywords {
   
@@ -16,14 +16,14 @@ public class BrasilAnimalshowstoreCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 21;
+    this.pageSize = 13;
     this.log("Página " + this.currentPage);
 
-    String url = "https://busca.animalshowstore.com.br/" + this.keywordEncoded + "?pagina=" + this.currentPage;
-    
+    String url = "https://www.animalshowstore.com.br/loja/busca.php?palavra_busca=" + this.keywordEncoded + "&pg=" + this.currentPage;
+
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select("#listProduct > li");
+      Elements products = this.currentDoc.select(".item.flex");
 
     if (!products.isEmpty()) {
       if(this.totalProducts == 0) {
@@ -31,8 +31,8 @@ public class BrasilAnimalshowstoreCrawler extends CrawlerRankingKeywords {
       }
       
       for (Element e : products) {
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-item-id]", "data-item-id");
-        String productUrl = CrawlerUtils.scrapUrl(e, "[itemprop=url]", "href", "http", HOME_PAGE);
+        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-box", "data-id");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".action-product > a", "href", "https", HOME_PAGE);
 
         saveDataProduct(internalId, null, productUrl);
 
@@ -58,7 +58,7 @@ public class BrasilAnimalshowstoreCrawler extends CrawlerRankingKeywords {
   
   @Override
   protected void setTotalProducts() {    
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".list-results", "de", "", true, false, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".search-counter", "Resultado", "produto", true, false, 0);
     
     this.log("Total products: " + this.totalProducts);
   }
