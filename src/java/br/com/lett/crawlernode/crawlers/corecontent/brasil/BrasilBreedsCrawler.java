@@ -52,7 +52,8 @@ public class BrasilBreedsCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "tr .data", false);
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#breadcrumbs > span > a > span", true);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li a", true);
+         System.err.println(categories);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".easyzoom a img", Arrays.asList("src"), "https:", HOME_PAGE);
          String secondaryImages = scrapSecondaryImages(doc, primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".box-description", ".title", "std"));
