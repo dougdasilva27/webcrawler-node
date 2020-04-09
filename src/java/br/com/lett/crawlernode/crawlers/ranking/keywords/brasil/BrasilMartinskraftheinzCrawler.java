@@ -3,19 +3,19 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.MartinsKeywords;
 
-public class BrasilMartinsmondelezCrawler extends MartinsKeywords {
+public class BrasilMartinskraftheinzCrawler extends MartinsKeywords {
 
-  public BrasilMartinsmondelezCrawler(Session session) {
+  public BrasilMartinskraftheinzCrawler(Session session) {
     super(session);
   }
 
   @Override
   protected String getPassword() {
-    return "monica08";
+    return "24373852";
   }
 
   @Override
   protected String getLogin() {
-    return "erika.rosa@mdlz.com";
+    return "lorenzo.lamas@kraftheinz.com";
   }
 }
