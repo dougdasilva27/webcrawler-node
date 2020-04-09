@@ -32,7 +32,7 @@ import models.pricing.Pricing.PricingBuilder;
 public class BrasilBreedsCrawler extends Crawler {
 
    private static final String HOME_PAGE = "www.breeds.com.br";
-   private static final String SELLER_FULL_NAME = "breeds";
+   private static final String SELLER_FULL_NAME = "Breeds";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -53,11 +53,9 @@ public class BrasilBreedsCrawler extends Crawler {
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li a", true);
-         System.err.println(categories);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".easyzoom a img", Arrays.asList("src"), "https:", HOME_PAGE);
          String secondaryImages = scrapSecondaryImages(doc, primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".box-description", ".title", "std"));
-         Integer stock = null;
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".box-collateral.box-description", ".title", "std"));
          boolean available = doc.selectFirst(".btn-addtocart[title=Comprar]") != null;
          String ean = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-attribute-specs-table .data", false);
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -76,7 +74,6 @@ public class BrasilBreedsCrawler extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
-               .setStock(stock)
                .setOffers(offers)
                .setEans(eans)
                .build();
@@ -130,7 +127,6 @@ public class BrasilBreedsCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box-content .price-box .regular-price .price", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box-content .price-box .regular-price .price", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
@@ -139,7 +135,7 @@ public class BrasilBreedsCrawler extends Crawler {
 
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
+            .setPriceFrom(null)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
