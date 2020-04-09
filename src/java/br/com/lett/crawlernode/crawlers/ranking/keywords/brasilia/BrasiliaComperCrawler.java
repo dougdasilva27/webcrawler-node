@@ -1,13 +1,14 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.campogrande;
+
+package br.com.lett.crawlernode.crawlers.ranking.keywords.brasilia;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ComperCrawlerRanking;
 
-public class CampograndeComperCrawler extends ComperCrawlerRanking {
+public class BrasiliaComperCrawler extends ComperCrawlerRanking {
 
-   private static final String STORE_ID = "6602";
+   private static final String STORE_ID = "6688";
 
-   public CampograndeComperCrawler(Session session) {
+   public BrasiliaComperCrawler(Session session) {
       super(session);
    }
 
