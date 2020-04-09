@@ -720,7 +720,7 @@ public class VTEXCrawlersUtils {
       return idList;
    }
 
-   public Offers scrapOffer(JSONObject apiJSON, String internalId, boolean usePriceApi) throws OfferException, MalformedPricingException {
+   public Offers scrapOffer(List<String> sales, JSONObject apiJSON, String internalId, boolean usePriceApi, boolean hasBankTicket) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
       JSONArray offersArray = apiJSON.optJSONArray("SkuSellersInformation");
@@ -733,7 +733,7 @@ public class VTEXCrawlersUtils {
             boolean isBuyBox = offersArray.length() > 1;
             boolean isMainRetailer = isMainRetailer(sellerFullName);
 
-            Pricing pricing = scrapPricing(internalId, apiJSON, offerJson, usePriceApi);
+            Pricing pricing = scrapPricing(internalId, apiJSON, offerJson, usePriceApi, hasBankTicket;
 
             offers.add(OfferBuilder.create()
                   .setInternalSellerId(sellerId)
@@ -742,6 +742,7 @@ public class VTEXCrawlersUtils {
                   .setIsBuybox(isBuyBox)
                   .setIsMainRetailer(isMainRetailer)
                   .setPricing(pricing)
+                  .setSales(sales)
                   .build());
             position++;
          }
@@ -763,7 +764,7 @@ public class VTEXCrawlersUtils {
       return isMainRetailer;
    }
 
-   private Pricing scrapPricing(String internalId, JSONObject apiJson, JSONObject sellerJson, boolean usePriceApi) throws MalformedPricingException {
+   private Pricing scrapPricing(String internalId, JSONObject apiJson, JSONObject sellerJson, boolean usePriceApi, boolean hasBankTicket) throws MalformedPricingException {
       boolean isDefaultSeller = sellerJson.optBoolean("IsDefaultSeller", true);
 
       JSONObject pricesJson = isDefaultSeller ? apiJson : sellerJson;
@@ -774,7 +775,14 @@ public class VTEXCrawlersUtils {
          priceFrom = null;
       }
 
-      CreditCards creditCards = scrapCreditCards(internalId, spotlightPrice, isDefaultSeller, usePriceApi);
+      CreditCards creditCards;
+      if (usePriceApi) {
+         String pricesApi = homePage + "productotherpaymentsystems/" + internalId;
+         Request request = RequestBuilder.create().setUrl(pricesApi).setCookies(cookies).build();
+         Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+
+         creditCards = scrapCreditCardsFromApi(spotlightPrice, isDefaultSeller, doc);
+      }
 
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
@@ -784,14 +792,10 @@ public class VTEXCrawlersUtils {
    }
 
 
-   private CreditCards scrapCreditCards(String internalId, Double spotlightPrice, boolean isDefaultSeller, boolean usePriceApi) throws MalformedPricingException {
+   private CreditCards scrapCreditCardsFromApi(Double spotlightPrice, boolean isDefaultSeller, Document doc) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       if (isDefaultSeller) {
-         String pricesApi = homePage + "productotherpaymentsystems/" + internalId;
-         Request request = RequestBuilder.create().setUrl(pricesApi).setCookies(cookies).build();
-         Document doc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-
          Elements cardsElements = doc.select("#ddlCartao option");
 
          if (!cardsElements.isEmpty()) {
