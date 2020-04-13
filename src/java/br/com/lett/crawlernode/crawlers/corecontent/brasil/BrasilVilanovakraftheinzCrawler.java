@@ -3,24 +3,19 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.Vilanova;
 
-/**
- * Date: 09/07/2019
- *
- * @author Gabriel Dornelas
- */
-public class BrasilVilanovamondelezCrawler extends Vilanova {
+public class BrasilVilanovakraftheinzCrawler extends Vilanova {
 
-  public BrasilVilanovamondelezCrawler(Session session) {
+  public BrasilVilanovakraftheinzCrawler(Session session) {
     super(session);
   }
 
   @Override
   public String getCNPJ() {
-    return "33033028004090";
+    return "lorenzo.lamas@kraftheinz.com";
   }
 
   @Override
   public String getPassword() {
-    return "521542";
+    return "24373852";
   }
 }
