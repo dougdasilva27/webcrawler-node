@@ -1,16 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.Vilanova;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilVilanova;
 
-public class BrasilVilanovakraftheinzCrawler extends Vilanova {
+public class BrasilVilanovakraftheinz extends BrasilVilanova {
 
-  public BrasilVilanovakraftheinzCrawler(Session session) {
+  public BrasilVilanovakraftheinz(Session session) {
     super(session);
   }
 
   @Override
-  public String getCNPJ() {
+  public String getCnpj() {
     return "lorenzo.lamas@kraftheinz.com";
   }
 

@@ -29,21 +29,21 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-public abstract class Vilanova extends Crawler {
+public abstract class BrasilVilanova extends Crawler {
 
   public static final String HOME_PAGE = "https://www.vilanova.com.br/";
   private static final String IMAGES_HOST = "i2-vilanova.a8e.net.br";
 
   private static final String LOGIN_URL = "https://www.vilanova.com.br/Cliente/Logar";
-  private final String CNPJ = getCNPJ();
+  private final String CNPJ = getCnpj();
   private final String PASSWORD = getPassword();
 
-  public Vilanova(Session session) {
+  public BrasilVilanova(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.APACHE);
   }
 
-  public abstract String getCNPJ();
+  public abstract String getCnpj();
 
   public abstract String getPassword();
 
