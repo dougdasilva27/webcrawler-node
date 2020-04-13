@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
@@ -16,6 +17,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -172,21 +174,21 @@ public class BrasilBreedsCrawler extends Crawler {
       Integer installment = null;
       Double value = 0d;
 
-      if (doc.selectFirst(".product-view .price-parcelado") != null) {
+      Elements elements = doc.select(".modal-body .installment-option");
 
-         installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".price-box-content #price-parcelado .periods", true, null);
-         value = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box-content #price-parcelado .price", null, true, ',', session);
+      for (Element e : elements) {
 
-      } else {
+         String installmentString = e != null ? e.attr("data-installment").replaceAll("[^0-9]", "").trim() : null;
+         installment = installmentString != null ? Integer.parseInt(installmentString) : null;
 
-         installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".modal-body .installment-option[data-installment]", true, null);
-         value = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".modal-body .installment-value", null, false, ',', session);
+         String valueString = e != null ? e.selectFirst(".installment-value").text() : null;
+         value = valueString != null ? MathUtils.parseDoubleWithComma(valueString) : null;
+
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(value)
+               .build());
       }
-
-      installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(installment)
-            .setInstallmentPrice(value)
-            .build());
 
       return installments;
    }
