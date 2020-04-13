@@ -9,3 +9,4 @@
 .scannerwork/
 .sonar/
 .vscode
+*.iml
