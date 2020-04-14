@@ -2,13 +2,18 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import com.google.common.collect.Sets;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,6 +23,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -50,11 +56,99 @@ public class BrasilTudodebichoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-
          if (doc.selectFirst(".container-tamanhos") != null) {
 
-            System.out.println("Ainda falta capturar produtos com variação.");
 
+
+            JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
+            JSONArray skus = json.has("offers") && json.get("offers") instanceof JSONArray ? json.getJSONArray("offers") : new JSONArray();
+
+
+
+            Elements variations = doc.select(".container-tamanhos .valorAtributo");
+            String scrapKG = null;
+            for (Element e : variations) {
+
+               scrapKG = e != null ? e.attr("data-valoratributo") : null;
+
+               System.err.println(scrapKG);
+            }
+
+            Elements variationsIdElement = doc.select("div #hdnProdutoVarianteId");
+
+            System.out.println(variationsIdElement);
+            String variationId = null;
+            for (Element e : variationsIdElement) {
+
+               variationId = e != null ? e.attr("value") : null;
+
+               System.err.println(variationId);
+            }
+
+
+            for (Object obj : skus) {
+               if (obj instanceof JSONObject) {
+                  JSONObject jsonOffers = (JSONObject) obj;
+
+                  String internalId = JSONUtils.getStringValue(jsonOffers, "sku");
+                  String internalPid = JSONUtils.getStringValue(jsonOffers, "mpn");
+
+                  Map<String, String> headers = new HashMap<>();
+                  headers.put("Content-type", "application/x-www-form-urlencoded");
+
+                  Request req = RequestBuilder.create()
+                        .setUrl("https://www.tudodebicho.com.br/Produto/AtualizarProduto")
+                        .setPayload(
+
+                              "atributoSelecionado=" + scrapKG
+                                    + "&produtoId=72024"
+                                    + "&comboIdSelecionado=0"
+                                    + "&opcaoParalelaSelecionada=0"
+                                    + "&optionString=Selecione"
+                                    + "&isThumb=false"
+                                    + "&produtoVarianteIdAdicional=0"
+                                    + "&assinaturaSelecionada=true"
+                                    + "&isPagProduto=true"
+                                    + "&quantidade=1"
+                                    + "&sellerId=0")
+
+                        .setHeaders(headers).build();
+                  String res = this.dataFetcher.post(session, req).getBody();
+
+                  JSONObject apiJSON = JSONUtils.stringToJson(res);
+
+
+                  String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
+                  System.err.println(name);
+                  CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
+                  String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
+                        Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
+                  String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
+                        Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
+                  String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
+                  RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+                  Offers offers = scrapOffersForProductsWithVariation(doc, apiJSON);
+                  // Creating the product
+                  Product product = ProductBuilder.create()
+                        .setUrl(session.getOriginalURL())
+
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(name)
+                        .setCategory1(categories.getCategory(0))
+                        .setCategory2(categories.getCategory(1))
+                        .setCategory3(categories.getCategory(2))
+                        .setPrimaryImage(primaryImage)
+                        .setSecondaryImages(secondaryImages)
+                        .setDescription(description)
+                        .setRatingReviews(ratingReviews)
+                        .setOffers(offers)
+                        .build();
+
+                  products.add(product);
+
+               }
+            }
          } else {
 
             JSONObject jsonInfo = jsonInfo(doc);
@@ -135,6 +229,7 @@ public class BrasilTudodebichoCrawler extends Crawler {
       for (Object obj : skus) {
          if (obj instanceof JSONObject) {
             jsonOffers = (JSONObject) obj;
+
          }
       }
       return jsonOffers;
@@ -233,6 +328,102 @@ public class BrasilTudodebichoCrawler extends Crawler {
 
    /* Start capturing offers for products with variation */
 
+   private JSONObject scrapApi(Document doc, String scrapKG) {
+      JSONObject apiJSON = new JSONObject();
 
+
+      return apiJSON;
+
+   }
+
+   private Offers scrapOffersForProductsWithVariation(Document doc, JSONObject apiURL) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricingForProductsWithVariation(apiURL);
+      List<String> sales = scrapSalesForProductsWithVariation(doc);
+
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+
+      return offers;
+   }
+
+   private List<String> scrapSalesForProductsWithVariation(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst("#fbits-div-preco-off .fbits-preco-off");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
+
+   private Pricing scrapPricingForProductsWithVariation(JSONObject apiURL) throws MalformedPricingException {
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(apiURL, "precoProduto", false);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(apiURL, "precoProduto", false);
+      CreditCards creditCards = scrapCreditCardsForProductsWithVariation(apiURL, spotlightPrice);
+      BankSlip bankSlip = BankSlipBuilder.create()
+            .setFinalPrice(JSONUtils.getDoubleValueFromJSON(apiURL, "precoProduto", false))
+            .build();
+
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
+   }
+
+   private CreditCards scrapCreditCardsForProductsWithVariation(JSONObject apiURL, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallmentsForProductsWithVariation(apiURL);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallmentsForProductsWithVariation(JSONObject apiURL) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      String installmentString = JSONUtils.getStringValue(apiURL, "precoProdutoParcelado").split("x")[0];
+      Integer installment = Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
+
+      String valueString = JSONUtils.getStringValue(apiURL, "precoProdutoParcelado");
+      int RS = valueString.indexOf("R$");
+      Double value = !valueString.isEmpty() && valueString.contains("R$") ? MathUtils.parseDoubleWithComma(valueString.substring(RS)) : null;
+
+
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(installment)
+            .setInstallmentPrice(value)
+            .build());
+
+      return installments;
+   }
 
 }
