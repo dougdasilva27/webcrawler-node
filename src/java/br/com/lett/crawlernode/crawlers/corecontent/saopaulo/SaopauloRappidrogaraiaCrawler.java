@@ -1,12 +1,23 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.RappiCrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiCrawler;
 
-public class SaopauloRappidrogaraiaCrawler extends RappiCrawler {
+public class SaopauloRappidrogaraiaCrawler extends BrasilRappiCrawler {
+   private static final String STORE_TYPE = "raia";
+   private static final String LOCATION = "lat=-23.5420705&lng=-46.6371135";
 
    public SaopauloRappidrogaraiaCrawler(Session session) {
-      super(session, "raia", "lat=-23.584&lng=-46.671");
+      super(session);
    }
 
+   @Override
+   protected String setStoreType() {
+      return STORE_TYPE;
+   }
+
+   @Override
+   protected String setLocationParameters() {
+      return LOCATION;
+   }
 }
