@@ -58,8 +58,6 @@ abstract public class TrayCommerceCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + this.session.getOriginalURL());
 
       JSONObject productJson = CrawlerUtils
           .selectJsonFromHtml(doc, "script", "dataLayer = [", "]", false, true);
@@ -108,7 +106,7 @@ abstract public class TrayCommerceCrawler extends Crawler {
                 .setInternalId(internalId)
                 .setInternalPid(internalPid)
                 .setName(variationName != null ? name + " " + variationName : name)
-                .setOffers(scrapOffers(skuJson, storeId))
+                .setOffers(doc.selectFirst(".botao-comprar") != null ? scrapOffers(skuJson, storeId) : null)
                 .setCategories(categories)
                 .setPrimaryImage(primaryImage)
                 .setSecondaryImages(secondaryImages)
@@ -133,7 +131,8 @@ abstract public class TrayCommerceCrawler extends Crawler {
             .setInternalId(internalPid)
             .setInternalPid(internalPid)
             .setName(name)
-            .setOffers(scrapOffers(productJson, storeId))
+            .setOffers(
+                doc.selectFirst(".botao-comprar") != null ? scrapOffers(productJson, storeId) : null)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
