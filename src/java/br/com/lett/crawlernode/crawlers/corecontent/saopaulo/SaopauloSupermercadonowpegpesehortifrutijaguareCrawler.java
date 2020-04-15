@@ -3,20 +3,20 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermercadonowCrawler;
 
-public class SaopauloSupermercadonowlojanestlechucrizaidanCrawler extends SupermercadonowCrawler {
+public class SaopauloSupermercadonowpegpesehortifrutijaguareCrawler extends SupermercadonowCrawler {
 
 
-   public SaopauloSupermercadonowlojanestlechucrizaidanCrawler(Session session) {
+   public SaopauloSupermercadonowpegpesehortifrutijaguareCrawler(Session session) {
       super(session);
    }
 
    @Override
    protected String getLoadUrl() {
-      return "loja-nestle-chucri-zaidan";
+      return "peg-pese-jaguare";
    }
 
    @Override
    protected String getSellerFullName() {
-      return "Empório Nestle";
+      return "Peg Pese Hortifruti";
    }
 }

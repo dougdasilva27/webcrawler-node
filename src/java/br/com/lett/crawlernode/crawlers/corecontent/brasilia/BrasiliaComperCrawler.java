@@ -1,15 +1,15 @@
 
-package br.com.lett.crawlernode.crawlers.corecontent.campogrande;
+package br.com.lett.crawlernode.crawlers.corecontent.brasilia;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ComperCrawler;
 
-public class CampograndeComperCrawler extends ComperCrawler {
+public class BrasiliaComperCrawler extends ComperCrawler {
 
-   private static final String STORE_ID = "6602";
-   private static final String MULTI_STORE_ID = "02010714110000101010000010001000";
+   private static final String STORE_ID = "6688";
+   private static final String MULTI_STORE_ID = "00040015110010000000100000000000";
 
-   public CampograndeComperCrawler(Session session) {
+   public BrasiliaComperCrawler(Session session) {
       super(session);
    }
 
