@@ -51,7 +51,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".add-to-cart .add-to-cart-buttons .live_init", "data-product-sku");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#sku", "value");
          String internalPid = crawlInternalPid(doc);
          boolean available = true;
          Element elementNotAvailable = doc.select(".product-shop .alert-stock.link-stock-alert a").first();
