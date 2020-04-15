@@ -8,7 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public abstract class MexicoCornershopCrawler extends CrawlerRankingKeywords {
+public abstract class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
 
    private final String STORE_ID = getStoreId();
    private final String PRODUCT_STORE_ID = getProductStoreId();
@@ -17,7 +17,7 @@ public abstract class MexicoCornershopCrawler extends CrawlerRankingKeywords {
 
    protected abstract String getProductStoreId();
 
-   public MexicoCornershopCrawler(Session session) {
+   public MexicoCornershopCrawlerRanking(Session session) {
       super(session);
    }
 
