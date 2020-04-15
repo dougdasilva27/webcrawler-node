@@ -51,7 +51,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".add-to-cart .add-to-cart-buttons .live_init", "data-product-sku");
          String internalPid = crawlInternalPid(doc);
          boolean available = true;
          Element elementNotAvailable = doc.select(".product-shop .alert-stock.link-stock-alert a").first();
@@ -167,33 +167,6 @@ public class SaopauloDrogasilCrawler extends Crawler {
       String[] tokens2 = image.split("/");
 
       return tokens[tokens.length - 1].split("\\?")[0].equals(tokens2[tokens2.length - 1].split("\\?")[0]);
-   }
-
-   private String crawlInternalId(Document doc) {
-      String internalId = null;
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");");
-
-      if (json.has("ecommerce")) {
-         JSONObject ecommerce = json.getJSONObject("ecommerce");
-
-         if (ecommerce.has("detail")) {
-            JSONObject detail = ecommerce.getJSONObject("detail");
-
-            if (detail.has("products")) {
-               JSONArray products = detail.getJSONArray("products");
-
-               if (products.length() > 0) {
-                  JSONObject product = products.getJSONObject(0);
-
-                  if (product.has("id")) {
-                     internalId = product.getString("id");
-                  }
-               }
-            }
-         }
-      }
-
-      return internalId;
    }
 
    private String crawlInternalPid(Document doc) {
