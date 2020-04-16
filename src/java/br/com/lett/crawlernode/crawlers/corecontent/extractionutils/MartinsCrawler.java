@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,10 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 public abstract class MartinsCrawler extends Crawler {
 
@@ -53,27 +57,27 @@ public abstract class MartinsCrawler extends Crawler {
     try {
       webdriver = DynamicDataFetcher
           .fetchPageWebdriver("https://www.martinsatacado.com.br/login/topo/request", session);
-      webdriver.waitLoad(5000);
+      webdriver.waitLoad(6000);
 
+      waitForElement(webdriver.driver, "#go-login");
       webdriver
           .clickOnElementViaJavascript(webdriver.driver.findElement(By.cssSelector("#go-login")));
-      webdriver.waitLoad(5000);
 
+      waitForElement(webdriver.driver, "#js_username_login");
       WebElement email = webdriver.driver.findElement(By.cssSelector("#js_username_login"));
       email.sendKeys(login);
-      webdriver.waitLoad(2000);
 
+      waitForElement(webdriver.driver, "#jsSelectCNPJ");
       WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#jsSelectCNPJ"));
       webdriver.clickOnElementViaJavascript(cnpj);
-      webdriver.waitLoad(2000);
 
+      waitForElement(webdriver.driver, "#j_password[required]");
       WebElement pass = webdriver.driver.findElement(By.cssSelector("#j_password[required]"));
       pass.sendKeys(password);
-      webdriver.waitLoad(2000);
 
+      waitForElement(webdriver.driver, ".c-login__button");
       WebElement login = webdriver.driver.findElement(By.cssSelector(".c-login__button"));
       webdriver.clickOnElementViaJavascript(login);
-      webdriver.waitLoad(6000);
 
       webdriver.loadUrl(session.getOriginalURL());
       webdriver.waitLoad(6000);
@@ -83,6 +87,11 @@ public abstract class MartinsCrawler extends Crawler {
       Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
       return super.fetch();
     }
+  }
+
+  public static void waitForElement(WebDriver driver, String cssSelector) {
+    WebDriverWait wait = new WebDriverWait(driver, 20);
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
   }
 
   @Override
@@ -103,17 +112,18 @@ public abstract class MartinsCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils
           .crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
       String primaryImage = CrawlerUtils
-          .scrapSimplePrimaryImage(doc, ".imagePrincipal img", Arrays.asList("src"), "https",
+          .scrapSimplePrimaryImage(doc, ".imagePrincipal img", Collections.singletonList("src"),
+              "https",
               "imgprd.martins.com.br");
-      String secondaryImages =
-          CrawlerUtils
-              .scrapSimpleSecondaryImages(doc, ".galeryImages img", Arrays.asList("src"), "https",
-                  "imgprd.martins.com.br", primaryImage);
+      String secondaryImages = CrawlerUtils
+          .scrapSimpleSecondaryImages(doc, ".galeryImages img", Collections.singletonList("src"),
+              "https",
+              "imgprd.martins.com.br", primaryImage);
       String description =
           CrawlerUtils.scrapSimpleDescription(doc,
               Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
-      List<String> eans = Arrays
-          .asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
+      List<String> eans = Collections
+          .singletonList(CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
       RatingsReviews ratingsReviews = scrapRating(doc, internalId);
 
       // Creating the product
