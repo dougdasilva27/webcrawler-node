@@ -40,7 +40,7 @@ public abstract class MexicoRappiCrawler extends RappiCrawler {
       String productId = null;
       String productUrl = session.getOriginalURL();
 
-      if (productUrl.contains("_") && productUrl.contains("?")) {
+      if (productUrl.contains("_")) {
          String ids = productUrl.split("\\?")[0];
          productId = CommonMethods.getLast(ids.split("_")).replaceAll("[^0-9]", "");
       }

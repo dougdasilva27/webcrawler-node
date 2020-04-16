@@ -5,8 +5,8 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.MexicoC
 
 public class MexicoCornershopwalmartsantafeCrawler extends MexicoCornershopCrawlerRanking {
 
-   public static final String STORE_ID = br.com.lett.crawlernode.crawlers.corecontent.mexico.MexicoCornershopwalmartsantafeCrawler.STORE_ID;
-   public static final String PRODUCT_STORE_ID = "14";
+  public static final String STORE_ID = br.com.lett.crawlernode.crawlers.corecontent.mexico.MexicoCornershopwalmartsantafeCrawler.STORE_ID;
+  public static final String PRODUCT_STORE_ID = "6";
 
    public MexicoCornershopwalmartsantafeCrawler(Session session) {
       super(session);
