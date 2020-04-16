@@ -308,9 +308,12 @@ public class BrasilCarrefourCrawler extends Crawler {
       Map<String, Integer> ratingDistribution = crawlRatingDistribution(document);
       AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValueWithRate(ratingDistribution);
 
+      int totalReviews = computeTotalReviewsCount(ratingDistribution);
+
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingReviews.setDate(session.getDate());
-      ratingReviews.setTotalRating(computeTotalReviewsCount(ratingDistribution));
+      ratingReviews.setTotalRating(totalReviews);
+      ratingReviews.setTotalWrittenReviews(totalReviews);
       ratingReviews.setAverageOverallRating(crawlAverageOverallRating(document));
 
       return ratingReviews;
@@ -328,7 +331,7 @@ public class BrasilCarrefourCrawler extends Crawler {
    }
 
    private Double crawlAverageOverallRating(Document document) {
-      Double avgOverallRating = null;
+      Double avgOverallRating = 0d;
 
       Element avgOverallRatingElement =
             document.select(".sust-review-container .block-review-pagination-bar div.block-rating div.rating.js-ratingCalc").first();
