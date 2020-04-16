@@ -41,11 +41,6 @@ public abstract class RappiCrawler extends Crawler {
    protected abstract String getImagesDomain();
 
    @Override
-   protected JSONObject fetch() {
-      return new JSONObject();
-   }
-
-   @Override
    public List<Product> extractInformation(JSONObject jsonSku) throws Exception {
       super.extractInformation(jsonSku);
       List<Product> products = new ArrayList<>();
