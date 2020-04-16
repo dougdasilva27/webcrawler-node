@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -55,6 +54,7 @@ public class S3Service {
    // Amazon images
    private static AmazonS3 s3clientImages;
    private static final String IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
+   private static final String IMAGES_BUCKET_NAME_NEW = GlobalConfigurations.executionParameters.getImagesBucketNameNew();
 
    // Amazon crawler-session
    private static AmazonS3 s3clientCrawlerSessions;
@@ -64,17 +64,17 @@ public class S3Service {
    static {
       s3clientImages =
             AmazonS3ClientBuilder
-               .standard()
-               .withRegion(Regions.US_EAST_1)
-               .withCredentials(new DefaultAWSCredentialsProviderChain())
-               .build();
+                  .standard()
+                  .withRegion(Regions.US_EAST_1)
+                  .withCredentials(new DefaultAWSCredentialsProviderChain())
+                  .build();
 
       s3clientCrawlerSessions =
             AmazonS3ClientBuilder
-               .standard()
-               .withRegion(Regions.US_EAST_1)
-               .withCredentials(new DefaultAWSCredentialsProviderChain())
-               .build();
+                  .standard()
+                  .withRegion(Regions.US_EAST_1)
+                  .withCredentials(new DefaultAWSCredentialsProviderChain())
+                  .build();
    }
 
    /**
@@ -117,6 +117,11 @@ public class S3Service {
       }
    }
 
+   public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key) throws FileNotFoundException {
+      uploadImage(session, newObjectMetadata, f, key, IMAGES_BUCKET_NAME);
+      uploadImage(session, newObjectMetadata, f, key, IMAGES_BUCKET_NAME_NEW);
+   }
+
    /**
     * Uploads the current image being processed in the session object to S3.
     * 
@@ -126,20 +131,20 @@ public class S3Service {
     * @param key the path for the image in the S3 bucket
     * @throws FileNotFoundException if the local temporary file of the downloaded image was not found
     */
-   public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key) throws FileNotFoundException {
+   public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key, String bucket) throws FileNotFoundException {
 
       ImageCrawlerSession s = (ImageCrawlerSession) session;
 
       FileInputStream fileInputStream = new FileInputStream(f);
 
-      PutObjectRequest putObjectRequest = new PutObjectRequest(IMAGES_BUCKET_NAME, key, fileInputStream, newObjectMetadata);
+      PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, fileInputStream, newObjectMetadata);
 
       try {
          s3clientImages.putObject(putObjectRequest);
-         Logging.printLogDebug(logger, session, "Uploaded image #" + s.getImageNumber() + " with success!");
+         Logging.printLogDebug(logger, session, "[BUCKET - " + bucket + "] Uploaded image #" + s.getImageNumber() + " with success!");
 
       } catch (AmazonClientException ace) {
-         Logging.printLogError(logger, session, "Error Message:    " + ace.getMessage());
+         Logging.printLogError(logger, session, "[BUCKET - " + bucket + "] Error Message:    " + ace.getMessage());
       }
    }
 

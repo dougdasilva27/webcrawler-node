@@ -21,5 +21,6 @@ public class EnvironmentVariables {
    public static final String FETCHER_URL = "FETCHER_URL";
    public static final String LOGS_BUCKET_NAME = "LOGS_BUCKET_NAME";
    public static final String IMAGES_BUCKET_NAME = "IMAGES_BUCKET_NAME";
+   public static final String IMAGES_BUCKET_NAME_NEW = "IMAGES_BUCKET_NAME_NEW";
    public static final String REPLICATOR_URL = "REPLICATOR_URL";
 }

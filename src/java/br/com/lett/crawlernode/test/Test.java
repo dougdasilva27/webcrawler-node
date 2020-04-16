@@ -111,7 +111,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://supermercadonow.com/produtos/loja-nestle-chucri-zaidan/produto/7043-ninho-forti-integral-400g",
+                        "https://www.carrefour.com.br/Escova-Dental-Sensodyne-Gentle-Branca-e-Azul/p/9745904",
                         market);
          }
 
