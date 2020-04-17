@@ -1,5 +1,19 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -15,21 +29,6 @@ import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class SaopauloDrogaraiaCrawler extends Crawler {
 
@@ -56,7 +55,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          // ID interno
-         String internalId = crawlInternalId(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#sku", "value");
 
          // Pid
          String internalPid = null;
@@ -108,7 +107,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          Marketplace marketplace = new Marketplace();
          Prices prices = crawlPrices(doc, price);
          String ean = scrapEan(doc);
-         RatingsReviews ratingReviews = crawRating(doc);
+         RatingsReviews ratingReviews = crawRating(doc, internalId);
          List<String> eans = new ArrayList<>();
          eans.add(ean);
 
@@ -166,32 +165,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return name.toString().replace("  ", " ").trim();
    }
 
-   private String crawlInternalId(Document doc) {
-      String internalId = null;
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, false);
-
-      if (json.has("ecommerce")) {
-         JSONObject ecommerce = json.getJSONObject("ecommerce");
-
-         if (ecommerce.has("detail")) {
-            JSONObject detail = ecommerce.getJSONObject("detail");
-
-            if (detail.has("products")) {
-               JSONArray products = detail.getJSONArray("products");
-
-               if (products.length() > 0) {
-                  JSONObject product = products.getJSONObject(0);
-
-                  if (product.has("id")) {
-                     internalId = product.getString("id");
-                  }
-               }
-            }
-         }
-      }
-
-      return internalId;
-   }
 
    private String crawlPrimaryImage(Document doc) {
       String primaryImage = null;
@@ -309,10 +282,9 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
    }
 
 
-   private RatingsReviews crawRating(Document doc) {
+   private RatingsReviews crawRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
-      String internalId = crawlInternalId(doc);
       ratingReviews.setDate(session.getDate());
       ratingReviews.setInternalId(internalId);
       JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
