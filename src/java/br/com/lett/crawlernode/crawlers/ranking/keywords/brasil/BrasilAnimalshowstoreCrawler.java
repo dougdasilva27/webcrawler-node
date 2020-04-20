@@ -1,16 +1,21 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrayCommerceCrawler;
+import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.TrayCommerceCrawler;
 
 public class BrasilAnimalshowstoreCrawler extends TrayCommerceCrawler {
 
   @Override
-  protected String setSellerName() {
-    return "Animal show store";
+  protected String setStoreId() {
+    return "753303";
   }
 
   public BrasilAnimalshowstoreCrawler(Session session) {
     super(session);
+  }
+
+  @Override
+  protected String setHomePage() {
+    return "https://www.animalshowstore.com.br/";
   }
 }
