@@ -198,7 +198,7 @@ public abstract class BrasilVilanova extends Crawler {
             .setHeaders(headers)
             .build());
 
-    return new JSONObject(response.getBody());
+    return JSONUtils.stringToJson(response.getBody());
   }
 
   private Prices scrapPrices(Float price, JSONObject json) {
