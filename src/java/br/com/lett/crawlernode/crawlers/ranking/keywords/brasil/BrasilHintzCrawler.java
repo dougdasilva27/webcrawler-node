@@ -1,14 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class BrasilHintzCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "loja.hintz.ind.br";
+   private static final String PROTOCOL = "https://";
 
    public BrasilHintzCrawler(Session session) {
       super(session);
@@ -21,25 +24,27 @@ public class BrasilHintzCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://loja.hintz.ind.br/busca/?q=" + this.keywordEncoded + "&p=2" + this.currentPage;
+      String url = PROTOCOL + HOME_PAGE + "/busca/?q=" + this.keywordEncoded + "&p=" + this.currentPage;
+
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".produtos-index.interno .col-xxs-12.col-xs-12");
+      JSONArray arr = scrapArray();
 
-      if (!products.isEmpty()) {
-         for (Element e : products) {
+      if (!arr.isEmpty()) {
+         for (Object jsonOb : arr) {
+
             String internalPid = null;
 
+            String incompleteUrl = JSONUtils.getStringValue((JSONObject) jsonOb, "url");
 
+            String internalId = incompleteUrl.split("/")[2];
+            String productUrl = PROTOCOL + HOME_PAGE + incompleteUrl;
 
-            // String internalId = crawlInternalId(e);
-            String productUrl = CrawlerUtils.scrapUrl(e, ".produtos-index.interno .col-xxs-12.col-xs-12 a", "href", "http://", HOME_PAGE);
+            saveDataProduct(internalId, internalPid, productUrl);
 
-            saveDataProduct("222", internalPid, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + "222" + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -53,12 +58,25 @@ public class BrasilHintzCrawler extends CrawlerRankingKeywords {
 
    }
 
-   // private String scrapInternalId(String productUrl) {
-   // String internalId = null;
+   private JSONArray scrapArray() {
+      JSONArray json = new JSONArray();
 
-   // Integer index = productUrl.indexOf("")
+      Element scripts = this.currentDoc.selectFirst("body script");
 
-   // return internalId;
-   // }
+      String script = scripts.html().replaceAll(" ", "");
+
+      if (script.contains("varprodutosData")) {
+
+         String jsonString = CrawlerUtils.extractSpecificStringFromScript(script, "varprodutosData=", false, ";", false);
+         json = CrawlerUtils.stringToJsonArray(jsonString);
+
+      }
+      return json;
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select("#paginacao a[href]:not(first-child)").isEmpty();
+   }
 
 }

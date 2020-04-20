@@ -32,7 +32,7 @@ import models.pricing.Pricing.PricingBuilder;
 public class BrasilHintzCrawler extends Crawler {
 
    private static final String HOME_PAGE = "loja.hintz.ind.br";
-   private static final String SELLER_FULL_NAME = "Hinthz";
+   private static final String SELLER_FULL_NAME = "Hintz";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
