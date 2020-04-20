@@ -2,19 +2,19 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 
-public class BrasilMartinsmondelezCrawler extends BrasilMartinsCrawler {
+public class BrasilMartinskraftheinzCrawler extends BrasilMartinsCrawler {
 
-  public BrasilMartinsmondelezCrawler(Session session) {
+  public BrasilMartinskraftheinzCrawler(Session session) {
     super(session);
   }
 
   @Override
   protected String getPassword() {
-    return "monica08";
+    return null;
   }
 
   @Override
   protected String getLogin() {
-    return "erika.rosa@mdlz.com";
+    return null;
   }
 }
