@@ -175,16 +175,6 @@ public abstract class BrasilVilanova extends Crawler {
     return !doc.select(".container #detalhes-container").isEmpty();
   }
 
-  private String crawlInternalId(JSONObject skuJson) {
-    String internalId = null;
-
-    if (skuJson.has("sku") && !skuJson.isNull("sku")) {
-      internalId = skuJson.get("sku").toString();
-    }
-
-    return internalId;
-  }
-
   private String crawlInternalPid(JSONObject productJson) {
     String internalPid = null;
 
@@ -193,16 +183,6 @@ public abstract class BrasilVilanova extends Crawler {
     }
 
     return internalPid;
-  }
-
-  private String crawlName(JSONObject skuJson) {
-    String name = null;
-
-    if (skuJson.has("name") && skuJson.get("name") instanceof String) {
-      name = skuJson.getString("name");
-    }
-
-    return name;
   }
 
   private JSONObject getSkusList(String ean) {
