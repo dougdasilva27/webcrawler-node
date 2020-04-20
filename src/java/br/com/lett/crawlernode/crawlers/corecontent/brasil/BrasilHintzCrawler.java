@@ -55,7 +55,7 @@ public class BrasilHintzCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject json = scrapArray(doc);
+         JSONObject json = scrapJSON(doc);
 
          String internalId = scrapInternalId(doc);
          String internalPid = internalId;
@@ -105,7 +105,7 @@ public class BrasilHintzCrawler extends Crawler {
 
    }
 
-   private JSONObject scrapArray(Document doc) {
+   private JSONObject scrapJSON(Document doc) {
       JSONObject json = new JSONObject();
 
       Element scripts = doc.selectFirst("body script[type=\"text/javascript\"]");

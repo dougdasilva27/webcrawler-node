@@ -40,7 +40,7 @@ public class BrasilHintzCrawler extends CrawlerRankingKeywords {
             String incompleteUrl = JSONUtils.getStringValue((JSONObject) jsonOb, "url");
 
             String internalId = incompleteUrl.split("/")[2];
-            String productUrl = PROTOCOL + HOME_PAGE + incompleteUrl;
+            String productUrl = CrawlerUtils.completeUrl(incompleteUrl, PROTOCOL, HOME_PAGE);
 
             saveDataProduct(internalId, internalPid, productUrl);
 
