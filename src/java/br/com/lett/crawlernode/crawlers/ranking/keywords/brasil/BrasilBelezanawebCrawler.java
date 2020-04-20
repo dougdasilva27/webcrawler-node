@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.Arrays;
-import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import java.util.Collections;
+import org.json.JSONObject;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
 
@@ -20,24 +20,31 @@ public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.belezanaweb.com.br/busca?q=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+    String url = "https://www.belezanaweb.com.br/busca?q=" + this.keywordEncoded + "&pagina="
+        + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".showcase > .showcase-item");
+    Elements products = this.currentDoc.select(".showcase-item");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
         setTotalProducts();
       }
       for (Element e : products) {
-        String internalId = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
+
+        JSONObject json = CrawlerUtils.stringToJson(e.attr("data-event"));
+        String internalId = json.optString("sku", null);
+        Element urlElem = e.selectFirst(".showcase-item-buy [data-href]");
+        String productUrl = CrawlerUtils
+            .sanitizeUrl(urlElem, Collections.singletonList("data-href"), "https:",
+                "www.belezanaweb.com.br");
 
         saveDataProduct(internalId, null, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
@@ -48,7 +55,8 @@ public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
       this.log("Keyword sem resultado!");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+        + this.arrayProducts.size() + " produtos crawleados");
   }
 
   @Override
@@ -64,26 +72,5 @@ public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Total da busca: " + this.totalProducts);
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalId = null;
-
-    JSONObject json = CrawlerUtils.stringToJson(e.attr("data-event"));
-    if (json.has("sku")) {
-      internalId = json.get("sku").toString();
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.selectFirst(".showcase-item-buy [data-href]");
-    if (url != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(url, Arrays.asList("data-href"), "https:", "www.belezanaweb.com.br");
-    }
-    return productUrl;
   }
 }
