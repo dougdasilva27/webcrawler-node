@@ -124,9 +124,16 @@ public abstract class BrasilVilanova extends Crawler {
         String internalId = skuJson.optString("Id");
         String name = skuJson.optString("Nome") + " " + skuJson.optString("Picking") + "un";
         int stock = JSONUtils.getJSONValue(skuJson, "Estoque").optInt("Disponivel");
-        boolean available = stock > 0;
-        Float price = available ? JSONUtils.getFloatValueFromJSON(skuJson, "PrecoPor", true) : null;
-        Prices prices = scrapPrices(price);
+
+        float price = skuJson.optFloat("PrecoPor", 0F);
+        Prices prices = scrapPrices(price, skuJson);
+
+        if (price != 0F) {
+          price = skuJson.optFloat("PrecoPorSemPromocao", 0F);
+          prices.setPriceFrom(null);
+        }
+
+        boolean available = price != 0F;
 
         Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -214,13 +221,14 @@ public abstract class BrasilVilanova extends Crawler {
     return new JSONObject(response.getBody());
   }
 
-  private Prices scrapPrices(Float price) {
+  private Prices scrapPrices(Float price, JSONObject json) {
     Prices prices = new Prices();
 
     if (price != null && price > 0) {
       Map<Integer, Float> installmentPriceMap = new TreeMap<>();
       installmentPriceMap.put(1, price);
 
+      prices.setPriceFrom(json.optDouble("PrecoPorSemPromocao"));
       prices.setBankTicketPrice(price);
       prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
       prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);

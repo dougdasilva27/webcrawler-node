@@ -8,9 +8,9 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilVilano
  *
  * @author Gabriel Dornelas
  */
-public class BrasilVilanovamondelez extends BrasilVilanova {
+public class BrasilVilanovamondelezCrawler extends BrasilVilanova {
 
-  public BrasilVilanovamondelez(Session session) {
+  public BrasilVilanovamondelezCrawler(Session session) {
     super(session);
   }
 
