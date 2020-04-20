@@ -22,7 +22,7 @@ import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -57,16 +57,18 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "data[data-product-id]", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .product-featured-image", Arrays.asList(
-               "data-product-image-zoom"),
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .product-featured-image",
+             Collections.singletonList(
+                 "data-product-image-zoom"),
                "https",
                "images.madeiramadeira.com.br");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#product-images-desktop .product-slider-thumbs div[data-image-zoom]",
-               Arrays.asList("data-image-zoom"), "https", "images.madeiramadeira.com.br",
+             Collections.singletonList("data-image-zoom"), "https", "images.madeiramadeira.com.br",
                primaryImage);
 
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-attributes-tab-information .product-description"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc,
+             Collections.singletonList("#product-attributes-tab-information .product-description"));
 
          String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
          Offers offers = availableEl.contains("Comprar")? scrapOffers(doc) : new Offers();
@@ -100,7 +102,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
-      final String regex = "(?i)madeiramadeira\\s?|madeira?[\\s]?madeira";
+      final String regex = "(?i)madeiramadeira\\s?|madeira?[-]?madeira";
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".txt-incash-value", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.section-price > p.text > del", null, false, ',', session);
       Pair<Integer, Float> pairInst = CrawlerUtils.crawlSimpleInstallment(".installment-payment-info-installments", doc, false, "x");
