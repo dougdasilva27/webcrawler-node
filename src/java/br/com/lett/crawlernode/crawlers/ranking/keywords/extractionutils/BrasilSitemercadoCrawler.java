@@ -1,9 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -12,6 +8,10 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
@@ -97,7 +97,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
             String lastUrlPart = CommonMethods.getLast(this.homePage.split("-"));
 
             if (productUrl.contains(lastUrlPart + "/") && !productUrl.contains("produto")) {
-               productUrl = productUrl.replace(lastUrlPart + "/", lastUrlPart + "produto/");
+               productUrl = productUrl.replace(lastUrlPart + "/", lastUrlPart + "/produto/");
             }
          }
       }

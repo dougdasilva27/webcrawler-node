@@ -423,7 +423,7 @@ public class BrasilPetzCrawler extends Crawler {
 
       Element installmentsCard = doc.selectFirst(".price-current .de-apagado");
 
-      String installmentCard = installmentsCard.text();
+      String installmentCard = installmentsCard != null ? installmentsCard.text() : null;
 
       if (installmentCard != null) {
 

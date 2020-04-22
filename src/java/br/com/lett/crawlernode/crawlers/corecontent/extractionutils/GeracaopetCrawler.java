@@ -7,7 +7,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.ratingandreviews.extractionutils.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
@@ -128,8 +127,7 @@ public class GeracaopetCrawler extends Crawler {
       throws MalformedPricingException, OfferException {
     Offers offers = new Offers();
     Double price;
-    if (doc.selectFirst("#outstock") != null
-        || doc.selectFirst("#product-addtocart-button") == null) {
+    if (doc.selectFirst(".btn.action") == null) {
       return offers;
     }
 

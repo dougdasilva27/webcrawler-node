@@ -111,7 +111,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.gpsfarma.com/cuidado-personal-1/afeitada/maquina-de-afeitar-prestobarba3-sense-care-x-4-un.html",
+                        "https://supermercadonow.com/produtos/loja-nestle-chucri-zaidan/produto/7043-ninho-forti-integral-400g",
                         market);
          }
 
