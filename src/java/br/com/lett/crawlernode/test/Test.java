@@ -107,7 +107,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.carrefour.com.br/Ampola-de-Tratamento-Pantene-Summer-Bomba-de-Reparacao-45ml/p/9555242",
+                        "https://supermercadonow.com/produtos/loja-nestle-chucri-zaidan/produto/7043-ninho-forti-integral-400g",
                         market);
          }
 
