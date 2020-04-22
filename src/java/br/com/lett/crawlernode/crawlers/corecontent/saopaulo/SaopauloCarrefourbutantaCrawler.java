@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilCarrefourCrawler;
 
 /**
  * 18/04/2020
