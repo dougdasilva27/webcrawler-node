@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,7 +9,31 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import models.Offer;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 public class BrasilTanakaoCrawler extends Crawler {
 
@@ -34,33 +49,41 @@ public class BrasilTanakaoCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
-      JSONObject billingInfoJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "Product.Config(", ");", false, true);
-      JSONObject variationsInfoJson = CrawlerUtils.selectJsonFromHtml(doc, " script[type=\"text/javascript\"]", "AmConfigurableData(", ");", false,
-          true);
+      JSONObject billingInfoJson = CrawlerUtils
+          .selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "Product.Config(", ");",
+              false, true);
+      JSONObject variationsInfoJson = CrawlerUtils
+          .selectJsonFromHtml(doc, " script[type=\"text/javascript\"]", "AmConfigurableData(", ");",
+              false,
+              true);
 
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-view [name=\"product\"]", "value");
-      String internalPid = internalId;
+      String internalId = CrawlerUtils
+          .scrapStringSimpleInfoByAttribute(doc, ".product-view [name=\"product\"]", "value");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name > h1", true);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "[id*=product-price]", null, false, ',', session);
-      Prices prices = scrapPrices(doc, price);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li", true);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "a.rsImg", Arrays.asList("data-rsbigimg", "href"), "https", HOME_PAGE);
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeria a", Arrays.asList("href"), "https", HOME_PAGE, primaryImage);
-      String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".short-description",
-          ".product-collateral .box-collateral:not(.box-reviews)"));
-      boolean available = doc.selectFirst(".availability.in-stock") != null;
+      Offers offers = doc.selectFirst(".availability.in-stock") != null ? scrapOffers(doc) : null;
+      CategoryCollection categories = CrawlerUtils
+          .crawlCategories(doc, ".breadcrumbs > ul > li", true);
+      String primaryImage = CrawlerUtils
+          .scrapSimplePrimaryImage(doc, "a.rsImg", Arrays.asList("data-rsbigimg", "href"), "https",
+              HOME_PAGE);
+      String secondaryImages = CrawlerUtils
+          .scrapSimpleSecondaryImages(doc, "#galeria a", Collections.singletonList("href"), "https",
+              HOME_PAGE,
+              primaryImage);
+      String description = CrawlerUtils
+          .scrapElementsDescription(doc, Arrays.asList(".short-description",
+              ".product-collateral .box-collateral:not(.box-reviews)"));
 
       // Creating the product
       Product product = ProductBuilder.create()
           .setUrl(session.getOriginalURL())
           .setInternalId(internalId)
-          .setInternalPid(internalPid)
+          .setInternalPid(internalId)
           .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
+          .setOffers(offers)
           .setCategory1(categories.getCategory(0))
           .setCategory2(categories.getCategory(1))
           .setCategory3(categories.getCategory(2))
@@ -73,45 +96,44 @@ public class BrasilTanakaoCrawler extends Crawler {
         String idAttr = getAttribute(doc);
 
         if (idAttr != null) {
-          billingInfoJson = billingInfoJson.has("attributes") && billingInfoJson.get("attributes") instanceof JSONObject
+          billingInfoJson = billingInfoJson.has("attributes") && billingInfoJson
+              .get("attributes") instanceof JSONObject
               ? billingInfoJson.getJSONObject("attributes")
               : new JSONObject();
-          billingInfoJson = billingInfoJson.has(idAttr) && billingInfoJson.get(idAttr) instanceof JSONObject
-              ? billingInfoJson.getJSONObject(idAttr)
-              : new JSONObject();
+          billingInfoJson =
+              billingInfoJson.has(idAttr) && billingInfoJson.get(idAttr) instanceof JSONObject
+                  ? billingInfoJson.getJSONObject(idAttr)
+                  : new JSONObject();
 
-          JSONArray variations = billingInfoJson.has("options") && billingInfoJson.get("options") instanceof JSONArray
-              ? billingInfoJson.getJSONArray("options")
-              : new JSONArray();
+          JSONArray variations =
+              billingInfoJson.has("options") && billingInfoJson.get("options") instanceof JSONArray
+                  ? billingInfoJson.getJSONArray("options")
+                  : new JSONArray();
 
           for (Object o : variations) {
             if (o instanceof JSONObject) {
               JSONObject variationJson = (JSONObject) o;
               Product clone = product.clone();
 
-              String id = variationJson.has("id") && !variationJson.isNull("id") ? variationJson.get("id").toString() : null;
-              JSONObject variationInfoJson = variationsInfoJson.has(id) && variationsInfoJson.get(id) instanceof JSONObject
-                  ? variationsInfoJson.getJSONObject(id)
-                  : new JSONObject();
+              String id = variationJson.optString("id", null);
+              JSONObject variationInfoJson =
+                  variationsInfoJson.has(id) && variationsInfoJson.get(id) instanceof JSONObject
+                      ? variationsInfoJson.getJSONObject(id)
+                      : new JSONObject();
 
-              if (variationInfoJson.has("name") && variationInfoJson.get("name") instanceof String) {
+              if (variationInfoJson.has("name") && variationInfoJson
+                  .get("name") instanceof String) {
                 clone.setName(variationInfoJson.getString("name"));
               }
 
-              if (variationInfoJson.has("not_is_in_stock") && variationInfoJson.get("not_is_in_stock") instanceof Boolean) {
-                clone.setAvailable(!variationInfoJson.getBoolean("not_is_in_stock"));
+              if (variationInfoJson.optString("price_html", null) != null) {
+                clone.setOffers(scrapVariationPrices(
+                    Jsoup.parse(variationInfoJson.optString("price_html")),
+                    clone.getOffers(), variationInfoJson.getDouble("price")));
               }
 
-              if (variationInfoJson.has("price") && (variationInfoJson.get("price") instanceof Float || variationInfoJson.get(
-                  "price") instanceof Double)) {
-                clone.setPrice(variationInfoJson.getFloat("price"));
-              }
-
-              if (variationInfoJson.has("price_html") && variationInfoJson.get("price_html") instanceof String) {
-                clone.setPrices(scrapVariationPrices(Jsoup.parse(variationInfoJson.getString("price_html")), clone.getPrice()));
-              }
-
-              if (variationJson.has("products") && variationJson.get("products") instanceof JSONArray) {
+              if (variationJson.has("products") && variationJson
+                  .get("products") instanceof JSONArray) {
                 for (Object obj : variationJson.getJSONArray("products")) {
                   if (obj instanceof String) {
                     Product cloneClone = clone.clone();
@@ -139,7 +161,8 @@ public class BrasilTanakaoCrawler extends Crawler {
   }
 
   private String getAttribute(Document doc) {
-    String attribute = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[id^=\"attribute\"]", "id");
+    String attribute = CrawlerUtils
+        .scrapStringSimpleInfoByAttribute(doc, "[id^=\"attribute\"]", "id");
 
     if (attribute != null && !attribute.isEmpty()) {
       attribute = attribute.replace("attribute", "");
@@ -148,52 +171,91 @@ public class BrasilTanakaoCrawler extends Crawler {
     return attribute;
   }
 
-  private Prices scrapPrices(Document doc, Float price) {
-    Prices prices = new Prices();
+  private Offers scrapOffers(Document doc)
+      throws MalformedPricingException, OfferException {
+    Offers offers = new Offers();
 
-    if (price != null) {
-      prices.setBankTicketPrice(price);
-      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop-stock-price .old-price .price", null, true, ',', session));
+    Double price = CrawlerUtils
+        .scrapDoublePriceFromHtml(doc, "[id*=product-price]", null, false, ',', session);
 
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
+    Double priceFrom = CrawlerUtils
+        .scrapDoublePriceFromHtml(doc, ".product-shop-stock-price .old-price .price", null, true,
+            ',', session);
 
-      Pair<Integer, Float> installments = CrawlerUtils.crawlSimpleInstallment(".product-view .plots", doc, false, "x");
-      if (!installments.isAnyValueNull()) {
-        installmentPriceMap.put(installments.getFirst(), installments.getSecond());
-      }
+    offers.add(OfferBuilder.create()
+        .setIsBuybox(false)
+        .setPricing(getPricing(price, priceFrom, doc))
+        .setSellerFullName("Tanakao")
+        .setIsMainRetailer(true)
+        .setUseSlugNameAsInternalSellerId(true)
+        .build());
 
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-    }
-
-    return prices;
+    return offers;
   }
 
-  private Prices scrapVariationPrices(Document doc, Float price) {
-    Prices prices = new Prices();
+  private Pricing getPricing(Double price, Double priceFrom, Document doc)
+      throws MalformedPricingException {
 
-    if (price != null) {
-      prices.setBankTicketPrice(price);
-      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session));
+    CreditCards creditCards = new CreditCards(
 
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
+        Stream.of(Card.VISA, Card.MASTERCARD, Card.ELO, Card.HIPERCARD, Card.AMEX, Card.HIPER,
+            Card.DINERS).map(card -> {
+          Pair<Integer, Float> installmentPair = CrawlerUtils
+              .crawlSimpleInstallment(".product-view .plots", doc, false, "x");
 
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPER.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-    }
+          Set<Installment> installments = new HashSet<>();
 
-    return prices;
+          try {
+            installments.add(InstallmentBuilder.create()
+                .setInstallmentPrice(price)
+                .setInstallmentNumber(1)
+                .setFinalPrice(price)
+                .build());
+
+            if (!installmentPair.isAnyValueNull()) {
+
+              installments.add(InstallmentBuilder.create()
+                  .setInstallmentPrice(installmentPair.getSecond().doubleValue())
+                  .setInstallmentNumber(installmentPair.getFirst())
+                  .setFinalPrice(installmentPair.getSecond().doubleValue() * installmentPair.getFirst())
+                  .build());
+            }
+
+            return CreditCardBuilder.create()
+                .setBrand(card.toString())
+                .setIsShopCard(false)
+                .setInstallments(new Installments(installments))
+                .build();
+
+          } catch (MalformedPricingException e) {
+            throw new RuntimeException(e);
+          }
+        }).collect(Collectors.toList()));
+
+    return PricingBuilder.create()
+        .setSpotlightPrice(price)
+        .setPriceFrom(priceFrom)
+        .setBankSlip(BankSlipBuilder
+            .create()
+            .setFinalPrice(price)
+            .build())
+        .setCreditCards(creditCards)
+        .build();
+  }
+
+  private Offers scrapVariationPrices(Document doc, Offers offers, Double price)
+      throws OfferException {
+    List<Offer> offerList = offers.getOffersList().stream().map(offer -> {
+      Double priceFrom = CrawlerUtils
+          .scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session);
+      try {
+        offer.setPricing(getPricing(price, priceFrom, doc));
+        return offer;
+      } catch (MalformedPricingException e) {
+        throw new RuntimeException(e);
+      }
+    }).collect(Collectors.toList());
+
+    return new Offers(offerList);
   }
 }
