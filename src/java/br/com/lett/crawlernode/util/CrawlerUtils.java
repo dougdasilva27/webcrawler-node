@@ -34,11 +34,14 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
+import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
 
 public class CrawlerUtils {
    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
@@ -338,6 +341,23 @@ public class CrawlerUtils {
       }
 
       return price;
+   }
+
+   /**
+    * Set Bank Slip Offers
+    * 
+    * @param Double
+    * @return bankSlip
+    */
+
+   public static BankSlip setBankSlipOffers(Double bankSlipPrice) throws MalformedPricingException {
+      BankSlip bankSlip = null;
+
+      bankSlip = BankSlipBuilder.create()
+            .setFinalPrice(bankSlipPrice)
+            .build();
+
+      return bankSlip;
    }
 
    /**
