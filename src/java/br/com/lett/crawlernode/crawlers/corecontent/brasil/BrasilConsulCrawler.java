@@ -3,35 +3,32 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXScraper;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VtexConfig;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VtexConfig.CardsInfo;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VtexConfig.VtexConfigBuilder;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
 
-public class BrasilConsulCrawler extends Crawler {
+public class BrasilConsulCrawler extends VTEXScraper {
 
    private static final String HOME_PAGE = "https://loja.consul.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "whirlpool";
-   private static final String MAIN_SELLER_NAME_LOWER_2 = "consul";
-   private static final String MAIN_SELLER_NAME_LOWER_3 = "brastemp";
-   private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2, MAIN_SELLER_NAME_LOWER_3);
+   private static final List<String> SELLERS = Arrays.asList("Whirlpool", "Consul", "Brastemp");
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString());
 
    public BrasilConsulCrawler(Session session) {
       super(session);
@@ -46,84 +43,23 @@ public class BrasilConsulCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
-      List<Product> products = new ArrayList<>();
 
-      if (isProductPage(doc)) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
-         vtexUtil.setDiscountWithDocument(doc, ".prod-selos p[class^=flag cns-e-btp--desconto-a-vista-cartao-percentual-]", true, false);
+      Integer aVistaDiscount = CrawlerUtils.scrapIntegerFromHtml(doc, ".prod-info .prod-selos p[class^=\"flag btp--desconto\"]", true, 0);
+      List<CardsInfo> cardsInfo = setListOfCards(cards, new HashMap<Integer, Integer>(1, aVistaDiscount));
+      VtexConfig vtexConfig = VtexConfigBuilder.create()
+            .setBankDiscount(aVistaDiscount)
+            .setMainSellerNames(SELLERS)
+            .setHomePage(HOME_PAGE)
+            .setUsePriceAPI(true)
+            .setCards(cardsInfo)
+            .setSalesIsCalculated(true)
+            .build();
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
-         String internalPid = vtexUtil.crawlInternalPid(skuJson);
-         CategoryCollection categories = crawlCategories(doc);
-
-         JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-         JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
-
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
-
-            String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String description = crawlDescription(doc, apiJSON, vtexUtil, internalId);
-            String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, SELLERS, Arrays.asList(Card.VISA), session);
-            boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, SELLERS);
-            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Prices prices = CrawlerUtils.getPrices(marketplaceMap, SELLERS);
-            Float price = vtexUtil.crawlMainPagePrice(prices);
-            RatingsReviews ratingReviews = scrapRating(internalId, doc);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
-            String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-            Offers offers = new Offers();
-            try {
-               offers = vtexUtil.scrapBuyBox(apiJSON);
-            } catch (Exception e) {
-               Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-            }
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
-
-            // Creating the product
-            Product product = ProductBuilder
-                  .create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setMarketplace(marketplace)
-                  .setEans(eans).setOffers(offers)
-                  .setRatingReviews(ratingReviews)
-                  .build();
-
-            products.add(product);
-         }
-
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-      }
-
-      return products;
+      return extractVtexInformation(doc, vtexConfig);
    }
 
-
-   private boolean isProductPage(Document document) {
-      return document.select(".productName").first() != null;
-   }
-
-   private CategoryCollection crawlCategories(Document doc) {
+   @Override
+   protected CategoryCollection scrapCategories(Document doc, String internalId) {
       CategoryCollection categories = new CategoryCollection();
 
       Element category = doc.selectFirst(".bread-crumb .last a");
@@ -139,14 +75,14 @@ public class BrasilConsulCrawler extends Crawler {
     * @param apiJSON
     * @return
     */
-   private String crawlDescription(Document document, JSONObject apiJSON, VTEXCrawlersUtils vtexCrawlersUtils, String internalId) {
+   protected String scrapDescription(Document document, JSONObject apiJSON, JSONObject skuJson, JSONObject productJson, String internalId) {
       StringBuilder description = new StringBuilder();
 
-      JSONObject descriptionJson = vtexCrawlersUtils.crawlDescriptionAPI(internalId, "skuId");
+      JSONObject descriptionJson = crawlCatalogAPI(internalId, "skuId", HOME_PAGE);
 
       if (descriptionJson.has("description")) {
          description.append("<div>");
-         description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get("description")));
+         description.append(sanitizeDescription(descriptionJson.get("description")));
          description.append("</div>");
       }
 
@@ -215,7 +151,8 @@ public class BrasilConsulCrawler extends Crawler {
       return description.toString();
    }
 
-   private RatingsReviews scrapRating(String internalId, Document doc) {
+   @Override
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject apiJson) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "3531", logger);
       return trustVox.extractRatingAndReviewsForVtex(doc, dataFetcher).getRatingReviews(internalId);
    }
