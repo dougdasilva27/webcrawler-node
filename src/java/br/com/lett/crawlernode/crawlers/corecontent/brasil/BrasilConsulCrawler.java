@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.json.JSONArray;
@@ -45,7 +45,7 @@ public class BrasilConsulCrawler extends VTEXScraper {
       super.extractInformation(doc);
 
       Integer aVistaDiscount = CrawlerUtils.scrapIntegerFromHtml(doc, ".prod-info .prod-selos p[class^=\"flag btp--desconto\"]", true, 0);
-      List<CardsInfo> cardsInfo = setListOfCards(cards, new HashMap<Integer, Integer>(1, aVistaDiscount));
+      List<CardsInfo> cardsInfo = setListOfCards(cards, Collections.singletonMap(1, aVistaDiscount));
       VtexConfig vtexConfig = VtexConfigBuilder.create()
             .setBankDiscount(aVistaDiscount)
             .setMainSellerNames(SELLERS)

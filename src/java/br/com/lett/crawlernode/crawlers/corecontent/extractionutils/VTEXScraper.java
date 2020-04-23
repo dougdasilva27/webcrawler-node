@@ -1,7 +1,6 @@
 
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -293,7 +292,7 @@ public abstract class VTEXScraper extends Crawler {
    public Offers scrapOffer(JSONObject apiJSON, String internalId, VtexConfig vtexConfig) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      JSONArray offersArray = apiJSON.optJSONArray("SkuSellersInformation");
+      JSONArray offersArray = apiJSON.optJSONArray(SELLERS_INFORMATION);
       if (offersArray != null) {
          int position = 1;
          for (Object o : offersArray) {
@@ -328,9 +327,8 @@ public abstract class VTEXScraper extends Crawler {
       List<String> sales = vtexConfig.getSales();
 
       if (vtexConfig.isSalesIsCalculated() && pricing.getPriceFrom() != null && pricing.getPriceFrom() > pricing.getSpotlightPrice()) {
-         BigDecimal big = BigDecimal.valueOf(pricing.getPriceFrom() / pricing.getSpotlightPrice() - 1);
-         String rounded = big.setScale(2, BigDecimal.ROUND_DOWN).toString();
-         sales.add('-' + rounded.replace("0.", "") + '%');
+         Integer value = ((Double) ((pricing.getSpotlightPrice() / pricing.getPriceFrom() - 1d) * 100d)).intValue();
+         sales.add(Integer.toString(value) + '%');
       }
 
       return sales;
@@ -340,7 +338,7 @@ public abstract class VTEXScraper extends Crawler {
       boolean isMainRetailer = false;
 
       for (String seller : mainSellerNames) {
-         if (seller.equalsIgnoreCase(seller)) {
+         if (seller.equalsIgnoreCase(sellerName)) {
             isMainRetailer = true;
             break;
          }
@@ -350,7 +348,7 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    private Pricing scrapPricing(String internalId, JSONObject apiJson, JSONObject sellerJson, VtexConfig vtexConfig) throws MalformedPricingException {
-      boolean isDefaultSeller = sellerJson.optBoolean("IsDefaultSeller", true);
+      boolean isDefaultSeller = sellerJson.optBoolean(IS_DEFAULT_SELLER, true);
 
       JSONObject pricesJson = isDefaultSeller ? apiJson
             : sellerJson;
@@ -442,6 +440,7 @@ public abstract class VTEXScraper extends Crawler {
                   CardsInfo cardInfo = vtexConfig.getCardInfoByBrand(card);
                   Map<Integer, Integer> discounts = cardInfo != null ? cardInfo.getInstallmentsDiscounts()
                         : null;
+
                   Installments installments = scrapInstallments(doc, idCard, spotlightPrice, discounts);
                   creditCards.add(CreditCardBuilder.create()
                         .setBrand(card)
