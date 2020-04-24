@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.test;
 
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.SessionFactory;
-import br.com.lett.crawlernode.core.task.base.Task;
-import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.database.DatabaseDataFetcher;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.Logging;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -16,6 +8,14 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionFactory;
+import br.com.lett.crawlernode.core.task.base.Task;
+import br.com.lett.crawlernode.core.task.base.TaskFactory;
+import br.com.lett.crawlernode.database.DatabaseDataFetcher;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.Logging;
 
 /**
  * 
@@ -95,11 +95,6 @@ public class Test {
       Market market = fetchMarket();
 
       if (market != null) {
-
-         // create a task executor
-         // for testing we use 1 thread, there is no need for more
-         // taskExecutor = new TaskExecutor(1, 1);
-
          Session session;
 
          if (testType.equals(KEYWORDS_TEST)) {
@@ -107,7 +102,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://supermercadonow.com/produtos/loja-nestle-chucri-zaidan/produto/7043-ninho-forti-integral-400g",
+                        "https://www.agroverdesr.com.br/produto/coleira-antipulgas-e-carrapatos-bayer-seresto-para-caes-acima-de-8kg-70588",
                         market);
          }
 

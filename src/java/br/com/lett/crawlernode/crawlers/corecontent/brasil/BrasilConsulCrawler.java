@@ -70,11 +70,7 @@ public class BrasilConsulCrawler extends VTEXScraper {
       return categories;
    }
 
-   /**
-    * @param document
-    * @param apiJSON
-    * @return
-    */
+   @Override
    protected String scrapDescription(Document document, JSONObject apiJSON, JSONObject skuJson, JSONObject productJson, String internalId) {
       StringBuilder description = new StringBuilder();
 

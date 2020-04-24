@@ -139,16 +139,7 @@ public abstract class VTEXScraper extends Crawler {
       return internalPid;
    }
 
-   protected CategoryCollection scrapCategories(Document doc, String internalId) {
-      CategoryCollection categories = new CategoryCollection();
-
-      Element category = doc.selectFirst(".bread-crumb .last a");
-      if (category != null) {
-         categories.add(category.ownText().trim());
-      }
-
-      return categories;
-   }
+   protected abstract CategoryCollection scrapCategories(Document doc, String internalId);
 
    /**
     * Get JSONArray wich contains the EAN data.
@@ -530,9 +521,7 @@ public abstract class VTEXScraper extends Crawler {
     * @param apiJSON
     * @return
     */
-   protected String scrapDescription(Document document, JSONObject apiJSON, JSONObject skuJson, JSONObject productJson, String internalId) {
-      return new StringBuilder().toString();
-   }
+   protected abstract String scrapDescription(Document document, JSONObject apiJSON, JSONObject skuJson, JSONObject productJson, String internalId);
 
    /**
     * Crawl description api on this url examples:
