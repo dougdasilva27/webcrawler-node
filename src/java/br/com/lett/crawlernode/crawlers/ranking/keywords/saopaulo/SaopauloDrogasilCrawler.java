@@ -10,6 +10,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
 
@@ -22,12 +23,12 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
-      String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
+      String keyword = this.keywordWithoutAccents.replace(" ", "%20");
 
       this.log("Página " + this.currentPage);
 
       // monta a url com a keyword e a página
-      String url = "http://busca.drogasil.com.br/search?w=" + keyword + "&cnt=36&srt="
+      String url = "https://busca.drogasil.com.br/search?w=" + keyword + "&cnt=36&srt="
             + this.arrayProducts.size();
 
       Map<String, String> headers = new HashMap<>();
@@ -109,7 +110,9 @@ public class SaopauloDrogasilCrawler extends CrawlerRankingKeywords {
          urlElement = e.selectFirst(".product-name a");
 
          if (urlElement != null) {
-            urlProduct = urlElement.attr("href");
+
+            urlProduct = CrawlerUtils.completeUrl(urlElement.attr("href"), "https://", "www.drogasil.com.br");
+
          }
       }
 
