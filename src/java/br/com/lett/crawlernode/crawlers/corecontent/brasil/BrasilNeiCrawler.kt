@@ -12,12 +12,11 @@ import models.prices.Prices
 import org.jsoup.nodes.Document
 
 class BrasilNeiCrawler(session: Session?) : Crawler(session) {
+
     override fun extractInformation(document: Document?): MutableList<Product> {
         val products = mutableListOf<Product>()
 
-        val jsonArray = CrawlerUtils.selectJsonArrayFromHtml(document, "script[type='text/javascript']",
-                "dataLayer = ", ";", false, false, false)
-        val json = jsonArray?.optJSONObject(0)
+        val json = CrawlerUtils.selectJsonFromHtml(document,"script[type='text/javascript']","window.dataLayer.push(",");",false,true)
         val jsonProduct = json?.optJSONObject("ecommerce")?.optJSONObject("detail")
 
         val ratingId = json?.optJSONObject("remarketing")?.optString("ecomm_prodid")
@@ -50,11 +49,13 @@ class BrasilNeiCrawler(session: Session?) : Crawler(session) {
     private fun scrapPrices(price: Float): Prices {
         val prices = Prices()
         prices.bankTicketPrice = price.toDouble()
-        val installments: MutableMap<Int, Float> = HashMap()
-        installments[1] = price
-        prices.insertCardInstallment(Card.VISA.toString(), installments)
-        prices.insertCardInstallment(Card.MASTERCARD.toString(), installments)
-        prices.insertCardInstallment(Card.ELO.toString(), installments)
+        val installments: MutableMap<Int, Float> = mutableMapOf()
+        with(prices) {
+            installments[1] = price
+            insertCardInstallment(Card.VISA.toString(), installments)
+            insertCardInstallment(Card.MASTERCARD.toString(), installments)
+            insertCardInstallment(Card.ELO.toString(), installments)
+        }
         return prices
     }
 
