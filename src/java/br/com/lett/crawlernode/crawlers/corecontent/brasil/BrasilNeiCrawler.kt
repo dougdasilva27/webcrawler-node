@@ -50,7 +50,6 @@ class BrasilNeiCrawler(session: Session?) : Crawler(session) {
         val prices = Prices()
         prices.bankTicketPrice = price.toDouble()
         val installments: MutableMap<Int, Float> = mutableMapOf()
-        installments[1] = price
         with(prices) {
             installments[1] = price
             insertCardInstallment(Card.VISA.toString(), installments)
