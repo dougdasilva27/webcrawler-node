@@ -65,6 +65,8 @@ public abstract class VTEXNewScraper extends Crawler {
       JSONObject runTimeJSON = scrapRuntimeJson(doc);
       JSONObject productJson = scrapProductJson(runTimeJSON);
 
+      System.err.println(productJson);
+
       if (productJson.has("productId")) {
          String internalPid = productJson.has("productId") && !productJson.isNull("productId") ? productJson.get("productId").toString() : null;
          CategoryCollection categories = scrapCategories(productJson);
@@ -86,12 +88,12 @@ public abstract class VTEXNewScraper extends Crawler {
    }
 
    protected Product extractProduct(Document doc, String internalPid, CategoryCollection categories, String description, JSONObject jsonSku) throws Exception {
-
       String internalId = jsonSku.has("itemId") ? jsonSku.get("itemId").toString() : null;
       String name = jsonSku.has("nameComplete") ? jsonSku.get("nameComplete").toString() : null;
       List<String> images = scrapImages(jsonSku);
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
       String secondaryImages = scrapSecondaryImages(images);
+      System.err.println(jsonSku);
       Offers offers = scrapOffer(doc, jsonSku, internalId, internalPid);
       RatingsReviews rating = scrapRating(internalId, internalPid, doc, jsonSku);
       List<String> eans = jsonSku.has("ean") ? Arrays.asList(jsonSku.get("ean").toString()) : null;
@@ -210,7 +212,7 @@ public abstract class VTEXNewScraper extends Crawler {
       return secondaryImages;
    }
 
-   public Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
+   protected Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
       JSONArray sellers = jsonSku.getJSONArray("sellers");
@@ -227,7 +229,7 @@ public abstract class VTEXNewScraper extends Crawler {
                boolean isBuyBox = sellers.length() > 1;
                boolean isMainRetailer = isMainRetailer(sellerFullName, mainSellersNames);
 
-               Pricing pricing = scrapPricing(commertialOffer);
+               Pricing pricing = scrapPricing(doc, internalId, commertialOffer);
                List<String> sales = scrapSales(doc, offerJson, internalId, internalPid);
 
                offers.add(OfferBuilder.create()
@@ -254,7 +256,7 @@ public abstract class VTEXNewScraper extends Crawler {
       boolean isMainRetailer = false;
 
       for (String seller : mainSellerNames) {
-         if (seller.startsWith(sellerName)) {
+         if (seller.toLowerCase().startsWith(sellerName.toLowerCase())) {
             isMainRetailer = true;
             break;
          }
@@ -263,11 +265,11 @@ public abstract class VTEXNewScraper extends Crawler {
       return isMainRetailer;
    }
 
-   private Pricing scrapPricing(JSONObject comertial) throws MalformedPricingException {
-      Double spotlightPrice = comertial.optDouble("spotPrice");
+   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial) throws MalformedPricingException {
+      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, comertial);
       Double priceFrom = comertial.optDouble("ListPrice");
 
-      if (priceFrom != null && spotlightPrice != null && spotlightPrice == priceFrom) {
+      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
          priceFrom = null;
       }
 
@@ -282,39 +284,37 @@ public abstract class VTEXNewScraper extends Crawler {
             .build();
    }
 
-   private CreditCards scrapCreditCards(JSONObject comertial) throws MalformedPricingException {
+   protected Double scrapSpotlightPrice(Document doc, String internalId, JSONObject comertial) {
+      return comertial.optDouble("spotPrice");
+   }
+
+   protected CreditCards scrapCreditCards(JSONObject comertial) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       JSONArray installmentsArray = comertial.optJSONArray("Installments");
+      Map<String, Installments> cardsInstallments = new HashMap<>();
       if (installmentsArray != null) {
-         Map<String, Installments> cardsInstallments = new HashMap<>();
-
          for (Object o : installmentsArray) {
             JSONObject installmentJson = (JSONObject) o;
+            String cardName = extractCardName(installmentJson.optString("Name"));
 
-            String cardName = extractCardName(installmentJson.optString("name"));
-            Integer installmentNumber = installmentJson.optInt("NumberOfInstallments");
-            Double totalValue = installmentJson.optDouble("TotalValuePlusInterestRate");
-            Double value = installmentJson.optDouble("Value");
-            Double interest = installmentJson.optDouble("InterestRate");
+            if (cardName != null && !cardName.contains("Boleto")) {
+               Integer installmentNumber = installmentJson.optInt("NumberOfInstallments");
+               Double totalValue = installmentJson.optDouble("TotalValuePlusInterestRate");
+               Double value = installmentJson.optDouble("Value");
+               Double interest = installmentJson.optDouble("InterestRate");
 
-            Installment installment = InstallmentBuilder.create()
-                  .setInstallmentNumber(installmentNumber)
-                  .setInstallmentPrice(value)
-                  .setAmOnPageInterests(interest)
-                  .setFinalPrice(totalValue)
-                  .build();
+               Installment installment = setInstallment(installmentNumber, value, interest, totalValue, 0d);
 
-            if (cardsInstallments.containsKey(cardName)) {
-               Installments installments = cardsInstallments.get(cardName);
-               installments.add(installment);
+               if (cardsInstallments.containsKey(cardName)) {
+                  Installments installments = cardsInstallments.get(cardName);
+                  installments.add(installment);
+               } else {
+                  Installments installments = new Installments();
+                  installments.add(installment);
 
-               cardsInstallments.put(cardName, installments);
-            } else {
-               Installments installments = new Installments();
-               installments.add(installment);
-
-               cardsInstallments.put(cardName, installments);
+                  cardsInstallments.put(cardName, installments);
+               }
             }
          }
 
@@ -330,11 +330,21 @@ public abstract class VTEXNewScraper extends Crawler {
       return creditCards;
    }
 
+   protected Installment setInstallment(Integer installmentNumber, Double value, Double interests, Double totalValue, Double discount) throws MalformedPricingException {
+      return InstallmentBuilder.create()
+            .setInstallmentNumber(installmentNumber)
+            .setInstallmentPrice(value)
+            .setAmOnPageInterests(interests)
+            .setFinalPrice(totalValue)
+            .setOnPageDiscount(discount)
+            .build();
+   }
+
    private String extractCardName(String input) {
       String cardName = null;
       Matcher opa = Pattern.compile(CARD_REGEX).matcher(input);
       while (opa.find() && cardName == null) {
-         cardName = opa.group();
+         cardName = opa.group().trim();
       }
 
       return cardName;
