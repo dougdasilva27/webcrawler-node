@@ -56,99 +56,77 @@ public class BrasilTudodebichoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         if (doc.selectFirst(".container-tamanhos") != null) {
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
+         JSONArray skus = json.has("offers") && json.get("offers") instanceof JSONArray ? json.getJSONArray("offers") : new JSONArray();
 
+         if (skus.length() > 1) {
 
-
-            JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
-            JSONArray skus = json.has("offers") && json.get("offers") instanceof JSONArray ? json.getJSONArray("offers") : new JSONArray();
-
-
+            String productId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
 
             Elements variations = doc.select(".container-tamanhos .valorAtributo");
-            String scrapKG = null;
             for (Element e : variations) {
 
-               scrapKG = e != null ? e.attr("data-valoratributo") : null;
+               String scrapKG = e != null ? e.attr("data-valoratributo") : null;
 
-               System.err.println(scrapKG);
+               Map<String, String> headers = new HashMap<>();
+               headers.put("Content-type", "application/x-www-form-urlencoded");
+
+               Request req = RequestBuilder.create()
+                     .setUrl("https://www.tudodebicho.com.br/Produto/AtualizarProduto")
+                     .setPayload(
+                           "atributoProduto=" + scrapKG + ";175"
+                                 + "&atributoSelecionado=" + scrapKG + ";175"
+                                 + "&produtoId=" + productId
+                                 + "&comboIdSelecionado=0"
+                                 + "&opcaoParalelaSelecionada=0"
+                                 + "&optionString=Selecione"
+                                 + "&isThumb=false"
+                                 + "&produtoVarianteIdAdicional=0"
+                                 + "&assinaturaSelecionada=false"
+                                 + "&isPagProduto=true"
+                                 + "&quantidade=1"
+                                 + "&sellerId=0").mustSendContentEncoding(true)
+
+                     .setHeaders(headers).build();
+               String res = this.dataFetcher.post(session, req).getBody();
+
+
+               JSONObject apiJSON = JSONUtils.stringToJson(res);
+
+               Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(apiJSON, "produtoVarianteId", 0);
+
+               String internalId = internalIdInt != null ? internalIdInt.toString() : null;
+               String internalPid = internalId;
+               String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
+               CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
+                     Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
+               String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
+                     Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
+               String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
+               RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+               Offers offers = scrapOffersForProductsWithVariation(doc, apiJSON);
+
+               Product product = ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setRatingReviews(ratingReviews)
+                     .setOffers(offers)
+                     .build();
+
+               products.add(product);
             }
 
-            Elements variationsIdElement = doc.select("div #hdnProdutoVarianteId");
 
-            System.out.println(variationsIdElement);
-            String variationId = null;
-            for (Element e : variationsIdElement) {
-
-               variationId = e != null ? e.attr("value") : null;
-
-               System.err.println(variationId);
-            }
-
-
-            for (Object obj : skus) {
-               if (obj instanceof JSONObject) {
-                  JSONObject jsonOffers = (JSONObject) obj;
-
-                  String internalId = JSONUtils.getStringValue(jsonOffers, "sku");
-                  String internalPid = JSONUtils.getStringValue(jsonOffers, "mpn");
-
-                  Map<String, String> headers = new HashMap<>();
-                  headers.put("Content-type", "application/x-www-form-urlencoded");
-
-                  Request req = RequestBuilder.create()
-                        .setUrl("https://www.tudodebicho.com.br/Produto/AtualizarProduto")
-                        .setPayload(
-
-                              "atributoSelecionado=" + scrapKG
-                                    + "&produtoId=72024"
-                                    + "&comboIdSelecionado=0"
-                                    + "&opcaoParalelaSelecionada=0"
-                                    + "&optionString=Selecione"
-                                    + "&isThumb=false"
-                                    + "&produtoVarianteIdAdicional=0"
-                                    + "&assinaturaSelecionada=true"
-                                    + "&isPagProduto=true"
-                                    + "&quantidade=1"
-                                    + "&sellerId=0")
-
-                        .setHeaders(headers).build();
-                  String res = this.dataFetcher.post(session, req).getBody();
-
-                  JSONObject apiJSON = JSONUtils.stringToJson(res);
-
-
-                  String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
-                  System.err.println(name);
-                  CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
-                  String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
-                        Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
-                  String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
-                        Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
-                  String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
-                  RatingsReviews ratingReviews = scrapRatingsReviews(doc);
-                  Offers offers = scrapOffersForProductsWithVariation(doc, apiJSON);
-                  // Creating the product
-                  Product product = ProductBuilder.create()
-                        .setUrl(session.getOriginalURL())
-
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setCategory1(categories.getCategory(0))
-                        .setCategory2(categories.getCategory(1))
-                        .setCategory3(categories.getCategory(2))
-                        .setPrimaryImage(primaryImage)
-                        .setSecondaryImages(secondaryImages)
-                        .setDescription(description)
-                        .setRatingReviews(ratingReviews)
-                        .setOffers(offers)
-                        .build();
-
-                  products.add(product);
-
-               }
-            }
          } else {
 
             JSONObject jsonInfo = jsonInfo(doc);
@@ -194,7 +172,6 @@ public class BrasilTudodebichoCrawler extends Crawler {
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("#bodyProduto") != null;
    }
-
 
 
    private RatingsReviews scrapRatingsReviews(Document doc) {
@@ -328,13 +305,6 @@ public class BrasilTudodebichoCrawler extends Crawler {
 
    /* Start capturing offers for products with variation */
 
-   private JSONObject scrapApi(Document doc, String scrapKG) {
-      JSONObject apiJSON = new JSONObject();
-
-
-      return apiJSON;
-
-   }
 
    private Offers scrapOffersForProductsWithVariation(Document doc, JSONObject apiURL) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
