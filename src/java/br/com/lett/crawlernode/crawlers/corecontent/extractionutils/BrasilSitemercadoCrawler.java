@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -21,8 +23,17 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 /**
  * 
@@ -34,6 +45,9 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       super(session);
    }
 
+   private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
+         Card.MASTERCARD.toString(), Card.ELO.toString());
+   private static final String MAIN_SELLER_NAME = "Sitemercado";
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
    private Map<String, Integer> lojaInfo = getLojaInfo();
@@ -77,19 +91,26 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
          String description = crawlDescription(jsonSku);
          Integer stock = jsonSku.has("quantityStock") && jsonSku.get("quantityStock") instanceof Integer ? jsonSku.getInt("quantityStock") : null;
          boolean available = jsonSku.has("isSale") && !jsonSku.isNull("isSale") && jsonSku.getBoolean("isSale");
-         Float price = available ? crawlPrice(jsonSku) : null;
+         Offers offers = available ? scrapOffers(jsonSku) : new Offers();
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
-         Double priceFrom = crawlPriceFrom(jsonSku);
-         Prices prices = crawlPrices(price, priceFrom);
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices)
-               .setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories
-                     .getCategory(2)).setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages).setDescription(description).setStock(stock).setMarketplace(new Marketplace()).build();
+         Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setOffers(offers)
+               .build();
 
          products.add(product);
 
@@ -136,8 +157,64 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       return name;
    }
 
-   private Float crawlPrice(JSONObject json) {
-      Float price = null;
+   private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(json);
+
+      if (pricing != null) {
+         offers.add(OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(MAIN_SELLER_NAME)
+               .setSellersPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(true)
+               .setPricing(pricing)
+               .build());
+      }
+
+      return offers;
+   }
+
+   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
+      Double spotlightPrice = crawlPrice(json);
+
+      if (spotlightPrice != null) {
+         Double priceFrom = crawlPriceFrom(json);
+         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+         return PricingBuilder.create()
+               .setSpotlightPrice(spotlightPrice)
+               .setPriceFrom(priceFrom)
+               .setCreditCards(creditCards)
+               .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+               .build();
+      }
+
+      return null;
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+      for (String brand : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(brand)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
+      }
+
+      return creditCards;
+   }
+
+   private Double crawlPrice(JSONObject json) {
+      Double price = null;
 
       if (json.has("unit")) {
          String unit = json.get("unit").toString().replace("null", "").trim();
@@ -156,7 +233,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
                   Object pObj = priceJson.get("price");
 
                   if (pObj instanceof Double) {
-                     price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
+                     price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj));
 
                      if (price == 0d) {
                         price = null;
@@ -287,35 +364,6 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
 
    /**
-    * In this site has no information of installments
-    * 
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, Double priceFrom) {
-      Prices p = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-
-         p.setPriceFrom(priceFrom);
-         p.setBankTicketPrice(price);
-
-         p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-
-      }
-
-      return p;
-   }
-
-
-   /**
     * Get the json of gpa api, this api has all info of product
     * 
     * @return
@@ -345,23 +393,4 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
    }
 
-
-   private String fetchApiVersion(Session session, String url) {
-      String version = null;
-
-      String loadUrl = "https://www.sitemercado.com.br/core/api/v1/b2c/page/load";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("referer", url);
-      headers.put("accept", "application/json, text/plain, */*");
-      headers.put("content-type", "application/json");
-
-      Request request = RequestBuilder.create().setUrl(loadUrl).setHeaders(headers).setPayload(loadPayload).setIgnoreStatusCode(false).build();
-      Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
-
-      if (responseHeaders.containsKey("sm-mmc")) {
-         version = responseHeaders.get("sm-mmc");
-      }
-
-      return version;
-   }
 }
