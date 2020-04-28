@@ -36,45 +36,44 @@ public class ArgentinaPigmentoCrawler extends Crawler {
   @Override
   public List<Product> extractInformation(Document document) throws Exception {
     List<Product> products = new ArrayList<>();
-    String internalId =
-        document.selectFirst(".price-box.price-final_price").attr("data-product-id");
 
-    String name = document.selectFirst(".base").text();
-    String[] measuring = document.selectFirst(".pigmento_tamano").text().split(":");
-    if (measuring.length >= 2) {
-      name += " " + measuring[1].trim();
-    }
+    if (document.selectFirst(".product-info-wrap.wrap-content") != null) {
 
-    String description = document.selectFirst("#product.info.description").wholeText();
+      String internalId =
+          document.selectFirst(".price-box.price-final_price").attr("data-product-id");
 
-    List<String> categories = document.select("ul.items strong").eachText();
+      String name = document.selectFirst(".base").text();
 
-    Offers offers = scrapOffers(document);
+      String description = document.selectFirst(".data.item.content").wholeText();
 
-    List<JSONObject> jsonImages = scrapJsonImages(document);
-    JSONArray secondaryImages = new JSONArray();
-    String primaryImage = null;
-    for (JSONObject jsonImage : jsonImages) {
-      String image = jsonImage.optString("full");
-      if (jsonImage.optBoolean("isMain")) {
-        primaryImage = image;
-      } else {
-        secondaryImages.put(image);
+      List<String> categories = document.select("ul.items strong").eachText();
+
+      Offers offers = scrapOffers(document);
+
+      List<JSONObject> jsonImages = scrapJsonImages(document);
+      JSONArray secondaryImages = new JSONArray();
+      String primaryImage = null;
+      for (JSONObject jsonImage : jsonImages) {
+        String image = jsonImage.optString("full");
+        if (jsonImage.optBoolean("isMain")) {
+          primaryImage = image;
+        } else {
+          secondaryImages.put(image);
+        }
       }
+
+      products.add(
+          ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setName(name)
+              .setOffers(offers)
+              .setCategories(categories)
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages.toString())
+              .setDescription(description)
+              .build());
     }
-
-    products.add(
-        ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setName(name)
-            .setOffers(offers)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages.toString())
-            .setDescription(description)
-            .build());
-
     return products;
   }
 
@@ -82,15 +81,10 @@ public class ArgentinaPigmentoCrawler extends Crawler {
     List<JSONObject> listJson = new ArrayList<>();
     Optional<Element> optElem =
         doc.select("script[type='text/x-magento-init']").stream()
-            .filter(
-                element ->
-                    element
-                        .text()
-                        .contains(
-                            "https:\\/\\/perfumeriaspigmento.com.ar\\/media\\/catalog\\/product\\/cache\\/image\\/620x678\\/"))
+            .filter(element -> element.html().contains("full"))
             .findFirst();
     JSONObject jsonObject =
-        optElem.map(element -> new JSONObject(element.text())).orElseGet(JSONObject::new);
+        optElem.map(element -> new JSONObject(element.html())).orElseGet(JSONObject::new);
 
     JSONObject jsonObject1 = jsonObject.optJSONObject("[data-gallery-role=gallery-placeholder]");
     if (jsonObject1 != null) {
@@ -108,11 +102,14 @@ public class ArgentinaPigmentoCrawler extends Crawler {
   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
     Offers offers = new Offers();
     Double price =
-        MathUtils.parseDoubleWithDot(
+        MathUtils.parseDoubleWithComma(
             doc.selectFirst("span[data-price-type=finalPrice] .price").text());
-    Double priceFrom =
-        MathUtils.parseDoubleWithDot(
-            doc.selectFirst("span[data-price-type=oldPrice] .price").text());
+
+    Double priceFrom = null;
+    Element priceFromElem = doc.selectFirst("span[data-price-type=oldPrice] .price");
+    if (priceFromElem != null) {
+      priceFrom = MathUtils.parseDoubleWithComma(priceFromElem.text());
+    }
 
     CreditCards creditCards =
         new CreditCards(
@@ -139,6 +136,7 @@ public class ArgentinaPigmentoCrawler extends Crawler {
 
     offers.add(
         OfferBuilder.create()
+            .setSellerFullName("Pigmento")
             .setIsBuybox(false)
             .setPricing(
                 PricingBuilder.create()
