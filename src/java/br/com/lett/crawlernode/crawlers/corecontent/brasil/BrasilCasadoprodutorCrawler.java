@@ -1,19 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -25,15 +12,30 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 /**
- * 
  * @author Paula
- *
  */
 
 public class BrasilCasadoprodutorCrawler extends Crawler {
@@ -55,57 +57,62 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    JSONObject dataLayer = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer[0]['product'] =", ";", false, true);
+    JSONObject dataLayer = CrawlerUtils
+        .selectJsonFromHtml(doc, "script", "dataLayer[0]['product'] =", ";", false, true);
 
     if (dataLayer.has("id")) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session,
+          "Product page identified: " + this.session.getOriginalURL());
 
       String internalIds = getMainProductId(dataLayer);
       String internalPid = crawlInternalPid(doc);
 
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".respiro_conteudo .migalha a");
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList( ".descricao_texto .descricao_texto_conteudo"));
+      CategoryCollection categories = CrawlerUtils
+          .crawlCategories(doc, ".respiro_conteudo .migalha a");
+      String description = CrawlerUtils
+          .scrapSimpleDescription(doc,
+              Collections.singletonList(".descricao_texto .descricao_texto_conteudo"));
       String mainProductId = getMainProductId(dataLayer);
 
       // sku data in json
-      JSONArray arraySkus = dataLayer != null && dataLayer.has("variants") && dataLayer.get("variants") instanceof JSONArray ? dataLayer.getJSONArray("variants") : new JSONArray();
+      JSONArray arraySkus = dataLayer != null && dataLayer.has("variants") && dataLayer
+          .get("variants") instanceof JSONArray ? dataLayer.getJSONArray("variants")
+          : new JSONArray();
 
-      for (int i = 0; i < arraySkus.length(); i++) { 
+      for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String name = crawlName(jsonSku);
         String internalId = getMainProductId(jsonSku);
 
-        Document productAPI = captureImageAndPricesInfo(internalIds, internalPid, mainProductId, doc);
-        
-        Float price = JSONUtils.getFloatValueFromJSON(jsonSku, "payInFullPrice", true);
-        boolean available = crawlAvailability(price, jsonSku);
-        Prices prices = available ? crawlPrices(price, jsonSku) : new Prices();
-        String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(productAPI, ".produto_foto #divImagemPrincipalZoom > a", Arrays.asList("href"),
-            "https:", "www.casadoprodutor.com.br");
+        Document productAPI = captureImageAndPricesInfo(internalIds, internalPid, mainProductId,
+            doc);
+
+        Offers offers = crawlAvailability(jsonSku) ? scrapOffers(jsonSku) : new Offers();
+        String primaryImage = CrawlerUtils
+            .scrapSimplePrimaryImage(productAPI, ".produto_foto #divImagemPrincipalZoom > a",
+                Collections.singletonList("href"),
+                "https:", "www.casadoprodutor.com.br");
         String secondaryImages = crawlSecondaryImages(doc);
 
         String ean = crawlEan(jsonSku);
-        List<String> eans = ean != null && !ean.isEmpty() ? Arrays.asList(ean) : null;
-        
+        List<String> eans = ean != null && !ean.isEmpty() ? Collections.singletonList(ean) : null;
+
         // Creating the product
         Product product = ProductBuilder.create()
-        		.setUrl(session.getOriginalURL())
-        		.setInternalId(internalId)
-        		.setInternalPid(internalPid)
-        		.setName(name)
-        		.setPrice(price)
-        		.setPrices(prices)
-        		.setAvailable(available)
-        		.setCategory1(categories.getCategory(0))
-        		.setCategory2(categories.getCategory(1))
-        		.setCategory3(categories.getCategory(2))
-        		.setPrimaryImage(primaryImage)
-        		.setSecondaryImages(secondaryImages)
-        		.setDescription(description)
-        		.setMarketplace(new Marketplace())
-        		.setEans(eans)
-        		.build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setOffers(offers)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setEans(eans)
+            .build();
 
         products.add(product);
       }
@@ -132,11 +139,12 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   }
 
   private String crawlInternalPid(Document doc) {
-    String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name .produto_codigo span", false);
+    String internalPid = CrawlerUtils
+        .scrapStringSimpleInfo(doc, ".product-name .produto_codigo span", false);
 
-    if(internalPid != null && internalPid.contains("-")) {
-    	int finalInternalPid = internalPid.indexOf("-");
-    	internalPid = internalPid.substring(0, finalInternalPid);
+    if (internalPid != null && internalPid.contains("-")) {
+      int finalInternalPid = internalPid.indexOf("-");
+      internalPid = internalPid.substring(0, finalInternalPid);
     }
     return internalPid;
   }
@@ -145,13 +153,14 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
     String name = null;
 
     if (skuJson.has("name") && !skuJson.isNull("name")) {
-    	name = skuJson.get("name").toString();
+      name = skuJson.get("name").toString();
     }
     return name;
   }
 
-  private boolean crawlAvailability(Float price, JSONObject jsonSku) {
-    return jsonSku.has("available") && jsonSku.get("available") instanceof Boolean && jsonSku.getBoolean("available") && price != null;
+  private boolean crawlAvailability(JSONObject jsonSku) {
+    return jsonSku.has("available") && jsonSku.get("available") instanceof Boolean && jsonSku
+        .getBoolean("available") && jsonSku.optDouble("payInFullPrice", 0D) != 0D;
   }
 
   private String crawlSecondaryImages(Document doc) {
@@ -177,23 +186,25 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
   }
 
   /**
-   * 
    * Access prices and images api's
-   * 
+   *
    * @param internalId
    * @param internalPid
    * @param mainProductId
    * @param mainPage
    * @return
    */
-  private Document captureImageAndPricesInfo(String internalId, String internalPid, String mainProductId, Document mainPage) {
+  private Document captureImageAndPricesInfo(String internalId, String internalPid,
+      String mainProductId, Document mainPage) {
     Document doc = mainPage;
 
     if (mainProductId != null && !mainProductId.equals(internalId)) {
       doc = new Document("");
       String imagesUrl =
-          "https://www.cassol.com.br/ImagensProduto/CodVariante/" + internalId + "/produto_id/" + internalPid + "/exibicao/produto/t/32";
-      String pricesUrl = "https://www.cassol.com.br/ParcelamentoVariante/CodVariante/" + internalId + "/produto_id/" + internalPid + "/t/32";
+          "https://www.cassol.com.br/ImagensProduto/CodVariante/" + internalId + "/produto_id/"
+              + internalPid + "/exibicao/produto/t/32";
+      String pricesUrl = "https://www.cassol.com.br/ParcelamentoVariante/CodVariante/" + internalId
+          + "/produto_id/" + internalPid + "/t/32";
 
       Request requestImages = RequestBuilder.create().setUrl(imagesUrl).setCookies(cookies).build();
       doc.append(Jsoup.parse(this.dataFetcher.get(session, requestImages).getBody()).toString());
@@ -205,35 +216,46 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
     return doc;
   }
 
-  /**
-   * 
-   * @param internalId
-   * @param price
-   * @return
-   */
-  
-  private Prices crawlPrices(Float price, JSONObject json) {
-	    Prices prices = new Prices();
+  private Offers scrapOffers(JSONObject json) throws MalformedPricingException, OfferException {
+    Offers offers = new Offers();
+    Double price = JSONUtils.getDoubleValueFromJSON(json, "payInFullPrice", true);
 
-	    if (price != null) {
-	      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-	      Integer quantityInstallment = JSONUtils.getIntegerValueFromJSON(json, "quantityOfInstallmentsNoInterest", null);
-	      Float installment = JSONUtils.getFloatValueFromJSON(json, "valueOfInstallmentsNoInterest", true);
-	      installmentPriceMap.put(1, price);
-	      prices.setBankTicketPrice(price);
-	      if(quantityInstallment != null && installment != null) {
-	    	  installmentPriceMap.put(quantityInstallment, installment);  
-	      }
+    CreditCards creditCards = new CreditCards(
+        Stream.of(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
+            Card.HIPERCARD).map(card -> {
+          int quantityInst = json.optInt("quantityOfInstallmentsNoInterest");
+          double installment = json.optDouble("valueOfInstallmentsNoInterest");
+          try {
+            return CreditCardBuilder.create()
+                .setBrand(card.toString())
+                .setIsShopCard(false)
+                .setInstallments(new Installments(Collections.singleton(InstallmentBuilder.create()
+                    .setInstallmentPrice(installment)
+                    .setInstallmentNumber(quantityInst)
+                    .build())))
+                .build();
+          } catch (MalformedPricingException e) {
+            throw new RuntimeException(e);
+          }
+        }).collect(Collectors.toList()));
 
-	      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-	      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-	      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-	      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-	      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-	    }
+    offers.add(OfferBuilder.create()
+        .setIsBuybox(false)
+        .setPricing(PricingBuilder.create()
+            .setSpotlightPrice(price)
+            .setPriceFrom(json.optDouble("price") != price ? json.optDouble("price") : null)
+            .setBankSlip(BankSlipBuilder.create()
+                .setFinalPrice(price)
+                .build())
+            .setCreditCards(creditCards)
+            .build())
+        .setSellerFullName("Casa do produtor")
+        .setIsMainRetailer(true)
+        .setUseSlugNameAsInternalSellerId(true)
+        .build());
 
-	    return prices;
-	  }
+    return offers;
+  }
 
   private String crawlEan(JSONObject json) {
     String ean = null;
