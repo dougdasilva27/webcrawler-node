@@ -8,67 +8,61 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilBreedsCrawler extends CrawlerRankingKeywords {
-  
-  private static final String HOME_PAGE = "breeds.com.br/";
 
-  public BrasilBreedsCrawler(Session session) {
-    super(session);
-  }
+   private static final String HOME_PAGE = "www.breeds.com.br/";
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 21;
-    this.log("Página " + this.currentPage);
+   public BrasilBreedsCrawler(Session session) {
+      super(session);
+   }
 
-    String url = "https://busca." + HOME_PAGE 
-        + this.keywordEncoded + "?pagina=" 
-        + this.currentPage;
-    
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select("#listProduct > li > div");
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 21;
+      this.log("Página " + this.currentPage);
 
-    if (!products.isEmpty()) {
+      String url = "https://" + HOME_PAGE + "catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select(".products-grid .item");
 
-      if (this.totalProducts == 0) {
-        setTotalProducts();
+      if (!products.isEmpty()) {
+
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
+
+         for (Element e : products) {
+
+            Integer internalPidInt = CrawlerUtils.scrapIntegerFromHtmlAttr(e, ".regular-price", "id", null);
+            String internalPid = internalPidInt != null ? internalPidInt.toString() : null;
+            String productUrl = CrawlerUtils.scrapUrl(e, ".item a", Arrays.asList("href"), "https:", HOME_PAGE);
+
+            saveDataProduct(null, internalPid, productUrl);
+
+            this.log(
+                  "Position: " + this.position +
+                        " - InternalId: " + null +
+                        " - InternalPid: " + internalPid +
+                        " - Url: " + productUrl);
+
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
+
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      for (Element e : products) {
-        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "data-item-id");
-        String productUrl = CrawlerUtils.scrapUrl(e, ".product-image > a", Arrays.asList("href"), "https:", HOME_PAGE);
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+            + this.arrayProducts.size() + " produtos crawleados");
 
-        saveDataProduct(null, internalPid, productUrl);
+   }
 
-        this.log(
-            "Position: " + this.position + 
-            " - InternalId: " + null +
-            " - InternalPid: " + internalPid + 
-            " - Url: " + productUrl);
-        
-        if (this.arrayProducts.size() == productsLimit)
-          break;
-      }
-      
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+   @Override
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".amount.amount--has-pages", "de", "", true, false, 0);
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-        + this.arrayProducts.size() + " produtos crawleados");
-
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(
-        this.currentDoc, 
-        ".filter-details .list-results", 
-        "de", 
-        "", 
-        true, false, 0);
-
-    this.log("Total de produtos: " + this.totalProducts);
-  }
+      this.log("Total de produtos: " + this.totalProducts);
+   }
 }
