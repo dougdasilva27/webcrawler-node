@@ -57,9 +57,9 @@ public class ArgentinaOpenfarmaCrawler extends Crawler {
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".row .product-name", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoom .item img",
-               Arrays.asList("src"), "http", HOME_PAGE);
+               Arrays.asList("src"), "https://", HOME_PAGE);
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#zoom .slider-for .item:not(.default-image) img",
-               Arrays.asList("src"), "http", HOME_PAGE, primaryImage);
+               Arrays.asList("src"), "https://", HOME_PAGE, primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".row article", false);
          Integer stock = null;
          boolean availableToBuy = doc.selectFirst(".row .btn-submit") != null;
