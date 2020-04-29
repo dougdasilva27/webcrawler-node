@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRati
 import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.Logging
 import models.prices.Prices
+import org.json.JSONObject
 import org.jsoup.nodes.Document
 
 class BrasilNeiCrawler(session: Session?) : Crawler(session) {
@@ -16,7 +17,7 @@ class BrasilNeiCrawler(session: Session?) : Crawler(session) {
     override fun extractInformation(document: Document?): MutableList<Product> {
         val products = mutableListOf<Product>()
 
-        val json = CrawlerUtils.selectJsonFromHtml(document,"script[type='text/javascript']","window.dataLayer.push(",");",false,true)
+        val json = CrawlerUtils.selectJsonFromHtml(document, "script[type='text/javascript']", "window.dataLayer.push(", ");", false, true)
         val jsonProduct = json?.optJSONObject("ecommerce")?.optJSONObject("detail")
 
         val ratingId = json?.optJSONObject("remarketing")?.optString("ecomm_prodid")
@@ -24,23 +25,28 @@ class BrasilNeiCrawler(session: Session?) : Crawler(session) {
         json ?: Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
 
         jsonProduct?.let {
-            val price = it.optFloat("original_price")
-            val prices = scrapPrices(price)
-            val interalId = it.optString("id")
-            products.add(ProductBuilder.create()
-                    .setUrl(session.originalURL)
-                    .setInternalId(interalId)
-                    .setName(it.optString("name"))
-                    .setDescription(CrawlerUtils.scrapElementsDescription(document, mutableListOf(".product-main--description",
-                            ".product-details > *:not(#trustvox-reviews):not(#_sincero_widget):not(script)")))
-                    .setPrice(price)
-                    .setPrices(prices)
-                    .setCategories(mutableListOf(it.optString("category")))
-                    .setRatingReviews(scrapRating(ratingId = ratingId, doc = document))
-                    .setAvailable(document?.selectFirst(".price > strong")?.text() == null)
-                    .setCategories(listOf(it.optString("parent_category"), it.optString("category")))
-                    .setPrimaryImage(it.optString("image"))
-                    .build())
+            for (any in it.optJSONArray("products")) {
+                if (any is JSONObject){
+
+                val price = any.optFloat("original_price")
+                val prices = scrapPrices(price)
+                val internalId = any.optString("id")
+                products.add(ProductBuilder.create()
+                        .setUrl(session.originalURL)
+                        .setInternalId(internalId)
+                        .setName(any.optString("name"))
+                        .setDescription(CrawlerUtils.scrapElementsDescription(document, mutableListOf(".product-main--description",
+                                ".product-details > *:not(#trustvox-reviews):not(#_sincero_widget):not(script)")))
+                        .setPrice(price)
+                        .setPrices(prices)
+                        .setCategories(mutableListOf(any.optString("category")))
+                        .setRatingReviews(scrapRating(ratingId = ratingId, doc = document))
+                        .setAvailable(document?.selectFirst(".price > strong")?.text() == null)
+                        .setCategories(listOf(any.optString("parent_category"), any.optString("category")))
+                        .setPrimaryImage(any.optString("image"))
+                        .build())
+                }
+            }
         }
 
         return products
