@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.util.Logging;
 public abstract class MexicoRappiCrawler extends RappiCrawler {
 
    private static final String HOME_PAGE = "https://www.rappi.com.mx/";
-   private static final String IMAGES_DOMAIN = "images.rappi.com.mx/products/";
+   private static final String IMAGES_DOMAIN = "images.rappi.com.mx/products";
    private final String storeId = setStoreId();
 
    protected abstract String setStoreId();
