@@ -13,6 +13,8 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -63,14 +65,14 @@ public abstract class VTEXNewScraper extends Crawler {
       List<Product> products = new ArrayList<>();
 
       JSONObject runTimeJSON = scrapRuntimeJson(doc);
-      JSONObject productJson = scrapProductJson(runTimeJSON);
+      JSONObject initialJson = scrapProductJson(runTimeJSON);
+      String internalPid = initialJson.optString("productId", null);
 
-      System.err.println(productJson);
+      if (internalPid != null) {
+         JSONObject productJson = crawlProductApi(internalPid);
 
-      if (productJson.has("productId")) {
-         String internalPid = productJson.has("productId") && !productJson.isNull("productId") ? productJson.get("productId").toString() : null;
          CategoryCollection categories = scrapCategories(productJson);
-         String description = JSONUtils.getStringValue(productJson, "description");
+         String description = scrapDescription(doc, productJson);
 
          JSONArray items = productJson.has("items") && !productJson.isNull("items") ? productJson.getJSONArray("items") : new JSONArray();
 
@@ -93,7 +95,6 @@ public abstract class VTEXNewScraper extends Crawler {
       List<String> images = scrapImages(jsonSku);
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
       String secondaryImages = scrapSecondaryImages(images);
-      System.err.println(jsonSku);
       Offers offers = scrapOffer(doc, jsonSku, internalId, internalPid);
       RatingsReviews rating = scrapRating(internalId, internalPid, doc, jsonSku);
       List<String> eans = jsonSku.has("ean") ? Arrays.asList(jsonSku.get("ean").toString()) : null;
@@ -169,6 +170,10 @@ public abstract class VTEXNewScraper extends Crawler {
       }
 
       return categories;
+   }
+
+   protected String scrapDescription(Document doc, JSONObject productJson) {
+      return JSONUtils.getStringValue(productJson, "description");
    }
 
    private List<String> scrapImages(JSONObject skuJson) {
@@ -350,7 +355,7 @@ public abstract class VTEXNewScraper extends Crawler {
       return cardName;
    }
 
-   private BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial) throws MalformedPricingException {
+   protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial) throws MalformedPricingException {
       Double bankSlipPrice = spotlightPrice;
 
       JSONArray installmentsArray = comertial.optJSONArray("Installments");
@@ -372,4 +377,19 @@ public abstract class VTEXNewScraper extends Crawler {
    }
 
    protected abstract RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku);
+
+   protected JSONObject crawlProductApi(String internalPid) {
+      JSONObject productApi = new JSONObject();
+
+      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid;
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+
+      if (!array.isEmpty()) {
+         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      }
+
+      return productApi;
+   }
 }
