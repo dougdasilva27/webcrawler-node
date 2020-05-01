@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
@@ -14,15 +13,12 @@ import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import models.RatingsReviews;
 import models.pricing.BankSlip;
-import models.pricing.BankSlip.BankSlipBuilder;
-import models.pricing.Installment;
-import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.CreditCards;
 
 public class BrasilKitchenaidCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.kitchenaid.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "Kitchenaid";
-   private static final double AVISTA_DISCOUNT = 0.10d;
 
    public BrasilKitchenaidCrawler(Session session) {
       super(session);
@@ -45,39 +41,37 @@ public class BrasilKitchenaidCrawler extends VTEXNewScraper {
       return sale != null && !sale.isEmpty() ? Arrays.asList(sale) : new ArrayList<>();
    }
 
-   @Override
-   protected Double scrapSpotlightPrice(Document doc, String internalId, JSONObject comertial) {
-      Double spotlightPrice = super.scrapSpotlightPrice(doc, internalId, comertial);
 
-      Element spotlightElement = doc.selectFirst("p[class*=\"discount-percentage-product\"] span");
-      if (spotlightElement != null) {
-         spotlightPrice = MathUtils.parseDoubleWithComma(spotlightElement.ownText());
+   @Override
+   protected Double scrapSpotlightPrice(Document doc, String internalId, Double principalPrice, JSONObject comertial, JSONObject discountsJson) {
+      Double spotlightPrice = super.scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
+      Double maxDiscount = 0d;
+      if (discountsJson != null && discountsJson.length() > 0) {
+         for (String key : discountsJson.keySet()) {
+            JSONObject paymentEffect = discountsJson.optJSONObject(key);
+            Double discount = paymentEffect.optDouble("discount");
+
+            if (discount > maxDiscount) {
+               maxDiscount = discount;
+            }
+         }
+      }
+
+      if (maxDiscount > 0d) {
+         spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice - (spotlightPrice * maxDiscount));
       }
 
       return spotlightPrice;
    }
 
    @Override
-   protected Installment setInstallment(Integer installmentNumber, Double value, Double interests, Double totalValue, Double discount) throws MalformedPricingException {
-      if (installmentNumber == 1) {
-         discount = AVISTA_DISCOUNT;
-         value = value - (value * AVISTA_DISCOUNT);
-      }
-
-      return InstallmentBuilder.create()
-            .setInstallmentNumber(installmentNumber)
-            .setInstallmentPrice(value)
-            .setAmOnPageInterests(interests)
-            .setFinalPrice(totalValue)
-            .setOnPageDiscount(discount)
-            .build();
+   protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
+      return super.scrapBankSlip(spotlightPrice, comertial, discounts, false);
    }
 
    @Override
-   protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial) throws MalformedPricingException {
-      return BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
+   protected CreditCards scrapCreditCards(JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
+      return super.scrapCreditCards(comertial, discounts, false);
    }
 
    @Override
