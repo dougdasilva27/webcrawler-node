@@ -10,11 +10,11 @@ public class BrasilMartinskraftheinzCrawler extends BrasilMartinsCrawler {
 
   @Override
   protected String getPassword() {
-    return null;
+    return "heinz2020";
   }
 
   @Override
   protected String getLogin() {
-    return null;
+    return "lorenzo.lamas@kraftheinz.com";
   }
 }
