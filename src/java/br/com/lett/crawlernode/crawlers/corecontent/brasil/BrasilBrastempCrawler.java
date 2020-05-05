@@ -18,11 +18,7 @@ import models.pricing.Pricing;
 public class BrasilBrastempCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://loja.brastemp.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "brastemp";
-   private static final String MAIN_SELLER_NAME_LOWER_2 = "consul";
-   private static final String MAIN_SELLER_NAME_LOWER_3 = "whirlpool";
-   private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2, MAIN_SELLER_NAME_LOWER_3);
-
+   private static final List<String> SELLERS = Arrays.asList("Whirlpool", "Consul", "Brastemp");
 
    public BrasilBrastempCrawler(Session session) {
       super(session);
