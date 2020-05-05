@@ -1,26 +1,22 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
 import models.Offers;
-import models.RatingsReviews;
 import models.pricing.BankSlip;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
@@ -30,16 +26,23 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 
-public class BrasilEsalpetCrawler extends Crawler {
+public class ArgentinaOpenfarmaCrawler extends Crawler {
 
-   private static final String IMAGE_HOST = "assets.xtechcommerce.com";
-   private static final String SELLER_FULL_NAME = "Esalpet";
+   private final String HOME_PAGE = "https://www.openfarma.com.ar/";
+   private static final String SELLER_FULL_NAME = "Open farma";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-   public BrasilEsalpetCrawler(Session session) {
+
+   public ArgentinaOpenfarmaCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
+   }
+
+
+   @Override
+   public boolean shouldVisit() {
+      String href = session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
    @Override
@@ -50,33 +53,28 @@ public class BrasilEsalpetCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".prod-action [name=id]", "value");
-         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var productvariants_settings_" + internalId + " = ", ";", false, false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".wrapper", "data-product-id");
+         String internalPid = internalId;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".row .product-name", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoom .item img",
+               Arrays.asList("src"), "https://", HOME_PAGE);
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#zoom .slider-for .item:not(.default-image) img",
+               Arrays.asList("src"), "https://", HOME_PAGE, primaryImage);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".row article", false);
+         Integer stock = null;
+         boolean availableToBuy = doc.selectFirst(".row .btn-submit") != null;
+         Offers offers = availableToBuy ? offers(doc) : new Offers();
 
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=product_sku]", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1[itemprop=name]", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb > li:not(:last-child)", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".prod-image #zoom", Arrays.asList("data-zoom-image", "src"), "https", IMAGE_HOST);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".prod-image-thumbs > a", Arrays.asList("data-zoom-image", "data-image"), "https", IMAGE_HOST, primaryImage);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".prod-excerpt", ".prod-description"));
-         Integer stock = json.has("overall_quantity") && json.get("overall_quantity") instanceof Integer ? json.getInt("overall_quantity") : 0;
-         boolean available = stock > 0 || ((json.has("allow_os_purchase") && json.get("allow_os_purchase") instanceof Boolean) && json.getBoolean("allow_os_purchase"));
-         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-         Offers offers = available ? scrapOffers(doc) : new Offers();
          // Creating the product
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setStock(stock)
-               .setRatingReviews(ratingsReviews)
                .setOffers(offers)
                .build();
 
@@ -87,21 +85,19 @@ public class BrasilEsalpetCrawler extends Crawler {
       }
 
       return products;
+
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#product") != null;
+      return doc.select("#product").first() != null;
    }
 
-   private RatingsReviews scrapRating(String internalId, Document doc) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "109465", logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
-   }
 
-   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+   private Offers offers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = new ArrayList<>();
+      List<String> sales = scrapSales(doc);
+
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -117,24 +113,41 @@ public class BrasilEsalpetCrawler extends Crawler {
 
    }
 
+
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      String salesString = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#zoom", "class").replaceAll("[^0-9]", "");
+
+      if (salesString != null && !salesString.isEmpty()) {
+         sales.add(salesString + "% OFF"); // On HTML this info appears like this: has-promo promo-20-off so a have to make this little
+                                           // adjustment to show sales like client see
+      }
+
+      return sales;
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product_price", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .promo", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices .regular", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-      BankSlip bankSlip = BankSlipBuilder.create()
+      BankSlip bankslip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
             .build();
 
       return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
+            .setBankSlip(bankslip)
             .setCreditCards(creditCards)
-            .setBankSlip(bankSlip)
             .build();
+
    }
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = new Installments();
+      Installments installments = scrapInstallment(spotlightPrice);
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
                .setInstallmentNumber(1)
@@ -151,6 +164,18 @@ public class BrasilEsalpetCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private Installments scrapInstallment(Double spotlightPrice) throws MalformedPricingException {
+
+      Installments installments = new Installments();
+
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+      return installments;
    }
 
 }

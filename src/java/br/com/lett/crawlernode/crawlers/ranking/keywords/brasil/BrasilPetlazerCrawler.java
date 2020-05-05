@@ -20,25 +20,27 @@ public class BrasilPetlazerCrawler extends CrawlerRankingKeywords {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.petlazer.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      String url = "https://www.petlazer.com.br/Busca/" + this.keywordEncoded + "/" + this.currentPage + ".html";
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".products-grid .item");
+      Elements products = this.currentDoc.select(".col-lg-3.col-md-3.top-m-20px");
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".infobox .bt-add > button", "data-id");
-            String productUrl = CrawlerUtils.scrapUrl(e, ".product-image-wrapper > a", Arrays.asList("href"), "https", HOME_PAGE);
+            String internalId = null;
 
-            saveDataProduct(null, internalPid, productUrl);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".col-lg-3.col-md-3 a", Arrays.asList("href"), "https", HOME_PAGE);
+            Integer pidString = productUrl.indexOf("produto/");
+            String id = productUrl.substring(pidString).split("/")[1];
+            internalId = id != null ? id : null; // O unico lugar onde foi possivel encontrar o internalId foi dentro da URL
 
-            // 1197
+            saveDataProduct(null, internalId, productUrl);
 
             this.log(
                   "Position: " + this.position +
-                        " - InternalId: " + null +
-                        " - InternalPid: " + internalPid +
+                        " - InternalId: " + internalId +
+                        " - InternalPid: " + null +
                         " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit)
@@ -57,6 +59,6 @@ public class BrasilPetlazerCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return this.currentDoc.selectFirst(".next > a") != null;
+      return this.currentDoc.selectFirst(".pagination.pagination-lg li:nth-child(3) a") != null;
    }
 }
