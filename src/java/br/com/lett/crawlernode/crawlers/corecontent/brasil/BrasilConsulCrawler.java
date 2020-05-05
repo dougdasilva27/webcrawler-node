@@ -17,14 +17,14 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXScraper;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VtexConfig;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VtexConfig.CardsInfo;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VtexConfig.VtexConfigBuilder;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 
-public class BrasilConsulCrawler extends VTEXScraper {
+public class BrasilConsulCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://loja.consul.com.br/";
    private static final List<String> SELLERS = Arrays.asList("Whirlpool", "Consul", "Brastemp");

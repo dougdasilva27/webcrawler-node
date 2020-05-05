@@ -14,6 +14,7 @@ import exceptions.MalformedPricingException;
 import models.RatingsReviews;
 import models.pricing.BankSlip;
 import models.pricing.CreditCards;
+import models.pricing.Pricing;
 
 public class BrasilKitchenaidCrawler extends VTEXNewScraper {
 
@@ -36,7 +37,7 @@ public class BrasilKitchenaidCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid) {
+   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
       String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__flags .price-flag", true);
       return sale != null && !sale.isEmpty() ? Arrays.asList(sale) : new ArrayList<>();
    }
