@@ -61,13 +61,14 @@ public class BrasilMartinsCrawler extends Crawler {
       return super.fetch();
     }
     try {
-      webdriver = DynamicDataFetcher
-          .fetchPageWebdriver("https://www.martinsatacado.com.br/login/topo/request", session);
+      webdriver =
+          DynamicDataFetcher.fetchPageWebdriver(
+              "https://www.martinsatacado.com.br/login/topo/request", session);
       webdriver.waitLoad(6000);
 
       waitForElement(webdriver.driver, "#go-login");
-      webdriver
-          .clickOnElementViaJavascript(webdriver.driver.findElement(By.cssSelector("#go-login")));
+      webdriver.clickOnElementViaJavascript(
+          webdriver.driver.findElement(By.cssSelector("#go-login")));
 
       waitForElement(webdriver.driver, "#js_username_login");
       WebElement email = webdriver.driver.findElement(By.cssSelector("#js_username_login"));
@@ -84,6 +85,7 @@ public class BrasilMartinsCrawler extends Crawler {
       waitForElement(webdriver.driver, ".c-login__button");
       WebElement login = webdriver.driver.findElement(By.cssSelector(".c-login__button"));
       webdriver.clickOnElementViaJavascript(login);
+      webdriver.waitLoad(6000);
 
       webdriver.loadUrl(session.getOriginalURL());
       webdriver.waitLoad(6000);
@@ -106,50 +108,61 @@ public class BrasilMartinsCrawler extends Crawler {
     List<Product> products = new ArrayList<>();
 
     if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session,
-          "Product page identified: " + session.getOriginalURL());
+      Logging.printLogDebug(
+          logger, session, "Product page identified: " + session.getOriginalURL());
 
-      String internalId = CommonMethods.getLast(
-          CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
+      String internalId =
+          CommonMethods.getLast(
+              CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
-      Float price = CrawlerUtils
-          .scrapFloatPriceFromHtml(doc, ".qdValue .value", null, true, ',', session);
+      Float price =
+          CrawlerUtils.scrapFloatPriceFromHtml(doc, ".qdValue .value", null, true, ',', session);
       Prices prices = scrapPrices(price);
-      CategoryCollection categories = CrawlerUtils
-          .crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
-      String primaryImage = CrawlerUtils
-          .scrapSimplePrimaryImage(doc, ".imagePrincipal img", Collections.singletonList("src"),
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(
+              doc,
+              ".imagePrincipal img",
+              Collections.singletonList("src"),
               "https",
               "imgprd.martins.com.br");
-      String secondaryImages = CrawlerUtils
-          .scrapSimpleSecondaryImages(doc, ".galeryImages img", Collections.singletonList("src"),
+      String secondaryImages =
+          CrawlerUtils.scrapSimpleSecondaryImages(
+              doc,
+              ".galeryImages img",
+              Collections.singletonList("src"),
               "https",
-              "imgprd.martins.com.br", primaryImage);
+              "imgprd.martins.com.br",
+              primaryImage);
       String description =
-          CrawlerUtils.scrapSimpleDescription(doc,
+          CrawlerUtils.scrapSimpleDescription(
+              doc,
               Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
-      List<String> eans = Collections
-          .singletonList(CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
+      List<String> eans =
+          Collections.singletonList(
+              CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
       RatingsReviews ratingsReviews = scrapRating(doc, internalId);
 
       // Creating the product
-      Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(price != null)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setRatingReviews(ratingsReviews)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setMarketplace(new Marketplace())
-          .setEans(eans)
-          .build();
+      Product product =
+          ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(price != null)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setRatingReviews(ratingsReviews)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setMarketplace(new Marketplace())
+              .setEans(eans)
+              .build();
 
       products.add(product);
 
@@ -162,8 +175,9 @@ public class BrasilMartinsCrawler extends Crawler {
 
   private RatingsReviews scrapRating(Document doc, String internalId) {
     RatingsReviews ratingsReviews = new RatingsReviews();
-    String ratingString = CrawlerUtils
-        .scrapStringSimpleInfoByAttribute(doc, ".hidden-sm .rating .rating-stars", "data-rating");
+    String ratingString =
+        CrawlerUtils.scrapStringSimpleInfoByAttribute(
+            doc, ".hidden-sm .rating .rating-stars", "data-rating");
     JSONObject jsonRating = JSONUtils.stringToJson(ratingString);
 
     int totalReviews = jsonRating.opt("rating") != null ? jsonRating.optInt("rating") : 0;
