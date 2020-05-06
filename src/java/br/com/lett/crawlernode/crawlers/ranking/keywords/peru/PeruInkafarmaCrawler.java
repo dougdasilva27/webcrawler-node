@@ -39,6 +39,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
 
       Response response = this.dataFetcher.post(session, requestToken);
       JSONObject apiTokenJson = JSONUtils.stringToJson(response.getBody());
+
       if (apiTokenJson.has("idToken") && !apiTokenJson.isNull("idToken")) {
          this.accessToken = apiTokenJson.get("idToken").toString();
       }
@@ -98,14 +99,15 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          JSONObject payload = new JSONObject();
          payload.put("brands", new JSONArray());
          payload.put("categories", new JSONArray());
-         payload.put("order", "DESC");
+         payload.put("order", "ASC");
          payload.put("page", this.currentPage - 1);
          payload.put("pharmaceuticalForm", new JSONArray());
          payload.put("prescriptionType", new JSONArray());
          payload.put("presentations", new JSONArray());
          payload.put("query", this.location);
-         payload.put("rows", 10);
+         payload.put("rows", 24);
          payload.put("sort", "ranking");
+
 
          Map<String, String> headers = new HashMap<>();
          headers.put(HttpHeaders.CONTENT_TYPE, "application/json;charset=UTF-8");
