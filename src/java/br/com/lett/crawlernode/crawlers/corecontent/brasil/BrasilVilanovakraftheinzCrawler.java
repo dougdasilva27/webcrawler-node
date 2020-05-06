@@ -11,11 +11,11 @@ public class BrasilVilanovakraftheinzCrawler extends BrasilVilanova {
 
   @Override
   public String getCnpj() {
-    return "";
+    return null;
   }
 
   @Override
   public String getPassword() {
-    return "";
+    return null;
   }
 }
