@@ -6,14 +6,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
@@ -26,7 +27,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
@@ -35,6 +35,10 @@ import models.prices.Prices;
 public abstract class ComperCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.comperdelivery.com.br/";
+   private static final String MAIN_SELLER_NAME_LOWER = "sdb comercio de alimentos ltda.";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+
    protected final String storeId = getStoreId();
    protected final String multiStoreId = getStoreId();
 
@@ -105,35 +109,48 @@ public abstract class ComperCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
 
-         JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", false, false);
+         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
 
-         String internalId = crawlInternalId(productJson);
-         String internalPid = crawlInternalPid(productJson);
-         String name = crawlName(productJson);
-         boolean available = crawlAvailability(productJson);
-         Float price = available ? crawlPrice(productJson) : null;
-         Prices prices = available ? crawlPrices(price, productJson) : new Prices();
-         CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".images .thumbs li[style~=block] img", Arrays.asList("src"), "https",
-               "www.comperdelivery.com.br", primaryImage);
-         String description = crawlDescription(doc);
-         Integer stock = null;
-         Marketplace marketplace = crawlMarketplace();
-         String ean = productJson.has("RKProductEan13") ? productJson.getString("RKProductEan13") : null;
+         String internalPid = vtexUtil.crawlInternalPid(skuJson);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
+         String description = crawlDescription(internalPid, vtexUtil);
 
-         List<String> eans = new ArrayList<>();
-         eans.add(ean);
+         // sku data in json
+         JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
 
-         // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+         JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
-         products.add(product);
+         for (int i = 0; i < arraySkus.length(); i++) {
+            JSONObject jsonSku = arraySkus.getJSONObject(i);
+
+            String internalId = vtexUtil.crawlInternalId(jsonSku);
+            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
+            String name = vtexUtil.crawlName(jsonSku, skuJson);
+            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
+            Marketplace marketplace =
+                  CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), session);
+            boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
+            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+            Prices prices = getPrices(marketplaceMap);
+            Float price = vtexUtil.crawlMainPagePrice(prices);
+            Integer stock = vtexUtil.crawlStock(apiJSON);
+
+            String ean = i < eanArray.length() ? eanArray.getString(i) : null;
+
+            List<String> eans = new ArrayList<>();
+            eans.add(ean);
+
+            // Creating the product
+            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+                  .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+
+            products.add(product);
+         }
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -143,146 +160,50 @@ public abstract class ComperCrawler extends Crawler {
 
    }
 
-   private boolean isProductPage(Document doc) {
-      return doc.select("#info-product").first() != null;
-   }
+   private Prices getPrices(Map<String, Prices> marketplaceMap) {
+      Prices prices = new Prices();
 
-   private String crawlInternalId(JSONObject product) {
-      String internalId = null;
-
-      if (product.has("RKProductWebID")) {
-         internalId = product.getString("RKProductWebID");
+      if (marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER)) {
+         prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
       }
 
-      return internalId;
+      return prices;
    }
 
-   private String crawlInternalPid(JSONObject product) {
-      String internalPid = null;
 
-      if (product.has("RKProductID")) {
-         internalPid = product.getString("RKProductID");
+   private String crawlDescription(String internalPid, VTEXCrawlersUtils vtexUtil) {
+      StringBuilder description = new StringBuilder();
+
+      JSONObject descriptionApi = vtexUtil.crawlDescriptionAPI(internalPid, "productId");
+      if (descriptionApi.has("description")) {
+         description.append(descriptionApi.get("description").toString());
       }
 
-      return internalPid;
-   }
+      List<String> specs = new ArrayList<>();
 
-   private String crawlName(JSONObject product) {
-      String name = null;
-
-      if (product.has("RKProductName")) {
-         name = product.getString("RKProductName");
-      }
-
-      return name;
-   }
-
-   private Float crawlPrice(JSONObject product) {
-      Float price = null;
-
-      try {
-         if (product.has("RKProductPrice")) {
-            price = Float.parseFloat(product.get("RKProductPrice").toString());
-         }
-      } catch (NumberFormatException e) {
-         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      return price;
-   }
-
-   private Marketplace crawlMarketplace() {
-      return new Marketplace();
-   }
-
-
-   private String crawlPrimaryImage(Document doc) {
-      String primaryImage = null;
-      Element elementPrimaryImage = doc.select("#Zoom1").first();
-
-      if (elementPrimaryImage != null) {
-         primaryImage = elementPrimaryImage.attr("href");
-
-         if (primaryImage.contains(".gif")) {
-            Element img = elementPrimaryImage.select("> img").first();
-
-            if (img != null) {
-               primaryImage = img.attr("src");
+      if (descriptionApi.has("allSpecifications")) {
+         JSONArray keys = descriptionApi.getJSONArray("allSpecifications");
+         for (Object o : keys) {
+            if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
+               specs.add(o.toString());
             }
          }
       }
 
-      if (primaryImage != null && !primaryImage.contains(".comper")) {
-         primaryImage = (HOME_PAGE + primaryImage).replace("br//", "br/");
-      }
+      for (String spec : specs) {
 
-      return primaryImage;
-   }
-
-   /**
-    * @param document
-    * @return
-    */
-   private CategoryCollection crawlCategories(Document document) {
-      CategoryCollection categories = new CategoryCollection();
-      Elements elementCategories = document.select(".breadcrumbs li a");
-
-      for (int i = 0; i < elementCategories.size(); i++) {
-         String cat = elementCategories.get(i).ownText().trim();
-
-         if (!cat.isEmpty()) {
-            categories.add(cat);
-         }
-      }
-
-      return categories;
-   }
-
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
-
-      Element elementDescription = doc.select("#ajaxDescription").first();
-
-      if (elementDescription != null) {
-         description.append(elementDescription.html());
-      }
-
-      Element elementSpec = doc.select("#ajaxSpecification").first();
-
-      if (elementSpec != null) {
-         description.append(elementSpec.html());
+         description.append("<div>");
+         description.append("<h4>").append(spec).append("</h4>");
+         description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionApi.get(spec)));
+         description.append("</div>");
       }
 
       return description.toString();
    }
 
-   private boolean crawlAvailability(JSONObject product) {
-      return product.has("RKProductAvailable") && product.get("RKProductAvailable").toString().equals("1");
-   }
 
-   /**
-    * In this market, installments not appear in product page
-    * 
-    * @param productJson
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, JSONObject productJson) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
-         installmentPriceMap.put(1, price);
-
-         double priceFrom = !Double.isNaN(productJson.optDouble("RKProductOffer")) ? productJson.optDouble("RKProductOffer") + price : null;
-         prices.setPriceFrom(priceFrom);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      }
-
-      return prices;
+   private boolean isProductPage(Document doc) {
+      return doc.select("#product-info").first() != null;
    }
 
 }
