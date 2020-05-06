@@ -170,7 +170,6 @@ public abstract class ComperCrawler extends Crawler {
       return prices;
    }
 
-
    private String crawlDescription(String internalPid, VTEXCrawlersUtils vtexUtil) {
       StringBuilder description = new StringBuilder();
 
@@ -200,7 +199,6 @@ public abstract class ComperCrawler extends Crawler {
 
       return description.toString();
    }
-
 
    private boolean isProductPage(Document doc) {
       return doc.select("#product-info").first() != null;
