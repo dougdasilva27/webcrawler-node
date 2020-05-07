@@ -104,8 +104,6 @@ public class MercadolivreCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-
-
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=itemId], #productInfo input[name=\"item_id\"]", "value");
 
          Map<String, Document> variations = getVariationsHtmls(doc);
@@ -129,10 +127,8 @@ public class MercadolivreCrawler extends Crawler {
             String description =
                   CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
-
-
             RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
             RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
             boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
                   || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
@@ -167,13 +163,13 @@ public class MercadolivreCrawler extends Crawler {
 
    }
 
-   private RatingsReviews crawlRating(Document doc, String internalId) {
+   private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
       Double avgRating = getTotalAvgRating(doc);
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc, internalId);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc, internalPid, internalId);
 
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -227,18 +223,25 @@ public class MercadolivreCrawler extends Crawler {
    }
 
 
-   private Document acessHtmlWithAdvanedRating(String internalId) {
+   private Document acessHtmlWithAdvanedRating(String internalPid, String internalId) {
 
       Document docRating = new Document("");
 
-      String url =
-            "https://produto.mercadolivre.com.br/noindex/catalog/reviews/" + internalId + "?noIndex=true&itemId=" + internalId + "&modal=true&modalWidth=840&modalHeight=400&access=stars&parent_url=" + this.homePage;
+      StringBuilder url = new StringBuilder();
+      url.append("https://produto.mercadolivre.com.br/noindex/catalog/reviews/")
+            .append(internalPid)
+            .append("?noIndex=true")
+            .append("&itemId=" + internalPid)
+            .append("&contextual=true")
+            .append("&access=view_all")
+            .append("&quantity=1")
+            .append("&variation=" + internalId.replace(internalPid + "-", ""));
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
       String response = dataFetcher.get(session, request).getBody().trim();
 
       docRating = Jsoup.parse(response);
@@ -248,7 +251,7 @@ public class MercadolivreCrawler extends Crawler {
    }
 
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, String internalId) {
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, String internalPid, String internalId) {
       Document docRating;
 
       Integer star1 = 0;
@@ -257,7 +260,7 @@ public class MercadolivreCrawler extends Crawler {
       Integer star4 = 0;
       Integer star5 = 0;
 
-      docRating = acessHtmlWithAdvanedRating(internalId);
+      docRating = acessHtmlWithAdvanedRating(internalPid, internalId);
 
       Elements reviews = docRating.select(".reviews-rating .review-rating-row.is-rated");
 
@@ -340,20 +343,12 @@ public class MercadolivreCrawler extends Crawler {
 
       Elements sizes = doc.select(".variation-list li:not(.variations-selected) a.ui-list__item-option");
       for (Element e : sizes) {
-         String attribute = null;
-         String[] parameters = e.attr("href").split("&");
-         for (String p : parameters) {
-            if (p.startsWith("attribute=")) {
-               attribute = p;
-               break;
-            }
-         }
-
-         String url = urlColor + (urlColor.contains("?") ? "&" : "?") + attribute;
+         String url = e.attr("href");
          Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
          Document docSize = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
-         variations.put(url, docSize);
+         String redirectUrl = session.getRedirectedToURL(url);
+         variations.put(redirectUrl != null ? redirectUrl : url, docSize);
       }
 
       return variations;
