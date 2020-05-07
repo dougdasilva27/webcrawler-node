@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
+import models.RatingsReviews;
 
 
 
@@ -29,7 +29,7 @@ public class ColombiaExitoCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid) {
-      return new ArrayList<>();
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
+      return null;
    }
 }

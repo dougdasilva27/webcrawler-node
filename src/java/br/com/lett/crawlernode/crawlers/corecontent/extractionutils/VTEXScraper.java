@@ -9,6 +9,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -42,7 +43,7 @@ public abstract class VTEXScraper extends Crawler {
 
    // private static final String CARD_REGEX = "(?i)^[a-zÀ-ú]+[ ]?(?!a )(?!á )(?!à )[a-zÀ-ú]+";
 
-   private final String homePage = getHomePage();
+   protected final String homePage = getHomePage();
    private final List<String> mainSellersNames = getMainSellersNames();
 
    protected abstract String getHomePage();
@@ -61,11 +62,12 @@ public abstract class VTEXScraper extends Crawler {
 
       String internalPid = scrapInternalpid(doc);
 
-      if (internalPid != null) {
+      if (internalPid != null && isProductPage(doc)) {
          JSONObject productJson = crawlProductApi(internalPid);
 
          CategoryCollection categories = scrapCategories(productJson);
          String description = scrapDescription(doc, productJson);
+         processBeforeScrapVariations(doc, productJson, internalPid);
 
          JSONArray items = productJson.has("items") && !productJson.isNull("items") ? productJson.getJSONArray("items") : new JSONArray();
 
@@ -82,10 +84,16 @@ public abstract class VTEXScraper extends Crawler {
       return products;
    }
 
+   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) {}
+
+   protected boolean isProductPage(Document doc) {
+      return true;
+   }
+
    protected Product extractProduct(Document doc, String internalPid, CategoryCollection categories, String description, JSONObject jsonSku) throws Exception {
       String internalId = jsonSku.has("itemId") ? jsonSku.get("itemId").toString() : null;
       String name = jsonSku.has("nameComplete") ? jsonSku.get("nameComplete").toString() : null;
-      List<String> images = scrapImages(jsonSku);
+      List<String> images = scrapImages(doc, jsonSku, internalPid, internalId);
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
       String secondaryImages = scrapSecondaryImages(images);
       Offers offers = scrapOffer(doc, jsonSku, internalId, internalPid);
@@ -135,7 +143,7 @@ public abstract class VTEXScraper extends Crawler {
       return Jsoup.parse(obj.toString().replace("[\"", "").replace("\"]", "").replace("\\r\\n\\r\\n\\r\\n", "").replace("\\", ""));
    }
 
-   private List<String> scrapImages(JSONObject skuJson) {
+   protected List<String> scrapImages(Document doc, JSONObject skuJson, String internalPid, String internalId) {
       List<String> images = new ArrayList<>();
 
       for (String key : skuJson.keySet()) {
@@ -221,7 +229,9 @@ public abstract class VTEXScraper extends Crawler {
       return offers;
    }
 
-   protected abstract List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing);
+   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
+      return new ArrayList<String>();
+   };
 
    private boolean isMainRetailer(String sellerName, List<String> mainSellerNames) {
       boolean isMainRetailer = false;
@@ -257,7 +267,24 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected Double scrapSpotlightPrice(Document doc, String internalId, Double principalPrice, JSONObject comertial, JSONObject discountsJson) {
-      return principalPrice;
+      Double spotlightPrice = principalPrice;
+      Double maxDiscount = 0d;
+      if (discountsJson != null && discountsJson.length() > 0) {
+         for (String key : discountsJson.keySet()) {
+            JSONObject paymentEffect = discountsJson.optJSONObject(key);
+            Double discount = paymentEffect.optDouble("discount");
+
+            if (discount > maxDiscount) {
+               maxDiscount = discount;
+            }
+         }
+      }
+
+      if (maxDiscount > 0d) {
+         spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice - (spotlightPrice * maxDiscount));
+      }
+
+      return spotlightPrice;
    }
 
    /**
@@ -361,10 +388,10 @@ public abstract class VTEXScraper extends Crawler {
 
                String paymentCode = cardJson.optString("paymentSystem");
                JSONObject cardDiscount = discounts.has(paymentCode) ? discounts.optJSONObject(paymentCode) : null;
-               String cardBrand = cardJson.optString("paymentName");
+               String paymentName = cardJson.optString("paymentName");
                JSONArray installmentsArray = cardJson.optJSONArray("installments");
 
-               if (!installmentsArray.isEmpty() && !cardBrand.toLowerCase().contains("boleto")) {
+               if (!installmentsArray.isEmpty() && !paymentName.toLowerCase().contains("boleto")) {
                   Installments installments = new Installments();
                   for (Object object : installmentsArray) {
                      JSONObject installmentJson = (JSONObject) object;
@@ -381,7 +408,7 @@ public abstract class VTEXScraper extends Crawler {
 
                         if (installmentNumber >= minInstallment && installmentNumber <= maxInstallment) {
                            discount = cardDiscount.optDouble("discount");
-                           value = value - (value * discount);
+                           value = MathUtils.normalizeTwoDecimalPlaces(value - (value * discount));
                            totalValue = MathUtils.normalizeTwoDecimalPlaces(installmentNumber * value);
                         }
                      }
@@ -389,11 +416,32 @@ public abstract class VTEXScraper extends Crawler {
                      installments.add(setInstallment(installmentNumber, value, interest, totalValue, mustSetDiscount ? discount : null));
                   }
 
-                  creditCards.add(CreditCardBuilder.create()
-                        .setBrand(cardBrand)
-                        .setInstallments(installments)
-                        .setIsShopCard(false)
-                        .build());
+                  String cardBrand = null;
+                  for (Card card : Card.values()) {
+                     if (card.toString().toLowerCase().contains(paymentName.toLowerCase())) {
+                        cardBrand = card.toString();
+                        break;
+                     }
+                  }
+
+                  boolean isShopCard = false;
+                  if (cardBrand == null) {
+                     for (String sellerName : mainSellersNames) {
+                        if (paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
+                           isShopCard = true;
+                           cardBrand = paymentName;
+                           break;
+                        }
+                     }
+                  }
+
+                  if (cardBrand != null) {
+                     creditCards.add(CreditCardBuilder.create()
+                           .setBrand(cardBrand)
+                           .setInstallments(installments)
+                           .setIsShopCard(isShopCard)
+                           .build());
+                  }
                }
             }
          }
@@ -431,7 +479,7 @@ public abstract class VTEXScraper extends Crawler {
                   bankSlipPrice = paymentJson.optDouble("value") / 100;
                   if (paymentDiscount != null) {
                      discount = paymentDiscount.optDouble("discount");
-                     bankSlipPrice = bankSlipPrice - (bankSlipPrice * discount);
+                     bankSlipPrice = MathUtils.normalizeTwoDecimalPlaces(bankSlipPrice - (bankSlipPrice * discount));
                   }
 
                   break;

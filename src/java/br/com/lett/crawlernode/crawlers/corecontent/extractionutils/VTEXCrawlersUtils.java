@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
 
+@Deprecated
 public class VTEXCrawlersUtils {
 
    public static final String SKU_ID = "sku";
@@ -55,7 +56,6 @@ public class VTEXCrawlersUtils {
    private boolean isPriceBasePriceFrom = false;
    private DataFetcher dataFetcher;
    private List<String> mainSellerNames;
-   private boolean isBuyBox = false;
 
    protected static final Logger logger = LoggerFactory.getLogger(VTEXCrawlersUtils.class);
 
