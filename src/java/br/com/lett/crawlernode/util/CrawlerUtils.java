@@ -346,16 +346,31 @@ public class CrawlerUtils {
    /**
     * Set Bank Slip Offers
     * 
-    * @param Double
+    * @param Double - Bank slip price - when a store has no price on the bill you must put the
+    *        spotlight price in place.
+    * @param Double - When the site has information such as: "22% discount" we must capture this
+    *        information and do the calculation.
     * @return bankSlip
     */
 
-   public static BankSlip setBankSlipOffers(Double bankSlipPrice) throws MalformedPricingException {
+   public static BankSlip setBankSlipOffers(Double bankSlipPrice, Double discount) throws MalformedPricingException {
       BankSlip bankSlip = null;
 
-      bankSlip = BankSlipBuilder.create()
-            .setFinalPrice(bankSlipPrice)
-            .build();
+      if (discount != null) {
+
+         Double discountFinal = discount / 100d;
+
+         bankSlip = BankSlipBuilder.create()
+               .setFinalPrice(bankSlipPrice)
+               .setOnPageDiscount(discountFinal)
+               .build();
+
+      } else {
+
+         bankSlip = BankSlipBuilder.create()
+               .setFinalPrice(bankSlipPrice)
+               .build();
+      }
 
       return bankSlip;
    }

@@ -130,7 +130,7 @@ public class BrasilViannapetCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#product_price .money", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
@@ -147,7 +147,8 @@ public class BrasilViannapetCrawler extends Crawler {
       Installments installments = scrapInstallments(doc, spotlightPrice);
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create().setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice).build());
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
       for (String card : cards) {
@@ -184,16 +185,14 @@ public class BrasilViannapetCrawler extends Crawler {
                if (interestFee != null && interestFee > 0) {
                   installmentFinalPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice + (spotlightPrice * (interestFee / 100d)));
 
-
                   if (installmentFinalPrice != null) {
 
                      Double installmentPrice = installmentFinalPrice / installmentNumber;
 
-
-
                      installments.add(InstallmentBuilder.create()
                            .setInstallmentNumber(installmentNumber)
                            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installmentPrice))
+                           .setAmOnPageInterests(interestFee)
                            .build());
                   }
                }
