@@ -68,6 +68,12 @@ public class CuritibaMuffatoCrawler extends Crawler {
    }
 
    @Override
+   public void handleCookiesBeforeFetch() {
+      Logging.printLogDebug(logger, session, "Adding cookie...");
+      this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null, "delivery.supermuffato.com.br", "/", cookies, session, null, dataFetcher);
+   }
+
+   @Override
    public String handleURLBeforeFetch(String curURL) {
 
       if (curURL.split("\\?")[0].endsWith("/p")) {
@@ -202,30 +208,32 @@ public class CuritibaMuffatoCrawler extends Crawler {
    public JSONObject crawlApi(String internalId) {
       String url = HOME_PAGE + "produto/sku/" + internalId;
 
-      Map<String, String> cookie = new HashMap<>();
-      cookie.put("cookie",
-            "VtexRCMacIdv7=bf4532a0-691e-11ea-9cce-99aa504bfa00;"
-                  + " checkout.vtex.com=__ofid=bfdc8a0e98ca409c9ce0de2ed0e43994;"
-                  + " StandoutTag=218815c4-ea06-9b66-82d7-44eda9f3de6f;"
-                  + " VtexFingerPrint=b8ebfd8d0bd536846f201fe5e783674d;"
-                  + " _ga=GA1.4.1536285874.1584539143; _gcl_au=1.1.1895307215.1584539143;"
-                  + " _fbp=fb.2.1584539144138.1720978257; newsletter_modal_is_hidden=true;"
-                  + " .ASPXAUTH=5F1318BE552E4142E0EE0D4548D575C427F22697772E7BF8C14F226EA657A8CFA5EE9AE1C9D1FADDC66DE18D270C492B6773D2B583E97652D100030EDDECA69C432F007A85D1D22792877BEC55DD21C230CBA1C6A79F2B259B58E56423327D146EACDCC687BF2927C113B09F75603CE533EE1E1DDF0282FB2E8BC861B598005A3113F70AD1749FFB76E2B6C0F7B9F334C5F779DA8A752287A35CE20555464B272C38686E;"
-                  + " _ga=GA1.3.2072354686.1584733159; IPI=UrlReferrer=https%3a%2f%2fwww.google.com%2f;"
-                  + " __utmz=73079430.1584735021.4.2.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided);"
-                  + " __utma=13449269.2072354686.1584733159.1584733162.1585058371.2;"
-                  + " __utmz=13449269.1585058371.2.2.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided);"
-                  + " stc120214=env:1585058368%7C20200424135928%7C20200324142933%7C2%7C1097393:20210324135933|uid:1584733159823.1498833973.5264597.120214.912890393.:20210324135933|srchist:1097393%3A1585058368%3A20200424135928:20210324135933|tsa:0:20200324142933;"
-                  + " _pwz_lead_hash_19796=d834b1f4bd8d394a16c6595c7fb533f5;"
-                  + " janus_sid=dec86bdb-4803-4f30-939d-b95b1cd839ac;"
-                  + " _gid=GA1.4.461023665.1588620896;"
-                  + " _gid=GA1.3.461023665.1588620896;"
-                  + " VTEXSC=sc=13;"
-                  + " vtex_session=eyJhbGciOiJFUzI1NiIsImtpZCI6IjE4OTgwOENCREIyQTA4NjIyQTNFQzQ0NjIxMzRFQjA0MTQ0NDQ1OTciLCJ0eXAiOiJqd3QifQ.eyJhY2NvdW50LmlkIjoiM2IxMGQzY2QtYjhjMC00YWM2LWE4MDEtNGU3ZTc5Zjk1ZTE0IiwiaWQiOiI4ODJiNWUyMC1hZTcxLTQ2ZTEtOWE4YS02ZTZiZTU2ZmU2ODUiLCJ2ZXJzaW9uIjoyLCJzdWIiOiJzZXNzaW9uIiwiYWNjb3VudCI6InNlc3Npb24iLCJleHAiOjE1ODkzMTM5MjQsImlhdCI6MTU4ODYyMjcyNCwiaXNzIjoidG9rZW4tZW1pdHRlciIsImp0aSI6IjlkNzkwMjIwLTQxNjItNGY1MC1hM2U4LTU4ZWIzNDQwMDJhZSJ9.JV2lv4NGy8-Gb6IJvGrlkvu0rBMm-mMWH-kjDhjcDa3unzrb52fbBFXTHAC16XRxIz8G3a0AXg_N99QW2f4gjg;"
-                  + " vtex_segment=eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxMyIsInByaWNlVGFibGVzIjpudWxsLCJyZWdpb25JZCI6bnVsbCwidXRtX2NhbXBhaWduIjpudWxsLCJ1dG1fc291cmNlIjpudWxsLCJ1dG1pX2NhbXBhaWduIjpudWxsLCJjdXJyZW5jeUNvZGUiOiJCUkwiLCJjdXJyZW5jeVN5bWJvbCI6IlIkIiwiY291bnRyeUNvZGUiOiJCUkEiLCJjdWx0dXJlSW5mbyI6InB0LUJSIiwiYWRtaW5fY3VsdHVyZUluZm8iOiJwdC1CUiJ9; VtexRCSessionIdv7=0%3A8bf42730-8eda-11ea-8888-71aa08403947; __utma=73079430.1536285874.1584539143.1588620897.1588687990.8; __utmc=73079430; __utmt=1; ISSMB=ScreenMedia=0&UserAcceptMobile=False; SGTS=2660C640CA6ACFB456D10F7975A61534;"
-                  + " urlLastSearch=http://delivery.supermuffato.com.br/limpeza/desinfetantes; VtexRCRequestCounter=5; _gat_UA-38452972-2=1; __utmb=73079430.5.10.1588687990");
-
-      Request request = RequestBuilder.create().setHeaders(cookie).setUrl(url).build();
+      /*
+       * Map<String, String> cookie = new HashMap<>(); cookie.put("cookie",
+       * "VtexRCMacIdv7=bf4532a0-691e-11ea-9cce-99aa504bfa00;" +
+       * " checkout.vtex.com=__ofid=bfdc8a0e98ca409c9ce0de2ed0e43994;" +
+       * " StandoutTag=218815c4-ea06-9b66-82d7-44eda9f3de6f;" +
+       * " VtexFingerPrint=b8ebfd8d0bd536846f201fe5e783674d;" +
+       * " _ga=GA1.4.1536285874.1584539143; _gcl_au=1.1.1895307215.1584539143;" +
+       * " _fbp=fb.2.1584539144138.1720978257; newsletter_modal_is_hidden=true;" +
+       * " .ASPXAUTH=5F1318BE552E4142E0EE0D4548D575C427F22697772E7BF8C14F226EA657A8CFA5EE9AE1C9D1FADDC66DE18D270C492B6773D2B583E97652D100030EDDECA69C432F007A85D1D22792877BEC55DD21C230CBA1C6A79F2B259B58E56423327D146EACDCC687BF2927C113B09F75603CE533EE1E1DDF0282FB2E8BC861B598005A3113F70AD1749FFB76E2B6C0F7B9F334C5F779DA8A752287A35CE20555464B272C38686E;"
+       * + " _ga=GA1.3.2072354686.1584733159; IPI=UrlReferrer=https%3a%2f%2fwww.google.com%2f;" +
+       * " __utmz=73079430.1584735021.4.2.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided);"
+       * + " __utma=13449269.2072354686.1584733159.1584733162.1585058371.2;" +
+       * " __utmz=13449269.1585058371.2.2.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided);"
+       * +
+       * " stc120214=env:1585058368%7C20200424135928%7C20200324142933%7C2%7C1097393:20210324135933|uid:1584733159823.1498833973.5264597.120214.912890393.:20210324135933|srchist:1097393%3A1585058368%3A20200424135928:20210324135933|tsa:0:20200324142933;"
+       * + " _pwz_lead_hash_19796=d834b1f4bd8d394a16c6595c7fb533f5;" +
+       * " janus_sid=dec86bdb-4803-4f30-939d-b95b1cd839ac;" + " _gid=GA1.4.461023665.1588620896;" +
+       * " _gid=GA1.3.461023665.1588620896;" + " VTEXSC=sc=13;" +
+       * " vtex_session=eyJhbGciOiJFUzI1NiIsImtpZCI6IjE4OTgwOENCREIyQTA4NjIyQTNFQzQ0NjIxMzRFQjA0MTQ0NDQ1OTciLCJ0eXAiOiJqd3QifQ.eyJhY2NvdW50LmlkIjoiM2IxMGQzY2QtYjhjMC00YWM2LWE4MDEtNGU3ZTc5Zjk1ZTE0IiwiaWQiOiI4ODJiNWUyMC1hZTcxLTQ2ZTEtOWE4YS02ZTZiZTU2ZmU2ODUiLCJ2ZXJzaW9uIjoyLCJzdWIiOiJzZXNzaW9uIiwiYWNjb3VudCI6InNlc3Npb24iLCJleHAiOjE1ODkzMTM5MjQsImlhdCI6MTU4ODYyMjcyNCwiaXNzIjoidG9rZW4tZW1pdHRlciIsImp0aSI6IjlkNzkwMjIwLTQxNjItNGY1MC1hM2U4LTU4ZWIzNDQwMDJhZSJ9.JV2lv4NGy8-Gb6IJvGrlkvu0rBMm-mMWH-kjDhjcDa3unzrb52fbBFXTHAC16XRxIz8G3a0AXg_N99QW2f4gjg;"
+       * +
+       * " vtex_segment=eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxMyIsInByaWNlVGFibGVzIjpudWxsLCJyZWdpb25JZCI6bnVsbCwidXRtX2NhbXBhaWduIjpudWxsLCJ1dG1fc291cmNlIjpudWxsLCJ1dG1pX2NhbXBhaWduIjpudWxsLCJjdXJyZW5jeUNvZGUiOiJCUkwiLCJjdXJyZW5jeVN5bWJvbCI6IlIkIiwiY291bnRyeUNvZGUiOiJCUkEiLCJjdWx0dXJlSW5mbyI6InB0LUJSIiwiYWRtaW5fY3VsdHVyZUluZm8iOiJwdC1CUiJ9; VtexRCSessionIdv7=0%3A8bf42730-8eda-11ea-8888-71aa08403947; __utma=73079430.1536285874.1584539143.1588620897.1588687990.8; __utmc=73079430; __utmt=1; ISSMB=ScreenMedia=0&UserAcceptMobile=False; SGTS=2660C640CA6ACFB456D10F7975A61534;"
+       * +
+       * " urlLastSearch=http://delivery.supermuffato.com.br/limpeza/desinfetantes; VtexRCRequestCounter=5; _gat_UA-38452972-2=1; __utmb=73079430.5.10.1588687990"
+       * );
+       */
+      Request request = RequestBuilder.create().setCookies(this.cookies).setUrl(url).build();
       JSONArray jsonArray = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
       if (jsonArray.length() > 0) {
