@@ -3,8 +3,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -12,8 +13,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
@@ -31,39 +30,29 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() {
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.extra.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage + "&ajaxSearch=1";
+      String url = "https://www.extra.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + "/b?page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = Jsoup.parse(fetchPage(url));
 
-      JSONObject searchApi = JSONUtils.stringToJson(fetchPage(url));
+      Elements products = this.currentDoc.select(".nm-product-item");
+      Elements result = this.currentDoc.select(".naoEncontrado, #divBuscaVaziaSuperior");
 
-      JSONObject jsonProducts = searchApi.has("productsInfo") ? searchApi.getJSONObject("productsInfo") : new JSONObject();
-      JSONArray products = jsonProducts.has("products") ? jsonProducts.getJSONArray("products") : new JSONArray();
-
-
-      this.pageSize = 24;
-
-      if (products.length() > 0) {
-
+      if (!products.isEmpty() && result.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts(searchApi);
+            setTotalProducts();
          }
+         for (Element e : products) {
+            // InternalPid
+            String internalPid = crawlInternalPid(e);
 
-         for (int i = 0; i < products.length(); i++) {
-            JSONObject product = products.getJSONObject(i);
-
-            String internalIdString = crawlInternalId(product);
-            String internalPid = crawlInternalPid(product);
-            String productUrl = crawlProductUrl(product);
-
+            // Url do produto
+            String productUrl = crawlProductUrl(e);
 
             saveDataProduct(null, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalIdString + " - InternalPid: " +
-                  internalPid + " - Url: " + productUrl);
-
-            if (this.arrayProducts.size() == productsLimit) {
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
                break;
-            }
          }
       } else {
          this.result = false;
@@ -74,51 +63,38 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
    }
 
-   private String crawlInternalId(JSONObject product) {
-      String internalId = null;
-
-      JSONArray skus = product.has("skus") ? product.getJSONArray("skus") : new JSONArray();
-
-      for (int i = 0; i < skus.length(); i++) {
-
-         JSONObject sku = skus.getJSONObject(i);
-
-         if (sku.has("sku")) {
-            internalId = sku.get("sku").toString();
-
-         }
-
-      }
-      return internalId;
+   private String crawlInternalPid(Element e) {
+      return e.attr("data-productid");
    }
 
-   private String crawlInternalPid(JSONObject product) {
-      String internalPid = null;
-
-      if (product.has("originalId")) {
-         internalPid = product.get("originalId").toString();
-      }
-
-      return internalPid;
-   }
-
-   private String crawlProductUrl(JSONObject product) {
+   private String crawlProductUrl(Element e) {
       String productUrl = null;
 
-      if (product.has("productUrl")) {
-         productUrl = CrawlerUtils.completeUrl(product.get("productUrl").toString(), "https:", "www.extra.com.br");
+      Element url = e.select(".nm-product-name a").first();
+
+      if (url != null) {
+         productUrl = url.attr("href");
+
+         if (!productUrl.startsWith("http")) {
+            productUrl = "https:" + productUrl.split("\\?")[0];
+         }
       }
 
       return productUrl;
    }
 
-   protected void setTotalProducts(JSONObject searchApi) {
+   @Override
+   protected void setTotalProducts() {
+      Element totalElement = null;
+      totalElement = this.currentDoc.select("span[data-totalresults]").first();
 
-      JSONObject totalProducts = searchApi.has("totalProducts") ? searchApi.getJSONObject("totalProducts") : new JSONObject();
-
-      this.totalProducts = JSONUtils.getIntegerValueFromJSON(totalProducts, "totalResults", 0);
-      this.log("Total da busca:" + this.totalProducts);
-
+      if (totalElement != null) {
+         String text = totalElement.attr("data-totalresults").replaceAll("[^0-9]", "");
+         if (!text.isEmpty()) {
+            this.totalProducts = Integer.parseInt(totalElement.text());
+         }
+      }
+      this.log("Total da busca: " + this.totalProducts);
    }
 
    protected String fetchPage(String url) {
