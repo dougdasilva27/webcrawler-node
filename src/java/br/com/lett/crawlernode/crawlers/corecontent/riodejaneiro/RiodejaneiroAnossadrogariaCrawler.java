@@ -36,7 +36,7 @@ public class RiodejaneiroAnossadrogariaCrawler extends VTEXOldScraper {
 
       String calculatedSale = CrawlerUtils.calculateSales(pricing);
       if (calculatedSale != null) {
-         sales.add("-" + calculatedSale + "%");
+         sales.add(calculatedSale + "%");
       }
 
       return sales;

@@ -31,7 +31,6 @@ public abstract class VTEXOldScraper extends VTEXScraper {
 
    protected List<String> scrapImagesOldWay(String internalId) {
       List<String> images = new ArrayList<>();
-      images.add(0, "");
       JSONObject skuApi = scrapSkuApi(internalId);
 
       if (skuApi.has(IMAGES)) {
@@ -49,10 +48,6 @@ public abstract class VTEXOldScraper extends VTEXScraper {
                }
             }
          }
-      }
-
-      if (images.get(0).isEmpty()) {
-         images.remove(0);
       }
 
       return images;

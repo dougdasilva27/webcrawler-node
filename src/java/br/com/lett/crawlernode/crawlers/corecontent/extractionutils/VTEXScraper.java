@@ -63,7 +63,7 @@ public abstract class VTEXScraper extends Crawler {
       String internalPid = scrapInternalpid(doc);
 
       if (internalPid != null && isProductPage(doc)) {
-         JSONObject productJson = crawlProductApi(internalPid);
+         JSONObject productJson = crawlProductApi(internalPid, null);
 
          CategoryCollection categories = scrapCategories(productJson);
          String description = scrapDescription(doc, productJson);
@@ -500,10 +500,10 @@ public abstract class VTEXScraper extends Crawler {
 
    protected abstract RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku);
 
-   protected JSONObject crawlProductApi(String internalPid) {
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
       JSONObject productApi = new JSONObject();
 
-      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid;
+      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
