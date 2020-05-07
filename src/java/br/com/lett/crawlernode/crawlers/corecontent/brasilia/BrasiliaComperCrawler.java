@@ -6,8 +6,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ComperCrawle
 
 public class BrasiliaComperCrawler extends ComperCrawler {
 
-   private static final String STORE_ID = "6688";
-   private static final String MULTI_STORE_ID = "00040015110010000000100000000000";
+   private static final String STORE_ID = "3";
 
    public BrasiliaComperCrawler(Session session) {
       super(session);
@@ -16,10 +15,5 @@ public class BrasiliaComperCrawler extends ComperCrawler {
    @Override
    protected String getStoreId() {
       return STORE_ID;
-   }
-
-   @Override
-   protected String getMultiStoreId() {
-      return MULTI_STORE_ID;
    }
 }

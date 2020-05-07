@@ -40,8 +40,10 @@ import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import models.pricing.Pricing;
 import models.pricing.BankSlip;
 import models.pricing.BankSlip.BankSlipBuilder;
+
 
 public class CrawlerUtils {
    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
@@ -1845,5 +1847,22 @@ public class CrawlerUtils {
       String slug = NONLATIN.matcher(normalized).replaceAll("");
       slug = EDGESDHASHES.matcher(slug).replaceAll("");
       return slug.toLowerCase(Locale.ENGLISH);
+   }
+
+   /**
+    * Calculate sale with: spotlightPrice / priceFrom
+    * 
+    * @param pricing
+    * @return
+    */
+   public static String calculateSales(Pricing pricing) {
+      String sale = null;
+
+      if (pricing.getPriceFrom() != null && pricing.getPriceFrom() > pricing.getSpotlightPrice()) {
+         Integer value = ((Double) ((pricing.getSpotlightPrice() / pricing.getPriceFrom() - 1d) * 100d)).intValue();
+         sale = Integer.toString(value);
+      }
+
+      return sale;
    }
 }
