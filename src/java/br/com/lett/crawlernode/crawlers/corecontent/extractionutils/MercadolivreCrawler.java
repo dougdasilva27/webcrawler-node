@@ -29,9 +29,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
+import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -54,16 +56,11 @@ public class MercadolivreCrawler extends Crawler {
 
    private String homePage;
    private String mainSellerNameLower;
-   private char separator;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
    protected MercadolivreCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
-   }
-
-   public void setSeparator(char separator) {
-      this.separator = separator;
    }
 
    public void setHomePage(String homePage) {
@@ -93,7 +90,6 @@ public class MercadolivreCrawler extends Crawler {
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
-
 
 
    @Override
@@ -156,7 +152,8 @@ public class MercadolivreCrawler extends Crawler {
          }
 
       } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+         Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, logger);
+         products = meli.extractInformation(doc);
       }
 
       return products;
@@ -250,7 +247,6 @@ public class MercadolivreCrawler extends Crawler {
 
    }
 
-
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, String internalPid, String internalId) {
       Document docRating;
 
@@ -312,7 +308,6 @@ public class MercadolivreCrawler extends Crawler {
             .totalStar5(star5)
             .build();
    }
-
 
    private boolean isProductPage(Document doc) {
       return !doc.select(".vip-nav-bounds .layout-main").isEmpty();
@@ -387,7 +382,61 @@ public class MercadolivreCrawler extends Crawler {
             .setSales(sales)
             .build());
 
+      scrapSellersPage(offers, doc);
+
       return offers;
+   }
+
+   private void scrapSellersPage(Offers offers, Document doc) throws OfferException, MalformedPricingException {
+      String sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-other-sellers__link", "href", "https", "www.mercadolivre.com.br");
+      if (sellersPageUrl != null) {
+         String nextUrl = sellersPageUrl;
+
+         int sellersPagePosition = 1;
+         boolean mainOfferFound = false;
+
+         do {
+            Request request = RequestBuilder.create()
+                  .setUrl(nextUrl)
+                  .setCookies(cookies)
+                  .build();
+
+            Document sellersHtml = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+            nextUrl = CrawlerUtils.scrapUrl(sellersHtml, ".andes-pagination__button--next:not(.andes-pagination__button--disabled) a", "href", "https", "www.mercadolivre.com.br");
+
+            Elements offersElements = sellersHtml.select("form.ui-pdp-buybox");
+            if (!offersElements.isEmpty()) {
+               for (Element e : offersElements) {
+                  String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", true);
+                  if (sellerName != null && !mainOfferFound && offers.containsSeller(sellerName)) {
+                     Offer offerMainPage = offers.getSellerByName(sellerName);
+                     offerMainPage.setSellersPagePosition(sellersPagePosition);
+                     offerMainPage.setIsBuybox(true);
+
+                     mainOfferFound = true;
+                  } else {
+                     Pricing pricing = scrapPricingSellersPage(doc);
+                     List<String> sales = scrapSales(doc);
+
+                     offers.add(OfferBuilder.create()
+                           .setUseSlugNameAsInternalSellerId(true)
+                           .setSellerFullName(sellerName)
+                           .setSellersPagePosition(sellersPagePosition)
+                           .setIsBuybox(true)
+                           .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerName))
+                           .setPricing(pricing)
+                           .setSales(sales)
+                           .build());
+                  }
+
+                  sellersPagePosition++;
+               }
+            } else {
+               break;
+            }
+
+         } while (nextUrl != null);
+      }
    }
 
    private String scrapSellerFullName(Document doc) {
@@ -400,11 +449,11 @@ public class MercadolivreCrawler extends Crawler {
          sellerNameElement = doc.selectFirst(".new-reputation > a");
 
          if (sellerNameElement != null) {
-
+            sellerName = CommonMethods.getLast(sellerNameElement.attr("href").split("/"));
             try {
-               sellerName = URLDecoder.decode(CommonMethods.getLast(sellerNameElement.attr("href").split("/")), "UTF-8").toLowerCase();
+               sellerName = URLDecoder.decode(sellerName, "UTF-8").toLowerCase();
             } catch (UnsupportedEncodingException e) {
-               e.printStackTrace();
+               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
          }
       }
@@ -412,10 +461,10 @@ public class MercadolivreCrawler extends Crawler {
    }
 
 
-   private List<String> scrapSales(Document doc) {
+   private List<String> scrapSales(Element doc) {
       List<String> sales = new ArrayList<>();
 
-      Element salesOneElement = doc.selectFirst(".price-tag.discount-arrow p");
+      Element salesOneElement = doc.selectFirst(".price-tag.discount-arrow p, .ui-pdp-price__second-line__label");
       String firstSales = salesOneElement != null ? salesOneElement.text() : null;
 
       if (firstSales != null && !firstSales.isEmpty()) {
@@ -425,10 +474,10 @@ public class MercadolivreCrawler extends Crawler {
       return sales;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-tag.price-tag__del del .price-tag-symbol", "content", false, '.', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del) .price-tag-symbol", "content", false, '.', session);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+   private Pricing scrapPricingSellersPage(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-tag__disabled .price-tag-fraction", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-pdp-price__second-line .price-tag-fraction", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice, true);
       BankSlip bankTicket = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
             .build();
@@ -442,10 +491,27 @@ public class MercadolivreCrawler extends Crawler {
    }
 
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-tag.price-tag__del del .price-tag-symbol", "content", false, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del) .price-tag-symbol", "content", false, '.', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice, false);
+      BankSlip bankTicket = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankTicket)
+            .build();
+   }
+
+
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice, boolean sellersPage) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(doc);
+      Installments installments = sellersPage ? scrapInstallmentsSellersPage(doc) : scrapInstallments(doc);
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
                .setInstallmentNumber(1)
@@ -484,4 +550,17 @@ public class MercadolivreCrawler extends Crawler {
       return installments;
    }
 
+   public Installments scrapInstallmentsSellersPage(Element doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".ui-pdp-payment--md .ui-pdp-media__title", doc, false);
+      if (!pair.isAnyValueNull()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
+               .build());
+      }
+
+      return installments;
+   }
 }
