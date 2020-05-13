@@ -37,7 +37,7 @@ class BrasilEmporioecoCrawler(session: Session?) : Crawler(session) {
         setDescription(document.selectFirst("#tab-description")?.html())
         setCategories(
           document.select(".la-breadcrumb-item")
-            ?.toCategories(arrayOf(0, 1), arrayOf("/"))
+            ?.eachText(arrayOf(0, 1), arrayOf("/"))
         )
         setPrimaryImage(it.optString("image"))
         setSecondaryImages(
