@@ -22,6 +22,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -139,17 +140,21 @@ public class BrasilPetloveCrawler extends Crawler {
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
+      Integer totalWrittenReviews = getTotalNumOfRatings(doc);
       Double avgRating = getTotalAvgRating(doc);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalWrittenReviews);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
    }
 
    private Integer getTotalNumOfRatings(Document doc) {
       Integer totalRating = 0;
-      Element rating = doc.select(".box-rating [itemprop=reviewCount]").first();
+      Element rating = doc.selectFirst(".label.text-sm");
 
       if (rating != null) {
          String votes = rating.text().replaceAll("[^0-9]", "").trim();
@@ -180,6 +185,59 @@ public class BrasilPetloveCrawler extends Crawler {
       }
 
       return avgRating;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".rating-list li");
+
+      for (Element review : reviews) {
+
+         Element elementStarNumber = review.selectFirst("span"); // 5 estrelas
+
+         if (elementStarNumber != null) {
+
+            String sN = elementStarNumber.text().replaceAll("[^0-9]", "").trim(); // 5
+            Integer numberOfStars = !sN.isEmpty() ? Integer.parseInt(sN) : 0; // Integer 5
+
+            String vN = review.ownText().replaceAll("[^0-9]", "").trim(); // 17
+            Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0; // Integer 17
+
+
+            switch (numberOfStars) {
+               case 5:
+                  star5 = numberOfVotes;
+                  break;
+               case 4:
+                  star4 = numberOfVotes;
+                  break;
+               case 3:
+                  star3 = numberOfVotes;
+                  break;
+               case 2:
+                  star2 = numberOfVotes;
+                  break;
+               case 1:
+                  star1 = numberOfVotes;
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private String crawlName(JSONObject jsonSku) {
