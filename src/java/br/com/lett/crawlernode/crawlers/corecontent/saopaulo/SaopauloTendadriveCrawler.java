@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -16,162 +8,162 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import models.RatingsReviews;
-import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 /**
  * Date: 04/09/17
- * 
- * @author gabriel
  *
+ * @author gabriel
  */
-
 public class SaopauloTendadriveCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "http://www.tendaatacado.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "tenda drive";
+  private static final String HOME_PAGE = "http://www.tendaatacado.com.br/";
+  private static final String MAIN_SELLER_NAME_LOWER = "tenda drive";
 
-   public SaopauloTendadriveCrawler(Session session) {
-      super(session);
-      super.config.setMustSendRatingToKinesis(true);
-   }
+  public SaopauloTendadriveCrawler(Session session) {
+    super(session);
+    super.config.setMustSendRatingToKinesis(true);
+  }
 
-   @Override
-   public boolean shouldVisit() {
-      String href = this.session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
+  @Override
+  public boolean shouldVisit() {
+    String href = this.session.getOriginalURL().toLowerCase();
+    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+  }
 
+  @Override
+  public void handleCookiesBeforeFetch() {
+    Logging.printLogDebug(logger, session, "Adding cookie...");
 
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Logging.printLogDebug(logger, session, "Adding cookie...");
+    this.cookies.addAll(
+        CrawlerUtils.fetchCookiesFromAPage(
+            HOME_PAGE, null, ".www.tendaatacado.com.br", "/", cookies, session, dataFetcher));
 
-      this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null,
-            ".www.tendaatacado.com.br", "/", cookies, session, dataFetcher));
+    // shop id (AV guarapiranga)
+    BasicClientCookie cookie2 = new BasicClientCookie("VTEXSC", "sc=1");
+    cookie2.setDomain(".www.tendaatacado.com.br");
+    cookie2.setPath("/");
+    this.cookies.add(cookie2);
+  }
 
-      // shop id (AV guarapiranga)
-      BasicClientCookie cookie2 = new BasicClientCookie("VTEXSC", "sc=1");
-      cookie2.setDomain(".www.tendaatacado.com.br");
-      cookie2.setPath("/");
-      this.cookies.add(cookie2);
-   }
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
+    super.extractInformation(doc);
+    List<Product> products = new ArrayList<>();
 
-   @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
-      List<Product> products = new ArrayList<>();
+    if (isProductPage(doc)) {
 
-      if (isProductPage(doc)) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
+      JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-         String internalPid = vtexUtil.crawlInternalPid(skuJson);
+      JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
 
-         JSONObject skusInfo = crawlSKusInfo(internalPid);
-         CategoryCollection categories = crawlCategories(skusInfo);
-         String description = crawlDescription(skusInfo, doc);
+      String internalPid = skuJson.optString("name");
 
-         // sku data in json
-         JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
+      JSONObject skusInfo = crawlSKusInfo(internalPid);
 
-         // ean data in html
-         JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
+      List<String> categories = doc.select(".breadcrumbs a").eachText();
+      categories.remove(0);
+      String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(""));
 
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
+      String internalId = scrapInternal(skuJson);
+      String name = skuJson.optString("name");
+      List<String> images = scrapImages(skuJson);
+      String primaryImage = images.remove(0);
+      String secondaryImages = new JSONArray(images).toString();
+      Integer stock = skuJson.optInt("totalStock");
+      RatingsReviews ratingsReviews = scrapRating(internalId, doc);
 
-            String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-            Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-            boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-            Float price = vtexUtil.crawlMainPagePrice(prices);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
-            String skuDescription = description + CrawlerUtils.scrapLettHtml(internalId, session, 233);
-            RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-            String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
+      Product product =
+          ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setCategories(categories)
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setStock(stock)
+              .setRatingReviews(ratingsReviews)
+              .build();
 
-            // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(skuDescription)
-                  .setStock(stock).setMarketplace(marketplace).setEans(eans).setRatingReviews(ratingsReviews).build();
+      products.add(product);
 
-            products.add(product);
-         }
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+    }
 
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+    return products;
+  }
+
+  private List<String> scrapImages(JSONObject skuJson) {
+    JSONArray photos = skuJson.optJSONArray("photos");
+    List<String> images = new ArrayList<>();
+    for (Object obj : photos) {
+      if (obj instanceof JSONObject) {
+        JSONObject json = (JSONObject) obj;
+        images.add(json.optString("url", null));
       }
+    }
+    return images;
+  }
 
-      return products;
-   }
+  private String scrapInternal(JSONObject skuJson) {
+    String[] tokens = skuJson.optString("token").split("-");
+    return tokens[tokens.length - 1];
+  }
 
-   private boolean isProductPage(Document document) {
-      return document.select(".produto").first() != null;
-   }
+  private boolean isProductPage(Document document) {
+    return document.selectFirst(".box-product") != null;
+  }
 
-   private CategoryCollection crawlCategories(JSONObject skuinfo) {
-      CategoryCollection categories = new CategoryCollection();
+  private CategoryCollection crawlCategories(JSONObject skuinfo) {
+    CategoryCollection categories = new CategoryCollection();
 
-      if (skuinfo.has("categories")) {
-         JSONArray cats = skuinfo.getJSONArray("categories");
+    if (skuinfo.has("categories")) {
+      JSONArray cats = skuinfo.getJSONArray("categories");
 
-         for (int i = cats.length() - 1; i >= 0; i--) {
-            String cat = cats.getString(i) + " ";
-            String[] tokens = cat.split("/");
+      for (int i = cats.length() - 1; i >= 0; i--) {
+        String cat = cats.getString(i) + " ";
+        String[] tokens = cat.split("/");
 
-            categories.add(tokens[tokens.length - 2]);
-         }
+        categories.add(tokens[tokens.length - 2]);
       }
+    }
 
-      return categories;
-   }
+    return categories;
+  }
 
-   private String crawlDescription(JSONObject skuInfo, Document doc) {
-      StringBuilder description = new StringBuilder();
+  private JSONObject crawlSKusInfo(String internalPid) {
+    JSONObject info = new JSONObject();
 
-      if (skuInfo.has("description")) {
-         description.append(skuInfo.getString("description") + "<br><br>");
-      }
+    String url =
+        "https://www.tendaatacado.com.br/api/catalog_system/pub/products/search?fq=productId:"
+            + internalPid
+            + "&sc=";
+    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONArray skus =
+        CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
-      Element info = doc.select("#caracteristicas").first();
+    if (skus.length() > 0) {
+      info = skus.getJSONObject(0);
+    }
 
-      if (info != null) {
-         info.select(".Avancado, .Caracteristicas").remove();
-         description.append(info.html());
-      }
+    return info;
+  }
 
-      return description.toString();
-   }
-
-   private JSONObject crawlSKusInfo(String internalPid) {
-      JSONObject info = new JSONObject();
-
-      String url = "https://www.tendaatacado.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=";
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      JSONArray skus = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
-
-      if (skus.length() > 0) {
-         info = skus.getJSONObject(0);
-      }
-
-      return info;
-   }
-
-   private RatingsReviews scrapRating(String internalId, Document doc) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "80984", logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
-   }
+  private RatingsReviews scrapRating(String internalId, Document doc) {
+    TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "80984", logger);
+    return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+  }
 }
