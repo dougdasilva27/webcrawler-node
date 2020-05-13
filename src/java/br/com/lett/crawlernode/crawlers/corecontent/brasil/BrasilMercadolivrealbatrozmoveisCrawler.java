@@ -11,13 +11,12 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.Mercadolivre
  */
 public class BrasilMercadolivrealbatrozmoveisCrawler extends MercadolivreCrawler {
 
-  private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/albatroz-moveis";
-  private static final String MAIN_SELLER_NAME_LOWER = "albatroz móveis";
+   private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/albatroz-moveis";
+   private static final String MAIN_SELLER_NAME_LOWER = "albatroz móveis";
 
-  public BrasilMercadolivrealbatrozmoveisCrawler(Session session) {
-    super(session);
-    super.setHomePage(HOME_PAGE);
-    super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
-    super.setSeparator(',');
-  }
+   public BrasilMercadolivrealbatrozmoveisCrawler(Session session) {
+      super(session);
+      super.setHomePage(HOME_PAGE);
+      super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
+   }
 }
