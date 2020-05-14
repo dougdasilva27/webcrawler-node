@@ -1,15 +1,28 @@
 package br.com.lett.crawlernode.dto;
 
+import java.util.Map;
+import java.util.Map.Entry;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.MathUtils;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.Marketplace;
 import models.Offer;
+import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
 import models.Seller;
 import models.prices.Prices;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
 import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class ProductDTO {
 
@@ -56,7 +69,7 @@ public class ProductDTO {
       return p;
    }
 
-   public static Product processCaptureData(Product product) {
+   public static Product processCaptureData(Product product, Session session) throws OfferException, MalformedPricingException {
       Product p = product.clone();
 
       if (product.getOffers() != null) {
@@ -78,9 +91,54 @@ public class ProductDTO {
       } else if (product.getPrices() != null && !product.getPrices().isEmpty()) {
          Offers offers = new Offers();
 
+         if (product.getAvailable()) {
+            offers.add(OfferBuilder.create()
+                  .setInternalSellerId(session.getMarket().getName())
+                  .setSellerFullName(session.getMarket().getFullName())
+                  .setIsBuybox(false)
+                  .setMainPagePosition(1)
+                  .setIsMainRetailer(true)
+                  .setPricing(pricesToPricing(product.getPrices(), product.getPrice()))
+                  .build());
+         }
 
+         p.setOffers(offers);
       }
 
       return p;
+   }
+
+   public static Pricing pricesToPricing(Prices prices, Float price) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      for (Card card : Card.values()) {
+         Map<Integer, Double> installmentsMap = prices.getCardPaymentOptions(card.toString());
+         if (installmentsMap != null) {
+            Installments installments = new Installments();
+
+            for (Entry<Integer, Double> entry : installmentsMap.entrySet()) {
+               installments.add(InstallmentBuilder.create()
+                     .setInstallmentNumber(entry.getKey())
+                     .setInstallmentPrice(entry.getValue())
+                     .build());
+            }
+
+            creditCards.add(CreditCardBuilder.create()
+                  .setBrand(card.toString())
+                  .setInstallments(installments)
+                  .setIsShopCard(card.toString().equalsIgnoreCase(Card.SHOP_CARD.toString()))
+                  .build());
+         }
+      }
+
+      return PricingBuilder.create()
+            .setSpotlightPrice(MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()))
+            .setCreditCards(creditCards)
+            .setBankSlip(
+                  BankSlipBuilder.create()
+                        .setFinalPrice(prices.getBankTicketPrice())
+                        .build()
+            )
+            .build();
    }
 }
