@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -101,56 +103,95 @@ public class MercadolivreCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=itemId], #productInfo input[name=\"item_id\"]", "value");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "a.breadcrumb:not(.shortened)");
 
          Map<String, Document> variations = getVariationsHtmls(doc);
-         for (Entry<String, Document> entry : variations.entrySet()) {
-            Document docVariation = entry.getValue();
+         // This condition happens because meli has a bug, has two ways to select size on the page below
+         // https://produto.mercadolivre.com.br/MLB-1394918791-fralda-infantil-pampers-premium-care-_JM
+         if (variations.size() == 1 && doc.select(".variation-list li:not(.variations-selected) a.ui-list__item-option").size() > 1) {
+            JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "new meli.Variations(", ");", false, false);
+            JSONArray skus = productJson.optJSONArray("model") != null ? productJson.optJSONArray("model") : new JSONArray();
 
-            String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
+            for (Object sku : skus) {
+               JSONObject skuJson = (JSONObject) sku;
 
-            if (variations.size() > 1 && (variationId == null || variationId.trim().isEmpty())) {
-               continue;
+               String variationId = skuJson.optString("id");
+               String internalId = internalPid + "-" + variationId;
+
+               String name = crawlName(doc, skuJson);
+               String nameUrl = extractNameUrl(session.getOriginalURL());
+               List<String> images = scrapSpecialImages(skuJson, nameUrl);
+               String primaryImage = !images.isEmpty() ? images.get(0) : null;
+               String secondaryImages = scrapSecondaryImages(images);
+               String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
+
+               RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+               ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
+               RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+               boolean availableToBuy = skuJson.optInt("available_quantity", 0) > 0;
+               Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+
+               // Creating the product
+               Product product = ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setRatingReviews(ratingReviews)
+                     .setOffers(offers)
+                     .build();
+
+               products.add(product);
             }
+         } else {
+            for (Entry<String, Document> entry : variations.entrySet()) {
+               Document docVariation = entry.getValue();
 
-            String internalId = variationId == null || variations.size() < 2 ? internalPid : internalPid + "-" + variationId;
+               String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
+               String internalId = variationId == null || variations.size() < 2 ? internalPid : internalPid + "-" + variationId;
 
-            String name = crawlName(docVariation);
-            CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "a.breadcrumb:not(.shortened)");
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
-                  "http2.mlstatic.com");
-            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, "figure.gallery-image-container a", Arrays.asList("href"),
-                  "https:", "http2.mlstatic.com", primaryImage);
-            String description =
-                  CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
+               String name = crawlName(docVariation);
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
+                     "http2.mlstatic.com");
+               String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, "figure.gallery-image-container a", Arrays.asList("href"),
+                     "https:", "http2.mlstatic.com", primaryImage);
+               String description =
+                     CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
-            RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
-            RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
-            boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
-                  || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
-                  || !docVariation.select(".item-actions [value~=Comprar]").isEmpty();
-            Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+               RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+               ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
+               RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+               boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
+                     || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
+                     || !docVariation.select(".item-actions [value~=Comprar]").isEmpty();
+               Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
-            // Creating the product
-            Product product = ProductBuilder.create()
-                  .setUrl(entry.getKey())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setRatingReviews(ratingReviews)
-                  .setOffers(offers)
-                  .build();
+               // Creating the product
+               Product product = ProductBuilder.create()
+                     .setUrl(entry.getKey())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setRatingReviews(ratingReviews)
+                     .setOffers(offers)
+                     .build();
 
-            products.add(product);
+               products.add(product);
 
+            }
          }
-
       } else {
          Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, logger);
          products = meli.extractInformation(doc);
@@ -160,157 +201,46 @@ public class MercadolivreCrawler extends Crawler {
 
    }
 
-   private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
-
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
-      Double avgRating = getTotalAvgRating(doc);
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc, internalPid, internalId);
-
-      ratingReviews.setInternalId(internalId);
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-
-      return ratingReviews;
+   private boolean isProductPage(Document doc) {
+      return !doc.select(".vip-nav-bounds .layout-main").isEmpty();
    }
 
-   /**
-    * 
-    * @param document
-    * @return
-    */
-   private Double getTotalAvgRating(Document doc) {
-      Double avgRating = 0d;
+   private String extractNameUrl(String url) {
+      return url.split("-_")[0].replaceAll("(?i)https:\\/\\/produto\\.mercadolivre\\.com\\.br\\/MLB[-][0-9]+[-]\\s?", "");
+   }
 
-      Element avg = doc.selectFirst(".review-summary-average");
-      if (avg != null) {
-         String text = avg.ownText().replaceAll("[^0-9.]", "");
+   private String scrapSecondaryImages(List<String> images) {
+      String secondaryImages = null;
+      JSONArray imagesArray = new JSONArray();
 
-         if (!text.isEmpty()) {
-            avgRating = Double.parseDouble(text);
+      if (!images.isEmpty()) {
+         images.remove(0);
+
+         for (String image : images) {
+            imagesArray.put(image);
          }
       }
 
-      return avgRating;
-   }
-
-   /**
-    * Number of ratings appear in html
-    * 
-    * @param docRating
-    * @return
-    */
-   private Integer getTotalNumOfRatings(Document docRating) {
-      Integer totalRating = 0;
-      Element totalRatingElement = docRating.selectFirst(".core-review .average-legend");
-
-      if (totalRatingElement != null) {
-         String text = totalRatingElement.text().replaceAll("[^0-9]", "").trim();
-
-         if (!text.isEmpty()) {
-            totalRating = Integer.parseInt(text);
-         }
+      if (imagesArray.length() > 0) {
+         secondaryImages = imagesArray.toString();
       }
 
-      return totalRating;
+      return secondaryImages;
    }
 
+   private List<String> scrapSpecialImages(JSONObject skuJson, String nameUrl) {
+      List<String> imagesList = new ArrayList<>();
 
-   private Document acessHtmlWithAdvanedRating(String internalPid, String internalId) {
-
-      Document docRating = new Document("");
-
-      StringBuilder url = new StringBuilder();
-      url.append("https://produto.mercadolivre.com.br/noindex/catalog/reviews/")
-            .append(internalPid)
-            .append("?noIndex=true")
-            .append("&itemId=" + internalPid)
-            .append("&contextual=true")
-            .append("&access=view_all")
-            .append("&quantity=1")
-            .append("&variation=" + internalId.replace(internalPid + "-", ""));
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
-
-      Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
-      String response = dataFetcher.get(session, request).getBody().trim();
-
-      docRating = Jsoup.parse(response);
-
-      return docRating;
-
-   }
-
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, String internalPid, String internalId) {
-      Document docRating;
-
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
-
-      docRating = acessHtmlWithAdvanedRating(internalPid, internalId);
-
-      Elements reviews = docRating.select(".reviews-rating .review-rating-row.is-rated");
-
-      for (Element review : reviews) {
-
-         Element elementStarNumber = review.selectFirst(".review-rating-label");
-
-         if (elementStarNumber != null) {
-
-
-            String stringStarNumber = elementStarNumber.text().replaceAll("[^0-9]", "").trim();
-            Integer numberOfStars = !stringStarNumber.isEmpty() ? Integer.parseInt(stringStarNumber) : 0;
-
-            Element elementVoteNumber = review.selectFirst(".review-rating-total");
-
-            if (elementVoteNumber != null) {
-
-               String vN = elementVoteNumber.text().replaceAll("[^0-9]", "").trim();
-               Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
-
-               switch (numberOfStars) {
-                  case 5:
-                     star5 = numberOfVotes;
-                     break;
-                  case 4:
-                     star4 = numberOfVotes;
-                     break;
-                  case 3:
-                     star3 = numberOfVotes;
-                     break;
-                  case 2:
-                     star2 = numberOfVotes;
-                     break;
-                  case 1:
-                     star1 = numberOfVotes;
-                     break;
-                  default:
-                     break;
-               }
+      JSONArray images = skuJson.optJSONArray("picture_ids");
+      if (images != null) {
+         for (Object o : images) {
+            if (o != null) {
+               imagesList.add("https://http2.mlstatic.com/" + nameUrl + "-D_NQ_NP_" + o + "-F.jpg");
             }
          }
       }
 
-      return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
-   }
-
-   private boolean isProductPage(Document doc) {
-      return !doc.select(".vip-nav-bounds .layout-main").isEmpty();
+      return imagesList;
    }
 
    private Map<String, Document> getVariationsHtmls(Document doc) {
@@ -342,6 +272,11 @@ public class MercadolivreCrawler extends Crawler {
          Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
          Document docSize = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
+         String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docSize, "input[name=variation]", "value");
+         if (sizes.size() > 1 && (variationId == null || variationId.trim().isEmpty())) {
+            continue;
+         }
+
          String redirectUrl = session.getRedirectedToURL(url);
          variations.put(redirectUrl != null ? redirectUrl : url, docSize);
       }
@@ -361,6 +296,25 @@ public class MercadolivreCrawler extends Crawler {
       Element colorElement = doc.selectFirst(".variation-list--full li.variations-selected");
       if (colorElement != null) {
          name.append(" ").append(colorElement.attr("data-title"));
+      }
+
+      return name.toString();
+   }
+
+   private static String crawlName(Document doc, JSONObject skuJson) {
+      StringBuilder name = new StringBuilder();
+      name.append(CrawlerUtils.scrapStringSimpleInfo(doc, "h1.item-title__primary", true));
+
+      JSONArray attributes = skuJson.optJSONArray("attribute_combinations");
+      if (attributes != null) {
+         for (Object att : attributes) {
+            JSONObject attribute = (JSONObject) att;
+
+            String variationName = attribute.optString("value_name");
+            if (variationName != null && !variationName.isEmpty()) {
+               name.append(" " + variationName);
+            }
+         }
       }
 
       return name.toString();
@@ -562,5 +516,154 @@ public class MercadolivreCrawler extends Crawler {
       }
 
       return installments;
+   }
+
+   private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
+      Double avgRating = getTotalAvgRating(doc);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc, internalPid, internalId);
+
+      ratingReviews.setInternalId(internalId);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+
+      return ratingReviews;
+   }
+
+   /**
+    * 
+    * @param document
+    * @return
+    */
+   private Double getTotalAvgRating(Document doc) {
+      Double avgRating = 0d;
+
+      Element avg = doc.selectFirst(".review-summary-average");
+      if (avg != null) {
+         String text = avg.ownText().replaceAll("[^0-9.]", "");
+
+         if (!text.isEmpty()) {
+            avgRating = Double.parseDouble(text);
+         }
+      }
+
+      return avgRating;
+   }
+
+   /**
+    * Number of ratings appear in html
+    * 
+    * @param docRating
+    * @return
+    */
+   private Integer getTotalNumOfRatings(Document docRating) {
+      Integer totalRating = 0;
+      Element totalRatingElement = docRating.selectFirst(".core-review .average-legend");
+
+      if (totalRatingElement != null) {
+         String text = totalRatingElement.text().replaceAll("[^0-9]", "").trim();
+
+         if (!text.isEmpty()) {
+            totalRating = Integer.parseInt(text);
+         }
+      }
+
+      return totalRating;
+   }
+
+
+   private Document acessHtmlWithAdvanedRating(String internalPid, String internalId) {
+
+      Document docRating = new Document("");
+
+      StringBuilder url = new StringBuilder();
+      url.append("https://produto.mercadolivre.com.br/noindex/catalog/reviews/")
+            .append(internalPid)
+            .append("?noIndex=true")
+            .append("&itemId=" + internalPid)
+            .append("&contextual=true")
+            .append("&access=view_all")
+            .append("&quantity=1")
+            .append("&variation=" + internalId.replace(internalPid + "-", ""));
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3");
+
+      Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).build();
+      String response = dataFetcher.get(session, request).getBody().trim();
+
+      docRating = Jsoup.parse(response);
+
+      return docRating;
+
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, String internalPid, String internalId) {
+      Document docRating;
+
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      docRating = acessHtmlWithAdvanedRating(internalPid, internalId);
+
+      Elements reviews = docRating.select(".reviews-rating .review-rating-row.is-rated");
+
+      for (Element review : reviews) {
+
+         Element elementStarNumber = review.selectFirst(".review-rating-label");
+
+         if (elementStarNumber != null) {
+
+
+            String stringStarNumber = elementStarNumber.text().replaceAll("[^0-9]", "").trim();
+            Integer numberOfStars = !stringStarNumber.isEmpty() ? Integer.parseInt(stringStarNumber) : 0;
+
+            Element elementVoteNumber = review.selectFirst(".review-rating-total");
+
+            if (elementVoteNumber != null) {
+
+               String vN = elementVoteNumber.text().replaceAll("[^0-9]", "").trim();
+               Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+
+               switch (numberOfStars) {
+                  case 5:
+                     star5 = numberOfVotes;
+                     break;
+                  case 4:
+                     star4 = numberOfVotes;
+                     break;
+                  case 3:
+                     star3 = numberOfVotes;
+                     break;
+                  case 2:
+                     star2 = numberOfVotes;
+                     break;
+                  case 1:
+                     star1 = numberOfVotes;
+                     break;
+                  default:
+                     break;
+               }
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 }
