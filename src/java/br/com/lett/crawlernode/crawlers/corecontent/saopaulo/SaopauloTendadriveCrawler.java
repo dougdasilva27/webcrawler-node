@@ -1,24 +1,32 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
+import static br.com.lett.crawlernode.core.models.Card.*;
+import static models.Offer.OfferBuilder;
+
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.ExtensionsKt;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import models.Offers;
 import models.RatingsReviews;
-import org.apache.http.impl.cookie.BasicClientCookie;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 /**
  * Date: 04/09/17
@@ -28,11 +36,9 @@ import org.jsoup.nodes.Document;
 public class SaopauloTendadriveCrawler extends Crawler {
 
   private static final String HOME_PAGE = "http://www.tendaatacado.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "tenda drive";
 
   public SaopauloTendadriveCrawler(Session session) {
     super(session);
-    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
@@ -42,43 +48,26 @@ public class SaopauloTendadriveCrawler extends Crawler {
   }
 
   @Override
-  public void handleCookiesBeforeFetch() {
-    Logging.printLogDebug(logger, session, "Adding cookie...");
-
-    this.cookies.addAll(
-        CrawlerUtils.fetchCookiesFromAPage(
-            HOME_PAGE, null, ".www.tendaatacado.com.br", "/", cookies, session, dataFetcher));
-
-    // shop id (AV guarapiranga)
-    BasicClientCookie cookie2 = new BasicClientCookie("VTEXSC", "sc=1");
-    cookie2.setDomain(".www.tendaatacado.com.br");
-    cookie2.setPath("/");
-    this.cookies.add(cookie2);
-  }
-
-  @Override
   public List<Product> extractInformation(Document doc) throws Exception {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    if (doc.selectFirst(".box-product") != null) {
 
       JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
-
       JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
 
       String internalPid = skuJson.optString("name");
-
-      JSONObject skusInfo = crawlSKusInfo(internalPid);
-
       List<String> categories = doc.select(".breadcrumbs a").eachText();
       categories.remove(0);
-      String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(""));
+      String description =
+          CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".more-info", " product-table"));
 
       String internalId = scrapInternal(skuJson);
       String name = skuJson.optString("name");
       List<String> images = scrapImages(skuJson);
       String primaryImage = images.remove(0);
+      Offers offers = scrapOffers(doc, skuJson);
       String secondaryImages = new JSONArray(images).toString();
       Integer stock = skuJson.optInt("totalStock");
       RatingsReviews ratingsReviews = scrapRating(internalId, doc);
@@ -86,6 +75,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
       Product product =
           ProductBuilder.create()
               .setUrl(session.getOriginalURL())
+              .setOffers(offers)
               .setInternalId(internalId)
               .setInternalPid(internalPid)
               .setName(name)
@@ -106,6 +96,42 @@ public class SaopauloTendadriveCrawler extends Crawler {
     return products;
   }
 
+  private Offers scrapOffers(Element elem, JSONObject skuJson)
+      throws MalformedPricingException, OfferException {
+    Offers offers = new Offers();
+    List<String> sales = null;
+    Element saleElem = elem.selectFirst(".PriceQtdComponent");
+    if (saleElem != null) {
+      String sale = saleElem.text();
+      if (sale != null) {
+        if (sale.contains("un.R")) {
+          sales = Collections.singletonList(sale.replace(".", ". "));
+        }
+      }
+    }
+
+    Double price = skuJson.optDouble("price");
+    CreditCards creditCards =
+        ExtensionsKt.toCreditCards(Arrays.asList(MASTERCARD, VISA, HIPERCARD, ELO), price, 1);
+
+    offers.add(
+        OfferBuilder.create()
+            .setSellerFullName("Tenda Drive")
+            .setIsBuybox(false)
+            .setPricing(
+                Pricing.PricingBuilder.create()
+                    .setSpotlightPrice(price)
+                    .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
+                    .setCreditCards(creditCards)
+                    .build())
+            .setIsMainRetailer(true)
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSales(sales)
+            .build());
+
+    return offers;
+  }
+
   private List<String> scrapImages(JSONObject skuJson) {
     JSONArray photos = skuJson.optJSONArray("photos");
     List<String> images = new ArrayList<>();
@@ -121,45 +147,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
   private String scrapInternal(JSONObject skuJson) {
     String[] tokens = skuJson.optString("token").split("-");
     return tokens[tokens.length - 1];
-  }
-
-  private boolean isProductPage(Document document) {
-    return document.selectFirst(".box-product") != null;
-  }
-
-  private CategoryCollection crawlCategories(JSONObject skuinfo) {
-    CategoryCollection categories = new CategoryCollection();
-
-    if (skuinfo.has("categories")) {
-      JSONArray cats = skuinfo.getJSONArray("categories");
-
-      for (int i = cats.length() - 1; i >= 0; i--) {
-        String cat = cats.getString(i) + " ";
-        String[] tokens = cat.split("/");
-
-        categories.add(tokens[tokens.length - 2]);
-      }
-    }
-
-    return categories;
-  }
-
-  private JSONObject crawlSKusInfo(String internalPid) {
-    JSONObject info = new JSONObject();
-
-    String url =
-        "https://www.tendaatacado.com.br/api/catalog_system/pub/products/search?fq=productId:"
-            + internalPid
-            + "&sc=";
-    Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-    JSONArray skus =
-        CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
-
-    if (skus.length() > 0) {
-      info = skus.getJSONObject(0);
-    }
-
-    return info;
   }
 
   private RatingsReviews scrapRating(String internalId, Document doc) {
