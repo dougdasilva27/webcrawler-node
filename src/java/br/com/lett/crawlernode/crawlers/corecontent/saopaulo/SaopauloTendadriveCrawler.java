@@ -1,9 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import static br.com.lett.crawlernode.core.models.Card.ELO;
-import static br.com.lett.crawlernode.core.models.Card.HIPERCARD;
-import static br.com.lett.crawlernode.core.models.Card.MASTERCARD;
-import static br.com.lett.crawlernode.core.models.Card.VISA;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,13 +8,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.ExtensionsKt;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
@@ -27,7 +23,10 @@ import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
 import models.pricing.Pricing;
 
 /**
@@ -115,8 +114,20 @@ public class SaopauloTendadriveCrawler extends Crawler {
       }
 
       Double price = skuJson.optDouble("price");
-      CreditCards creditCards =
-            ExtensionsKt.toCreditCards(Arrays.asList(MASTERCARD, VISA, HIPERCARD, ELO), price, 1);
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(price)
+            .build());
+
+      creditCards.add(CreditCardBuilder.create()
+            .setIsShopCard(false)
+            .setBrand(Card.VISA.toString())
+            .setInstallments(installments)
+            .build());
+
 
       offers.add(
             OfferBuilder.create()
