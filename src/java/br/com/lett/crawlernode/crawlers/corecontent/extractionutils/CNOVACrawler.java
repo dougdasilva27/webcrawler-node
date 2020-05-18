@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -158,6 +159,10 @@ public abstract class CNOVACrawler extends Crawler {
             .setUrl(encodeUrlPath(url))
             .setCookies(cookies)
             .setHeaders(headers)
+            .setFetcheroptions(FetcherOptionsBuilder.create()
+                  .mustUseMovingAverage(false)
+                  .mustRetrieveStatistics(true)
+                  .build())
             .setProxyservice(
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
