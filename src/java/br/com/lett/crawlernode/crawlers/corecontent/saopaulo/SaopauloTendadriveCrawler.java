@@ -1,43 +1,46 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import static br.com.lett.crawlernode.core.models.Card.ELO;
+import static br.com.lett.crawlernode.core.models.Card.HIPERCARD;
+import static br.com.lett.crawlernode.core.models.Card.MASTERCARD;
+import static br.com.lett.crawlernode.core.models.Card.VISA;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.ExtensionsKt;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
 
 /**
  * Date: 04/09/17
- * 
- * @author gabriel
  *
+ * @author gabriel
  */
-
 public class SaopauloTendadriveCrawler extends Crawler {
 
    private static final String HOME_PAGE = "http://www.tendaatacado.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "tenda drive";
 
    public SaopauloTendadriveCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -46,70 +49,49 @@ public class SaopauloTendadriveCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Logging.printLogDebug(logger, session, "Adding cookie...");
-
-      this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, null,
-            ".www.tendaatacado.com.br", "/", cookies, session, dataFetcher));
-
-      // shop id (AV guarapiranga)
-      BasicClientCookie cookie2 = new BasicClientCookie("VTEXSC", "sc=1");
-      cookie2.setDomain(".www.tendaatacado.com.br");
-      cookie2.setPath("/");
-      this.cookies.add(cookie2);
-   }
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(doc)) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
+      if (doc.selectFirst(".box-product") != null) {
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-         String internalPid = vtexUtil.crawlInternalPid(skuJson);
+         JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
+         JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
 
-         JSONObject skusInfo = crawlSKusInfo(internalPid);
-         CategoryCollection categories = crawlCategories(skusInfo);
-         String description = crawlDescription(skusInfo, doc);
-
-         // sku data in json
-         JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-
-         // ean data in html
-         JSONArray arrayEan = CrawlerUtils.scrapEanFromVTEX(doc);
-
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
-
-            String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-            Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-            boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-            Float price = vtexUtil.crawlMainPagePrice(prices);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
-            String skuDescription = description + CrawlerUtils.scrapLettHtml(internalId, session, 233);
-            RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-            String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
-
-            // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(skuDescription)
-                  .setStock(stock).setMarketplace(marketplace).setEans(eans).setRatingReviews(ratingsReviews).build();
-
-            products.add(product);
+         String internalPid = skuJson.optString("name");
+         List<String> categories = doc.select(".breadcrumbs a").eachText();
+         if (!categories.isEmpty()) {
+            categories.remove(0);
          }
+         String description =
+               CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".more-info", " product-table"));
+
+         String internalId = scrapInternal(skuJson);
+         String name = skuJson.optString("name");
+         List<String> images = scrapImages(skuJson);
+         String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
+         String secondaryImages = images != null && !images.isEmpty() ? new JSONArray(images).toString() : null;
+         Offers offers = scrapOffers(doc, skuJson);
+         Integer stock = skuJson.optInt("totalStock");
+         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
+
+         Product product =
+               ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setOffers(offers)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategories(categories)
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setStock(stock)
+                     .setRatingReviews(ratingsReviews)
+                     .build();
+
+         products.add(product);
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -118,56 +100,57 @@ public class SaopauloTendadriveCrawler extends Crawler {
       return products;
    }
 
-   private boolean isProductPage(Document document) {
-      return document.select(".produto").first() != null;
-   }
-
-   private CategoryCollection crawlCategories(JSONObject skuinfo) {
-      CategoryCollection categories = new CategoryCollection();
-
-      if (skuinfo.has("categories")) {
-         JSONArray cats = skuinfo.getJSONArray("categories");
-
-         for (int i = cats.length() - 1; i >= 0; i--) {
-            String cat = cats.getString(i) + " ";
-            String[] tokens = cat.split("/");
-
-            categories.add(tokens[tokens.length - 2]);
+   private Offers scrapOffers(Element elem, JSONObject skuJson)
+         throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      List<String> sales = null;
+      Element saleElem = elem.selectFirst(".PriceQtdComponent");
+      if (saleElem != null) {
+         String sale = saleElem.text();
+         if (sale != null) {
+            if (sale.contains("un.R")) {
+               sales = Collections.singletonList(sale.replace(".", ". "));
+            }
          }
       }
 
-      return categories;
+      Double price = skuJson.optDouble("price");
+      CreditCards creditCards =
+            ExtensionsKt.toCreditCards(Arrays.asList(MASTERCARD, VISA, HIPERCARD, ELO), price, 1);
+
+      offers.add(
+            OfferBuilder.create()
+                  .setSellerFullName("Tenda Drive")
+                  .setIsBuybox(false)
+                  .setPricing(
+                        Pricing.PricingBuilder.create()
+                              .setSpotlightPrice(price)
+                              .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
+                              .setCreditCards(creditCards)
+                              .build())
+                  .setIsMainRetailer(true)
+                  .setUseSlugNameAsInternalSellerId(true)
+                  .setSales(sales)
+                  .build());
+
+      return offers;
    }
 
-   private String crawlDescription(JSONObject skuInfo, Document doc) {
-      StringBuilder description = new StringBuilder();
-
-      if (skuInfo.has("description")) {
-         description.append(skuInfo.getString("description") + "<br><br>");
+   private List<String> scrapImages(JSONObject skuJson) {
+      JSONArray photos = skuJson.optJSONArray("photos");
+      List<String> images = new ArrayList<>();
+      for (Object obj : photos) {
+         if (obj instanceof JSONObject) {
+            JSONObject json = (JSONObject) obj;
+            images.add(json.optString("url", null));
+         }
       }
-
-      Element info = doc.select("#caracteristicas").first();
-
-      if (info != null) {
-         info.select(".Avancado, .Caracteristicas").remove();
-         description.append(info.html());
-      }
-
-      return description.toString();
+      return images;
    }
 
-   private JSONObject crawlSKusInfo(String internalPid) {
-      JSONObject info = new JSONObject();
-
-      String url = "https://www.tendaatacado.com.br/api/catalog_system/pub/products/search?fq=productId:" + internalPid + "&sc=";
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      JSONArray skus = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
-
-      if (skus.length() > 0) {
-         info = skus.getJSONObject(0);
-      }
-
-      return info;
+   private String scrapInternal(JSONObject skuJson) {
+      String[] tokens = skuJson.optString("token").split("-");
+      return tokens[tokens.length - 1];
    }
 
    private RatingsReviews scrapRating(String internalId, Document doc) {
