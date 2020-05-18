@@ -59,7 +59,9 @@ public class SaopauloTendadriveCrawler extends Crawler {
 
       String internalPid = skuJson.optString("name");
       List<String> categories = doc.select(".breadcrumbs a").eachText();
-      categories.remove(0);
+      if (!categories.isEmpty()) {
+        categories.remove(0);
+      }
       String description =
           CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".more-info", " product-table"));
 
