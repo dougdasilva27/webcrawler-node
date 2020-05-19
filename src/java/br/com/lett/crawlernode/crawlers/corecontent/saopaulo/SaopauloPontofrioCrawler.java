@@ -24,7 +24,7 @@ public class SaopauloPontofrioCrawler extends CNOVACrawler {
    }
 
    @Override
-   protected String fetchPage(String url) {
+   protected String fetchPageHtml(String url, String referer) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
       headers.put("Accept-Enconding", "");
@@ -32,7 +32,7 @@ public class SaopauloPontofrioCrawler extends CNOVACrawler {
       headers.put("Cache-Control", "no-cache");
       headers.put("Connection", "keep-alive");
       headers.put("Host", HOST);
-      headers.put("Referer", PROTOCOL + "://" + HOST + "/");
+      headers.put("Referer", referer);
       headers.put("Upgrade-Insecure-Requests", "1");
       headers.put("User-Agent", FetchUtilities.randUserAgent());
 
