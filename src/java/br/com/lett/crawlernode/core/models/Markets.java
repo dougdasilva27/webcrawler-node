@@ -78,13 +78,6 @@ public class Markets {
 
             marketsList.add(market);
          }
-
-         rs = sta.executeQuery("SELECT id, city, name, crawler_webdriver, proxies, proxies_images FROM market");
-
-         while (rs.next()) {
-
-         }
-
       } catch (SQLException e) {
          e.printStackTrace();
       } finally {
