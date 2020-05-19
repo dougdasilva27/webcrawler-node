@@ -49,14 +49,14 @@ public class ProductDTO {
          RatingsReviews r = new RatingsReviews();
 
          if (session.getInternalId() != null) {
-            r.setInternalId(session.getInternalId());
-            r.setUrl(session.getOriginalURL());
+            r.setInternalId(p.getInternalId());
+            r.setUrl(p.getUrl());
             r.setMarketId(session.getMarket().getNumber());
 
             if (product.getRatingReviews() != null) {
-               r.setAverageOverallRating(product.getRatingReviews().getAverageOverallRating());
-               r.setTotalRating(product.getRatingReviews().getTotalReviews());
-               r.setTotalWrittenReviews(product.getRatingReviews().getTotalWrittenReviews());
+               r.setAverageOverallRating(p.getRatingReviews().getAverageOverallRating());
+               r.setTotalRating(p.getRatingReviews().getTotalReviews());
+               r.setTotalWrittenReviews(p.getRatingReviews().getTotalWrittenReviews());
             }
          }
 
@@ -81,14 +81,14 @@ public class ProductDTO {
                   p.setAvailable(true);
                   p.setPrices(new Prices(pricing));
                   p.setPrice(pricing.getSpotlightPrice().floatValue());
-               } else {
+               } else if (!offer.getIsMainRetailer()) {
                   marketplace.add(new Seller(offer));
                }
             }
          }
 
          p.setMarketplace(marketplace);
-      } else if (product.getPrices() != null && !product.getPrices().isEmpty()) {
+      } else if (product.getAvailable() || (product.getMarketplace() != null && product.getMarketplace().size() > 0)) {
          Offers offers = new Offers();
 
          if (product.getAvailable()) {
@@ -102,7 +102,25 @@ public class ProductDTO {
                   .build());
          }
 
+         Marketplace mkt = product.getMarketplace();
+         if (mkt != null) {
+            for (int i = 0; i < mkt.size(); i++) {
+               Seller seller = mkt.get(i);
+
+               offers.add(OfferBuilder.create()
+                     .setUseSlugNameAsInternalSellerId(true)
+                     .setSellerFullName(seller.getName())
+                     .setIsBuybox(mkt.size() > 1 || (product.getAvailable() && mkt.size() > 0))
+                     .setMainPagePosition(i + 2)
+                     .setIsMainRetailer(false)
+                     .setPricing(pricesToPricing(seller.getPrices(), MathUtils.normalizeTwoDecimalPlaces(seller.getPrice().floatValue())))
+                     .build());
+            }
+         }
+
          p.setOffers(offers);
+      } else if (product.getOffers() == null) {
+         p.setOffers(new Offers());
       }
 
       return p;

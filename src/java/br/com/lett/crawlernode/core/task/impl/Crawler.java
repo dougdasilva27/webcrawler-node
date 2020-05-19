@@ -462,7 +462,12 @@ public class Crawler extends Task {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      return products;
+      List<Product> processedProducts = new ArrayList<>();
+      for (Product p : products) {
+         processedProducts.add(ProductDTO.processCaptureData(p, session));
+      }
+
+      return processedProducts;
    }
 
 
