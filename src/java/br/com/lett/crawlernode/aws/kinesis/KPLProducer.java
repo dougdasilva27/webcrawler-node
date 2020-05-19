@@ -48,6 +48,7 @@ public class KPLProducer {
       config.setRecordTtl(KPLProducerConfig.RECORD_TTL); // 5 minutes to avoid data loss
       config.setRecordMaxBufferedTime(KPLProducerConfig.RECORD_MAX_BUFFERED_TIME); // Consumer needs to know how to disassemble records
       config.setAggregationEnabled(true);
+      config.setMetricsLevel(KPLProducerConfig.METRIC_LEVEL_NONE); // Do not send any KPL metrics do CloudWatch
 
       kinesisProducer = new KinesisProducer(config);
    }

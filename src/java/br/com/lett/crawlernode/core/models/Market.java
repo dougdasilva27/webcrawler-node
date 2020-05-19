@@ -8,6 +8,7 @@ public class Market {
    private String city;
    private String name;
    private String fullName;
+   private String code;
    private boolean crawlerWebdriver;
    private List<String> proxies;
    private List<String> imageProxies;
@@ -24,12 +25,16 @@ public class Market {
                  int marketId,
                  String marketCity,
                  String marketName,
+                 String marketCode,
+                 String marketFullName,
                  List<String> proxies,
                  List<String> imageProxies) {
 
       this.id = marketId;
       this.city = marketCity;
       this.name = marketName;
+      this.code = marketCode;
+      this.fullName = marketFullName;
       this.proxies = proxies;
       this.imageProxies = imageProxies;
    }
@@ -61,7 +66,9 @@ public class Market {
    @Override
    public String toString() {
       return "Market [id=" + id +
+            ", code=" + code +
             ", city=" + city +
+            ", fullName=" + fullName +
             ", name=" + name +
             ", proxies=" + proxies.toString() +
             ", mustUseWebdriver=" + crawlerWebdriver +
@@ -96,7 +103,15 @@ public class Market {
       return fullName;
    }
 
+   public String getCode() {
+      return code;
+   }
+
    public void setFullName(String fullName) {
       this.fullName = fullName;
+   }
+
+   public void setCode(String code) {
+      this.code = code;
    }
 }
