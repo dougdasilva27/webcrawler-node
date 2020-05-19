@@ -42,7 +42,7 @@ public class BrasilTintasverginiaCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-view [name=product]", "value");
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name > h1", true);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "#product-price-" + internalId + " .price", null, false, ',', session);
+         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".compra-box .price-box .regular-price", null, false, ',', session);
          Prices prices = scrapPrices(doc, price);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul > li:not(:last-child)", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image > a", Arrays.asList("href"), "https", HOST);
