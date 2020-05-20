@@ -116,7 +116,7 @@ public abstract class CNOVACrawler extends Crawler {
 
    public CNOVACrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.FETCHER);
       super.config.setMustSendRatingToKinesis(true);
    }
 
@@ -150,16 +150,17 @@ public abstract class CNOVACrawler extends Crawler {
 
    protected Response fetchPage(String url, String referer) {
       Map<String, String> headers = new HashMap<>();
-      // headers.put("Accept",
-      // "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-      // headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      // headers.put("Cache-Control", "max-age=0");
-      // headers.put("Connection", "keep-alive");
-      // headers.put("Host", this.marketHost);
-      headers.put("Accept-Enconding", "");
       headers.put("Referer", referer);
-      headers.put("User-Agent", USER_AGENT);
-      // headers.put("Upgrade-Insecure-Requests", "1");
+      headers.put("authority", this.marketHost);
+      headers.put("cache-control", "max-age=0");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("user-agent", USER_AGENT);
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("sec-fetch-site", "cross-site");
+      headers.put("sec-fetch-mode", "navigate");
+      headers.put("sec-fetch-user", "?1");
+      headers.put("sec-fetch-dest", "document");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
       Request request = RequestBuilder.create()
             .setUrl(encodeUrlPath(url))
@@ -172,8 +173,8 @@ public abstract class CNOVACrawler extends Crawler {
             .setProxyservice(
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.BUY,
-                        ProxyCollection.STORM_RESIDENTIAL_US
+                        ProxyCollection.STORM_RESIDENTIAL_US,
+                        ProxyCollection.BUY
                   )
             ).build();
 
