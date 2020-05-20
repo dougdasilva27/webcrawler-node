@@ -143,7 +143,7 @@ public class Crawler extends Task {
     * @param product
     */
    private void sendToKinesis(Product product) {
-      if (!GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
+      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
          Product p = ProductDTO.convertProductToKinesisFormat(product, session);
          KPLProducer.getInstance().put(p, session);
          KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());

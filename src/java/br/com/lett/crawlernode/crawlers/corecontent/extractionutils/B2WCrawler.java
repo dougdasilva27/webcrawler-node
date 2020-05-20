@@ -75,8 +75,11 @@ public class B2WCrawler extends Crawler {
       headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
       headers.put(HttpHeaders.CONNECTION, "keep-alive");
       headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
-      headers.put(HttpHeaders.ACCEPT_ENCODING, "no");
+      headers.put(HttpHeaders.ACCEPT_ENCODING, "");
       headers.put("Upgrade-Insecure-Requests", "1");
+      headers.put("sec-fetch-mode", "navigate");
+      headers.put("sec-fetch-user", "?1");
+      headers.put("sec-fetch-site", "none");
    }
 
    @Override
