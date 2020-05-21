@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.core.imgprocessing;
 
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -31,10 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
 
 public class ImageConverter {
 
@@ -108,7 +108,7 @@ public class ImageConverter {
 
     graphics2dOriginal.dispose();
 
-    // write final image to the tmp converted image file
+    // write final image to the tmp converted image filecaixa
     ImageWriter writer = ImageIO.getImageWritersByFormatName("jpeg").next();
     ImageWriteParam param = writer.getDefaultWriteParam();
 

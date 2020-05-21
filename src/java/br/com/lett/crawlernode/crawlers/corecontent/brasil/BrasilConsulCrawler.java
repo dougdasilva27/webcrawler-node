@@ -4,34 +4,23 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.Offers;
+import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.Pricing;
 
-public class BrasilConsulCrawler extends Crawler {
+public class BrasilConsulCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://loja.consul.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "whirlpool";
-   private static final String MAIN_SELLER_NAME_LOWER_2 = "consul";
-   private static final String MAIN_SELLER_NAME_LOWER_3 = "brastemp";
-   private static final List<String> SELLERS = Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2, MAIN_SELLER_NAME_LOWER_3);
+   private static final List<String> SELLERS = Arrays.asList("Whirlpool", "Consul", "Brastemp");
 
    public BrasilConsulCrawler(Session session) {
       super(session);
@@ -44,116 +33,59 @@ public class BrasilConsulCrawler extends Crawler {
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
-      List<Product> products = new ArrayList<>();
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
 
-      if (isProductPage(doc)) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
-         vtexUtil.setDiscountWithDocument(doc, ".prod-selos p[class^=flag cns-e-btp--desconto-a-vista-cartao-percentual-]", true, false);
+   @Override
+   protected List<String> getMainSellersNames() {
+      return SELLERS;
+   }
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+   @Override
+   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
+      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__flags .price-flag", true);
+      return sale != null && !sale.isEmpty() ? Arrays.asList(sale) : new ArrayList<>();
+   }
 
-         String internalPid = vtexUtil.crawlInternalPid(skuJson);
-         CategoryCollection categories = crawlCategories(doc);
 
-         JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-         JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
+   @Override
+   protected Double scrapSpotlightPrice(Document doc, String internalId, Double principalPrice, JSONObject comertial, JSONObject discountsJson) {
+      Double spotlightPrice = super.scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
+      Double maxDiscount = 0d;
+      if (discountsJson != null && discountsJson.length() > 0) {
+         for (String key : discountsJson.keySet()) {
+            JSONObject paymentEffect = discountsJson.optJSONObject(key);
+            Double discount = paymentEffect.optDouble("discount");
 
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
-
-            String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String description = crawlDescription(doc, apiJSON, vtexUtil, internalId);
-            String name = vtexUtil.crawlName(jsonSku, skuJson, apiJSON);
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, SELLERS, Arrays.asList(Card.VISA), session);
-            boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, SELLERS);
-            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Prices prices = CrawlerUtils.getPrices(marketplaceMap, SELLERS);
-            Float price = vtexUtil.crawlMainPagePrice(prices);
-            RatingsReviews ratingReviews = scrapRating(internalId, doc);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
-            String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-            Offers offers = new Offers();
-            try {
-               offers = vtexUtil.scrapBuyBox(apiJSON);
-            } catch (Exception e) {
-               Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+            if (discount > maxDiscount) {
+               maxDiscount = discount;
             }
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
-
-            // Creating the product
-            Product product = ProductBuilder
-                  .create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setMarketplace(marketplace)
-                  .setEans(eans).setOffers(offers)
-                  .setRatingReviews(ratingReviews)
-                  .build();
-
-            products.add(product);
          }
-
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      return products;
-   }
-
-
-   private boolean isProductPage(Document document) {
-      return document.select(".productName").first() != null;
-   }
-
-   private CategoryCollection crawlCategories(Document doc) {
-      CategoryCollection categories = new CategoryCollection();
-
-      Element category = doc.selectFirst(".bread-crumb .last a");
-      if (category != null) {
-         categories.add(category.ownText().trim());
+      if (maxDiscount > 0d) {
+         spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice - (spotlightPrice * maxDiscount));
       }
 
-      return categories;
+      return spotlightPrice;
    }
 
-   /**
-    * @param document
-    * @param apiJSON
-    * @return
-    */
-   private String crawlDescription(Document document, JSONObject apiJSON, VTEXCrawlersUtils vtexCrawlersUtils, String internalId) {
+
+   @Override
+   protected String scrapDescription(Document doc, JSONObject productJson) {
       StringBuilder description = new StringBuilder();
 
-      JSONObject descriptionJson = vtexCrawlersUtils.crawlDescriptionAPI(internalId, "skuId");
-
-      if (descriptionJson.has("description")) {
+      if (productJson.has("description")) {
          description.append("<div>");
-         description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get("description")));
+         description.append(sanitizeDescription(productJson.get("description")));
          description.append("</div>");
       }
 
       List<String> specs = new ArrayList<>();
 
-      if (descriptionJson.has("Caracteristícas Técnicas")) {
-         JSONArray keys = descriptionJson.getJSONArray("Caracteristícas Técnicas");
+      if (productJson.has("Caracteristícas Técnicas")) {
+         JSONArray keys = productJson.getJSONArray("Caracteristícas Técnicas");
          for (Object o : keys) {
             if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
                specs.add(o.toString());
@@ -161,8 +93,26 @@ public class BrasilConsulCrawler extends Crawler {
          }
       }
 
+      List<Integer> modules = Arrays.asList(1, 2, 3, 4);
+
+
+      for (int i : modules) {
+         if (productJson.has("Texto modulo 0" + i)) {
+            description.append("<div>");
+
+            if (productJson.has("Título modulo 0" + i)) {
+               description.append("<h4>");
+               description.append(productJson.get("Título modulo 0" + i).toString().replace("[\"", "").replace("\"]", ""));
+               description.append("</h4>");
+            }
+
+            description.append(sanitizeDescription(productJson.get("Texto modulo 0" + i)));
+            description.append("</div>");
+         }
+      }
+
       for (String spec : specs) {
-         if (descriptionJson.has(spec)) {
+         if (productJson.has(spec)) {
 
             String label = spec;
 
@@ -176,46 +126,47 @@ public class BrasilConsulCrawler extends Crawler {
 
             description.append("<div>");
             description.append("<h4>").append(label).append("</h4>");
-            description.append(VTEXCrawlersUtils.sanitizeDescription(descriptionJson.get(spec)) + (label.equals("Garantia") ? " meses" : ""));
+            description.append(VTEXCrawlersUtils.sanitizeDescription(productJson.get(spec)) + (label.equals("Garantia") ? " meses" : ""));
             description.append("</div>");
          }
       }
 
-      Element manual = document.selectFirst(".value-field.Manual-do-Produto");
+      Element manual = doc.selectFirst(".value-field.Manual-do-Produto");
       if (manual != null) {
 
          description
                .append("<a href=\"" + manual.ownText() + "\" title=\"Baixar manual\" class=\"details__manual\" target=\"_blank\">Baixar manual</a>");
       }
 
-      if (apiJSON.has("RealHeight")) {
+      if (productJson.has("RealHeight")) {
          description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
-               .append("<td>").append("\n" + apiJSON.get("RealHeight").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
+               .append("<td>").append("\n" + productJson.get("RealHeight").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
                .append("</table>");
       }
 
-      if (apiJSON.has("RealWidth")) {
+      if (productJson.has("RealWidth")) {
          description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
-               .append("<td>").append("\n" + apiJSON.get("RealWidth").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
+               .append("<td>").append("\n" + productJson.get("RealWidth").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
                .append("</table>");
       }
 
-      if (apiJSON.has("RealLength")) {
+      if (productJson.has("RealLength")) {
          description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
-               .append("<td>").append("\n" + apiJSON.get("RealLength").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
+               .append("<td>").append("\n" + productJson.get("RealLength").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
                .append("</table>");
       }
 
-      if (apiJSON.has("RealWeightKg")) {
+      if (productJson.has("RealWeightKg")) {
          description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
-               .append("<td>").append("\n" + apiJSON.get("RealWeightKg").toString().replace(".0", "") + " kg").append("</td>").append("</tbody>")
+               .append("<td>").append("\n" + productJson.get("RealWeightKg").toString().replace(".0", "") + " kg").append("</td>").append("</tbody>")
                .append("</table>");
       }
 
       return description.toString();
    }
 
-   private RatingsReviews scrapRating(String internalId, Document doc) {
+   @Override
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject apiJson) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "3531", logger);
       return trustVox.extractRatingAndReviewsForVtex(doc, dataFetcher).getRatingReviews(internalId);
    }

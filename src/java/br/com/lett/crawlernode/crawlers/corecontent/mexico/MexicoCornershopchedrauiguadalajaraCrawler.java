@@ -15,5 +15,4 @@ public class MexicoCornershopchedrauiguadalajaraCrawler extends CornershopCrawle
    protected String getStoreId() {
       return STORE_ID;
    }
-
 }

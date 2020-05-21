@@ -15,5 +15,4 @@ public class MexicoCornershopwalmartguadalajaraCrawler extends CornershopCrawler
    protected String getStoreId() {
       return STORE_ID;
    }
-
 }

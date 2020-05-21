@@ -20,7 +20,6 @@ import com.mongodb.client.FindIterable;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Market.MarketBuilder;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import dbmodels.Tables;
@@ -59,6 +58,7 @@ public class DatabaseDataFetcher {
       fields.add(marketTable.ID);
       fields.add(marketTable.CITY);
       fields.add(marketTable.NAME);
+      fields.add(marketTable.FULLNAME);
       fields.add(marketTable.CODE);
       fields.add(marketTable.PROXIES);
       fields.add(marketTable.PROXIES_IMAGES);
@@ -95,14 +95,14 @@ public class DatabaseDataFetcher {
                imageProxies.add(imageProxiesJSONArray.getString(i));
             }
 
-            return MarketBuilder.create()
-                  .setCity(r.getValue(marketTable.CITY))
-                  .setName(r.getValue(marketTable.NAME))
-                  .setCode(r.getValue(marketTable.CODE))
-                  .setId(r.getValue(marketTable.ID).intValue())
-                  .setImageProxies(imageProxies)
-                  .setProxies(proxies)
-                  .build();
+            // create market
+            return new Market(r.getValue(marketTable.ID).intValue(),
+                  r.getValue(marketTable.CITY),
+                  r.getValue(marketTable.NAME),
+                  r.getValue(marketTable.CODE),
+                  r.getValue(marketTable.FULLNAME),
+                  proxies,
+                  imageProxies);
          }
 
       } catch (Exception e) {

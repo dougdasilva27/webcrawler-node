@@ -7,10 +7,11 @@ public class Market {
    private int id;
    private String city;
    private String name;
+   private String fullName;
+   private String code;
    private boolean crawlerWebdriver;
    private List<String> proxies;
    private List<String> imageProxies;
-   private String code;
 
    /**
     * Default constructor used for testing.
@@ -20,16 +21,22 @@ public class Market {
     * @param marketName
     * @param proxies
     */
-   public Market() {}
+   public Market(
+                 int marketId,
+                 String marketCity,
+                 String marketName,
+                 String marketCode,
+                 String marketFullName,
+                 List<String> proxies,
+                 List<String> imageProxies) {
 
-   private Market(MarketBuilder builder) {
-      this.id = builder.id;
-      this.city = builder.city;
-      this.name = builder.name;
-      this.code = builder.code;
-      this.crawlerWebdriver = builder.crawlerWebdriver;
-      this.imageProxies = builder.imageProxies;
-      this.proxies = builder.proxies;
+      this.id = marketId;
+      this.city = marketCity;
+      this.name = marketName;
+      this.code = marketCode;
+      this.fullName = marketFullName;
+      this.proxies = proxies;
+      this.imageProxies = imageProxies;
    }
 
    public int getNumber() {
@@ -59,7 +66,9 @@ public class Market {
    @Override
    public String toString() {
       return "Market [id=" + id +
+            ", code=" + code +
             ", city=" + city +
+            ", fullName=" + fullName +
             ", name=" + name +
             ", proxies=" + proxies.toString() +
             ", mustUseWebdriver=" + crawlerWebdriver +
@@ -90,81 +99,19 @@ public class Market {
       this.crawlerWebdriver = crawlerWebdriver;
    }
 
-   public int getId() {
-      return id;
-   }
-
-   public boolean isCrawlerWebdriver() {
-      return crawlerWebdriver;
+   public String getFullName() {
+      return fullName;
    }
 
    public String getCode() {
       return code;
    }
 
-   public void setId(int id) {
-      this.id = id;
-   }
-
-   public void setCrawlerWebdriver(boolean crawlerWebdriver) {
-      this.crawlerWebdriver = crawlerWebdriver;
+   public void setFullName(String fullName) {
+      this.fullName = fullName;
    }
 
    public void setCode(String code) {
       this.code = code;
-   }
-
-   public static class MarketBuilder {
-
-      private int id;
-      private String city;
-      private String name;
-      private boolean crawlerWebdriver;
-      private List<String> proxies;
-      private List<String> imageProxies;
-      private String code;
-
-      public static MarketBuilder create() {
-         return new MarketBuilder();
-      }
-
-      public MarketBuilder setId(int id) {
-         this.id = id;
-         return this;
-      }
-
-      public MarketBuilder setCity(String city) {
-         this.city = city;
-         return this;
-      }
-
-      public MarketBuilder setName(String name) {
-         this.name = name;
-         return this;
-      }
-
-      public MarketBuilder setCrawlerWebdriver(boolean crawlerWebdriver) {
-         this.crawlerWebdriver = crawlerWebdriver;
-         return this;
-      }
-
-      public MarketBuilder setProxies(List<String> proxies) {
-         this.proxies = proxies;
-         return this;
-      }
-
-      public MarketBuilder setImageProxies(List<String> imageProxies) {
-         this.imageProxies = imageProxies;
-         return this;
-      }
-
-      public MarketBuilder setCode(String code) {
-         this.code = code;
-         return this;
-      }
-
-      public Market build() {
-         return new Market(this);
-      }
    }
 }

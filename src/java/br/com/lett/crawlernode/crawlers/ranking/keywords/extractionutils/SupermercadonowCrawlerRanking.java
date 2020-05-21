@@ -4,10 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -35,30 +31,13 @@ public abstract class SupermercadonowCrawlerRanking extends CrawlerRankingKeywor
       super.processBeforeFetch();
       Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
       Response response = this.dataFetcher.get(session, request);
-      Document doc = Jsoup.parse(response.getBody());
 
-      headers.put("Accept", "application/json, text/plain, */*");
-      headers.put("X-SNW-TOKEN", scrapToken(doc));
+      headers.put("Accept", "text/json");
+      headers.put("X-SNW-Token", "XLBhhbP1YEkB2tL61wkX163Dqm9iIDpx");
 
       this.cookies = response.getCookies();
    }
 
-   private String scrapToken(Document doc) {
-      String token = null;
-      String identifier = "AuthenticateUser.setToken('";
-
-      Elements scripts = doc.select("script");
-
-      for (Element e : scripts) {
-         String script = e.html().replace(" ", "");
-         if (script.contains(identifier)) {
-            token = CrawlerUtils.extractSpecificStringFromScript(script, "AuthenticateUser.setToken('", false, "')", false);
-            break;
-         }
-      }
-
-      return token;
-   }
 
    @Override
    public void extractProductsFromCurrentPage() {

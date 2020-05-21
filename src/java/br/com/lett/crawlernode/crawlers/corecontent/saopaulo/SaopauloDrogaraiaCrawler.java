@@ -45,14 +45,14 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         Logging.printLogDebug(
+               logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          // ID interno
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#sku", "value");
@@ -65,15 +65,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          }
 
          // Disponibilidade
-         boolean available = true;
-         Element buyButton = doc.select(".add-to-cart button").first();
-
-         if (buyButton == null) {
-            available = false;
-         }
+         boolean available = doc.selectFirst(".add-to-cart-buttons") != null;
 
          // Nome
-         String name = crawlName(doc);
+         String name = crawlName(doc, available);
 
          // Preço
          Float price = null;
@@ -82,7 +77,13 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
             elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
          }
          if (elementPrice != null) {
-            price = Float.parseFloat(elementPrice.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+            price =
+                  Float.parseFloat(
+                        elementPrice
+                              .text()
+                              .replaceAll("[^0-9,]+", "")
+                              .replaceAll("\\.", "")
+                              .replaceAll(",", "."));
          }
 
          // Categorias
@@ -140,31 +141,29 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return products;
    }
 
-
-   /*******************************
-    * Product page identification *
-    *******************************/
-
+   /** ***************************** Product page identification * ***************************** */
    private boolean isProductPage(Document document) {
-      return !document.select(".product-name h1").isEmpty();
+      return !document.select("div[typeOf='Product']").isEmpty();
    }
 
-   private String crawlName(Document doc) {
+   private String crawlName(Document doc, boolean available) {
       StringBuilder name = new StringBuilder();
 
-      Element firstName = doc.selectFirst(".product-name h1");
-      if (firstName != null) {
-         name.append(firstName.text());
+      if (available) {
+         Element firstName = doc.selectFirst(".product-name h1");
+         if (firstName != null) {
+            name.append(firstName.text());
 
-         Elements attributes = doc.select(".product-attributes .show-hover");
-         for (Element e : attributes) {
-            name.append(" ").append(e.ownText().trim());
+            Elements attributes = doc.select(".product-attributes .show-hover");
+            for (Element e : attributes) {
+               name.append(" ").append(e.ownText().trim());
+            }
          }
+         return name.toString().replace("  ", " ").trim();
+      } else {
+         return doc.selectFirst(".product-image-gallery > img").attr("title");
       }
-
-      return name.toString().replace("  ", " ").trim();
    }
-
 
    private String crawlPrimaryImage(Document doc) {
       String primaryImage = null;
@@ -210,7 +209,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
    /**
     * In this market, installments not appear in product page
-    * 
+    *
     * @param doc
     * @param price
     * @return
@@ -273,14 +272,19 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       for (Element iframe : iframes) {
          String url = iframe.attr("src");
          if (!url.contains("youtube")) {
-            description
-                  .append(Jsoup.parse(this.dataFetcher.get(session, RequestBuilder.create().setUrl(url).setCookies(cookies).build()).getBody()).html());
+            description.append(
+                  Jsoup.parse(
+                        this.dataFetcher
+                              .get(
+                                    session,
+                                    RequestBuilder.create().setUrl(url).setCookies(cookies).build())
+                              .getBody())
+                        .html());
          }
       }
 
       return description.toString();
    }
-
 
    private RatingsReviews crawRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
@@ -289,7 +293,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       ratingReviews.setInternalId(internalId);
       JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
       Integer total = getTotalNumOfRatings(trustVoxResponse);
-      AdvancedRatingReview advancedRatingReview = TrustvoxRatingCrawler.getTotalStarsFromEachValueWithRate(trustVoxResponse);
+      AdvancedRatingReview advancedRatingReview =
+            TrustvoxRatingCrawler.getTotalStarsFromEachValueWithRate(trustVoxResponse);
 
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
       ratingReviews.setTotalRating(total);
@@ -298,8 +303,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
       return ratingReviews;
    }
-
-
 
    private Integer getTotalNumOfRatings(JSONObject trustVoxResponse) {
       if (trustVoxResponse.has("rate")) {
@@ -347,7 +350,12 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       headerMap.put(HttpHeaders.ACCEPT, "application/vnd.trustvox-v2+json");
       headerMap.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8");
 
-      Request request = RequestBuilder.create().setUrl(requestURL.toString()).setCookies(cookies).setHeaders(headerMap).build();
+      Request request =
+            RequestBuilder.create()
+                  .setUrl(requestURL.toString())
+                  .setCookies(cookies)
+                  .setHeaders(headerMap)
+                  .build();
       String response = this.dataFetcher.get(session, request).getBody();
 
       JSONObject trustVoxResponse;

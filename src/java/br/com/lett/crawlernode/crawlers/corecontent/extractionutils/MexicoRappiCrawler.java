@@ -13,7 +13,7 @@ import br.com.lett.crawlernode.util.Logging;
 public abstract class MexicoRappiCrawler extends RappiCrawler {
 
    private static final String HOME_PAGE = "https://www.rappi.com.mx/";
-   private static final String IMAGES_DOMAIN = "images.rappi.com.mx/products/";
+   private static final String IMAGES_DOMAIN = "images.rappi.com.mx/products";
    private final String storeId = setStoreId();
 
    protected abstract String setStoreId();
@@ -40,7 +40,7 @@ public abstract class MexicoRappiCrawler extends RappiCrawler {
       String productId = null;
       String productUrl = session.getOriginalURL();
 
-      if (productUrl.contains("_") && productUrl.contains("?")) {
+      if (productUrl.contains("_")) {
          String ids = productUrl.split("\\?")[0];
          productId = CommonMethods.getLast(ids.split("_")).replaceAll("[^0-9]", "");
       }

@@ -1,13 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.nodes.TextNode;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -15,271 +10,200 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class BrasilMartinsCrawler extends Crawler {
 
-   private final String HOME_PAGE = "https://b.martins.com.br/";
+  public BrasilMartinsCrawler(Session session) {
+    super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
+  }
 
-   public BrasilMartinsCrawler(Session session) {
-      super(session);
-   }
+  private String password = getPassword();
+  private String login = getLogin();
 
-   @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
+  protected String getPassword() {
+    return null;
+  }
 
-   // private String userAgent;
-   // private LettProxy proxy;
-   //
-   // @Override
-   // public void handleCookiesBeforeFetch() {
-   // this.userAgent = DataFetcher.randUserAgent();
-   //
-   // Map<String, String> headers = new HashMap<>();
-   // headers.put("Content-Type", "application/x-www-form-urlencoded");
-   //
-   // Map<String, String> cookiesMapHome =
-   // POSTFetcher.fetchCookiesPOSTWithHeaders("https://b.martins.com.br/ajax/ajaxCodigoCliente.aspx?mail=victor.fernandes1@br.nestle.com",
-   // session,
-   // "idemail=victor.fernandes1%40br.nestle.com", cookies, proxy, userAgent, 1, headers);
-   //
-   // for (Entry<String, String> entry : cookiesMapHome.entrySet()) {
-   // BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-   // cookie.setDomain("b.martins.com.br");
-   // cookie.setPath("/");
-   // this.cookies.add(cookie);
-   // }
-   //
-   // this.proxy = session.getRequestProxy(HOME_PAGE);
-   //
-   // String url = "https://b.martins.com.br/ajax/ajaxLogarUsuario.aspx";
-   // Map<String, String> cookiesMap =
-   // POSTFetcher.fetchCookiesPOSTWithHeaders(url, session,
-   // "e=victor.fernandes1@br.nestle.com&p=nestle@2017&c=4041415&t=0", cookies, 1, headers);
-   //
-   // for (Entry<String, String> entry : cookiesMap.entrySet()) {
-   // BasicClientCookie cookie = new BasicClientCookie(entry.getKey(), entry.getValue());
-   // cookie.setDomain("b.martins.com.br");
-   // cookie.setPath("/");
-   // this.cookies.add(cookie);
-   // }
-   //
-   // }
-   //
-   // @Override
-   // protected Object fetch() {
-   // return Jsoup.parse(GETFetcher.fetchPageGET(session, session.getOriginalURL(), cookies,
-   // this.userAgent, proxy, 1));
-   // }
+  protected String getLogin() {
+    return null;
+  }
 
-   @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
-      List<Product> products = new ArrayList<>();
+  @Override
+  public boolean shouldVisit() {
+    String href = session.getOriginalURL().toLowerCase();
+    String homePage = "https://www.martinsatacado.com.br";
+    return !FILTERS.matcher(href).matches() && (href.startsWith(homePage));
+  }
 
-      if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+  @Override
+  protected Object fetch() {
+    if (login == null || password == null) {
+      return super.fetch();
+    }
+    try {
+      webdriver =
+          DynamicDataFetcher.fetchPageWebdriver(
+              "https://www.martinsatacado.com.br/login/topo/request", session);
+      webdriver.waitLoad(6000);
 
-         String internalId = crawlInternalId(doc);
-         String name = crawlName(doc);
-         Float price = crawlPrice(doc);
+      waitForElement(webdriver.driver, "#go-login");
+      webdriver.clickOnElementViaJavascript(
+          webdriver.driver.findElement(By.cssSelector("#go-login")));
 
-         ArrayList<String> categories = crawlCategories(doc);
-         String category1 = getCategory(categories, 0);
-         String category2 = getCategory(categories, 1);
-         String category3 = getCategory(categories, 2);
+      waitForElement(webdriver.driver, "#js_username_login");
+      WebElement email = webdriver.driver.findElement(By.cssSelector("#js_username_login"));
+      email.sendKeys(login);
 
-         String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = crawlSecondaryImages(doc);
-         String description = crawlDescription(doc);
+      waitForElement(webdriver.driver, "#jsSelectCNPJ");
+      WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#jsSelectCNPJ"));
+      webdriver.clickOnElementViaJavascript(cnpj);
 
-         // ean
-         String ean = crawlEan(doc);
+      waitForElement(webdriver.driver, "#j_password[required]");
+      WebElement pass = webdriver.driver.findElement(By.cssSelector("#j_password[required]"));
+      pass.sendKeys(password);
 
-         List<String> eans = new ArrayList<>();
-         eans.add(ean);
+      waitForElement(webdriver.driver, ".c-login__button");
+      WebElement login = webdriver.driver.findElement(By.cssSelector(".c-login__button"));
+      webdriver.clickOnElementViaJavascript(login);
+      webdriver.waitLoad(6000);
 
-         Product product = new Product();
-         product.setUrl(session.getOriginalURL());
-         product.setInternalId(internalId);
-         product.setName(name);
-         product.setPrice(price);
-         product.setPrices(new Prices());
-         product.setAvailable(false);
-         product.setCategory1(category1);
-         product.setCategory2(category2);
-         product.setCategory3(category3);
-         product.setPrimaryImage(primaryImage);
-         product.setSecondaryImages(secondaryImages);
-         product.setDescription(description);
-         product.setMarketplace(new Marketplace());
-         product.setEans(eans);
+      webdriver.loadUrl(session.getOriginalURL());
+      webdriver.waitLoad(6000);
 
-         products.add(product);
+      return Jsoup.parse(webdriver.getCurrentPageSource());
+    } catch (Exception e) {
+      Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+      return super.fetch();
+    }
+  }
 
-      } else {
-         products.addAll(extractProductsNewWay(doc));
-      }
+  public static void waitForElement(WebDriver driver, String cssSelector) {
+    WebDriverWait wait = new WebDriverWait(driver, 10);
+    wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+  }
 
-      return products;
-   }
+  @Override
+  public List<Product> extractInformation(Document doc) throws Exception {
+    super.extractInformation(doc);
+    List<Product> products = new ArrayList<>();
 
-   private List<Product> extractProductsNewWay(Document doc) throws Exception {
-      List<Product> products = new ArrayList<>();
+    if (isProductPage(doc)) {
+      Logging.printLogDebug(
+          logger, session, "Product page identified: " + session.getOriginalURL());
 
-      if (!doc.select("input#id").isEmpty()) {
-         String internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagePrincipal img", Arrays.asList("src"), "https", "imgprd.martins.com.br");
-         String secondaryImages =
-               CrawlerUtils.scrapSimpleSecondaryImages(doc, ".galeryImages img", Arrays.asList("src"), "https", "imgprd.martins.com.br", primaryImage);
-         String description =
-               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
-         List<String> eans = Arrays.asList(CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
+      String internalId =
+          CommonMethods.getLast(
+              CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
+      Float price =
+          CrawlerUtils.scrapFloatPriceFromHtml(doc, ".qdValue .value", null, true, ',', session);
+      Prices prices = scrapPrices(price);
+      CategoryCollection categories =
+          CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
+      String primaryImage =
+          CrawlerUtils.scrapSimplePrimaryImage(
+              doc,
+              ".imagePrincipal img",
+              Collections.singletonList("src"),
+              "https",
+              "imgprd.martins.com.br");
+      String secondaryImages =
+          CrawlerUtils.scrapSimpleSecondaryImages(
+              doc,
+              ".galeryImages img",
+              Collections.singletonList("src"),
+              "https",
+              "imgprd.martins.com.br",
+              primaryImage);
+      String description =
+          CrawlerUtils.scrapSimpleDescription(
+              doc,
+              Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
+      List<String> eans =
+          Collections.singletonList(
+              CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
+      RatingsReviews ratingsReviews = scrapRating(doc, internalId);
 
-         // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrices(new Prices())
-               .setAvailable(false).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace())
-               .setEans(eans).build();
+      // Creating the product
+      Product product =
+          ProductBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(price != null)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setRatingReviews(ratingsReviews)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setMarketplace(new Marketplace())
+              .setEans(eans)
+              .build();
 
-         products.add(product);
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-      }
+      products.add(product);
 
-      return products;
-   }
+    } else {
+      Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
+    }
 
-   private boolean isProductPage(Document doc) {
-      return !doc.select("#ctnTitProduto").isEmpty();
-   }
+    return products;
+  }
 
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
+  private RatingsReviews scrapRating(Document doc, String internalId) {
+    RatingsReviews ratingsReviews = new RatingsReviews();
+    String ratingString =
+        CrawlerUtils.scrapStringSimpleInfoByAttribute(
+            doc, ".hidden-sm .rating .rating-stars", "data-rating");
+    JSONObject jsonRating = JSONUtils.stringToJson(ratingString);
 
-      Element infoProd = doc.select("#ctnCodProduto").first();
-      if (infoProd != null) {
-         description.append(infoProd.html());
-      }
+    int totalReviews = jsonRating.opt("rating") != null ? jsonRating.optInt("rating") : 0;
+    ratingsReviews.setTotalRating(totalReviews);
+    ratingsReviews.setTotalWrittenReviews(totalReviews);
+    ratingsReviews.setDate(session.getDate());
+    ratingsReviews.setInternalId(internalId);
+    return ratingsReviews;
+  }
 
-      Element saleArgumentElement = doc.select("#lblArgumentoVenda").first();
-      if (saleArgumentElement != null) {
-         description.append(saleArgumentElement.html());
-      }
+  private boolean isProductPage(Document doc) {
+    return !doc.select("input#id").isEmpty();
+  }
 
-      Element bodyPostersElement = doc.select("div#corpo").first();
-      if (bodyPostersElement != null) {
-         description.append(bodyPostersElement.html());
-      }
+  private Prices scrapPrices(Float price) {
+    Prices prices = new Prices();
 
-      Element moreInformationElementTab2 = doc.select("#ctnMaisInfo #dvFieldset #tab2 .ctnZebraListaBranca").first();
-      if (moreInformationElementTab2 != null) {
-         description.append(moreInformationElementTab2.html());
-      }
+    if (price != null) {
+      Map<Integer, Float> installment = new HashMap<>();
+      installment.put(1, price);
 
-      return description.toString();
-   }
+      prices.setBankTicketPrice(price);
+      prices.insertCardInstallment(Card.VISA.toString(), installment);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installment);
+    }
 
-   private String crawlSecondaryImages(Document doc) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      Elements secondaryImagesElements = doc.select("#slider .thumbnail > a");
-      for (int i = 1; i < secondaryImagesElements.size(); i++) { // the first is the same as the
-                                                                 // primary image
-         secondaryImagesArray.put(secondaryImagesElements.get(i).attr("href").trim());
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
-   }
-
-   private String crawlPrimaryImage(Document doc) {
-      String primaryImage = null;
-      Element primaryImageElement = doc.select("#imgPrincipalProduto a").first();
-      if (primaryImageElement != null) {
-         primaryImage = primaryImageElement.attr("href").trim();
-      }
-      return primaryImage;
-   }
-
-   private ArrayList<String> crawlCategories(Document doc) {
-      ArrayList<String> categories = new ArrayList<String>();
-
-      Elements categoriesElements = doc.select("#ctnCaminhoMigalhas li");
-      for (int i = 1; i < categoriesElements.size(); i++) { // first one is a link for home
-         Element hrefElement = categoriesElements.get(i).select("a").first();
-         if (hrefElement != null) {
-            categories.add(hrefElement.text().trim());
-         }
-      }
-
-      return categories;
-   }
-
-   private Float crawlPrice(Document doc) {
-      Float price = null;
-
-      Element elementPrice = doc.select(".ctnValorUnitario span").first();
-      if (elementPrice != null) {
-         price = MathUtils.parseFloatWithComma(elementPrice.text());
-      }
-
-      return price;
-   }
-
-   private String crawlName(Document doc) {
-      String name = null;
-      Element nameElement = doc.select("#ctnTitProduto h2").first();
-      if (nameElement != null) {
-         name = nameElement.text().trim();
-      }
-      return name;
-   }
-
-   private String crawlInternalId(Document doc) {
-      String internalId = null;
-      Element internalIdElement = doc.select("#ctnCodProduto").first();
-      if (internalIdElement != null) {
-         List<TextNode> textNodes = internalIdElement.textNodes();
-         if (!textNodes.isEmpty()) {
-            String internalIdText = textNodes.get(0).text().trim();
-            List<String> parsedNumbers = MathUtils.parseNumbers(internalIdText);
-            if (!parsedNumbers.isEmpty()) {
-               internalId = parsedNumbers.get(0);
-            }
-         }
-      }
-      return internalId;
-   }
-
-   private String getCategory(ArrayList<String> categories, int n) {
-      if (n < categories.size()) {
-         return categories.get(n);
-      }
-
-      return "";
-   }
-
-   private String crawlEan(Document doc) {
-      String ean = null;
-      Element e = doc.selectFirst("#ctnDesDetalheProduto #quick-codigo-barras");
-
-      if (e != null) {
-         ean = e.attr("value");
-      }
-
-      return ean;
-   }
+    return prices;
+  }
 }

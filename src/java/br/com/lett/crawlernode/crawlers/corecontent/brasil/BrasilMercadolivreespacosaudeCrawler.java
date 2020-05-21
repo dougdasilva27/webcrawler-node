@@ -11,13 +11,12 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.Mercadolivre
  */
 public class BrasilMercadolivreespacosaudeCrawler extends MercadolivreCrawler {
 
-  private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/espaco-saude";
-  private static final String MAIN_SELLER_NAME_LOWER = "espaço saúde";
+   private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/espaco-saude";
+   private static final String MAIN_SELLER_NAME_LOWER = "espaço saúde";
 
-  public BrasilMercadolivreespacosaudeCrawler(Session session) {
-    super(session);
-    super.setHomePage(HOME_PAGE);
-    super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
-    super.setSeparator(',');
-  }
+   public BrasilMercadolivreespacosaudeCrawler(Session session) {
+      super(session);
+      super.setHomePage(HOME_PAGE);
+      super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
+   }
 }

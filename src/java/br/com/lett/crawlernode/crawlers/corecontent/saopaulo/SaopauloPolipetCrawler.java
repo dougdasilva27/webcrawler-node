@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
+import java.util.Set;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -15,6 +15,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -29,8 +30,18 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class SaopauloPolipetCrawler extends Crawler {
 
@@ -39,6 +50,10 @@ public class SaopauloPolipetCrawler extends Crawler {
   private static final String VARIATIONS_AJAX_METHOD = "CarregaSKU";
   private static final String SKU_AJAX_METHOD = "DisponibilidadeSKU";
   private static final String VARIATION_NAME_PAYLOAD = "ColorCode";
+  
+  private static final String MAIN_SELLER_NAME = "Poli-Pet";
+  private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), 
+        Card.DINERS.toString(), Card.AMEX.toString(), Card.ELO.toString());
 
 
   public SaopauloPolipetCrawler(Session session) {
@@ -85,17 +100,11 @@ public class SaopauloPolipetCrawler extends Crawler {
 
       String internalPid = crawlInternalPid(doc);
       String name = this.crawlName(doc);
-      Integer stock = null;
-      Marketplace marketplace = new Marketplace();
       CategoryCollection categories = crawlCategories(doc);
       String description = this.crawlDescription(doc);
       String primaryImage = this.crawlPrimaryImage(doc);
       String secondaryImages = this.crawlSecondaryImages(doc, primaryImage);
-
-      // Prices
-      // It wasn't observed any price difference between variations
-      // the only type of variations found was in product colors
-
+      
       // Variations
       Map<String, String> skusMap = this.crawlSkuOptions(internalPid, this.session.getOriginalURL());
 
@@ -115,6 +124,7 @@ public class SaopauloPolipetCrawler extends Crawler {
           String internalIdVariation = idVariation != null ? internalPid + "-" + idVariation : internalPid;
           String primaryImageVariation = crawlPrimaryImageVariation(skuInformation);
           String secondaryImagesVariation = crawlSecondaryImagesVariation(skuInformation);
+          Offers offers = scrapOffers(doc, skuInformation);
 
           if (primaryImageVariation == null) {
             primaryImageVariation = primaryImage;
@@ -124,27 +134,19 @@ public class SaopauloPolipetCrawler extends Crawler {
             secondaryImagesVariation = secondaryImages;
           }
 
-          boolean availableVariation = crawlAvailabilityVariation(skuInformation);
-          Float priceVariation = crawlPriceVariation(skuInformation, availableVariation);
-          Prices prices = crawlPrices(doc, priceVariation);
-
           // Creating the product
           Product product = ProductBuilder.create()
               .setUrl(session.getOriginalURL())
               .setInternalId(internalIdVariation)
               .setInternalPid(internalPid)
               .setName(nameVariation)
-              .setPrice(priceVariation)
-              .setPrices(prices)
-              .setAvailable(availableVariation)
               .setCategory1(categories.getCategory(0))
               .setCategory2(categories.getCategory(1))
               .setCategory3(categories.getCategory(2))
               .setPrimaryImage(primaryImageVariation)
               .setSecondaryImages(secondaryImagesVariation)
               .setDescription(description)
-              .setStock(stock)
-              .setMarketplace(marketplace)
+              .setOffers(offers)
               .build();
 
           products.add(product);
@@ -156,9 +158,7 @@ public class SaopauloPolipetCrawler extends Crawler {
        * Single product
        */
       else {
-        Float price = this.crawlPrice(doc);
-        Prices prices = crawlPrices(doc, price);
-        boolean available = this.crawlAvailability(doc);
+        Offers offers = scrapOffers(doc, null);
 
         // Creating the product
         Product product = ProductBuilder.create()
@@ -166,17 +166,13 @@ public class SaopauloPolipetCrawler extends Crawler {
             .setInternalId(internalPid)
             .setInternalPid(internalPid)
             .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setStock(stock)
-            .setMarketplace(marketplace)
+            .setOffers(offers)
             .build();
 
         products.add(product);
@@ -189,7 +185,125 @@ public class SaopauloPolipetCrawler extends Crawler {
     return products;
   }
 
+  private Offers scrapOffers(Document doc, JSONObject json) throws OfferException, MalformedPricingException {
+     Offers offers = new Offers();
+     Pricing pricing = scrapPricing(doc, json);
 
+     if(pricing != null) {
+       offers.add(OfferBuilder.create()
+             .setUseSlugNameAsInternalSellerId(true)
+             .setSellerFullName(MAIN_SELLER_NAME)
+             .setSellersPagePosition(1)
+             .setIsBuybox(false)
+             .setIsMainRetailer(true)
+             .setPricing(pricing)
+             .build());
+     }
+
+     return offers;
+  }
+  
+  private Pricing scrapPricing(Document doc, JSONObject json) throws MalformedPricingException {
+     Double spotlightPrice = json == null ?
+           CrawlerUtils.scrapDoublePriceFromHtml(doc, "#lblPrecos #lblPrecoPor strong", null, false, ',', session) :
+           crawlPriceVariation(json);
+
+     if(spotlightPrice != null) {
+       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#lblPrecos .price-from", null, false, ',', session);
+       BankSlip bankSlip = scrapBankSlip(doc);
+       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+
+       return PricingBuilder.create()
+             .setSpotlightPrice(spotlightPrice)
+             .setPriceFrom(priceFrom)
+             .setCreditCards(creditCards)
+             .setBankSlip(bankSlip)
+             .build();
+     }
+
+     return null;
+  }
+  
+  private BankSlip scrapBankSlip(Document doc) throws MalformedPricingException {
+     Double bankSlipPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#lblPrecoAVista", null, true, ',', session);
+     // Double bankSlipDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".MsgBoleto span", null, true, ',', session)/100;
+     
+     if(bankSlipPrice != null) {
+       return BankSlipBuilder.create()
+             .setFinalPrice(bankSlipPrice)
+             .setOnPageDiscount(0d)
+             .build();
+     }
+     
+     return BankSlipBuilder.create().build();
+  }
+  
+  private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+     CreditCards creditCards = new CreditCards();
+
+     Installments installments = new Installments();
+     
+     // 1x
+     Element firstPaymentElement = doc.select("#infoPrices .price sale price-to strong").first();
+     if (firstPaymentElement != null) { // 1x
+       Double firstInstallmentPrice = MathUtils.parseDoubleWithComma(firstPaymentElement.text());
+       installments.add(InstallmentBuilder.create()
+             .setInstallmentNumber(1)
+             .setInstallmentPrice(firstInstallmentPrice)
+             .build());
+     }
+
+     // max installment number without intereset (maior número de parcelas sem taxa de juros)
+     Element maxInstallmentNumberWithoutInterestElement = doc.select("#lblParcelamento1 strong").first();
+     Element maxInstallmentPriceWithoutInterestElement = doc.select("#lblParcelamento2 strong").first();
+     if (maxInstallmentNumberWithoutInterestElement != null && maxInstallmentPriceWithoutInterestElement != null) {
+       List<String> parsedNumbers = MathUtils.parseNumbers(maxInstallmentNumberWithoutInterestElement.text());
+
+       if (!parsedNumbers.isEmpty()) {
+         Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+         Double installmentPrice = MathUtils.parseDoubleWithComma(maxInstallmentPriceWithoutInterestElement.text());
+
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(installmentNumber)
+               .setInstallmentPrice(installmentPrice)
+               .build());
+       }
+     }
+
+     // max installment number with intereset (maior número de parcelas com taxa de juros)
+     Element maxInstallmentNumberWithInterestElement = doc.select("#lblOutroParc strong").first();
+     Element maxInstallmentPriceWithInterestElement = doc.select("#lblOutroParc strong").last();
+     if (maxInstallmentNumberWithInterestElement != null && maxInstallmentPriceWithInterestElement != null) {
+       List<String> parsedNumbers = MathUtils.parseNumbers(maxInstallmentNumberWithInterestElement.text());
+
+       if (!parsedNumbers.isEmpty()) {
+         Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
+         Double installmentPrice = MathUtils.parseDoubleWithComma(maxInstallmentPriceWithInterestElement.text());
+
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(installmentNumber)
+               .setInstallmentPrice(installmentPrice)
+               .build());
+       }
+     }
+     
+     if (installments.getInstallment(1) == null) {
+        installments.add(InstallmentBuilder.create()
+              .setInstallmentNumber(1)
+              .setInstallmentPrice(spotlightPrice)
+              .build());
+     }
+
+     for (String brand : cards) {
+        creditCards.add(CreditCardBuilder.create()
+              .setBrand(brand)
+              .setIsShopCard(false)
+              .setInstallments(installments)
+              .build());
+     }
+
+     return creditCards;
+  }
 
   /*******************************
    * Product page identification *
@@ -199,21 +313,14 @@ public class SaopauloPolipetCrawler extends Crawler {
     return doc.select("#info-product").first() != null;
   }
 
-  private Float crawlPriceVariation(JSONObject jsonSku, boolean availbale) {
+  private Float crawlPriceVariation(JSONObject jsonSku) {
     Float price = null;
 
-    if (jsonSku.has("price") && availbale) {
+    if (jsonSku.has("price")) {
       price = Float.parseFloat(jsonSku.getString("price"));
     }
 
     return price;
-  }
-
-  private boolean crawlAvailabilityVariation(JSONObject skuInformation) {
-    if (skuInformation.has("available"))
-      return skuInformation.getBoolean("available");
-
-    return false;
   }
 
 
@@ -441,88 +548,6 @@ public class SaopauloPolipetCrawler extends Crawler {
    * General methods *
    *******************/
 
-  private Float crawlPrice(Document doc) {
-    Float price = null;
-    Element priceElement = doc.select("#lblPrecos #lblPrecoPor strong").first();
-
-    if (priceElement != null) {
-      price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
-    }
-
-    return price;
-  }
-
-  /**
-   * The prices are the same across all variations and card brands. There is no bank slip payment
-   * option in this ecommerce (sem boleto bancário).
-   * 
-   * @param doc
-   * @param unnavailableForAll
-   * @return
-   */
-  private Prices crawlPrices(Document doc, Float price) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Element boleto = doc.selectFirst("#lblPrecoAVista");
-      if (boleto != null) {
-        prices.setBankTicketPrice(MathUtils.parseFloatWithComma(boleto.text()));
-      }
-
-      // installments
-      Map<Integer, Float> installments = new TreeMap<>();
-
-      // 1x
-      Element firstPaymentElement = doc.select("#infoPrices .price sale price-to strong").first();
-      if (firstPaymentElement != null) { // 1x
-        Float firstInstallmentPrice = MathUtils.parseFloatWithComma(firstPaymentElement.text());
-        installments.put(1, firstInstallmentPrice);
-      }
-
-      // max installment number without intereset (maior número de parcelas sem taxa de juros)
-      Element maxInstallmentNumberWithoutInterestElement = doc.select("#lblParcelamento1 strong").first();
-      Element maxInstallmentPriceWithoutInterestElement = doc.select("#lblParcelamento2 strong").first();
-      if (maxInstallmentNumberWithoutInterestElement != null && maxInstallmentPriceWithoutInterestElement != null) {
-        List<String> parsedNumbers = MathUtils.parseNumbers(maxInstallmentNumberWithoutInterestElement.text());
-
-        if (!parsedNumbers.isEmpty()) {
-          Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-          Float installmentPrice = MathUtils.parseFloatWithComma(maxInstallmentPriceWithoutInterestElement.text());
-
-          installments.put(installmentNumber, installmentPrice);
-        }
-      }
-
-      // max installment number with intereset (maior número de parcelas com taxa de juros)
-      Element maxInstallmentNumberWithInterestElement = doc.select("#lblOutroParc strong").first();
-      Element maxInstallmentPriceWithInterestElement = doc.select("#lblOutroParc strong").last();
-      if (maxInstallmentNumberWithInterestElement != null && maxInstallmentPriceWithInterestElement != null) {
-        List<String> parsedNumbers = MathUtils.parseNumbers(maxInstallmentNumberWithInterestElement.text());
-
-        if (!parsedNumbers.isEmpty()) {
-          Integer installmentNumber = Integer.parseInt(parsedNumbers.get(0));
-          Float installmentPrice = MathUtils.parseFloatWithComma(maxInstallmentPriceWithInterestElement.text());
-
-          installments.put(installmentNumber, installmentPrice);
-        }
-      }
-
-      if (!installments.containsKey(1)) {
-        installments.put(1, price);
-      }
-
-      if (installments.size() > 0) {
-        prices.insertCardInstallment(Card.VISA.toString(), installments);
-        prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-        prices.insertCardInstallment(Card.DINERS.toString(), installments);
-        prices.insertCardInstallment(Card.AMEX.toString(), installments);
-        prices.insertCardInstallment(Card.ELO.toString(), installments);
-      }
-    }
-
-    return prices;
-  }
-
   private String crawlInternalPid(Document doc) {
     String internalID = null;
     Element internalIdElement = doc.select("#ProdutoCodigo").first();
@@ -532,10 +557,6 @@ public class SaopauloPolipetCrawler extends Crawler {
     }
 
     return internalID;
-  }
-
-  private boolean crawlAvailability(Document doc) {
-    return doc.select("#lblPrecos #lblPrecoPor strong").first() != null;
   }
 
   private String crawlPrimaryImage(Document document) {

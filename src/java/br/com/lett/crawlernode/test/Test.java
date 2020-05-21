@@ -95,19 +95,10 @@ public class Test {
       Market market = fetchMarket();
 
       if (market != null) {
-
-         // create a task executor
-         // for testing we use 1 thread, there is no need for more
-         // taskExecutor = new TaskExecutor(1, 1);
-
          Session session;
 
          if (testType.equals(KEYWORDS_TEST)) {
             session = SessionFactory.createTestRankingKeywordsSession("comfort ", market);
-         } else if (testType.equals(CATEGORIES_TEST)) {
-            session = SessionFactory.createTestRankingCategoriesSession(
-                  "https://produto.mercadolivre.com.br/MLB-1225997122-capsula-de-cafe-espresso-melitta-staccato-10-unidades-_JM",
-                  market, "Aparelhos");
          } else {
             session = SessionFactory
                   .createTestSession(

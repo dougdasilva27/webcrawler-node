@@ -127,8 +127,7 @@ public class GeracaopetCrawler extends Crawler {
       throws MalformedPricingException, OfferException {
     Offers offers = new Offers();
     Double price;
-    if (doc.selectFirst("#outstock") != null
-        || doc.selectFirst("#product-addtocart-button") == null) {
+    if (doc.selectFirst(".btn.action") == null) {
       return offers;
     }
 

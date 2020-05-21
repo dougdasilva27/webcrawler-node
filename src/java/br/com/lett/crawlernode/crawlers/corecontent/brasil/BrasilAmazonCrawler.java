@@ -171,14 +171,24 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_ourprice", null, true, ',', session);
+
+
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_dealprice, #priceblock_saleprice", null, false, ',', session);
+
+         if (spotlightPrice == null) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#soldByThirdParty span", null, false, ',', session);
+         }
       }
 
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
       Double savings = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#dealprice_savings .priceBlockSavingsString",
             null, false, ',', session);
-      Double priceFrom = savings == null ? null : spotlightPrice + savings;
+
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#buyBoxInner .a-list-item span:nth-child(2n)", null, false, ',', session);
+      if (savings != null) {
+         priceFrom = spotlightPrice + savings;
+      }
 
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)

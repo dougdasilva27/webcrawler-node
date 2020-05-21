@@ -15,5 +15,4 @@ public class MexicoCornershoplacomerciudadmexicoCrawler extends CornershopCrawle
    protected String getStoreId() {
       return STORE_ID;
    }
-
 }

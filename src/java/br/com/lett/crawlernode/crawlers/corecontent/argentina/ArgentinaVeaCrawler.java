@@ -71,6 +71,7 @@ public class ArgentinaVeaCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       JSONObject apiJson = crawlProductApi(doc);
+
       if (isProductPage(apiJson)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -78,7 +79,7 @@ public class ArgentinaVeaCrawler extends Crawler {
          String internalId = crawlInternalId(apiJson);
          String name = crawlName(apiJson);
          Integer stock = crawlStock(apiJson);
-         boolean availableToBuy = stock != null && stock > 0;
+         boolean availableToBuy = scrapPricing(apiJson).getSpotlightPrice() != null;
          Offers offers = availableToBuy ? scrapOffer(apiJson) : new Offers();
          CategoryCollection categories = new CategoryCollection();
          String primaryImage = crawlPrimaryImage(apiJson);

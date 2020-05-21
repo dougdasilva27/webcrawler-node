@@ -3,12 +3,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.portoalegre;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -21,8 +21,17 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class PortoalegrePetshopmolecaoCrawler extends Crawler {
 
@@ -33,6 +42,10 @@ public class PortoalegrePetshopmolecaoCrawler extends Crawler {
   private static final String IMAGES_SELECTOR = "#carousel li a[href]:not(.cloud-zoom-gallery-video), .produto-imagem a";
   private static final String IMAGES_HOST = "#carousel li a[href]:not(.cloud-zoom-gallery-video)";
   private static final String PRICE_SELECTOR = "#variacaoPreco";
+  
+  private static final String MAIN_SELLER_NAME = "Pet Shop Molecão";
+  private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.ELO.toString(), Card.DINERS.toString(), Card.AMEX.toString());
 
   public PortoalegrePetshopmolecaoCrawler(Session session) {
     super(session);
@@ -67,12 +80,10 @@ public class PortoalegrePetshopmolecaoCrawler extends Crawler {
             Document docPrices = fetchVariationApi(internalPid, variationId, PRICE_API_PARAMETER);
             Document docImages = fetchVariationApi(internalPid, variationId, IMAGES_API_PARAMETER);
 
-            boolean available = docPrices.selectFirst("#nao_disp") == null;
-            Float price = CrawlerUtils.scrapFloatPriceFromHtml(docPrices, PRICE_SELECTOR, null, false, ',', session);
-            Prices prices = scrapPrices(docPrices, price);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docImages, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST);
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docImages, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST,
                 primaryImage);
+            Offers offers = scrapOffers(docPrices);
 
             String ean = JSONUtils.getStringValue(skuJson, "EAN");
             List<String> eans = ean != null ? Arrays.asList(ean) : null;
@@ -83,17 +94,14 @@ public class PortoalegrePetshopmolecaoCrawler extends Crawler {
                 .setInternalId(internalId)
                 .setInternalPid(internalPid)
                 .setName(variationName != null ? name + " " + variationName : name)
-                .setPrice(price)
-                .setPrices(prices)
-                .setAvailable(available)
                 .setCategory1(categories.getCategory(0))
                 .setCategory2(categories.getCategory(1))
                 .setCategory3(categories.getCategory(2))
                 .setPrimaryImage(primaryImage)
                 .setSecondaryImages(secondaryImages)
                 .setDescription(description)
-                .setMarketplace(new Marketplace())
                 .setEans(eans)
+                .setOffers(offers)
                 .build();
 
             products.add(product);
@@ -102,32 +110,27 @@ public class PortoalegrePetshopmolecaoCrawler extends Crawler {
       } else {
 
         String internalId = internalPid;
-        Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, PRICE_SELECTOR, null, false, ',', session);
-        Prices prices = scrapPrices(doc, price);
         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST);
         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, IMAGES_SELECTOR, Arrays.asList("href"), "https", IMAGES_HOST,
             primaryImage);
-        boolean available = doc.selectFirst("#nao_disp") == null;
         String ean = JSONUtils.getStringValue(productJson, "EAN");
         List<String> eans = ean != null ? Arrays.asList(ean) : null;
-
+        Offers offers = scrapOffers(doc);
+        
         // Creating the product
         Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setMarketplace(new Marketplace())
             .setEans(eans)
+            .setOffers(offers)
             .build();
 
         products.add(product);
@@ -138,6 +141,60 @@ public class PortoalegrePetshopmolecaoCrawler extends Crawler {
     }
 
     return products;
+  }
+  
+  private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+     Offers offers = new Offers();
+     Pricing pricing = scrapPricing(doc);
+
+     if(pricing != null) {
+       offers.add(OfferBuilder.create()
+             .setUseSlugNameAsInternalSellerId(true)
+             .setSellerFullName(MAIN_SELLER_NAME)
+             .setSellersPagePosition(1)
+             .setIsBuybox(false)
+             .setIsMainRetailer(true)
+             .setPricing(pricing)
+             .build());
+     }
+
+     return offers;
+  }
+  
+  private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+     Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, PRICE_SELECTOR, null, false, ',', session);
+
+     if(spotlightPrice != null) {
+       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+
+       return PricingBuilder.create()
+             .setSpotlightPrice(spotlightPrice)
+             .setCreditCards(creditCards)
+             .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0.0d).build())
+             .build();
+     }
+
+     return null;
+  }
+  
+  private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+     CreditCards creditCards = new CreditCards();
+
+     Installments installments = new Installments();
+     installments.add(InstallmentBuilder.create()
+           .setInstallmentNumber(1)
+           .setInstallmentPrice(spotlightPrice)
+           .build());
+
+     for (String brand : cards) {
+        creditCards.add(CreditCardBuilder.create()
+              .setBrand(brand)
+              .setIsShopCard(false)
+              .setInstallments(installments)
+              .build());
+     }
+
+     return creditCards;
   }
 
   private boolean isProductPage(Document doc) {
@@ -154,23 +211,5 @@ public class PortoalegrePetshopmolecaoCrawler extends Crawler {
         .build();
 
     return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-  }
-
-  private Prices scrapPrices(Document doc, Float price) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
-
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-    }
-
-    return prices;
   }
 }

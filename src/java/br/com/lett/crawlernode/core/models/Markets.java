@@ -6,39 +6,53 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.conf.ParamType;
 import org.json.JSONArray;
-import br.com.lett.crawlernode.core.models.Market.MarketBuilder;
+import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.JdbcConnectionFactory;
+import dbmodels.Tables;
 
 public class Markets {
 
    private List<Market> marketsList;
 
-   public Markets() {
+   public Markets(DatabaseManager db) {
       this.marketsList = new ArrayList<>();
 
-      init();
+      init(db);
    }
 
-   public void init() {
+   public void init(DatabaseManager db) {
       Connection conn = null;
       ResultSet rs = null;
       Statement sta = null;
       try {
+
+         dbmodels.tables.Market marketTable = Tables.MARKET;
+         List<Field<?>> fields = new ArrayList<>();
+         fields.add(marketTable.ID);
+         fields.add(marketTable.CITY);
+         fields.add(marketTable.NAME);
+         fields.add(marketTable.FULLNAME);
+         fields.add(marketTable.CODE);
+         fields.add(marketTable.PROXIES);
+         fields.add(marketTable.PROXIES_IMAGES);
+         fields.add(marketTable.CRAWLER_WEBDRIVER);
+
          conn = JdbcConnectionFactory.getInstance().getConnection();
          sta = conn.createStatement();
-         rs = sta.executeQuery("SELECT id, city, name, code, crawler_webdriver, proxies, proxies_images FROM market");
+         rs = sta.executeQuery(db.jooqPostgres.select(fields).from(marketTable).getSQL(ParamType.INLINED));
 
-         while (rs.next()) {
-            int marketId = rs.getInt("id");
-            String city = rs.getString("city");
-            String name = rs.getString("name");
-            boolean crawlerWebdriver = rs.getBoolean("crawler_webdriver");
+         Result<Record> records = db.jooqPostgres.fetch(rs);
+         for (Record r : records) {
             ArrayList<String> proxies = new ArrayList<>();
             ArrayList<String> imageProxies = new ArrayList<>();
 
             // get the array of proxies from postgres, as a json array
-            JSONArray proxiesJSONArray = new JSONArray(rs.getString("proxies"));
+            JSONArray proxiesJSONArray = new JSONArray(r.get(marketTable.PROXIES));
 
             // populate the proxies array list
             for (int i = 0; i < proxiesJSONArray.length(); i++) {
@@ -46,22 +60,24 @@ public class Markets {
             }
 
             // get the array of image proxies from postgres
-            JSONArray imageProxiesJSONArray = new JSONArray(rs.getString("proxies_images"));
+            JSONArray imageProxiesJSONArray = new JSONArray(r.get(marketTable.PROXIES_IMAGES));
             for (int i = 0; i < imageProxiesJSONArray.length(); i++) {
                imageProxies.add(imageProxiesJSONArray.getString(i));
             }
 
-            marketsList.add(MarketBuilder.create()
-                  .setCity(city)
-                  .setName(name)
-                  .setCrawlerWebdriver(crawlerWebdriver)
-                  .setCode(rs.getString("code"))
-                  .setId(marketId)
-                  .setImageProxies(imageProxies)
-                  .setProxies(proxies)
-                  .build());
-         }
+            Market market = new Market(
+                  r.get(marketTable.ID).intValue(),
+                  r.get(marketTable.CITY),
+                  r.get(marketTable.NAME),
+                  r.get(marketTable.CODE),
+                  r.get(marketTable.FULLNAME),
+                  proxies,
+                  imageProxies);
 
+            market.setMustUseCrawlerWebdriver(r.get(marketTable.CRAWLER_WEBDRIVER));
+
+            marketsList.add(market);
+         }
       } catch (SQLException e) {
          e.printStackTrace();
       } finally {

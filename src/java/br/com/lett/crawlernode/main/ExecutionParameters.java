@@ -40,7 +40,7 @@ public class ExecutionParameters {
    private Boolean useFetcher;
    private String kinesisStream;
    private String kinesisRatingStream = null;
-   private Boolean sendToKinesis;
+   private boolean sendToKinesis;
 
    private String logsBucketName;
    private String imagesBucketName;
@@ -79,7 +79,7 @@ public class ExecutionParameters {
    }
 
 
-   public Boolean mustSendToKinesis() {
+   public boolean mustSendToKinesis() {
       return sendToKinesis;
    }
 
@@ -118,8 +118,7 @@ public class ExecutionParameters {
    }
 
    private boolean getEnvSendToKinesis() {
-      String sendToKinesis = System.getenv(EnvironmentVariables.SEND_TO_KINESIS);
-      return Boolean.TRUE.toString().equals(sendToKinesis);
+      return Boolean.TRUE.toString().equals(System.getenv(EnvironmentVariables.SEND_TO_KINESIS));
    }
 
    private String getEnvReplicatorUrl() {

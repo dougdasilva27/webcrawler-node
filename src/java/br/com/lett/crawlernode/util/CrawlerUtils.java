@@ -34,11 +34,16 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
+import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import models.pricing.Pricing;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
+
 
 public class CrawlerUtils {
    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
@@ -338,6 +343,38 @@ public class CrawlerUtils {
       }
 
       return price;
+   }
+
+   /**
+    * Set Bank Slip Offers
+    * 
+    * @param Double - Bank slip price - when a store has no price on the bill you must put the
+    *        spotlight price in place.
+    * @param Double - When the site has information such as: "22% discount" we must capture this
+    *        information and do the calculation.
+    * @return bankSlip
+    */
+
+   public static BankSlip setBankSlipOffers(Double bankSlipPrice, Double discount) throws MalformedPricingException {
+      BankSlip bankSlip = null;
+
+      if (discount != null) {
+
+         Double discountFinal = discount / 100d;
+
+         bankSlip = BankSlipBuilder.create()
+               .setFinalPrice(bankSlipPrice)
+               .setOnPageDiscount(discountFinal)
+               .build();
+
+      } else {
+
+         bankSlip = BankSlipBuilder.create()
+               .setFinalPrice(bankSlipPrice)
+               .build();
+      }
+
+      return bankSlip;
    }
 
    /**
@@ -1810,5 +1847,22 @@ public class CrawlerUtils {
       String slug = NONLATIN.matcher(normalized).replaceAll("");
       slug = EDGESDHASHES.matcher(slug).replaceAll("");
       return slug.toLowerCase(Locale.ENGLISH);
+   }
+
+   /**
+    * Calculate sale with: spotlightPrice / priceFrom
+    * 
+    * @param pricing
+    * @return
+    */
+   public static String calculateSales(Pricing pricing) {
+      String sale = null;
+
+      if (pricing.getPriceFrom() != null && pricing.getPriceFrom() > pricing.getSpotlightPrice()) {
+         Integer value = ((Double) ((pricing.getSpotlightPrice() / pricing.getPriceFrom() - 1d) * 100d)).intValue();
+         sale = Integer.toString(value);
+      }
+
+      return sale;
    }
 }
