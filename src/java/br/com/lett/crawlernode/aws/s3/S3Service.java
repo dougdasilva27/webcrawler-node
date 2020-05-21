@@ -48,6 +48,7 @@ public class S3Service {
    public static final String HTML_UPLOAD_TYPE = "html";
    public static final String MD5_HEX_METADATA_FIELD = "md5hex";
    public static final String MD5_ORIGINAL_HEX_FIELD = "originalmd5hex";
+   public static final String POSITION = "position";
 
    public static final String LOCAL_PATH = "src/resources/";
 
