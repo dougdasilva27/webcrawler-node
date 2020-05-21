@@ -224,8 +224,6 @@ public class SaopauloPolipetCrawler extends Crawler {
 
    private BankSlip scrapBankSlip(Document doc) throws MalformedPricingException {
       Double bankSlipPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#lblPrecoAVista", null, true, ',', session);
-      // Double bankSlipDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".MsgBoleto span", null,
-      // true, ',', session)/100;
 
       if (bankSlipPrice != null) {
          return BankSlipBuilder.create()
