@@ -59,7 +59,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                         .setPrices(prices)
                         .setAvailable(!model.optBoolean("bit_esgotado"))
                         .setCategories(categories)
-                        .setPrimaryImage(imagesJson?.optString("str_img_path"))
+                        .setPrimaryImage("${imagesJson.optString("str_img_path")}-g.jpg")
                         .setStock(productJson.optInt("int_qtd_estoque_produto"))
                         .setEans(mutableListOf<String>().also { list ->
                             list.opt(productJson.optString("str_cod_barras_produto"))
