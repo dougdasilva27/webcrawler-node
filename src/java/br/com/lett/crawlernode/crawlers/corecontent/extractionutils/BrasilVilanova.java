@@ -14,7 +14,6 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import java.util.*;
 import models.prices.Prices;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
@@ -22,6 +21,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+
+import java.util.*;
+
+import static java.util.Collections.singletonList;
 
 public abstract class BrasilVilanova extends Crawler {
 
@@ -96,29 +99,15 @@ public abstract class BrasilVilanova extends Crawler {
           CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
       JSONObject productJson = extractProductData(productJsonArray);
 
-      String internalPid = crawlInternalPid(productJson);
-      List<String> eans =
-          Collections.singletonList(
-              CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
+      String internalPid = productJson.optString("productSKU", null);
+      List<String> eans = singletonList(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
-      String description =
-          CrawlerUtils.scrapElementsDescription(
-              doc, Collections.singletonList("#info-abas-mobile"));
-      String primaryImage =
-          CrawlerUtils.scrapSimplePrimaryImage(
-              doc,
-              "#imagem-produto #elevateImg",
-              Arrays.asList("data-zoom-image", "href", "src"),
-              "https",
-              IMAGES_HOST);
-      String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(
-              doc,
-              "#imagem-produto #elevateImg",
-              Arrays.asList("data-zoom-image", "href", "src"),
-              "https",
-              IMAGES_HOST,
-              primaryImage);
+      String description = CrawlerUtils.scrapElementsDescription(doc,
+          singletonList("#info-abas-mobile"));
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg",
+          Arrays.asList("data-zoom-image", "href", "src"), "https", IMAGES_HOST);
+      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-produto #elevateImg",
+          Arrays.asList("data-zoom-image", "href", "src"), "https", IMAGES_HOST, primaryImage);
 
       JSONObject productsJson = getSkusList(doc);
 
@@ -143,24 +132,23 @@ public abstract class BrasilVilanova extends Crawler {
 
         boolean available = price != 0F;
 
-        Product product =
-            ProductBuilder.create()
-                .setUrl(session.getOriginalURL())
-                .setInternalId(internalId)
-                .setInternalPid(internalPid)
-                .setName(name)
-                .setPrice(price)
-                .setPrices(prices)
-                .setAvailable(available)
-                .setCategory1(categories.getCategory(0))
-                .setCategory2(categories.getCategory(1))
-                .setCategory3(categories.getCategory(2))
-                .setPrimaryImage(primaryImage)
-                .setSecondaryImages(secondaryImages)
-                .setDescription(description)
-                .setEans(eans)
-                .setStock(stock)
-                .build();
+        Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setEans(eans)
+            .setStock(stock)
+            .build();
 
         products.add(product);
       }
@@ -184,33 +172,20 @@ public abstract class BrasilVilanova extends Crawler {
     return !doc.select(".container #detalhes-container").isEmpty();
   }
 
-  private String crawlInternalPid(JSONObject productJson) {
-    String internalPid = null;
-
-    if (productJson.has("productID") && !productJson.isNull("productID")) {
-      internalPid = productJson.get("productID").toString();
-    }
-
-    return internalPid;
-  }
-
   private JSONObject getSkusList(Document doc) {
     String ean =
         CrawlerUtils.scrapStringSimpleInfoByAttribute(
             doc, ".variacao-container", "data-produtoean");
     if (ean == null) {
-      JSONObject json =
-          CrawlerUtils.selectJsonFromHtml(doc, "script", "var dataLayer = [", "];", false, true)
-              .optJSONObject("productData");
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var dataLayer = [", "];",
+          false, true).optJSONObject("productData");
       JSONObject jsonObject = new JSONObject();
 
-      jsonObject.put(
-          "productData",
-          new JSONObject()
-              .put("Nome", json.optString("productName"))
-              .put("Id", json.optString("productID"))
-              .put("PrecoPor", json.opt("productDiscountPrice"))
-              .put("PrecoPorSemPromocao", json.opt("productOldPrice")));
+      jsonObject.put("productData", new JSONObject()
+          .put("Nome", json.optString("productName"))
+          .put("Id", json.optString("productID"))
+          .put("PrecoPor", json.opt("productDiscountPrice"))
+          .put("PrecoPorSemPromocao", json.opt("productOldPrice")));
 
       return jsonObject;
     }
