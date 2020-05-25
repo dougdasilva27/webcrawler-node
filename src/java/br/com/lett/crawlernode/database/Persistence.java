@@ -17,6 +17,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.conf.ParamType;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
@@ -34,7 +35,6 @@ import dbmodels.tables.CrawlerRanking;
 import generation.PostgresJsonBinding;
 import models.Behavior;
 import models.Processed;
-import models.RatingsReviews;
 import models.prices.Prices;
 
 public class Persistence {
@@ -46,45 +46,6 @@ public class Persistence {
    // this type
    private static final PostgresJsonBinding CONVERT_STRING_GSON = new PostgresJsonBinding();
 
-
-   public static void updateRating(RatingsReviews ratingReviews, String internalId, Session session) {
-      dbmodels.tables.Processed processedTable = Tables.PROCESSED;
-
-      Map<Field<?>, Object> updateSets = new HashMap<>();
-
-      if (ratingReviews != null) {
-         updateSets.put(processedTable.RATING, CONVERT_STRING_GSON.converter().from(ratingReviews.getJSON().toString()));
-      } else {
-         updateSets.put(processedTable.RATING, null);
-      }
-
-      if (internalId != null) {
-         List<Condition> conditions = new ArrayList<>();
-         conditions.add(processedTable.INTERNAL_ID.equal(internalId));
-         conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
-
-         Connection conn = null;
-         PreparedStatement pstmt = null;
-         try {
-            conn = JdbcConnectionFactory.getInstance().getConnection();
-            pstmt = conn.prepareStatement(
-                  GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
-
-            pstmt.executeUpdate();
-            Logging.printLogDebug(logger, session, "Processed product rating updated with success.");
-
-         } catch (Exception e) {
-            Logging.printLogError(logger, session, "Error updating processed product rating.");
-            Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-
-            session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
-         } finally {
-            JdbcConnectionFactory.closeResource(pstmt);
-            JdbcConnectionFactory.closeResource(conn);
-         }
-      }
-   }
-
    /**
     * 
     * @param newProcessedProduct
@@ -92,7 +53,7 @@ public class Persistence {
     * @return
     */
    public static PersistenceResult persistProcessedProduct(Processed newProcessedProduct, Session session) {
-      Logging.printLogDebug(logger, session, "Persisting processed product...");
+      Logging.printLogInfo(logger, session, "Persisting processed product...");
 
       PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
       Long id;
@@ -100,6 +61,8 @@ public class Persistence {
       Prices prices = newProcessedProduct.getPrices();
 
       dbmodels.tables.Processed processedTable = Tables.PROCESSED;
+
+      long queryStartTime = System.currentTimeMillis();
 
       if (newProcessedProduct.getId() == null) {
 
@@ -213,6 +176,11 @@ public class Persistence {
                   }
                }
             }
+
+            JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+                  .put("query_type", "persist_processed_product");
+
+            Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -328,6 +296,11 @@ public class Persistence {
             pstmt = conn.prepareStatement(query);
 
             pstmt.executeUpdate();
+
+            JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+                  .put("query_type", "update_processed_product");
+
+            Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -375,6 +348,8 @@ public class Persistence {
          conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
       }
 
+      long queryStartTime = System.currentTimeMillis();
+
       Connection conn = null;
       PreparedStatement pstmt = null;
       try {
@@ -385,6 +360,11 @@ public class Persistence {
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. " + "(InternalId: "
                + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
+
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "update_processed_product_behaviour");
+
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product behaviour.");
@@ -431,6 +411,8 @@ public class Persistence {
       conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
       conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
+      long queryStartTime = System.currentTimeMillis();
+
       Connection conn = null;
       PreparedStatement pstmt = null;
       try {
@@ -441,6 +423,10 @@ public class Persistence {
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
 
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "update_void_processed_product");
+
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product void.");
          Logging.printLogError(logger, session, "InternalId: " + session.getInternalId() + " Market: " + session.getMarket().getNumber());
@@ -469,6 +455,8 @@ public class Persistence {
       conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
       conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
+      long queryStartTime = System.currentTimeMillis();
+
       Connection conn = null;
       PreparedStatement pstmt = null;
       try {
@@ -478,6 +466,11 @@ public class Persistence {
 
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
+
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "update_processed_product_lrt");
+
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product LRT.");
@@ -507,6 +500,8 @@ public class Persistence {
       conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
       conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
+      long queryStartTime = System.currentTimeMillis();
+
       Connection conn = null;
       PreparedStatement pstmt = null;
       try {
@@ -517,6 +512,10 @@ public class Persistence {
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
 
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "update_processed_product_lmt");
+
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product LMT.");
          Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -545,6 +544,8 @@ public class Persistence {
       conditions.add(processedTable.INTERNAL_ID.equal(session.getInternalId()));
       conditions.add(processedTable.MARKET.equal(session.getMarket().getNumber()));
 
+      long queryStartTime = System.currentTimeMillis();
+
       Connection conn = null;
       PreparedStatement pstmt = null;
       try {
@@ -555,6 +556,10 @@ public class Persistence {
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product LMS updated with success.");
 
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "update_processed_product_lms");
+
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product LMS.");
          Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -626,7 +631,7 @@ public class Persistence {
 
 
    // busca dados no postgres
-   public static List<Processed> fetchProcessedIdsWithInternalId(String id, int market) {
+   public static List<Processed> fetchProcessedIdsWithInternalId(String id, int market, Session session) {
       List<Processed> processeds = new ArrayList<>();
 
       dbmodels.tables.Processed processed = Tables.PROCESSED;
@@ -641,6 +646,8 @@ public class Persistence {
       conditions.add(processed.MARKET.equal(market));
       conditions.add(processed.INTERNAL_ID.equal(id));
 
+      long queryStartTime = System.currentTimeMillis();
+
       Connection conn = null;
       Statement sta = null;
       ResultSet rs = null;
@@ -666,7 +673,10 @@ public class Persistence {
             processeds.add(p);
          }
 
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "ranking_fetch_processed_product_with_internalid");
 
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
       } finally {
@@ -678,7 +688,7 @@ public class Persistence {
       return processeds;
    }
 
-   public static List<Processed> fetchProcessedIdsWithInternalPid(String pid, int market) {
+   public static List<Processed> fetchProcessedIdsWithInternalPid(String pid, int market, Session session) {
       List<Processed> processeds = new ArrayList<>();
 
       dbmodels.tables.Processed processed = Tables.PROCESSED;
@@ -693,6 +703,8 @@ public class Persistence {
       conditions.add(processed.MARKET.equal(market));
       conditions.add(processed.INTERNAL_PID.equal(pid));
 
+      long queryStartTime = System.currentTimeMillis();
+
       Connection conn = null;
       Statement sta = null;
       ResultSet rs = null;
@@ -718,7 +730,10 @@ public class Persistence {
             processeds.add(p);
          }
 
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "ranking_fetch_processed_product_with_internalpid");
 
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
       } finally {
@@ -732,7 +747,7 @@ public class Persistence {
 
 
 
-   public static List<Long> fetchProcessedIdsWithUrl(String url, int market) {
+   public static List<Long> fetchProcessedIdsWithUrl(String url, int market, Session session) {
       List<Long> processedIds = new ArrayList<>();
 
       dbmodels.tables.Processed processed = Tables.PROCESSED;
@@ -744,6 +759,8 @@ public class Persistence {
       List<Condition> conditions = new ArrayList<>();
       conditions.add(processed.MARKET.equal(market));
       conditions.add(processed.URL.equal(url));
+
+      long queryStartTime = System.currentTimeMillis();
 
       Connection conn = null;
       Statement sta = null;
@@ -765,6 +782,10 @@ public class Persistence {
             }
          }
 
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "ranking_fetch_processed_product_with_internalpid");
+
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
@@ -781,6 +802,10 @@ public class Persistence {
    public static void insertProductsRanking(Ranking ranking, Session session) {
       Connection conn = null;
       Statement sta = null;
+
+      Logging.printLogInfo(logger, session, "Persisting ranking data ...");
+
+      long queryStartTime = System.currentTimeMillis();
 
       try {
          conn = JdbcConnectionFactory.getInstance().getConnection();
@@ -815,6 +840,10 @@ public class Persistence {
          sta.executeBatch();
          Logging.printLogDebug(logger, session, "Produtos cadastrados no postgres.");
 
+         JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+               .put("query_type", "persist_products_crawler_ranking");
+
+         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
@@ -854,9 +883,16 @@ public class Persistence {
 
          taskDocument.append("result", result);
 
+         long queryStartTime = System.currentTimeMillis();
+
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
                   MONGO_COLLECTION_SERVER_TASK);
+
+            JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
+                  .put("query_type", "update_product_frozen_seed_servertask");
+
+            Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          }
@@ -888,9 +924,16 @@ public class Persistence {
 
          taskDocument.append("result", new Document().append("error", errors.toString()));
 
+         long queryStartTime = System.currentTimeMillis();
+
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
                   MONGO_COLLECTION_SERVER_TASK);
+
+            JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
+                  .put("query_type", "update_error_frozen_seed_servertask");
+
+            Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          }
@@ -914,9 +957,16 @@ public class Persistence {
 
          taskDocument.append("result", new Document().append("error", errors.toString()));
 
+         long queryStartTime = System.currentTimeMillis();
+
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
                   MONGO_COLLECTION_SERVER_TASK);
+
+            JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
+                  .put("query_type", "update_error_frozen_seed_servertask");
+
+            Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          }
@@ -934,9 +984,16 @@ public class Persistence {
 
       if (taskId != null) {
          Document taskDocument = new Document("$set", new Document().append("updated", new Date()).append("progress", progress));
+
+         long queryStartTime = System.currentTimeMillis();
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), taskDocument,
                   MONGO_COLLECTION_SERVER_TASK);
+
+            JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
+                  .put("query_type", "update_progress_frozen_seed_servertask");
+
+            Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          }

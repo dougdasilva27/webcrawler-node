@@ -79,7 +79,7 @@ public class ResultManager {
     * @param session
     */
    private void updateDigitalContent(Processed pm, Session session) {
-      Logging.printLogInfo(LOGGER, session, "Updating digital content ...");
+      Logging.printLogDebug(LOGGER, session, "Updating digital content ...");
 
       // if the processed model doesn't have a digital content
       // we must create an empty one, to be populated
@@ -131,7 +131,7 @@ public class ResultManager {
          Logging.printLogDebug(LOGGER, session, "Previous image status is " + previousStatus);
 
          if (!Pic.NO_IMAGE.equals(previousStatus)) { // if the previous verified status is different from no-image, clear and set as not-verified
-            Logging.printLogTrace(LOGGER, session, "Previous image status is different from " + Pic.NO_IMAGE + "...let's clear and set to not-verified");
+            Logging.printLogInfo(LOGGER, session, "Previous image status is different from " + Pic.NO_IMAGE + "...let's clear and set to not-verified");
 
             processedModelDigitalContentPicPrimary = new JSONObject();
             processedModelDigitalContentPicPrimary.put("status", Pic.NOT_VERIFIED);
@@ -144,7 +144,7 @@ public class ResultManager {
          Logging.printLogDebug(LOGGER, session, "Previous verified md5: " + previousMd5);
 
          if (!primaryMd5.equals(previousMd5)) {
-            Logging.printLogTrace(LOGGER, session, "Previous md5 is different from the new one...updating and seting as not_verified...");
+            Logging.printLogInfo(LOGGER, session, "Previous md5 is different from the new one...updating and seting as not_verified...");
 
             File primaryImage = S3Service.fetchImageFromAmazon(session, primaryImageAmazonKey);
 
@@ -161,7 +161,7 @@ public class ResultManager {
                primaryImage.delete();
             }
          } else {
-            Logging.printLogTrace(LOGGER, session, "New image md5 is the same as the previous verified one. Nothing to be done.");
+            Logging.printLogInfo(LOGGER, session, "New image md5 is the same as the previous verified one. Nothing to be done.");
          }
       }
 
