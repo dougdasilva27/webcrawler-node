@@ -146,7 +146,10 @@ public class Crawler extends Task {
       if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
          Product p = ProductDTO.convertProductToKinesisFormat(product, session);
          KPLProducer.getInstance().put(p, session);
-         KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
+
+         if (!p.isVoid()) {
+            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
+         }
       }
    }
 

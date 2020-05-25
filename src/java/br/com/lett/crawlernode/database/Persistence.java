@@ -289,9 +289,7 @@ public class Persistence {
          // TODO
          if (newProcessedProduct.getOffers() != null && !newProcessedProduct.getOffers().isEmpty()) {
             updateMap.put(processedTable.OFFERS, CONVERT_STRING_GSON.converter().from(newProcessedProduct.getOffers().toJSON()));
-            System.err.println("Offers não ta null: " + CONVERT_STRING_GSON.converter().from(newProcessedProduct.getOffers().toJSON()));
          } else {
-            System.err.println("Offers ta null");
             updateMap.put(processedTable.OFFERS, null);
          }
 
