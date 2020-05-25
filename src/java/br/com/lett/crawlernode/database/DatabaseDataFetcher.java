@@ -117,45 +117,6 @@ public class DatabaseDataFetcher {
    }
 
    /**
-    * Return all processeds from crawler_ranking for this location and market from yesterday
-    * 
-    * @param location
-    * @param market
-    * @param date
-    * @return
-    */
-   public static Long fetchCountOfProcessedsFromCrawlerRanking(String location, int market, String today, String yesterday) {
-      Long count = 0l;
-
-      StringBuilder sql = new StringBuilder();
-
-      sql.append("SELECT COUNT(crawler_ranking.id) AS count FROM crawler_ranking, processed ")
-            .append("WHERE crawler_ranking.processed_id = processed_id ").append("AND processed.market = ").append(market)
-            .append(" AND crawler_ranking.location = '").append(location).append("' AND crawler_ranking.date BETWEEN '").append(yesterday)
-            .append("' AND '").append(today).append("'");
-
-      Connection conn = null;
-      ResultSet rs = null;
-      Statement sta = null;
-      try {
-         conn = JdbcConnectionFactory.getInstance().getConnection();
-         sta = conn.createStatement();
-         rs = sta.executeQuery(sql.toString());
-
-         count = (Long) rs.getObject("count");
-
-      } catch (Exception e) {
-         Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
-      } finally {
-         JdbcConnectionFactory.closeResource(rs);
-         JdbcConnectionFactory.closeResource(sta);
-         JdbcConnectionFactory.closeResource(conn);
-      }
-
-      return count;
-   }
-
-   /**
     * Return all proxies from mongo fetcher
     * 
     * @return List<LettProxy>

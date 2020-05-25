@@ -53,7 +53,7 @@ public class Processor {
    public static Processed createProcessed(Product product, Session session, Processed previousProcessedProduct,
          ResultManager processorResultManager) {
 
-      Logging.printLogInfo(logger, session, "Creating processed product ...");
+      Logging.printLogDebug(logger, session, "Creating processed product ...");
 
       String nowISO = new DateTime(DateUtils.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -588,6 +588,8 @@ public class Processor {
          Statement sta = null;
          ResultSet rs = null;
 
+         long queryStartTime = System.currentTimeMillis();
+
          try {
 
             conn = JdbcConnectionFactory.getInstance().getConnection();
@@ -779,6 +781,12 @@ public class Processor {
                if (eansArray != null) {
                   eans = Arrays.asList((String[]) eansArray.getArray());
                }
+
+               JSONObject postgresMetadata = new JSONObject()
+                     .put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
+                     .put("query_type", "fetch_previous_processed");
+
+               Logging.logInfo(logger, session, postgresMetadata, "POSTGRES TIMING INFO");
 
                /*
                 * Create the Processed model

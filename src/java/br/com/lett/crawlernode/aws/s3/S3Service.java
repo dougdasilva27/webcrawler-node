@@ -13,12 +13,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -64,17 +64,17 @@ public class S3Service {
    static {
       s3clientImages =
             AmazonS3ClientBuilder
-               .standard()
-               .withRegion(Regions.US_EAST_1)
-               .withCredentials(new DefaultAWSCredentialsProviderChain())
-               .build();
+                  .standard()
+                  .withRegion(Regions.US_EAST_1)
+                  .withCredentials(new DefaultAWSCredentialsProviderChain())
+                  .build();
 
       s3clientCrawlerSessions =
             AmazonS3ClientBuilder
-               .standard()
-               .withRegion(Regions.US_EAST_1)
-               .withCredentials(new DefaultAWSCredentialsProviderChain())
-               .build();
+                  .standard()
+                  .withRegion(Regions.US_EAST_1)
+                  .withCredentials(new DefaultAWSCredentialsProviderChain())
+                  .build();
    }
 
    /**
@@ -168,6 +168,7 @@ public class S3Service {
 
          File compressedFile = null;
 
+         long sendS3FilesStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Uploading content to Amazon");
             compressedFile = new File(tarGzPath);
@@ -175,6 +176,11 @@ public class S3Service {
             s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
 
             Logging.printLogDebug(logger, session, "Content uploaded with success!");
+            JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendS3FilesStartTime)
+                  .put("aws_type", "s3")
+                  .put("s3_bucket", LOGS_BUCKET_NAME);
+
+            Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
          } catch (AmazonServiceException ase) {
             Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "
                   + "to Amazon S3, but was rejected with an error response" + " for some reason.");
