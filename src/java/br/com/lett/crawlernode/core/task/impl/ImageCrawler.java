@@ -159,8 +159,10 @@ public class ImageCrawler extends Task {
          ObjectMetadata newTransformedImageMetadata = new ObjectMetadata();
          newTransformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
          newTransformedImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
+         newTransformedImageMetadata.setContentType("image/jpeg");
+         newTransformedImageMetadata.setContentLength(transformedImageFile.length());
 
-         S3Service.uploadImage(session, newTransformedImageMetadata, new File(imageCrawlerSession.getLocalOriginalFileDir()),
+         S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
                creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
          Logging.printLogDebug(LOGGER, session, "Done ... ");
       } else {
@@ -170,17 +172,19 @@ public class ImageCrawler extends Task {
       // upload the original image to Amazon
       if (imageDownloadResult.md5 != null && !imageDownloadResult.imageFormat.isEmpty()) {
          Logging.printLogDebug(LOGGER, session, "Uploading original image to Amazon...");
+         File originalImage = new File(imageCrawlerSession.getLocalOriginalFileDir());
+
          ObjectMetadata newObjectMetadata = new ObjectMetadata();
          newObjectMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
 
-         S3Service.uploadImage(session, newObjectMetadata, new File(imageCrawlerSession.getLocalOriginalFileDir()),
-               imageCrawlerSession.getOriginalImageKeyOnBucket(), IMAGES_BUCKET_NAME);
+         S3Service.uploadImage(session, newObjectMetadata, originalImage, imageCrawlerSession.getOriginalImageKeyOnBucket(), IMAGES_BUCKET_NAME);
 
          ObjectMetadata newImageMetadata = new ObjectMetadata();
          newImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
          newImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
-         S3Service.uploadImage(session, newImageMetadata, new File(imageCrawlerSession.getLocalOriginalFileDir()),
-               creatImageKeyOnBucketNew(true, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         newImageMetadata.setContentType("image/" + imageDownloadResult.imageFormat);
+         newImageMetadata.setContentLength(originalImage.length());
+         S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
 
          Logging.printLogDebug(LOGGER, session, "Done.");
       } else {
