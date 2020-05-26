@@ -6,14 +6,14 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ComperCrawle
 
 public class CampograndeComperCrawler extends ComperCrawler {
 
-   private static final String STORE_ID = "1";
+  private static final String STORE_ID = "2";
 
-   public CampograndeComperCrawler(Session session) {
-      super(session);
-   }
+  public CampograndeComperCrawler(Session session) {
+    super(session);
+  }
 
-   @Override
-   protected String getStoreId() {
-      return STORE_ID;
-   }
+  @Override
+  protected String getStoreId() {
+    return STORE_ID;
+  }
 }
