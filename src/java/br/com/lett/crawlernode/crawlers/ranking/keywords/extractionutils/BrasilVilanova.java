@@ -8,17 +8,18 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class BrasilVilanova extends CrawlerRankingKeywords {
 
@@ -77,8 +78,7 @@ public abstract class BrasilVilanova extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     this.pageSize = 24;
-    String url =
-        "https://www.vilanova.com.br/Busca/Resultado/?p="
+    String url = "https://www.vilanova.com.br/Busca/Resultado/?p="
             + this.currentPage
             + "&loja=&q="
             + this.keywordEncoded
@@ -102,15 +102,8 @@ public abstract class BrasilVilanova extends CrawlerRankingKeywords {
 
         saveDataProduct(null, internalPid, productUrl);
 
-        this.log(
-            "Position: "
-                + this.position
-                + " - InternalId: "
-                + internalPid
-                + " - InternalPid: "
-                + null
-                + " - Url: "
-                + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid
+                + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
