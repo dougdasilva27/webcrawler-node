@@ -28,7 +28,7 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
@@ -379,25 +379,26 @@ public class FetchUtilities {
     * @param status
     * @param requestHash
     */
-   public static void sendRequestInfoLog(int attempt, Request request, Response response, LettProxy proxy, String method, String userAgent, Session session,
+   public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, LettProxy proxy, String method, String userAgent, Session session,
          int status, String requestHash) {
 
       JSONObject requestMetadata =
             new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()))
                   .put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress())).put("user_agent", userAgent).put("req_method", method)
-                  .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status);
+                  .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status)
+                  .put("req_elapsed_time", requestSatistic.getElapsedTime());
 
-      Logging.logDebug(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
+      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
    }
 
-   public static void sendRequestInfoLog(int attempt, Request request, Response response, String proxy, String method, String userAgent, Session session,
+   public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, String proxy, String method, String userAgent, Session session,
          int status, String requestHash) {
 
       JSONObject requestMetadata = new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy))
             .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
-            .put("res_http_code", status);
+            .put("res_http_code", status).put("req_elapsed_time", requestSatistic.getElapsedTime());
 
-      Logging.logDebug(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
+      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
    }
 
    public static class TrustManager implements X509TrustManager {

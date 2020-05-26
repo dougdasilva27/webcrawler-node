@@ -40,9 +40,9 @@ import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
-import models.pricing.Pricing;
 import models.pricing.BankSlip;
 import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.Pricing;
 
 
 public class CrawlerUtils {
@@ -229,7 +229,6 @@ public class CrawlerUtils {
             if (priceFormat == '.') {
                price = MathUtils.parseFloatWithDots(priceStr);
             } else if (priceFormat == ',') {
-               System.err.println(priceFormat);
                price = MathUtils.parseFloatWithComma(priceStr);
             }
          } catch (NumberFormatException e) {

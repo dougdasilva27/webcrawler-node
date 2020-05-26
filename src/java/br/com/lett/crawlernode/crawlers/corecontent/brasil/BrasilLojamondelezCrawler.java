@@ -13,7 +13,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -86,7 +86,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
             .setHeaders(headers)
             .build();
 
-      return Jsoup.parse(new JavanetDataFetcher().get(session, request).getBody());
+      return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
    }
 
    @Override

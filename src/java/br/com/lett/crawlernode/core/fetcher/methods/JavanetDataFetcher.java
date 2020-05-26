@@ -17,6 +17,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import org.apache.http.cookie.Cookie;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
@@ -32,6 +33,7 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 
 public class JavanetDataFetcher implements DataFetcher {
 
@@ -44,10 +46,13 @@ public class JavanetDataFetcher implements DataFetcher {
       String targetURL = request.getUrl();
       int attempt = 1;
 
+      long requestsStartTime = System.currentTimeMillis();
+
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
+         long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
-            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY);
+            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_EU);
 
             RequestsStatistics requestStats = new RequestsStatistics();
             requestStats.setAttempt(attempt);
@@ -61,7 +66,7 @@ public class JavanetDataFetcher implements DataFetcher {
             Proxy proxy = null;
 
             if (!proxyStorm.isEmpty() && attempt < 4) {
-               Logging.printLogDebug(logger, session, "Using " + ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY + " for this request.");
+               Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_EU + " for this request.");
                proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
             } else {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
@@ -103,6 +108,7 @@ public class JavanetDataFetcher implements DataFetcher {
             rd.close();
             content = responseStr.toString();
 
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             S3Service.saveResponseContent(session, requestHash, content);
 
             response = new ResponseBuilder()
@@ -113,16 +119,21 @@ public class JavanetDataFetcher implements DataFetcher {
             requestStats.setHasPassedValidation(true);
             session.addRedirection(request.getUrl(), connection.getURL().toString());
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   connection.getResponseCode(), requestHash);
          } catch (Exception e) {
-            Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
+            Logging.printLogDebug(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
          }
          attempt++;
       }
+
+      JSONObject apacheMetadata = new JSONObject().put("req_javanet_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_javanet_attempts_number", attempt);
+
+      Logging.logInfo(logger, session, apacheMetadata, "JAVANET REQUESTS INFO");
 
       return response;
    }
@@ -151,6 +162,7 @@ public class JavanetDataFetcher implements DataFetcher {
       int attempt = 1;
 
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
+         long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
             List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_US);
@@ -205,13 +217,13 @@ public class JavanetDataFetcher implements DataFetcher {
             rd.close();
             content = responseStr.toString();
 
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             S3Service.saveResponseContent(session, requestHash, content);
-
 
             response = new ResponseBuilder().setBody(content).setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null).build();
             requestStats.setHasPassedValidation(true);
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   connection.getResponseCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing POST request. Error: " + e.getMessage());

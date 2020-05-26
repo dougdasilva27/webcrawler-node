@@ -41,6 +41,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -87,6 +88,8 @@ public class ApacheDataFetcher implements DataFetcher {
 
       boolean mustContinue = true;
 
+      long requestsStartTime = System.currentTimeMillis();
+
       while (attempt <= session.getMaxConnectionAttemptsCrawler() && ((request.bodyIsRequired() && (response.getBody() == null || response.getBody()
             .isEmpty())) || !request.bodyIsRequired()) && mustContinue) {
          RequestsStatistics requestStats = new RequestsStatistics();
@@ -99,6 +102,8 @@ public class ApacheDataFetcher implements DataFetcher {
          String requestHash = FetchUtilities.generateRequestHash(session);
 
          try {
+            long requestStartTime = System.currentTimeMillis();
+
             randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
             requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
@@ -180,8 +185,9 @@ public class ApacheDataFetcher implements DataFetcher {
             // try again
             int responseCode = closeableHttpResponse != null ? closeableHttpResponse.getStatusLine().getStatusCode() : 0;
             requestStats.setStatusCode(responseCode);
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             if (responseCode == 404 || responseCode == 204) {
-               FetchUtilities.sendRequestInfoLog(attempt, request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
+               FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, responseCode, requestHash);
                break;
             } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
                throw new ResponseCodeException(responseCode);
@@ -244,21 +250,27 @@ public class ApacheDataFetcher implements DataFetcher {
             mustContinue = false;
             requestStats.setHasPassedValidation(true);
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, responseCode, requestHash);
          } catch (Exception e) {
             int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, randProxy, method, randUserAgent, session, code, requestHash);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, code, requestHash);
             requestStats.setHasPassedValidation(false);
 
-            Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "] Error performing " + method + " request. Error: " + e.getMessage());
+            Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Error performing " + method + " request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+               Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             }
          }
 
          attempt++;
       }
+
+
+      JSONObject apacheMetadata = new JSONObject().put("req_apache_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_apache_attempts_number", attempt);
+
+      Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
       response.setRequests(requests);
       return response;

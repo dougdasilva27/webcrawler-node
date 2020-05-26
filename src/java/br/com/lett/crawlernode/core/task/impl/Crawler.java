@@ -145,14 +145,37 @@ public class Crawler extends Task {
    private void sendToKinesis(Product product) {
       if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
          Product p = ProductDTO.convertProductToKinesisFormat(product, session);
+
+         Logging.printLogInfo(logger, session, "Sending data to Kinesis ...");
+
+         long productStartTime = System.currentTimeMillis();
+
          KPLProducer.getInstance().put(p, session);
-         KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
+
+         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+               .put("aws_type", "kinesis")
+               .put("kinesis_flow_type", "product");
+
+         Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
+
+         if (!p.isVoid()) {
+            long ratingStartTime = System.currentTimeMillis();
+            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
+
+            JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
+                  .put("aws_type", "kinesis")
+                  .put("kinesis_flow_type", "rating");
+
+            Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
+         }
+
+
       }
    }
 
    @Override
    public void onStart() {
-      Logging.printLogDebug(logger, session, "START");
+      Logging.printLogInfo(logger, session, "START");
    }
 
    @Override
@@ -175,23 +198,22 @@ public class Crawler extends Task {
             Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
             session.setTaskStatus(Task.STATUS_FAILED);
          } else {
-            Logging.printLogDebug(logger, session, "Task completed.");
+            Logging.printLogInfo(logger, session, "Task completed.");
             session.setTaskStatus(Task.STATUS_COMPLETED);
          }
 
          // only print statistics of void and truco if we are running an Insights session crawling
          if (session instanceof InsightsCrawlerSession) {
-            Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
+            Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
          }
 
-
-         Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
-
       } catch (Exception e) {
+         Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
          session.setTaskStatus(Task.STATUS_FAILED);
-         Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
+
+      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
    }
 
    private void productionRun() {
@@ -237,7 +259,7 @@ public class Crawler extends Task {
          // if the product is void run the active void analysis
          Product activeVoidResultProduct = crawledProduct;
          if (crawledProduct.isVoid()) {
-            Logging.printLogDebug(logger, session, "Product is void...going to start the active void.");
+            Logging.printLogInfo(logger, session, "Product is void...going to start the active void.");
             try {
                activeVoidResultProduct = activeVoid(crawledProduct);
             } catch (Exception e) {
@@ -532,7 +554,7 @@ public class Crawler extends Task {
    }
 
    private void printCrawledInformation(Product product) {
-      Logging.printLogDebug(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString());
+      Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString());
    }
 
    /**
