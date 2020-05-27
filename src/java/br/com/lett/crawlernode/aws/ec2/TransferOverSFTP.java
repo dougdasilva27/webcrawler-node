@@ -28,15 +28,16 @@ public class TransferOverSFTP {
         final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         S3Object o = s3.getObject(SSLKeysBucket, SSLKey);
         S3ObjectInputStream s3is = o.getObjectContent();
-        FileOutputStream fos = new FileOutputStream(SSLKeyFile);
-        byte[] read_buf = new byte[1024];
-        int read_len = 0;
-        while ((read_len = s3is.read(read_buf)) > 0) {
-            fos.write(read_buf, 0, read_len);
+        try (FileOutputStream fos = new FileOutputStream(SSLKeyFile)) {
+            byte[] read_buf = new byte[1024];
+            int read_len = 0;
+            while ((read_len = s3is.read(read_buf)) > 0) {
+                fos.write(read_buf, 0, read_len);
+            }
+            s3is.close();
         }
-        s3is.close();
-        fos.close();
     }
+
 
     private void createJschSession(String user, String host, String SSLKeysBucket, String SSLKey, Integer port) throws AmazonServiceException, IOException, JSchException {
         jsch = new JSch();
