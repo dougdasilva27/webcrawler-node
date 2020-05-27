@@ -386,7 +386,7 @@ public class FetchUtilities {
             new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()))
                   .put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress())).put("user_agent", userAgent).put("req_method", method)
                   .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status)
-                  .put("req_elapsed_time", requestSatistic.getElapsedTime());
+                  .put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
       Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
    }
@@ -396,7 +396,7 @@ public class FetchUtilities {
 
       JSONObject requestMetadata = new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy))
             .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
-            .put("res_http_code", status).put("req_elapsed_time", requestSatistic.getElapsedTime());
+            .put("res_http_code", status).put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
       Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
    }

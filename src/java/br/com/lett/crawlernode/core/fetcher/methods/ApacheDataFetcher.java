@@ -268,7 +268,8 @@ public class ApacheDataFetcher implements DataFetcher {
 
 
       JSONObject apacheMetadata = new JSONObject().put("req_apache_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_apache_attempts_number", attempt);
+            .put("req_apache_attempts_number", attempt)
+            .put("req_apache_type", "url_request");
 
       Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
@@ -281,6 +282,8 @@ public class ApacheDataFetcher implements DataFetcher {
       File localFile = null;
       int attempt = 1;
 
+      long requestsStartTime = System.currentTimeMillis();
+
       while (attempt <= session.getMaxConnectionAttemptsImages() && localFile == null) {
          LettProxy randProxy = null;
          String url = request.getUrl();
@@ -288,9 +291,14 @@ public class ApacheDataFetcher implements DataFetcher {
          String randUserAgent = headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
          CloseableHttpResponse closeableHttpResponse = null;
          String requestHash = FetchUtilities.generateRequestHash(session);
+         RequestsStatistics requestStats = new RequestsStatistics();
+         requestStats.setAttempt(attempt);
 
          try {
+            long requestStartTime = System.currentTimeMillis();
+
             randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
+            requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
 
             CookieStore cookieStore = createCookieStore(request.getCookies());
@@ -346,6 +354,8 @@ public class ApacheDataFetcher implements DataFetcher {
             // if there was some response code that indicates forbidden access or server error we want to
             // try again
             int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+            requestStats.setStatusCode(responseCode);
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
                throw new ResponseCodeException(responseCode);
             }
@@ -366,12 +376,12 @@ public class ApacheDataFetcher implements DataFetcher {
             file.close();
             is.close();
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, null, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
          } catch (Exception e) {
             int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
             Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + e.getMessage());
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, null, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
 
             if (localFile != null && localFile.exists()) {
                localFile.delete();
@@ -380,6 +390,12 @@ public class ApacheDataFetcher implements DataFetcher {
          }
          attempt++;
       }
+
+      JSONObject apacheMetadata = new JSONObject().put("req_apache_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_apache_attempts_number", attempt)
+            .put("req_apache_type", "images_download");
+
+      Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
       return localFile;
    }
