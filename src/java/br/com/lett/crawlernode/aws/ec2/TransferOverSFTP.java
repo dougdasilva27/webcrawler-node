@@ -16,19 +16,19 @@ public class TransferOverSFTP {
     JSch jsch;
     Session session;
 
-    public TransferOverSFTP(String user, String host, String SSLKeysBucket, String SSLKey, Integer port) throws AmazonServiceException, IOException, JSchException {
-        createJschSession(user, host, SSLKeysBucket, SSLKey, port);
+    public TransferOverSFTP(String user, String host, String sslKeysBucket, String sslKey, Integer port) throws AmazonServiceException, IOException, JSchException {
+        createJschSession(user, host, sslKeysBucket, sslKey, port);
     }
 
-    public TransferOverSFTP(String user, String host, String SSLKeysBucket, String SSLKey) throws AmazonServiceException, IOException, JSchException {
-        createJschSession(user, host, SSLKeysBucket, SSLKey, 22);
+    public TransferOverSFTP(String user, String host, String sslKeysBucket, String sslKey) throws AmazonServiceException, IOException, JSchException {
+        createJschSession(user, host, sslKeysBucket, sslKey, 22);
     }
 
-    private static void getSSLKeyFromS3(String SSLKeysBucket, String SSLKey, File SSLKeyFile) throws AmazonServiceException, IOException {
+    private static void getSSLKeyFromS3(String sslKeysBucket, String sslKey, File sslKeyFile) throws AmazonServiceException, IOException {
         final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        S3Object o = s3.getObject(SSLKeysBucket, SSLKey);
+        S3Object o = s3.getObject(sslKeysBucket, sslKey);
         S3ObjectInputStream s3is = o.getObjectContent();
-        try (FileOutputStream fos = new FileOutputStream(SSLKeyFile)) {
+        try (FileOutputStream fos = new FileOutputStream(sslKeyFile)) {
             byte[] read_buf = new byte[1024];
             int read_len = 0;
             while ((read_len = s3is.read(read_buf)) > 0) {
@@ -39,13 +39,13 @@ public class TransferOverSFTP {
     }
 
 
-    private void createJschSession(String user, String host, String SSLKeysBucket, String SSLKey, Integer port) throws AmazonServiceException, IOException, JSchException {
+    private void createJschSession(String user, String host, String sslKeysBucket, String sslKey, Integer port) throws AmazonServiceException, IOException, JSchException {
         jsch = new JSch();
-        File SSLKeyFile = new File(SSLKey);
-        if (!SSLKeyFile.exists()) {
-            getSSLKeyFromS3(SSLKeysBucket, SSLKey, SSLKeyFile);
+        File sslKeyFile = new File(sslKey);
+        if (!sslKeyFile.exists()) {
+            getSSLKeyFromS3(sslKeysBucket, sslKey, sslKeyFile);
         }
-        jsch.addIdentity(SSLKeyFile.getAbsolutePath());
+        jsch.addIdentity(sslKeyFile.getAbsolutePath());
         session = jsch.getSession(user, host, port);
 
         Properties config = new Properties();
