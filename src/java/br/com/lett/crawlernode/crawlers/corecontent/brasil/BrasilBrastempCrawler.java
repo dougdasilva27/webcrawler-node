@@ -1,21 +1,22 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
 import models.pricing.Pricing;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
-public class BrasilBrastempCrawler extends VTEXOldScraper {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class BrasilBrastempCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://loja.brastemp.com.br/";
    private static final List<String> SELLERS = Arrays.asList("Whirlpool", "Consul", "Brastemp");
