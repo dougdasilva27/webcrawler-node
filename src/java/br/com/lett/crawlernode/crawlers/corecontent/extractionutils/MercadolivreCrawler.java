@@ -58,6 +58,7 @@ public class MercadolivreCrawler extends Crawler {
 
    private String homePage;
    private String mainSellerNameLower;
+   protected boolean allow3PSellers = false;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
    protected MercadolivreCrawler(Session session) {
@@ -115,85 +116,95 @@ public class MercadolivreCrawler extends Crawler {
             for (Object sku : skus) {
                JSONObject skuJson = (JSONObject) sku;
 
-               String variationId = skuJson.optString("id");
-               String internalId = internalPid + "-" + variationId;
+               String sellerFullName = scrapSellerFullName(doc);
+               boolean isMainSeller = mainSellerNameLower.equalsIgnoreCase(sellerFullName);
 
-               String name = crawlName(doc, skuJson);
-               String nameUrl = extractNameUrl(session.getOriginalURL());
-               List<String> images = scrapSpecialImages(skuJson, nameUrl);
-               String primaryImage = !images.isEmpty() ? images.get(0) : null;
-               String secondaryImages = scrapSecondaryImages(images);
-               String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
+               if (isMainSeller) {
+                  String variationId = skuJson.optString("id");
+                  String internalId = internalPid + "-" + variationId;
 
-               RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-               ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
-               RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
-               boolean availableToBuy = skuJson.optInt("available_quantity", 0) > 0;
-               Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+                  String name = crawlName(doc, skuJson);
+                  String nameUrl = extractNameUrl(session.getOriginalURL());
+                  List<String> images = scrapSpecialImages(skuJson, nameUrl);
+                  String primaryImage = !images.isEmpty() ? images.get(0) : null;
+                  String secondaryImages = scrapSecondaryImages(images);
+                  String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
-               // Creating the product
-               Product product = ProductBuilder.create()
-                     .setUrl(session.getOriginalURL())
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(name)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setRatingReviews(ratingReviews)
-                     .setOffers(offers)
-                     .build();
+                  RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+                  ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
+                  RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+                  boolean availableToBuy = skuJson.optInt("available_quantity", 0) > 0;
+                  Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
-               products.add(product);
+                  // Creating the product
+                  Product product = ProductBuilder.create()
+                        .setUrl(session.getOriginalURL())
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(name)
+                        .setCategory1(categories.getCategory(0))
+                        .setCategory2(categories.getCategory(1))
+                        .setCategory3(categories.getCategory(2))
+                        .setPrimaryImage(primaryImage)
+                        .setSecondaryImages(secondaryImages)
+                        .setDescription(description)
+                        .setRatingReviews(ratingReviews)
+                        .setOffers(offers)
+                        .build();
+
+                  products.add(product);
+               }
             }
          } else {
             for (Entry<String, Document> entry : variations.entrySet()) {
                Document docVariation = entry.getValue();
 
-               String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
-               String internalId = variationId == null || variations.size() < 2 ? internalPid : internalPid + "-" + variationId;
+               String sellerFullName = scrapSellerFullName(docVariation);
+               boolean isMainSeller = mainSellerNameLower.equalsIgnoreCase(sellerFullName);
 
-               String name = crawlName(docVariation);
-               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
-                     "http2.mlstatic.com");
-               String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, "figure.gallery-image-container a", Arrays.asList("href"),
-                     "https:", "http2.mlstatic.com", primaryImage);
-               String description =
-                     CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
+               if (isMainSeller) {
+                  String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
+                  String internalId = variationId == null || variations.size() < 2 ? internalPid : internalPid + "-" + variationId;
 
-               RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-               ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
-               RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
-               boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
-                     || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
-                     || !docVariation.select(".item-actions [value~=Comprar]").isEmpty();
-               Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+                  String name = crawlName(docVariation);
+                  String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
+                        "http2.mlstatic.com");
+                  String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, "figure.gallery-image-container a", Arrays.asList("href"),
+                        "https:", "http2.mlstatic.com", primaryImage);
+                  String description =
+                        CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
-               // Creating the product
-               Product product = ProductBuilder.create()
-                     .setUrl(entry.getKey())
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(name)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setRatingReviews(ratingReviews)
-                     .setOffers(offers)
-                     .build();
+                  RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+                  ratingReviewsCollection.addRatingReviews(crawlRating(docVariation, internalPid, internalId));
+                  RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+                  boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
+                        || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
+                        || !docVariation.select(".item-actions [value~=Comprar]").isEmpty();
+                  Offers offers = availableToBuy ? scrapOffers(docVariation) : new Offers();
 
-               products.add(product);
+                  // Creating the product
+                  Product product = ProductBuilder.create()
+                        .setUrl(entry.getKey())
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(name)
+                        .setCategory1(categories.getCategory(0))
+                        .setCategory2(categories.getCategory(1))
+                        .setCategory3(categories.getCategory(2))
+                        .setPrimaryImage(primaryImage)
+                        .setSecondaryImages(secondaryImages)
+                        .setDescription(description)
+                        .setRatingReviews(ratingReviews)
+                        .setOffers(offers)
+                        .build();
+
+                  products.add(product);
+               }
 
             }
          }
       } else {
-         Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, logger);
+         Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
          products = meli.extractInformation(doc);
       }
 
@@ -322,9 +333,11 @@ public class MercadolivreCrawler extends Crawler {
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
+      String sellerFullName = scrapSellerFullName(doc);
+
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(doc);
-      String sellerFullName = scrapSellerFullName(doc);
+
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)

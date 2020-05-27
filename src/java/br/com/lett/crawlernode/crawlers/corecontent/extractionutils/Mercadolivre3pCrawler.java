@@ -53,13 +53,15 @@ public class Mercadolivre3pCrawler {
    private Session session;
    private DataFetcher dataFetcher;
    private Logger logger;
+   protected boolean allow3PSellers = false;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
-   protected Mercadolivre3pCrawler(Session session, DataFetcher dataFetcher, String mainSellerNameLower, Logger logger) {
+   protected Mercadolivre3pCrawler(Session session, DataFetcher dataFetcher, String mainSellerNameLower, boolean allow3PSellers, Logger logger) {
       this.session = session;
       this.dataFetcher = dataFetcher;
       this.mainSellerNameLower = mainSellerNameLower;
       this.logger = logger;
+      this.allow3PSellers = allow3PSellers;
    }
 
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -68,41 +70,45 @@ public class Mercadolivre3pCrawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product_id]", "value");
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=item_id]", "value");;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
-               "http2.mlstatic.com");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
-               "http2.mlstatic.com", primaryImage);
-         String description =
-               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
-
-         RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-         ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
-         RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
          boolean availableToBuy = !doc.select(".andes-button--filled").isEmpty();
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+         boolean mustAddProduct = checkIfMustScrapProduct(offers);
 
-         // Creating the product
-         Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setRatingReviews(ratingReviews)
-               .setOffers(offers)
-               .build();
+         if (mustAddProduct) {
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product_id]", "value");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=item_id]", "value");;
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true);
+            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
+                  "http2.mlstatic.com");
+            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
+                  "http2.mlstatic.com", primaryImage);
+            String description =
+                  CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
 
-         products.add(product);
+            RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
+            RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
 
+
+            // Creating the product
+            Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setRatingReviews(ratingReviews)
+                  .setOffers(offers)
+                  .build();
+
+            products.add(product);
+         }
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -114,6 +120,22 @@ public class Mercadolivre3pCrawler {
 
    private boolean isProductPage(Document doc) {
       return !doc.select("input[name=item_id]").isEmpty();
+   }
+
+   private boolean checkIfMustScrapProduct(Offers offers) {
+      boolean mustAddProduct = this.allow3PSellers;
+      if (!allow3PSellers) {
+         List<Offer> offersList = offers.getOffersList();
+
+         for (Offer offer : offersList) {
+            if (offer.getIsMainRetailer()) {
+               mustAddProduct = true;
+               break;
+            }
+         }
+      }
+
+      return mustAddProduct;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
