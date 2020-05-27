@@ -62,12 +62,16 @@ public abstract class VTEXNewScraper extends VTEXScraper {
 
   @Override
   protected String scrapInternalpid(Document doc) {
+    String internalPid = null;
     Element elem = doc.selectFirst(".vtex-product-context-provider script");
-    JSONObject json = JSONUtils.stringToJson(elem.data());
-    String internalPid = json.optString("mpn", null);
-    if (internalPid == null) {
-      internalPid = scrapInternalPidOldWay(doc);
+    if (elem != null) {
+      JSONObject json = JSONUtils.stringToJson(elem.data());
+      internalPid = json.optString("mpn", null);
+      if (internalPid == null) {
+        internalPid = scrapInternalPidOldWay(doc);
+      }
     }
+
     return internalPid;
   }
 }
