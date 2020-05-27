@@ -45,6 +45,12 @@ public class ExecutionParameters {
    private String logsBucketName;
    private String imagesBucketName;
 
+   private String s3BatchHost;
+   private String s3BatchKey;
+   private String s3BatchRemoteLocaion;
+   private String s3BatchUser;
+   private String sshKeysBucket;
+
    public ExecutionParameters() {
       debug = null;
    }
@@ -61,6 +67,11 @@ public class ExecutionParameters {
       sendToKinesis = getEnvSendToKinesis();
       logsBucketName = getEnvLogsBucketName();
       imagesBucketName = getEnvImagesBucketName();
+      s3BatchHost = System.getenv(EnvironmentVariables.S3_BATCH_HOST);
+      s3BatchKey = System.getenv(EnvironmentVariables.S3_BATCH_KEY);
+      s3BatchRemoteLocaion = System.getenv(EnvironmentVariables.S3_BATCH_REMOTE_LOCAION);
+      s3BatchUser = System.getenv(EnvironmentVariables.S3_BATCH_USER);
+      sshKeysBucket = System.getenv(EnvironmentVariables.SSH_KEYS_BUCKET);
       setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
       setFetcherUrl(getEnvFetcherUrl());
       setPhantomjsPath(getEnvPhantomjsPath());
@@ -336,4 +347,25 @@ public class ExecutionParameters {
    public void setImagesBucketName(String imagesBucketName) {
       this.imagesBucketName = imagesBucketName;
    }
+
+   public String getS3BatchHost() {
+      return s3BatchHost;
+   }
+
+   public String getS3BatchKey() {
+      return s3BatchKey;
+   }
+
+   public String getS3BatchRemoteLocaion() {
+      return s3BatchRemoteLocaion;
+   }
+
+   public String getS3BatchUser() {
+      return s3BatchUser;
+   }
+
+   public String getSshKeysBucket() {
+      return sshKeysBucket;
+   }
+
 }
