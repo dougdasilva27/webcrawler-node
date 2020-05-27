@@ -22,7 +22,7 @@ public class EnvironmentVariables {
     public static final String REPLICATOR_URL = "REPLICATOR_URL";
     public static final String S3_BATCH_HOST = "S3_BATCH_HOST";
     public static final String S3_BATCH_KEY = "S3_BATCH_KEY";
-    public static final String S3_BATCH_REMOTE_LOCAION = "S3_BATCH_REMOTE_LOCAION";
+    public static final String S3_BATCH_REMOTE_LOCATION = "S3_BATCH_REMOTE_LOCATION";
     public static final String S3_BATCH_USER = "S3_BATCH_USER";
     public static final String SEND_TO_KINESIS = "SEND_TO_KINESIS";
     public static final String SSH_KEYS_BUCKET = "SSH_KEYS_BUCKET";

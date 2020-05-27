@@ -62,7 +62,7 @@ public class S3Service {
     private static final String S3_BATCH_USER = GlobalConfigurations.executionParameters.getS3BatchUser();
     private static final String S3_BATCH_HOST = GlobalConfigurations.executionParameters.getS3BatchHost();
     private static final String S3_BATCH_KEY = GlobalConfigurations.executionParameters.getS3BatchKey();
-    private static final String S3_BATCH_REMOTE_LOCATION = GlobalConfigurations.executionParameters.getS3BatchRemoteLocaion();
+    private static final String S3_BATCH_REMOTE_LOCATION = GlobalConfigurations.executionParameters.getS3BatchRemoteLocation();
     private static final String SSH_KEYS_BUCKET = GlobalConfigurations.executionParameters.getSshKeysBucket();
     private static final String crawlerSessionsPrefix = "crawler-sessions";
 
