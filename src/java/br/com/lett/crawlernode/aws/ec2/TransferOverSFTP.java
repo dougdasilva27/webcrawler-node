@@ -10,6 +10,7 @@ import com.jcraft.jsch.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class TransferOverSFTP {
@@ -54,10 +55,19 @@ public class TransferOverSFTP {
     }
 
     public void sendFile(String localFile, String remoteFile) throws SftpException, JSchException {
+        // creates parent path
+        ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
+        execChannel.setCommand("mkdir -p " + Paths.get(remoteFile).getParent());
+        execChannel.setInputStream(null);
+        execChannel.connect();
+        execChannel.disconnect();
+
+        // uploads file
         ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
         sftpChannel.connect();
         sftpChannel.put(localFile, remoteFile);
         sftpChannel.disconnect();
+
     }
 
     public void connect() throws JSchException {
