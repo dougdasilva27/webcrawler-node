@@ -58,7 +58,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
          JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
          JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
 
-         String internalPid = skuJson.optString("name");
          List<String> categories = doc.select(".breadcrumbs a").eachText();
          if (!categories.isEmpty()) {
             categories.remove(0);
@@ -66,7 +65,7 @@ public class SaopauloTendadriveCrawler extends Crawler {
          String description =
                CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".more-info", " product-table"));
 
-         String internalId = scrapInternal(skuJson);
+         String internalId = skuJson.optString("sku");
          String name = skuJson.optString("name");
          List<String> images = scrapImages(skuJson);
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
@@ -80,7 +79,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
                      .setUrl(session.getOriginalURL())
                      .setOffers(offers)
                      .setInternalId(internalId)
-                     .setInternalPid(internalPid)
                      .setName(name)
                      .setCategories(categories)
                      .setPrimaryImage(primaryImage)
@@ -157,11 +155,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
          }
       }
       return images;
-   }
-
-   private String scrapInternal(JSONObject skuJson) {
-      String[] tokens = skuJson.optString("token").split("-");
-      return tokens[tokens.length - 1];
    }
 
    private RatingsReviews scrapRating(String internalId, Document doc) {

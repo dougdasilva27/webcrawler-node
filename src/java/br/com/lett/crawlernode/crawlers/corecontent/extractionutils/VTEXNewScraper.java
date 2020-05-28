@@ -15,7 +15,7 @@ public abstract class VTEXNewScraper extends VTEXScraper {
       super(session);
    }
 
-   protected String scrapInternalpid(Document doc) {
+   protected String scrapInternalPidOldWay(Document doc) {
       JSONObject runTimeJSON = scrapRuntimeJson(doc);
       JSONObject initialJson = scrapProductJson(runTimeJSON);
       return initialJson.optString("productId", null);
@@ -30,11 +30,11 @@ public abstract class VTEXNewScraper extends VTEXScraper {
          String script = e.html();
 
          if (script.contains(token)) {
-            runtimeJson = CrawlerUtils.stringToJSONObject(CrawlerUtils.extractSpecificStringFromScript(script, token, false, "", true));
+            runtimeJson = CrawlerUtils.stringToJSONObject(CrawlerUtils.extractSpecificStringFromScript(script,
+                  token, false, "", true));
             break;
          }
       }
-
       return runtimeJson;
    }
 
@@ -57,7 +57,22 @@ public abstract class VTEXNewScraper extends VTEXScraper {
       } else if (queryDataJson.has("data") && queryDataJson.get("data") instanceof String) {
          product = CrawlerUtils.stringToJson(queryDataJson.getString("data"));
       }
-
       return JSONUtils.getJSONValue(product, "product");
+   }
+
+   @Override
+   protected String scrapInternalpid(Document doc) {
+      String internalPid = null;
+      Element elem = doc.selectFirst(".vtex-product-context-provider script");
+      if (elem != null) {
+         JSONObject json = JSONUtils.stringToJson(elem.data());
+         internalPid = json.optString("mpn", null);
+      }
+
+      if (internalPid == null) {
+         internalPid = scrapInternalPidOldWay(doc);
+      }
+
+      return internalPid;
    }
 }
