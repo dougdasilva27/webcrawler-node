@@ -44,6 +44,7 @@ public class ExecutionParameters {
 
    private String logsBucketName;
    private String imagesBucketName;
+   private String imagesBucketNameNew;
 
    public ExecutionParameters() {
       debug = null;
@@ -61,6 +62,7 @@ public class ExecutionParameters {
       sendToKinesis = getEnvSendToKinesis();
       logsBucketName = getEnvLogsBucketName();
       imagesBucketName = getEnvImagesBucketName();
+      imagesBucketNameNew = getEnvImagesBucketNameNew();
       setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
       setFetcherUrl(getEnvFetcherUrl());
       setPhantomjsPath(getEnvPhantomjsPath());
@@ -193,6 +195,18 @@ public class ExecutionParameters {
       String logsBucketName = System.getenv(EnvironmentVariables.IMAGES_BUCKET_NAME);
       if (logsBucketName == null || logsBucketName.isEmpty()) {
          Logging.logWarn(logger, null, null, "IMAGES_BUCKET_NAME not set");
+
+         // Return empty string to avoid null pointers
+         return "";
+      }
+
+      return logsBucketName;
+   }
+
+   private String getEnvImagesBucketNameNew() {
+      String logsBucketName = System.getenv(EnvironmentVariables.IMAGES_BUCKET_NAME_NEW);
+      if (logsBucketName == null || logsBucketName.isEmpty()) {
+         Logging.logWarn(logger, null, null, "IMAGES_BUCKET_NAME_NEW not set");
 
          // Return empty string to avoid null pointers
          return "";
@@ -335,5 +349,13 @@ public class ExecutionParameters {
 
    public void setImagesBucketName(String imagesBucketName) {
       this.imagesBucketName = imagesBucketName;
+   }
+
+   public String getImagesBucketNameNew() {
+      return imagesBucketNameNew;
+   }
+
+   public void setImagesBucketNameNew(String imagesBucketNameNew) {
+      this.imagesBucketNameNew = imagesBucketNameNew;
    }
 }

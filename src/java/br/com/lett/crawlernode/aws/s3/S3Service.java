@@ -49,18 +49,18 @@ public class S3Service {
    public static final String HTML_UPLOAD_TYPE = "html";
    public static final String MD5_HEX_METADATA_FIELD = "md5hex";
    public static final String MD5_ORIGINAL_HEX_FIELD = "originalmd5hex";
+   public static final String POSITION = "position";
 
    public static final String LOCAL_PATH = "src/resources/";
 
    // Amazon images
    private static AmazonS3 s3clientImages;
-   private static final String IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
-
    // Amazon crawler-session
    private static AmazonS3 s3clientCrawlerSessions;
    private static String LOGS_BUCKET_NAME = GlobalConfigurations.executionParameters.getLogsBucketName();
    private static String crawlerSessionsPrefix = "crawler-sessions";
 
+   private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
    static {
       s3clientImages =
             AmazonS3ClientBuilder
@@ -85,7 +85,7 @@ public class S3Service {
     */
    public static ObjectMetadata fetchObjectMetadata(Session session, String name) {
       try {
-         return s3clientImages.getObjectMetadata(IMAGES_BUCKET_NAME, name);
+         return s3clientImages.getObjectMetadata(READ_IMAGES_BUCKET_NAME, name);
       } catch (AmazonS3Exception s3Exception) {
          if (s3Exception.getStatusCode() == 404) {
             Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
@@ -102,7 +102,7 @@ public class S3Service {
 
    public static S3Object fetchS3Object(Session session, String name) {
       try {
-         return s3clientImages.getObject(IMAGES_BUCKET_NAME, name);
+         return s3clientImages.getObject(READ_IMAGES_BUCKET_NAME, name);
       } catch (AmazonS3Exception s3Exception) {
          if (s3Exception.getStatusCode() == 404) {
             Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
@@ -126,20 +126,18 @@ public class S3Service {
     * @param key the path for the image in the S3 bucket
     * @throws FileNotFoundException if the local temporary file of the downloaded image was not found
     */
-   public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key) throws FileNotFoundException {
+   public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key, String bucket) throws FileNotFoundException {
 
       ImageCrawlerSession s = (ImageCrawlerSession) session;
-
       FileInputStream fileInputStream = new FileInputStream(f);
-
-      PutObjectRequest putObjectRequest = new PutObjectRequest(IMAGES_BUCKET_NAME, key, fileInputStream, newObjectMetadata);
+      PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, fileInputStream, newObjectMetadata);
 
       try {
          s3clientImages.putObject(putObjectRequest);
-         Logging.printLogDebug(logger, session, "Uploaded image #" + s.getImageNumber() + " with success!");
+         Logging.printLogDebug(logger, session, "[BUCKET - " + bucket + "] Uploaded image #" + s.getImageNumber() + " with success!");
 
       } catch (AmazonClientException ace) {
-         Logging.printLogError(logger, session, "Error Message:    " + ace.getMessage());
+         Logging.printLogError(logger, session, "[BUCKET - " + bucket + "] Error Message:    " + ace.getMessage());
       }
    }
 
@@ -239,7 +237,7 @@ public class S3Service {
       Logging.printLogDebug(logger, session, "Fetching image from Amazon: " + key);
 
       try {
-         S3Object object = s3clientImages.getObject(new GetObjectRequest(IMAGES_BUCKET_NAME, key));
+         S3Object object = s3clientImages.getObject(new GetObjectRequest(READ_IMAGES_BUCKET_NAME, key));
 
          InputStream reader = new BufferedInputStream(object.getObjectContent());
 
@@ -290,7 +288,7 @@ public class S3Service {
     */
    public static String fetchOriginalImageMd5(Session session, String key) {
       try {
-         ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
+         ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(READ_IMAGES_BUCKET_NAME, key));
 
          if (objectMetadata != null) {
             return objectMetadata.getUserMetaDataOf(MD5_ORIGINAL_HEX_FIELD);
@@ -325,7 +323,7 @@ public class S3Service {
     */
    public static String fetchEtagFromAmazon(Session session, String key) {
       try {
-         ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
+         ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(READ_IMAGES_BUCKET_NAME, key));
 
          String md5 = objectMetadata.getETag();
 

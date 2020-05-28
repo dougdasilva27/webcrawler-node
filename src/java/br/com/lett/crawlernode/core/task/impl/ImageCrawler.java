@@ -29,6 +29,10 @@ public class ImageCrawler extends Task {
 
    private final int IMAGE_CHECKING_TRY = 5;
 
+   private static final String IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
+   private static final String IMAGES_BUCKET_NAME_NEW = GlobalConfigurations.executionParameters.getImagesBucketNameNew();
+
+
    public ImageCrawler(Session session) {
       this.session = session;
    }
@@ -149,7 +153,17 @@ public class ImageCrawler extends Task {
          ObjectMetadata transformedImageMetadata = new ObjectMetadata();
          transformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
          transformedImageMetadata.addUserMetadata(S3Service.MD5_ORIGINAL_HEX_FIELD, imageDownloadResult.md5); // also put the md5 of the original image
-         S3Service.uploadImage(session, transformedImageMetadata, transformedImageFile, imageCrawlerSession.getTransformedImageKeyOnBucket());
+
+         S3Service.uploadImage(session, transformedImageMetadata, transformedImageFile, imageCrawlerSession.getTransformedImageKeyOnBucket(), IMAGES_BUCKET_NAME);
+
+         ObjectMetadata newTransformedImageMetadata = new ObjectMetadata();
+         newTransformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
+         newTransformedImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
+         newTransformedImageMetadata.setContentType("image/jpeg");
+         newTransformedImageMetadata.setContentLength(transformedImageFile.length());
+
+         S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
+               creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
          Logging.printLogDebug(LOGGER, session, "Done ... ");
       } else {
          Logging.printLogWarn(LOGGER, session, "Transformed image file was not sent to S3 because it is null.");
@@ -158,10 +172,20 @@ public class ImageCrawler extends Task {
       // upload the original image to Amazon
       if (imageDownloadResult.md5 != null && !imageDownloadResult.imageFormat.isEmpty()) {
          Logging.printLogDebug(LOGGER, session, "Uploading original image to Amazon...");
+         File originalImage = new File(imageCrawlerSession.getLocalOriginalFileDir());
+
          ObjectMetadata newObjectMetadata = new ObjectMetadata();
          newObjectMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
-         S3Service.uploadImage(session, newObjectMetadata, new File(imageCrawlerSession.getLocalOriginalFileDir()),
-               imageCrawlerSession.getOriginalImageKeyOnBucket());
+
+         S3Service.uploadImage(session, newObjectMetadata, originalImage, imageCrawlerSession.getOriginalImageKeyOnBucket(), IMAGES_BUCKET_NAME);
+
+         ObjectMetadata newImageMetadata = new ObjectMetadata();
+         newImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
+         newImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
+         newImageMetadata.setContentType("image/" + imageDownloadResult.imageFormat);
+         newImageMetadata.setContentLength(originalImage.length());
+         S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+
          Logging.printLogDebug(LOGGER, session, "Done.");
       } else {
          Logging.printLogWarn(LOGGER, session, "Original image was not sent to S3 because it either has a null md5 or an unknown image format");
@@ -291,7 +315,17 @@ public class ImageCrawler extends Task {
       else {
          return !amazonMd5.equals(md5);
       }
+   }
 
+   private String creatImageKeyOnBucketNew(boolean original, ImageCrawlerSession session) {
+      return new StringBuilder()
+            .append("sku").append("/")
+            .append("market_code=").append(session.getMarket().getCode()).append("/")
+            .append("internal_id=").append(session.getInternalId()).append("/")
+            .append("type=").append(session.getType()).append("/")
+            .append(session.getType().equalsIgnoreCase("primary") ? "1" : session.getImageNumber())
+            .append(original ? "_original" : ".jpg")
+            .toString();
    }
 
 }
