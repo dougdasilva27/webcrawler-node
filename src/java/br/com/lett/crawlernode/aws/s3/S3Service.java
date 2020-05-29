@@ -102,11 +102,6 @@ public class S3Service {
         }
     }
 
-    public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key) throws FileNotFoundException {
-        uploadImage(session, newObjectMetadata, f, key, IMAGES_BUCKET_NAME);
-        uploadImage(session, newObjectMetadata, f, key, IMAGES_BUCKET_NAME_NEW);
-    }
-
     /**
      * Uploads the current image being processed in the session object to S3.
      *
@@ -119,9 +114,7 @@ public class S3Service {
     public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key, String bucket) throws FileNotFoundException {
 
         ImageCrawlerSession s = (ImageCrawlerSession) session;
-
         FileInputStream fileInputStream = new FileInputStream(f);
-
         PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, fileInputStream, newObjectMetadata);
 
         try {
