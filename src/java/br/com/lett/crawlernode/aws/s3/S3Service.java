@@ -1,40 +1,25 @@
 package br.com.lett.crawlernode.aws.s3;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Paths;
-
 import br.com.lett.crawlernode.aws.ec2.TransferOverSFTP;
-import org.apache.commons.io.FileUtils;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.FileCompression;
 import br.com.lett.crawlernode.util.Logging;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.*;
+import org.apache.commons.io.FileUtils;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.file.Paths;
 
 /**
  * Utility class to export some methods more user-friendly to our needs to operate on S3.
@@ -43,18 +28,16 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class S3Service {
 
-    protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
-
     public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
     public static final String HTML_UPLOAD_TYPE = "html";
     public static final String MD5_HEX_METADATA_FIELD = "md5hex";
     public static final String MD5_ORIGINAL_HEX_FIELD = "originalmd5hex";
-
     public static final String LOCAL_PATH = "src/resources/";
-
+    protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
     // Amazon images
     private static final AmazonS3 s3clientImages;
     private static final String IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
+    private static final String IMAGES_BUCKET_NAME_NEW = GlobalConfigurations.executionParameters.getImagesBucketNameNew();
 
     // Amazon crawler-session
     private static final AmazonS3 s3clientCrawlerSessions;
@@ -67,19 +50,17 @@ public class S3Service {
     private static final String crawlerSessionsPrefix = "crawler-sessions";
 
     static {
-        s3clientImages =
-                AmazonS3ClientBuilder
-                        .standard()
-                        .withRegion(Regions.US_EAST_1)
-                        .withCredentials(new DefaultAWSCredentialsProviderChain())
-                        .build();
+        s3clientImages = AmazonS3ClientBuilder
+                .standard()
+                .withRegion(Regions.US_EAST_1)
+                .withCredentials(new DefaultAWSCredentialsProviderChain())
+                .build();
 
-        s3clientCrawlerSessions =
-                AmazonS3ClientBuilder
-                        .standard()
-                        .withRegion(Regions.US_EAST_1)
-                        .withCredentials(new DefaultAWSCredentialsProviderChain())
-                        .build();
+        s3clientCrawlerSessions = AmazonS3ClientBuilder
+                .standard()
+                .withRegion(Regions.US_EAST_1)
+                .withCredentials(new DefaultAWSCredentialsProviderChain())
+                .build();
     }
 
     /**
@@ -121,6 +102,11 @@ public class S3Service {
         }
     }
 
+    public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key) throws FileNotFoundException {
+        uploadImage(session, newObjectMetadata, f, key, IMAGES_BUCKET_NAME);
+        uploadImage(session, newObjectMetadata, f, key, IMAGES_BUCKET_NAME_NEW);
+    }
+
     /**
      * Uploads the current image being processed in the session object to S3.
      *
@@ -130,20 +116,20 @@ public class S3Service {
      * @param key               the path for the image in the S3 bucket
      * @throws FileNotFoundException if the local temporary file of the downloaded image was not found
      */
-    public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key) throws FileNotFoundException {
+    public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key, String bucket) throws FileNotFoundException {
 
         ImageCrawlerSession s = (ImageCrawlerSession) session;
 
         FileInputStream fileInputStream = new FileInputStream(f);
 
-        PutObjectRequest putObjectRequest = new PutObjectRequest(IMAGES_BUCKET_NAME, key, fileInputStream, newObjectMetadata);
+        PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, fileInputStream, newObjectMetadata);
 
         try {
             s3clientImages.putObject(putObjectRequest);
-            Logging.printLogDebug(logger, session, "Uploaded image #" + s.getImageNumber() + " with success!");
+            Logging.printLogDebug(logger, session, "[BUCKET - " + bucket + "] Uploaded image #" + s.getImageNumber() + " with success!");
 
         } catch (AmazonClientException ace) {
-            Logging.printLogError(logger, session, "Error Message:    " + ace.getMessage());
+            Logging.printLogError(logger, session, "[BUCKET - " + bucket + "] Error Message:    " + ace.getMessage());
         }
     }
 

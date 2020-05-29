@@ -102,7 +102,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.agroverdesr.com.br/produto/coleira-antipulgas-e-carrapatos-bayer-seresto-para-caes-acima-de-8kg-70588",
+                        "https://www.carrefour.com.br/Escova-Dental-Sensodyne-Gentle-Branca-e-Azul/p/9745904",
                         market);
          }
 
