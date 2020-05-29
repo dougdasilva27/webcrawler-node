@@ -28,12 +28,15 @@ import java.nio.file.Paths;
  */
 public class S3Service {
 
+    protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
+
     public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
     public static final String HTML_UPLOAD_TYPE = "html";
     public static final String MD5_HEX_METADATA_FIELD = "md5hex";
     public static final String MD5_ORIGINAL_HEX_FIELD = "originalmd5hex";
+    public static final String POSITION = "position";
+
     public static final String LOCAL_PATH = "src/resources/";
-    protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
     // Amazon images
     private static final AmazonS3 s3clientImages;
     private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
