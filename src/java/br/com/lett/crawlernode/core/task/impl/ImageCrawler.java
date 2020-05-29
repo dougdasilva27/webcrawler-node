@@ -162,8 +162,8 @@ public class ImageCrawler extends Task {
          newTransformedImageMetadata.setContentType("image/jpeg");
          newTransformedImageMetadata.setContentLength(transformedImageFile.length());
 
-         S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
-               creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         // S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
+         // creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
          Logging.printLogDebug(LOGGER, session, "Done ... ");
       } else {
          Logging.printLogWarn(LOGGER, session, "Transformed image file was not sent to S3 because it is null.");
@@ -184,7 +184,8 @@ public class ImageCrawler extends Task {
          newImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
          newImageMetadata.setContentType("image/" + imageDownloadResult.imageFormat);
          newImageMetadata.setContentLength(originalImage.length());
-         S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         // S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true,
+         // imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
 
          Logging.printLogDebug(LOGGER, session, "Done.");
       } else {
