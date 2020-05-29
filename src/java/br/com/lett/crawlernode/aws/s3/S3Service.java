@@ -36,7 +36,7 @@ public class S3Service {
     protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
     // Amazon images
     private static final AmazonS3 s3clientImages;
-    private static final String IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
+    private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
     private static final String IMAGES_BUCKET_NAME_NEW = GlobalConfigurations.executionParameters.getImagesBucketNameNew();
 
     // Amazon crawler-session
@@ -70,7 +70,7 @@ public class S3Service {
      */
     public static ObjectMetadata fetchObjectMetadata(Session session, String name) {
         try {
-            return s3clientImages.getObjectMetadata(IMAGES_BUCKET_NAME, name);
+            return s3clientImages.getObjectMetadata(READ_IMAGES_BUCKET_NAME, name);
         } catch (AmazonS3Exception s3Exception) {
             if (s3Exception.getStatusCode() == 404) {
                 Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
@@ -87,7 +87,7 @@ public class S3Service {
 
     public static S3Object fetchS3Object(Session session, String name) {
         try {
-            return s3clientImages.getObject(IMAGES_BUCKET_NAME, name);
+            return s3clientImages.getObject(READ_IMAGES_BUCKET_NAME, name);
         } catch (AmazonS3Exception s3Exception) {
             if (s3Exception.getStatusCode() == 404) {
                 Logging.printLogWarn(logger, session, "S3 status code: 404 [object metadata not found]");
@@ -226,7 +226,7 @@ public class S3Service {
         Logging.printLogDebug(logger, session, "Fetching image from Amazon: " + key);
 
         try {
-            S3Object object = s3clientImages.getObject(new GetObjectRequest(IMAGES_BUCKET_NAME, key));
+            S3Object object = s3clientImages.getObject(new GetObjectRequest(READ_IMAGES_BUCKET_NAME, key));
 
             InputStream reader = new BufferedInputStream(object.getObjectContent());
 
@@ -277,7 +277,7 @@ public class S3Service {
      */
     public static String fetchOriginalImageMd5(Session session, String key) {
         try {
-            ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
+            ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(READ_IMAGES_BUCKET_NAME, key));
 
             if (objectMetadata != null) {
                 return objectMetadata.getUserMetaDataOf(MD5_ORIGINAL_HEX_FIELD);
@@ -312,7 +312,7 @@ public class S3Service {
      */
     public static String fetchEtagFromAmazon(Session session, String key) {
         try {
-            ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(IMAGES_BUCKET_NAME, key));
+            ObjectMetadata objectMetadata = s3clientImages.getObjectMetadata(new GetObjectMetadataRequest(READ_IMAGES_BUCKET_NAME, key));
 
             String md5 = objectMetadata.getETag();
 
