@@ -28,29 +28,27 @@ import java.nio.file.Paths;
  */
 public class S3Service {
 
-    protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
-
     public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
     public static final String HTML_UPLOAD_TYPE = "html";
     public static final String MD5_HEX_METADATA_FIELD = "md5hex";
     public static final String MD5_ORIGINAL_HEX_FIELD = "originalmd5hex";
     public static final String POSITION = "position";
-
     public static final String LOCAL_PATH = "src/resources/";
+    protected static final Logger logger = LoggerFactory.getLogger(S3Service.class);
     // Amazon images
     private static final AmazonS3 s3clientImages;
-    private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
-    private static final String IMAGES_BUCKET_NAME_NEW = GlobalConfigurations.executionParameters.getImagesBucketNameNew();
 
     // Amazon crawler-session
     private static final AmazonS3 s3clientCrawlerSessions;
     private static final String LOGS_BUCKET_NAME = GlobalConfigurations.executionParameters.getLogsBucketName();
+    private static final String crawlerSessionsPrefix = "crawler-sessions";
     private static final String S3_BATCH_USER = GlobalConfigurations.executionParameters.getS3BatchUser();
     private static final String S3_BATCH_HOST = GlobalConfigurations.executionParameters.getS3BatchHost();
     private static final String S3_BATCH_KEY = GlobalConfigurations.executionParameters.getS3BatchKey();
     private static final String S3_BATCH_REMOTE_LOCATION = GlobalConfigurations.executionParameters.getS3BatchRemoteLocation();
     private static final String SSH_KEYS_BUCKET = GlobalConfigurations.executionParameters.getSshKeysBucket();
-    private static final String crawlerSessionsPrefix = "crawler-sessions";
+
+    private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
 
     static {
         s3clientImages = AmazonS3ClientBuilder
