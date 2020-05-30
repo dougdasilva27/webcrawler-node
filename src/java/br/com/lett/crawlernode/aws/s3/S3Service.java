@@ -174,21 +174,21 @@ public class S3Service {
             File compressedFile = new File(tarGzPath);
 
             if (compressedFile.exists()) {
-                try {
-                    Logging.printLogDebug(logger, session, "Uploading HTML to S3 Batch service");
-
-                    TransferOverSFTP sftp = new TransferOverSFTP(S3_BATCH_USER, S3_BATCH_HOST, SSH_KEYS_BUCKET, S3_BATCH_KEY);
-                    String localFile = compressedFile.getAbsolutePath();
-                    String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
-                    sftp.connect();
-                    sftp.sendFile(localFile, remoteFile);
-                    sftp.disconnect();
-
-                    Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
-                } catch (Exception ex) {
-                    Logging.printLogError(logger, session, "Error during HTML upload.");
-                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
-                }
+//                try {
+//                    Logging.printLogDebug(logger, session, "Uploading HTML to S3 Batch service");
+//
+//                    TransferOverSFTP sftp = new TransferOverSFTP(S3_BATCH_USER, S3_BATCH_HOST, SSH_KEYS_BUCKET, S3_BATCH_KEY);
+//                    String localFile = compressedFile.getAbsolutePath();
+//                    String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
+//                    sftp.connect();
+//                    sftp.sendFileAsync(localFile, remoteFile);
+//                    sftp.disconnect();
+//
+//                    Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
+//                } catch (Exception ex) {
+//                    Logging.printLogError(logger, session, "Error during HTML upload.");
+//                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+//                }
 
                 // TODO: remove S3 endpoint after validating batch in production VVVVVVV
                 try {
