@@ -57,7 +57,7 @@ public class TransferOverSFTP {
     public void sendFileAsync(String localFile, String remoteFile) throws SftpException, JSchException {
         // creates parent path
         ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
-        String parentPath = Paths.get(remoteFile).getParent()
+        String parentPath = Paths.get(remoteFile).getParent().toString();
         execChannel.setCommand("bash -c '! [[ -d " + parentPath + " ]] && mkdir -p " + parentPath + "'");
         execChannel.setInputStream(null);
         execChannel.connect(5);
