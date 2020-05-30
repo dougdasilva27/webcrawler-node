@@ -181,7 +181,9 @@ public class Crawler extends Task {
    @Override
    public void onFinish() {
       try {
-         S3Service.uploadCrawlerSessionContentToAmazon(session);
+         if (!(session instanceof TestCrawlerSession)) {
+            S3Service.uploadCrawlerSessionContentToAmazon(session);
+         }
 
          // close the webdriver
          if (webdriver != null && ((RemoteWebDriver) webdriver.driver).getSessionId() != null) {
