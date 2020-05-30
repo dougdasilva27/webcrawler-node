@@ -54,17 +54,18 @@ public class TransferOverSFTP {
         session.setConfig(config);
     }
 
-    public void sendFile(String localFile, String remoteFile) throws SftpException, JSchException {
+    public void sendFileAsync(String localFile, String remoteFile) throws SftpException, JSchException {
         // creates parent path
         ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
-        execChannel.setCommand("mkdir -p " + Paths.get(remoteFile).getParent());
+        String parentPath = Paths.get(remoteFile).getParent()
+        execChannel.setCommand("bash -c '! [[ -d " + parentPath + " ]] && mkdir -p " + parentPath + "'");
         execChannel.setInputStream(null);
-        execChannel.connect();
+        execChannel.connect(5);
         execChannel.disconnect();
 
         // uploads file
         ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
-        sftpChannel.connect();
+        sftpChannel.connect(5);
         sftpChannel.put(localFile, remoteFile);
         sftpChannel.disconnect();
 
