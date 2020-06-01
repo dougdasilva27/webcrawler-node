@@ -19,7 +19,7 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
    }
 
 
-   private static final String URL_PRODUCT_PAGE = "https://www.merconnect.com.br/api/v2/markets/58/items/search?query=";
+   private static final String URL_PRODUCT_PAGE = "https://loja.centerbox.com.br/loja/58/search?query=";
    private static final String CEP = "60192-105";
 
 

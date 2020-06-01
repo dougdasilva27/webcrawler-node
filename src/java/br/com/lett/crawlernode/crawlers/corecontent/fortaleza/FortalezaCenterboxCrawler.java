@@ -32,7 +32,8 @@ import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 
 public class FortalezaCenterboxCrawler extends Crawler {
-   private static final String HOME_PAGE = "https://www.merconnect.com.br/api/v2/";
+
+   private static final String HOME_PAGE = "https://loja.centerbox.com.br/loja/58/";
    private static final String CEP = "60192-105";
    private static final String SELLER_FULL_NAME = "centerbox";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -51,6 +52,7 @@ public class FortalezaCenterboxCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Auth-Token", "RUsycjRnU1BLTndkblIyTnF1T3FvMGlnUDJKVWx4Nk95eC9IL0RaMU80dz0tLVl3dlBqUjJnK1p2amdheW9WRVlWM0E9PQ");
       headers.put("Connection", "keep-alive");
+
       String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&neighborhood_id=42&market_codename=centerbox";
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
@@ -74,7 +76,11 @@ public class FortalezaCenterboxCrawler extends Crawler {
    private JSONArray getProductInfo() {
       JSONArray api = new JSONArray();
 
-      Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).build();
+      String[] tokens = session.getOriginalURL().split("=");
+
+      String url = "https://www.merconnect.com.br/api/v2/markets/58/items/search?query=" + tokens[tokens.length - 1];
+
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       String content = this.dataFetcher.get(session, request).getBody();
 
       JSONObject jsonInfo = CrawlerUtils.stringToJson(content);
