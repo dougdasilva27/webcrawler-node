@@ -44,13 +44,43 @@ public class FortalezaCenterboxCrawler extends Crawler {
 
    }
 
+   private String getToken() {
+      String token = null;
+
+      String apiAdress = "https://loja.centerbox.com.br/static/js/main.89e6b0f2.chunk.js";
+
+      Request request = RequestBuilder.create().setUrl(apiAdress).setCookies(cookies).build();
+      String content = this.dataFetcher.get(session, request).getBody();
+
+      if (content != null) {
+
+         Integer indexOf = content.indexOf("Auth-Token\":\"");
+
+         if (indexOf != null) {
+            Integer lastIndexOf = content.lastIndexOf("\"},$");
+            if (lastIndexOf != null) {
+               String buildJson = "{\"" + content.substring(indexOf, lastIndexOf) + "\"}";
+
+               JSONObject jsonToken = CrawlerUtils.stringToJson(buildJson);
+
+               token = jsonToken.optString("Auth-Token");
+
+            }
+         }
+      }
+
+      return token;
+   }
+
 
    @Override
    protected Object fetch() {
       JSONObject api = new JSONObject();
 
+      String token = getToken();
+
       Map<String, String> headers = new HashMap<>();
-      headers.put("Auth-Token", "RUsycjRnU1BLTndkblIyTnF1T3FvMGlnUDJKVWx4Nk95eC9IL0RaMU80dz0tLVl3dlBqUjJnK1p2amdheW9WRVlWM0E9PQ");
+      headers.put("Auth-Token", token);
       headers.put("Connection", "keep-alive");
 
       String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&neighborhood_id=42&market_codename=centerbox";
@@ -95,8 +125,10 @@ public class FortalezaCenterboxCrawler extends Crawler {
       super.extractInformation(json);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(session.getOriginalURL())) {
+      if (session.getOriginalURL().contains("search")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+
+         String token = getToken();
 
          JSONArray arr = getProductInfo();
 
@@ -150,9 +182,6 @@ public class FortalezaCenterboxCrawler extends Crawler {
 
    }
 
-   private boolean isProductPage(String url) {
-      return url.contains("search");
-   }
 
    private Offers scrapOffers(JSONObject jsonInfo) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
