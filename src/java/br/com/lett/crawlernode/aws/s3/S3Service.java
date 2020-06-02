@@ -189,30 +189,30 @@ public class S3Service {
                     Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
                 }
 
-                // TODO: remove S3 endpoint after validating batch in production VVVVVVV
-                try {
-                    Logging.printLogDebug(logger, session, "Uploading content to S3");
-                    s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
-                    Logging.printLogDebug(logger, session, "Content uploaded to S3 successfully!");
-                } catch (AmazonServiceException ase) {
-                    Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "
-                            + "to Amazon S3, but was rejected with an error response" + " for some reason.");
-                    Logging.printLogError(logger, session, "Error Message:    " + ase.getMessage());
-                    Logging.printLogError(logger, session, "HTTP Status Code: " + ase.getStatusCode());
-                    Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
-                    Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
-                    Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
-
-                    ase.printStackTrace();
-                } catch (AmazonClientException ace) {
-                    Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " + "means the client encountered "
-                            + "an internal error while trying to " + "communicate with S3, " + "such as not being able to access the network.");
-                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
-                } catch (Exception ex) {
-                    Logging.printLogError(logger, session, "Error during html upload.");
-                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
-                }
-                // TODO: remove S3 endpoint after validating batch in production ^^^^^^^^^^^^^^^^^^
+//                // TODO: remove S3 endpoint after validating batch in production VVVVVVV
+//                try {
+//                    Logging.printLogDebug(logger, session, "Uploading content to S3");
+//                    s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
+//                    Logging.printLogDebug(logger, session, "Content uploaded to S3 successfully!");
+//                } catch (AmazonServiceException ase) {
+//                    Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "
+//                            + "to Amazon S3, but was rejected with an error response" + " for some reason.");
+//                    Logging.printLogError(logger, session, "Error Message:    " + ase.getMessage());
+//                    Logging.printLogError(logger, session, "HTTP Status Code: " + ase.getStatusCode());
+//                    Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
+//                    Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
+//                    Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
+//
+//                    ase.printStackTrace();
+//                } catch (AmazonClientException ace) {
+//                    Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " + "means the client encountered "
+//                            + "an internal error while trying to " + "communicate with S3, " + "such as not being able to access the network.");
+//                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
+//                } catch (Exception ex) {
+//                    Logging.printLogError(logger, session, "Error during html upload.");
+//                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+//                }
+//                // TODO: remove S3 endpoint after validating batch in production ^^^^^^^^^^^^^^^^^^
 
                 compressedFile.delete();
             } else {
