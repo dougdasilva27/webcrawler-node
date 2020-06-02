@@ -21,6 +21,9 @@ import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -137,7 +140,11 @@ public abstract class CNOVACrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      Response response = fetchPage(session.getOriginalURL(), PROTOCOL + "://" + this.marketHost + "/");
+      Response response = fetchPage(session.getOriginalURL(), PROTOCOL + "://" + this.marketHost + "/", this.dataFetcher);
+      if (response.getBody().isEmpty()) {
+         response = fetchPage(session.getOriginalURL(), PROTOCOL + "://" + this.marketHost + "/",
+               this.dataFetcher instanceof ApacheDataFetcher ? new FetcherDataFetcher() : new ApacheDataFetcher());
+      }
       Document doc = Jsoup.parse(response.getBody());
 
       List<Cookie> cookiesResponse = response.getCookies();
@@ -148,7 +155,7 @@ public abstract class CNOVACrawler extends Crawler {
       return doc;
    }
 
-   protected Response fetchPage(String url, String referer) {
+   protected Response fetchPage(String url, String referer, DataFetcher df) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Referer", referer);
       headers.put("authority", this.marketHost);
@@ -178,11 +185,11 @@ public abstract class CNOVACrawler extends Crawler {
                   )
             ).build();
 
-      return this.dataFetcher.get(session, request);
+      return df.get(session, request);
    }
 
    protected String fetchPageHtml(String url, String referer) {
-      return fetchPage(url, referer).getBody();
+      return fetchPage(url, referer, this.dataFetcher).getBody();
    }
 
    protected String encodeUrlPath(String url) {
