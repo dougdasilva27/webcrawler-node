@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.aws.s3;
 
-import br.com.lett.crawlernode.aws.ec2.TransferOverSFTP;
+import br.com.lett.crawlernode.aws.ec2.TransferOverFTPS;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
@@ -42,10 +42,9 @@ public class S3Service {
     private static final String LOGS_BUCKET_NAME = GlobalConfigurations.executionParameters.getLogsBucketName();
     private static final String S3_CRAWLER_SESSIONS_PREFIX = "crawler-sessions";
     private static final String S3_BATCH_USER = GlobalConfigurations.executionParameters.getS3BatchUser();
+    private static final String S3_BATCH_PASS = GlobalConfigurations.executionParameters.getS3BatchPass();
     private static final String S3_BATCH_HOST = GlobalConfigurations.executionParameters.getS3BatchHost();
-    private static final String S3_BATCH_KEY = GlobalConfigurations.executionParameters.getS3BatchKey();
     private static final String S3_BATCH_REMOTE_LOCATION = GlobalConfigurations.executionParameters.getS3BatchRemoteLocation();
-    private static final String SSH_KEYS_BUCKET = GlobalConfigurations.executionParameters.getSshKeysBucket();
     private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
     // Amazon crawler-session
     private static final AmazonS3 s3clientCrawlerSessions;
@@ -174,21 +173,21 @@ public class S3Service {
             File compressedFile = new File(tarGzPath);
 
             if (compressedFile.exists()) {
-//                try {
-//                    Logging.printLogDebug(logger, session, "Uploading HTML to S3 Batch service");
-//
-//                    TransferOverSFTP sftp = new TransferOverSFTP(S3_BATCH_USER, S3_BATCH_HOST, SSH_KEYS_BUCKET, S3_BATCH_KEY);
-//                    String localFile = compressedFile.getAbsolutePath();
-//                    String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
-//                    sftp.connect();
-//                    sftp.sendFileAsync(localFile, remoteFile);
-//                    sftp.disconnect();
-//
-//                    Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
-//                } catch (Exception ex) {
-//                    Logging.printLogError(logger, session, "Error during HTML upload.");
-//                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
-//                }
+                try {
+                    Logging.printLogDebug(logger, session, "Uploading HTML to S3 Batch service");
+
+                    String localFile = compressedFile.getAbsolutePath();
+                    String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
+
+                    TransferOverFTPS sftp = new TransferOverFTPS(S3_BATCH_USER, S3_BATCH_PASS, S3_BATCH_HOST);
+                    sftp.sendFile(localFile, remoteFile);
+                    sftp.disconnect();
+
+                    Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
+                } catch (Exception ex) {
+                    Logging.printLogError(logger, session, "Error during HTML upload.");
+                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+                }
 
                 // TODO: remove S3 endpoint after validating batch in production VVVVVVV
                 try {
