@@ -8,7 +8,6 @@ import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -83,19 +82,36 @@ public class FortalezaCenterboxCrawler extends Crawler {
       headers.put("Auth-Token", token);
       headers.put("Connection", "keep-alive");
 
-      String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&neighborhood_id=42&market_codename=centerbox";
+      String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&market_codename=centerbox";
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
       String content = this.dataFetcher.get(session, request).getBody();
-
-      if (content == null || content.isEmpty()) {
-         content = new ApacheDataFetcher().get(session, request).getBody();
-      }
 
       api = CrawlerUtils.stringToJson(content);
 
       return api;
    }
+
+
+   private String getMarketID(JSONObject apiResponse) {
+
+      String marketId = null;
+
+      JSONArray markets = JSONUtils.getJSONArrayValue(apiResponse, "markets");
+
+      if (markets != null) {
+         for (Object arr : markets) {
+
+            JSONObject jsonM = (JSONObject) arr;
+
+            marketId = jsonM.optString("id");
+
+         }
+      }
+
+      return marketId;
+   }
+
 
    @Override
    public boolean shouldVisit() {
@@ -103,34 +119,25 @@ public class FortalezaCenterboxCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   private JSONArray getProductInfo() {
-      JSONArray api = new JSONArray();
-
-      String[] tokens = session.getOriginalURL().split("=");
-
-      String url = "https://www.merconnect.com.br/api/v2/markets/58/items/search?query=" + tokens[tokens.length - 1];
-
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      JSONObject jsonInfo = CrawlerUtils.stringToJson(content);
-
-      api = JSONUtils.getJSONArrayValue(jsonInfo, "mixes");
-
-      return api;
-   }
-
    @Override
-   public List<Product> extractInformation(JSONObject json) throws Exception {
-      super.extractInformation(json);
+   public List<Product> extractInformation(JSONObject api) throws Exception {
+      super.extractInformation(api);
       List<Product> products = new ArrayList<>();
 
-      if (session.getOriginalURL().contains("search")) {
+      if (session.getOriginalURL().contains("id=")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String token = getToken();
+         String marketId = getMarketID(api);
 
-         JSONArray arr = getProductInfo();
+         // Build the URL
+         String[] tokens = session.getOriginalURL().split("id=");
+         String url = "https://www.merconnect.com.br/api/v2/markets/" + marketId + "/items/search?query=" + tokens[tokens.length - 1];
+         // make a request in a new URL
+         Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+         String content = this.dataFetcher.get(session, request).getBody();
+         // Get a JSONArray
+         JSONObject rawJsonWithAllContent = CrawlerUtils.stringToJson(content);
+         JSONArray arr = JSONUtils.getJSONArrayValue(rawJsonWithAllContent, "mixes");
 
          for (Object arrayOfArrays : arr) {
 
@@ -142,7 +149,14 @@ public class FortalezaCenterboxCrawler extends Crawler {
 
                   JSONObject jsonInfo = (JSONObject) productJsonInfo;
 
-                  if (jsonInfo != null) {
+                  /*
+                   * Now, we have to compare the product's bar_code with the bar_code that is passed as a parameter in
+                   * the URL. The reason for this is that in some cases, JSONArray can return an array of arrays
+                   * (here's an example:https://www.merconnect.com.br/api/v2/markets/58/items/search?query=10381) and
+                   * all products have a bar_code, we have to make sure that we are getting the right product.
+                   */
+
+                  if (jsonInfo != null && jsonInfo.opt("bar_code").equals(tokens[tokens.length - 1])) {
 
                      String internalId = jsonInfo.optString("id");
                      String internalPid = jsonInfo.optString("mix_id");

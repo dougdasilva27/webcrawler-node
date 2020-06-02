@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,7 +18,7 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
    }
 
 
-   private static final String URL_PRODUCT_PAGE = "https://loja.centerbox.com.br/loja/58/search?query=";
+   private static final String URL_PRODUCT_PAGE = "https://loja.centerbox.com.br?id=";
    private static final String CEP = "60192-105";
 
    private String getToken() {
@@ -50,7 +49,6 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
       return token;
    }
 
-
    protected Object fetch() {
       JSONObject api = new JSONObject();
 
@@ -59,19 +57,36 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put("Auth-Token", token);
       headers.put("Connection", "keep-alive");
-      String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&neighborhood_id=42&market_codename=centerbox";
+
+      String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&market_codename=centerbox";
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
       String content = this.dataFetcher.get(session, request).getBody();
-
-      if (content == null || content.isEmpty()) {
-         content = new ApacheDataFetcher().get(session, request).getBody();
-      }
 
       api = CrawlerUtils.stringToJson(content);
 
       return api;
    }
+
+   private String getMarketID(JSONObject apiResponse) {
+
+      String marketId = null;
+
+      JSONArray markets = JSONUtils.getJSONArrayValue(apiResponse, "markets");
+
+      if (markets != null) {
+         for (Object arr : markets) {
+
+            JSONObject jsonM = (JSONObject) arr;
+
+            marketId = jsonM.optString("id");
+
+         }
+      }
+
+      return marketId;
+   }
+
 
 
    @Override
@@ -79,7 +94,10 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
       // número de produtos por página do market
       this.pageSize = 0;
 
-      String url = "https://www.merconnect.com.br/api/v2/markets/58/items/search?query=" + this.keywordEncoded;
+      JSONObject fetch = (JSONObject) fetch();
+      String marketId = getMarketID(fetch);
+
+      String url = "https://www.merconnect.com.br/api/v2/markets/" + marketId + "/items/search?query=" + this.keywordEncoded;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
