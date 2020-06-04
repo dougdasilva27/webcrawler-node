@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.aws.ec2;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPSClient;
 
@@ -23,8 +24,8 @@ public class TransferOverFTPS {
     }
 
     // https://www.codejava.net/java-se/ftp/creating-nested-directory-structure-on-a-ftp-server
-    public boolean makeDirectories(String dirPath) throws IOException {
-        String[] pathElements = dirPath.split("/");
+    public boolean makeAndChangeWorkingDirectory(String dirPath) throws IOException {
+        String[] pathElements = StringUtils.removeStart(dirPath, "/").split("/");
         if (pathElements.length > 0) {
             for (String singleDir : pathElements) {
                 boolean existed = ftpClient.changeWorkingDirectory(singleDir);
@@ -46,9 +47,8 @@ public class TransferOverFTPS {
         String remoteParentDirectory = remoteFilePath.getParent().toString();
         String remoteFileName = remoteFilePath.getFileName().toString();
 
-        if (!ftpClient.changeWorkingDirectory(remoteParentDirectory)) {
-            makeDirectories(remoteParentDirectory);
-            ftpClient.changeWorkingDirectory(remoteParentDirectory);
+        if (!ftpClient.changeWorkingDirectory(remoteParentDirectory) && !makeAndChangeWorkingDirectory(remoteParentDirectory)) {
+            throw new IOException("Unable to create directory in ftp server: " + remoteParentDirectory);
         }
 
         InputStream inputStream = new FileInputStream(localFile);
