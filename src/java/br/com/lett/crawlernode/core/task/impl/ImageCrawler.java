@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,8 +163,8 @@ public class ImageCrawler extends Task {
          newTransformedImageMetadata.setContentType("image/jpeg");
          newTransformedImageMetadata.setContentLength(transformedImageFile.length());
 
-         // S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
-         // creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
+               creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
          Logging.printLogDebug(LOGGER, session, "Done ... ");
       } else {
          Logging.printLogWarn(LOGGER, session, "Transformed image file was not sent to S3 because it is null.");
@@ -184,8 +185,8 @@ public class ImageCrawler extends Task {
          newImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
          newImageMetadata.setContentType("image/" + imageDownloadResult.imageFormat);
          newImageMetadata.setContentLength(originalImage.length());
-         // S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true,
-         // imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true,
+               imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
 
          Logging.printLogDebug(LOGGER, session, "Done.");
       } else {
@@ -322,7 +323,7 @@ public class ImageCrawler extends Task {
       return new StringBuilder()
             .append("sku").append("/")
             .append("market_code=").append(session.getMarket().getCode()).append("/")
-            .append("internal_id=").append(session.getInternalId()).append("/")
+            .append("internal_id=").append(Hex.encodeHex(session.getInternalId().getBytes())).append("/")
             .append("type=").append(session.getType()).append("/")
             .append(session.getType().equalsIgnoreCase("primary") ? "1" : session.getImageNumber())
             .append(original ? "_original" : ".jpg")
