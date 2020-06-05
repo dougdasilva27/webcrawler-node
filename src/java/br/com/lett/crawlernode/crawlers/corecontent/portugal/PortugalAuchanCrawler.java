@@ -38,6 +38,7 @@ public class PortugalAuchanCrawler extends Crawler {
       super(session);
    }
 
+
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
@@ -56,25 +57,22 @@ public class PortugalAuchanCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".info input[name=\"Id\"]", "value");
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .relative", false);
-         boolean available = true;
+         boolean available = doc.selectFirst("button[data-gtmevent=\"ev_add_to_cart\"]") != null;
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".item.type-image a img", Arrays.asList("src"), "http://", HOME_PAGE);
-         // String secondaryImages = crawlSecondaryImages(jsonProduct);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a");
-         // RatingsReviews ratingReviews = crawlRating(doc, skuJson.optString("productId"));
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productDetail .row .col-md-12"));
-         Offers offers = scrapOffer(doc);
+         Offers offers = available ? scrapOffer(doc) : new Offers();
          // Creating the product
+
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               // .setRatingReviews(ratingReviews)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
-               // .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setOffers(offers)
                .build();
