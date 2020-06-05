@@ -16,36 +16,39 @@ import org.jsoup.nodes.Document
 
 class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
 
+  override fun shouldVisit(): Boolean {
+    val href = session.originalURL.toLowerCase()
+    return !FILTERS.matcher(href).matches() && href.startsWith("https://www.comperdelivery.com.br/")
+  }
+
   override fun extractInformation(document: Document): List<Product> {
     val products = mutableListOf<Product>()
 
-    val name = document.selectAny("#product-01", ".product-header__name")?.text()
+    if ("/p" in session.originalURL) {
 
-    val split = session.originalURL.split("/")
-    val internalId = split[split.size - 2]
+      val name = document.selectAny("#product-01", ".product-header__name")?.text()
 
-    val categories = document.select(".breadcrumb__item").eachText(ignoreIndex = arrayOf(0))
+      val categories = document.select(".breadcrumb__item").eachText(ignoreIndex = arrayOf(0))
 
-    val description = document.selectFirst(".product-details")?.html()
+      val description = document.selectFirst(".product-details")?.html()
 
-    val images = document.select(".pics-slider__thumbnail img")?.eachAttr("src")
-      ?.map { src -> "\\d.*(?=x_)".toRegex().replace(src, "768") }?.toMutableList()
+      val images = document.select(".pics-slider__thumbnail img")?.eachAttr("src")
+        ?.map { src -> "\\d.*(?=x_)".toRegex().replace(src, "768") }?.toMutableList()
 
-    val jsonProduct = CrawlerUtils.selectJsonFromHtml(document, "script", "__INITIAL_STATE__=", "};", false, false)
-      ?.optJSONObject("pdp")?.optJSONObject("product") ?: JSONObject()
+      val jsonProduct = CrawlerUtils.selectJsonFromHtml(document, "script", "__INITIAL_STATE__=", "};", false, false)
+        ?.optJSONObject("pdp")?.optJSONObject("product") ?: JSONObject()
 
-    val productBuilder = ProductBuilder.create()
-      .setCategories(categories)
-      .setName(name)
-      .setDescription(description)
-      .setInternalId(internalId)
-      .setUrl(session.originalURL)
+      val productBuilder = ProductBuilder.create()
+        .setCategories(categories)
+        .setName(name)
+        .setDescription(description)
+        .setUrl(session.originalURL)
 
-
-    products += if (jsonProduct.opt("skus") != null) {
-      scrapMutipleSkus(productBuilder, jsonProduct.optJSONArray("skus"), images)
-    } else {
-      scrapSingleSku(productBuilder, jsonProduct)
+      products += if (jsonProduct.opt("skus") != null) {
+        scrapMutipleSkus(productBuilder, jsonProduct.optJSONArray("skus"), images)
+      } else {
+        scrapSingleSku(productBuilder, jsonProduct)
+      }
     }
 
     return products
@@ -56,7 +59,7 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
     val jsonOffers = jsonProduct.optJSONObject("offer")
 
     val images = mutableListOf<String?>()
-    for (json in (jsonOffers.optJSONArray("images") ?: JSONArray())) {
+    for (json in (jsonProduct.optJSONArray("images") ?: JSONArray())) {
       if (json is JSONObject) {
         images.add(json.optString("large"))
       }
@@ -66,12 +69,13 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
 
     val offers: Offers = scrapSingleOffers(jsonOffers)
 
-    products += productBuilder.setInternalId(jsonProduct.optString("product_id"))
+    products += productBuilder
       .setOffers(offers)
+      .setInternalId(jsonProduct.optString("sku_id", null))
+      .setInternalPid(jsonProduct.optString("product_id", null))
       .setPrimaryImage(primary)
       .setSecondaryImages(JSONArray(images).toString())
       .build()
-
     return products
 
   }
@@ -105,8 +109,12 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
       if (skuJson is JSONObject) {
         val offers = scrapOffers(skuJson.optJSONArray("offers"))
 
+        val split = session.originalURL.split("/")
+
         products += productBuilder
           .setOffers(offers)
+          .setInternalId(skuJson.optString("id"))
+          .setInternalPid(split[split.size - 2])
           .setPrimaryImage(images?.removeAt(0))
           .setSecondaryImages(JSONArray(images).toString())
           .setEans(listOf(skuJson.optString("ean13")))
@@ -122,11 +130,13 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
     for (sku in jsonOffers) {
       if (sku is JSONObject) {
         val creditCards = CreditCards()
-
-        for (cardInf in sku.optJSONArray("financing_options")) {
-          if (cardInf is JSONObject) {
-            setOf(VISA, MASTERCARD, AMEX).toCreditCards(instPrice = MathUtils.parseDoubleWithComma(cardInf.optString("first_quota")), instNumber = cardInf.optInt("months"))
-              .creditCards.forEach(creditCards::add)
+        val financingOpt = sku.optJSONArray("financing_options")
+        if (financingOpt != null) {
+          for (cardInf in financingOpt) {
+            if (cardInf is JSONObject) {
+              setOf(VISA, MASTERCARD, AMEX).toCreditCards(instPrice = MathUtils.parseDoubleWithComma(cardInf.optString("first_quota")), instNumber = cardInf.optInt("months"))
+                .creditCards.forEach(creditCards::add)
+            }
           }
         }
         val price: Double? = MathUtils.parseDoubleWithComma(sku.optString("price"))
