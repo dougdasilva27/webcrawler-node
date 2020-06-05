@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -55,10 +53,6 @@ public class PortugalAuchanCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
-
-
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".info input[name=\"Id\"]", "value");
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .relative", false);
@@ -68,14 +62,13 @@ public class PortugalAuchanCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a");
          // RatingsReviews ratingReviews = crawlRating(doc, skuJson.optString("productId"));
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productDetail .row .col-md-12"));
-         Offers offers = scrapOffer(doc, internalId);
+         Offers offers = scrapOffer(doc);
          // Creating the product
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setAvailable(available)
                // .setRatingReviews(ratingReviews)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
@@ -100,10 +93,10 @@ public class PortugalAuchanCrawler extends Crawler {
       return document.selectFirst("#conteudo .product-detail") != null;
    }
 
-   private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
+   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(internalId, doc);
-      List<String> sales = scrapSales(doc);
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = new ArrayList<>();
 
       offers.add(OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -119,35 +112,21 @@ public class PortugalAuchanCrawler extends Crawler {
 
    }
 
-   private List<String> scrapSales(Document doc) {
-      List<String> sales = new ArrayList<>();
 
-      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
-      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
-
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
-      }
-
-      return sales;
-   }
-
-   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
-      // Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null,
-      // false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".row .item-price", null, false, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-old-price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-price", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return PricingBuilder.create()
-            // .setPriceFrom(priceFrom)
+            .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
             .build();
 
-
    }
 
-   private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
