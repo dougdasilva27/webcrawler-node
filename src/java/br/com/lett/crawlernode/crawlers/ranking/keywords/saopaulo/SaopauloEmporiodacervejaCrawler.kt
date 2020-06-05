@@ -64,7 +64,6 @@ class SaopauloEmporiodacervejaCrawler(session: Session) : CrawlerRankingKeywords
 
     private fun fetchSearchApi(): JSONObject? {
         var searchApi = JSONObject()
-        //val urlTeste = "https://www.emporiodacerveja.com.br/_v/segment/graphql/v1?workspace=abtestbeermenu&maxAge=short&appsEtag=remove&domain=store&locale=pt-BR&operationName=searchResult&variables=%7B%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22dcf550c27cd0bbf0e6899e3fa1f4b8c0b977330e321b9b8304cc23e2d2bad674%22%2C%22sender%22%3A%22vtex.search%400.x%22%2C%22provider%22%3A%22vtex.search%400.x%22%7D%2C%22variables%22%3A%22eyJwcm9kdWN0T3JpZ2luIjoiVlRFWCIsImluZGV4aW5nVHlwZSI6IkFQSSIsInF1ZXJ5IjoiY2VydmVqYSIsInBhZ2UiOjEsImF0dHJpYnV0ZVBhdGgiOiIiLCJzb3J0IjoiIiwiY291bnQiOjIwLCJsZWFwIjpmYWxzZX0%3D%22%7D"
         val url = StringBuilder()
         url.append("https://www.emporiodacerveja.com.br/_v/segment/graphql/v1?")
         url.append("workspace=abtestbeermenu")
