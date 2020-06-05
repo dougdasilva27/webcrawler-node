@@ -8,10 +8,8 @@ import org.jsoup.nodes.Document
 
 class SaopauloEmporiodacervejaCrawler(session: Session) : VTEXNewScraper(session) {
 
-    companion object {
-        private const val HOME_PAGE = "https://www.emporiodacerveja.com.br/"
-        private const val MAIN_SELLER_NAME_LOWER = "emporiodacerveja.com.br"
-    }
+    private val HOME_PAGE = "https://www.emporiodacerveja.com.br/"
+    private val MAIN_SELLER_NAME_LOWER = "emporiodacerveja.com.br"
 
     override fun getHomePage(): String {
         return HOME_PAGE

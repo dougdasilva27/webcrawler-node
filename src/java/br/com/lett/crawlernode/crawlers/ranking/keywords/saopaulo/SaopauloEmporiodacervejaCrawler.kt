@@ -6,7 +6,6 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CommonMethods
 import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.Logging
-import com.google.gson.JsonObject
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
@@ -15,12 +14,10 @@ import java.net.URLEncoder
 import java.util.*
 
 class SaopauloEmporiodacervejaCrawler(session: Session) : CrawlerRankingKeywords(session) {
-    companion object {
-        private const val HOME_PAGE = "https://www.emporiodacerveja.com.br/"
-        private const val API_VERSION = 1
-        private const val SENDER = "vtex.search@0.x"
-        private const val PROVIDER = "vtex.search@0.x"
-    }
+
+    private val API_VERSION = 1
+    private val SENDER = "vtex.search@0.x"
+    private val PROVIDER = "vtex.search@0.x"
 
     private var keySHA256: String = "dcf550c27cd0bbf0e6899e3fa1f4b8c0b977330e321b9b8304cc23e2d2bad674"
 
@@ -33,21 +30,19 @@ class SaopauloEmporiodacervejaCrawler(session: Session) : CrawlerRankingKeywords
         }
 
         val searchApi = fetchSearchApi()
-        val products = if (searchApi!!.has("products")) searchApi.getJSONArray("products") else JSONArray()
+        val products = if (searchApi.opt("products") != null) searchApi.optJSONArray("products") else JSONArray()
 
         if (products.length() > 0) {
             if (totalProducts == 0) {
+
                 setTotalProducts(searchApi)
             }
-            for (`object` in products) {
-                val product = `object` as JSONObject
+            for (item in products) {
+                val product = item as JSONObject
                 val productUrl = CrawlerUtils.completeUrl(product.optString("link"), "https", "www.emporiodacerveja.com.br").replace("portal.vtexcommercestable", "emporiodacerveja")
                 val internalPid = product.optString("productId")
                 saveDataProduct(null, internalPid, productUrl)
                 log("Position: $position - InternalId: null - InternalPid: $internalPid - Url: $productUrl")
-                if (arrayProducts.size == productsLimit) {
-                    break
-                }
             }
         } else {
             result = false
@@ -58,11 +53,11 @@ class SaopauloEmporiodacervejaCrawler(session: Session) : CrawlerRankingKeywords
     }
 
     private fun setTotalProducts(data: JSONObject) {
-        totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "total", 0)
+        totalProducts = data.optInt("total")
         log("Total da busca: $totalProducts")
     }
 
-    private fun fetchSearchApi(): JSONObject? {
+    private fun fetchSearchApi(): JSONObject {
         var searchApi = JSONObject()
         val url = StringBuilder()
         url.append("https://www.emporiodacerveja.com.br/_v/segment/graphql/v1?")
@@ -95,7 +90,7 @@ class SaopauloEmporiodacervejaCrawler(session: Session) : CrawlerRankingKeywords
         }
         url.append(payload.toString())
 
-        log("Link onde são feitos os crawlers: ${url.toString()}")
+        log("Link onde são feitos os crawlers: $url")
 
         val request = Request.RequestBuilder.create()
                 .setUrl(url.toString())
@@ -132,18 +127,6 @@ class SaopauloEmporiodacervejaCrawler(session: Session) : CrawlerRankingKeywords
         return Base64.getEncoder().encodeToString(search.toString().toByteArray())
     }
 
-    /**
-     * This function accesses the search url and extracts a hash that will be required to access the
-     * search api.
-     *
-     * This hash is inside a key in json STATE. Ex:
-     *
-     * "$ROOT_QUERY.productSearch({\"from\":0,\"hideUnavailableItems\":true,\"map\":\"ft\",\"orderBy\":\"OrderByTopSaleDESC\",\"query\":\"ACONDICIONADOR\",\"to\":19}) @runtimeMeta({\"hash\":\"0be25eb259af62c2a39f305122908321d46d3710243c4d4ec301bf158554fa71\"})"
-     *
-     * Hash: a627313bafddd8a80fa1ed6223a7bb55ea33e76959294b4f80b74bcd2ef86e8b
-     *
-     * @return
-     */
     private fun fetchSHA256Key(): String {
         // When sha256Hash is not found, this key below works (on 05/06/2020)
         var hash = "dcf550c27cd0bbf0e6899e3fa1f4b8c0b977330e321b9b8304cc23e2d2bad674"
