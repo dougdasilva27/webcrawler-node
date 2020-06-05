@@ -2,33 +2,37 @@ package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.remote.JsonException;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Util;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer.OfferBuilder;
+import models.Offers;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class ArgentinaCarrefourCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.carrefour.com.ar/";
+   private static final String SELLER_FULL_NAME = "Carrefour";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ArgentinaCarrefourCrawler(Session session) {
       super(session);
@@ -48,21 +52,28 @@ public class ArgentinaCarrefourCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".no-display input", "value");
          String name = crawlName(doc);
-         Float price = crawlPrice(doc);
-         Prices prices = crawlPrices(doc);
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
          String secondaryImages = crawlSecondaryImages(doc);
          String description = crawlDescription(doc);
          Integer stock = null;
+         Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-               .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+         Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setOffers(offers)
                .setStock(stock).build();
 
          products.add(product);
@@ -108,94 +119,9 @@ public class ArgentinaCarrefourCrawler extends Crawler {
    }
 
    private boolean crawlAvailability(Document doc) {
-      return doc.select("div.add-to-cart-buttons p.out-of-stock").first() == null;
+      return doc.select(".btn.btn-add").first() == null;
    }
 
-   /**
-    * Possui várias bandeiras e para cada bandeira vários bancos. Apenas o cartão da loja está sendo
-    * capturado.
-    * 
-    * @param price
-    * @param doc
-    * @return
-    */
-   private Prices crawlPrices(Document doc) {
-      Prices prices = new Prices();
-      Pair<String, String> idTarjeta = getIdTarjetaCarrefourId(doc);
-      JSONObject dataBanking = parseDataBanking(doc);
-      if (idTarjeta != null) {
-         if (dataBanking.has(idTarjeta.getLeft())) {
-            JSONObject tarjeta = dataBanking.getJSONObject(idTarjeta.getLeft());
-            if (tarjeta.has(idTarjeta.getRight())) {
-               JSONObject tarjetaCarrefour = tarjeta.getJSONObject(idTarjeta.getRight());
-               if (tarjetaCarrefour.has("0")) {
-                  JSONObject installmentsJson = tarjetaCarrefour.getJSONObject("0");
-                  Set<String> keys = installmentsJson.keySet();
-                  Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-                  for (String key : keys) {
-                     JSONObject installmentJson = installmentsJson.getJSONObject(key);
-                     if (installmentJson.has("name")) {
-                        Pattern p = Pattern.compile("(\\$[\\d\\.]+\\,\\d+)");
-                        Matcher m = p.matcher(installmentJson.getString("name"));
-                        if (m.find()) {
-                           try {
-                              Float installmentPrice =
-                                    Float.parseFloat(m.group(1).replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-                              installmentPriceMap.put(Integer.parseInt(key), installmentPrice);
-                           } catch (NumberFormatException ex) {
-                              Logging.printLogWarn(logger, session, "Error parsing installment value from dataBanking. [" + ex.getMessage() + "]");
-                           }
-                        }
-                     }
-                  }
-                  prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-               }
-            }
-         }
-      }
-      return prices;
-   }
-
-   /**
-    * Cada badneira de cartão possuía um id, o qual deve ser usado para pegar as informações das
-    * parcelas no json parseado na função crawrlPrices.
-    * 
-    * @return
-    */
-   private Pair<String, String> getIdTarjetaCarrefourId(Document doc) {
-      Elements elements = doc.select("#lc_pmnt_cc_id option");
-      for (Element e : elements) {
-         if (e.text().toLowerCase().contains("carrefour")) {
-            return Pair.of(e.attr("value"), e.text());
-         }
-      }
-      return null;
-   }
-
-   private Float crawlPrice(Document doc) {
-      Float price = null;
-      Element priceElement = doc.select("div.price-info div.price-box .special-price span.price").first();
-      if (priceElement != null) {
-         try {
-            price = Float.parseFloat(priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim());
-         } catch (NumberFormatException numberFormatException) {
-            Logging.printLogWarn(logger, session, "Error parsing price String to float.");
-            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(numberFormatException));
-         }
-      } else {
-         priceElement = doc.select("div.price-info span.regular-price span[itemprop=price]").first();
-         if (priceElement != null) {
-            String priceString = priceElement.text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", ".").trim();
-            try {
-               price = Float.parseFloat(priceString);
-            } catch (NumberFormatException numberFormatException) {
-               Logging.printLogWarn(logger, session, "Error parsing price String to float.");
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(numberFormatException));
-            }
-         }
-      }
-      return price;
-   }
 
    private String crawlName(Document doc) {
       if (doc.select("div.product-name h1").first() != null) {
@@ -208,53 +134,73 @@ public class ArgentinaCarrefourCrawler extends Crawler {
       return doc.select(".product-view").first() != null;
    }
 
-   private String crawlInternalId(Document doc) {
-      JSONObject dataLayer = parseDataLayer(doc);
-      if (dataLayer.has("productos")) {
-         JSONArray products = dataLayer.getJSONArray("productos");
-         if (products.length() > 0) {
-            JSONObject product = products.getJSONObject(0);
-            if (product.has("id")) {
-               return product.getString("id");
-            }
-         }
-      }
-      return null;
+   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(doc);
+
+      offers.add(OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+
+      return offers;
+
    }
 
-   /*
-    * dataLayer.push({ "productos": [ { "name":
-    * "Lavarropas Automático Samsung 8 KG WA80F5S4UTW Blanco", "id": "6468", "price": "15999,00",
-    * "brand": "Samsung", "category": "Lavado y Secado" } ], "event": "productdetailview" });
-    */
-   private JSONObject parseDataLayer(Document document) {
-      try {
-         return CrawlerUtils.selectJsonFromHtml(document, "script", "dataLayer.push(", ");");
-      } catch (Exception e) {
-         Logging.printLogWarn(logger, session, Util.getStackTraceString(e));
-         return new JSONObject();
-      }
-   }
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
 
-   private JSONObject parseDataBanking(Document document) {
-      Elements scripts = document.select("script");
-      JSONObject dataBanking = new JSONObject();
+      Element salesOneElement = doc.selectFirst(".product-shop .offer");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
 
-      for (Element e : scripts) {
-         String dataLayer = e.outerHtml().trim();
-
-         if (dataLayer.contains("var dataBankingJson = {")) {
-            int x = dataLayer.indexOf("= {") + 2;
-            int y = dataLayer.indexOf("};", x);
-            try {
-               dataBanking = new JSONObject(dataLayer.substring(x, y + 1));
-            } catch (JsonException jsonException) {
-               Logging.printLogWarn(logger, session, "Error parsing dataBanking json object [" + jsonException.getMessage() + "]");
-            }
-         }
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
       }
 
-      return dataBanking;
+      return sales;
    }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".regular-price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box .price .precio-numero", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+
+      return PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
+
+
+   }
+
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+      }
+
+      return creditCards;
+   }
+
 
 }
