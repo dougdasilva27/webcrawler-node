@@ -1,10 +1,8 @@
 package br.com.lett.crawlernode.util
 
 import br.com.lett.crawlernode.core.models.Card
-import models.pricing.CreditCard
-import models.pricing.CreditCards
-import models.pricing.Installment
-import models.pricing.Installments
+import models.pricing.*
+import models.pricing.BankSlip.BankSlipBuilder
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
@@ -111,3 +109,19 @@ fun toSlug(input: String): String {
   slug = EDGESDHASHES.matcher(slug).replaceAll("")
   return slug.toLowerCase(Locale.ENGLISH)
 }
+
+/**
+ * It tends to void null, but depends on selectors
+ */
+fun Document.selectAny(vararg selectors: String): Element? {
+  var found: Element? = null
+  for (selector in selectors) {
+    val element = selectFirst(selector)
+    if (element != null) {
+      found = element
+    }
+  }
+  return found
+}
+
+fun Double.toBankSlip(discount: Double? = null): BankSlip = BankSlipBuilder.create().setFinalPrice(this).setOnPageDiscount(discount).build()
