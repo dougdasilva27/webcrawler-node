@@ -52,7 +52,7 @@ public class ArgentinaCarrefourCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".no-display input", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".fav-btn-open", "data-bind");
          String name = crawlName(doc);
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
