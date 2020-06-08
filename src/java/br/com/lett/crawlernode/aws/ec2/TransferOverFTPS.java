@@ -24,7 +24,7 @@ public class TransferOverFTPS {
     }
 
     // https://www.codejava.net/java-se/ftp/creating-nested-directory-structure-on-a-ftp-server
-    public boolean makeAndChangeWorkingDirectory(String dirPath) throws IOException {
+    public boolean mkdirsAndCWD(String dirPath) throws IOException {
         String[] pathElements = StringUtils.removeStart(dirPath, "/").split("/");
         if (pathElements.length > 0) {
             for (String singleDir : pathElements) {
@@ -42,13 +42,27 @@ public class TransferOverFTPS {
         return true;
     }
 
+    public Thread sendFileAsyncAndCloseConnection(String localFile, String remoteFile) {
+        Thread sendFileThread = new Thread(() -> {
+            try {
+                sendFile(localFile, remoteFile);
+                disconnect();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        sendFileThread.start();
+        return sendFileThread;
+    }
+
     public void sendFile(String localFile, String remoteFile) throws IOException {
         Path remoteFilePath = Paths.get(remoteFile);
         String remoteParentDirectory = remoteFilePath.getParent().toString();
         String remoteFileName = remoteFilePath.getFileName().toString();
 
-        if (!ftpClient.changeWorkingDirectory(remoteParentDirectory) && !makeAndChangeWorkingDirectory(remoteParentDirectory)) {
-            throw new IOException("Unable to create directory in ftp server: " + remoteParentDirectory);
+        if (!ftpClient.changeWorkingDirectory(remoteParentDirectory)) {
+            mkdirsAndCWD(remoteParentDirectory);
+            ftpClient.changeWorkingDirectory(remoteParentDirectory);
         }
 
         InputStream inputStream = new FileInputStream(localFile);

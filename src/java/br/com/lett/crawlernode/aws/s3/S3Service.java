@@ -180,8 +180,7 @@ public class S3Service {
                     String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
 
                     TransferOverFTPS sftp = new TransferOverFTPS(S3_BATCH_USER, S3_BATCH_PASS, S3_BATCH_HOST);
-                    sftp.sendFile(localFile, remoteFile);
-                    sftp.disconnect();
+                    sftp.sendFileAsyncAndCloseConnection(localFile, remoteFile);
 
                     Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
                 } catch (Exception ex) {
