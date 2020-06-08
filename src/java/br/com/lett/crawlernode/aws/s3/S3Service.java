@@ -180,7 +180,7 @@ public class S3Service {
                     String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
 
                     TransferOverFTPS sftp = new TransferOverFTPS(S3_BATCH_USER, S3_BATCH_PASS, S3_BATCH_HOST);
-                    sftp.sendFileAsyncAndCloseConnection(localFile, remoteFile);
+                    sftp.sendFileAsyncAndCloseConnection(localFile, remoteFile, true);
 
                     Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
                 } catch (Exception ex) {
@@ -210,10 +210,11 @@ public class S3Service {
 //                } catch (Exception ex) {
 //                    Logging.printLogError(logger, session, "Error during html upload.");
 //                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
+//                } finally {
+//                    compressedFile.delete();
 //                }
 //                // TODO: remove S3 endpoint after validating batch in production ^^^^^^^^^^^^^^^^^^
 
-                compressedFile.delete();
             } else {
                 Logging.printLogDebug(logger, session, "No files to upload!");
             }

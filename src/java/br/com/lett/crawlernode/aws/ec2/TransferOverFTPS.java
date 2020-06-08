@@ -3,11 +3,9 @@ package br.com.lett.crawlernode.aws.ec2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPSClient;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -42,11 +40,25 @@ public class TransferOverFTPS {
         return true;
     }
 
+    public Thread sendFileAsyncAndCloseConnection(String localFile, String remoteFile, boolean deleteLocalFile) {
+        return _sendFileAsync(localFile, remoteFile, deleteLocalFile);
+    }
+
     public Thread sendFileAsyncAndCloseConnection(String localFile, String remoteFile) {
+        return _sendFileAsync(localFile, remoteFile, false);
+    }
+
+    private Thread _sendFileAsync(String localFile, String remoteFile, boolean deleteLocalFile) {
         Thread sendFileThread = new Thread(() -> {
             try {
                 sendFile(localFile, remoteFile);
                 disconnect();
+                if (deleteLocalFile) {
+                    File fileToDelete = new File(localFile);
+                    if (fileToDelete.exists()) {
+                        fileToDelete.delete();
+                    }
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
