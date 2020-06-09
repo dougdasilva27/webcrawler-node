@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 
-class SaopauloSuperpaguemenosCrawler(session: Session?) : CrawlerRankingKeywords(session) {
+class SaopauloSupermercadospaguemenosCrawler(session: Session?) : CrawlerRankingKeywords(session) {
 
   init {
     pageSize = 40

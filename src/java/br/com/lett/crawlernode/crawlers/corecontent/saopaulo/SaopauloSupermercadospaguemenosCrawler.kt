@@ -13,7 +13,7 @@ import models.Offers
 import models.pricing.Pricing.PricingBuilder
 import org.jsoup.nodes.Document
 
-class SaopauloSuperpaguemenosCrawler(session: Session?) : Crawler(session) {
+class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(session) {
 
   override fun extractInformation(document: Document): MutableList<Product> {
     val products = mutableListOf<Product>()
