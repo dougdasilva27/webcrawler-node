@@ -53,13 +53,14 @@ public class PeruWongCrawler extends Crawler {
       JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
       JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
 
+      String name = skuJson.optString("name");
 
       for (int i = 0; i < arraySkus.length(); i++) {
         JSONObject jsonSku = arraySkus.getJSONObject(i);
 
         String internalId = vtexUtil.crawlInternalId(jsonSku);
         JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-        String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
+        String skuName = vtexUtil.crawlName(jsonSku, skuJson, " ");
         Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
         List<String> wongSellers = CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2));
         Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, wongSellers, Arrays.asList(Card.VISA), session);
@@ -75,7 +76,7 @@ public class PeruWongCrawler extends Crawler {
         eans.add(ean);
 
         // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
+        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(concatenateName(name, skuName))
             .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
             .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
@@ -140,4 +141,9 @@ public class PeruWongCrawler extends Crawler {
 
     return description.toString();
   }
+
+  private String concatenateName(String name, String skuName) {
+    return name.equals(skuName) ? skuName : name + " - " + skuName;
+  }
+
 }
