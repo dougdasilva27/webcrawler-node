@@ -33,7 +33,6 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 
 public class JavanetDataFetcher implements DataFetcher {
 
@@ -165,7 +164,7 @@ public class JavanetDataFetcher implements DataFetcher {
          long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
-            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_US);
+            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_EU);
 
             RequestsStatistics requestStats = new RequestsStatistics();
             requestStats.setAttempt(attempt);
@@ -179,7 +178,7 @@ public class JavanetDataFetcher implements DataFetcher {
             Proxy proxy = null;
 
             if (!proxyStorm.isEmpty() && attempt < 4) {
-               Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_US + " for this request.");
+               Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_EU + " for this request.");
                proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
             } else {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
