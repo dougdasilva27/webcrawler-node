@@ -118,7 +118,7 @@ public class ApacheDataFetcher implements DataFetcher {
                         new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
-               Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "]Using no proxy for this request.");
+               Logging.printLogDebug(logger, session, "[NO_PROXY ALERT][ATTEMPT " + attempt + "]Using no proxy for this request.");
             }
 
             List<Header> reqHeaders = new ArrayList<>();
@@ -311,7 +311,7 @@ public class ApacheDataFetcher implements DataFetcher {
                         new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
-               Logging.printLogWarn(logger, session, "Using no proxy for this request.");
+               Logging.printLogDebug(logger, session, "[NO_PROXY ALERT]Using no proxy for this request.");
             }
 
             List<Header> reqHeaders = new ArrayList<>();
