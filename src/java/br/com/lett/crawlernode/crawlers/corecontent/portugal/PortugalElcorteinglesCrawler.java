@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import com.google.common.collect.Sets;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -20,6 +22,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -45,6 +49,7 @@ public class PortugalElcorteinglesCrawler extends Crawler {
 
    public PortugalElcorteinglesCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -54,33 +59,40 @@ public class PortugalElcorteinglesCrawler extends Crawler {
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
-      Request request;
+   protected Object fetch() {
+      Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setCookies(this.cookies)
+            .mustSendContentEncoding(false)
+            .setFetcheroptions(
+                  FetcherOptionsBuilder.create()
+                        .mustUseMovingAverage(false)
+                        .mustRetrieveStatistics(true)
+                        .build()
+            ).setProxyservice(
+                  Arrays.asList(
+                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                        ProxyCollection.STORM_RESIDENTIAL_EU,
+                        ProxyCollection.STORM_RESIDENTIAL_US,
+                        ProxyCollection.BUY
+                  )
+            ).build();
 
-      if (dataFetcher instanceof FetcherDataFetcher) {
-         request = RequestBuilder.create().setUrl(HOME_PAGE)
-               .setCookies(cookies)
-               .setProxyservice(
-                     Arrays.asList(
-                           ProxyCollection.INFATICA_RESIDENTIAL_BR
-                     )
-               ).mustSendContentEncoding(false)
-               .setFetcheroptions(FetcherOptionsBuilder.create()
-                     .mustUseMovingAverage(false)
-                     .mustRetrieveStatistics(true).build())
-               .build();
-      } else {
-         request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
+      String content = this.dataFetcher.get(session, request).getBody();
+
+      if (content == null || content.isEmpty()) {
+         content = new ApacheDataFetcher().get(session, request).getBody();
       }
 
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.elcorteingles.pt", "/", null, session, dataFetcher);
+      return Jsoup.parse(content);
    }
-
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
+
+      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "PORTUGA.html");
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
