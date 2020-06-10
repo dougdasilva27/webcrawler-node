@@ -1,92 +1,69 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 
 public class ChileTottusCrawler extends CrawlerRankingKeywords {
 
-  public ChileTottusCrawler(Session session) {
-    super(session);
-  }
+   public ChileTottusCrawler(Session session) {
+      super(session);
+   }
 
-  private String redirectUrl;
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 15;
-    this.log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 15;
+      this.log("Página " + this.currentPage);
 
-    String url = "http://www.tottus.cl/tottus/search?Ntt=" + this.keywordEncoded;
+      String url = "https://www.tottus.cl/buscar?q=" + this.keywordWithoutAccents + "&page=" + this.currentPage;
+      System.out.println(url);
+      this.currentDoc = fetchDocument(url);
 
-    if (this.currentPage > 1 && this.redirectUrl != null) {
+      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, true, false);
+      JSONObject props = JSONUtils.getJSONValue(jsonInfo, "props");
+      JSONObject pageProps = JSONUtils.getJSONValue(props, "pageProps");
+      JSONObject products = JSONUtils.getJSONValue(pageProps, "products");
+      JSONArray results = JSONUtils.getJSONArrayValue(products, "results");
 
-      if (url.contains("browse")) {
 
-        url = this.redirectUrl.replace("browse", "productListFragment") + "?No=" + this.arrayProducts.size() + "&Nrpp=&currentCatId="
-            + CommonMethods.getLast(this.redirectUrl.split("\\?")[0].split("/"));
+      if (!results.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
+
+         if (results != null) {
+
+            for (Object e : results) {
+
+               JSONObject skuInfo = (JSONObject) e;
+
+               String internalId = skuInfo.optString("sku");
+               String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", "www.tottus.cl") + "/p/";
+
+               saveDataProduct(internalId, null, productUrl);
+
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
+            }
+         }
       } else {
-        url = this.redirectUrl + "?No=" + this.arrayProducts.size();
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else if (this.currentPage > 1) {
-      url += "&No=" + this.arrayProducts.size();
-    }
 
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".item-product-caption");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-    if (this.currentPage == 1) {
-      this.redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
-    }
+   @Override
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".searchQuery span", true, 0);
+      this.log("Total da busca: " + this.totalProducts);
+   }
 
-    if (!products.isEmpty()) {
-      for (Element e : products) {
-        String internalId = crawlInternalId(e);
-        String productUrl = crawlProductUrl(e);
-
-        saveDataProduct(internalId, null, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
-
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    return this.currentDoc.select(".item-product-caption").size() >= this.pageSize;
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    Element input = e.selectFirst("input.btn-add-cart");
-    if (input != null) {
-      internalId = input.val();
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String url = null;
-
-    Element eUrl = e.selectFirst(".title a");
-    if (eUrl != null) {
-      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "https:", "www.tottus.cl");
-    }
-
-    return url;
-  }
 }
