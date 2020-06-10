@@ -35,18 +35,21 @@ public class ChileTottusCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
 
-         for (Object e : results) {
+         if (results != null) {
 
-            JSONObject skuInfo = (JSONObject) e;
+            for (Object e : results) {
 
-            String internalId = skuInfo.optString("sku");
-            String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", "www.tottus.cl") + "/p/";
+               JSONObject skuInfo = (JSONObject) e;
 
-            saveDataProduct(internalId, null, productUrl);
+               String internalId = skuInfo.optString("sku");
+               String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", "www.tottus.cl") + "/p/";
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+               saveDataProduct(internalId, null, productUrl);
+
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
             }
          }
       } else {
