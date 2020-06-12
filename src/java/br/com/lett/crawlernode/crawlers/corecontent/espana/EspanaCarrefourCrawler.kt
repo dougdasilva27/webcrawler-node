@@ -28,7 +28,7 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
 
       val name = document.selectAny("#product-01", ".product-header__name")?.text()
 
-      val categories = document.select(".breadcrumb__item").eachText(ignoreIndex = arrayOf(0))
+      val categories = document.select(".breadcrumb__item").eachText(ignoreIndexes = arrayOf(0))
 
       val description = document.selectFirst(".product-details")?.html()
 

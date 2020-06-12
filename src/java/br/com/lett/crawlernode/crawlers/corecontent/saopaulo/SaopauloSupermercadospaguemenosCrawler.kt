@@ -22,7 +22,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
 
       val name = document.selectFirst(".name")?.text()
       val internalId = document.selectFirst("button[data-sku]")?.attr("data-sku")
-      val categories = document.select("li a[itemprop='item'] span").eachText(ignoreIndex = arrayOf(0))
+      val categories = document.select("li a[itemprop='item'] span").eachText(ignoreIndexes = arrayOf(0))
 
       val offers = scrapOffers(document)
       val primaryImage = document.selectFirst(".big-image a")?.attr("href")?.replaceFirst("//", "https://")

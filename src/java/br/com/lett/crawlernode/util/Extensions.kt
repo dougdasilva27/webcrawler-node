@@ -25,10 +25,10 @@ fun String?.toDoc(): Document? = if (this != null) Jsoup.parse(this) else null
 /**
  * @return list containing each [Elements]' text
  */
-fun Elements.eachText(ignoreIndex: Array<Int> = arrayOf(), ignoreTokens: Array<String> = arrayOf()): List<String> {
+fun Elements.eachText(ignoreIndexes: Array<Int> = arrayOf(), ignoreTokens: Array<String> = arrayOf()): List<String> {
   val list = mutableListOf<String>()
   forEachIndexed { index, element ->
-    if ((index !in (ignoreIndex)) and (element.text() !in ignoreTokens))
+    if ((index !in (ignoreIndexes)) and (element.text() !in ignoreTokens))
       list.add(element.text())
   }
   return list
@@ -38,12 +38,18 @@ fun Elements.eachText(ignoreIndex: Array<Int> = arrayOf(), ignoreTokens: Array<S
  * Get each [Elements]' text by attribute, representing our secondary images data model.
  * @return json-like string
  */
-fun Elements.toSecondaryImagesBy(attr: String = "href", ignoreIndex: Array<Int> = arrayOf()): String = JSONArray().also {
-  this.forEachIndexed { index, element ->
-    if (index !in ignoreIndex)
-      it.put(element.attr(attr))
-  }
+fun Elements.toSecondaryImagesBy(attr: String = "href", ignoreIndexes: Array<Int> = arrayOf()): String = JSONArray().also {
+  this.eachAttr(attr, ignoreIndexes).forEach { attr -> it.put(attr) }
 }.toString()
+
+fun Elements.eachAttr(attr: String, ignoreIndexes: Array<Int> = arrayOf()): List<String> {
+  val attrs = mutableListOf<String>()
+  this.forEachIndexed { index, element ->
+    if (index !in ignoreIndexes)
+      attrs.add(element.attr(attr))
+  }
+  return attrs
+}
 
 /**
  * @return [JSONObject] in a cool way
@@ -79,6 +85,14 @@ fun Collection<Card>.toCreditCards(instPrice: Double, instNumber: Int = 1): Cred
     .build()
 })
 
+fun Collection<Card>.toCreditCards(installments: Installments): CreditCards = CreditCards(this.map { card: Card ->
+  CreditCard.CreditCardBuilder.create()
+    .setBrand(card.toString())
+    .setIsShopCard(false)
+    .setInstallments(installments)
+    .build()
+})
+
 /**
  * @return Parse [String] number with comma ',' to [Double]
  */
@@ -88,6 +102,8 @@ fun String?.toDoubleComma(): Double = MathUtils.parseDoubleWithComma(this)
  * @return Parse [Element]'s text number with comma ',' to [Double]
  */
 fun Element?.toDoubleComma(): Double = MathUtils.parseDoubleWithComma(this?.text())
+
+fun Element?.toInt(): Int = MathUtils.parseInt(this?.text())
 
 /**
  * @return Parse [String] number with dot '.' to [Double]
