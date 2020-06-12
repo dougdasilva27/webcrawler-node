@@ -22,8 +22,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -43,7 +41,7 @@ import models.pricing.Pricing.PricingBuilder;
 public class PortugalElcorteinglesCrawler extends Crawler {
 
    private static final String HOME_PAGE = "www.elcorteingles.pt/";
-   private static final String SELLER_FULL_NAME = "Elcorteingles";
+   private static final String SELLER_FULL_NAME = "El Corte Ingles";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -92,7 +90,6 @@ public class PortugalElcorteinglesCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "PORTUGA.html");
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -136,7 +133,6 @@ public class PortugalElcorteinglesCrawler extends Crawler {
       return products;
    }
 
-
    private boolean isProductPage(Document document) {
       return document.selectFirst(".vp.content-wrapper") != null;
    }
@@ -175,7 +171,7 @@ public class PortugalElcorteinglesCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".former.stroked", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".current.sale", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price  .current", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return PricingBuilder.create()
@@ -189,58 +185,34 @@ public class PortugalElcorteinglesCrawler extends Crawler {
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
-      }
+      if (spotlightPrice != null) {
 
-      for (String card : cards) {
-         creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+         Installments installments = new Installments();
+         if (installments.getInstallments().isEmpty()) {
+            installments.add(InstallmentBuilder.create()
+                  .setInstallmentNumber(1)
+                  .setInstallmentPrice(spotlightPrice)
+                  .build());
+         }
+
+         for (String card : cards) {
+            creditCards.add(CreditCardBuilder.create()
+                  .setBrand(card)
+                  .setInstallments(installments)
+                  .setIsShopCard(false)
+                  .build());
+         }
       }
 
       return creditCards;
    }
 
-   private String getPassKey() {
-      String passKey = null;
-
-      String urlApi = "https://display.ugc.bazaarvoice.com/static/elcorteingles-pt/main_site/pt_PT/bvapi.js";
-      Request request = RequestBuilder.create().setUrl(urlApi).build();
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      if (content != null) {
-
-         Integer indexOf = content.indexOf("passkey:\"");
-
-         if (indexOf != null) {
-            Integer lastIndexOf = content.lastIndexOf("\",baseUrl");
-
-            if (lastIndexOf != null) {
-               String contentSubstring = content.substring(indexOf, lastIndexOf);
-
-               passKey = contentSubstring.contains("passkey:\"") ? contentSubstring.replace("passkey:\"", "") : null;
-
-            }
-         }
-      }
-
-
-      return passKey;
-   }
 
    private JSONObject apiRatingReview(Document doc, String internalId) {
       JSONObject ratingInfo = new JSONObject();
 
-      String passkey = getPassKey();
+      String urlApi = "https://api.bazaarvoice.com/data/batch.json?passkey=canv5L9pzGrdW3dOOxZrXJ9ZdveMke1FtkDsBrPV8SvAg&apiversion=5.5&resource.q0=products&filter.q0=id%3Aeq%3A" + internalId + "&stats.q0=reviews";
 
-      String urlApi = "https://api.bazaarvoice.com/data/batch.json?passkey=" + passkey + "&apiversion=5.5&resource.q0=products&filter.q0=id%3Aeq%3A" + internalId + "&stats.q0=reviews";
       Request request = RequestBuilder.create().setUrl(urlApi).build();
 
       JSONObject jsonObject = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
@@ -252,7 +224,9 @@ public class PortugalElcorteinglesCrawler extends Crawler {
          for (Object arr : result) {
             JSONObject ReviewStatistics = (JSONObject) arr;
 
-            ratingInfo = JSONUtils.getJSONValue(ReviewStatistics, "ReviewStatistics");
+            if (!ReviewStatistics.isEmpty()) {
+               ratingInfo = JSONUtils.getJSONValue(ReviewStatistics, "ReviewStatistics");
+            }
          }
       }
       return ratingInfo;
@@ -263,8 +237,8 @@ public class PortugalElcorteinglesCrawler extends Crawler {
       ratingReviews.setDate(session.getDate());
 
       Integer totalNumOfEvaluations = ratingInfo.optInt("TotalReviewCount");
-      Double avgRating = ratingInfo.optDouble("AverageOverallRating");
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(ratingInfo);
+      Double avgRating = ratingInfo.optDouble("AverageOverallRating", 0.0D);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
@@ -292,7 +266,6 @@ public class PortugalElcorteinglesCrawler extends Crawler {
             Integer RatingValue = ratingReviews.optInt("RatingValue");
             Integer count = ratingReviews.optInt("Count");
 
-
             switch (RatingValue) {
                case 5:
                   star5 = count;
@@ -313,7 +286,6 @@ public class PortugalElcorteinglesCrawler extends Crawler {
                   break;
             }
          }
-
       }
 
       return new AdvancedRatingReview.Builder()
@@ -324,7 +296,5 @@ public class PortugalElcorteinglesCrawler extends Crawler {
             .totalStar5(star5)
             .build();
    }
-
-
 
 }
