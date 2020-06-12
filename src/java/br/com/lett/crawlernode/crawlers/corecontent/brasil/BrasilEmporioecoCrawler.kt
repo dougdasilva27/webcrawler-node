@@ -42,7 +42,7 @@ class BrasilEmporioecoCrawler(session: Session?) : Crawler(session) {
         setPrimaryImage(it.optString("image"))
         setSecondaryImages(
           document.select(".woocommerce-product-gallery__wrapper a")
-            ?.toSecondaryImagesBy(ignoreIndex = arrayOf(0))
+            ?.toSecondaryImagesBy(ignoreIndexes = arrayOf(0))
         )
       }
 
