@@ -2,133 +2,64 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class BrasilCasaevideoCrawler extends CrawlerRankingKeywords {
 
-  public BrasilCasaevideoCrawler(Session session) {
-    super(session);
-  }
+    public BrasilCasaevideoCrawler(Session session) {
+        super(session);
+    }
 
-  @Override
-  protected void processBeforeFetch() {
-    this.cookies = this.getCookies("http://www.casaevideo.com.br");
-  }
+    @Override
+    protected void extractProductsFromCurrentPage() {
+        this.pageSize = 24;
+        this.log("Página " + this.currentPage);
 
-  private List<Cookie> cookies = new ArrayList<>();
+        String url = "https://busca.casaevideo.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+        this.log("Link onde são feitos os crawlers: " + url);
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 16;
+        this.currentDoc = fetchDocument(url);
 
-    this.log("Página " + this.currentPage);
+        Elements products = this.currentDoc.select("#nm-product-");
 
-    String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
+        if (!products.isEmpty()) {
+            if (this.totalProducts == 0) {
+                setTotalProducts();
+            }
 
-    // monta a url com a keyword e a página
-    String url =
-        "http://www.casaevideo.com.br/" + keyword + "?&utmi_p=_&utmi_pc=BuscaFullText&utmi_cp=" + keyword + "&PageNumber=" + this.currentPage;
+            for (Element product : products) {
+                String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "div[data-trustvox-product-code]", "data-trustvox-product-code");
+                String productUrl = scrapProductUrl(product);
 
-    this.log("Link onde são feitos os crawlers: " + url);
+                saveDataProduct(null, internalPid, productUrl);
 
-    this.currentDoc = fetchDocument(url, cookies);
+                this.log("Position: " + this.position +
+                        " - InternalId: " + null +
+                        " - InternalPid: " + internalPid +
+                        " - Url: " + productUrl);
 
-    Elements products = this.currentDoc.select(".prateleira ul li[layout] > span.box-item");
-    Elements productsPid = this.currentDoc.select(".prateleira ul li[id].helperComplement");
-
-    Element emptySearch = this.currentDoc.select("#busca-vazia-extra-middle").first();
-
-    int count = 0;
-
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (products.size() >= 1 && emptySearch == null) {
-      for (Element e : products) {
-        // seta o id com o seletor
-        String internalPid = crawlInternalPid(productsPid.get(count));
-        String internalId = crawlInternalId(e);
-
-        // monta a url
-        String productUrl = crawlProductUrl(e);
-
-        saveDataProduct(internalId, internalPid, productUrl);
-        count++;
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
+                if (this.arrayProducts.size() == productsLimit)
+                    break;
+            }
+        } else {
+            this.result = false;
+            this.log("Keyword sem resultado!");
         }
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
+        this.log("Finalizando Crawler de produtos da página " + this.currentPage +
+                " - até agora " + this.arrayProducts.size() + " produtos crawleados");
     }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    Elements lastPage = this.currentDoc.select(".prateleira ul li[id].helperComplement");
-
-    return lastPage.size() >= this.pageSize;
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-    Element id = e.select(".buy-button-asynchronous-product-id").first();
-
-    if (id != null) {
-      internalId = id.val();
+    @Override
+    protected void setTotalProducts() {
+        this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".neemu-total-products-container", true, 0);
+        this.log("Total da busca: " + this.totalProducts);
     }
 
-    return internalId;
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = e.attr("id").split("_")[1];
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.select("> a[title]").first();
-
-    if (url != null) {
-      productUrl = url.attr("href");
+    private String scrapProductUrl(Element product) {
+        String protocol = "https";
+        String baseUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".nm-product-img-link", "href");
+        return (baseUrl != null) ? protocol + ":" + baseUrl : null;
     }
-
-
-    return productUrl;
-  }
-
-  private List<Cookie> getCookies(String url) {
-    List<Cookie> cookiesList = new ArrayList<>();
-
-    // Criando cookie
-    BasicClientCookie cookieWSE = new BasicClientCookie("WC_SESSION_ESTABLISHED", "true");
-    cookieWSE.setDomain("www.casaevideo.com.br");
-    cookieWSE.setPath("/");
-    cookiesList.add(cookieWSE);
-
-    List<Cookie> cookiesResponse = fetchCookies("http://www.casaevideo.com.br/webapp/wcs/stores/servlet/pt/auroraesite");
-
-    for (Cookie cookieResponse : cookiesResponse) {
-      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-      cookie.setDomain("www.casaevideo.com.br");
-      cookie.setPath("/");
-      cookies.add(cookie);
-    }
-
-
-    return cookiesList;
-  }
 }

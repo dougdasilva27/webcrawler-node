@@ -18,6 +18,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -55,6 +56,8 @@ public class BrasilLojacolgateCrawler extends Crawler {
          }
 
 
+         CommonMethods.saveDataToAFile(this.webdriver.getCurrentPageSource(), Test.pathWrite + "COLGATE.html");
+
          WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
          email.sendKeys(CNPJ);
          this.webdriver.waitLoad(2000);
@@ -85,7 +88,7 @@ public class BrasilLojacolgateCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         Elements variations = doc.select(".js-variant-select > option");
+         Elements variations = doc.select(".product-item-content .js-variant-select > option");
 
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details .name", true).replace("|", "");
          CategoryCollection categories = scrapCategories(doc);

@@ -450,7 +450,7 @@ public abstract class CrawlerRanking extends Task {
                   .put("aws_type", "sqs")
                   .put("sqs_queue", "ws-discoverer");
 
-            Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+            Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
          }
       }
 

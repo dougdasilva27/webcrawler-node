@@ -388,7 +388,7 @@ public class FetchUtilities {
                   .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status)
                   .put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
-      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
+      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION]");
    }
 
    public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, String proxy, String method, String userAgent, Session session,
@@ -398,7 +398,7 @@ public class FetchUtilities {
             .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
             .put("res_http_code", status).put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
-      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
+      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION]");
    }
 
    public static class TrustManager implements X509TrustManager {

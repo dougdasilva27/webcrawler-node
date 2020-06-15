@@ -185,7 +185,7 @@ public class Processor {
          updateBehavior(newProcessedProduct, nowISO, stock, available, newProcessedProduct.getStatus(), price, newProcessedProduct.getPrices(),
                marketplace, session);
 
-         Logging.printLogInfo(logger, session, "Produto processado.");
+         Logging.printLogDebug(logger, session, "Produto processado.");
       } catch (Exception e2) {
          Logging.printLogError(logger, session, "Error processing product.");
          Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e2));

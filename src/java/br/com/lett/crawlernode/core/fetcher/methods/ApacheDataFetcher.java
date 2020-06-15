@@ -118,7 +118,7 @@ public class ApacheDataFetcher implements DataFetcher {
                         new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
-               Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "]Using no proxy for this request.");
+               Logging.printLogDebug(logger, session, "[NO_PROXY ALERT][ATTEMPT " + attempt + "]Using no proxy for this request.");
             }
 
             List<Header> reqHeaders = new ArrayList<>();
@@ -233,6 +233,7 @@ public class ApacheDataFetcher implements DataFetcher {
             for (String errorCode : FetchUtilities.errorCodes) {
                if (content.equals(errorCode)) {
                   requestStats.setStatusCode(Integer.parseInt(errorCode));
+                  requests.add(requestStats);
                   throw new ResponseCodeException(Integer.parseInt(errorCode));
                }
             }
@@ -249,7 +250,7 @@ public class ApacheDataFetcher implements DataFetcher {
                   .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE))).build();
             mustContinue = false;
             requestStats.setHasPassedValidation(true);
-
+            requests.add(requestStats);
             FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, responseCode, requestHash);
          } catch (Exception e) {
             int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
@@ -311,7 +312,7 @@ public class ApacheDataFetcher implements DataFetcher {
                         new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
-               Logging.printLogWarn(logger, session, "Using no proxy for this request.");
+               Logging.printLogDebug(logger, session, "[NO_PROXY ALERT]Using no proxy for this request.");
             }
 
             List<Header> reqHeaders = new ArrayList<>();
