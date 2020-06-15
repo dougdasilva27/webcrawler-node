@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
+import org.jsoup.nodes.Element
 
 class BelohorizonteBernardaoCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
@@ -23,7 +24,7 @@ class BelohorizonteBernardaoCrawler(session: Session) : CrawlerRankingKeywords(s
             }
             for (product in products) {
 
-                val internalPid = CrawlerUtils.scrapIntegerFromHtmlAttr(product, ".regular-price", "id", 0).toString()
+                val internalPid = extractInternalPid(product)
                 val productUrl: String = CrawlerUtils.scrapUrl(product, ".cdz-product-top > a", "href", "https://", "www.bernardaoemcasa.com.br")
                 saveDataProduct(null, internalPid, productUrl)
 
@@ -40,7 +41,12 @@ class BelohorizonteBernardaoCrawler(session: Session) : CrawlerRankingKeywords(s
     }
 
     override fun setTotalProducts() {
-        totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".pager .amount","de","",true, true, 0)
+        totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".pager .amount", "de", "", true, true, 0)
         log("Total da busca: $totalProducts")
+    }
+
+    private fun extractInternalPid(product: Element): String {
+        val fullName = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".regular-price", "id")
+        return fullName.filter { it.isDigit() }
     }
 }

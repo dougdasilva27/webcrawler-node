@@ -7,8 +7,6 @@ import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.Logging
-import exceptions.MalformedPricingException
-import exceptions.OfferException
 import models.Offer.OfferBuilder
 import models.Offers
 import models.pricing.BankSlip.BankSlipBuilder
@@ -35,7 +33,7 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
         if (isProductPage(doc)) {
             Logging.printLogDebug(logger, session, "Product page identified:  ${session.originalURL}")
 
-            val internalPid = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".no-display input[name=product]", "value", 0)
+            val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".no-display input[name=product]", "value")
             val internalId = internalPid
             val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true)
             val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li > :not(span)", true)
@@ -43,15 +41,15 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
                     ".rsImg[href]", listOf("href", "content", "src"), "https://", BASE_URL)
             val secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
                     ".rsImg[href]", listOf("href", "content", "src"), "https://", BASE_URL, primaryImage)
-            val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".std"))
+            val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".std", "#product-attribute-specs-table"))
             val availability = scrapAvailability(doc)
 
             val offers = if (availability) scrapOffers(doc) else Offers()
 
             val product = ProductBuilder.create()
                     .setUrl(session.originalURL)
-                    .setInternalId(internalId.toString())
-                    .setInternalPid(internalPid.toString())
+                    .setInternalId(internalId)
+                    .setInternalPid(internalPid)
                     .setName(name)
                     .setCategory1(categories.getCategory(0))
                     .setCategory2(categories.getCategory(1))
@@ -71,7 +69,7 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
     }
 
     private fun isProductPage(doc: Document): Boolean {
-        return doc.select(".product") != null
+        return doc.selectFirst(".product") != null
     }
 
     private fun scrapAvailability(doc: Document): Boolean {
@@ -98,15 +96,11 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
     private fun scrapPricing(doc: Document): Pricing? {
         val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".regular-price span", null, true, ',', session)
 
-        if (spotlightPrice != null) {
-            return PricingBuilder.create()
-                    .setPriceFrom(null)
-                    .setSpotlightPrice(spotlightPrice)
-                    .setCreditCards(scrapCreditCards(spotlightPrice))
-                    .setBankSlip(BankSlipBuilder.create().setFinalPrice(null).build())
-                    .build()
-        }
-        return null
+        return PricingBuilder.create()
+                .setPriceFrom(null)
+                .setSpotlightPrice(spotlightPrice)
+                .setCreditCards(scrapCreditCards(spotlightPrice))
+                .build()
     }
 
     private fun scrapCreditCards(spotlightPrice: Double): CreditCards {
