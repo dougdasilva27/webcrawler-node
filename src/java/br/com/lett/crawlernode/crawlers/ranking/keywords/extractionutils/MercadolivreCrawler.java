@@ -15,7 +15,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
    private String url;
 
    private static final String PRODUCTS_SELECTOR = ".results-item .item";
-   private static final Integer PAGE_SIZE = 64;
+   protected Integer meliPageSize = 64;
 
    protected MercadolivreCrawler(Session session) {
       super(session);
@@ -36,7 +36,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = PAGE_SIZE;
+      this.pageSize = meliPageSize;
       this.log("Página " + this.currentPage);
 
       // In this market we need to scrap url for next page
