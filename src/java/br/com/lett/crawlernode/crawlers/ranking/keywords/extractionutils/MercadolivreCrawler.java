@@ -10,9 +10,9 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
    private String nextUrlHost;
-   private String nextUrl;
+   protected String nextUrl;
    private String productUrlHost;
-   private String url;
+   protected String url;
 
    private static final String PRODUCTS_SELECTOR = ".results-item .item";
    protected Integer meliPageSize = 64;
@@ -39,13 +39,9 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       this.pageSize = meliPageSize;
       this.log("Página " + this.currentPage);
 
-      // In this market we need to scrap url for next page
-      // because the url format change
-      if (this.currentPage > 1) {
-         this.url = this.nextUrl;
-      }
+      String searchUrl = getNextPageUrl();
 
-      this.currentDoc = fetchDocument(this.url);
+      this.currentDoc = fetchDocument(searchUrl);
       this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", nextUrlHost);
       Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
       boolean ownStoreResults = !this.currentDoc.select("#categorySearch").isEmpty();
@@ -70,6 +66,10 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   protected String getNextPageUrl() {
+      return this.currentPage > 1 ? this.nextUrl : this.url;
    }
 
    @Override
