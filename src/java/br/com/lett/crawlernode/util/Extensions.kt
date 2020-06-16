@@ -89,6 +89,8 @@ fun String?.toDoubleComma(): Double = MathUtils.parseDoubleWithComma(this)
  */
 fun Element?.toDoubleComma(): Double = MathUtils.parseDoubleWithComma(this?.text())
 
+fun Element?.toInt(): Int = MathUtils.parseInt(this?.text())
+
 /**
  * @return Parse [String] number with dot '.' to [Double]
  */
