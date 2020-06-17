@@ -76,7 +76,7 @@ public class Mercadolivre3pCrawler {
 
          if (mustAddProduct) {
             String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product_id]", "value");
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=item_id]", "value");;
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=item_id]", "value");
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
