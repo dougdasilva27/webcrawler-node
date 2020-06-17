@@ -46,7 +46,7 @@ class BelohorizonteBernardaoCrawler(session: Session) : CrawlerRankingKeywords(s
     }
 
     private fun extractInternalPid(product: Element): String {
-        val fullName = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".regular-price", "id")
-        return fullName.filter { it.isDigit() }
+        val fullName: String = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".regular-price", "id")
+        return fullName.split("-").last()
     }
 }
