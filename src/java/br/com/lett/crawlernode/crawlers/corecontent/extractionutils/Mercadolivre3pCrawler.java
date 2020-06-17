@@ -70,7 +70,7 @@ public class Mercadolivre3pCrawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         boolean availableToBuy = !doc.select(".andes-button--filled").isEmpty();
+         boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
          boolean mustAddProduct = checkIfMustScrapProduct(offers);
 
