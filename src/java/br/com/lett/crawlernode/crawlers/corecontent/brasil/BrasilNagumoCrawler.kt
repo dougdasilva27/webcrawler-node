@@ -12,17 +12,12 @@ import org.jsoup.nodes.Document
 
 class BrasilNagumoCrawler(session: Session) : VTEXOldScraper(session) {
 
-    companion object {
-        private const val HOME_PAGE = "https://www.nagumo.com.br/"
-        private val MAIN_SELLERS = mutableListOf("Supermercados Nagumo")
-    }
-
     override fun getHomePage(): String {
-        return HOME_PAGE
+        return "https://www.nagumo.com.br/"
     }
 
     override fun getMainSellersNames(): MutableList<String> {
-        return MAIN_SELLERS
+        return mutableListOf("Supermercados Nagumo")
     }
 
     override fun scrapRating(internalId: String, internalPid: String, doc: Document, jsonSku: JSONObject): RatingsReviews {
