@@ -14,33 +14,55 @@ import models.pricing.Pricing
 import org.json.JSONArray
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities
+import org.apache.http.HttpHeaders
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
+import java.util.Arrays
+import java.util.HashMap
 
 class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
 
   private val cep = "28010"
 
+	private val USER_AGENT = FetchUtilities.randUserAgent();
+	
   init {
-    super.config.fetcher = FetchMode.APACHE
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   override fun handleCookiesBeforeFetch() {
-    val requestOn: (String) -> Response = { url: String ->
+	  val headers = HashMap<String, String>()
+	  headers.put(HttpHeaders.USER_AGENT, USER_AGENT);
+//	  val headers: Map<String,String> = mapOf(HttpHeaders.USER_AGENT to USER_AGENT);
+	  
+    val requestOn: (String, Boolean) -> Response = { url: String, bodyIsrequired: Boolean ->
       val resp = dataFetcher.get(
         session, RequestBuilder.create()
           .setUrl("https://primenow.amazon.es/$url")
           .setCookies(cookies)
+				  .setHeaders(headers)
+				  .setBodyIsRequired(bodyIsrequired)
+				  .setProxyservice(
+                     listOf(
+                           ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                           ProxyCollection.STORM_RESIDENTIAL_EU,
+                           ProxyCollection.STORM_RESIDENTIAL_US))
+               .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
           .build()
       )
-      if (resp.cookies.size > 0) cookies = resp.cookies
+      if (resp.cookies.size > 0) {
+         cookies = resp.cookies
+	 	  }
       resp
     }
 
-    val resp = requestOn("onboard")
+    val resp = requestOn("onboard", true)
     val token = resp.body?.toDoc()?.selectFirst("span[data-location-select-form-submit]")
       ?.attr("data-location-select-form-submit")?.toJson()?.optString("offerSwappingToken")!!
 
-    requestOn("onboard/check?postalCode=$cep&offerSwappingToken=$token")
-    requestOn("cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token")
+    requestOn("onboard/check?postalCode=$cep&offerSwappingToken=$token", false)
+    requestOn("cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token", false)
   }
 
   override fun fetch(): Any {
@@ -94,6 +116,7 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
       .setPricing(pricing)
       .setSellerFullName(document.selectFirst("#merchant-info")?.text()?.trim()?.substringAfter("por "))
       .setIsBuybox(false)
+			.setIsMainRetailer(true)
       .build()
 
     offers.add(offer)
