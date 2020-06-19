@@ -1815,6 +1815,23 @@ public class CrawlerUtils {
       return doc;
    }
 
+
+   /**
+    * This function sums number of evaluations of each star to return the total number of evaluations
+    * 
+    * @param advancedRatingReview
+    * @return
+    */
+   public static int extractReviwsNumberOfAdvancedRatingReview(AdvancedRatingReview advancedRatingReview) {
+      int reviewsWith5stars = advancedRatingReview.getTotalStar5();
+      int reviewsWith4stars = advancedRatingReview.getTotalStar4();
+      int reviewsWith3stars = advancedRatingReview.getTotalStar3();
+      int reviewsWith2stars = advancedRatingReview.getTotalStar2();
+      int reviewsWith1star = advancedRatingReview.getTotalStar1();
+
+      return reviewsWith5stars + reviewsWith4stars + reviewsWith3stars + reviewsWith2stars + reviewsWith1star;
+   }
+
    /**
     * This function calculates the average rating from the model AdvancedRatingReview
     * 
