@@ -178,8 +178,8 @@ public class BrasilRedecomprasCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject jsonInfo) throws MalformedPricingException {
-      Double priceFrom = jsonInfo.optDouble("mny_vlr_produto_tabela_preco", 0D);
-      Double spotlightPrice = jsonInfo.optDouble("mny_vlr_parcela", 0D);
+      Double priceFrom = jsonInfo.optDouble("mny_vlr_produto_tabela_preco");
+      Double spotlightPrice = jsonInfo.optDouble("mny_vlr_parcela");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
