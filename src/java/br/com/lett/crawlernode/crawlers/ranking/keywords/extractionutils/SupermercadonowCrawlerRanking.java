@@ -23,19 +23,24 @@ public abstract class SupermercadonowCrawlerRanking extends CrawlerRankingKeywor
 
    protected abstract String getLoadUrl();
 
-   private final String HOME_PAGE = "https://supermercadonow.com/produtos/" + loadUrl + "/";
+   protected String host = getHost();
+   private final String homePage = "https://" + host + "/produtos/" + loadUrl + "/";
    private Map<String, String> headers = new HashMap<>();
 
    @Override
    protected void processBeforeFetch() {
       super.processBeforeFetch();
-      Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+      Request request = RequestBuilder.create().setUrl(homePage).setCookies(cookies).setHeaders(headers).build();
       Response response = this.dataFetcher.get(session, request);
 
       headers.put("Accept", "text/json");
       headers.put("X-SNW-Token", "XLBhhbP1YEkB2tL61wkX163Dqm9iIDpx");
 
       this.cookies = response.getCookies();
+   }
+
+   protected String getHost() {
+      return "supermercadonow.com";
    }
 
 
@@ -112,7 +117,7 @@ public abstract class SupermercadonowCrawlerRanking extends CrawlerRankingKeywor
       String urlProduct = null;
 
       if (product.has("slug")) {
-         urlProduct = "https://supermercadonow.com/produtos/" + loadUrl + "/produto/" + product.getString("slug");
+         urlProduct = homePage + "produto/" + product.getString("slug");
       }
 
       return urlProduct;

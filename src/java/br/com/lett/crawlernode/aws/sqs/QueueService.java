@@ -24,74 +24,72 @@ import enums.QueueName;
  */
 public class QueueService {
 
-  protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
+   protected static final Logger logger = LoggerFactory.getLogger(QueueService.class);
 
-  private static final Map<String, String> queueURLMap;
-  
-  public static final String QUEUE_DATA_TYPE_STRING = "String";
+   private static final Map<String, String> queueURLMap;
 
-  public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
-  public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
-  public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
-  public static final String SCRAPER_TYPE_MESSAGE_ATTR = "scraperType";
-  
-  public static final String IMAGE_TYPE = "type";
-  public static final String PRIMARY_IMAGE_TYPE_MESSAGE_ATTR = "primary";
-  public static final String SECONDARY_IMAGES_MESSAGE_ATTR = "secondary";
-  public static final String NUMBER_MESSAGE_ATTR = "number";
+   public static final String QUEUE_DATA_TYPE_STRING = "String";
 
-  private static final String QUEUE_URL = GlobalConfigurations.executionParameters.getQueueUrlFirstPart();
+   public static final String MARKET_ID_MESSAGE_ATTR = "marketId";
+   public static final String PROCESSED_ID_MESSAGE_ATTR = "processedId";
+   public static final String INTERNAL_ID_MESSAGE_ATTR = "internalId";
+   public static final String SCRAPER_TYPE_MESSAGE_ATTR = "scraperType";
 
-  static {
-    queueURLMap = new HashMap<>();
-    queueURLMap.put(QueueName.CORE.toString(), QUEUE_URL + QueueName.CORE.toString());
-    queueURLMap.put(QueueName.CORE_WEBDRIVER.toString(), QUEUE_URL + QueueName.CORE_WEBDRIVER.toString());
-    queueURLMap.put(QueueName.DISCOVERER.toString(), QUEUE_URL + QueueName.DISCOVERER.toString());
-    queueURLMap.put(QueueName.DISCOVERER_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_WEBDRIVER.toString());
-    queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS.toString());
-    queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString());
-    queueURLMap.put(QueueName.DISCOVERER_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_CATEGORIES.toString());
-    queueURLMap.put(QueueName.IMAGES_DOWNLOAD.toString(), QUEUE_URL + QueueName.IMAGES_DOWNLOAD.toString());
-    queueURLMap.put(QueueName.RANKING_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS.toString());
-    queueURLMap.put(QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString());
-    queueURLMap.put(QueueName.RANKING_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.RANKING_BY_CATEGORIES.toString());
-    queueURLMap.put(QueueName.RATING.toString(), QUEUE_URL + QueueName.RATING.toString());
-    queueURLMap.put(QueueName.RATING_WEBDRIVER.toString(), QUEUE_URL + QueueName.RATING_WEBDRIVER.toString());
-    queueURLMap.put(QueueName.SEED.toString(), QUEUE_URL + QueueName.SEED.toString());
+   public static final String IMAGE_TYPE = "type";
+   public static final String PRIMARY_IMAGE_TYPE_MESSAGE_ATTR = "primary";
+   public static final String SECONDARY_IMAGES_MESSAGE_ATTR = "secondary";
+   public static final String NUMBER_MESSAGE_ATTR = "number";
 
-    queueURLMap.put(QueueName.INTEREST_PROCESSED.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED.toString());
-    queueURLMap.put(QueueName.INTEREST_PROCESSED_RATING.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED_RATING.toString());
-  }
+   private static final String QUEUE_URL = GlobalConfigurations.executionParameters.getQueueUrlFirstPart();
 
-  /**
-   * Send a message batch to SQS.
-   * 
-   * @param sqs
-   * @param entries
-   * @return
-   */
-  public static SendMessageBatchResult sendBatchMessages(AmazonSQS sqs, String queueName, List<SendMessageBatchRequestEntry> entries) {
-    SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
-    String queueURL = getQueueURL(queueName);
-    batchMessageBatchRequest.setQueueUrl(queueURL);
-    batchMessageBatchRequest.setEntries(entries);
+   static {
+      queueURLMap = new HashMap<>();
+      queueURLMap.put(QueueName.CORE.toString(), QUEUE_URL + QueueName.CORE.toString());
+      queueURLMap.put(QueueName.CORE_WEBDRIVER.toString(), QUEUE_URL + QueueName.CORE_WEBDRIVER.toString());
+      queueURLMap.put(QueueName.DISCOVERER.toString(), QUEUE_URL + QueueName.DISCOVERER.toString());
+      queueURLMap.put(QueueName.DISCOVERER_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_WEBDRIVER.toString());
+      queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS.toString());
+      queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString());
+      queueURLMap.put(QueueName.DISCOVERER_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_CATEGORIES.toString());
+      queueURLMap.put(QueueName.IMAGES_DOWNLOAD.toString(), QUEUE_URL + QueueName.IMAGES_DOWNLOAD.toString());
+      queueURLMap.put(QueueName.RANKING_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS.toString());
+      queueURLMap.put(QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString());
+      queueURLMap.put(QueueName.RANKING_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.RANKING_BY_CATEGORIES.toString());
+      queueURLMap.put(QueueName.SEED.toString(), QUEUE_URL + QueueName.SEED.toString());
 
-    return sqs.sendMessageBatch(batchMessageBatchRequest);
-  }
+      queueURLMap.put(QueueName.INTEREST_PROCESSED.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED.toString());
+      queueURLMap.put(QueueName.INTEREST_PROCESSED_RATING.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED_RATING.toString());
+   }
 
-  /**
-   * Selects a proper Amazon SQS queue to be used, according to it's name.
-   * 
-   * @param queueName the name of the queue, as displayed in Amazon console
-   * @return The appropriate queue URL
-   */
-  private static String getQueueURL(String queueName) {
-    if (queueURLMap.containsKey(queueName)) {
-      return queueURLMap.get(queueName);
-    }
+   /**
+    * Send a message batch to SQS.
+    * 
+    * @param sqs
+    * @param entries
+    * @return
+    */
+   public static SendMessageBatchResult sendBatchMessages(AmazonSQS sqs, String queueName, List<SendMessageBatchRequestEntry> entries) {
+      SendMessageBatchRequest batchMessageBatchRequest = new SendMessageBatchRequest();
+      String queueURL = getQueueURL(queueName);
+      batchMessageBatchRequest.setQueueUrl(queueURL);
+      batchMessageBatchRequest.setEntries(entries);
 
-    Logging.printLogError(logger, "Unrecognized queue.");
-    return null;
-  }
+      return sqs.sendMessageBatch(batchMessageBatchRequest);
+   }
+
+   /**
+    * Selects a proper Amazon SQS queue to be used, according to it's name.
+    * 
+    * @param queueName the name of the queue, as displayed in Amazon console
+    * @return The appropriate queue URL
+    */
+   private static String getQueueURL(String queueName) {
+      if (queueURLMap.containsKey(queueName)) {
+         return queueURLMap.get(queueName);
+      }
+
+      Logging.printLogError(logger, "Unrecognized queue.");
+      return null;
+   }
 
 }

@@ -7,9 +7,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
-public class SaojosedoriopretoparquedaliberdadeSitemercadosupermercadoproencaCrawler extends BrasilSitemercadoCrawler {
+public class SaojosedoriopretoSitemercadosupermercadoproencaparquedaliberdadeCrawler extends BrasilSitemercadoCrawler {
 
-   public SaojosedoriopretoparquedaliberdadeSitemercadosupermercadoproencaCrawler(Session session) {
+   public SaojosedoriopretoSitemercadosupermercadoproencaparquedaliberdadeCrawler(Session session) {
       super(session);
    }
 
