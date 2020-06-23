@@ -63,7 +63,7 @@ public class BrasilAgropecuariaimaruiCrawler extends Crawler {
         skuJson = null;
       }
 
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#comment_post_ID", "value");
+      String internalId = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "wc_shipping_simulator=", ";", true, true).optString("product_id");
       String internalPid = skuJson != null && skuJson.has("sku") ? skuJson.get("sku").toString() : null;
       String name = skuJson != null && skuJson.has("name") ? skuJson.get("name").toString() : null;
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-info .woocommerce-breadcrumb a[href]", true);
