@@ -235,6 +235,10 @@ public class PortugalElcorteinglesCrawler extends Crawler {
         rating.put(ratingReviews.optInt("RatingValue"), ratingReviews.optInt("Count"));
       }
     }
-    return new AdvancedRatingReview.Builder().allStars(rating).build();
+    AdvancedRatingReview.Builder advRatingReview = new AdvancedRatingReview.Builder();
+
+    if (rating != null) advRatingReview.allStars(rating);
+
+    return advRatingReview.build();
   }
 }
