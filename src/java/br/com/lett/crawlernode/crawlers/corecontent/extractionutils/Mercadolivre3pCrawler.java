@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -70,13 +71,19 @@ public class Mercadolivre3pCrawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         boolean availableToBuy = !doc.select(".andes-button--filled").isEmpty();
+         boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
          boolean mustAddProduct = checkIfMustScrapProduct(offers);
 
          if (mustAddProduct) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product_id]", "value");
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=item_id]", "value");;
+            JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
+            String internalPid = jsonInfo.optString("productID");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=item_id]", "value");
+
+            if (internalId == null || internalId.isEmpty()) {
+               internalId = jsonInfo.optString("sku");
+            }
+
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
@@ -119,7 +126,7 @@ public class Mercadolivre3pCrawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select("input[name=item_id]").isEmpty();
+      return !doc.select("h1.ui-pdp-title").isEmpty();
    }
 
    private boolean checkIfMustScrapProduct(Offers offers) {
@@ -135,7 +142,7 @@ public class Mercadolivre3pCrawler {
          }
       }
 
-      return mustAddProduct;
+      return offers.isEmpty() || mustAddProduct;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
@@ -235,26 +242,31 @@ public class Mercadolivre3pCrawler {
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(doc);
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-buybox .ui-pdp-seller__header__title a", true);
+      boolean hasMainOffer = false;
 
-      offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(sellerFullName)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+      if (sellerFullName != null && !sellerFullName.isEmpty()) {
+         Pricing pricing = scrapPricing(doc);
+         List<String> sales = scrapSales(doc);
 
-      scrapSellersPage(offers, doc);
+         offers.add(OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(sellerFullName)
+               .setMainPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
+               .setPricing(pricing)
+               .setSales(sales)
+               .build());
+
+         hasMainOffer = true;
+      }
+      scrapSellersPage(offers, doc, hasMainOffer);
 
       return offers;
    }
 
-   private void scrapSellersPage(Offers offers, Document doc) throws OfferException, MalformedPricingException {
+   private void scrapSellersPage(Offers offers, Document doc, boolean hasMainOffer) throws OfferException, MalformedPricingException {
       String sellersPageUrl = CrawlerUtils.scrapUrl(doc, ".ui-pdp-other-sellers__link", "href", "https", "www.mercadolivre.com.br");
       if (sellersPageUrl != null) {
          String nextUrl = sellersPageUrl;
@@ -274,7 +286,7 @@ public class Mercadolivre3pCrawler {
             if (!offersElements.isEmpty()) {
                for (Element e : offersElements) {
                   String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", true);
-                  if (sellerName != null && !mainOfferFound && offers.containsSeller(sellerName)) {
+                  if (hasMainOffer && sellerName != null && !mainOfferFound && offers.containsSeller(sellerName)) {
                      Offer offerMainPage = offers.getSellerByName(sellerName);
                      offerMainPage.setSellersPagePosition(sellersPagePosition);
                      offerMainPage.setIsBuybox(true);

@@ -22,10 +22,10 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
-      super.fetchMode = FetchMode.JAVANET;
+      super.fetchMode = FetchMode.APACHE;
    }
 
-   private static final String PRODUCTS_SELECTOR = ".home-product-cards .product-card .producto-info .open-modal[data-id]";
+   private static final String PRODUCTS_SELECTOR = ".home-product-cards .product-card .producto-info .open-modal[title]";
    private static final String HOST = "supermercado.carrefour.com.ar";
    private String categoryUrl;
 

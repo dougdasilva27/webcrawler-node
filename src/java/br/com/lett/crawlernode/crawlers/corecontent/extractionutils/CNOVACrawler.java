@@ -181,7 +181,7 @@ public abstract class CNOVACrawler extends Crawler {
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
                         ProxyCollection.STORM_RESIDENTIAL_US,
-                        ProxyCollection.BUY
+                        ProxyCollection.NETNUT_RESIDENTIAL_BR
                   )
             ).build();
 

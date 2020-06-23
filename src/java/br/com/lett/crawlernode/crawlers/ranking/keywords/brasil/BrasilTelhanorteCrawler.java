@@ -20,7 +20,7 @@ public class BrasilTelhanorteCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String url = "https://api.linximpulse.com/engage/search/v3/search?terms=" + this.keywordEncoded + "&origin=&apiKey=telhanorte&salesChannel=1&sortBy=relevance&showOnlyAvailable=true";
+    String url = "https://api.linximpulse.com/engage/search/v3/search?terms="+this.keywordEncoded+"&apikey=telhanorte&saleschannel=1&sortby=relevance&showonlyavailable=true&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
     Map<String, String> headers = new HashMap<>();

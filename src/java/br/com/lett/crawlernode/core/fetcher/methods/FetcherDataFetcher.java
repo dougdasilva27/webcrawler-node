@@ -153,7 +153,8 @@ public class FetcherDataFetcher implements DataFetcher {
          session.addRedirection(request.getUrl(), response.getRedirectUrl());
          S3Service.saveResponseContent(session, requestHash, response.getBody());
       } catch (Exception e) {
-         Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response: " + CommonMethods.getStackTrace(e));
+         Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response: " + e.getMessage());
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
       }
 
       sendRequestInfoLog(request, response, method, session, requestHash);
@@ -437,7 +438,7 @@ public class FetcherDataFetcher implements DataFetcher {
       requestMetadata.put("req_location", request != null ? request.getUrl() : "");
       requestMetadata.put("req_type", "FETCHER");
 
-      Logging.logDebug(logger, session, requestMetadata, "Registrando requisição...");
+      Logging.logInfo(logger, session, requestMetadata, "Registrando requisição...");
 
    }
 }
