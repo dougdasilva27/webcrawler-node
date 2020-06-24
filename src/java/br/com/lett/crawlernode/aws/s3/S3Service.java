@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.FileCompression;
 import br.com.lett.crawlernode.util.Logging;
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
@@ -46,17 +45,9 @@ public class S3Service {
     private static final String S3_BATCH_HOST = GlobalConfigurations.executionParameters.getS3BatchHost();
     private static final String S3_BATCH_REMOTE_LOCATION = GlobalConfigurations.executionParameters.getS3BatchRemoteLocation();
     private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
-    // Amazon crawler-session
-    private static final AmazonS3 s3clientCrawlerSessions;
 
     static {
         s3clientImages = AmazonS3ClientBuilder
-                .standard()
-                .withRegion(Regions.US_EAST_1)
-                .withCredentials(new DefaultAWSCredentialsProviderChain())
-                .build();
-
-        s3clientCrawlerSessions = AmazonS3ClientBuilder
                 .standard()
                 .withRegion(Regions.US_EAST_1)
                 .withCredentials(new DefaultAWSCredentialsProviderChain())

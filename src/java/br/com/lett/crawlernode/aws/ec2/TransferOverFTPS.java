@@ -1,15 +1,21 @@
 package br.com.lett.crawlernode.aws.ec2;
 
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPSClient;
-import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TransferOverFTPS {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalConfigurations.class);
     FTPSClient ftpClient;
 
     public TransferOverFTPS(String username, String password, String host) throws IOException {
@@ -41,14 +47,14 @@ public class TransferOverFTPS {
     }
 
     public Thread sendFileAsyncAndCloseConnection(String localFile, String remoteFile, boolean deleteLocalFile) {
-        return _sendFileAsync(localFile, remoteFile, deleteLocalFile);
+        return sendFileAsync(localFile, remoteFile, deleteLocalFile);
     }
 
     public Thread sendFileAsyncAndCloseConnection(String localFile, String remoteFile) {
-        return _sendFileAsync(localFile, remoteFile, false);
+        return sendFileAsync(localFile, remoteFile, false);
     }
 
-    private Thread _sendFileAsync(String localFile, String remoteFile, boolean deleteLocalFile) {
+    private Thread sendFileAsync(String localFile, String remoteFile, boolean deleteLocalFile) {
         Thread sendFileThread = new Thread(() -> {
             try {
                 sendFile(localFile, remoteFile);
@@ -56,11 +62,11 @@ public class TransferOverFTPS {
                 if (deleteLocalFile) {
                     File fileToDelete = new File(localFile);
                     if (fileToDelete.exists()) {
-                        fileToDelete.delete();
+                        Files.delete(Paths.get(fileToDelete.getAbsolutePath()));
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
             }
         });
         sendFileThread.start();
@@ -77,17 +83,17 @@ public class TransferOverFTPS {
             ftpClient.changeWorkingDirectory(remoteParentDirectory);
         }
 
-        InputStream inputStream = new FileInputStream(localFile);
-        OutputStream outputStream = ftpClient.storeFileStream(remoteFileName);
+        OutputStream outputStream;
+        try (InputStream inputStream = new FileInputStream(localFile)) {
+            outputStream = ftpClient.storeFileStream(remoteFileName);
 
-        byte[] bytesIn = new byte[4096];
+            byte[] bytesIn = new byte[4096];
 
-        int read;
-        while ((read = inputStream.read(bytesIn)) != -1) {
-            outputStream.write(bytesIn, 0, read);
+            int read;
+            while ((read = inputStream.read(bytesIn)) != -1) {
+                outputStream.write(bytesIn, 0, read);
+            }
         }
-
-        inputStream.close();
         outputStream.close();
     }
 
