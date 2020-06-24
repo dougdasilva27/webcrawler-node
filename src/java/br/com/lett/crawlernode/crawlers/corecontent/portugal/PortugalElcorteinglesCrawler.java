@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.portugal;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -15,6 +14,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -32,6 +32,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.util.*;
 
@@ -63,15 +64,8 @@ public class PortugalElcorteinglesCrawler extends Crawler {
             FetcherOptionsBuilder.create()
                 .mustUseMovingAverage(false)
                 .mustRetrieveStatistics(true)
-                .build()
-        ).setProxyservice(
-            Arrays.asList(
-                ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                ProxyCollection.STORM_RESIDENTIAL_EU,
-                ProxyCollection.STORM_RESIDENTIAL_US,
-                ProxyCollection.BUY
-            )
-        ).build();
+                .build())
+        .build();
 
     String content = this.dataFetcher.get(session, request).getBody();
 
@@ -113,7 +107,6 @@ public class PortugalElcorteinglesCrawler extends Crawler {
           .build();
       products.add(product);
 
-
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
@@ -139,12 +132,23 @@ public class PortugalElcorteinglesCrawler extends Crawler {
         .build());
 
     return offers;
-
   }
 
   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-    Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices-price._before", null, false, ',', session);
-    Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prices-price._offer", null, false, ',', session);
+    Element elemPrice;
+    Element elemPriceFrom = null;
+    if (doc.selectFirst(".prices-price._offer") != null) {
+      elemPrice = doc.selectFirst(".prices-price._offer");
+      elemPriceFrom = doc.selectFirst(".prices-price._before");
+    } else {
+      elemPrice = doc.selectFirst(".prices-price");
+    }
+    Double spotlightPrice = MathUtils.parseDoubleWithComma(elemPrice.text());
+    Double priceFrom = null;
+    if (elemPriceFrom != null) {
+      priceFrom = MathUtils.parseDoubleWithComma(elemPriceFrom.text());
+    }
+
     CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
     return PricingBuilder.create()
