@@ -149,79 +149,41 @@ class CampinasPetcampCrawler(session: Session) : Crawler(session) {
     }
 
     private fun scrapCreditCards(doc: Document, spotlightPrice: Double): CreditCards {
-        val creditCards = scrapCreditCardsInPage(doc)
-        val installments = Installments()
+        val creditCards = CreditCards()
+        val installments = scrapInstallments(doc)
 
-        if (creditCards.creditCards.isEmpty()) {
+        if (installments.installments.isEmpty()) {
             installments.add(InstallmentBuilder.create()
                     .setInstallmentNumber(1)
                     .setInstallmentPrice(spotlightPrice)
                     .build())
-
-            for (brand in cards) {
-                creditCards.add(CreditCardBuilder.create()
-                        .setBrand(brand)
-                        .setIsShopCard(false)
-                        .setInstallments(installments)
-                        .build())
-            }
         }
+
+        for (brand in cards) {
+            creditCards.add(CreditCardBuilder.create()
+                    .setBrand(brand)
+                    .setIsShopCard(false)
+                    .setInstallments(installments)
+                    .build())
+        }
+
         return creditCards
     }
 
-    private fun scrapCreditCardsInPage(doc: Document): CreditCards {
-        val creditCards = CreditCards()
+    private fun scrapInstallments(doc: Document): Installments {
         val installments = Installments()
 
-        val banks = doc.select(".conteudo ul li")
-        for (line in banks) {
-            for (row in banks.select(".formas_parc tbody > tr")) {
+        val banks = doc.selectFirst(".conteudo ul li")
+        for (row in banks.select(".formas_parc tbody > tr")) {
+            val number = CrawlerUtils.scrapIntegerFromHtml(row, "td:first-child", true, null)
+            val price = CrawlerUtils.scrapDoublePriceFromHtml(row, "td:last-child", null, true, ',', session)
 
-                val currentCard = checkCreditCard(line)
-                if (currentCard != null) {
-                    val number = CrawlerUtils.scrapIntegerFromHtml(row, "td:first-child", true, null)
-                    val price = CrawlerUtils.scrapDoublePriceFromHtml(row, "td:last-child", null, true, ',', session)
-
-                    installments.add(InstallmentBuilder.create()
-                            .setInstallmentNumber(number)
-                            .setInstallmentPrice(price)
-                            .build())
-
-                    creditCards.add(CreditCardBuilder.create()
-                            .setBrand(currentCard)
-                            .setInstallments(installments)
-                            .setIsShopCard(false)
-                            .build())
-                }
-            }
+            installments.add(InstallmentBuilder.create()
+                    .setInstallmentNumber(number)
+                    .setInstallmentPrice(price)
+                    .build())
         }
-        return creditCards
-    }
-
-    private fun checkCreditCard(line: Element): String? {
-        val url = CrawlerUtils.scrapStringSimpleInfoByAttribute(line, ".img_parc > img", "src")
-
-        return when {
-            url.contains("amex") -> {
-                Card.AMEX.toString()
-            }
-            url.contains("aura") -> {
-                Card.AURA.toString()
-            }
-            url.contains("elo") -> {
-                Card.ELO.toString()
-            }
-            url.contains("visa") -> {
-                Card.VISA.toString()
-            }
-            url.contains("master") -> {
-                Card.MASTERCARD.toString()
-            }
-            url.contains("diners") -> {
-                Card.DINERS.toString()
-            }
-            else -> null
-        }
+        return installments
     }
 
     private fun scrapRatingReviews(doc: Document): RatingsReviews? {
