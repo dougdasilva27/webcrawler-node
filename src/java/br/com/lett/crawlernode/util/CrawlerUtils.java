@@ -1577,6 +1577,58 @@ public class CrawlerUtils {
       return images;
    }
 
+   public static String scrapPrimaryImageMagento(JSONArray images) {
+      String primaryImage = null;
+
+      for (int i = 0; i < images.length(); i++) {
+         Object obj = images.get(0);
+
+         if (obj instanceof JSONObject) {
+            JSONObject jsonImage = (JSONObject) obj;
+
+            if (jsonImage.has("isMain") && jsonImage.getBoolean("isMain") && jsonImage.has("full")) {
+               primaryImage = jsonImage.getString("full");
+               break;
+            }
+         } else if (obj instanceof String) {
+            primaryImage = obj.toString();
+         }
+      }
+
+      return primaryImage;
+   }
+
+   public static String scrapSecondaryImagesMagento(JSONArray images, String primaryImage) {
+      String secondaryImages = null;
+      JSONArray secondaryImagesArray = new JSONArray();
+
+      for (int i = 0; i < images.length(); i++) {
+         Object obj = images.get(i);
+
+         if (obj instanceof JSONObject) {
+            JSONObject jsonImage = (JSONObject) obj;
+
+            if (jsonImage.has("isMain") && jsonImage.getBoolean("isMain") && jsonImage.has("full")) {
+               String image = jsonImage.optString("full", null);
+               if (image != null && !image.equalsIgnoreCase(primaryImage)) {
+                  secondaryImagesArray.put(image);
+               }
+            }
+         } else if (obj instanceof String) {
+            String image = obj.toString();
+            if (image != null && !image.equalsIgnoreCase(primaryImage)) {
+               secondaryImagesArray.put(image);
+            }
+         }
+      }
+
+      if (secondaryImagesArray.length() > 0) {
+         secondaryImages = secondaryImagesArray.toString();
+      }
+
+      return secondaryImages;
+   }
+
    /**
     * Get total products of search in crawler Ranking
     * 

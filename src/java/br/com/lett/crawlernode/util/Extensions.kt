@@ -141,3 +141,4 @@ fun Document.selectAny(vararg selectors: String): Element? {
 }
 
 fun Double.toBankSlip(discount: Double? = null): BankSlip = BankSlipBuilder.create().setFinalPrice(this).setOnPageDiscount(discount).build()
+
