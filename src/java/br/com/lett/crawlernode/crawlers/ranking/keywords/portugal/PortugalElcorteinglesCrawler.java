@@ -1,64 +1,52 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.portugal;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class PortugalElcorteinglesCrawler extends CrawlerRankingKeywords {
 
-   public PortugalElcorteinglesCrawler(Session session) {
-      super(session);
-   }
+  public PortugalElcorteinglesCrawler(Session session) {
+    super(session);
+    this.pageSize = 24;
+  }
 
-   @Override
-   protected void extractProductsFromCurrentPage() {
-      this.pageSize = 12;
+  @Override
+  protected void extractProductsFromCurrentPage() {
 
-      this.log("Página " + this.currentPage);
-      String keyword = this.keywordWithoutAccents.replace(" ", "+");
+    this.log("Página " + this.currentPage);
 
-      this.log("Página " + this.currentPage);
-
-      // monta a url com a keyword e a página
-      String url = "https://www.elcorteingles.pt/search/?s=" + keyword;
-      this.currentDoc = fetchDocument(url);
+    // monta a url com a keyword e a página
+    String url = "https://www.elcorteingles.pt/supermercado/pesquisar/" + currentPage + "/?term=" + keywordEncoded + "&search=text";
+    this.currentDoc = fetchDocument(url);
 
 
-      this.log("Link onde são feitos os crawlers: " + url);
+    this.log("Link onde são feitos os crawlers: " + url);
 
 
-      Elements products = this.currentDoc.select(".product-preview");
+    Elements products = this.currentDoc.select(".dataholder.js-product");
 
-      if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
-
-         for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image .hidden", "data-bv-product-id");
-            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image .hidden", "data-bv-redirect-url"), "http://", "www.elcorteingles.pt");
-
-            saveDataProduct(internalId, null, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-         }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
+    if (!products.isEmpty()) {
+      if (this.totalProducts == 0) {
+        setTotalProducts();
       }
 
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
+      for (Element e : products) {
+        String internalId = e.attr("data-product-id");
+        String productUrl = "https://www.elcorteingles.pt" + e.selectFirst("a").attr("href");
 
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#product-list-total", true, 0);
-      this.log("Total da busca: " + this.totalProducts);
-   }
+        saveDataProduct(internalId, null, productUrl);
 
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+      }
+    }
+  }
+
+  @Override
+  protected void setTotalProducts() {
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".grid-coincidences .semi", false, 0);
+    this.log("Total da busca: " + this.totalProducts);
+  }
 }
