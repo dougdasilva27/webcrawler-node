@@ -35,16 +35,16 @@ import models.pricing.Pricing.PricingBuilder;
 
 public class BrasilMinhacooper extends Crawler {
 
-   private String mainSellerNameLower;
-   private final String HOME_PAGE = "https://www.minhacooper.com.br/loja/" + mainSellerNameLower;
+   private String store_name;
+
+   public void setStore_name(String store_name) {
+      this.store_name = store_name;
+   }
+
+   private final String HOME_PAGE = "https://www.minhacooper.com.br/loja/" + store_name;
 
    public BrasilMinhacooper(Session session) {
       super(session);
-   }
-
-
-   public void setMainSellerNameLower(String mainSellerNameLower) {
-      this.mainSellerNameLower = mainSellerNameLower;
    }
 
    @Override
@@ -52,7 +52,6 @@ public class BrasilMinhacooper extends Crawler {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
-
 
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
          Card.MASTERCARD.toString(), Card.ELO.toString());
@@ -68,15 +67,13 @@ public class BrasilMinhacooper extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ref", false);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ref", false).replace("REF. ", "");
          String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail-section h4", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#product-zoom", Arrays.asList("src"), "http:", null);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".col-xs-3 .gallery", Arrays.asList("data-zoom-image"), "http:", null, primaryImage);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #product-zoom", Arrays.asList("src"), "http:", "");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".col-xs-3 .gallery", Arrays.asList("data-zoom-image"), "http:", "", primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs p a");
-
-         boolean available = doc.selectFirst(".col-xs-12 .button.button-default").equals("Adicionar");
-         Offers offers = available ? scrapOffer(doc) : new Offers();
+         Offers offers = scrapOffer(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -146,7 +143,6 @@ public class BrasilMinhacooper extends Crawler {
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
-
 
    }
 
