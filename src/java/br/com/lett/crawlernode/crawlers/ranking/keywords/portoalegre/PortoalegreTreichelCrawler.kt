@@ -14,18 +14,29 @@ class PortoalegreTreichelCrawler(session: Session) : CrawlerRankingKeywords(sess
   }
 
   override fun extractProductsFromCurrentPage() {
-    val payload = """{"descricao":"$keywordWithoutAccents","order":"MV","pg":$currentPage,"marcas":[],
-      |"categorias":[],"subcategorias":[],"precoIni":0,"precoFim":0,"avaliacoes":[],"num_reg_pag":$pageSize,
-      |"visualizacao":"CARD"}""".trimMargin()
-    val json = dataFetcher.post(session, Request.RequestBuilder.create().setUrl(url).setPayload(payload).build()).body?.toJson()!!
+    val payload = """
+      {"descricao":"$keywordWithoutAccents","order":"MV","pg":$currentPage,"marcas":[],
+      "categorias":[],"subcategorias":[],"precoIni":0,"precoFim":0,"avaliacoes":[],"num_reg_pag":$pageSize,
+      "visualizacao":"CARD"}""".trimIndent().replace("\n", "")
+    val json = dataFetcher.post(
+      session, Request.RequestBuilder.create()
+        .setUrl(url)
+        .setPayload(payload)
+        .setHeaders(mapOf("Content-Type" to "application/json;charset=UTF-8"))
+        .build()
+    ).body?.toJson()!!
 
     for (elem in json.optJSONArray("Produtos")) {
       if (elem is JSONObject) {
-        val productUrl = """https://delivery.atacadotreichel.com.br/${elem.optString("str_link_produto")}"""
+        val productUrl = "https://delivery.atacadotreichel.com.br/produto/${elem.optString("str_link_produto")}"
         val id = elem.optString("id_produto")
         log("Url $productUrl - internalId - $id")
         saveDataProduct(id, null, productUrl)
       }
     }
+  }
+
+  override fun checkIfHasNextPage(): Boolean {
+    return (arrayProducts.size % pageSize - currentPage) < 0
   }
 }
