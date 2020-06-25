@@ -6,7 +6,6 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.crawlers.corecontent.recife.opt
 import br.com.lett.crawlernode.util.toBankSlip
 import br.com.lett.crawlernode.util.toCreditCards
 import br.com.lett.crawlernode.util.toJson
@@ -37,10 +36,10 @@ class PortoalegreTreichelCrawler(session: Session) : Crawler(session) {
     val products = mutableListOf<Product>()
     val images = mutableListOf<String>()
 
-    for (imgJson in json.optJSONArray("str_img_path")) {
+    for (imgJson in json.optJSONArray("Imagens")) {
       if (imgJson is JSONObject) {
 
-        images.opt(imgJson.optString("str_img_path"))
+        images += "${imgJson.optString("str_img_path")}-g.jpg"
       }
     }
 
@@ -79,13 +78,15 @@ class PortoalegreTreichelCrawler(session: Session) : Crawler(session) {
       .setBankSlip(price.toBankSlip())
       .setSpotlightPrice(price)
       .setCreditCards(setOf(VISA, MASTERCARD, HIPERCARD, HIPER, DINERS, JCB).toCreditCards(price))
-      .setPriceFrom(priceFrom)
+      .setPriceFrom(if (priceFrom != price) priceFrom else null)
       .build()
 
     val offer = OfferBuilder.create()
       .setPricing(pricing)
       .setIsMainRetailer(true)
+      .setSellerFullName("Treichel")
       .setUseSlugNameAsInternalSellerId(true)
+      .setIsBuybox(false)
       .build()
     offers.add(offer)
 
