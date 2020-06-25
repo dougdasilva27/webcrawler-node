@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.aws.s3;
 
-import br.com.lett.crawlernode.aws.ec2.TransferOverSFTP;
+import br.com.lett.crawlernode.aws.ec2.TransferOverFTPS;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.FileCompression;
 import br.com.lett.crawlernode.util.Logging;
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
@@ -42,22 +41,13 @@ public class S3Service {
     private static final String LOGS_BUCKET_NAME = GlobalConfigurations.executionParameters.getLogsBucketName();
     private static final String S3_CRAWLER_SESSIONS_PREFIX = "crawler-sessions";
     private static final String S3_BATCH_USER = GlobalConfigurations.executionParameters.getS3BatchUser();
+    private static final String S3_BATCH_PASS = GlobalConfigurations.executionParameters.getS3BatchPass();
     private static final String S3_BATCH_HOST = GlobalConfigurations.executionParameters.getS3BatchHost();
-    private static final String S3_BATCH_KEY = GlobalConfigurations.executionParameters.getS3BatchKey();
     private static final String S3_BATCH_REMOTE_LOCATION = GlobalConfigurations.executionParameters.getS3BatchRemoteLocation();
-    private static final String SSH_KEYS_BUCKET = GlobalConfigurations.executionParameters.getSshKeysBucket();
     private static final String READ_IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
-    // Amazon crawler-session
-    private static final AmazonS3 s3clientCrawlerSessions;
 
     static {
         s3clientImages = AmazonS3ClientBuilder
-                .standard()
-                .withRegion(Regions.US_EAST_1)
-                .withCredentials(new DefaultAWSCredentialsProviderChain())
-                .build();
-
-        s3clientCrawlerSessions = AmazonS3ClientBuilder
                 .standard()
                 .withRegion(Regions.US_EAST_1)
                 .withCredentials(new DefaultAWSCredentialsProviderChain())
@@ -174,48 +164,21 @@ public class S3Service {
             File compressedFile = new File(tarGzPath);
 
             if (compressedFile.exists()) {
-//                try {
-//                    Logging.printLogDebug(logger, session, "Uploading HTML to S3 Batch service");
-//
-//                    TransferOverSFTP sftp = new TransferOverSFTP(S3_BATCH_USER, S3_BATCH_HOST, SSH_KEYS_BUCKET, S3_BATCH_KEY);
-//                    String localFile = compressedFile.getAbsolutePath();
-//                    String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
-//                    sftp.connect();
-//                    sftp.sendFileAsync(localFile, remoteFile);
-//                    sftp.disconnect();
-//
-//                    Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
-//                } catch (Exception ex) {
-//                    Logging.printLogError(logger, session, "Error during HTML upload.");
-//                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
-//                }
-
-                // TODO: remove S3 endpoint after validating batch in production VVVVVVV
                 try {
-                    Logging.printLogDebug(logger, session, "Uploading content to S3");
-                    s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
-                    Logging.printLogDebug(logger, session, "Content uploaded to S3 successfully!");
-                } catch (AmazonServiceException ase) {
-                    Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "
-                            + "to Amazon S3, but was rejected with an error response" + " for some reason.");
-                    Logging.printLogError(logger, session, "Error Message:    " + ase.getMessage());
-                    Logging.printLogError(logger, session, "HTTP Status Code: " + ase.getStatusCode());
-                    Logging.printLogError(logger, session, "AWS Error Code:   " + ase.getErrorCode());
-                    Logging.printLogError(logger, session, "Error Type:       " + ase.getErrorType());
-                    Logging.printLogError(logger, session, "Request ID:       " + ase.getRequestId());
+                    Logging.printLogDebug(logger, session, "Uploading HTML to S3 Batch service");
 
-                    ase.printStackTrace();
-                } catch (AmazonClientException ace) {
-                    Logging.printLogError(logger, session, " - Caught an AmazonClientException, which " + "means the client encountered "
-                            + "an internal error while trying to " + "communicate with S3, " + "such as not being able to access the network.");
-                    Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ace));
+                    String localFile = compressedFile.getAbsolutePath();
+                    String remoteFile = Paths.get(S3_BATCH_REMOTE_LOCATION, LOGS_BUCKET_NAME, amazonLocation).toString();
+
+                    TransferOverFTPS sftp = new TransferOverFTPS(S3_BATCH_USER, S3_BATCH_PASS, S3_BATCH_HOST);
+                    sftp.sendFileAsyncAndCloseConnection(localFile, remoteFile, true);
+
+                    Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
                 } catch (Exception ex) {
-                    Logging.printLogError(logger, session, "Error during html upload.");
+                    Logging.printLogError(logger, session, "Error during HTML upload.");
                     Logging.printLogError(logger, session, CommonMethods.getStackTraceString(ex));
                 }
-                // TODO: remove S3 endpoint after validating batch in production ^^^^^^^^^^^^^^^^^^
 
-                compressedFile.delete();
             } else {
                 Logging.printLogDebug(logger, session, "No files to upload!");
             }
