@@ -275,6 +275,8 @@ public class Persistence {
 
          if (newProcessedProduct.getRatingsReviews() != null) {
             updateMap.put(processedTable.RATING, newProcessedProduct.getRatingsReviews().toString());
+         } else {
+            updateMap.put(processedTable.RATING, null);
          }
 
          // get the id of the processed product that already exists
