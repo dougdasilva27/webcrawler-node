@@ -73,8 +73,8 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
    public JSONObject crawlApi(String token) {
 
       // there is no info about internalId on product page HTML so capture this info from URL
-      Integer x = session.getOriginalURL().indexOf("detalhe/");
-      String internalIdFromURL = x != null ? session.getOriginalURL().substring(x).split("/")[1] : null;
+      Integer indexOf = session.getOriginalURL().indexOf("detalhe/");
+      String internalIdFromURL = indexOf != null ? session.getOriginalURL().substring(indexOf).split("/")[1] : null;
       String url = "https://api.deliverycidade.com.br/v1/loja/produtos/" + internalIdFromURL + "/filial/1/centro_distribuicao/1/detalhes";
 
       Map<String, String> headers = new HashMap<>();
@@ -104,9 +104,9 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
          String internalPid = JSONUtils.getStringValue(productInfo, "id");
          String name = JSONUtils.getStringValue(productInfo, "descricao");
          String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getStringValue(productInfo, "imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
-         boolean availeble = productInfo.optBoolean("disponivel");
+         boolean available = productInfo.optBoolean("disponivel");
          Integer stock = JSONUtils.getIntegerValueFromJSON(productInfo, "quantidade_maxima", null);
-         Offers offers = availeble ? scrapOffers(OffersInfo, productInfo) : new Offers();
+         Offers offers = available ? scrapOffers(OffersInfo, productInfo) : new Offers();
 
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
