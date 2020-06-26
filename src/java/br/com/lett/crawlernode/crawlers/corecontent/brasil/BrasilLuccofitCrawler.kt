@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper
 import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.JSONUtils
 import models.RatingsReviews
 import org.json.JSONObject
 import org.jsoup.nodes.Document
