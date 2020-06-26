@@ -52,13 +52,9 @@ public class BrasilErgovitaCrawler extends Crawler {
             String internalId = jsonInfo.optString("productID");
             String internalPid = internalId;
             String name = jsonInfo.optString("name");
-
-            //TODO get right image
             String primaryImage = scrapPrimaryImage(jsonInfo);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".EstPathCatLink");
             String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#det-product-description-tab > div:not(:last-child)"));
-
-            //TODO get rating from the json
             RatingsReviews ratingReview = scrapRatingReviews(jsonInfo);
             Offers offers = scrapOffers(doc, jsonInfo);
 
@@ -88,13 +84,15 @@ public class BrasilErgovitaCrawler extends Crawler {
         return doc.selectFirst(".det-product-container") != null;
     }
 
-    private String scrapPrimaryImage(JSONObject json) {
-        String imgUrl = json.optString("image");
-        return null;
+    private String scrapPrimaryImage(JSONObject jsonInfo) {
+        String mpn = jsonInfo.optString("mpn");
+        if (mpn.contains("-")) {
+            mpn = mpn.split("-")[0];
+        }
+        return "https://www.rumo.com.br/lojas/00028727/prod/" + mpn + ".png";
     }
 
     private Offers scrapOffers(Document doc, JSONObject jsonInfo) throws OfferException, MalformedPricingException {
-        //TODO corrigir para produtos indisponiveis
         Offers offers = new Offers();
         Pricing pricing = scrapPricing(doc, jsonInfo);
 
@@ -113,12 +111,13 @@ public class BrasilErgovitaCrawler extends Crawler {
     }
 
     private Pricing scrapPricing(Document doc, JSONObject jsonInfo) throws MalformedPricingException {
-        Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "b .FCPriceValue", null, false, ',', this.session);
+        JSONObject offer = jsonInfo.optJSONObject("offers");
 
-        if (spotlightPrice != null) {
+        if (offer != null && !offer.isEmpty() && offer.optString("availability").contains("InStock")) {
+            Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "b .FCPriceValue", null, false, ',', this.session);
             Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "strike .FCPriceValue", null, false, ',', this.session);
             CreditCards creditCards = scrapCreditCards(spotlightPrice);
-            BankSlip bankSlip = scrapBankSlip(jsonInfo);
+            BankSlip bankSlip = scrapBankSlip(offer);
 
             return PricingBuilder.create()
                     .setSpotlightPrice(spotlightPrice)
@@ -127,20 +126,14 @@ public class BrasilErgovitaCrawler extends Crawler {
                     .setBankSlip(bankSlip)
                     .build();
         }
-
         return null;
     }
 
-    private BankSlip scrapBankSlip(JSONObject jsonInfo) throws MalformedPricingException {
-        BankSlip bankSlip = new BankSlip();
-        JSONObject bankSlipOffer = jsonInfo.optJSONObject("offers");
-        if (bankSlipOffer != null && !bankSlipOffer.isEmpty()) {
-            Double bankSlipPrice = bankSlipOffer.optDouble("price");
-            bankSlip = BankSlip.BankSlipBuilder.create()
-                    .setFinalPrice(bankSlipPrice)
-                    .build();
-        }
-        return bankSlip;
+    private BankSlip scrapBankSlip(JSONObject offer) throws MalformedPricingException {
+        Double bankSlipPrice = offer.optDouble("price");
+        return BankSlip.BankSlipBuilder.create()
+                .setFinalPrice(bankSlipPrice)
+                .build();
     }
 
     private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -167,22 +160,19 @@ public class BrasilErgovitaCrawler extends Crawler {
         RatingsReviews ratingReviews = new RatingsReviews();
         ratingReviews.setDate(session.getDate());
 
-        int totalComments = 0;
-        double avgRating = 0D;
-        AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-
         JSONArray reviews = json.optJSONArray("review");
         JSONObject aggregateRating = json.optJSONObject("aggregateRating");
         if (reviews != null && aggregateRating != null) {
-            totalComments = aggregateRating.optInt("reviewCount", 0);
-            avgRating = aggregateRating.optDouble("ratingValue", 0);
-            advancedRatingReview = scrapAdvancedRatingReview(reviews);
+            int totalComments = aggregateRating.optInt("reviewCount", 0);
+            double avgRating = aggregateRating.optDouble("ratingValue", 0);
+            AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(reviews);
+
+            ratingReviews.setTotalRating(totalComments);
+            ratingReviews.setTotalWrittenReviews(totalComments);
+            ratingReviews.setAverageOverallRating(avgRating);
+            ratingReviews.setAdvancedRatingReview(advancedRatingReview);
         }
 
-        ratingReviews.setTotalRating(totalComments);
-        ratingReviews.setTotalWrittenReviews(totalComments);
-        ratingReviews.setAverageOverallRating(avgRating);
-        ratingReviews.setAdvancedRatingReview(advancedRatingReview);
         return ratingReviews;
     }
 
