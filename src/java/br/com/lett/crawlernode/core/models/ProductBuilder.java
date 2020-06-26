@@ -1,13 +1,15 @@
 package br.com.lett.crawlernode.core.models;
 
-import java.util.Collection;
-import java.util.List;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.DateUtils;
 import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+
+import java.util.Collection;
+import java.util.List;
 
 
 public class ProductBuilder {
@@ -112,6 +114,11 @@ public class ProductBuilder {
 
    public ProductBuilder setSecondaryImages(String secondaryImages) {
       this.secondaryImages = secondaryImages;
+      return this;
+   }
+
+   public ProductBuilder setSecondaryImages(Collection<String> secondaryImages) {
+      this.secondaryImages = new JSONArray(secondaryImages).toString();
       return this;
    }
 
