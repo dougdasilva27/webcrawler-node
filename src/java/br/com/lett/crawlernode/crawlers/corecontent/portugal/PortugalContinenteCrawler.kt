@@ -22,8 +22,7 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
 
       val offers = scrapOffers(document)
 
-      val primaryImg = document.selectFirst("#zoomWindow div img")?.attr("src")
-
+      val primaryImg = document.selectFirst("#bigProduct")?.attr("href")
 
       products += ProductBuilder.create()
         .setUrl(session.originalURL)
