@@ -289,7 +289,7 @@ public class ImageCrawler extends Task {
             default:
                break;
          }
-      } else if (marketId == 307 || marketId == 27) {
+      } else if (marketId == 307 || marketId == 27 || marketId == 836) {
          headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
          request.setSendContentEncoding(false);
       }
