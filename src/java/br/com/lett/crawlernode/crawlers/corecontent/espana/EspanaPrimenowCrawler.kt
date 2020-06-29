@@ -16,6 +16,7 @@ import models.pricing.Pricing
 import org.apache.http.HttpHeaders
 import org.json.JSONArray
 import org.jsoup.nodes.Document
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
 
 class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
 
@@ -37,6 +38,7 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
           .setCookies(cookies)
           .setHeaders(headers)
           .setBodyIsRequired(bodyIsrequired)
+				  .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
           .setProxyservice(
             listOf(
               ProxyCollection.INFATICA_RESIDENTIAL_BR,
