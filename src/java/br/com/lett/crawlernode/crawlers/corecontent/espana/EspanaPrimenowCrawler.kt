@@ -43,7 +43,7 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
             listOf(
               ProxyCollection.INFATICA_RESIDENTIAL_BR,
               ProxyCollection.STORM_RESIDENTIAL_US,
-              ProxyCollection.NETNUT_RESIDENTIAL_BR
+              ProxyCollection.NETNUT_RESIDENTIAL_ES
             )
           )
           .build()
