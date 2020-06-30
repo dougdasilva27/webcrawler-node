@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler
+import br.com.lett.crawlernode.util.CrawlerUtils
 import models.AdvancedRatingReview
 import models.RatingsReviews
 import org.json.JSONObject
@@ -19,7 +20,12 @@ class BrasilSuperadegaCrawler(session: Session) : VTEXOldScraper(session) {
         return mutableListOf("Super Adega")
     }
 
+    override fun scrapDescription(doc: Document?, productJson: JSONObject?): String {
+        return CrawlerUtils.scrapElementsDescription(doc, listOf(".product-description-specs-content"))
+    }
+
     override fun scrapRating(internalId: String, internalPid: String, doc: Document, jsonSku: JSONObject): RatingsReviews {
+        //TODO refactor this
         val ratingReviews = RatingsReviews()
         ratingReviews.date = session.date
 
