@@ -50,7 +50,8 @@ import models.pricing.Pricing.PricingBuilder;
  */
 public class BrasilAmazonCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.amazon.com.br";
+   private static final String HOST = "www.amazon.com.br";
+   private static final String HOME_PAGE = "https://" + HOST;
    private static final String SELLER_NAME = "amazon.com.br";
    private static final String SELLER_NAME_2 = "amazon.com";
    private static final String SELLER_NAME_3 = "Amazon";
@@ -147,17 +148,31 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
       String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info #sellerProfileTriggerId", false);
+      String sellerUrl = CrawlerUtils.scrapUrl(doc, "#merchant-info #sellerProfileTriggerId a", "href", "https", HOST);
+      String sellerId = scrapSellerIdByUrl(sellerUrl);
 
       if (seller == null) {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info", false);
+
+         if (seller != null && seller.contains("vendido por")) {
+            seller = CommonMethods.getLast(seller.split("vendido por")).trim();
+
+            if (seller.endsWith(".")) {
+               seller = seller.substring(0, seller.length() - 1);
+            }
+         }
       }
 
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3);
          Pricing pricing = scrapMainPagePricing(doc);
 
+         if (sellerId == null) {
+            sellerId = CommonMethods.toSlug(SELLER_NAME);
+         }
+
          return OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
+               .setInternalSellerId(sellerId)
                .setSellerFullName(seller)
                .setMainPagePosition(1)
                .setIsBuybox(false)
@@ -167,6 +182,21 @@ public class BrasilAmazonCrawler extends Crawler {
       }
 
       return null;
+   }
+
+   private String scrapSellerIdByUrl(String sellerUrl) {
+      String sellerId = null;
+
+      if (sellerUrl != null) {
+         for (String parameter : sellerUrl.split("&")) {
+            if (parameter.startsWith("seller=")) {
+               sellerId = parameter.split("=")[1];
+               break;
+            }
+         }
+      }
+
+      return sellerId;
    }
 
    private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
@@ -225,9 +255,16 @@ public class BrasilAmazonCrawler extends Crawler {
 
                   offers.add(mainPageOffer);
                } else {
+                  String sellerUrl = CrawlerUtils.scrapUrl(oferta, "h3.olpSellerName a[href]", "href", "https", HOST);
+                  String sellerId = scrapSellerIdByUrl(sellerUrl);
                   boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
+
+                  if (sellerId == null) {
+                     sellerId = CommonMethods.toSlug(SELLER_NAME);
+                  }
+
                   offers.add(OfferBuilder.create()
-                        .setUseSlugNameAsInternalSellerId(true)
+                        .setInternalSellerId(sellerId)
                         .setSellerFullName(name)
                         .setSellersPagePosition(pos)
                         .setIsBuybox(false)
