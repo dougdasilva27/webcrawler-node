@@ -102,7 +102,7 @@ public class ResultManager {
       // count images
       processedModelDigitalContentPic.put("count", DigitalContentAnalyser.imageCount(pm));
 
-      if (pm.getDigitalContent() == null) { // if md5 is null, means that there is no image in Amazon, let's see the previous status
+      if (processedModelDigitalContentPic.isEmpty()) { // if md5 is null, means that there is no image in Amazon, let's see the previous status
          String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
          JSONObject processedModelDigitalContentPicPrimary = new JSONObject();
