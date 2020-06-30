@@ -285,7 +285,7 @@ public class Mercadolivre3pCrawler {
             Elements offersElements = sellersHtml.select("form.ui-pdp-buybox");
             if (!offersElements.isEmpty()) {
                for (Element e : offersElements) {
-                  String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", true);
+                  String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", false);
                   if (hasMainOffer && sellerName != null && !mainOfferFound && offers.containsSeller(sellerName)) {
                      Offer offerMainPage = offers.getSellerByName(sellerName);
                      offerMainPage.setSellersPagePosition(sellersPagePosition);
