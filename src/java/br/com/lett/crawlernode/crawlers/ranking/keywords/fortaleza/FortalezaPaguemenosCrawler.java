@@ -170,7 +170,7 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
       // When sha256Hash is not found, this key below works (on 01/07/2020)
       String hash = "dcf550c27cd0bbf0e6899e3fa1f4b8c0b977330e321b9b8304cc23e2d2bad674";
       // When script with hash is not found, we use this url
-      String url = "http://exitocol.vtexassets.com/_v/public/assets/v1/published/bundle/public/react/asset.min.js?v=1&files=vtex.search@0.6.4,0";
+      String url = "http://paguemenos.vtexassets.com/_v/public/assets/v1/published/bundle/public/react/asset.min.js?v=1&files=vtex.search@0.6.4,0";
 
       String homePage = "https://www.paguemenos.com.br/";
 
@@ -179,7 +179,7 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
 
       Elements scripts = doc.select("body > script[crossorigin]");
       for (Element e : scripts) {
-         String scriptUrl = CrawlerUtils.scrapUrl(e, null, "src", "https", "exitocol.vtexassets.com");
+         String scriptUrl = CrawlerUtils.scrapUrl(e, null, "src", "https", "paguemenos.vtexassets.com");
          if (scriptUrl.contains("vtex.search@")) {
             url = scriptUrl;
             break;
