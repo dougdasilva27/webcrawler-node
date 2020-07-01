@@ -22,6 +22,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
+   private String apiSearchUrl = getApiSearchUrl();
 
    protected abstract String getHomePage();
 
@@ -33,6 +34,10 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       payload.put("redeUrl", split[split.length - 2]);
 
       return payload.toString();
+   }
+
+   protected String getApiSearchUrl(){
+      return "https://sitemercado-b2c-sm-www-api-production2.azurewebsites.net/api/v1/b2c/product/loadSearch";
    }
 
    @Override
@@ -124,7 +129,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
       String payloadSearch = "{phrase: \"" + this.keywordWithoutAccents + "\"}";
       Request requestApi = RequestBuilder.create()
-            .setUrl("https://sitemercado-b2c-sm-www-api-production2.azurewebsites.net/api/v1/b2c/product/loadSearch")
+            .setUrl(apiSearchUrl)
             .setCookies(cookies)
             .setHeaders(headers)
             .setPayload(payloadSearch)

@@ -1,43 +1,29 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
 import br.com.lett.crawlernode.core.session.Session
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler
+import br.com.lett.crawlernode.util.CommonMethods
+import org.json.JSONObject
 
-class BrasilNagumoCrawler(session: Session) : CrawlerRankingKeywords(session) {
-
-    override fun extractProductsFromCurrentPage() {
-        pageSize = 20
-        log("Página $currentPage")
-        val url = "https://www.nagumo.com.br/buscapagina?ft=$keywordEncoded&PS=20&sl=c7c7de7b-0063-4ce3-bd0c-43571ae046f1&cc=20&sm=0&PageNumber=$currentPage"
-        log("Link onde são feitos os crawlers: $url")
-        currentDoc = fetchDocument(url)
-
-        val products = currentDoc.select(".prateleira > ul > li > :not(helperComplement)")
-        if (!products.isEmpty()) {
-            if (totalProducts == 0) {
-                setTotalProducts()
-            }
-            for (product in products) {
-                val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a[rel]", "rel")
-                val productUrl = CrawlerUtils.scrapUrl(product, "a[href^=\"https\"]", "href", "https://", "www.nagumo.com.br")
-                saveDataProduct(null, internalPid, productUrl)
-                log("Position: $position - InternalId: null - InternalPid: $internalPid - Url: $productUrl")
-                if (arrayProducts.size == productsLimit) {
-                    break
-                }
-            }
-        } else {
-            result = false
-            log("Keyword sem resultado!")
-        }
-        log("Finalizando Crawler de produtos da página $currentPage - até agora ${arrayProducts.size} produtos crawleados")
+class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) {
+    companion object {
+        private const val HOME_PAGE = "https://www.nagumo.com.br/guarulhos-loja-guarulhos-aruja-jardim-cumbica-caminho-do-campo-do-rincao"
+        private const val API_URL = "https://sitemercado-b2c-wl-www-api-production.azurewebsites.net/api/v1/b2c/product/loadSearch"
     }
 
-    override fun setTotalProducts() {
-        val url = "https://www.nagumo.com.br/busca/?ft=$keywordEncoded"
-        val document = fetchDocument(url)
-        totalProducts = CrawlerUtils.scrapIntegerFromHtml(document, ".resultado-busca-numero .value", true, 0)
-        log("Total da busca: $totalProducts")
+    override fun getHomePage(): String {
+        return HOME_PAGE
+    }
+
+    override fun getLoadPayload(): String {
+        val payload = JSONObject()
+        val split = HOME_PAGE.split("/".toRegex()).toTypedArray()
+        payload.put("lojaUrl", CommonMethods.getLast(split))
+        payload.put("redeUrl", split[split.size - 2])
+        return payload.toString()
+    }
+
+    override fun getApiSearchUrl(): String {
+        return API_URL
     }
 }
