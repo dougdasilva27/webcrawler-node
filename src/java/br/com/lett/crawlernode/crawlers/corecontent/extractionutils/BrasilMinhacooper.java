@@ -73,7 +73,8 @@ public class BrasilMinhacooper extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #product-zoom", Arrays.asList("src"), "http:", "");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".col-xs-3 .gallery", Arrays.asList("data-zoom-image"), "http:", "", primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs p a");
-         Offers offers = scrapOffer(doc);
+         boolean availableToBuy = doc.selectFirst(".product-variation__add-actions.product-add-actions") != null;
+         Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
