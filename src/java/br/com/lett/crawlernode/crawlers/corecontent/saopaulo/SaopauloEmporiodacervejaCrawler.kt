@@ -8,15 +8,12 @@ import org.jsoup.nodes.Document
 
 class SaopauloEmporiodacervejaCrawler(session: Session) : VTEXNewScraper(session) {
 
-    private val HOME_PAGE = "https://www.emporiodacerveja.com.br/"
-    private val MAIN_SELLER_NAME_LOWER = "emporiodacerveja.com.br"
-
     override fun getHomePage(): String {
-        return HOME_PAGE
+        return "https://www.emporiodacerveja.com.br/"
     }
 
     override fun getMainSellersNames(): MutableList<String> {
-        return mutableListOf(MAIN_SELLER_NAME_LOWER)
+        return mutableListOf("emporiodacerveja.com.br")
     }
 
     override fun scrapRating(internalId: String?, internalPid: String?, doc: Document?, jsonSku: JSONObject?): RatingsReviews? {
