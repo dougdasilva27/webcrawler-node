@@ -29,10 +29,11 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.APACHE;
    }
 
-   private String keySHA256;
    private static final Integer API_VERSION = 1;
    private static final String SENDER = "vtex.search@0.x";
    private static final String PROVIDER = "vtex.search@0.x";
+
+   private String keySHA256 = "dcf550c27cd0bbf0e6899e3fa1f4b8c0b977330e321b9b8304cc23e2d2bad674";
 
    @Override
    protected void extractProductsFromCurrentPage() {
@@ -89,16 +90,8 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
     */
    private JSONObject fetchSearchApi() {
       JSONObject searchApi = new JSONObject();
-
       StringBuilder url = new StringBuilder();
-      url.append("https://www.paguemenos.com.br/_v/public/graphql/v1?");
-      url.append("workspace=master");
-      url.append("&maxAge=long");
-      url.append("&appsEtag=remove");
-      url.append("&domain=store");
-      url.append("&locale=pt-BR");
-      url.append("&operationName=searchResult");
-
+      url.append("https://www.paguemenos.com.br/_v/segment/graphql/v1?");
 
       JSONObject extensions = new JSONObject();
       JSONObject persistedQuery = new JSONObject();
@@ -107,6 +100,7 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
       persistedQuery.put("sha256Hash", this.keySHA256);
       persistedQuery.put("sender", SENDER);
       persistedQuery.put("provider", PROVIDER);
+
       extensions.put("variables", createVariablesBase64());
       extensions.put("persistedQuery", persistedQuery);
 
@@ -117,14 +111,11 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
       } catch (UnsupportedEncodingException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
-
       url.append(payload.toString());
-      this.log("Link onde são feitos os crawlers: " + url);
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      log("Link onde são feitos os crawlers:" + url);
 
-      Request request = RequestBuilder.create()
+      Request request = Request.RequestBuilder.create()
               .setUrl(url.toString())
               .setCookies(cookies)
               .setPayload(payload.toString())
@@ -145,15 +136,21 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
 
    private String createVariablesBase64() {
       JSONObject search = new JSONObject();
-      search.put("query", this.location);
-      search.put("page", this.currentPage);
-      search.put("store", "paguemenos");
-      search.put("count", this.pageSize);
-
       search.put("productOrigin", "VTEX");
+      search.put("indexingType", "API");
+      search.put("query", keywordEncoded);
+      search.put("page", currentPage);
       search.put("attributePath", "");
       search.put("sort", "");
+      search.put("count", 12);
       search.put("leap", false);
+
+      if (currentPage != 1) {
+         int from = pageSize * (currentPage - 1);
+         search.put("from", from);
+         search.put("to", from + 11);
+      }
+
       return Base64.getEncoder().encodeToString(search.toString().getBytes());
    }
 
@@ -170,8 +167,8 @@ public class FortalezaPaguemenosCrawler extends CrawlerRankingKeywords {
     * @return
     */
    private String fetchSHA256Key() {
-      // When sha256Hash is not found, this key below works (on 03/02/2020)
-      String hash = "c934a0763acad40d4c1377dec290a91ea4b99d425c194c893360009dc5488c0e";
+      // When sha256Hash is not found, this key below works (on 01/07/2020)
+      String hash = "dcf550c27cd0bbf0e6899e3fa1f4b8c0b977330e321b9b8304cc23e2d2bad674";
       // When script with hash is not found, we use this url
       String url = "http://exitocol.vtexassets.com/_v/public/assets/v1/published/bundle/public/react/asset.min.js?v=1&files=vtex.search@0.6.4,0";
 
