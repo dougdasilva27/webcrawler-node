@@ -12,6 +12,8 @@ import org.jsoup.nodes.Document
 
 class BrasilSuperadegaCrawler(session: Session) : VTEXOldScraper(session) {
 
+    private val STORE_KEY = "8efd852a-d220-49a7-9bd8-e84c2b09b66a"
+
     override fun getHomePage(): String {
         return "https://www.superadega.com.br/"
     }
@@ -25,43 +27,33 @@ class BrasilSuperadegaCrawler(session: Session) : VTEXOldScraper(session) {
     }
 
     override fun scrapRating(internalId: String, internalPid: String, doc: Document, jsonSku: JSONObject): RatingsReviews {
-        //TODO refactor this
         val ratingReviews = RatingsReviews()
         ratingReviews.date = session.date
 
-        val yr = YourreviewsRatingCrawler(session, cookies, Crawler.logger, "8efd852a-d220-49a7-9bd8-e84c2b09b66a", dataFetcher)
-        val docRating = yr.crawlPageRatingsFromYourViews(internalId, "8efd852a-d220-49a7-9bd8-e84c2b09b66a", dataFetcher)
+        val yr = YourreviewsRatingCrawler(session, cookies, Crawler.logger, STORE_KEY, dataFetcher)
+        val docRating = yr.crawlPageRatingsFromYourViews(internalId, STORE_KEY, dataFetcher)
 
         val totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating)
-        val avgRating = getTotalAvgRatingFromYourViews(docRating)
-        val advancedRatingReview = getTotalStarsFromEachValue(internalId, yr)
 
-        ratingReviews.advancedRatingReview = advancedRatingReview
-        ratingReviews.setTotalRating(totalNumOfEvaluations)
-        ratingReviews.averageOverallRating = avgRating
+        ratingReviews.advancedRatingReview = getTotalStarsFromEachValue(internalId, yr)
+        ratingReviews.averageOverallRating = getTotalAvgRatingFromYourViews(docRating)
         ratingReviews.totalWrittenReviews = totalNumOfEvaluations
+        ratingReviews.setTotalRating(totalNumOfEvaluations)
         return ratingReviews
     }
 
     fun getTotalNumOfRatingsFromYourViews(doc: Document): Int {
-        var totalRating = 0
         val totalRatingElement = doc.select("strong[itemprop=count]").first()
         if (totalRatingElement != null) {
-            val totalText = totalRatingElement.ownText().replace("[^0-9]".toRegex(), "").trim { it <= ' ' }
-            if (totalText.isNotEmpty()) {
-                totalRating = totalText.toInt()
-            }
+            val totalText = totalRatingElement.ownText().replace("[^0-9]".toRegex(), "").trim()
+            return if (totalText.isNotEmpty()) totalText.toInt() else 0
         }
-        return totalRating
+        return 0
     }
 
     fun getTotalAvgRatingFromYourViews(docRating: Document): Double {
-        var avgRating = 0.0
         val rating = docRating.selectFirst("meta[itemprop=rating]")
-        if (rating != null) {
-            avgRating = rating.attr("content").toDouble()
-        }
-        return avgRating
+        return rating?.attr("content")?.toDouble() ?: 0.0
     }
 
     fun getTotalStarsFromEachValue(internalPid: String, yr: YourreviewsRatingCrawler): AdvancedRatingReview {
@@ -72,9 +64,10 @@ class BrasilSuperadegaCrawler(session: Session) : VTEXOldScraper(session) {
         var star3 = 0
         var star4 = 0
         var star5 = 0
+
         do {
             currentPage++
-            docRating = yr.crawlAllPagesRatingsFromYourViews(internalPid, "8efd852a-d220-49a7-9bd8-e84c2b09b66a", dataFetcher, currentPage)
+            docRating = yr.crawlAllPagesRatingsFromYourViews(internalPid, STORE_KEY, dataFetcher, currentPage)
             val reviews = docRating.select(".yv-col-md-8")
             for (element in reviews) {
                 val stars = element.select(".fa-star")
@@ -95,7 +88,14 @@ class BrasilSuperadegaCrawler(session: Session) : VTEXOldScraper(session) {
                 }
             }
         } while (hasNextPage(docRating, currentPage))
-        return AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build()
+
+        return AdvancedRatingReview.Builder()
+                .totalStar1(star1)
+                .totalStar2(star2)
+                .totalStar3(star3)
+                .totalStar4(star4)
+                .totalStar5(star5)
+                .build()
     }
 
     private fun hasNextPage(docRating: Document, currentPage: Int): Boolean {
