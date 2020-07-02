@@ -17,6 +17,7 @@ import org.apache.http.HttpHeaders
 import org.json.JSONArray
 import org.jsoup.nodes.Document
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
 
 class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
 
@@ -32,8 +33,7 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
     val headers = mutableMapOf(HttpHeaders.USER_AGENT to userAgent);
 
     val requestOn: (String, Boolean) -> Response = { url, bodyIsrequired ->
-      val resp = dataFetcher.get(
-        session, RequestBuilder.create()
+      val request = RequestBuilder.create()
           .setUrl("https://primenow.amazon.es/$url")
           .setCookies(cookies)
           .setHeaders(headers)
@@ -46,11 +46,20 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
               ProxyCollection.NETNUT_RESIDENTIAL_ES
             )
           )
-          .build()
+          .build();
+		
+		  var resp = dataFetcher.get(
+        session, request
       )
-      if (resp.cookies.size > 0) {
+		
+		  if(resp.body.isEmpty()) {
+			   resp = ApacheDataFetcher().get(session, request);
+			}
+
+		  if (resp.cookies.size > 0) {
         cookies = resp.cookies
       }
+				
       resp
     }
 
