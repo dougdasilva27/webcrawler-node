@@ -58,7 +58,7 @@ public class ChileTottusCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
-         JSONObject jsonFromHTML = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, null, true, false);
+         JSONObject jsonFromHTML = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, null, false, false);
          JSONObject offersJson = jsonFromHTML.optJSONObject("offers");
 
          String internalId = jsonFromHTML.optString("sku");
