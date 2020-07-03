@@ -9,7 +9,7 @@ import models.Offers
 import models.RatingsReviews
 import models.pricing.Pricing
 
-fun buildProduct(builder: ProductBuilderDsl.() -> Unit): Product {
+fun product(builder: ProductBuilderDsl.() -> Unit): Product {
   return ProductBuilderDsl().invoke(builder)
 }
 
