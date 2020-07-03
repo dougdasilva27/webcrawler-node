@@ -33,7 +33,7 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
          for (int i = 0; i < products.length(); i++) {
             JSONObject productJson = products.optJSONObject(i);
 
-            String productId = productJson.getString("sku");
+            String productId = productJson.optString("sku");
             String productUrl =
                   "https://www.tendaatacado.com.br/produto/" + productJson.optString("token", null);
 
