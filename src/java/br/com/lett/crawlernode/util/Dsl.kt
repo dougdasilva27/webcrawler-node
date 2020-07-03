@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package br.com.lett.crawlernode.util
 
 import br.com.lett.crawlernode.core.models.Product
