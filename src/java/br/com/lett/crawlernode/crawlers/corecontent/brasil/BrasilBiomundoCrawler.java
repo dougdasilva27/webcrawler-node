@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -22,6 +23,8 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +58,9 @@ public class BrasilBiomundoCrawler extends Crawler {
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#img-product", Collections.singletonList("src"), "https://", HOST_PAGE);
             String secondaryImages = null;
             String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".info-description"));
+            //TODO get avaibility
             Offers offers = scrapOffers(doc);
+            //TODO get advanced rating
             RatingsReviews ratings = scrapRatingReviews(doc);
 
             Product product = ProductBuilder.create()
@@ -103,9 +108,9 @@ public class BrasilBiomundoCrawler extends Crawler {
 
     private Pricing scrapPricing(Document doc) throws MalformedPricingException {
         Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale", null, true, ',', session);
-
+        Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".list-price > .list", null, true, ',', session);
         return PricingBuilder.create()
-                .setPriceFrom(null)
+                .setPriceFrom(priceFrom)
                 .setSpotlightPrice(spotlightPrice)
                 .setCreditCards(scrapCreditCards(doc, spotlightPrice))
                 .setBankSlip(scrapBankSlip(doc))
@@ -155,6 +160,50 @@ public class BrasilBiomundoCrawler extends Crawler {
         return new BankSlip();
     }
 
+    //TODO rename
+    private BankSlip scrapBankSlip2(Document doc) throws MalformedPricingException {
+        Element rows = doc.selectFirst("div.content > table:nth-child(5)");
+        if(rows != null){
+            for (Element line : doc.select("tbody > tr:last-child > td > div")){
+                String price = line.text();
+                Integer parcel = 1;
+                Double installmentPrice = null;
+                Double finalPrice = null;
+
+                if(price.contains("x")){
+                    String[] teste = price.split("x");
+                    parcel = Integer.parseInt(teste[0]);
+                    CrawlerUtils.scrapDoublePriceFromHtml()
+                    price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
+                }
+            }
+        }
+
+    }
+
+    //TODO rename
+    private Installments scrapInstallments2(Document doc) throws MalformedPricingException {
+        Installments installments = new Installments();
+        Element rows = doc.selectFirst("div.content > table:nth-child(5)");
+        if(rows != null){
+            for (Element line : doc.select("tbody > tr:last-child > td > div")){
+                String price = line.text();
+                Integer parcel = 1;
+                Double installmentPrice = null;
+                Double finalPrice = null;
+
+                if(price.contains("x")){
+                    String[] teste = price.split("x");
+                    parcel = Integer.parseInt(teste[0]);
+                    CrawlerUtils.scrapDoublePriceFromHtml()
+                    price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
+                }
+                else{
+                    installmentPrice =
+                }
+            }
+        }
+    }
     private RatingsReviews scrapRatingReviews(Document doc) {
         RatingsReviews ratingReviews = new RatingsReviews();
         ratingReviews.setDate(session.getDate());
