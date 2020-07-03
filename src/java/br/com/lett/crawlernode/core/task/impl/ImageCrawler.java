@@ -60,14 +60,16 @@ public class ImageCrawler extends Task {
          Logging.printLogDebug(LOGGER, session,
                "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession) session).getTransformedImageKeyOnBucket());
          ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, creatImageKeyOnBucketNew(false, ((ImageCrawlerSession) session)), IMAGES_BUCKET_NAME_NEW);
+
          ObjectMetadata metadataOld = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession) session).getTransformedImageKeyOnBucket(), IMAGES_BUCKET_NAME);
          String amazonMd5Old = metadataOld != null ? metadataOld.getUserMetaDataOf(S3Service.MD5_ORIGINAL_HEX_FIELD) : null;
+         boolean oldBucketImageIsDifferent = amazonMd5Old == null || isDifferent(amazonMd5Old, simpleDownloadResult.md5);
 
          if (metadata == null) { // we doesn't have any image under this path in S3 yet
             Logging.printLogDebug(LOGGER, session, "This image isn't on Amazon yet.");
 
             if (simpleDownloadResult.imageFile != null && simpleDownloadResult.md5 != null) {
-               update(simpleDownloadResult, amazonMd5Old == null || isDifferent(amazonMd5Old, simpleDownloadResult.md5));
+               update(simpleDownloadResult, oldBucketImageIsDifferent);
             }
          }
 
@@ -85,8 +87,9 @@ public class ImageCrawler extends Task {
             }
             Logging.printLogDebug(LOGGER, session, "Local MD5: " + simpleDownloadResult.md5);
 
+
             // let's see if the md5 has changed
-            if (amazonMd5 == null || isDifferent(amazonMd5, simpleDownloadResult.md5)) {
+            if ((amazonMd5 == null || isDifferent(amazonMd5, simpleDownloadResult.md5)) || oldBucketImageIsDifferent) {
                Logging.printLogDebug(LOGGER, session, "The new md5 doesn't exists on Amazon yet, or it's different from the previous md5.");
 
                ImageDownloadResult finalDownloadResult;
@@ -97,12 +100,9 @@ public class ImageCrawler extends Task {
                   finalDownloadResult = simpleDownloadResult;
                }
 
-               update(finalDownloadResult, amazonMd5Old == null || isDifferent(amazonMd5Old, simpleDownloadResult.md5));
+               update(finalDownloadResult, oldBucketImageIsDifferent);
             } else if (GlobalConfigurations.executionParameters.mustForceImageUpdate()) {
                Logging.printLogDebug(LOGGER, session, "The image md5 is already on Amazon, but i want to force the update.");
-               update(simpleDownloadResult, true);
-            } else if (amazonMd5Old == null || isDifferent(amazonMd5Old, simpleDownloadResult.md5)) {
-               Logging.printLogDebug(LOGGER, session, "The new md5 doesn't exists on Amazon old bucket yet, or it's different from the previous md5.");
                update(simpleDownloadResult, true);
             } else {
                Logging.printLogDebug(LOGGER, session, "The image md5 is already on Amazon.");
