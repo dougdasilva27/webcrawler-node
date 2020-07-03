@@ -270,13 +270,8 @@ public class BrasilBenoitCrawler extends Crawler {
       Float price = null;
 
       if (json.has("Price")) {
-         JSONObject priceJson = json.getJSONObject("Price");
-
-         if (priceJson.has("BestInstallment")) {
-            JSONObject bestInstallment = priceJson.getJSONObject("BestInstallment");
-            price = CrawlerUtils.getFloatValueFromJSON(bestInstallment, "InstallmentPrice");
-
-         }
+        JSONObject priceJson = json.getJSONObject("Price");
+        price = priceJson.optFloat("SalesPrice");
       }
 
       return price;
