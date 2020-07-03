@@ -63,7 +63,7 @@ public class ChileTottusCrawler extends Crawler {
 
          String internalId = jsonFromHTML.optString("sku");
          String internalPid = internalId;
-         String name = jsonFromHTML.optString("name");
+         String name = scrapName(doc);
          boolean available = offersJson.opt("availability").equals("https://schema.org/InStock");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs .link.small");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-gallery-image", Arrays.asList("src"), "http://",
@@ -100,6 +100,12 @@ public class ChileTottusCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return !doc.select("#container .Product").isEmpty();
+   }
+
+   private String scrapName(Document doc){
+      String mainTitle = CrawlerUtils.scrapStringSimpleInfo(doc, ".column-right-content .title", true);
+      String subTitle = CrawlerUtils.scrapStringSimpleInfo(doc, ".column-right-content .brand", true);
+      return mainTitle + " " + subTitle;
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
