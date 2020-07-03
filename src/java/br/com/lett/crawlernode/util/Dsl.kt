@@ -66,7 +66,7 @@ class OfferBuilderDsl {
   var mainPagePosition: Int? = null
   var sellersPagePosition: Int? = null
   var sellerType: String? = null
-  var sales: List<String>? = null
+  var sales: MutableList<String> = mutableListOf()
   var pricing: Pricing? = null
 
   val useSlugNameAsInternalSellerId: Boolean
