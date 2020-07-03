@@ -15,9 +15,9 @@ import java.text.Normalizer
 import java.util.*
 import java.util.regex.Pattern
 
-val NONLATIN = Pattern.compile("[^\\w-]")
-val WHITESPACE = Pattern.compile("[\\s]")
-val EDGESDHASHES = Pattern.compile("(^-|-$)")
+val NONLATIN: Pattern by lazy { Pattern.compile("[^\\w-]") }
+val WHITESPACE: Pattern by lazy { Pattern.compile("[\\s]") }
+val EDGESDHASHES: Pattern by lazy { Pattern.compile("(^-|-$)") }
 
 /**
  * @return jsoup [Document] instance
