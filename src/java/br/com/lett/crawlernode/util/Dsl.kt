@@ -54,6 +54,7 @@ class ProductBuilderDsl {
   }
 }
 
+@ProductDsl
 class OfferBuilderDsl {
   private val offerBuilder = Offer.OfferBuilder()
 
