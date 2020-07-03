@@ -162,21 +162,14 @@ public class BrasilBiomundoCrawler extends Crawler {
 
     //TODO rename
     private BankSlip scrapBankSlip2(Document doc) throws MalformedPricingException {
-        Element rows = doc.selectFirst("div.content > table:nth-child(5)");
+        Element rows = doc.selectFirst("div.content > table:nth-child(1)");
         if(rows != null){
-            for (Element line : doc.select("tbody > tr:last-child > td > div")){
-                String price = line.text();
-                Integer parcel = 1;
-                Double installmentPrice = null;
-                Double finalPrice = null;
-
-                if(price.contains("x")){
-                    String[] teste = price.split("x");
-                    parcel = Integer.parseInt(teste[0]);
-                    CrawlerUtils.scrapDoublePriceFromHtml()
-                    price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
-                }
+            Element line = rows.selectFirst("nobr");
+            String price = line.text();
+            if(price.contains("(")){
+                //split
             }
+            CrawlerUtils.scrapDoublePriceFromHtml(rows, "nobr", null, true, ',', this.session);
         }
 
     }
@@ -186,7 +179,7 @@ public class BrasilBiomundoCrawler extends Crawler {
         Installments installments = new Installments();
         Element rows = doc.selectFirst("div.content > table:nth-child(5)");
         if(rows != null){
-            for (Element line : doc.select("tbody > tr:last-child > td > div")){
+            for (Element line : rows.select("tbody > tr:last-child > td > div")){
                 String price = line.text();
                 Integer parcel = 1;
                 Double installmentPrice = null;
