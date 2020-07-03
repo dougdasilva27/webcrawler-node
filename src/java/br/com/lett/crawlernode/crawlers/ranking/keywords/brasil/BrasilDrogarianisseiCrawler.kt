@@ -1,88 +1,61 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.core.session.Session
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
+import br.com.lett.crawlernode.util.CrawlerUtils
+import org.json.JSONObject
 
-public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
+class BrasilDrogarianisseiCrawler(session: Session?) : CrawlerRankingKeywords(session) {
 
-  public BrasilDrogarianisseiCrawler(Session session) {
-    super(session);
+  val apiToken: String by lazy {
+    currentDoc = fetchDocument("https://www.farmaciasnissei.com.br/searchanise/result?q=$keywordEncoded")
+    CrawlerUtils.selectJsonFromHtml(currentDoc, "script", "window.Searchanise=", "};", true, false)
+      .optString("api_key")
   }
 
-  private String categoryUrl;
+  init {
+    pageSize = 20
+  }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 16;
-    this.log("Página " + this.currentPage);
-
-    String url = "https://www.farmaciasnissei.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded
-        + "&product_list_limit=36";
-
-    if (this.currentPage > 1 && this.categoryUrl != null) {
-      url = this.categoryUrl + "?p=" + this.currentPage;
+  override fun extractProductsFromCurrentPage() {
+    val url = "https://www.searchanise.com/getresults?api_key=$apiToken" +
+        "&q=$keywordEncoded" +
+        "&sortBy=relevance" +
+        "&sortOrder=desc" +
+        "&restrictBy%5Bstatus%5D=1" +
+        "&restrictBy%5Bvisibility%5D=3%7C4" +
+        "&startIndex=${arrayProducts.size}" +
+        "&maxResults=30" +
+        "&items=true" +
+        "&pages=true" +
+        "&categories=false" +
+        "&suggestions=false" +
+        "&queryCorrection=true" +
+        "&suggestionsMaxResults=3" +
+        "&pageStartIndex=0" +
+        "&pagesMaxResults=20" +
+        "&categoryStartIndex=0" +
+        "&categoriesMaxResults=20" +
+        "&facets=false" +
+        "&facetsShowUnavailableOptions=false" +
+        "&ResultsTitleStrings=2" +
+        "&ResultsDescriptionStrings=0" +
+        "&output=jsonp"
+    val json = fetchJSONObject(url)
+    if (this.arrayProducts.size == 0) {
+      totalProducts = json.optInt("totalItems")
     }
+    pageSize = json.optInt("itemsPerPage")
+    val productsArray = json.optJSONArray("items")
 
-    this.log("Link onde são feitos os crawlers: " + url);
-
-    this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".category-products .product-item-info");
-
-    if (this.currentPage == 1) {
-      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
-
-      if (!url.equals(redirectUrl)) {
-        this.categoryUrl = redirectUrl;
+    for (productJson in productsArray) {
+      if (productJson is JSONObject) {
+        val internalId = productJson.optString("product_id")
+        val productUrl = productJson.optString("link")
+        saveDataProduct(internalId, null, productUrl)
+        log("InternalId: $internalId - Url: $productUrl")
       }
     }
-
-    if (!products.isEmpty()) {
-      for (Element e : products) {
-        String internalId = crawlInternalId(e);
-        String productUrl = crawlProductUrl(e);
-
-        saveDataProduct(internalId, null, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    return this.currentDoc.select(".action.next").first() != null;
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    Element id = e.select("[data-product-id]").first();
-    if (id != null) {
-      internalId = id.attr("data-product-id");
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = e.attr("href");
-
-    Element url = e.select(".product-item-link").first();
-    if (url != null) {
-      productUrl = url.attr("href");
-    }
-
-    return productUrl;
+    log("Pag $currentPage - ${arrayProducts.size} produtos crawleados")
   }
 }
