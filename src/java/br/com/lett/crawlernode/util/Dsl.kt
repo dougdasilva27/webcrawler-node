@@ -20,12 +20,12 @@ class ProductBuilderDsl {
   lateinit var internalId: String
   var internalPid: String? = null
   lateinit var name: String
-  var categories: MutableCollection<String>? = null
+  var categories: MutableCollection<String> = mutableListOf()
   var primaryImage: String? = null
   var secondaryImages: String? = null
   var description: String? = null
   var stock: Int? = null
-  var eans: MutableList<String>? = null
+  var eans: MutableList<String> = mutableListOf()
   private var offers = Offers()
   var ratingReviews: RatingsReviews? = null
   private val productBuilder = ProductBuilder()

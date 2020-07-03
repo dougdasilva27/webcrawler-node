@@ -5,11 +5,7 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.crawlers.corecontent.recife.opt
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.MathUtils
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
+import br.com.lett.crawlernode.util.*
 import models.AdvancedRatingReview
 import models.Offer.OfferBuilder
 import models.Offers
@@ -89,7 +85,7 @@ class BrasilNutricaoatevoceCrawler(session: Session?) : Crawler(session) {
       }
 
       val sales = mutableListOf<String>()
-      sales.opt(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-add-form .tier-price-description", false))
+      sales addNonNull CrawlerUtils.scrapStringSimpleInfo(doc, ".product-add-form .tier-price-description", false)
       val creditCards = setOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(price)
 
       offers.add(
