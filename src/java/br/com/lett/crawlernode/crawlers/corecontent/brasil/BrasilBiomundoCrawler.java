@@ -15,6 +15,7 @@ import exceptions.OfferException;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
+import models.prices.Prices;
 import models.pricing.BankSlip;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
@@ -62,6 +63,41 @@ public class BrasilBiomundoCrawler extends Crawler {
             Offers offers = scrapOffers(doc);
             //TODO get advanced rating
             RatingsReviews ratings = scrapRatingReviews(doc);
+
+            /*//TODO get product variation
+            Elements productsElements = doc.select(".tabbedBrowse-productListings li:not([id])");
+            // Multiple product page
+            if(productsElements.size() > 0){
+
+                for(Element e : productsElements) {
+                    String internalId = crawlInternalIdVariation(e);
+                    Float price = crawlPrice(e, available);
+                    Prices prices = crawlPrices(price);
+                    String description = crawlDescriptionVariation(doc);
+
+                    // Creating the product
+                    Product product = ProductBuilder.create()
+                            .setUrl(session.getOriginalURL())
+                            .setInternalId(internalId)
+                            .setInternalPid(internalPid)
+                            .setName(name)
+                            .setPrice(price)
+                            .setPrices(prices)
+                            .setAvailable(available)
+                            .setCategory1(categories.getCategory(0))
+                            .setCategory2(categories.getCategory(1))
+                            .setCategory3(categories.getCategory(2))
+                            .setPrimaryImage(primaryImage)
+                            .setSecondaryImages(secondaryImages)
+                            .setDescription(description)
+                            .setStock(stock)
+                            .setMarketplace(marketplace)
+                            .build();
+
+                    products.add(product);
+                }
+
+            }*/
 
             Product product = ProductBuilder.create()
                     .setUrl(session.getOriginalURL())
@@ -159,7 +195,7 @@ public class BrasilBiomundoCrawler extends Crawler {
         }
         return new BankSlip();
     }
-
+/*
     //TODO rename
     private BankSlip scrapBankSlip2(Document doc) throws MalformedPricingException {
         Element rows = doc.selectFirst("div.content > table:nth-child(1)");
@@ -196,7 +232,7 @@ public class BrasilBiomundoCrawler extends Crawler {
                 }
             }
         }
-    }
+    }*/
     private RatingsReviews scrapRatingReviews(Document doc) {
         RatingsReviews ratingReviews = new RatingsReviews();
         ratingReviews.setDate(session.getDate());
