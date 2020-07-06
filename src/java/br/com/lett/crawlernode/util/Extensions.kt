@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package br.com.lett.crawlernode.util
 
 import br.com.lett.crawlernode.core.models.Card
@@ -13,9 +15,9 @@ import java.text.Normalizer
 import java.util.*
 import java.util.regex.Pattern
 
-val NONLATIN = Pattern.compile("[^\\w-]")
-val WHITESPACE = Pattern.compile("[\\s]")
-val EDGESDHASHES = Pattern.compile("(^-|-$)")
+val NONLATIN: Pattern by lazy { Pattern.compile("[^\\w-]") }
+val WHITESPACE: Pattern by lazy { Pattern.compile("[\\s]") }
+val EDGESDHASHES: Pattern by lazy { Pattern.compile("(^-|-$)") }
 
 /**
  * @return jsoup [Document] instance
@@ -142,3 +144,10 @@ fun Document.selectAny(vararg selectors: String): Element? {
 
 fun Double.toBankSlip(discount: Double? = null): BankSlip = BankSlipBuilder.create().setFinalPrice(this).setOnPageDiscount(discount).build()
 
+infix fun <T> MutableCollection<T>.add(elem: T) {
+  this.plusAssign(elem)
+}
+
+infix fun <T> MutableCollection<T>.addNonNull(elem: T?) {
+  elem?.let { this.plusAssign(elem) }
+}
