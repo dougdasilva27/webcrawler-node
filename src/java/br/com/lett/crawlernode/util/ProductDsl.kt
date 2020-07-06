@@ -7,7 +7,9 @@ import br.com.lett.crawlernode.core.models.ProductBuilder
 import models.Offer
 import models.Offers
 import models.RatingsReviews
-import models.pricing.Pricing
+import models.pricing.*
+import models.pricing.BankSlip.BankSlipBuilder
+import models.pricing.Pricing.PricingBuilder
 
 fun product(builder: ProductBuilderDsl.() -> Unit): Product {
   return ProductBuilderDsl().invoke(builder)
@@ -63,13 +65,13 @@ class OfferBuilderDsl {
   private var buybox: Boolean? = false
   private var mainRetailer: Boolean = false
   private var slugNameAsInternalSellerId = false
+  var pricingDsl = PricingBuilderDsl()
   var sellerFullName: String? = null
   var internalSellerId: String? = null
   var mainPagePosition: Int? = null
   var sellersPagePosition: Int? = null
   var sellerType: String? = null
   var sales: MutableList<String> = mutableListOf()
-  var pricing: Pricing? = null
 
   val useSlugNameAsInternalSellerId: Boolean
     get() {
@@ -87,10 +89,14 @@ class OfferBuilderDsl {
       return true
     }
 
+  fun pricing(block: PricingBuilderDsl.() -> Unit) {
+    pricingDsl.block()
+  }
+
   internal fun build(initializer: OfferBuilderDsl.() -> Unit): Offer {
     initializer()
 
-    return offerBuilder.setPricing(pricing)
+    return offerBuilder.setPricing(pricingDsl.build())
       .setIsBuybox(buybox)
       .setSellerFullName(sellerFullName)
       .setSellersPagePosition(sellersPagePosition)
@@ -99,5 +105,66 @@ class OfferBuilderDsl {
       .setSales(sales)
       .setSellerType(sellerType)
       .build()
+  }
+}
+
+@ProductDsl
+class PricingBuilderDsl {
+  private val pricingBuilder = PricingBuilder()
+  var creditCards = CreditCards()
+  var priceFrom: Double? = null
+  var spotlightPrice: Double? = null
+  var bankSlip: BankSlip? = null
+
+  fun bankSlip(block: BankslipBuilderDsl.() -> Unit) {
+    val bankSlipDsl = BankslipBuilderDsl()
+    bankSlipDsl.block()
+    bankSlip = bankSlipDsl.build()
+  }
+
+  fun creditCard(block: CreditCardBuilderDsl.() -> Unit) {
+    val creditCardDsl = CreditCardBuilderDsl()
+    creditCardDsl.block()
+    creditCards.add(creditCardDsl.build())
+  }
+
+  internal fun build(): Pricing {
+    return pricingBuilder.setBankSlip(bankSlip)
+      .setCreditCards(creditCards)
+      .setPriceFrom(priceFrom)
+      .setSpotlightPrice(spotlightPrice)
+      .build()
+  }
+}
+
+@ProductDsl
+class CreditCardBuilderDsl {
+  private val creditCardBuilder = CreditCard.CreditCardBuilder()
+  var brand: String? = null
+  var shopCard: Boolean = false
+  var installments: Installments = Installments()
+  val isShopCard: Boolean
+    get() {
+      shopCard = true
+      return true
+    }
+
+  internal fun build(): CreditCard {
+    return creditCardBuilder.setBrand(brand)
+      .setInstallments(installments)
+      .setIsShopCard(shopCard)
+      .build()
+  }
+}
+
+@ProductDsl
+class BankslipBuilderDsl {
+  private val bankSlipBuilder = BankSlipBuilder()
+  var finalPrice: Double? = null
+  var pageDiscount: Double? = null
+
+  internal fun build(): BankSlip {
+    return bankSlipBuilder.setFinalPrice(finalPrice)
+      .setOnPageDiscount(pageDiscount).build()
   }
 }

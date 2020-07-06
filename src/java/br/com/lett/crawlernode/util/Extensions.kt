@@ -144,10 +144,6 @@ fun Document.selectAny(vararg selectors: String): Element? {
 
 fun Double.toBankSlip(discount: Double? = null): BankSlip = BankSlipBuilder.create().setFinalPrice(this).setOnPageDiscount(discount).build()
 
-infix fun <T> MutableCollection<T>.add(elem: T) {
-  this.plusAssign(elem)
-}
-
 infix fun <T> MutableCollection<T>.addNonNull(elem: T?) {
   elem?.let { this.plusAssign(elem) }
 }
