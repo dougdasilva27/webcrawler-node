@@ -8,5 +8,5 @@ class SaopauloParaisosaudavelCrawler(session: Session) : TrayCommerceCrawler(ses
 
   override fun setStoreId(): String = "738124"
 
-  override fun setHomePage(): String = "https://www.paraisosaudavel.com.br"
+  override fun setHomePage(): String = "https://www.paraisosaudavel.com.br/"
 }
