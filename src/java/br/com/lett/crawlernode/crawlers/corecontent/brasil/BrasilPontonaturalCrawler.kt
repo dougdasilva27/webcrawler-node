@@ -28,11 +28,10 @@ class BrasilPontonaturalCrawler(session: Session) : Crawler(session) {
         useSlugNameAsInternalSellerId
         isMainRetailer
         sellerFullName = "Ponto Natural"
-        val price = document.selectFirst(".price_cash span")?.toDoubleComma()
-        price?.let {
+        document.selectFirst(".price_cash span")?.toDoubleComma()?.let { price ->
 
           pricing {
-            spotlightPrice = document.selectFirst(".price_cash span")?.toDoubleComma()
+            spotlightPrice = price
             bankSlip = spotlightPrice?.toBankSlip()
             priceFrom = document.selectFirst("#old_price_display span")?.toDoubleComma()
             val pair = document.selectFirst(".price_in_installment")?.text()?.split("de")
@@ -41,9 +40,7 @@ class BrasilPontonaturalCrawler(session: Session) : Crawler(session) {
               creditCards = listOf(Card.UNKNOWN_CARD)
                 .toCreditCards(instPrice = number, instNumber = MathUtils.parseInt(pair?.get(0)))
             }
-
           }
-
         }
       }
     }
