@@ -24,7 +24,7 @@ public class SaopauloTendadriveCrawler extends CrawlerRankingKeywords {
 
       JSONArray products = search.optJSONArray("products");
 
-      if (products.length() > 0) {
+      if (products != null && products.length() > 0) {
          pageSize = search.optInt("products_per_page");
          if (this.totalProducts == 0) {
             totalProducts = search.optInt("total_products");
