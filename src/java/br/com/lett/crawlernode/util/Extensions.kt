@@ -98,19 +98,38 @@ fun Collection<Card>.toCreditCards(installments: Installments): CreditCards = Cr
 /**
  * @return Parse [String] number with comma ',' to [Double]
  */
-fun String?.toDoubleComma(): Double = MathUtils.parseDoubleWithComma(this)
+fun String?.toDoubleComma(): Double? {
+  val doubleText = this?.replace("[^0-9,]+".toRegex(), "")?.replace(".", "")?.replace(",", ".")
+  return if (!doubleText.isNullOrEmpty())
+    doubleText.toDouble()
+  else null
+}
 
 /**
  * @return Parse [Element]'s text number with comma ',' to [Double]
  */
-fun Element?.toDoubleComma(): Double = MathUtils.parseDoubleWithComma(this?.text())
+fun Element?.toDoubleComma(): Double? = this?.text()?.toDoubleComma()
 
-fun Element?.toInt(): Int = MathUtils.parseInt(this?.text())
+fun Element?.toInt(): Int? {
+  return this?.text()?.int()
+}
+
+fun String?.int(): Int? {
+  val text = this?.replace("[^0-9]".toRegex(), "")?.trim()
+  return if (!text.isNullOrEmpty())
+    text.toInt()
+  else null
+}
 
 /**
  * @return Parse [String] number with dot '.' to [Double]
  */
-fun String?.toDoubleDot(): Double = MathUtils.parseDoubleWithDot(this)
+fun String?.toDoubleDot(): Double? {
+  val doubleText = this?.replace("[^0-9.]+".toRegex(), "")
+  return if (!doubleText.isNullOrEmpty())
+    doubleText.toDouble()
+  else null
+}
 
 /**
  * @return Parse [Element]'s text number with dot '.' to [Double]
@@ -142,11 +161,16 @@ fun Document.selectAny(vararg selectors: String): Element? {
   return found
 }
 
-fun Double.toBankSlip(discount: Double? = null): BankSlip = BankSlipBuilder.create().setFinalPrice(this).setOnPageDiscount(discount).build()
-
-infix fun <T> MutableCollection<T>.add(elem: T) {
-  this.plusAssign(elem)
+fun Document.htmlOf(vararg selectors: String): String = buildString {
+  for (selector in selectors) {
+    val element = selectFirst(selector)
+    if (element != null && !element.html().isNullOrEmpty()) {
+      append(element.html())
+    }
+  }
 }
+
+fun Double.toBankSlip(discount: Double? = null): BankSlip = BankSlipBuilder.create().setFinalPrice(this).setOnPageDiscount(discount).build()
 
 infix fun <T> MutableCollection<T>.addNonNull(elem: T?) {
   elem?.let { this.plusAssign(elem) }
