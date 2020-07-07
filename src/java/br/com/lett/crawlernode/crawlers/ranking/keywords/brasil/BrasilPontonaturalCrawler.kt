@@ -20,10 +20,13 @@ class BrasilPontonaturalCrawler(session: Session) : CrawlerRankingKeywords(sessi
           "&p=$currentPage" +
           "&submit_search="
     )
+    if (arrayProducts.size == 0) {
+      setTotalProducts()
+    }
     val elements = currentDoc.select(".product-container .right-block")
     for (elem in elements) {
       val internalId = elem.selectFirst(".product-reference").text()
-      val productUrl = elem.selectFirst(".product-name").attr("href")
+      val productUrl = elem.selectFirst(".product-name").attr("href").substringBeforeLast("?")
       saveDataProduct(internalId, null, productUrl)
       log("internalId $internalId - $productUrl")
     }
