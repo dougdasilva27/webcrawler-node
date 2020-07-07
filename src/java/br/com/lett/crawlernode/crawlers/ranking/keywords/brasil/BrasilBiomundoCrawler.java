@@ -33,7 +33,7 @@ public class BrasilBiomundoCrawler extends CrawlerRankingKeywords {
             for (Element product : products) {
                 String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "input[name=\"ProdutoId\"]", "value");
                 String internalPId = internalId;
-                String productUrl = CrawlerUtils.scrapUrl(product, ".product > a", "href", "https://", HOST_PAGE);
+                String productUrl = CrawlerUtils.scrapUrl(product, ".product > a", "href", "https", HOST_PAGE);
 
                 saveDataProduct(internalId, internalPId, productUrl);
 

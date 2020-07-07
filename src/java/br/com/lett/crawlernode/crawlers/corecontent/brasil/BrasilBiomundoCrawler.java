@@ -57,8 +57,7 @@ public class BrasilBiomundoCrawler extends Crawler {
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb > span > span > a", true);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#img-product", Collections.singletonList("src"), "https://", HOST_PAGE);
             String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".info-description"));
-            boolean availability = scrapAvailability(doc);
-            Offers offers = (availability) ? scrapOffers(doc) : new Offers();
+            Offers offers = scrapAvailability(doc) ? scrapOffers(doc) : new Offers();
             RatingsReviews ratings = scrapRatingReviews(doc);
 
             Product product = ProductBuilder.create()
@@ -78,13 +77,13 @@ public class BrasilBiomundoCrawler extends Crawler {
             Elements productsElements = doc.select("#variations option:not([selected])");
 
             if (productsElements.size() > 0) {
-                for (Element e : productsElements) {
+                for (Element variation : productsElements) {
 
                     Product productClone = product.clone();
-                    productClone.setName(product.getName() + " - " + scrapVariationName(e));
-                    productClone.setInternalId(product.getInternalId() + "-" + scrapVariationId(e));
+                    productClone.setName(product.getName() + " - " + CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "value"));
+                    productClone.setInternalId(product.getInternalId() + "-" + CrawlerUtils.scrapStringSimpleInfo(variation, null, true));
 
-                    if (e.hasClass("sold-out-box")) {
+                    if (variation.hasClass("sold-out-box")) {
                         productClone.setOffers(new Offers());
                     }
 
@@ -197,13 +196,4 @@ public class BrasilBiomundoCrawler extends Crawler {
 
         return ratingReviews;
     }
-
-    private String scrapVariationId(Element variation) {
-        return CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "value");
-    }
-
-    private String scrapVariationName(Element variation) {
-        return CrawlerUtils.scrapStringSimpleInfo(variation, null, true);
-    }
-
 }
