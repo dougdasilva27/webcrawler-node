@@ -104,22 +104,24 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
     val offers = Offers()
 
     val price = document.selectFirst("#priceblock_ourprice")?.toDoubleComma()
-    val priceFrom = document.selectFirst(".priceBlockStrikePriceString")?.toDoubleComma()
+      price?.let {
+          val priceFrom = document.selectFirst(".priceBlockStrikePriceString")?.toDoubleComma()
 
+          val pricing = Pricing.PricingBuilder.create()
+                  .setPriceFrom(priceFrom)
+                  .setSpotlightPrice(price)
+                  .setBankSlip(price.toBankSlip()).build()
 
-    val pricing = Pricing.PricingBuilder.create()
-      .setPriceFrom(priceFrom)
-      .setSpotlightPrice(price)
-      .setBankSlip(price?.toBankSlip()).build()
-    val offer = OfferBuilder.create()
-      .setUseSlugNameAsInternalSellerId(true)
-      .setPricing(pricing)
-      .setSellerFullName(document.selectFirst("#merchant-info")?.text()?.trim()?.substringAfter("por "))
-      .setIsBuybox(false)
-      .setIsMainRetailer(true)
-      .build()
+          val offer = OfferBuilder.create()
+                  .setUseSlugNameAsInternalSellerId(true)
+                  .setPricing(pricing)
+                  .setSellerFullName(document.selectFirst("#merchant-info")?.text()?.trim()?.substringAfter("por "))
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(true)
+                  .build()
 
-    offers.add(offer)
+          offers.add(offer)
+      }
 
     return offers
   }
