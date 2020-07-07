@@ -6,6 +6,10 @@ import br.com.lett.crawlernode.util.toInt
 
 class BrasilPontonaturalCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
+  init {
+    pageSize = 24
+  }
+
   override fun extractProductsFromCurrentPage() {
     currentDoc = fetchDocument(
       "https://www.pontonaturalshop.com.br/procurar?controller=search" +
@@ -19,13 +23,13 @@ class BrasilPontonaturalCrawler(session: Session) : CrawlerRankingKeywords(sessi
     val elements = currentDoc.select(".product-container .right-block")
     for (elem in elements) {
       val internalId = elem.selectFirst(".product-reference").text()
-      val productUrl = elem.selectFirst(".product-name").text()
+      val productUrl = elem.selectFirst(".product-name").attr("href")
       saveDataProduct(internalId, null, productUrl)
       log("internalId $internalId - $productUrl")
     }
   }
 
   override fun setTotalProducts() {
-    totalProducts = currentDoc.selectFirst(".heading-counter").toInt()
+    totalProducts = currentDoc.selectFirst(".heading-counter").toInt() ?: 0
   }
 }
