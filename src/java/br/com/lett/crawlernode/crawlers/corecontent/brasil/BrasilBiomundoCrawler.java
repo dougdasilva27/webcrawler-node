@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -24,7 +21,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -64,8 +60,6 @@ public class BrasilBiomundoCrawler extends Crawler {
             boolean availability = scrapAvailability(doc);
             Offers offers = (availability) ? scrapOffers(doc) : new Offers();
             RatingsReviews ratings = scrapRatingReviews(doc);
-            String paymentsLink = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#payments", "href");
-            Document payments = sendRequest(paymentsLink);
 
             Product product = ProductBuilder.create()
                     .setUrl(session.getOriginalURL())
@@ -137,7 +131,7 @@ public class BrasilBiomundoCrawler extends Crawler {
     private Pricing scrapPricing(Document doc) throws MalformedPricingException {
         Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale", null, true, ',', session);
         Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".list-price > .list", null, true, ',', session);
-        //TODO
+
         return PricingBuilder.create()
                 .setPriceFrom(priceFrom)
                 .setSpotlightPrice(spotlightPrice)
@@ -190,72 +184,6 @@ public class BrasilBiomundoCrawler extends Crawler {
                 .build();
     }
 
-
-    //TODO rename
-    private BankSlip scrapBankSlip2(Document doc) throws MalformedPricingException {
-
-        Element rows = doc.selectFirst("div.content > table:nth-child(1)");
-        if (rows != null) {
-            Element line = rows.selectFirst("nobr");
-            String price = line.text();
-            if (price.contains("(")) {
-                String[] prices = price.split("\\(");
-                String mainPrice = prices[0];
-                String percentage = prices[1];
-                //TODO use percentage
-                Double finalPrice = Double.parseDouble(mainPrice.replaceAll("[^0-9,]", "").replace(",", "."));
-
-                return BankSlipBuilder.create()
-                        .setFinalPrice(finalPrice)
-                        .build();
-            }
-            Double finalPrice = CrawlerUtils.scrapDoublePriceFromHtml(line, null, null, true, ',', this.session);
-            return BankSlipBuilder.create()
-                    .setFinalPrice(finalPrice)
-                    .build();
-        }
-        return new BankSlip();
-    }
-
-    //TODO rename
-    private Installments scrapInstallments2(Document doc) throws MalformedPricingException {
-        Installments installments = new Installments();
-
-        Element rows = doc.selectFirst("div.content > table:nth-child(5)");
-        if (rows != null) {
-            for (Element line : rows.select("div")) {
-                String price = line.text();
-                Integer parcel = 1;
-                Double installmentPrice = null;
-                Double totalPrice = null;
-
-                if (price.contains("x")) {
-                    String[] splittedText = price.split("x");
-                    parcel = Integer.parseInt(splittedText[0].trim());
-                    if (splittedText[1].contains("(")) {
-                        String[] fullPrice = splittedText[1].split("\\(");
-                        installmentPrice = Double.parseDouble(fullPrice[0].replaceAll("[^0-9,]", "").replace(",", "."));
-                        totalPrice = Double.parseDouble(fullPrice[1].replaceAll("[^0-9,]", "").replace(",", "."));
-
-                        installments.add(InstallmentBuilder.create()
-                                .setInstallmentNumber(parcel)
-                                .setInstallmentPrice(installmentPrice)
-                                .setFinalPrice(totalPrice)
-                                .build());
-                    }
-                    installmentPrice = Double.parseDouble(splittedText[1].replaceAll("[^0-9,]", "").replace(",", "."));
-                } else {
-                    installmentPrice = CrawlerUtils.scrapDoublePriceFromHtml(line, null, null, true, ',', session);
-                }
-                installments.add(InstallmentBuilder.create()
-                        .setInstallmentNumber(parcel)
-                        .setInstallmentPrice(installmentPrice)
-                        .build());
-            }
-        }
-        return installments;
-    }
-
     private RatingsReviews scrapRatingReviews(Document doc) {
         RatingsReviews ratingReviews = new RatingsReviews();
         ratingReviews.setDate(session.getDate());
@@ -268,13 +196,6 @@ public class BrasilBiomundoCrawler extends Crawler {
         ratingReviews.setAverageOverallRating(avgRating);
 
         return ratingReviews;
-    }
-
-    private Document sendRequest(String str) {
-        Request request = RequestBuilder.create().setUrl(str).build();
-        Response response = dataFetcher.get(session, request);
-        String html = response.getBody();
-        return Jsoup.parse(html);
     }
 
     private String scrapVariationId(Element variation) {
