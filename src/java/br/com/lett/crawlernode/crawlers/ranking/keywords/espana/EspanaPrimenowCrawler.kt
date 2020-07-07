@@ -36,9 +36,9 @@ class EspanaPrimenowCrawler(session: Session) : CrawlerRankingKeywords(session) 
           .setBodyIsRequired(bodyIsrequired)
           .setProxyservice(
             listOf(
-              ProxyCollection.NETNUT_RESIDENTIAL_ES,
+              ProxyCollection.INFATICA_RESIDENTIAL_BR,
               ProxyCollection.STORM_RESIDENTIAL_US,
-              ProxyCollection.INFATICA_RESIDENTIAL_BR
+              ProxyCollection.NETNUT_RESIDENTIAL_ES
             )
           )
           .build()
@@ -54,21 +54,14 @@ class EspanaPrimenowCrawler(session: Session) : CrawlerRankingKeywords(session) 
       ?.attr("data-location-select-form-submit")?.toJson()?.optString("offerSwappingToken")!!
 
     requestOn("onboard/check?postalCode=$cep&offerSwappingToken=$token", false)
-    requestOn("cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome" +
-        "&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token", false)
+    requestOn("cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token", false)
   }
 
 
   override fun extractProductsFromCurrentPage() {
     currentDoc = fetchDocument("https://primenow.amazon.es/search?k=$keywordEncoded&ref_=pn_gw_nav_sr_ALL&page=$currentPage")
-    val elements = currentDoc.select("li[class^=product_grid__item] > div > a")
-
-    if (arrayProducts.size == 0) {
-      setTotalProducts()
-    }
-
-    for (element: Element in elements) {
-      val url = element.attr("href")
+    for (element: Element in currentDoc.select(".asin_card__root__3x1lV")) {
+      val url = element.selectFirst("a")?.attr("href")
       val internalId = url?.substringBefore("?")?.substringAfter("dp/")
       saveDataProduct(internalId, null, "https://primenow.amazon.es$url")
       log("internalId - $internalId url - https://primenow.amazon.es$url")
@@ -76,6 +69,6 @@ class EspanaPrimenowCrawler(session: Session) : CrawlerRankingKeywords(session) 
   }
 
   override fun setTotalProducts() {
-    totalProducts = currentDoc.selectFirst("div[class^=index__heading__] > div[class^=index__root] > div:first-child")?.toInt() ?: 0
+    totalProducts = currentDoc.selectFirst(".index__root__3XLxs div")?.toInt() ?: 0
   }
 }

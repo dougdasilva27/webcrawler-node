@@ -41,9 +41,9 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
 				  .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
           .setProxyservice(
             listOf(
-              ProxyCollection.NETNUT_RESIDENTIAL_ES,
+              ProxyCollection.INFATICA_RESIDENTIAL_BR,
               ProxyCollection.STORM_RESIDENTIAL_US,
-              ProxyCollection.INFATICA_RESIDENTIAL_BR
+              ProxyCollection.NETNUT_RESIDENTIAL_ES
             )
           )
           .build();
