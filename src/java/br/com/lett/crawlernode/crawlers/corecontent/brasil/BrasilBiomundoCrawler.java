@@ -80,8 +80,8 @@ public class BrasilBiomundoCrawler extends Crawler {
                 for (Element variation : productsElements) {
 
                     Product productClone = product.clone();
-                    productClone.setName(product.getName() + " - " + CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "value"));
-                    productClone.setInternalId(product.getInternalId() + "-" + CrawlerUtils.scrapStringSimpleInfo(variation, null, true));
+                    productClone.setName(product.getName() + " - " + CrawlerUtils.scrapStringSimpleInfo(variation, null, true));
+                    productClone.setInternalId(product.getInternalId() + "-" + CrawlerUtils.scrapStringSimpleInfoByAttribute(variation, null, "value"));
 
                     if (variation.hasClass("sold-out-box")) {
                         productClone.setOffers(new Offers());
@@ -196,4 +196,5 @@ public class BrasilBiomundoCrawler extends Crawler {
 
         return ratingReviews;
     }
+
 }
