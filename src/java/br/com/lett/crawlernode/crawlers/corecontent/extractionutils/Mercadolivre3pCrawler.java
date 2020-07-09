@@ -242,7 +242,7 @@ public class Mercadolivre3pCrawler {
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-buybox .ui-pdp-seller__header__title a", true);
+      String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-buybox .ui-pdp-seller__header__title a", false);
       boolean hasMainOffer = false;
 
       if (sellerFullName != null && !sellerFullName.isEmpty()) {
