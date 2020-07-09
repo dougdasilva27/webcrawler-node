@@ -59,24 +59,17 @@ public class BrasilZedeliveryCrawler extends Crawler {
     @Override
     protected Object fetch() {
         Map<String, String> headers = new HashMap<>();
-        headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-        headers.put(HttpHeaders.REFERER, "https://www.ze.delivery/produtos");
         headers.put("x-visitorid", VISITOR_ID);
-        headers.put("x-request-origin", "WEB");
-        headers.put("origin", "https://www.ze.delivery");
-        headers.put("Accept", "*/*");
-        headers.put("Accept-Encoding", "gzip, deflate, br");
-        headers.put("Connection", "keep-alive");
-
         JSONObject payload = new JSONObject();
         payload.put("operationName", "loadProduct");
         payload.put("variables", getVariables());
-        payload.put("query", "query loadProduct($id: ID, $isVisitor: Boolean!) {\\n  loadProduct(id: $id, isVisitor: $isVisitor) {\\n    id\\n    displayName\\n    description\\n    isRgb\\n    price {\\n      min\\n      max\\n    }\\n    images\\n    category {\\n      id\\n      displayName\\n    }\\n    brand {\\n      id\\n      displayName\\n    }\\n    applicableDiscount {\\n      discountType\\n      finalValue\\n      presentedDiscountValue\\n    }\\n  }\\n}\\n");
+        payload.put("query", "query loadProduct($id: ID, $isVisitor: Boolean!){loadProduct(id: $id, isVisitor: $isVisitor) {id displayName description isRgb price {min max} images category {id displayName} brand {id displayName} applicableDiscount {discountType finalValue presentedDiscountValue}}}");
 
         Request request = Request.RequestBuilder.create().setUrl(API_URL)
                 .setPayload(payload.toString())
                 .setCookies(cookies)
                 .setHeaders(headers)
+                .mustSendContentEncoding(true)
                 .build();
         Response response = this.dataFetcher.post(session, request);
         return CrawlerUtils.stringToJson(response.getBody());
@@ -87,118 +80,4 @@ public class BrasilZedeliveryCrawler extends Crawler {
         String teste = "0";
         return super.extractInformation(json);
     }
-
-/*    @Override
-    public List<Product> extractInformation(Document doc) throws Exception {
-        super.extractInformation(doc);
-        List<Product> products = new ArrayList<>();
-
-        if (doc.selectFirst(".css-11ecsv0-productContainer") != null) {
-
-            JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, "}", false, false);
-            JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
-
-            List<String> categories = doc.select(".breadcrumbs a").eachText();
-            if (!categories.isEmpty()) {
-                categories.remove(0);
-            }
-            String description =
-                    CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".more-info", " product-table"));
-
-            String internalId = skuJson.optString("productId");
-            String name = skuJson.optString("productName");
-            List<String> images = scrapImages(skuJson);
-            String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
-            String secondaryImages = images != null && !images.isEmpty() ? new JSONArray(images).toString() : null;
-            Offers offers = scrapOffers(doc, skuJson);
-            Integer stock = skuJson.optInt("totalStock");
-            RatingsReviews ratingsReviews = scrapRating(internalId, doc);
-
-            Product product =
-                    ProductBuilder.create()
-                            .setUrl(session.getOriginalURL())
-                            .setOffers(offers)
-                            .setInternalId(internalId)
-                            .setName(name)
-                            .setCategories(categories)
-                            .setPrimaryImage(primaryImage)
-                            .setSecondaryImages(secondaryImages)
-                            .setDescription(description)
-                            .setStock(stock)
-                            .setRatingReviews(ratingsReviews)
-                            .build();
-
-            products.add(product);
-
-        } else {
-            Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-        }
-
-        return products;
-    }
-
-    private Offers scrapOffers(Element elem, JSONObject skuJson)
-            throws MalformedPricingException, OfferException {
-        Offers offers = new Offers();
-        List<String> sales = null;
-        Element saleElem = elem.selectFirst(".PriceQtdComponent");
-        if (saleElem != null) {
-            String sale = saleElem.text();
-            if (sale != null) {
-                if (sale.contains("un.R")) {
-                    sales = Collections.singletonList(sale.replace(".", ". "));
-                }
-            }
-        }
-
-        Double price = skuJson.optDouble("price");
-        CreditCards creditCards = new CreditCards();
-
-        Installments installments = new Installments();
-        installments.add(Installment.InstallmentBuilder.create()
-                .setInstallmentNumber(1)
-                .setInstallmentPrice(price)
-                .build());
-
-        creditCards.add(CreditCard.CreditCardBuilder.create()
-                .setIsShopCard(false)
-                .setBrand(Card.VISA.toString())
-                .setInstallments(installments)
-                .build());
-
-
-        offers.add(
-                Offer.OfferBuilder.create()
-                        .setSellerFullName("Tenda Drive")
-                        .setIsBuybox(false)
-                        .setPricing(
-                                Pricing.PricingBuilder.create()
-                                        .setSpotlightPrice(price)
-                                        .setBankSlip(BankSlip.BankSlipBuilder.create().setFinalPrice(price).build())
-                                        .setCreditCards(creditCards)
-                                        .build())
-                        .setIsMainRetailer(true)
-                        .setUseSlugNameAsInternalSellerId(true)
-                        .setSales(sales)
-                        .build());
-
-        return offers;
-    }
-
-    private List<String> scrapImages(JSONObject skuJson) {
-        JSONArray photos = skuJson.optJSONArray("photos");
-        List<String> images = new ArrayList<>();
-        for (Object obj : photos) {
-            if (obj instanceof JSONObject) {
-                JSONObject json = (JSONObject) obj;
-                images.add(json.optString("url", null));
-            }
-        }
-        return images;
-    }
-
-    private RatingsReviews scrapRating(String internalId, Document doc) {
-        TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "80984", logger);
-        return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
-    }*/
 }
