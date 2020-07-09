@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -36,6 +38,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
    public ColombiaFarmatodoCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    public Object fetch() {
@@ -63,10 +66,8 @@ public class ColombiaFarmatodoCrawler extends Crawler {
    public List<Product> extractInformation(JSONObject json) throws Exception {
       List<Product> products = new ArrayList<>();
 
-      System.err.println(json);
       if (isProductPage(json)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
 
          JSONObject seo = JSONUtils.getJSONValue(json, "seo");
          JSONObject offer = JSONUtils.getJSONValue(seo, "offers");

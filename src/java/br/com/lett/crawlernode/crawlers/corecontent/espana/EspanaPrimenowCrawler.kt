@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.espana
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.Product
@@ -16,8 +18,6 @@ import models.pricing.Pricing
 import org.apache.http.HttpHeaders
 import org.json.JSONArray
 import org.jsoup.nodes.Document
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
 
 class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
 
@@ -41,9 +41,9 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
 				  .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
           .setProxyservice(
             listOf(
-              ProxyCollection.INFATICA_RESIDENTIAL_BR,
+              ProxyCollection.NETNUT_RESIDENTIAL_ES,
               ProxyCollection.STORM_RESIDENTIAL_US,
-              ProxyCollection.NETNUT_RESIDENTIAL_ES
+              ProxyCollection.INFATICA_RESIDENTIAL_BR
             )
           )
           .build();
@@ -104,22 +104,24 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
     val offers = Offers()
 
     val price = document.selectFirst("#priceblock_ourprice")?.toDoubleComma()
-    val priceFrom = document.selectFirst(".priceBlockStrikePriceString")?.toDoubleComma()
+      price?.let {
+          val priceFrom = document.selectFirst(".priceBlockStrikePriceString")?.toDoubleComma()
 
+          val pricing = Pricing.PricingBuilder.create()
+                  .setPriceFrom(priceFrom)
+                  .setSpotlightPrice(price)
+                  .setBankSlip(price.toBankSlip()).build()
 
-    val pricing = Pricing.PricingBuilder.create()
-      .setPriceFrom(priceFrom)
-      .setSpotlightPrice(price)
-      .setBankSlip(price?.toBankSlip()).build()
-    val offer = OfferBuilder.create()
-      .setUseSlugNameAsInternalSellerId(true)
-      .setPricing(pricing)
-      .setSellerFullName(document.selectFirst("#merchant-info")?.text()?.trim()?.substringAfter("por "))
-      .setIsBuybox(false)
-      .setIsMainRetailer(true)
-      .build()
+          val offer = OfferBuilder.create()
+                  .setUseSlugNameAsInternalSellerId(true)
+                  .setPricing(pricing)
+                  .setSellerFullName(document.selectFirst("#merchant-info")?.text()?.trim()?.substringAfter("por "))
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(true)
+                  .build()
 
-    offers.add(offer)
+          offers.add(offer)
+      }
 
     return offers
   }
