@@ -18,7 +18,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -55,8 +54,6 @@ public class BrasilLojacolgateCrawler extends Crawler {
             this.webdriver.waitLoad(2000);
          }
 
-
-         CommonMethods.saveDataToAFile(this.webdriver.getCurrentPageSource(), Test.pathWrite + "COLGATE.html");
 
          WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
          email.sendKeys(CNPJ);
