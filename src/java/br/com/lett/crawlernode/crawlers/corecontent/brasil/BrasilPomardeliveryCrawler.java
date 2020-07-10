@@ -116,12 +116,23 @@ public class BrasilPomardeliveryCrawler extends Crawler {
     return sales;
   }
 
+  private Double concatSpotlight(Document doc) {
+    Double spotlightPrice = 0D;
+
+    String price = CrawlerUtils.scrapStringSimpleInfo(doc, "#placeHolderCentral_asp_tbl_precos", true);
+    String centsOfPrice = CrawlerUtils.scrapStringSimpleInfo(doc, "#placeHolderCentral_asp_tbl_precos sup:nth-child(2)", false);
+
+    if (price != null && centsOfPrice != null) {
+      String contatNumbers = price + centsOfPrice;
+      spotlightPrice = MathUtils.parseDoubleWithComma(contatNumbers);
+    }
+
+    return spotlightPrice;
+  }
 
   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-    Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precos .preco_de span", null, false, ',', session);
-    Double spotlightPrice =
-          priceFrom != null ? CrawlerUtils.scrapDoublePriceFromHtml(doc, ".acoes_produto.celula .precos", null, true, ',', session) : CrawlerUtils.scrapDoublePriceFromHtml(doc, ".acoes_produto.celula .precos", null, false, ',', session);
-    ;
+    Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".acoes_produto .precos div span", null, false, ',', session);
+    Double spotlightPrice = priceFrom != null ? concatSpotlight(doc) : CrawlerUtils.scrapDoublePriceFromHtml(doc, "#placeHolderCentral_asp_tbl_precos", null, false, ',', session);
     CreditCards creditCards = scrapCreditCards(spotlightPrice);
     BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
