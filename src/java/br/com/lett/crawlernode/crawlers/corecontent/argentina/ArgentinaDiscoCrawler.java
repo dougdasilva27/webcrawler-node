@@ -190,7 +190,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
    /**
     * There is no secondary Images in this market.
     *
-    * @param document
+    * @param
     * @return
     */
    private String crawlSecondaryImages() {
@@ -220,8 +220,18 @@ public class ArgentinaDiscoCrawler extends Crawler {
 
          if (json.has("d")) {
             JSONObject jsonD = CrawlerUtils.stringToJson(json.get("d").toString());
-            if (jsonD.has("descr")) {
-               description.append(jsonD.getString("descr"));
+            JSONObject especificaciones = jsonD.optJSONObject("especificaciones");
+
+            if (especificaciones != null ){
+               description.append("<div id=\"especificaciones\">");
+               for (String key : especificaciones.keySet()) {
+                  description.append(
+                          "<div class=\"columna\">"
+                                  + "<div class=\"caracteristica  text-left\">" + key + "</div> "
+                                  + "<div class=\"valor-caracteristica  text-right\">" + especificaciones.get(key) + "</div>"
+                                  + "</div>"
+                  );
+               }
             }
          }
       }
