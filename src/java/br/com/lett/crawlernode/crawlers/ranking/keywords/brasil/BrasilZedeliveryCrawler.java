@@ -5,18 +5,15 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import com.google.common.net.HttpHeaders;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class BrasilZedeliveryCrawler extends CrawlerRankingKeywords {
 
     private static final String API_URL = "https://api.ze.delivery/public-api";
-    private static final String VISITOR_ID = "2d5a638d-fc7b-4143-9379-86ddb12832b5";
+    private static final String VISITOR_ID = "4004b948-7568-4474-91c1-3e9b463f135e";
 
     public BrasilZedeliveryCrawler(Session session) {
         super(session);
@@ -30,21 +27,22 @@ public class BrasilZedeliveryCrawler extends CrawlerRankingKeywords {
     }
 
     protected JSONObject fetch() {
+
         Map<String, String> headers = new HashMap<>();
         headers.put("x-visitorid", VISITOR_ID);
+        headers.put("content-type:", "application/json");
 
-        JSONObject payload = new JSONObject();
-        payload.put("operationName", "search");
-        payload.put("variables", getVariables());
-        payload.put("query", "query search($searchTerm: String!, $limit: Int) {\\n  search(searchTerm: $searchTerm) {\\n    items(limit: $limit) {\\n      id\\n      type\\n      displayName\\n      images\\n      applicableDiscount {\\n        presentedDiscountValue\\n        discountType\\n        finalValue\\n      }\\n      category {\\n        id\\n        displayName\\n      }\\n      brand {\\n        id\\n        displayName\\n      }\\n      price {\\n        min\\n        max\\n      }\\n    }\\n  }\\n}\\n");
+        String payload =
+                "{\"variables\":{\"searchTerm\":\"" + this.keywordEncoded + "\",\"limit\":\"20\"},\"query\":\"query search($searchTerm: String!, $limit: Int) {  search(searchTerm: $searchTerm) {    items(limit: $limit) {      id      type      displayName      images      applicableDiscount {        presentedDiscountValue        discountType        finalValue      }      category {        id        displayName      }      brand {        id        displayName      }      price {        min        max      }    }  }}\",\"operationName\":\"search\"}";
 
         Request request = Request.RequestBuilder.create().setUrl(API_URL)
-                .setPayload(payload.toString())
+                .setPayload(payload)
                 .setCookies(cookies)
                 .setHeaders(headers)
-                .mustSendContentEncoding(true)
+                .mustSendContentEncoding(false)
                 .build();
-        Response response = this.dataFetcher.get(session, request);
+        Response response = this.dataFetcher.post(session, request);
+        System.err.println(CrawlerUtils.stringToJson(response.getBody()));
         return CrawlerUtils.stringToJson(response.getBody());
     }
 
@@ -55,43 +53,44 @@ public class BrasilZedeliveryCrawler extends CrawlerRankingKeywords {
 
         String url = "https://api.ze.delivery/public-api";
         this.log("Link onde são feitos os crawlers: " + url);
-        //this.currentDoc = fetchDocument(url);
-        JSONObject doc = fetch();
-        /*Elements products = this.currentDoc.select(".list-standart-products > li");
 
-        if (!products.isEmpty()) {
-            if (this.totalProducts == 0) {
-                setTotalProducts();
-            }
+        JSONObject json = fetch();
+        JSONObject data = json.optJSONObject("data");
 
-            for (Element product : products) {
-                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "input[name=\"ProdutoId\"]", "value");
-                String internalPId = internalId;
-                String productUrl = CrawlerUtils.scrapUrl(product, ".product > a", "href", "https", HOST_PAGE);
-                saveDataProduct(internalId, internalPId, productUrl);
+        if (data != null) {
+            JSONObject search = data.optJSONObject("search");
+            JSONArray items = search.optJSONArray("items");
 
-                this.log(
-                        "Position: " + this.position +
-                                " - InternalId: " + internalId +
-                                " - InternalPid: " + internalPId +
-                                " - Url: " + productUrl
-                );
+            for (Object item : items) {
+                JSONObject product = (JSONObject) item;
 
-                if (this.arrayProducts.size() == productsLimit) {
-                    break;
+                if (product.optString("type").equals("PRODUCT")) {
+                    String internalId = product.optString("id");
+                    String internalPId = internalId;
+                    String productUrl = scrapUrl(product, internalId);
+                    saveDataProduct(internalId, internalPId, productUrl);
+
+                    this.log(
+                            "Position: " + this.position +
+                                    " - InternalId: " + internalId +
+                                    " - InternalPid: " + internalPId +
+                                    " - Url: " + productUrl
+                    );
+
+                    if (this.arrayProducts.size() == productsLimit) {
+                        break;
+                    }
+                } else {
+                    this.result = false;
+                    this.log("Keyword sem resultado!");
                 }
             }
-        } else {
-            this.result = false;
-            this.log("Keyword sem resultado!");
+            this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
         }
-
-        this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");*/
     }
 
-    /*@Override
-    protected void setTotalProducts() {
-        this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".results > span:last-child", true, 0);
-        this.log("Total: " + this.totalProducts);
-    }*/
+    private String scrapUrl(JSONObject product, String id) {
+        String displayName = product.optString("displayName").toLowerCase().replaceAll(" ", "-");
+        return "https://www.ze.delivery/entrega-produto/" + id + "/" + displayName;
+    }
 }
