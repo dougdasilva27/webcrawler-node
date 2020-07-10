@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
@@ -67,9 +68,7 @@ public class BrasilZedeliveryCrawler extends Crawler {
 
         Request request = Request.RequestBuilder.create().setUrl(API_URL)
                 .setPayload(payload.toString())
-                .setCookies(cookies)
                 .setHeaders(headers)
-                .mustSendContentEncoding(true)
                 .build();
         Response response = this.dataFetcher.post(session, request);
         return CrawlerUtils.stringToJson(response.getBody());
@@ -79,5 +78,12 @@ public class BrasilZedeliveryCrawler extends Crawler {
     public List<Product> extractInformation(JSONObject json) throws Exception {
         String teste = "0";
         return super.extractInformation(json);
+    }
+
+    @Override
+    public List<Product> extractInformation(Document doc) throws Exception {
+        JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
+        JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
+        return super.extractInformation(doc);
     }
 }
