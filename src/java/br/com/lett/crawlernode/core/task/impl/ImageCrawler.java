@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.HttpHeaders;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -28,7 +29,7 @@ public class ImageCrawler extends Task {
 
    private static final Logger LOGGER = LoggerFactory.getLogger(ImageCrawler.class);
 
-   private final int IMAGE_CHECKING_TRY = 5;
+   private static final int IMAGE_CHECKING_TRY = 5;
 
    private static final String IMAGES_BUCKET_NAME = GlobalConfigurations.executionParameters.getImagesBucketName();
    private static final String IMAGES_BUCKET_NAME_NEW = GlobalConfigurations.executionParameters.getImagesBucketNameNew();
@@ -59,51 +60,59 @@ public class ImageCrawler extends Task {
          // get metadata from the image on Amazon
          Logging.printLogDebug(LOGGER, session,
                "Fetching image object metadata on Amazon: " + ((ImageCrawlerSession) session).getTransformedImageKeyOnBucket());
-         ObjectMetadata metadata = S3Service.fetchObjectMetadata(session, creatImageKeyOnBucketNew(false, ((ImageCrawlerSession) session)), IMAGES_BUCKET_NAME_NEW);
+         ObjectMetadata metadataNewBucket = S3Service.fetchObjectMetadata(session, creatImageKeyOnBucketNew(true, ((ImageCrawlerSession) session)), IMAGES_BUCKET_NAME_NEW);
+         String amazonMd5NewBucket = metadataNewBucket != null ? metadataNewBucket.getUserMetaDataOf(S3Service.MD5_HEX_METADATA_FIELD) : null;
 
-         ObjectMetadata metadataOld = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession) session).getTransformedImageKeyOnBucket(), IMAGES_BUCKET_NAME);
-         String amazonMd5Old = metadataOld != null ? metadataOld.getUserMetaDataOf(S3Service.MD5_ORIGINAL_HEX_FIELD) : null;
-         boolean oldBucketImageIsDifferent = amazonMd5Old == null || isDifferent(amazonMd5Old, simpleDownloadResult.md5);
+         ObjectMetadata metadataOldBucket = S3Service.fetchObjectMetadata(session, ((ImageCrawlerSession) session).getTransformedImageKeyOnBucket(), IMAGES_BUCKET_NAME);
+         String amazonMd5OldBucket = metadataOldBucket != null ? metadataOldBucket.getUserMetaDataOf(S3Service.MD5_ORIGINAL_HEX_FIELD) : null;
+         boolean oldBucketImageIsDifferent = amazonMd5OldBucket == null || isDifferent(amazonMd5OldBucket, simpleDownloadResult.md5);
 
-         if (metadata == null) { // we doesn't have any image under this path in S3 yet
+         JSONObject md5Json = new JSONObject();
+         md5Json.put("download_md5", simpleDownloadResult.md5);
+         md5Json.put("old_bucket_md5", amazonMd5OldBucket);
+         md5Json.put("new_bucket_md5", amazonMd5NewBucket);
+
+         Logging.logInfo(LOGGER, session, md5Json, "IMAGES MD5 INFO");
+
+         if (metadataNewBucket == null) { // we doesn't have any image under this path in S3 yet
             Logging.printLogDebug(LOGGER, session, "This image isn't on Amazon yet.");
 
             if (simpleDownloadResult.imageFile != null && simpleDownloadResult.md5 != null) {
-               update(simpleDownloadResult, oldBucketImageIsDifferent);
+               update(simpleDownloadResult, oldBucketImageIsDifferent, true);
             }
          }
 
          // we already have an image under this path in S3
          else {
 
-            String amazonMd5 = metadata.getUserMetaDataOf(S3Service.MD5_ORIGINAL_HEX_FIELD);
-
             Logging.printLogDebug(LOGGER, session,
                   "Looking for change on image # " + ((ImageCrawlerSession) session).getImageNumber() + "... (first check)");
-            if (amazonMd5 == null) {
+            if (amazonMd5NewBucket == null) {
                Logging.printLogDebug(LOGGER, session, "Amazon MD5 doesn't exists yet.");
             } else {
-               Logging.printLogDebug(LOGGER, session, "Amazon MD5: " + amazonMd5);
+               Logging.printLogDebug(LOGGER, session, "Amazon MD5: " + amazonMd5NewBucket);
             }
             Logging.printLogDebug(LOGGER, session, "Local MD5: " + simpleDownloadResult.md5);
 
 
+            boolean newBucketImageIsDifferent = amazonMd5NewBucket == null || isDifferent(amazonMd5NewBucket, simpleDownloadResult.md5);
+
             // let's see if the md5 has changed
-            if ((amazonMd5 == null || isDifferent(amazonMd5, simpleDownloadResult.md5)) || oldBucketImageIsDifferent) {
+            if (newBucketImageIsDifferent || oldBucketImageIsDifferent) {
                Logging.printLogDebug(LOGGER, session, "The new md5 doesn't exists on Amazon yet, or it's different from the previous md5.");
 
                ImageDownloadResult finalDownloadResult;
 
-               if (amazonMd5 != null) {
-                  finalDownloadResult = trucoDownload(amazonMd5, simpleDownloadResult.md5);
+               if (amazonMd5NewBucket != null && newBucketImageIsDifferent) {
+                  finalDownloadResult = trucoDownload(amazonMd5NewBucket, simpleDownloadResult.md5);
                } else {
                   finalDownloadResult = simpleDownloadResult;
                }
 
-               update(finalDownloadResult, oldBucketImageIsDifferent);
+               update(finalDownloadResult, oldBucketImageIsDifferent, newBucketImageIsDifferent);
             } else if (GlobalConfigurations.executionParameters.mustForceImageUpdate()) {
                Logging.printLogDebug(LOGGER, session, "The image md5 is already on Amazon, but i want to force the update.");
-               update(simpleDownloadResult, true);
+               update(simpleDownloadResult, true, true);
             } else {
                Logging.printLogDebug(LOGGER, session, "The image md5 is already on Amazon.");
             }
@@ -118,7 +127,7 @@ public class ImageCrawler extends Task {
 
    @Override
    public void onStart() {
-      Logging.printLogDebug(LOGGER, session, "START");
+      Logging.printLogInfo(LOGGER, session, "START");
    }
 
    @Override
@@ -135,7 +144,7 @@ public class ImageCrawler extends Task {
 
       // clear the session
       session.clearSession();
-      Logging.printLogDebug(LOGGER, session, "END");
+      Logging.printLogInfo(LOGGER, session, "END");
    }
 
    /**
@@ -147,7 +156,7 @@ public class ImageCrawler extends Task {
     * @param imageDownloadResult
     * @throws IOException
     */
-   private void update(ImageDownloadResult imageDownloadResult, boolean oldInsert) throws IOException {
+   private void update(ImageDownloadResult imageDownloadResult, boolean oldInsert, boolean newInsert) throws IOException {
       ImageCrawlerSession imageCrawlerSession = (ImageCrawlerSession) session;
 
       // upload the transformed version of the image to Amazon
@@ -165,14 +174,16 @@ public class ImageCrawler extends Task {
             S3Service.uploadImage(session, transformedImageMetadata, transformedImageFile, imageCrawlerSession.getTransformedImageKeyOnBucket(), IMAGES_BUCKET_NAME);
          }
 
-         ObjectMetadata newTransformedImageMetadata = new ObjectMetadata();
-         newTransformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
-         newTransformedImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
-         newTransformedImageMetadata.setContentType("image/jpeg");
-         newTransformedImageMetadata.setContentLength(transformedImageFile.length());
+         if (newInsert) {
+            ObjectMetadata newTransformedImageMetadata = new ObjectMetadata();
+            newTransformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
+            newTransformedImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
+            newTransformedImageMetadata.setContentType("image/jpeg");
+            newTransformedImageMetadata.setContentLength(transformedImageFile.length());
 
-         S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
-               creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+            S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
+                  creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         }
          Logging.printLogDebug(LOGGER, session, "Done ... ");
       } else {
          Logging.printLogWarn(LOGGER, session, "Transformed image file was not sent to S3 because it is null.");
@@ -190,13 +201,15 @@ public class ImageCrawler extends Task {
             S3Service.uploadImage(session, newObjectMetadata, originalImage, imageCrawlerSession.getOriginalImageKeyOnBucket(), IMAGES_BUCKET_NAME);
          }
 
-         ObjectMetadata newImageMetadata = new ObjectMetadata();
-         newImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
-         newImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
-         newImageMetadata.setContentType("image/" + imageDownloadResult.imageFormat);
-         newImageMetadata.setContentLength(originalImage.length());
-         S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true,
-               imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         if (newInsert) {
+            ObjectMetadata newImageMetadata = new ObjectMetadata();
+            newImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
+            newImageMetadata.addUserMetadata(S3Service.POSITION, Integer.toString(((ImageCrawlerSession) session).getImageNumber()));
+            newImageMetadata.setContentType("image/" + imageDownloadResult.imageFormat);
+            newImageMetadata.setContentLength(originalImage.length());
+            S3Service.uploadImage(session, newImageMetadata, originalImage, creatImageKeyOnBucketNew(true,
+                  imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+         }
 
          Logging.printLogDebug(LOGGER, session, "Done.");
       } else {
