@@ -7,26 +7,46 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class BrasilZedeliveryCrawler extends CrawlerRankingKeywords {
 
     private static final String API_URL = "https://api.ze.delivery/public-api";
-    private static final String VISITOR_ID = "4004b948-7568-4474-91c1-3e9b463f135e";
+    private String VISITOR_ID;
 
     public BrasilZedeliveryCrawler(Session session) {
         super(session);
     }
 
-    private JSONObject getVariables() {
-        JSONObject variables = new JSONObject();
-        variables.put("searchTerm", this.keywordEncoded);
-        variables.put("limit", 20);
-        return variables;
+    /**
+     * Making a call to an address in the 05426-100 postal code
+     * Address is hard coded in payload
+     */
+    private void validateUUID() {
+        VISITOR_ID = UUID.randomUUID().toString();
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("x-visitorid", VISITOR_ID);
+        headers.put("content-type:", "application/json");
+
+        String payload =
+                "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":{\"address\":{\"latitude\":-23.5674273,\"longitude\":-46.6931558,\"zipcode\":null,\"street\":\"Avenida Brigadeiro Faria Lima\",\"neighborhood\":\"Pinheiros\",\"city\":\"S\\u00e3o Paulo\",\"province\":\"SP\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+
+        Request request = Request.RequestBuilder.create().setUrl(API_URL)
+                .setPayload(payload)
+                .setCookies(cookies)
+                .setHeaders(headers)
+                .mustSendContentEncoding(false)
+                .build();
+        this.dataFetcher.post(session, request);
     }
 
+
     protected JSONObject fetch() {
+        validateUUID();
 
         Map<String, String> headers = new HashMap<>();
         headers.put("x-visitorid", VISITOR_ID);
@@ -42,7 +62,6 @@ public class BrasilZedeliveryCrawler extends CrawlerRankingKeywords {
                 .mustSendContentEncoding(false)
                 .build();
         Response response = this.dataFetcher.post(session, request);
-        System.err.println(CrawlerUtils.stringToJson(response.getBody()));
         return CrawlerUtils.stringToJson(response.getBody());
     }
 

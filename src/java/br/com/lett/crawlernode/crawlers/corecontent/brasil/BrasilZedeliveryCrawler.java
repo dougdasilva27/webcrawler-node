@@ -31,9 +31,8 @@ public class BrasilZedeliveryCrawler extends Crawler {
 
     private static final String HOME_PAGE = "https://www.ze.delivery";
     private static final String API_URL = "https://api.ze.delivery/public-api";
-    //TODO gerar UUID e fazer a primeira call do programa para um endereço
-    private static final String VISITOR_ID = "4004b948-7568-4474-91c1-3e9b463f135e";
     private static final String SELLER_FULL_NAME = "zedelivery";
+    private String VISITOR_ID;
 
     protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
             Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -48,7 +47,32 @@ public class BrasilZedeliveryCrawler extends Crawler {
         return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
     }
 
+    /**
+     * Making a call to an address in the 05426-100 postal code
+     * Address is hard coded in payload
+     */
+    private void validateUUID() {
+        VISITOR_ID = UUID.randomUUID().toString();
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("x-visitorid", VISITOR_ID);
+        headers.put("content-type:", "application/json");
+
+        String payload =
+                "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":{\"address\":{\"latitude\":-23.5674273,\"longitude\":-46.6931558,\"zipcode\":null,\"street\":\"Avenida Brigadeiro Faria Lima\",\"neighborhood\":\"Pinheiros\",\"city\":\"S\\u00e3o Paulo\",\"province\":\"SP\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+
+        Request request = Request.RequestBuilder.create().setUrl(API_URL)
+                .setPayload(payload)
+                .setCookies(cookies)
+                .setHeaders(headers)
+                .mustSendContentEncoding(false)
+                .build();
+        this.dataFetcher.post(session, request);
+    }
+
     private JSONObject fetchJson(String id) {
+        validateUUID();
+
         Map<String, String> headers = new HashMap<>();
         headers.put("x-visitorid", VISITOR_ID);
         headers.put("content-type:", "application/json");
@@ -63,7 +87,6 @@ public class BrasilZedeliveryCrawler extends Crawler {
                 .mustSendContentEncoding(false)
                 .build();
         Response response = this.dataFetcher.post(session, request);
-        System.err.println(CrawlerUtils.stringToJson(response.getBody()));
         return CrawlerUtils.stringToJson(response.getBody());
     }
 
@@ -131,9 +154,9 @@ public class BrasilZedeliveryCrawler extends Crawler {
         JSONObject discountPrice = product.optJSONObject("applicableDiscount");
         JSONObject prices = product.optJSONObject("price");
 
-        //TODO ver se preço está quebrado para Skol 269ml
         Double spotlightPrice = discountPrice != null ? discountPrice.optDouble("finalValue") : prices.optDouble("min");
-        spotlightPrice = Math.round(spotlightPrice * 100) /100.0;
+        spotlightPrice = Math.round(spotlightPrice * 100) / 100.0;
+
         Double priceFrom = prices.optDouble("min") != spotlightPrice ? prices.optDouble("min") : null;
 
         CreditCards creditCards = scrapCreditCards(spotlightPrice);
@@ -172,7 +195,7 @@ public class BrasilZedeliveryCrawler extends Crawler {
 
         for (int i = 1; i < imageArray.length(); i++) {
             String image = imageArray.getString(i);
-            if(!image.equals(primaryImage)){
+            if (!image.equals(primaryImage)) {
                 secondaryImagesArray.put(image);
             }
         }
