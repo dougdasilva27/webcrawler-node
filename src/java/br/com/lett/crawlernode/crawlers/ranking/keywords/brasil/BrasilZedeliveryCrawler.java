@@ -22,7 +22,8 @@ public class BrasilZedeliveryCrawler extends CrawlerRankingKeywords {
     }
 
     /**
-     * Making a call to an address in the 05426-100 postal code
+     * Replicating the first api call of the web, that is used to validate the UUID
+     * Making a call sending an address: postal code 05426-100
      * Address is hard coded in payload
      */
     private void validateUUID() {
