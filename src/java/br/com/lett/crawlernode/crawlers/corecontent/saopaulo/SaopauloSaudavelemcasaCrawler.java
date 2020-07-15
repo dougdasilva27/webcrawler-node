@@ -27,6 +27,7 @@ import java.util.Set;
 import static models.pricing.BankSlip.BankSlipBuilder;
 
 public class SaopauloSaudavelemcasaCrawler extends Crawler {
+
     private static final String BASE_URL = "https://www.saudavelemcasa.com.br/";
     private static final String MAIN_SELLER_NAME = "saudavel em casa";
     private final Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
@@ -134,7 +135,6 @@ public class SaopauloSaudavelemcasaCrawler extends Crawler {
         return creditCards;
     }
 
-    //TODO change name
     public CreditCards scrapCardsInHtml(Document doc) throws MalformedPricingException {
         CreditCards creditCards = new CreditCards();
         String cardName = null;
