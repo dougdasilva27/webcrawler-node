@@ -185,12 +185,14 @@ public class MexicoAmazonCrawler extends Crawler {
 
   private Float crawlPriceForPrincipalSeller(Document document) {
     Float price = null;
-    Element salePriceElement = document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
+    Element salePriceElement = document.select("#sns-base-price").first();
     Element specialPrice = document.select("#priceblock_dealprice").first();
     Element foodPrice = document.select("#priceblock_ourprice").first();
 
-    if (salePriceElement != null) {
-      price = MathUtils.parseFloatWithDots(salePriceElement.text().trim());
+    String[] salePriceText = salePriceElement.text().split("\\(");
+
+    if (salePriceText[0] != null) {
+      price = MathUtils.parseFloatWithDots(salePriceText[0].trim());
     } else {
       Element priceElement = document.selectFirst("#buybox .a-color-price");
       if (!priceElement.text().replaceAll("[^0-9]", "").equals("")) {
