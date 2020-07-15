@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -8,10 +12,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
@@ -36,7 +36,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return payload.toString();
    }
 
-   protected String getApiSearchUrl(){
+   protected String getApiSearchUrl() {
       return "https://sitemercado-b2c-sm-www-api-production2.azurewebsites.net/api/v1/b2c/product/loadSearch";
    }
 
