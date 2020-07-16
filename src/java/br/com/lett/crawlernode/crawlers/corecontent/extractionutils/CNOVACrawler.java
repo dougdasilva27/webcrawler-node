@@ -21,9 +21,9 @@ import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -119,7 +119,7 @@ public abstract class CNOVACrawler extends Crawler {
 
    public CNOVACrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.FETCHER);
       super.config.setMustSendRatingToKinesis(true);
    }
 
@@ -141,10 +141,6 @@ public abstract class CNOVACrawler extends Crawler {
    @Override
    protected Object fetch() {
       Response response = fetchPage(session.getOriginalURL(), PROTOCOL + "://" + this.marketHost + "/", this.dataFetcher);
-      if (response.getBody().isEmpty()) {
-         response = fetchPage(session.getOriginalURL(), PROTOCOL + "://" + this.marketHost + "/",
-               this.dataFetcher instanceof ApacheDataFetcher ? new FetcherDataFetcher() : new ApacheDataFetcher());
-      }
       Document doc = Jsoup.parse(response.getBody());
 
       List<Cookie> cookiesResponse = response.getCookies();
@@ -162,7 +158,7 @@ public abstract class CNOVACrawler extends Crawler {
       headers.put("cache-control", "max-age=0");
       headers.put("upgrade-insecure-requests", "1");
       headers.put("user-agent", USER_AGENT);
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("accept", "text/html");
       headers.put("sec-fetch-site", "cross-site");
       headers.put("sec-fetch-mode", "navigate");
       headers.put("sec-fetch-user", "?1");
@@ -177,15 +173,31 @@ public abstract class CNOVACrawler extends Crawler {
                   .mustUseMovingAverage(false)
                   .mustRetrieveStatistics(true)
                   .build())
+            .mustSendContentEncoding(false)
             .setProxyservice(
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
                         ProxyCollection.STORM_RESIDENTIAL_US,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR
+                        ProxyCollection.BUY
                   )
             ).build();
 
-      return df.get(session, request);
+      Response response = df.get(session, request);
+      int statusCode = response.getLastStatusCode();
+
+      if (response.getBody().isEmpty() || (Integer.toString(statusCode).charAt(0) != '2' &&
+            Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404)) {
+
+         if (df instanceof FetcherDataFetcher) {
+            response = new JavanetDataFetcher().get(session, request);
+         } else {
+            response = new FetcherDataFetcher().get(session, request);
+         }
+
+      }
+
+      return response;
    }
 
    protected String fetchPageHtml(String url, String referer) {
@@ -853,7 +865,7 @@ public abstract class CNOVACrawler extends Crawler {
 
       Element ean = document.select(".productEan").first();
       if (ean != null) {
-         description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), this.dataFetcher,
+         description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), new FetcherDataFetcher(),
                session));
       }
 

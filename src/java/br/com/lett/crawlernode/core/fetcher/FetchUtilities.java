@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -285,6 +286,58 @@ public class FetchUtilities {
       }
 
       return headersMap;
+   }
+
+   public static Map<String, String> headersJavaNetToMap(Map<String, List<String>> headers) {
+      Map<String, String> headersMap = new HashMap<>();
+
+      for (Entry<String, List<String>> entry : headers.entrySet()) {
+         String headerName = entry.getKey();
+
+         if (headerName != null) {
+            List<String> values = entry.getValue();
+
+            if (headerName.equalsIgnoreCase(HEADER_SET_COOKIE)) {
+               headerName = HEADER_SET_COOKIE;
+            }
+
+            headersMap.put(headerName, values.toString().replace("[", "").replace("]", ""));
+         }
+      }
+
+      return headersMap;
+   }
+
+   public static List<Cookie> getCookiesFromHeadersJavaNet(Map<String, List<String>> headers) {
+      List<Cookie> cookies = new ArrayList<>();
+
+      for (Entry<String, List<String>> entry : headers.entrySet()) {
+         String headerName = entry.getKey();
+
+
+         if (headerName != null && headerName.equalsIgnoreCase(HEADER_SET_COOKIE)) {
+            List<String> cookiesHeader = entry.getValue();
+
+            for (String cookieHeader : cookiesHeader) {
+               String cookieName = cookieHeader.split("=")[0].trim();
+
+               int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+               String cookieValue;
+               if (cookieHeader.contains(";")) {
+                  int y = cookieHeader.indexOf(';', x);
+                  cookieValue = cookieHeader.substring(x, y).trim();
+               } else {
+                  cookieValue = cookieHeader.substring(x).trim();
+               }
+
+               BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
+               cookie.setPath("/");
+               cookies.add(cookie);
+            }
+         }
+      }
+
+      return cookies;
    }
 
    public static List<Cookie> getCookiesFromHeaders(Header[] headers) {
