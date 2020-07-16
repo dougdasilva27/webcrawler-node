@@ -185,7 +185,7 @@ public class MexicoAmazonCrawler extends Crawler {
 
   private Float crawlPriceForPrincipalSeller(Document document) {
     Float price = null;
-    Element salePriceElement = document.select(".a-box .a-section.a-spacing-none.a-padding-none .a-color-price").first();
+    Element salePriceElement = document.select("#priceblock_ourprice").first();
     Element specialPrice = document.select("#priceblock_dealprice").first();
     Element foodPrice = document.select("#priceblock_ourprice").first();
 
