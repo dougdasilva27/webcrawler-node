@@ -56,6 +56,7 @@ public class SaopauloSaudavelemcasaCrawler extends Crawler {
             RatingsReviews ratingsReviews = scrapRatings(doc);
 
             Product product = ProductBuilder.create()
+                    .setUrl(session.getOriginalURL())
                     .setInternalId(internalId)
                     .setInternalPid(internalPId)
                     .setName(name)
