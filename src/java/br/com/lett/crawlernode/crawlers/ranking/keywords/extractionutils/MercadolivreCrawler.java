@@ -60,8 +60,8 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[item-id]", "item-id");
-            internalPid = internalPid == null || internalPid.trim().isEmpty() ? CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[product-id]", "product-id") : internalPid;
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[product-id]", "product-id");
+            internalPid = internalPid == null || internalPid.trim().isEmpty() ? CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[item-id]", "item-id") : internalPid;
 
             String productUrl = CrawlerUtils.scrapUrl(e, ".item__title a", "href", "https", productUrlHost);
             productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;

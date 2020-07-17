@@ -1,26 +1,21 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -33,7 +28,6 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestForcedProxies;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestsParameters;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -85,48 +79,41 @@ public class FetcherDataFetcher implements DataFetcher {
 
       try {
          Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 18;
-         RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(true).setConnectionRequestTimeout(defaultTimeout)
-               .setConnectTimeout(defaultTimeout).setSocketTimeout(defaultTimeout).build();
 
-         List<Header> reqHeaders = new ArrayList<>();
-         reqHeaders.add(new BasicHeader(HttpHeaders.CONTENT_TYPE, FETCHER_CONTENT_TYPE));
+         URL url = new URL(FETCHER_HOST);
+         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+         connection.setRequestMethod(FetchUtilities.POST_REQUEST);
+         connection.setInstanceFollowRedirects(true);
+         connection.setUseCaches(false);
+         connection.setReadTimeout(defaultTimeout);
+         connection.setDoInput(true);
+         connection.setDoOutput(true);
+         connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, FETCHER_CONTENT_TYPE);
 
-         CloseableHttpClient httpclient = HttpClients.custom().setDefaultRequestConfig(requestConfig)
-               .setDefaultCredentialsProvider(new BasicCredentialsProvider()).setDefaultHeaders(reqHeaders).build();
+         // Inserting payload
+         OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8);
+         writer.write(payload.toJson().toString());
+         writer.close();
 
-         HttpContext localContext = new BasicHttpContext();
-
-         StringEntity input = new StringEntity(payload.toJson().toString());
-         input.setContentType(FETCHER_CONTENT_TYPE);
-
-         HttpPost httpPost = new HttpPost(FETCHER_HOST);
-         httpPost.setEntity(input);
-         httpPost.setEntity(new StringEntity(payload.toJson().toString(), ContentType.create(FETCHER_CONTENT_TYPE)));
-         httpPost.setConfig(requestConfig);
-
-         // do request
-         CloseableHttpResponse closeableHttpResponse = httpclient.execute(httpPost, localContext);
+         // Get Response
+         InputStream is = connection.getInputStream();
+         BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+         StringBuilder responseStr = new StringBuilder(); // or StringBuffer if Java version 5+
+         String line;
+         while ((line = rd.readLine()) != null) {
+            responseStr.append(line);
+            responseStr.append('\r');
+         }
+         rd.close();
+         String content = responseStr.toString();
 
          // analysing the status code
          // if there was some response code that indicates forbidden access or server error we want to
          // try again
-         int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+         int responseCode = connection.getResponseCode();
 
          if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
             throw new ResponseCodeException(responseCode);
-         }
-
-         // creating the page content result from the http request
-         PageContent pageContent = new PageContent(closeableHttpResponse.getEntity()); // loading
-         pageContent.setStatusCode(closeableHttpResponse.getStatusLine().getStatusCode()); // geting the
-         pageContent.setUrl(FETCHER_HOST); // setting url
-
-         // saving request content result on Amazon
-         String content;
-         if (pageContent.getContentCharset() == null) {
-            content = new String(pageContent.getContentData());
-         } else {
-            content = new String(pageContent.getContentData(), pageContent.getContentCharset());
          }
 
          // see if some code error occured
@@ -176,6 +163,9 @@ public class FetcherDataFetcher implements DataFetcher {
       Response response = new Response();
       List<RequestsStatistics> requestsStatistics = getStats(fetcherResponse);
       response.setRequests(requestsStatistics);
+
+      int statusCode = requestsStatistics.isEmpty() ? 0 : requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
+      response.setLastStatusCode(statusCode);
 
       if (!requestsStatistics.isEmpty()) {
          response.setProxyUsed(requestsStatistics.get(requestsStatistics.size() - 1).getProxy());

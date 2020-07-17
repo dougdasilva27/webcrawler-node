@@ -100,7 +100,7 @@ public class S3Service {
 
       try {
          s3clientImages.putObject(putObjectRequest);
-         Logging.printLogDebug(logger, session, "[BUCKET - " + bucket + "] Uploaded image #" + s.getImageNumber() + " with success!");
+         Logging.printLogInfo(logger, session, "[BUCKET - " + bucket + "] Uploaded image #" + s.getImageNumber() + " with success!");
 
       } catch (AmazonClientException ace) {
          Logging.printLogError(logger, session, "[BUCKET - " + bucket + "] Error Message:    " + ace.getMessage());
