@@ -28,7 +28,7 @@ public abstract class BrasilIfood extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.ifood.com.br/delivery/" + region + "/" + store_name;
+    String url = "https://www.ifood.com.br/delivery/" + region + "/" + store_name + "/31dbd467-bb46-4884-8879-e545789acc39";
 
     this.currentDoc = fetchDocument(url, cookies);
 

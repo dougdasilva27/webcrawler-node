@@ -41,7 +41,7 @@ public abstract class BrasilIfood extends Crawler {
     super.config.setFetcher(FetchMode.FETCHER);
   }
 
-  private final String HOME_PAGE = "https://www.ifood.com.br/delivery/" + region + "/" + store_name;
+  private final String HOME_PAGE = "https://www.ifood.com.br/delivery/" + region + "/" + store_name + "/31dbd467-bb46-4884-8879-e545789acc39";
 
   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
