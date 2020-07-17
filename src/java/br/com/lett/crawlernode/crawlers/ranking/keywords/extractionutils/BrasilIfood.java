@@ -1,18 +1,19 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+
 
 public abstract class BrasilIfood extends CrawlerRankingKeywords {
 
   public BrasilIfood(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   protected String region = getRegion();
@@ -54,13 +55,8 @@ public abstract class BrasilIfood extends CrawlerRankingKeywords {
 
               String internalId = itensObject.optString("code");
               String internalPid = internalId;
-
-              String urlId = itensObject.optString("id");
               String productUrl = url + "?prato=" + internalId;
 
-
-              //https://www.ifood.com.br/delivery/sao-paulo-sp/big-pacaembu---express-bom-retiro?prato=179415637
-              // https://www.ifood.com.br/delivery/sao-paulo-sp/big-pacaembu---express-bom-retiro?prato=102721778
               saveDataProduct(internalId, internalPid, productUrl);
 
               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
@@ -77,10 +73,7 @@ public abstract class BrasilIfood extends CrawlerRankingKeywords {
           }
         }
       }
-
     }
-
-    Elements products = this.currentDoc.select(".product-list-item");
 
   }
 

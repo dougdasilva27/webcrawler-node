@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -37,13 +38,14 @@ public abstract class BrasilIfood extends Crawler {
 
   public BrasilIfood(Session session) {
     super(session);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   private final String HOME_PAGE = "https://www.ifood.com.br/delivery/" + region + "/" + store_name;
 
   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
-  
+
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
@@ -52,7 +54,6 @@ public abstract class BrasilIfood extends Crawler {
 
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
-    System.err.println(HOME_PAGE);
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
