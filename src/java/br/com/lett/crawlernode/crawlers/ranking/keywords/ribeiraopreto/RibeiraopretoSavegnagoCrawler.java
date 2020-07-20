@@ -7,6 +7,8 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +25,7 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords {
      */
     // private static final int cityCode = ControllerKeywords.codeCity;
     private static final int cityCode = 2;
+    private static final String BASE_URL = "www.savegnago.com.br";
     private static final String API_KEY = "savegnago";
     private static final int SALES_CHANNEL = 1;
 
@@ -31,30 +34,66 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords {
         this.pageSize = 32;
         this.log("Página " + this.currentPage);
 
-        JSONObject json = loadJson();
-        JSONArray products = json.optJSONArray("products");
+        String url = "https://www.savegnago.com.br/" + this.keywordEncoded;
+        this.currentDoc = fetchDocument(url);
 
-        if (products != null && !products.isEmpty()) {
-            if (totalProducts == 0) {
-                setTotalProducts(json);
-            }
-            for (Object productObj : products) {
-                JSONObject product = (JSONObject) productObj;
-                String internalId = product.optString("id");
-                String internalPid = internalId;
-                String productUrl = product.optString("url").replace("//", "");
-                saveDataProduct(internalId, internalPid, productUrl);
+        if (currentDoc.selectFirst(".product-card") != null) {
+            //Get from the html
+            this.log("Link onde são feitos os crawlers: " + url);
+            Elements products = this.currentDoc.select(".n4colunas li[layout]");
 
-                log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-                if (arrayProducts.size() == productsLimit) {
-                    break;
+            if (products != null && !products.isEmpty()) {
+                if (totalProducts == 0) {
+                    setTotalProducts();
                 }
+                for (Element product : products) {
+                    String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-card", "item");
+                    String internalPid = internalId;
+                    String productUrl = CrawlerUtils.scrapUrl(product, ".prod-acc > a", "href", "http", BASE_URL);
+                    saveDataProduct(internalId, internalPid, productUrl);
+
+                    log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+                    if (arrayProducts.size() == productsLimit) {
+                        break;
+                    }
+                }
+            } else {
+                result = false;
+                log("Keyword sem resultado!");
             }
         } else {
-            result = false;
-            log("Keyword sem resultado!");
+            //Get from API
+            JSONObject json = loadJson();
+            JSONArray products = json.optJSONArray("products");
+
+            if (products != null && !products.isEmpty()) {
+                if (totalProducts == 0) {
+                    setTotalProducts(json);
+                }
+                for (Object productObj : products) {
+                    JSONObject product = (JSONObject) productObj;
+                    String internalId = product.optString("id");
+                    String internalPid = internalId;
+                    String productUrl = product.optString("url").replace("//", "");
+                    saveDataProduct(internalId, internalPid, productUrl);
+
+                    log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+                    if (arrayProducts.size() == productsLimit) {
+                        break;
+                    }
+                }
+            } else {
+                result = false;
+                log("Keyword sem resultado!");
+            }
         }
         log("Finalizando Crawler de produtos da página $currentPage até agora ${arrayProducts.size} produtos crawleados");
+    }
+
+    @Override
+    protected void setTotalProducts() {
+        this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", true, 0);
+        this.log("Total de produtos: " + this.totalProducts);
     }
 
     private void setTotalProducts(JSONObject json) {
