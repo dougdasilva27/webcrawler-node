@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -15,10 +16,7 @@ import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class SaopauloImigrantesbebidasCrawler extends Crawler {
 
@@ -37,6 +35,7 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
         List<Product> products = new ArrayList<>();
 
         if (isProductPage(doc)) {
+            JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "head > script:nth-of-type(6)", null, "}", false, true);
 
             String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".skuId", true);
             String internalPId = internalId;
@@ -46,7 +45,8 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
             String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".tabs"));
             int stock = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".frmCartQuantity input[name=\"stock_unit\"]", "value", 0);
             Offers offers = stock > 0 ? scrapOffers(doc) : new Offers();
-            List<String> eans = scrapEans(doc);
+            CategoryCollection categories = scrapCategories(productJson);
+            List<String> eans = scrapEans(productJson);
 
             Product product = ProductBuilder.create()
                     .setUrl(session.getOriginalURL())
@@ -55,6 +55,9 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
                     .setName(name)
                     .setPrimaryImage(primaryImage)
                     .setSecondaryImages(secondaryImage)
+                    .setCategory1(categories.getCategory(0))
+                    .setCategory2(categories.getCategory(1))
+                    .setCategory3(categories.getCategory(2))
                     .setDescription(description)
                     .setStock(stock)
                     .setOffers(offers)
@@ -127,12 +130,28 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
                 .build();
     }
 
-    private List<String> scrapEans(Document doc) {
-        //TODO
-        /*JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, null, false, false);
-        String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".productPage__tabs__content__text"));
-        String ean = description.split("EAN:")[1].trim();
-        return !ean.isEmpty() ? Collections.singletonList(ean) : null;*/
+    private CategoryCollection scrapCategories(JSONObject productJson) {
+        CategoryCollection finalCategory = new CategoryCollection();
+        String categories = productJson.optString("category");
+        String[] split = categories.split("\\/");
+        finalCategory.addAll(Arrays.asList(split));
+        return finalCategory;
+    }
+
+    private List<String> scrapEans(JSONObject productJson) {
+        String key = getEansKey(productJson);
+        return key != null ? Collections.singletonList(productJson.optString(key)) : null;
+    }
+
+    private String getEansKey(JSONObject productJson) {
+        Iterator<String> keys = productJson.keys();
+        String currentKey;
+        while (keys.hasNext()) {
+            currentKey = keys.next();
+            if (currentKey.contains("gtin")) {
+                return currentKey;
+            }
+        }
         return null;
     }
 }

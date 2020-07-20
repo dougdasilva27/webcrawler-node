@@ -18,7 +18,7 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
     protected void extractProductsFromCurrentPage() {
         this.log("Página " + this.currentPage);
 
-        this.pageSize = 12;
+        this.pageSize = 20;
         String url = "https://www.imigrantesbebidas.com.br/bebida/advanced_search_result.php?page=" + this.currentPage + "&keywords=" + this.keywordEncoded;
 
         this.log("Link onde são feitos os crawlers: " + url);
@@ -31,8 +31,7 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
                 setTotalProducts();
 
             for (Element product : products) {
-                //TODO get id of out of stock products
-                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".frmCartQuantity input[name=\"products_id\"]", "value");
+                String internalId = scrapInternalId(product);
                 String internalPid = internalId;
                 String productUrl = CrawlerUtils.scrapUrl(product, ".product__link", "href", "https", BASE_URL);
 
@@ -52,7 +51,6 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
 
     @Override
     protected void setTotalProducts() {
-        //Getting the total of pages
         this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".pagination > li:nth-last-child(2) > a", true, 0);
         super.setTotalProducts();
     }
@@ -60,5 +58,16 @@ public class SaopauloImigrantesbebidasCrawler extends CrawlerRankingKeywords {
     @Override
     protected boolean hasNextPage() {
         return this.currentPage < totalProducts;
+    }
+
+    private String scrapInternalId(Element product) {
+        String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".frmCartQuantity input[name=\"products_id\"]", "value");
+        if (id == null) {
+            String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".productItem__image > img", "data-src");
+            String[] split = imageUrl.split("products/");
+            id = split[1].split("_")[0];
+            id = id.split("-")[0];
+        }
+        return id;
     }
 }
