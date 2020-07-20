@@ -32,40 +32,15 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
     override fun extractInformation(doc: Document): MutableList<Product> {
         super.extractInformation(doc)
 
-        val jsonInfo = crawlerJsonInfo(doc)
-
-        print(jsonInfo)
-        if (!isProductPage(doc)) {
-            return mutableListOf()
-        }
-
-        val products = mutableListOf<Product>()
-
-
-//        val name = doc.selectFirst(".product_name")?.selectFirst("span")?.text()
-        val name = jsonInfo.getString("name")
-
-//        val productHtmlId = doc.selectFirst("#js-product-form")?.getElementsByAttributeValue("name", "product")?.attr("value") ?: ""
-        val internalPid = jsonInfo.getString("mpn")
-
-//        val productId = doc.selectFirst("#js-product-form")?.getElementsByAttributeValue("name", "sku")?.attr("value") ?: ""
-        val productId = jsonInfo.getString("sku")
-
-
-        //[{"id":"TAMG","skuId":"549982064"},{"id":"TAMGG","skuId":"549982072"},{"id":"TAMP","skuId":"549982048"},{"id":"TAMM","skuId":"549982056"}]
-        //[{"id":"TAMG","skuId":"549977708"},{"id":"TAMGG","skuId":"549977716"},{"id":"TAMP","skuId":"549977687"},{"id":"TAMM","skuId":"549977695"}]
-        print("product :$internalPid")
-        //val productId = getProductIdFromApi(productHtmlId) //"5921935"
-        //val productId = productNameHtml.selectFirst("small")?.text()?.split(": ")?.get(1) ?: ""
-
-        print("unique: $productId")
-
-
-        val images = getImages(doc)
+        val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".main_product_info .product_name span", true)
+        val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb ul li:not(:first-child):not(:last-child) a")
+        val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value")
+		
+        for variations {
+			   val images = getImages(doc)
 
         val description = doc.selectFirst(".desc").html()
 
-        val categories = crawlerCategories(doc)
 
         val price = jsonInfo.getJSONObject("offers")?.getString("price")
 
@@ -81,7 +56,6 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
                 .setPrimaryImage(images[0])
                 .setSecondaryImages(images.subList(1, images.size))
                 .setDescription(description)
-
                 .setStock(1)
                 .setEans(mutableListOf())
                 .setOffers(offers)
@@ -91,10 +65,44 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
         print(product.toString())
 
         products += product
+		}
+
+		    val jsonInfo = crawlerJsonInfo(doc)
+
+        print(jsonInfo)
+        if (!isProductPage(doc)) {
+            return mutableListOf()
+        }
+
+        val products = mutableListOf<Product>()
+
+
+//        val name = doc.selectFirst(".product_name")?.selectFirst("span")?.text()
+
+//        val productHtmlId = doc.selectFirst("#js-product-form")?.getElementsByAttributeValue("name", "product")?.attr("value") ?: ""
+
+//        val productId = doc.selectFirst("#js-product-form")?.getElementsByAttributeValue("name", "sku")?.attr("value") ?: ""
+        val productId = jsonInfo.getString("sku")
+
+
+        //[{"id":"TAMG","skuId":"549982064"},{"id":"TAMGG","skuId":"549982072"},{"id":"TAMP","skuId":"549982048"},{"id":"TAMM","skuId":"549982056"}]
+        //[{"id":"TAMG","skuId":"549977708"},{"id":"TAMGG","skuId":"549977716"},{"id":"TAMP","skuId":"549977687"},{"id":"TAMM","skuId":"549977695"}]
+        print("product :$internalPid")
+        //val productId = getProductIdFromApi(productHtmlId) //"5921935"
+        //val productId = productNameHtml.selectFirst("small")?.text()?.split(": ")?.get(1) ?: ""
+
+        print("unique: $productId")
+
+
+     
 
         return products
     }
 
+  	private fun scrapProductVariations(doc: Document): MutableList<String> {
+  		
+  	}
+	
     private fun scrapOffers(doc: Document): Offers {
         val jsonInfo = crawlerJsonInfo(doc)
 
@@ -175,18 +183,6 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
         val response: Response = dataFetcher.post(session, request)
 
         return CrawlerUtils.stringToJson(response.body)
-    }
-
-    private fun crawlerCategories(doc: Document): List<String> {
-        val categories = mutableListOf<String>()
-
-        val elements = doc.selectFirst(".breadcrumb div ul").select("li")
-
-        for (i: Int in 1 until elements.size ) {
-            categories.add(elements[i].text())
-        }
-
-        return categories
     }
 
     private fun getProductIdFromApi(productHtmlId: String): String {
