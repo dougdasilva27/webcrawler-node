@@ -74,7 +74,7 @@ public abstract class VTEXScraper extends Crawler {
          for (int i = 0; i < items.length(); i++) {
             JSONObject jsonSku = items.getJSONObject(i);
 
-            Product product = extractProduct(doc, internalPid, categories, description, jsonSku);
+            Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
             products.add(product);
          }
       } else {
@@ -90,9 +90,9 @@ public abstract class VTEXScraper extends Crawler {
       return true;
    }
 
-   protected Product extractProduct(Document doc, String internalPid, CategoryCollection categories, String description, JSONObject jsonSku) throws Exception {
+   protected Product extractProduct(Document doc, String internalPid, CategoryCollection categories, String description, JSONObject jsonSku, JSONObject productJson) throws Exception {
       String internalId = jsonSku.has("itemId") ? jsonSku.get("itemId").toString() : null;
-      String name = jsonSku.has("nameComplete") ? jsonSku.get("nameComplete").toString() : null;
+      String name = scrapName(doc, productJson, jsonSku);
       List<String> images = scrapImages(doc, jsonSku, internalPid, internalId);
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
       String secondaryImages = scrapSecondaryImages(images);
@@ -119,6 +119,10 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected abstract String scrapInternalpid(Document doc);
+
+   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      return jsonSku.has("nameComplete") ? jsonSku.get("nameComplete").toString() : null;
+   }
 
    private CategoryCollection scrapCategories(JSONObject product) {
       CategoryCollection categories = new CategoryCollection();

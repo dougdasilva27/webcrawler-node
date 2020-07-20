@@ -43,6 +43,11 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    @Override
+   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      return (productJson.optString("brand") + " " + super.scrapName(doc, productJson, jsonSku)).trim();
+   }
+
+   @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       return this.rating;
    }
