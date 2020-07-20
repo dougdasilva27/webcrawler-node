@@ -66,11 +66,9 @@ public class BrasilRiachueloCrawler extends Crawler {
     headers.put("connection", "keep-alive");
     Request request = RequestBuilder.create()
         .setUrl(url)
-        .setBodyIsRequired(true)
         .setIgnoreStatusCode(false)
         .mustSendContentEncoding(false)
         .setHeaders(headers)
-        .setFollowRedirects(true)
         .setFetcheroptions(
             FetcherOptionsBuilder.create()
                 .mustUseMovingAverage(false)
