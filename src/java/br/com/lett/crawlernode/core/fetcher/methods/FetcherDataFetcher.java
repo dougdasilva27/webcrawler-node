@@ -97,7 +97,7 @@ public class FetcherDataFetcher implements DataFetcher {
 
          // Get Response
          InputStream is = connection.getInputStream();
-         BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+         BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
          StringBuilder responseStr = new StringBuilder(); // or StringBuffer if Java version 5+
          String line;
          while ((line = rd.readLine()) != null) {
