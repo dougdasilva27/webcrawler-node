@@ -19,15 +19,9 @@ public class RibeiraopretoSavegnagoCrawler extends CrawlerRankingKeywords {
         super(session);
     }
 
-    /**
-     * Código das cidades: Ribeirão Preto - 2 Sertãozinho - 6 Jardianópolis - 11 Jaboticabal - 7
-     * Franca - 3 Barretos - 10 Bebedouro - 9 Monte Alto - 12 Araraquara - 4 São carlos - 5 Matão - 8
-     */
-    // private static final int cityCode = ControllerKeywords.codeCity;
-    private static final int cityCode = 2;
+    private static final int SALES_CHANNEL = 1;
     private static final String BASE_URL = "www.savegnago.com.br";
     private static final String API_KEY = "savegnago";
-    private static final int SALES_CHANNEL = 1;
 
     @Override
     protected void extractProductsFromCurrentPage() {
