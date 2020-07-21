@@ -2,14 +2,20 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.fetcher.models.Response
+import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
+import exceptions.MalformedPricingException
 import models.Offer
 import models.Offers
-import models.pricing.*
+import models.pricing.CreditCard.CreditCardBuilder
+import models.pricing.CreditCards
+import models.pricing.Installment
+import models.pricing.Installments
+import models.pricing.Pricing
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -153,7 +159,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
             sales addNonNull doc.getDouble("percentDiscount").toString()
 
 
-            val rennerCard = CreditCard.CreditCardBuilder.create()
+            val rennerCard = CreditCardBuilder()
                     .setBrand("Cartão Renner")
                     .setIsShopCard(true)
                     .setInstallments(
@@ -161,15 +167,25 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
                     )
                     .build()
 
-            val otherCars = CreditCard.CreditCardBuilder.create()
-                    .setBrand("Outros cartões")
-                    .setIsShopCard(false)
-                    .setInstallments(
-                            scrapInstallments(dataOffers.getElementsByAttributeValue("data-target_content", "creditCard").first())
-                    )
-                    .build()
+            val otherCars =
+                    listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
+                            Card.HIPERCARD).map { card: Card ->
+                        try {
+                            return@map CreditCardBuilder.create()
+                                    .setBrand(card.toString())
+                                    .setIsShopCard(false)
+                                    .setInstallments(
+                                            scrapInstallments(dataOffers.getElementsByAttributeValue("data-target_content", "creditCard").first())
+                                    )
+                                    .build()
+                        } catch (e: MalformedPricingException) {
+                            throw RuntimeException(e)
+                        }
+                    }
 
-            val creditCards = CreditCards(listOf(rennerCard, otherCars))
+            val creditCards = CreditCards(otherCars)
+
+            creditCards.add(rennerCard)
 
             offers.add(
                     Offer.OfferBuilder.create()
@@ -177,6 +193,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
                                     Pricing.PricingBuilder.create()
                                             .setCreditCards(creditCards)
                                             .setSpotlightPrice(spotlightPrice)
+                                            .setBankSlip(spotlightPrice.toBankSlip())
                                             .setPriceFrom(priceFrom)
                                             .build()
                             )
