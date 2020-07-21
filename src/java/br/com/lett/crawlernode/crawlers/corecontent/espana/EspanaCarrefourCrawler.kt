@@ -111,11 +111,16 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
 
         val split = session.originalURL.split("/")
 
+		    var image: String? = null
+		    if ( images != null && !images.isEmpty()) {
+		       image = images.removeAt(0)
+		    }
+		  
         products += productBuilder
           .setOffers(offers)
           .setInternalId(skuJson.optString("id"))
           .setInternalPid(split[split.size - 2])
-          .setPrimaryImage(images?.removeAt(0))
+				  .setPrimaryImage(image)
           .setSecondaryImages(JSONArray(images).toString())
           .setEans(listOf(skuJson.optString("ean13")))
           .build()
