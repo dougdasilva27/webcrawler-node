@@ -189,7 +189,20 @@ public class BrasilRiachueloCrawler extends Crawler {
   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
     CreditCards creditCards = new CreditCards();
 
-    Installments installments = scrapInstallments(doc, false);
+    Installments installments = new Installments();
+    Installments installmentsShopCard = new Installments();
+
+    if (doc.selectFirst(".product-info-main .installement-info p") != null) {
+      scrapInstallments(doc, false, installments);
+      scrapInstallments(doc, true, installmentsShopCard);
+
+      creditCards.add(CreditCardBuilder.create()
+          .setBrand(Card.SHOP_CARD.toString())
+          .setInstallments(installmentsShopCard)
+          .setIsShopCard(true)
+          .build());
+    }
+
     installments.add(InstallmentBuilder.create()
         .setInstallmentNumber(1)
         .setInstallmentPrice(spotlightPrice)
@@ -203,24 +216,15 @@ public class BrasilRiachueloCrawler extends Crawler {
           .build());
     }
 
-    Installments installmentsShopCard = scrapInstallments(doc, true);
     installments.add(InstallmentBuilder.create()
         .setInstallmentNumber(1)
         .setInstallmentPrice(spotlightPrice)
         .build());
 
-    creditCards.add(CreditCardBuilder.create()
-        .setBrand(Card.SHOP_CARD.toString())
-        .setInstallments(installmentsShopCard)
-        .setIsShopCard(true)
-        .build());
-
     return creditCards;
   }
 
-  public Installments scrapInstallments(Document doc, boolean storeCard) throws MalformedPricingException {
-    Installments installments = new Installments();
-
+  public void scrapInstallments(Document doc, boolean storeCard, Installments installments) throws MalformedPricingException {
     String tagPosition = storeCard ? ":last-child" : "first-child";
 
     Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".product-info-main .installement-info p" + tagPosition, doc, true);
@@ -230,8 +234,6 @@ public class BrasilRiachueloCrawler extends Crawler {
           .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
           .build());
     }
-
-    return installments;
   }
 
 }
