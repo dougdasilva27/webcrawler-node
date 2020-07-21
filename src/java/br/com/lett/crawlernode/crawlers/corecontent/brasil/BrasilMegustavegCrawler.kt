@@ -12,12 +12,13 @@ import models.Offer
 import models.Offers
 import models.RatingsReviews
 import models.pricing.*
+import models.pricing.Installment.InstallmentBuilder
 import org.jsoup.nodes.Document
 import java.util.*
 
 class BrasilMegustavegCrawler(session: Session) : Crawler(session) {
 
-    //TODO change seller
+    private val BASE_URL: String = "www.megustaveg.com.br"
     private val SELLER_FULL_NAME: String = "Me Gusta Veg"
     private val cards = listOf(Card.VISA.toString(), Card.MASTERCARD.toString(),
             Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString())
@@ -29,7 +30,6 @@ class BrasilMegustavegCrawler(session: Session) : Crawler(session) {
         if (isProductPage(doc)) {
             Logging.printLogDebug(logger, session, "Product page identified: ${session.originalURL}")
             val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".acoes-produto", "data-produto-id")
-            //TODO olhar se tem variacao
             val internalPid = internalId
             val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto", true)
             val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li", true)
@@ -87,8 +87,8 @@ class BrasilMegustavegCrawler(session: Session) : Crawler(session) {
     }
 
     private fun scrapPricing(doc: Document): Pricing {
-        val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".preco-promocional", null, true, ',', this.session)
-        val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".preco-venda", null, true, ',', this.session)
+        val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".acoes-produto  .preco-promocional", null, true, ',', this.session)
+        val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".acoes-produto .preco-venda", null, true, ',', this.session)
 
         return Pricing.PricingBuilder.create()
                 .setSpotlightPrice(spotlightPrice)
@@ -103,7 +103,7 @@ class BrasilMegustavegCrawler(session: Session) : Crawler(session) {
         val installments = scrapInstallments(doc)
 
         if (installments.installments.isEmpty()) {
-            installments.add(Installment.InstallmentBuilder.create()
+            installments.add(InstallmentBuilder.create()
                     .setInstallmentNumber(1)
                     .setInstallmentPrice(spotlightPrice)
                     .build())
@@ -122,12 +122,13 @@ class BrasilMegustavegCrawler(session: Session) : Crawler(session) {
 
     private fun scrapInstallments(doc: Document): Installments {
         val installments = Installments()
-        val itens = doc.select(".parcela")
-        for (row in itens) {
+        val items = doc.select(".parcela")
+
+        for (row in items) {
             val number = CrawlerUtils.scrapIntegerFromHtml(row, "b", true, null)
             val price = CrawlerUtils.scrapDoublePriceFromHtml(row, "span", null, true, ',', session)
 
-            installments.add(Installment.InstallmentBuilder.create()
+            installments.add(InstallmentBuilder.create()
                     .setInstallmentNumber(number)
                     .setInstallmentPrice(price)
                     .build())
