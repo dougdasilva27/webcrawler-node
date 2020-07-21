@@ -24,7 +24,7 @@ class ProductBuilderDsl {
   lateinit var internalId: String
   var internalPid: String? = null
   lateinit var name: String
-  var categories: MutableCollection<String> = mutableListOf()
+  var categories: List<String> = mutableListOf()
   var primaryImage: String? = null
   var secondaryImages: String? = null
   var description: String? = null
