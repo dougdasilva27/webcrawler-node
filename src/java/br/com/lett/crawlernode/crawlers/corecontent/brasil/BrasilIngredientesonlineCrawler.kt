@@ -8,15 +8,14 @@ import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.MathUtils
+import br.com.lett.crawlernode.util.toBankSlip
+import br.com.lett.crawlernode.util.toDoubleComma
 import exceptions.MalformedPricingException
 import models.Offer
 import models.Offers
-import models.pricing.CreditCard
+import models.pricing.*
 import models.pricing.CreditCard.CreditCardBuilder
-import models.pricing.CreditCards
 import models.pricing.Installment.InstallmentBuilder
-import models.pricing.Installments
-import models.pricing.Pricing
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -95,15 +94,13 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
 
         val priceText = doc.selectFirst(".old-price .price")?.text() ?: ""
 
-
         var priceFrom = MathUtils.parseDoubleWithComma(priceText)
 
-        val spotlightText = if (priceFrom > 0) {
+        val spotlightText = if ((priceFrom ?: 0.0) > 0) {
             doc.selectFirst(".special-price .price")?.text()
         } else {
             doc.selectFirst(".regular-price .price")?.text()
         } ?: ""
-
 
         val spotlightPrice = MathUtils.parseDoubleWithComma(spotlightText)
 
@@ -111,42 +108,40 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
             if (spotlightPrice == priceFrom) {
                 priceFrom = null
             }
-
-            val rennerCard = CreditCard.CreditCardBuilder.create()
-                    .setBrand("Cartão Renner")
-                    .setIsShopCard(true)
-                    .setInstallments(
-                            installments
-                    )
-                    .build()
-
-
-
             val creditCards = CreditCards(
                     listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
                             Card.HIPERCARD).map { card: Card ->
-                        val installment = CrawlerUtils
-                                .crawlSimpleInstallment(".parcel", doc, false, "x", "juros", false, ',')
                         try {
                             return@map CreditCardBuilder.create()
                                     .setBrand(card.toString())
                                     .setIsShopCard(false)
-                                    .setInstallments(Installments(setOf(InstallmentBuilder.create()
-                                            .setInstallmentPrice(installment.second.toDouble())
-                                            .setInstallmentNumber(installment.first)
-                                            .build())))
+                                    .setInstallments(installments)
                                     .build()
                         } catch (e: MalformedPricingException) {
                             throw RuntimeException(e)
                         }
                     })
 
+            val bankSlipPrice = doc.selectFirst(".preco-comprar .boletoBox .price")?.text().toDoubleComma()?.round()
+            val bankSlipDiscount = doc.selectFirst(".preco-comprar .boletoBox .descontoBoleto")?.text()?.toDouble()
+
+            var bankSlip : BankSlip? = BankSlip.BankSlipBuilder()
+                    .setFinalPrice(bankSlipPrice)
+
+                    // convert from int to decimal percent
+                    .setOnPageDiscount(((bankSlipDiscount ?: 0.0)/100).round())
+                    .build()
+
+            if ((bankSlipPrice ?: 0.0) <= 0) {
+                bankSlip = null
+            }
             offers.add(
                     Offer.OfferBuilder.create()
                             .setPricing(
                                     Pricing.PricingBuilder.create()
                                             .setCreditCards(creditCards)
                                             .setSpotlightPrice(spotlightPrice)
+                                            .setBankSlip(bankSlip)
                                             .setPriceFrom(priceFrom)
                                             .build()
                             )
@@ -164,16 +159,14 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
 
     private fun scrapInstallments(doc: Document): Installments {
         val installments = Installments()
-        doc.select(".preco-comprar .table-pagamento ul li").map {
 
-            val text = it.text()
-
-            val pair = CrawlerUtils.crawlSimpleInstallmentFromString(text, "de", "sem juros", true)
-
+        val parcel = doc.selectFirst(".parcelaBloco")?.attr("data-maximo_parcelas_sem_juros")?.toInt() ?: 0
+        val price = doc.selectFirst(".parcelaBloco")?.attr("data-valor_produto")?.toDouble()?.round() ?: 0.0
+        for (i: Int in 1..parcel) {
             val installment = InstallmentBuilder()
-                    .setInstallmentNumber(pair.first)
-                    .setInstallmentPrice(pair.second.round())
-                    .setFinalPrice((pair.first * pair.second).round())
+                    .setInstallmentNumber(i)
+                    .setInstallmentPrice((price/i).round())
+                    .setFinalPrice(price)
                     .build()
 
             installments.add(installment)
