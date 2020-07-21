@@ -175,3 +175,14 @@ fun Double.toBankSlip(discount: Double? = null): BankSlip = BankSlipBuilder.crea
 infix fun <T> MutableCollection<T>.addNonNull(elem: T?) {
   elem?.let { this.plusAssign(elem) }
 }
+
+// fix floating point
+fun Double.round(): Double {
+  return ((this * 100).toInt()).toDouble() / 100
+}
+
+// fix floating point
+fun Float.round(): Double {
+  return this.toDouble().round()
+}
+

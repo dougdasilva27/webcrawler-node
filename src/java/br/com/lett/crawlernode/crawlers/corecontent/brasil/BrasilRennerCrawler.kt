@@ -6,10 +6,7 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.JSONUtils
-import br.com.lett.crawlernode.util.MathUtils
-import br.com.lett.crawlernode.util.addNonNull
+import br.com.lett.crawlernode.util.*
 import models.Offer
 import models.Offers
 import models.pricing.*
@@ -225,12 +222,4 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
     private fun isProductPage(document: Document): Boolean {
         return document.selectFirst(".product_name") != null
     }
-}
-
-fun Double.round(): Double {
-    return ((this * 100).toInt()).toDouble() / 100
-}
-
-fun Float.round(): Double {
-    return this.toDouble().round()
 }
