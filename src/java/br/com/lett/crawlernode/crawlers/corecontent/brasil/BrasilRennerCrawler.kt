@@ -16,10 +16,12 @@ import models.pricing.CreditCards
 import models.pricing.Installment
 import models.pricing.Installments
 import models.pricing.Pricing
+import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+
 
 /**
  * Date: 14/07/20
@@ -42,36 +44,37 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
         val products = mutableListOf<Product>()
 
-        val baseName = CrawlerUtils.scrapStringSimpleInfo(doc, ".main_product_info .product_name span", true)
+        val baseName = CrawlerUtils.scrapStringSimpleInfo(doc, ".main_product .product_name span", true)
         val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb ul li:not(:first-child):not(:last-child) a")
         val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value")
 
-        for (sku: String in scrapProductVariations(doc)) {
+        val skus = scrapProductVariations(doc)
+
+        skus.map { sku ->
 
             val jsonProduct = getProductFromApi(internalPid, sku)
 
             val description = jsonProduct.getString("description")
 
-            val images = getImages(jsonProduct)
+            val images = scrapImages(jsonProduct)
 
             val offers = if (jsonProduct.getBoolean("purchasable")) scrapOffers(jsonProduct, internalPid, sku) else Offers()
 
             val variants = mutableListOf<String>()
 
-            jsonProduct.getJSONArray("skuAttributes").sortedBy {
+            jsonProduct.getJSONArray("skuAttributes")
+                    .filter {
+                        val i = it as JSONObject
+                        val c = i.optString("code")
+                        val m = i.optJSONObject("mediaSet")
 
-                val i = it as JSONObject
-
-                val o = i.get("priority")
-                if (o is Int) {
-                    o
-                } else {
-                    0
-                }
-
-            }.map {
-                variants addNonNull (it as JSONObject).getString("name")?.trim()?.toUpperCase()
-            }
+                        return@filter (!(c.isNotEmpty() && m == null))
+                    }
+                    .sortedBy {
+                        (it as JSONObject).optString("code") ?: ""
+                    }.map {
+                        variants addNonNull (it as JSONObject).getString("name")?.trim()?.toUpperCase()
+                    }
 
             val name = "${baseName.toUpperCase()} ${variants.joinToString(separator = " ")}"
 
@@ -90,28 +93,33 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
             products addNonNull product
         }
-
         return products
     }
 
-    private fun scrapProductVariations(doc: Document): MutableList<String> {
+    private fun scrapProductVariations(doc: Document): List<String> {
 
-        val elements = doc.select(".sku_selection .sku #js-prod-price label input")
+        val ids = mutableListOf<String>()
 
-//        val skus = mutableListOf("549982048")
-        val skus = mutableListOf<String>()
+        val elementsWithColors = doc.select("#js-buy-form input[data-refs]")
 
-        elements?.map {
-            val dataRefs = it.attr("data-refs")
-
-            val dataJson = JSONUtils.stringToJsonArray(dataRefs)
-
-            dataJson?.map { skuData ->
-                skus addNonNull (skuData as JSONObject).getString("skuId")
+        if (elementsWithColors.isNotEmpty()) {
+            for (e in elementsWithColors) {
+                val skus: JSONArray = JSONUtils.stringToJsonArray(e.attr("data-refs"))
+                for (o in skus) {
+                    val skuObj = (o as JSONObject).optString("skuId")
+                    if (skuObj.isNotEmpty()) {
+                        ids += skuObj
+                    }
+                }
+            }
+        } else {
+            val options = doc.select("#js-buy-form input[value]")
+            for (e in options) {
+                ids addNonNull e.`val`()
             }
         }
 
-        return skus
+        return ids
     }
 
     private fun scrapInstallments(doc: Element): Installments {
@@ -209,7 +217,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
         return offers
     }
 
-    private fun getImages(doc: JSONObject): List<String> {
+    private fun scrapImages(doc: JSONObject): List<String> {
 
         return doc.getJSONArray("mediaSets").map { "http:${(it as JSONObject).getString("mediumImageUrl")}" }
     }
