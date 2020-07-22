@@ -45,13 +45,13 @@ class CampinagrandeRedebellaCrawler(session: Session) : CrawlerRankingKeywords(s
 
     override fun setTotalProducts() {
         val fullText = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".row .text-left", true)
-        val split = fullText.split("de", "(")
-        totalProducts = split[split.lastIndex - 1].trim().toInt()
+        val split: List<String?> = fullText.split("de", "(")
+        totalProducts = split.getOrNull(split.lastIndex - 1)?.trim()?.toInt() ?: 0
         log("Total da busca: $totalProducts")
     }
 
-    private fun extractInternalId(product: Element): String {
+    private fun extractInternalId(product: Element): String? {
         val fullText = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".list-block .addToCart", "onclick")
-        return fullText.split("'")[1]
+        return fullText.split("'").getOrNull(1)
     }
 }
