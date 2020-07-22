@@ -10,6 +10,7 @@ import models.RatingsReviews
 import models.pricing.*
 import models.pricing.BankSlip.BankSlipBuilder
 import models.pricing.Pricing.PricingBuilder
+import org.slf4j.LoggerFactory
 
 fun product(builder: ProductBuilderDsl.() -> Unit): Product {
   return ProductBuilderDsl().invoke(builder)
@@ -33,8 +34,9 @@ class ProductBuilderDsl {
   private var offers = Offers()
   var ratingReviews: RatingsReviews? = null
   private val productBuilder = ProductBuilder()
+  private val logger = LoggerFactory.getLogger(this::class.java)
 
-  operator fun invoke(initializer: ProductBuilderDsl.() -> Unit): Product {
+   operator fun invoke(initializer: ProductBuilderDsl.() -> Unit): Product {
     initializer()
     return productBuilder
       .setUrl(url)
@@ -54,7 +56,11 @@ class ProductBuilderDsl {
 
   fun offer(block: OfferBuilderDsl.() -> Unit) {
     val offerBuilder = OfferBuilderDsl()
-    offers.add(offerBuilder.build(block))
+     try {
+        offers.add(offerBuilder.build(block))
+     }catch (e: Exception){
+        logger.error("Error on offer building", e)
+     }
   }
 }
 
@@ -65,7 +71,7 @@ class OfferBuilderDsl {
   private var buybox: Boolean? = false
   private var mainRetailer: Boolean = false
   private var slugNameAsInternalSellerId = false
-  var pricingDsl = PricingBuilderDsl()
+  private var pricingDsl = PricingBuilderDsl()
   var sellerFullName: String? = null
   var internalSellerId: String? = null
   var mainPagePosition: Int? = null
