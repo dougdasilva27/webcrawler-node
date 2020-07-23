@@ -1,103 +1,74 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
 
-  public BrasilIkesakiCrawler(Session session) {
-    super(session);
-  }
+   public BrasilIkesakiCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 48;
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 48;
+      this.log("Página " + this.currentPage);
 
-    this.log("Página " + this.currentPage);
+      JSONObject json = fetchApi();
+      JSONArray products = json.optJSONArray("products");
 
-    // monta a url com a keyword e a página
-    String url = "https://www.ikesaki.com.br/busca?ft=" + this.keywordEncoded + "&PageNumber=" + this.currentPage;
-    this.log("Link onde são feitos os crawlers: " + url);
+      if (products != null && !products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts(json);
+         }
 
-    this.currentDoc = fetchDocument(url);
+         for (Object element : products) {
+            JSONObject product = (JSONObject) element;
 
-    Elements products = this.currentDoc.select(".vitrine .prateleira li[layout]");
+            String internalPid = product.optString("id");
+            String productUrl = "https:" + product.optString("url");
 
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
+            saveDataProduct(null, internalPid, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-        saveDataProduct(null, internalPid, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
-
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean checkIfHasNextPage() {
-    return super.checkIfHasNextPage() && !(session instanceof RankingKeywordsSession);
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".resultado-busca-numero .value").first();
-
-    if (totalElement != null) {
-      String total = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!total.isEmpty()) {
-        this.totalProducts = Integer.parseInt(total);
-      }
-
+   private void setTotalProducts(JSONObject json) {
+      this.totalProducts = json.optInt("size", 0);
       this.log("Total da busca: " + this.totalProducts);
-    }
-  }
+   }
 
-  private String crawlInternalPid(Element e) {
-	  String str = null;
-	  
-	Element el = e.selectFirst("article.product[data-product-id]");
-	
-	  if(el != null) {
-		  if(el.hasAttr("data-product-id")) {
-			  str = e.selectFirst("article.product[data-product-id]").attr("data-product-id");
-		  }
-	  }
-	   
-	  return str;
-  }
+   private JSONObject fetchApi() {
+      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=ikesaki&page=" + this.currentPage + "&resultsPerPage=48&terms=" + this.keywordEncoded;
+      this.log("Link onde são feitos os crawlers: " + url);
 
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Origin", "https://www.ikesaki.com.br");
 
-    Element url = e.selectFirst(".prat_image a[href]");
+      Request request = Request.RequestBuilder.create()
+         .setHeaders(headers)
+         .setUrl(url)
+         .build();
 
-    if (url != null) {
-      productUrl = url.attr("href");
-
-      if (!productUrl.startsWith("http")) {
-        productUrl = "https:" + productUrl;
-      }
-    }
-
-    return productUrl;
-  }
+      String response = dataFetcher.get(session, request).getBody();
+      return CrawlerUtils.stringToJson(response);
+   }
 }
