@@ -126,7 +126,7 @@ public class MercadolivreCrawler extends Crawler {
                   String name = crawlName(doc, skuJson);
                   String nameUrl = extractNameUrl(session.getOriginalURL());
                   List<String> images = scrapSpecialImages(skuJson, nameUrl);
-                  String primaryImage = !images.isEmpty() ? images.get(0) : null;
+                  String primaryImage = !images.isEmpty() ? images.get(0).replace(".webp", ".jpg") : null;
                   String secondaryImages = scrapSecondaryImages(images);
                   String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
@@ -228,7 +228,7 @@ public class MercadolivreCrawler extends Crawler {
          images.remove(0);
 
          for (String image : images) {
-            imagesArray.put(image);
+            imagesArray.put(image.replace(".webp", ".jpg"));
          }
       }
 
