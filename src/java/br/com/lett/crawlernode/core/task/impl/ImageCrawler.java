@@ -290,6 +290,7 @@ public class ImageCrawler extends Task {
 
       int marketId = session.getMarket().getNumber();
       Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
 
       if (marketId == 63 || marketId == 62 || marketId == 73) {
          request.setSendContentEncoding(false);
@@ -313,7 +314,6 @@ public class ImageCrawler extends Task {
                break;
          }
       } else if (marketId == 307 || marketId == 27 || marketId == 836) {
-         headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
          request.setSendContentEncoding(false);
       }
 
