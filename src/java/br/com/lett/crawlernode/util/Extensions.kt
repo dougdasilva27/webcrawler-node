@@ -183,6 +183,5 @@ fun Double.round(): Double {
 
 // fix floating point
 fun Float.round(): Double {
-  return this.toDouble().round()
+  return ((this * 100).toInt()).toDouble() / 100
 }
-
