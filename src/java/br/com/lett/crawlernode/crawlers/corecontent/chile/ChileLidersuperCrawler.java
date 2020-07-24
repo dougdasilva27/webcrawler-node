@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -28,9 +29,8 @@ import models.prices.Prices;
 
 /**
  * Date: 04/12/2018
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class ChileLidersuperCrawler extends Crawler {
 
@@ -72,9 +72,9 @@ public class ChileLidersuperCrawler extends Crawler {
          List<String> eans = scrapEans(jsonEan);
          // Creating the product
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-               .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(new Marketplace()).setRatingReviews(ratingReviews).setEans(eans).build();
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(new Marketplace()).setRatingReviews(ratingReviews).setEans(eans).build();
 
          products.add(product);
 
@@ -121,7 +121,7 @@ public class ChileLidersuperCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".product-info").isEmpty();
+      return doc.select(".product-info") != null && doc.selectFirst(".product-info .no-available") == null;
    }
 
    private String scrapName(Document doc) {
@@ -175,9 +175,9 @@ public class ChileLidersuperCrawler extends Crawler {
       Integer stock = 0;
 
       Request request = RequestBuilder.create()
-            .setUrl(
-                  "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp?productNumber=" + id + "&useProfile=true&consolidate=true")
-            .setCookies(cookies).build();
+         .setUrl(
+            "https://www.lider.cl/supermercado/includes/inventory/inventoryInformation.jsp?productNumber=" + id + "&useProfile=true&consolidate=true")
+         .setCookies(cookies).build();
       JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
 
       if (array.length() > 0) {
@@ -197,7 +197,7 @@ public class ChileLidersuperCrawler extends Crawler {
 
    /**
     * In the time when this crawler was made, this market hasn't installments informations
-    * 
+    *
     * @param doc
     * @param price
     * @return
