@@ -36,9 +36,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -140,7 +140,7 @@ public abstract class CNOVACrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      Response response = fetchPage(session.getOriginalURL(), PROTOCOL + "://" + this.marketHost + "/", this.dataFetcher);
+      Response response = fetchPage(encodeUrlPath(session.getOriginalURL()), PROTOCOL + "://" + this.marketHost + "/", this.dataFetcher);
       Document doc = Jsoup.parse(response.getBody());
 
       List<Cookie> cookiesResponse = response.getCookies();
@@ -153,7 +153,7 @@ public abstract class CNOVACrawler extends Crawler {
 
    protected Response fetchPage(String url, String referer, DataFetcher df) {
       Map<String, String> headers = new HashMap<>();
-      headers.put("Referer", referer);
+      headers.put("referer", referer);
       headers.put("authority", this.marketHost);
       headers.put("cache-control", "max-age=0");
       headers.put("upgrade-insecure-requests", "1");
@@ -166,7 +166,7 @@ public abstract class CNOVACrawler extends Crawler {
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
       Request request = RequestBuilder.create()
-            .setUrl(encodeUrlPath(url))
+            .setUrl(url)
             .setCookies(cookies)
             .setHeaders(headers)
             .setFetcheroptions(FetcherOptionsBuilder.create()
@@ -183,6 +183,8 @@ public abstract class CNOVACrawler extends Crawler {
             ).build();
 
       Response response = df.get(session, request);
+      this.cookies.addAll(response.getCookies());
+
       int statusCode = response.getLastStatusCode();
 
       if (response.getBody().isEmpty() || (Integer.toString(statusCode).charAt(0) != '2' &&
@@ -232,9 +234,6 @@ public abstract class CNOVACrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         // Pegando url padrão no doc da página, para lidar com casos onde a url no banco é diferente
-         String modifiedURL = getRedirectUrl().split("\\?")[0];
-
          boolean hasVariations = hasProductVariations(doc);
          if (hasVariations) {
             Logging.printLogDebug(logger, session, "Multiple skus in this page.");
@@ -254,10 +253,6 @@ public abstract class CNOVACrawler extends Crawler {
          if (hasVariations) {
             Elements productVariationElements = doc.select(".produtoSku option[value]:not([value=\"\"])");
 
-            List<String> idsForUrlMarketPlace = scrapSellersIDs(modifiedURL, doc, productVariationElements, unnavailableForAll);
-            // Pegando os documents das páginas de marketPlace para produtos especiais
-            Map<String, Document> documentsMarketPlaces = fetchSellersHtmlForSpecialProducts(idsForUrlMarketPlace, modifiedURL);
-
             for (Element sku : productVariationElements) {
                String variationInternalID = internalPid + "-" + sku.val();
                boolean unnavailable = sku.text().contains("Esgotado");
@@ -267,11 +262,7 @@ public abstract class CNOVACrawler extends Crawler {
                Document variationDocument = sku.hasAttr("selected") ? doc
                      : Jsoup.parse(fetchPageHtml(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost), session.getOriginalURL()));
 
-               Offers offers = new Offers();
-               if (!unnavailable) {
-                  Document docMarketplace = getDocumentMarketpalceForSku(documentsMarketPlaces, variationName, sku, modifiedURL);
-                  offers = scrapOffers(variationDocument, docMarketplace);
-               }
+               Offers offers = !unnavailable ? scrapOffers(variationDocument) : new Offers();
 
                List<String> eans = new ArrayList<>();
                String ean = scrapEan(variationDocument);
@@ -306,8 +297,7 @@ public abstract class CNOVACrawler extends Crawler {
             JSONObject metadataJSON = CrawlerUtils.selectJsonFromHtml(doc, "script", "varsiteMetadata=", ";", true, true);
             String idSKU = scrapSkuIdForSingleProductPage(metadataJSON);
             String internalId = internalPid + (idSKU != null ? "-" + idSKU : "");
-            Document docMarketplace = fetchDocumentMarketPlace(idSKU, modifiedURL);
-            Offers offers = scrapOffers(doc, docMarketplace);
+            Offers offers = scrapOffers(doc);
             RatingsReviews ratingReviews = crawRating(doc, internalId);
 
             List<String> eans = new ArrayList<>();
@@ -419,7 +409,7 @@ public abstract class CNOVACrawler extends Crawler {
       return secondaryImages;
    }
 
-   private Offers scrapOffers(Document doc, Document docMarketplace) throws MalformedPricingException, OfferException {
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
       Offer principalOffer = null;
@@ -444,31 +434,48 @@ public abstract class CNOVACrawler extends Crawler {
          }
       }
 
-      Elements sellersElements = docMarketplace.select("#sellerList tr[data-id-lojista]");
-      int position = 1;
-      for (Element e : sellersElements) {
-         String internalSellerId = e.attr("data-id-lojista");
+      JSONObject sitemetadata = CrawlerUtils.selectJsonFromHtml(doc, "script", "var siteMetadata = ", ";", false, true);
+      JSONObject page = sitemetadata.optJSONObject("page");
 
-         if (principalOffer != null && principalOffer.getInternalSellerId().equalsIgnoreCase(internalSellerId)) {
-            principalOffer.setSellersPagePosition(position);
-         } else {
-            Integer mainPagePosition = mainSellers.containsKey(internalSellerId) ? mainSellers.get(internalSellerId) : null;
-            String sellerFullName = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".lojista > a[title]", "title");
-            boolean isMainRetailer = sellerFullName.equalsIgnoreCase(mainSellerNameLower) || sellerFullName.equalsIgnoreCase(mainSellerNameLower2);
-            Pricing pricing = scrapSellersPricing(e);
+      if (page != null) {
+         JSONObject product = page.optJSONObject("product");
 
-            offers.add(OfferBuilder.create()
-                  .setInternalSellerId(internalSellerId)
-                  .setSellerFullName(sellerFullName)
-                  .setMainPagePosition(mainPagePosition)
-                  .setSellersPagePosition(position)
-                  .setIsBuybox(isBuyBoxPage)
-                  .setIsMainRetailer(isMainRetailer)
-                  .setPricing(pricing)
-                  .build());
+         if (product != null) {
+            JSONObject sellersJson = product.optJSONObject("sellers");
+
+            if (sellers != null) {
+               JSONObject id = sellersJson.optJSONObject("id");
+               Set<String> sellersIds = id != null ? id.keySet() : new HashSet<>();
+               int position = 1;
+
+               for (String sellerId : sellersIds) {
+                  JSONObject sellerObject = id.optJSONObject(sellerId);
+
+                  String internalSellerId = sellerObject.optString("id");
+
+                  if (principalOffer != null && principalOffer.getInternalSellerId().equalsIgnoreCase(internalSellerId)) {
+                     principalOffer.setSellersPagePosition(position);
+                  } else {
+                     Integer mainPagePosition = mainSellers.containsKey(internalSellerId) ? mainSellers.get(internalSellerId) : null;
+                     String sellerFullName = sellerObject.optString("name");
+                     boolean isMainRetailer = sellerFullName.equalsIgnoreCase(mainSellerNameLower) || sellerFullName.equalsIgnoreCase(mainSellerNameLower2);
+                     Pricing pricing = scrapSellersPricing(sellerObject);
+
+                     offers.add(OfferBuilder.create()
+                           .setInternalSellerId(internalSellerId)
+                           .setSellerFullName(sellerFullName)
+                           .setMainPagePosition(mainPagePosition)
+                           .setSellersPagePosition(position)
+                           .setIsBuybox(isBuyBoxPage)
+                           .setIsMainRetailer(isMainRetailer)
+                           .setPricing(pricing)
+                           .build());
+                  }
+                  position++;
+               }
+
+            }
          }
-
-         position++;
       }
 
       if (principalOffer != null) {
@@ -478,12 +485,12 @@ public abstract class CNOVACrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapSellersPricing(Element e) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, ".valor", null, true, ',', session);
+   private Pricing scrapSellersPricing(JSONObject sellerObj) throws MalformedPricingException {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(sellerObj, "price", true);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
             .build();
-      CreditCards creditCards = scrapSellersCreditCards(e, spotlightPrice);
+      CreditCards creditCards = scrapSellersCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
@@ -492,7 +499,7 @@ public abstract class CNOVACrawler extends Crawler {
             .build();
    }
 
-   private CreditCards scrapSellersCreditCards(Element e, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapSellersCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
@@ -501,15 +508,7 @@ public abstract class CNOVACrawler extends Crawler {
             .setInstallmentPrice(spotlightPrice)
             .build());
 
-      Pair<Integer, Float> installmentsPair = CrawlerUtils.crawlSimpleInstallment(".parcel", e, false, "de", "", true, ',');
-      if (!installmentsPair.isAnyValueNull()) {
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(installmentsPair.getFirst())
-               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installmentsPair.getSecond().doubleValue()))
-               .build());
-      }
-
-      Set<String> allCards = new HashSet<String>(this.cards);
+      Set<String> allCards = new HashSet<>(this.cards);
       allCards.add(Card.SHOP_CARD.toString());
 
       for (String brand : allCards) {
@@ -758,81 +757,6 @@ public abstract class CNOVACrawler extends Crawler {
       return internalPid;
    }
 
-   private String getRedirectUrl() {
-      String urlRedirect = null;
-
-      if (session.getRedirectedToURL(session.getOriginalURL()) != null) {
-         urlRedirect = session.getRedirectedToURL(session.getOriginalURL());
-      } else {
-         urlRedirect = session.getOriginalURL();
-      }
-
-
-      return urlRedirect;
-   }
-
-   private Map<String, Document> fetchSellersHtmlForSpecialProducts(List<String> idsForUrlMarketPlace, String url) {
-      Map<String, Document> documentsMarketPlaces = new HashMap<>();
-
-      if (!idsForUrlMarketPlace.isEmpty()) {
-         Document docMarketPlaceProdOne = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(0), url);
-         String[] namev = docMarketPlaceProdOne.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
-         documentsMarketPlaces.put(namev[namev.length - 1].trim().toLowerCase(), docMarketPlaceProdOne);
-
-         if (idsForUrlMarketPlace.size() == 2) {
-            Document docMarketPlaceProdTwo = this.fetchDocumentMarketPlace(idsForUrlMarketPlace.get(1), url);
-            String[] namev2 = docMarketPlaceProdTwo.select("#ctl00_Conteudo_lnkProdutoDescricao").text().split("-");
-            documentsMarketPlaces.put(namev2[namev2.length - 1].trim(), docMarketPlaceProdTwo);
-         }
-      }
-
-      return documentsMarketPlaces;
-   }
-
-   private List<String> scrapSellersIDs(String url, Document doc, Elements skuOptions, boolean unnavailableForAll) {
-      List<String> ids = new ArrayList<>();
-      if (!unnavailableForAll) {
-
-         String firstIdMainPage = CommonMethods.getLast(url.split("-")).replaceAll("[^0-9]", "").trim();
-         String secondIdMainPage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ctl00_Conteudo_hdnIdSkuSelecionado", "value");
-         ids.add(firstIdMainPage);
-
-         // se os ids forem iguais, não há necessidade de enviar os 2
-         if (!firstIdMainPage.equals(secondIdMainPage)) {
-            ids.add(secondIdMainPage);
-         }
-
-         // Ids variations
-         boolean correctId = false;
-         for (Element e : skuOptions) {
-            String id = e.attr("value").trim();
-
-            if (id.equals(firstIdMainPage) || id.equals(secondIdMainPage)) {
-               correctId = true;
-               break;
-            }
-         }
-
-         if (correctId) {
-            ids.clear();
-         }
-
-      }
-
-      return ids;
-   }
-
-   private Document fetchDocumentMarketPlace(String id, String url) {
-      String urlMarketPlace;
-
-      if (id != null) {
-         urlMarketPlace = url.replace(CommonMethods.getLast(url.split("-")), id + "/lista-de-lojistas.html");
-      } else {
-         urlMarketPlace = url.replace(".html", "/lista-de-lojistas.html");
-      }
-
-      return Jsoup.parse(fetchPageHtml(urlMarketPlace, session.getOriginalURL()));
-   }
 
    private String assembleVariationName(String name, Element sku) {
       String nameV = name;
@@ -872,29 +796,6 @@ public abstract class CNOVACrawler extends Crawler {
       return description.toString();
    }
 
-   private Document getDocumentMarketpalceForSku(Map<String, Document> documentsMarketPlaces, String name, Element sku, String url) {
-      Document docMarketplaceInfo = new Document(url);
-
-      if (documentsMarketPlaces.size() > 0) {
-
-         if (documentsMarketPlaces.size() == 1) {
-            docMarketplaceInfo = documentsMarketPlaces.entrySet().iterator().next().getValue();
-         } else if (name != null) {
-            String[] tokens = name.split("-");
-            String nameV = tokens[tokens.length - 1].trim().toLowerCase();
-
-            if (documentsMarketPlaces.containsKey(nameV)) {
-               docMarketplaceInfo = documentsMarketPlaces.get(nameV);
-            }
-         }
-
-      } else {
-         docMarketplaceInfo = fetchDocumentMarketPlace(sku.attr("value"), url);
-      }
-
-      return docMarketplaceInfo;
-   }
-
    private String scrapEan(Document doc) {
       String ean = null;
 
@@ -909,8 +810,6 @@ public abstract class CNOVACrawler extends Crawler {
 
       return ean;
    }
-
-
 
    private RatingsReviews crawRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
