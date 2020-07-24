@@ -22,7 +22,7 @@ class BrasilPontonaturalCrawler(session: Session) : Crawler(session) {
       )
 
       primaryImage = document.selectFirst("#view_full_size a").attr("href")
-      internalId = document.selectFirst("span[itemprop='sku']").attr("content")
+      internalId = document.selectFirst("input[id='product_page_product_id']").attr("value")
 
       offer {
         useSlugNameAsInternalSellerId
