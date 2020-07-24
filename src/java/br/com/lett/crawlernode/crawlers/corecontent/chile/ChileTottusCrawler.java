@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -17,6 +9,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -27,19 +20,26 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 03/12/2018
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class ChileTottusCrawler extends Crawler {
 
    private static final String HOME_PAGE = "http://www.tottus.cl/";
    private static final String SELLER_FULL_NAME = "Tottus";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
    public ChileTottusCrawler(Session session) {
@@ -67,25 +67,25 @@ public class ChileTottusCrawler extends Crawler {
          boolean available = offersJson.opt("availability").equals("https://schema.org/InStock");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs .link.small");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-gallery-image", Arrays.asList("src"), "http://",
-               "www.tottus.cl");
+            "www.tottus.cl");
          String secondaryImages = scrapSecondaryImages(jsonFromHTML);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".react-tabs__tab-panel tbody tr"));
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -102,7 +102,7 @@ public class ChileTottusCrawler extends Crawler {
       return !doc.select("#container .Product").isEmpty();
    }
 
-   private String scrapName(Document doc){
+   private String scrapName(Document doc) {
       String mainTitle = CrawlerUtils.scrapStringSimpleInfo(doc, ".column-right-content .title", true);
       String subTitle = CrawlerUtils.scrapStringSimpleInfo(doc, ".column-right-content .brand", true);
       return mainTitle + " " + subTitle;
@@ -114,14 +114,14 @@ public class ChileTottusCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -133,9 +133,9 @@ public class ChileTottusCrawler extends Crawler {
 
 
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
 
 
    }
@@ -146,17 +146,17 @@ public class ChileTottusCrawler extends Crawler {
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
@@ -168,10 +168,10 @@ public class ChileTottusCrawler extends Crawler {
       List<String> listOfUrls = new ArrayList<>();
       if (secondaryImagesArray != null) {
          for (Object e : secondaryImagesArray) {
-            String images = (String) e;
-
-            listOfUrls.add(images);
-
+            if (e instanceof String) {
+               String images = (String) e;
+               listOfUrls.add(images);
+            }
          }
 
          if (listOfUrls.size() > 0) {
