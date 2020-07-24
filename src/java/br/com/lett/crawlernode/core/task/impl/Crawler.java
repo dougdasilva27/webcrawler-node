@@ -1,5 +1,17 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -13,7 +25,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
@@ -26,6 +37,7 @@ import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
+import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
@@ -35,21 +47,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import models.DateConstants;
 import models.Processed;
-import models.RatingsReviews;
 import models.prices.Prices;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit
@@ -145,75 +143,47 @@ public class Crawler extends Task {
     * @param product
     */
    private void sendToKinesis(Product product) {
-      if (!GlobalConfigurations.executionParameters.mustSendToKinesis())
-         return;
+      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
+         Product p = ProductDTO.convertProductToKinesisFormat(product, session);
 
-      if (product.isVoid()) {
-         if (session instanceof InsightsCrawlerSession) {
-            Product p = new Product();
-            p.setInternalId(session.getInternalId());
-            p.setInternalPid(product.getInternalPid());
-            p.setMarketId(session.getMarket().getNumber());
-            p.setUrl(session.getOriginalURL());
-            p.setAvailable(false);
-            p.setStatus(SkuStatus.VOID);
+         Logging.printLogInfo(logger, session, "Sending data to Kinesis ...");
 
-            KPLProducer.getInstance().put(p, session);
-         }
-
-      } else {
-         Product p = product.clone();
-         p.setUrl(session.getOriginalURL());
-         p.setMarketId(session.getMarket().getNumber());
-         if (p.getAvailable()) {
-            p.setStatus(SkuStatus.AVAILABLE);
-         } else {
-            if (p.getMarketplace() != null && p.getMarketplace().size() > 0) {
-               p.setStatus(SkuStatus.MARKETPLACE_ONLY);
-            } else {
-               p.setStatus(SkuStatus.UNAVAILABLE);
-            }
-         }
+         long productStartTime = System.currentTimeMillis();
 
          KPLProducer.getInstance().put(p, session);
 
-         if (this.config.mustSendRatingToKinesis()) {
-            RatingsReviews productRating = p.getRatingReviews();
-            RatingsReviews rating = assembleRatingToSendToKinesis(productRating);
+         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+               .put("aws_type", "kinesis")
+               .put("kinesis_flow_type", "product");
 
-            KPLProducer.getInstance().put(rating, session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
-         }
-      }
-   }
+         Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
-   private RatingsReviews assembleRatingToSendToKinesis(RatingsReviews rating) {
-      RatingsReviews r = new RatingsReviews();
+         if (!p.isVoid()) {
+            long ratingStartTime = System.currentTimeMillis();
+            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
 
-      if (session.getInternalId() != null) {
-         r.setInternalId(session.getInternalId());
-         r.setUrl(session.getOriginalURL());
-         r.setMarketId(session.getMarket().getNumber());
+            JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
+                  .put("aws_type", "kinesis")
+                  .put("kinesis_flow_type", "rating");
 
-         if (rating != null) {
-            r.setAverageOverallRating(rating.getAverageOverallRating());
-            r.setTotalRating(rating.getTotalReviews());
-            r.setTotalWrittenReviews(rating.getTotalWrittenReviews());
+            Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
          }
 
-      }
 
-      return r;
+      }
    }
 
    @Override
    public void onStart() {
-      Logging.printLogDebug(logger, session, "START");
+      Logging.printLogInfo(logger, session, "START");
    }
 
    @Override
    public void onFinish() {
       try {
-         S3Service.uploadCrawlerSessionContentToAmazon(session);
+         if (!(session instanceof TestCrawlerSession)) {
+            S3Service.uploadCrawlerSessionContentToAmazon(session);
+         }
 
          // close the webdriver
          if (webdriver != null && ((RemoteWebDriver) webdriver.driver).getSessionId() != null) {
@@ -230,23 +200,22 @@ public class Crawler extends Task {
             Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
             session.setTaskStatus(Task.STATUS_FAILED);
          } else {
-            Logging.printLogDebug(logger, session, "Task completed.");
+            Logging.printLogInfo(logger, session, "Task completed.");
             session.setTaskStatus(Task.STATUS_COMPLETED);
          }
 
          // only print statistics of void and truco if we are running an Insights session crawling
          if (session instanceof InsightsCrawlerSession) {
-            Logging.printLogDebug(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
+            Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
          }
 
-
-         Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
-
       } catch (Exception e) {
+         Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
          session.setTaskStatus(Task.STATUS_FAILED);
-         Logging.logDebug(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
+
+      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
    }
 
    private void productionRun() {
@@ -404,7 +373,7 @@ public class Crawler extends Task {
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-                 Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             scheduleImages(persistenceResult, newProcessedProduct);
@@ -517,7 +486,12 @@ public class Crawler extends Task {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      return products;
+      List<Product> processedProducts = new ArrayList<>();
+      for (Product p : products) {
+         processedProducts.add(ProductDTO.processCaptureData(p, session));
+      }
+
+      return processedProducts;
    }
 
 
@@ -582,7 +556,7 @@ public class Crawler extends Task {
    }
 
    private void printCrawledInformation(Product product) {
-      Logging.printLogDebug(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString());
+      Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString());
    }
 
    /**

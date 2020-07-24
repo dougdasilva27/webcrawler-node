@@ -14,43 +14,43 @@ import credentials.models.DBCredentials;
 
 public class GlobalConfigurations {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GlobalConfigurations.class);
+   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalConfigurations.class);
 
-  public static ExecutionParameters executionParameters;
-  public static DatabaseManager dbManager;
-  public static ProxyCollection proxies;
-  public static ResultManager processorResultManager;
-  public static Markets markets;
+   public static ExecutionParameters executionParameters;
+   public static DatabaseManager dbManager;
+   public static ProxyCollection proxies;
+   public static ResultManager processorResultManager;
+   public static Markets markets;
 
-  public static void setConfigurations() {
-    Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
+   public static void setConfigurations() {
+      Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
-    // setting execution parameters
-    executionParameters = new ExecutionParameters();
-    executionParameters.setUpExecutionParameters();
+      // setting execution parameters
+      executionParameters = new ExecutionParameters();
+      executionParameters.setUpExecutionParameters();
 
-    // setting database credentials
-    DBCredentials dbCredentials = new DBCredentials();
+      // setting database credentials
+      DBCredentials dbCredentials = new DBCredentials();
 
-    try {
-      dbCredentials = DatabaseCredentialsSetter.setCredentials();
-    } catch (Exception e) {
-      Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
-    }
+      try {
+         dbCredentials = DatabaseCredentialsSetter.setCredentials();
+      } catch (Exception e) {
+         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
+      }
 
-    // creating the database manager
-    dbManager = new DatabaseManager(dbCredentials);
+      // creating the database manager
+      dbManager = new DatabaseManager(dbCredentials);
 
-    // fetch all markets information from database
-    markets = new Markets();
+      // fetch all markets information from database
+      markets = new Markets(dbManager);
 
-    // initialize temporary folder for images download
-    Persistence.initializeImagesDirectories(markets);
+      // initialize temporary folder for images download
+      Persistence.initializeImagesDirectories(markets);
 
-    // create result manager for processor stage
-    processorResultManager = new ResultManager(dbManager);
+      // create result manager for processor stage
+      processorResultManager = new ResultManager(dbManager);
 
-    // fetching proxies
-    proxies = new ProxyCollection(markets, dbManager);
-  }
+      // fetching proxies
+      proxies = new ProxyCollection(markets, dbManager);
+   }
 }

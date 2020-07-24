@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -19,6 +11,11 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class BelohorizonteBhvidaCrawler extends Crawler {
 
@@ -49,7 +46,7 @@ public class BelohorizonteBhvidaCrawler extends Crawler {
       // Creating the product
       Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
           .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(null).setDescription(description)
+          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description)
           .setMarketplace(new Marketplace()).build();
 
       products.add(product);

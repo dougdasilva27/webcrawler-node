@@ -85,7 +85,7 @@ public class BrasilLojacolgateCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         Elements variations = doc.select(".js-variant-select > option");
+         Elements variations = doc.select(".product-item-content .js-variant-select > option");
 
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details .name", true).replace("|", "");
          CategoryCollection categories = scrapCategories(doc);

@@ -1,16 +1,15 @@
 package br.com.lett.crawlernode.core.models;
 
-import java.util.Collection;
-import java.util.List;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.DateUtils;
 import models.Marketplace;
-import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.Seller;
 import models.prices.Prices;
-import models.pricing.Pricing;
+import org.json.JSONArray;
+
+import java.util.Collection;
+import java.util.List;
 
 
 public class ProductBuilder {
@@ -118,6 +117,11 @@ public class ProductBuilder {
       return this;
    }
 
+   public ProductBuilder setSecondaryImages(Collection<String> secondaryImages) {
+      this.secondaryImages = new JSONArray(secondaryImages).toString();
+      return this;
+   }
+
    public ProductBuilder setDescription(String description) {
       this.description = description;
       return this;
@@ -173,26 +177,6 @@ public class ProductBuilder {
       product.setRatingReviews(this.ratingReviews);
 
       product.setOffers(this.offers);
-
-      if (this.offers != null) {
-         for (Offer offer : this.offers.getOffersList()) {
-            if (offer.getPricing() != null) {
-               if (offer.getIsMainRetailer()) {
-                  Pricing pricing = offer.getPricing();
-                  this.available = true;
-                  this.prices = new Prices(pricing);
-                  this.price = pricing.getSpotlightPrice().floatValue();
-               } else {
-                  if (this.marketplace == null) {
-                     this.marketplace = new Marketplace();
-                  }
-
-                  this.marketplace.add(new Seller(offer));
-               }
-            }
-         }
-      }
-
       product.setAvailable(this.available);
       product.setPrices(this.prices);
       product.setPrice(this.price);

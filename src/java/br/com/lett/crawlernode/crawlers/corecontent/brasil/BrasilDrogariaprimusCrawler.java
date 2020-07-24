@@ -67,7 +67,7 @@ public class BrasilDrogariaprimusCrawler extends Crawler {
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-photos-list li[data-img]", Collections.singletonList("data-img"), "https",
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-photos-list li a[href]", Collections.singletonList("href"), "https",
                  "w1.ezcdn.com.br", primaryImage);
          String description = crawlDescription(doc);
          Integer stock = null;

@@ -39,6 +39,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
 
       Response response = this.dataFetcher.post(session, requestToken);
       JSONObject apiTokenJson = JSONUtils.stringToJson(response.getBody());
+
       if (apiTokenJson.has("idToken") && !apiTokenJson.isNull("idToken")) {
          this.accessToken = apiTokenJson.get("idToken").toString();
       }
@@ -60,7 +61,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
 
          for (Object o : products) {
             if (o instanceof JSONObject) {
-               JSONObject product = JSONUtils.getJSONValue((JSONObject) o, "product");
+               JSONObject product = (JSONObject) o;
 
                String internalId = product.has("id") && !product.isNull("id") ? product.get("id").toString() : null;
                String productUrl = internalId != null ? "https://inkafarma.pe/producto/" + product.optString("slug", "") + "/" + internalId : null;
@@ -92,20 +93,20 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       JSONObject searchApi = new JSONObject();
 
       if (this.accessToken != null) {
-         String url = "https://qurswintke.execute-api.us-west-2.amazonaws.com/PROD/productsearch";
+         String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/filtered-products";
          this.log("Link onde são feitos os crawlers: " + url);
 
          JSONObject payload = new JSONObject();
-         payload.put("brands", new JSONArray());
-         payload.put("categories", new JSONArray());
-         payload.put("order", "DESC");
+         payload.put("brandsFilter", new JSONArray());
+         payload.put("categoriesFilter", new JSONArray());
+         payload.put("departmentsFilter", new JSONArray());
+         payload.put("order", "ASC");
          payload.put("page", this.currentPage - 1);
-         payload.put("pharmaceuticalForm", new JSONArray());
-         payload.put("prescriptionType", new JSONArray());
-         payload.put("presentations", new JSONArray());
-         payload.put("query", this.location);
-         payload.put("rows", 10);
+         payload.put("productsFilter", getProductsFilter());
+         payload.put("rows", 24);
          payload.put("sort", "ranking");
+         payload.put("subcategoriesFilter", new JSONArray());
+
 
          Map<String, String> headers = new HashMap<>();
          headers.put(HttpHeaders.CONTENT_TYPE, "application/json;charset=UTF-8");
@@ -113,16 +114,39 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          headers.put("AndroidVersion", "100000");
 
          Request request = RequestBuilder.create()
-               .setUrl(url)
-               .setHeaders(headers)
-               .mustSendContentEncoding(false)
-               .setPayload(payload.toString())
-               .build();
+                 .setUrl(url)
+                 .setHeaders(headers)
+                 .mustSendContentEncoding(false)
+                 .setPayload(payload.toString())
+                 .build();
 
-         JSONObject result = JSONUtils.stringToJson(new JavanetDataFetcher().post(session, request).getBody());
-         searchApi = JSONUtils.getJSONValue(result, "data");
+         searchApi = JSONUtils.stringToJson(new JavanetDataFetcher().post(session, request).getBody());
       }
 
       return searchApi;
+   }
+
+   private JSONArray getProductsFilter (){
+
+      String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/search-filters";
+
+      JSONObject payload = new JSONObject();
+      payload.put("query", this.keywordEncoded);
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json;charset=UTF-8");
+      headers.put("x-access-token", this.accessToken);
+      headers.put("AndroidVersion", "100000");
+
+      Request request = RequestBuilder.create()
+              .setUrl(url)
+              .setHeaders(headers)
+              .mustSendContentEncoding(true)
+              .setPayload(payload.toString())
+              .build();
+
+      JSONObject result =  JSONUtils.stringToJson(new JavanetDataFetcher().post(session, request).getBody());
+
+      return result.optJSONArray("productsId");
    }
 }

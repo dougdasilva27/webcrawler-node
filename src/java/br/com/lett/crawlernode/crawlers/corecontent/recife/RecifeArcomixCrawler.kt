@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.JSONUtils
 import br.com.lett.crawlernode.util.Logging
+import br.com.lett.crawlernode.util.addNonNull
 import models.prices.Prices
 import org.json.JSONObject
 
@@ -40,9 +41,9 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                     val prices = scrapPrices(model, price)
 
                     val categories = mutableListOf<String>()
-                    categories.opt(productJson.optString("str_categoria", null))
-                    categories.opt(productJson.optString("str_subcategoria", null))
-                    categories.opt(productJson.optString("str_tricategoria", null))
+                    categories addNonNull productJson.optString("str_categoria", null)
+                    categories addNonNull productJson.optString("str_subcategoria", null)
+                    categories addNonNull productJson.optString("str_tricategoria", null)
 
 
                     val name =
@@ -59,10 +60,10 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                         .setPrices(prices)
                         .setAvailable(!model.optBoolean("bit_esgotado"))
                         .setCategories(categories)
-                        .setPrimaryImage(imagesJson?.optString("str_img_path"))
+                        .setPrimaryImage("${imagesJson.optString("str_img_path")}-g.jpg")
                         .setStock(productJson.optInt("int_qtd_estoque_produto"))
                         .setEans(mutableListOf<String>().also { list ->
-                            list.opt(productJson.optString("str_cod_barras_produto"))
+                            list.addNonNull(productJson.optString("str_cod_barras_produto"))
                         })
                         .build()
                 }
@@ -92,8 +93,4 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
         }
         return prices
     }
-}
-
-fun <T> MutableList<T>.opt(element: T?) {
-    element?.let(this::add)
 }

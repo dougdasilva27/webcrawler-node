@@ -4,10 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -27,38 +23,26 @@ public abstract class SupermercadonowCrawlerRanking extends CrawlerRankingKeywor
 
    protected abstract String getLoadUrl();
 
-   private final String HOME_PAGE = "https://supermercadonow.com/produtos/" + loadUrl + "/";
+   protected String host = getHost();
+   private final String homePage = "https://" + host + "/produtos/" + loadUrl + "/";
    private Map<String, String> headers = new HashMap<>();
 
    @Override
    protected void processBeforeFetch() {
       super.processBeforeFetch();
-      Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
+      Request request = RequestBuilder.create().setUrl(homePage).setCookies(cookies).setHeaders(headers).build();
       Response response = this.dataFetcher.get(session, request);
-      Document doc = Jsoup.parse(response.getBody());
 
-      headers.put("Accept", "application/json, text/plain, */*");
-      headers.put("X-SNW-TOKEN", scrapToken(doc));
+      headers.put("Accept", "text/json");
+      headers.put("X-SNW-Token", "XLBhhbP1YEkB2tL61wkX163Dqm9iIDpx");
 
       this.cookies = response.getCookies();
    }
 
-   private String scrapToken(Document doc) {
-      String token = null;
-      String identifier = "AuthenticateUser.setToken('";
-
-      Elements scripts = doc.select("script");
-
-      for (Element e : scripts) {
-         String script = e.html().replace(" ", "");
-         if (script.contains(identifier)) {
-            token = CrawlerUtils.extractSpecificStringFromScript(script, "AuthenticateUser.setToken('", false, "')", false);
-            break;
-         }
-      }
-
-      return token;
+   protected String getHost() {
+      return "supermercadonow.com";
    }
+
 
    @Override
    public void extractProductsFromCurrentPage() {
@@ -133,7 +117,7 @@ public abstract class SupermercadonowCrawlerRanking extends CrawlerRankingKeywor
       String urlProduct = null;
 
       if (product.has("slug")) {
-         urlProduct = "https://supermercadonow.com/produtos/" + loadUrl + "/produto/" + product.getString("slug");
+         urlProduct = homePage + "produto/" + product.getString("slug");
       }
 
       return urlProduct;

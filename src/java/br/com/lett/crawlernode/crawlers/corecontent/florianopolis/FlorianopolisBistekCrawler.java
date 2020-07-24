@@ -3,24 +3,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
+import java.util.Set;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -29,226 +17,147 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
 
 public class FlorianopolisBistekCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.bistekonline.com.br/";
-  private static final String HOST = "www.bistekonline.com.br";
-  private static final String CEP = "88066-000";
+   private static final String HOME_PAGE = "https://www.bistek.com.br/";
+   private static final String HOST = "www.bistek.com.br";
+   private static final String MAIN_SELLER_NAME = "bistek";
 
-  public FlorianopolisBistekCrawler(Session session) {
-    super(session);
-    super.config.setFetcher(FetchMode.FETCHER);
-  }
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
-  }
+   public FlorianopolisBistekCrawler(Session session) {
+      super(session);
+      super.config.setFetcher(FetchMode.APACHE);
+   }
 
-  private String userAgent;
-  private LettProxy proxyUsed;
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
+   }
 
-  @Override
-  public void handleCookiesBeforeFetch() {
-    this.userAgent = FetchUtilities.randUserAgent();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
-    Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers)
-        .setProxyservice(Arrays.asList(ProxyCollection.BUY, ProxyCollection.BONANZA, ProxyCollection.NO_PROXY)).build();
-    Response response = this.dataFetcher.get(session, request);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-box", "data-product-id");
+         String internalPid = internalId;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h2.page-title .base", true);
+         CategoryCollection categories = scrapCategories(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
+               ".gallery-placeholder__image", Arrays.asList("href", "src"), "https", HOST);
+         Offers offers = scrapOffers(doc);
 
-    this.proxyUsed = response.getProxyUsed();
+         Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setOffers(offers)
+               .build();
 
-    for (Cookie cookieResponse : response.getCookies()) {
-      BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-      cookie.setDomain(HOST);
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
+         products.add(product);
 
-    Request request2 = RequestBuilder.create().setUrl("https://www.bistekonline.com.br/store/SetStoreByZipCode?zipCode=" + CEP).setProxy(proxyUsed)
-        .setCookies(cookies).setHeaders(headers).build();
-    this.dataFetcher.get(session, request2);
-
-    BasicClientCookie cookieM = new BasicClientCookie("MultiStoreId", "04010000000000000000000010100000");
-    cookieM.setDomain(HOST);
-    cookieM.setPath("/");
-    this.cookies.add(cookieM);
-  }
-
-  @Override
-  protected Object fetch() {
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.USER_AGENT, this.userAgent);
-
-    Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
-    return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-  }
-
-
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
-
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
-
-      String internalId = crawlInternalId(doc);
-      String internalPid = crawlInternalPid(doc);
-      String name = crawlName(doc);
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".main-content #lblPrecoPor strong", null, true, ',', session);
-      boolean available = price != null;
-      CategoryCollection categories = crawlCategories(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".collum.images #hplAmpliar:not([href=\"#\"]), #big_photo_container img",
-          Arrays.asList("href", "src"), "https", HOST);
-      String secondaryImages = null;
-      String description = crawlDescription(doc);
-      Prices prices = crawlPrices(doc, price);
-      String ean = scrapEan(doc);
-
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).setEans(Arrays.asList(ean)).build();
-
-      products.add(product);
-
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page: " + session.getOriginalURL());
-    }
-
-    return products;
-  }
-
-  private static boolean isProductPage(Document doc) {
-    return doc.select("#info-product").first() != null;
-  }
-
-  private static String crawlInternalId(Document document) {
-    String internalId = null;
-    Element internalIdElement = document.selectFirst("#liCodigoInterno #productInternalCode");
-
-    if (internalIdElement != null) {
-      internalId = internalIdElement.text().trim();
-    }
-
-    return internalId;
-  }
-
-  private static String crawlInternalPid(Document document) {
-    String internalPid = null;
-    Element pid = document.select("#ProdutoCodigo").first();
-
-    if (pid != null) {
-      internalPid = pid.val();
-    }
-
-    return internalPid;
-  }
-
-  private static String crawlName(Document document) {
-    String name = null;
-    Element nameElement = document.selectFirst(".main-content h1.name.fn");
-
-    if (nameElement != null) {
-      name = nameElement.text().trim();
-    }
-
-    return name;
-  }
-
-  /**
-   * @param document
-   * @return
-   */
-  private static CategoryCollection crawlCategories(Document document) {
-    CategoryCollection categories = new CategoryCollection();
-    Elements elementCategories = document.select("#breadcrumbs span a[href] span");
-
-    for (int i = 1; i < elementCategories.size(); i++) {
-      String cat = elementCategories.get(i).ownText().trim();
-
-      if (!cat.isEmpty()) {
-        categories.add(cat);
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page: " + session.getOriginalURL());
       }
-    }
+      return products;
+   }
 
-    return categories;
-  }
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".media") != null;
+   }
 
-  private static String crawlDescription(Document document) {
-    String description = "";
-    Element descriptionElement = document.select("#panCaracteristica").first();
+   private CategoryCollection scrapCategories(Document doc) {
+      CategoryCollection categories = new CategoryCollection();
 
-    if (descriptionElement != null) {
-      description = description + descriptionElement.html();
-    }
+      JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".page-wrapper > script:nth-child(4)[type=\"text/x-magento-init\"]", null, null, true, false);
+      JSONObject breadcrumbs = scriptJson.optJSONObject(".breadcrumbs");
+      if (breadcrumbs != null && !breadcrumbs.isEmpty()) {
+         JSONObject category = breadcrumbs.optJSONObject("breadcrumbs");
 
-    return description;
-  }
+         categories.add(category.optString("product"));
+      }
+      return categories;
+   }
 
-  private String scrapEan(Document doc) {
-    String ean = null;
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
 
-    JSONObject dataLayer = CrawlerUtils.selectJsonFromHtml(doc, "script", "dataLayer.push(", ");", true, true);
-    if (dataLayer.has("RKProductEan13")) {
-      ean = dataLayer.get("RKProductEan13").toString();
-    }
-
-    return ean;
-  }
-
-  /**
-   * In this market has no bank slip payment method
-   * 
-   * @param doc
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Document doc, Float price) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
-      installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
-
-      prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".main-content #lblPreco.price-from", null, true, ',', session));
-
-      Element installments = doc.select(".main-content #lblParcelamento").first();
-
-      if (installments != null) {
-        Element installmentElement = installments.select("#lblParcelamento1 > strong").first();
-
-        if (installmentElement != null) {
-          Integer installment = Integer.parseInt(installmentElement.text().replaceAll("[^0-9]", ""));
-
-          Element valueElement = installments.select("#lblParcelamento2 > strong").first();
-
-          if (valueElement != null) {
-            Float value = MathUtils.parseFloatWithComma(valueElement.text());
-
-            installmentPriceMap.put(installment, value);
-          }
-        }
+      if (pricing != null) {
+         offers.add(Offer.OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(MAIN_SELLER_NAME)
+               .setSellersPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(true)
+               .setPricing(pricing)
+               .build());
       }
 
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-    }
+      return offers;
+   }
 
-    return prices;
-  }
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price", null, true,
+            ',', session);
+
+      if (spotlightPrice != null) {
+         Double priceFrom = null;
+         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+         return PricingBuilder.create()
+               .setSpotlightPrice(spotlightPrice)
+               .setPriceFrom(priceFrom)
+               .setCreditCards(creditCards)
+               .setBankSlip(BankSlipBuilder.create()
+                     .setFinalPrice(spotlightPrice)
+                     .build())
+               .build();
+      }
+
+      return null;
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+
+      installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+
+      for (String brand : cards) {
+         creditCards.add(CreditCardBuilder.create()
+               .setBrand(brand)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
+      }
+
+      return creditCards;
+   }
 }

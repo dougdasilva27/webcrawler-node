@@ -2,9 +2,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -25,9 +28,9 @@ import models.prices.Prices;
 
 public class ColombiaFarmatodoCrawler extends Crawler {
 
-   private static final String API_TOKEN = "d406fb453dc09e35fc388ae47a58447e";
-   private static final String WEB_SAFE_TOKEN = "ahZzfnN0dW5uaW5nLWJhc2UtMTY0NDAycl0LEgRVc2VyIiQyZDk5MjdiYS1hYzUxLTQ2N2QtOGFlNS00MmYyNTY0MjExN2EMCxIFVG9rZW4iJDA5NTk3YWNkLTJkYjItNDYwNS1hYzBmLTcwZjlmYmQ4YjZjMgw";
-   private static final String PRODUCTS_API_URL = "https://stunning-base-164402.appspot.com/_ah/api/productEndpoint/getItem";
+   private static final String API_TOKEN = "f0b269756fc30c5adce554a04b52ec7b";
+   private static final String WEB_SAFE_TOKEN = "ahZzfnN0dW5uaW5nLWJhc2UtMTY0NDAycl0LEgRVc2VyIiQ4ZDFkMDhlMy04NDMzLTRiY2MtYjM2Mi1hNWFhNmUyNGJjZGEMCxIFVG9rZW4iJDk5Njg3ODMyLWJkN2QtNDgyOS1iZjdlLTkyN2VlYWQ3NGJlNgw";
+   private static final String PRODUCTS_API_URL = "https://stunning-base-164402.uc.r.appspot.com/_ah/api/productEndpoint/getItem?idItem=";
 
    private static final String RATING_API_KEY = "caRsE2BkjeLAPlvqv4kY8SPNrY032XNfzo6M2cKaZgNjY";
    private static final String RATING_API_URL = "https://api.bazaarvoice.com/data/display/0.2alpha/product/summary";
@@ -35,21 +38,24 @@ public class ColombiaFarmatodoCrawler extends Crawler {
    public ColombiaFarmatodoCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    public Object fetch() {
       String url = session.getOriginalURL();
 
-      if (url.contains("product/")) {
-         String id = CommonMethods.getLast(url.split("product/")).split("\\/")[0].trim();
-
+      if (url.contains("producto/")) {
+         String id = CommonMethods.getLast(url.split("producto/")).split("-")[0].trim();
          if (!id.isEmpty()) {
-            String urlApi = PRODUCTS_API_URL + "?idItem=" + id + "&idStoreGroup=26&token=" + API_TOKEN + "&tokenIdWebSafe=" + WEB_SAFE_TOKEN;
+            String urlApi =
+                  PRODUCTS_API_URL + id + "&idStoreGroup=26&token=" + API_TOKEN + "&tokenIdWebSafe=" + WEB_SAFE_TOKEN + "&key=AIzaSyDASDi-v-kJzulGnaRwT7sAfG44KEqaudA";
 
-            Request request = RequestBuilder.create().setUrl(urlApi).setCookies(cookies).build();
+            Map<String, String> headers = new HashMap<>();
+            headers.put("referer", " https://www.farmatodo.com.co/producto/" + id);
+
+            Request request = RequestBuilder.create().setUrl(urlApi).setCookies(cookies).setHeaders(headers).build();
             String page = new FetcherDataFetcher().get(session, request).getBody();
             page = Normalizer.normalize(page, Normalizer.Form.NFD);
-
             return CrawlerUtils.stringToJson(page);
          }
       }
@@ -163,6 +169,7 @@ public class ColombiaFarmatodoCrawler extends Crawler {
          AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(reviewJson);
 
          ratingsReviews.setTotalRating(totalRating);
+         ratingsReviews.setTotalWrittenReviews(totalRating);
          ratingsReviews.setAverageOverallRating(avgRating == null ? 0.0f : avgRating);
          ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
       }

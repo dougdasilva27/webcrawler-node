@@ -34,11 +34,16 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.session.Session;
+import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Seller;
 import models.Util;
 import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.Pricing;
+
 
 public class CrawlerUtils {
    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
@@ -224,7 +229,6 @@ public class CrawlerUtils {
             if (priceFormat == '.') {
                price = MathUtils.parseFloatWithDots(priceStr);
             } else if (priceFormat == ',') {
-               System.err.println(priceFormat);
                price = MathUtils.parseFloatWithComma(priceStr);
             }
          } catch (NumberFormatException e) {
@@ -338,6 +342,38 @@ public class CrawlerUtils {
       }
 
       return price;
+   }
+
+   /**
+    * Set Bank Slip Offers
+    * 
+    * @param Double - Bank slip price - when a store has no price on the bill you must put the
+    *        spotlight price in place.
+    * @param Double - When the site has information such as: "22% discount" we must capture this
+    *        information and do the calculation.
+    * @return bankSlip
+    */
+
+   public static BankSlip setBankSlipOffers(Double bankSlipPrice, Double discount) throws MalformedPricingException {
+      BankSlip bankSlip = null;
+
+      if (discount != null) {
+
+         Double discountFinal = discount / 100d;
+
+         bankSlip = BankSlipBuilder.create()
+               .setFinalPrice(bankSlipPrice)
+               .setOnPageDiscount(discountFinal)
+               .build();
+
+      } else {
+
+         bankSlip = BankSlipBuilder.create()
+               .setFinalPrice(bankSlipPrice)
+               .build();
+      }
+
+      return bankSlip;
    }
 
    /**
@@ -1500,16 +1536,20 @@ public class CrawlerUtils {
       return pair;
    }
 
+   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
+      return crawlArrayImagesFromScriptMagento(doc, ".product.media script[type=\"text/x-magento-init\"]");
+   }
+
    /**
     * Crawls images from a javascript inside the page for Magento markets.
     * 
     * @param doc
     * @return JSONArray
     */
-   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
+   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc, String selector) {
       JSONArray images = new JSONArray();
 
-      JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
+      JSONObject scriptJson = scrapMagentoImagesJson(doc, selector);
 
       if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
          JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
@@ -1539,6 +1579,77 @@ public class CrawlerUtils {
       }
 
       return images;
+   }
+
+   private static JSONObject scrapMagentoImagesJson(Document doc, String selector) {
+      JSONObject imagesMagento = new JSONObject();
+
+      String imageKey = "mage/gallery/gallery";
+      String imageSpecialkey = "Xumulus_FastGalleryLoad/js/gallery/custom_gallery";
+
+      Elements scripts = doc.select(selector);
+      for (Element e : scripts) {
+         String script = e.html().replace(" ", "");
+
+         if (script.contains("[data-gallery-role=gallery-placeholder]") && (script.contains(imageKey) || script.contains(imageSpecialkey))) {
+            imagesMagento = JSONUtils.stringToJson(script.trim());
+            break;
+         }
+      }
+
+      return imagesMagento;
+   }
+
+   public static String scrapPrimaryImageMagento(JSONArray images) {
+      String primaryImage = null;
+
+      for (int i = 0; i < images.length(); i++) {
+         Object obj = images.get(0);
+
+         if (obj instanceof JSONObject) {
+            JSONObject jsonImage = (JSONObject) obj;
+
+            if (jsonImage.has("isMain") && jsonImage.getBoolean("isMain") && jsonImage.has("full")) {
+               primaryImage = jsonImage.getString("full");
+               break;
+            }
+         } else if (obj instanceof String) {
+            primaryImage = obj.toString();
+         }
+      }
+
+      return primaryImage;
+   }
+
+   public static String scrapSecondaryImagesMagento(JSONArray images, String primaryImage) {
+      String secondaryImages = null;
+      JSONArray secondaryImagesArray = new JSONArray();
+
+      for (int i = 0; i < images.length(); i++) {
+         Object obj = images.get(i);
+
+         if (obj instanceof JSONObject) {
+            JSONObject jsonImage = (JSONObject) obj;
+
+            if (jsonImage.has("isMain") && jsonImage.getBoolean("isMain") && jsonImage.has("full")) {
+               String image = jsonImage.optString("full", null);
+               if (image != null && !image.equalsIgnoreCase(primaryImage)) {
+                  secondaryImagesArray.put(image);
+               }
+            }
+         } else if (obj instanceof String) {
+            String image = obj.toString();
+            if (image != null && !image.equalsIgnoreCase(primaryImage)) {
+               secondaryImagesArray.put(image);
+            }
+         }
+      }
+
+      if (secondaryImagesArray.length() > 0) {
+         secondaryImages = secondaryImagesArray.toString();
+      }
+
+      return secondaryImages;
    }
 
    /**
@@ -1779,6 +1890,23 @@ public class CrawlerUtils {
       return doc;
    }
 
+
+   /**
+    * This function sums number of evaluations of each star to return the total number of evaluations
+    * 
+    * @param advancedRatingReview
+    * @return
+    */
+   public static int extractReviwsNumberOfAdvancedRatingReview(AdvancedRatingReview advancedRatingReview) {
+      int reviewsWith5stars = advancedRatingReview.getTotalStar5();
+      int reviewsWith4stars = advancedRatingReview.getTotalStar4();
+      int reviewsWith3stars = advancedRatingReview.getTotalStar3();
+      int reviewsWith2stars = advancedRatingReview.getTotalStar2();
+      int reviewsWith1star = advancedRatingReview.getTotalStar1();
+
+      return reviewsWith5stars + reviewsWith4stars + reviewsWith3stars + reviewsWith2stars + reviewsWith1star;
+   }
+
    /**
     * This function calculates the average rating from the model AdvancedRatingReview
     * 
@@ -1810,5 +1938,22 @@ public class CrawlerUtils {
       String slug = NONLATIN.matcher(normalized).replaceAll("");
       slug = EDGESDHASHES.matcher(slug).replaceAll("");
       return slug.toLowerCase(Locale.ENGLISH);
+   }
+
+   /**
+    * Calculate sale with: spotlightPrice / priceFrom
+    * 
+    * @param pricing
+    * @return
+    */
+   public static String calculateSales(Pricing pricing) {
+      String sale = null;
+
+      if (pricing.getPriceFrom() != null && pricing.getPriceFrom() > pricing.getSpotlightPrice()) {
+         Integer value = ((Double) ((pricing.getSpotlightPrice() / pricing.getPriceFrom() - 1d) * 100d)).intValue();
+         sale = Integer.toString(value);
+      }
+
+      return sale;
    }
 }

@@ -1,8 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -10,12 +18,9 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
    private String nextUrlHost;
-   private String nextUrl;
+   protected String nextUrl;
    private String productUrlHost;
-   private String url;
-
-   private static final String PRODUCTS_SELECTOR = ".results-item .item";
-   private static final Integer PAGE_SIZE = 64;
+   protected String url;
 
    protected MercadolivreCrawler(Session session) {
       super(session);
@@ -34,29 +39,33 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       this.productUrlHost = productUrlHost;
    }
 
+   private static final String PRODUCTS_SELECTOR = ".results-item .item";
+   protected Integer meliPageSize = 64;
+
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = PAGE_SIZE;
+      this.pageSize = meliPageSize;
       this.log("Página " + this.currentPage);
 
-      // In this market we need to scrap url for next page
-      // because the url format change
-      if (this.currentPage > 1) {
-         this.url = this.nextUrl;
-      }
+      String searchUrl = getNextPageUrl();
 
-      this.currentDoc = fetchDocument(this.url);
+      this.currentDoc = fetch(searchUrl);
       this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", nextUrlHost);
       Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
       boolean ownStoreResults = !this.currentDoc.select("#categorySearch").isEmpty();
+
       if (!products.isEmpty() && ownStoreResults) {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
 
          for (Element e : products) {
-            String internalPid = e.id();
-            String productUrl = CrawlerUtils.scrapUrl(e, "> a", "href", "https:", productUrlHost);
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[product-id]", "product-id");
+            internalPid = internalPid == null || internalPid.trim().isEmpty() ? CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[item-id]", "item-id") : internalPid;
+
+            String productUrl = CrawlerUtils.scrapUrl(e, ".item__title a", "href", "https", productUrlHost);
+            productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;
+
             saveDataProduct(null, internalPid, productUrl);
 
             this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
@@ -70,6 +79,26 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private Document fetch(String url) {
+      // This user agent is used because some of ours user agents doesn't work on this market
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
+
+      Request request = RequestBuilder.create()
+            .setCookies(cookies)
+            .setUrl(url)
+            .setHeaders(headers)
+            .build();
+
+      Response response = dataFetcher.get(session, request);
+
+      return Jsoup.parse(response.getBody());
+   }
+
+   protected String getNextPageUrl() {
+      return this.currentPage > 1 ? this.nextUrl : this.url;
    }
 
    @Override

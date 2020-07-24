@@ -5,8 +5,7 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.Mercado
 
 public class BrasilMercadolivreCrawler extends MercadolivreCrawler {
 
-   private final String URL = "https://lista.mercadolivre.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + "_Loja_mercado-livre#D[A:"
-         + this.keywordWithoutAccents.replace(" ", "+") + ",mercado-livre]";
+   private final String URL = "https://lista.mercadolivre.com.br/" + this.keywordWithoutAccents.replace(" ", "-");
 
    public BrasilMercadolivreCrawler(Session session) {
       super(session);

@@ -16,8 +16,8 @@ public class BrasilMercadolivreCrawler extends MercadolivreCrawler {
 
    public BrasilMercadolivreCrawler(Session session) {
       super(session);
+      super.allow3PSellers = true;
       super.setHomePage(HOME_PAGE);
       super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
-      super.setSeparator(',');
    }
 }

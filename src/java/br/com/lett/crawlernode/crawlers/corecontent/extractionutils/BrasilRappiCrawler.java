@@ -22,6 +22,7 @@ public abstract class BrasilRappiCrawler extends RappiCrawler {
 
    private final String locationParameters = setLocationParameters();
    private final String storeType = setStoreType();
+   private final String storeIdMainStore = setStoreId();
 
    public BrasilRappiCrawler(Session session) {
       super(session);
@@ -29,6 +30,10 @@ public abstract class BrasilRappiCrawler extends RappiCrawler {
    }
 
    protected abstract String setStoreType();
+
+   protected String setStoreId() {
+      return null;
+   }
 
    protected abstract String setLocationParameters();
 
@@ -40,10 +45,17 @@ public abstract class BrasilRappiCrawler extends RappiCrawler {
    @Override
    protected JSONObject fetch() {
       JSONObject productsInfo = new JSONObject();
-      Map<String, String> stores = crawlStores();
+
+      String storeId;
+
+      if (this.storeIdMainStore == null) {
+         Map<String, String> stores = crawlStores();
+         storeId = stores.containsKey(storeType) ? stores.get(storeType) : null;
+      } else {
+         storeId = this.storeIdMainStore;
+      }
 
       String productUrl = session.getOriginalURL();
-      String storeId = stores.containsKey(storeType) ? stores.get(storeType) : null;
       String productId = null;
 
       if (productUrl.contains("_")) {

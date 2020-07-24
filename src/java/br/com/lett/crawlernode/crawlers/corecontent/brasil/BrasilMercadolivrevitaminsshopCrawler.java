@@ -11,13 +11,12 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.Mercadolivre
  */
 public class BrasilMercadolivrevitaminsshopCrawler extends MercadolivreCrawler {
 
-  private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/vitamins-shop";
-  private static final String MAIN_SELLER_NAME_LOWER = "vitamins shop";
+   private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/vitamins-shop";
+   private static final String MAIN_SELLER_NAME_LOWER = "vitamins shop";
 
-  public BrasilMercadolivrevitaminsshopCrawler(Session session) {
-    super(session);
-    super.setHomePage(HOME_PAGE);
-    super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
-    super.setSeparator(',');
-  }
+   public BrasilMercadolivrevitaminsshopCrawler(Session session) {
+      super(session);
+      super.setHomePage(HOME_PAGE);
+      super.setMainSellerNameLower(MAIN_SELLER_NAME_LOWER);
+   }
 }

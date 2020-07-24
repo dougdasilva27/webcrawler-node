@@ -193,7 +193,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
          Element productAttributes = document.select(".product-attributes").last();
          if (productAttributes != null) {
-            Element quantity = productAttributes.select("ul li.quantidade").first();
+            Element quantity = productAttributes.select("ul li.quantidade.show-hover").first();
             if (quantity != null) {
                name = name + " - " + quantity.text().trim();
             }

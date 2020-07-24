@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -28,7 +29,7 @@ import org.slf4j.MDC;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.PageContent;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
@@ -72,30 +73,33 @@ public class FetchUtilities {
    public static List<String> highTimeoutMarkets;
 
    static {
-      userAgents = Arrays.asList("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
-            "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
-            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0",
-            "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36");
+      userAgents = Arrays.asList(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.58",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
 
       userAgentsWithoutChrome = Arrays.asList(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
-            "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
-            "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0",
-            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/601.5.17 (KHTML, like Gecko) Version/9.1 Safari/601.5.17",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.58",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.37",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
       );
 
       mobileUserAgents = Arrays.asList(
@@ -284,6 +288,58 @@ public class FetchUtilities {
       return headersMap;
    }
 
+   public static Map<String, String> headersJavaNetToMap(Map<String, List<String>> headers) {
+      Map<String, String> headersMap = new HashMap<>();
+
+      for (Entry<String, List<String>> entry : headers.entrySet()) {
+         String headerName = entry.getKey();
+
+         if (headerName != null) {
+            List<String> values = entry.getValue();
+
+            if (headerName.equalsIgnoreCase(HEADER_SET_COOKIE)) {
+               headerName = HEADER_SET_COOKIE;
+            }
+
+            headersMap.put(headerName, values.toString().replace("[", "").replace("]", ""));
+         }
+      }
+
+      return headersMap;
+   }
+
+   public static List<Cookie> getCookiesFromHeadersJavaNet(Map<String, List<String>> headers) {
+      List<Cookie> cookies = new ArrayList<>();
+
+      for (Entry<String, List<String>> entry : headers.entrySet()) {
+         String headerName = entry.getKey();
+
+
+         if (headerName != null && headerName.equalsIgnoreCase(HEADER_SET_COOKIE)) {
+            List<String> cookiesHeader = entry.getValue();
+
+            for (String cookieHeader : cookiesHeader) {
+               String cookieName = cookieHeader.split("=")[0].trim();
+
+               int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+               String cookieValue;
+               if (cookieHeader.contains(";")) {
+                  int y = cookieHeader.indexOf(';', x);
+                  cookieValue = cookieHeader.substring(x, y).trim();
+               } else {
+                  cookieValue = cookieHeader.substring(x).trim();
+               }
+
+               BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
+               cookie.setPath("/");
+               cookies.add(cookie);
+            }
+         }
+      }
+
+      return cookies;
+   }
+
    public static List<Cookie> getCookiesFromHeaders(Header[] headers) {
       List<Cookie> cookies = new ArrayList<>();
 
@@ -379,25 +435,26 @@ public class FetchUtilities {
     * @param status
     * @param requestHash
     */
-   public static void sendRequestInfoLog(int attempt, Request request, Response response, LettProxy proxy, String method, String userAgent, Session session,
+   public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, LettProxy proxy, String method, String userAgent, Session session,
          int status, String requestHash) {
 
       JSONObject requestMetadata =
             new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()))
                   .put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress())).put("user_agent", userAgent).put("req_method", method)
-                  .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status);
+                  .put("req_location", request != null ? request.getUrl() : "").put("res_http_code", status)
+                  .put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
-      Logging.logDebug(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
+      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION]");
    }
 
-   public static void sendRequestInfoLog(int attempt, Request request, Response response, String proxy, String method, String userAgent, Session session,
+   public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, String proxy, String method, String userAgent, Session session,
          int status, String requestHash) {
 
       JSONObject requestMetadata = new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy))
             .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
-            .put("res_http_code", status);
+            .put("res_http_code", status).put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
-      Logging.logDebug(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION] " + request.getUrl());
+      Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION]");
    }
 
    public static class TrustManager implements X509TrustManager {

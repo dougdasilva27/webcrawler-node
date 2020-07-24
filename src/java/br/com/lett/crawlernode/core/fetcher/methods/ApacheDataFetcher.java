@@ -41,6 +41,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -87,6 +88,8 @@ public class ApacheDataFetcher implements DataFetcher {
 
       boolean mustContinue = true;
 
+      long requestsStartTime = System.currentTimeMillis();
+
       while (attempt <= session.getMaxConnectionAttemptsCrawler() && ((request.bodyIsRequired() && (response.getBody() == null || response.getBody()
             .isEmpty())) || !request.bodyIsRequired()) && mustContinue) {
          RequestsStatistics requestStats = new RequestsStatistics();
@@ -99,6 +102,8 @@ public class ApacheDataFetcher implements DataFetcher {
          String requestHash = FetchUtilities.generateRequestHash(session);
 
          try {
+            long requestStartTime = System.currentTimeMillis();
+
             randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
             requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
@@ -113,7 +118,7 @@ public class ApacheDataFetcher implements DataFetcher {
                         new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
-               Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "]Using no proxy for this request.");
+               Logging.printLogDebug(logger, session, "[NO_PROXY ALERT][ATTEMPT " + attempt + "]Using no proxy for this request.");
             }
 
             List<Header> reqHeaders = new ArrayList<>();
@@ -180,8 +185,9 @@ public class ApacheDataFetcher implements DataFetcher {
             // try again
             int responseCode = closeableHttpResponse != null ? closeableHttpResponse.getStatusLine().getStatusCode() : 0;
             requestStats.setStatusCode(responseCode);
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             if (responseCode == 404 || responseCode == 204) {
-               FetchUtilities.sendRequestInfoLog(attempt, request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
+               FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, responseCode, requestHash);
                break;
             } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
                throw new ResponseCodeException(responseCode);
@@ -227,6 +233,7 @@ public class ApacheDataFetcher implements DataFetcher {
             for (String errorCode : FetchUtilities.errorCodes) {
                if (content.equals(errorCode)) {
                   requestStats.setStatusCode(Integer.parseInt(errorCode));
+                  requests.add(requestStats);
                   throw new ResponseCodeException(Integer.parseInt(errorCode));
                }
             }
@@ -238,27 +245,39 @@ public class ApacheDataFetcher implements DataFetcher {
 
             Map<String, String> responseHeaders = FetchUtilities.headersToMap(closeableHttpResponse.getAllHeaders());
 
-            response = new ResponseBuilder().setBody(FetchUtilities.processContent(pageContent, session).trim())
-                  .setRedirecturl(redirectStrategy.getFinalURL()).setProxyused(randProxy).setHeaders(responseHeaders)
-                  .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE))).build();
+            response = new ResponseBuilder()
+                  .setBody(FetchUtilities.processContent(pageContent, session).trim())
+                  .setRedirecturl(redirectStrategy.getFinalURL())
+                  .setProxyused(randProxy)
+                  .setHeaders(responseHeaders)
+                  .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE)))
+                  .setLastStatusCode(responseCode)
+                  .build();
             mustContinue = false;
             requestStats.setHasPassedValidation(true);
-
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, randProxy, method, randUserAgent, session, responseCode, requestHash);
+            requests.add(requestStats);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, responseCode, requestHash);
          } catch (Exception e) {
             int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, randProxy, method, randUserAgent, session, code, requestHash);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, code, requestHash);
             requestStats.setHasPassedValidation(false);
 
-            Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "] Error performing " + method + " request. Error: " + e.getMessage());
+            Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Error performing " + method + " request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+               Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             }
          }
 
          attempt++;
       }
+
+
+      JSONObject apacheMetadata = new JSONObject().put("req_apache_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_apache_attempts_number", attempt)
+            .put("req_apache_type", "url_request");
+
+      Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
       response.setRequests(requests);
       return response;
@@ -269,6 +288,8 @@ public class ApacheDataFetcher implements DataFetcher {
       File localFile = null;
       int attempt = 1;
 
+      long requestsStartTime = System.currentTimeMillis();
+
       while (attempt <= session.getMaxConnectionAttemptsImages() && localFile == null) {
          LettProxy randProxy = null;
          String url = request.getUrl();
@@ -276,9 +297,14 @@ public class ApacheDataFetcher implements DataFetcher {
          String randUserAgent = headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
          CloseableHttpResponse closeableHttpResponse = null;
          String requestHash = FetchUtilities.generateRequestHash(session);
+         RequestsStatistics requestStats = new RequestsStatistics();
+         requestStats.setAttempt(attempt);
 
          try {
+            long requestStartTime = System.currentTimeMillis();
+
             randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
+            requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
 
             CookieStore cookieStore = createCookieStore(request.getCookies());
@@ -291,7 +317,7 @@ public class ApacheDataFetcher implements DataFetcher {
                         new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
-               Logging.printLogWarn(logger, session, "Using no proxy for this request.");
+               Logging.printLogDebug(logger, session, "[NO_PROXY ALERT]Using no proxy for this request.");
             }
 
             List<Header> reqHeaders = new ArrayList<>();
@@ -334,6 +360,8 @@ public class ApacheDataFetcher implements DataFetcher {
             // if there was some response code that indicates forbidden access or server error we want to
             // try again
             int responseCode = closeableHttpResponse.getStatusLine().getStatusCode();
+            requestStats.setStatusCode(responseCode);
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3' && responseCode != 404) { // errors
                throw new ResponseCodeException(responseCode);
             }
@@ -354,12 +382,12 @@ public class ApacheDataFetcher implements DataFetcher {
             file.close();
             is.close();
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, null, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, responseCode, requestHash);
          } catch (Exception e) {
             int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
             Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request: " + e.getMessage());
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, null, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, FetchUtilities.GET_REQUEST, randUserAgent, session, code, requestHash);
 
             if (localFile != null && localFile.exists()) {
                localFile.delete();
@@ -368,6 +396,12 @@ public class ApacheDataFetcher implements DataFetcher {
          }
          attempt++;
       }
+
+      JSONObject apacheMetadata = new JSONObject().put("req_apache_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_apache_attempts_number", attempt)
+            .put("req_apache_type", "images_download");
+
+      Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
       return localFile;
    }

@@ -16,7 +16,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
@@ -74,8 +73,7 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.comperdelivery.com.br/busca/3/0/0/MaisVendidos/Decrescente/20/" + this.currentPage + "/0/0/" + this.keywordEncoded
-            + ".aspx?q=" + this.keywordEncoded;
+      String url = "https://www.comperdelivery.com.br/" + this.keywordEncoded + "#" + this.currentPage;
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, this.userAgent);
@@ -84,7 +82,7 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
       this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Elements products = this.currentDoc.select("ul#listProduct > li .details .url[rel]");
+      Elements products = this.currentDoc.select(".main-shelf .main-shelf ul .shelf-item");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -92,8 +90,8 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e, null, "href", "https", "www.comper.com.br");
-            String internalId = crawlInternalId(productUrl);
+            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href"), "http://", "www.comperdelivery.com.br");
+            String internalId = e.attr("data-product-id");
 
             saveDataProduct(internalId, null, productUrl);
 
@@ -112,20 +110,8 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".filter-details strong:last-child", true, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".resultado-busca-numero .value", true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 
-   private String crawlInternalId(String url) {
-      String internalId = null;
-      String[] tokens = url.split("-");
-
-      internalId = CommonMethods.getLast(tokens).split("/")[0];
-
-      if (internalId.contains(".")) {
-         internalId = internalId.split("\\.")[0];
-      }
-
-      return internalId;
-   }
 }

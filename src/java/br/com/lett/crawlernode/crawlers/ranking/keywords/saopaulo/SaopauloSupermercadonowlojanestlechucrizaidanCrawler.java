@@ -13,4 +13,9 @@ public class SaopauloSupermercadonowlojanestlechucrizaidanCrawler extends Superm
    protected String getLoadUrl() {
       return "loja-nestle-chucri-zaidan";
    }
+
+   @Override
+   protected String getHost() {
+      return "www.emporionestle.com.br";
+   }
 }

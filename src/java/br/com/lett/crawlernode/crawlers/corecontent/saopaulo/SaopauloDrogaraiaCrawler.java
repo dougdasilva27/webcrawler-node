@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
@@ -11,37 +11,30 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
-import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class SaopauloDrogaraiaCrawler extends Crawler {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-  private final String HOME_PAGE = "http://www.drogaraia.com.br/";
+public class SaopauloDrogaraiaCrawler extends Crawler {
 
   public SaopauloDrogaraiaCrawler(Session session) {
     super(session);
-    super.config.setMustSendRatingToKinesis(true);
   }
 
   @Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
+    String HOME_PAGE = "http://www.drogaraia.com.br/";
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
@@ -50,62 +43,36 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
+    if (doc.selectFirst(".product-view") != null) {
       Logging.printLogDebug(
           logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      // ID interno
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#sku", "value");
 
-      // Pid
       String internalPid = null;
       Element elementInternalPid = doc.select("input[name=product]").first();
       if (elementInternalPid != null) {
         internalPid = elementInternalPid.attr("value").trim();
       }
 
-      // Disponibilidade
-      boolean available = true;
-      Element buyButton = doc.select(".add-to-cart button").first();
+      boolean available = doc.selectFirst(".add-to-cart-buttons") != null;
 
-      if (buyButton == null) {
-        available = false;
-      }
-
-      // Nome
       String name = crawlName(doc, available);
 
-      // Preço
       Float price = null;
       Element elementPrice = doc.select(".product-shop .regular-price").first();
       if (elementPrice == null) {
         elementPrice = doc.select(".product-shop .price-box .special-price .price").first();
       }
       if (elementPrice != null) {
-        price =
-            Float.parseFloat(
-                elementPrice
-                    .text()
-                    .replaceAll("[^0-9,]+", "")
-                    .replaceAll("\\.", "")
-                    .replaceAll(",", "."));
+        price = Float.parseFloat(elementPrice
+            .text()
+            .replaceAll("[^0-9,]+", "")
+            .replaceAll("\\.", "")
+            .replaceAll(",", "."));
       }
 
-      // Categorias
-      Elements elementsCategories = doc.select(".breadcrumbs ul li:not(.home):not(.product) a");
-      String category1 = "";
-      String category2 = "";
-      String category3 = "";
-      for (Element category : elementsCategories) {
-        if (category1.isEmpty()) {
-          category1 = category.text();
-        } else if (category2.isEmpty()) {
-          category2 = category.text();
-        } else if (category3.isEmpty()) {
-          category3 = category.text();
-        }
-      }
-
+      List<String> cat = doc.select(".breadcrumbs ul li:not(.home):not(.product) a").eachText();
       String description = scrapDescription(doc);
       String primaryImage = crawlPrimaryImage(doc);
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
@@ -117,25 +84,23 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       List<String> eans = new ArrayList<>();
       eans.add(ean);
 
-      Product product = new Product();
-
-      product.setUrl(session.getOriginalURL());
-      product.setInternalId(internalId);
-      product.setInternalPid(internalPid);
-      product.setName(name);
-      product.setPrice(price);
-      product.setPrices(prices);
-      product.setCategory1(category1);
-      product.setCategory2(category2);
-      product.setCategory3(category3);
-      product.setPrimaryImage(primaryImage);
-      product.setSecondaryImages(secondaryImages);
-      product.setDescription(description);
-      product.setStock(stock);
-      product.setMarketplace(marketplace);
-      product.setAvailable(available);
-      product.setRatingReviews(ratingReviews);
-      product.setEans(eans);
+      Product product = ProductBuilder.create()
+          .setUrl(session.getOriginalURL())
+          .setInternalId(internalId)
+          .setInternalPid(internalPid)
+          .setName(name)
+          .setPrice(price)
+          .setPrices(prices)
+          .setCategories(cat)
+          .setPrimaryImage(primaryImage)
+          .setSecondaryImages(secondaryImages)
+          .setDescription(description)
+          .setStock(stock)
+          .setMarketplace(marketplace)
+          .setAvailable(available)
+          .setRatingReviews(ratingReviews)
+          .setEans(eans)
+          .build();
 
       products.add(product);
 
@@ -144,11 +109,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     }
 
     return products;
-  }
-
-  /** ***************************** Product page identification * ***************************** */
-  private boolean isProductPage(Document document) {
-    return !document.select("div[typeOf='Product']").isEmpty();
   }
 
   private String crawlName(Document doc, boolean available) {
@@ -212,13 +172,6 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
     return x.equals(y);
   }
 
-  /**
-   * In this market, installments not appear in product page
-   *
-   * @param doc
-   * @param price
-   * @return
-   */
   private Prices crawlPrices(Document doc, Float price) {
     Prices prices = new Prices();
 
@@ -279,11 +232,11 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       if (!url.contains("youtube")) {
         description.append(
             Jsoup.parse(
-                    this.dataFetcher
-                        .get(
-                            session,
-                            RequestBuilder.create().setUrl(url).setCookies(cookies).build())
-                        .getBody())
+                this.dataFetcher
+                    .get(
+                        session,
+                        RequestBuilder.create().setUrl(url).setCookies(cookies).build())
+                    .getBody())
                 .html());
       }
     }
@@ -292,87 +245,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
   }
 
   private RatingsReviews crawRating(Document doc, String internalId) {
-    RatingsReviews ratingReviews = new RatingsReviews();
-
-    ratingReviews.setDate(session.getDate());
-    ratingReviews.setInternalId(internalId);
-    JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
-    Integer total = getTotalNumOfRatings(trustVoxResponse);
-    AdvancedRatingReview advancedRatingReview =
-        TrustvoxRatingCrawler.getTotalStarsFromEachValueWithRate(trustVoxResponse);
-
-    ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-    ratingReviews.setTotalRating(total);
-    ratingReviews.setTotalWrittenReviews(total);
-    ratingReviews.setAverageOverallRating(getTotalRating(trustVoxResponse));
-
-    return ratingReviews;
-  }
-
-  private Integer getTotalNumOfRatings(JSONObject trustVoxResponse) {
-    if (trustVoxResponse.has("rate")) {
-      JSONObject rate = trustVoxResponse.getJSONObject("rate");
-
-      if (rate.has("count")) {
-        return rate.getInt("count");
-      }
-    }
-    return 0;
-  }
-
-  private Double getTotalRating(JSONObject trustVoxResponse) {
-    Double totalRating = 0.0;
-    if (trustVoxResponse.has("rate")) {
-      JSONObject rate = trustVoxResponse.getJSONObject("rate");
-
-      if (rate.has("average")) {
-        totalRating = rate.getDouble("average");
-      }
-    }
-
-    return totalRating;
-  }
-
-  private JSONObject requestTrustVoxEndpoint(String id) {
-    StringBuilder requestURL = new StringBuilder();
-
-    requestURL.append("http://trustvox.com.br/widget/root?code=");
-    requestURL.append(id);
-
-    requestURL.append("&");
-    requestURL.append("store_id=71450");
-
-    requestURL.append("&");
-    try {
-      requestURL.append(URLEncoder.encode(session.getOriginalURL(), "UTF-8"));
-    } catch (UnsupportedEncodingException e1) {
-      Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
-    }
-
-    requestURL.append("&product_extra_attributes%5Bsubgroup%5D");
-
-    Map<String, String> headerMap = new HashMap<>();
-    headerMap.put(HttpHeaders.ACCEPT, "application/vnd.trustvox-v2+json");
-    headerMap.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8");
-
-    Request request =
-        RequestBuilder.create()
-            .setUrl(requestURL.toString())
-            .setCookies(cookies)
-            .setHeaders(headerMap)
-            .build();
-    String response = this.dataFetcher.get(session, request).getBody();
-
-    JSONObject trustVoxResponse;
-    try {
-      trustVoxResponse = new JSONObject(response);
-    } catch (JSONException e) {
-      Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
-      Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
-
-      trustVoxResponse = new JSONObject();
-    }
-
-    return trustVoxResponse;
+    TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "71450", logger);
+    return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
   }
 }

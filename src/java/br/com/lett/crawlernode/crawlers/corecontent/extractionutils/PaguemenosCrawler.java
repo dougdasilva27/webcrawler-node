@@ -11,9 +11,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;
@@ -26,16 +23,8 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    private static final String HOME_PAGE = "https://www.paguemenos.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "pague menos";
-   private static final String MAIN_SELLER_NAME_LOWER_2 = "farmácias pague menos";
-
-
-   @Override
-   protected Product extractProduct(String internalPid, CategoryCollection categories, String description, JSONObject jsonSku) throws Exception {
-      Product product = super.extractProduct(internalPid, categories, description, jsonSku);
-      product.setRatingReviews(crawlRating(internalPid));
-      return product;
-   }
+   private static final List<String> MAIN_SELLERS = Arrays.asList("Pague Menos", "Farmácias Pague Menos");
+   private RatingsReviews rating = new RatingsReviews();
 
    @Override
    protected String getHomePage() {
@@ -43,24 +32,29 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      return super.extractInformation(doc);
-   }
-
-   @Override
    protected List<String> getMainSellersNames() {
-      return Arrays.asList(MAIN_SELLER_NAME_LOWER, MAIN_SELLER_NAME_LOWER_2);
+      return MAIN_SELLERS;
    }
 
    @Override
-   protected List<Card> getCards() {
-      return Arrays.asList(Card.VISA, Card.SHOP_CARD);
+   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) {
+      super.processBeforeScrapVariations(doc, productJson, internalPid);
+      this.rating = scrapRating(internalPid);
    }
 
-   protected RatingsReviews crawlRating(String internalPid) {
+   @Override
+   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      return (productJson.optString("brand") + " " + super.scrapName(doc, productJson, jsonSku)).trim();
+   }
+
+   @Override
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
+      return this.rating;
+   }
+
+   protected RatingsReviews scrapRating(String internalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
-
 
       Document docRating = crawlPageRatings(session.getOriginalURL(), internalPid);
 
@@ -185,5 +179,4 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    private Integer getTotalNumOfReviews(Document docRating) {
       return docRating.select(".resenhas .quem > li").size();
    }
-
 }

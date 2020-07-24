@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,6 +18,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import org.apache.http.cookie.Cookie;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
@@ -41,13 +43,21 @@ public class JavanetDataFetcher implements DataFetcher {
    public Response get(Session session, Request request) {
       Response response = new Response();
 
+      List<RequestsStatistics> requests = new ArrayList<>();
+
       String targetURL = request.getUrl();
       int attempt = 1;
 
+      long requestsStartTime = System.currentTimeMillis();
+      List<String> proxies = request.getProxyServices();
+
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
+         long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
-            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_US);
+            String proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.STORM_RESIDENTIAL_US : proxies.get(0);
+
+            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(proxyService);
 
             RequestsStatistics requestStats = new RequestsStatistics();
             requestStats.setAttempt(attempt);
@@ -61,7 +71,7 @@ public class JavanetDataFetcher implements DataFetcher {
             Proxy proxy = null;
 
             if (!proxyStorm.isEmpty() && attempt < 4) {
-               Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_US + " for this request.");
+               Logging.printLogDebug(logger, session, "Using " + proxyService + " for this request.");
                proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
             } else {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
@@ -86,6 +96,7 @@ public class JavanetDataFetcher implements DataFetcher {
             connection.setInstanceFollowRedirects(true);
             connection.setUseCaches(false);
             connection.setReadTimeout(FetchUtilities.DEFAULT_CONNECT_TIMEOUT * 2);
+            connection.setConnectTimeout(FetchUtilities.DEFAULT_CONNECT_TIMEOUT * 2);
 
             for (Entry<String, String> entry : headers.entrySet()) {
                connection.setRequestProperty(entry.getKey(), entry.getValue());
@@ -93,7 +104,7 @@ public class JavanetDataFetcher implements DataFetcher {
 
             // Get Response
             InputStream is = connection.getInputStream();
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             StringBuilder responseStr = new StringBuilder(); // or StringBuffer if Java version 5+
             String line;
             while ((line = rd.readLine()) != null) {
@@ -103,26 +114,43 @@ public class JavanetDataFetcher implements DataFetcher {
             rd.close();
             content = responseStr.toString();
 
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             S3Service.saveResponseContent(session, requestHash, content);
+
+            Map<String, String> responseHeaders = FetchUtilities.headersJavaNetToMap(connection.getHeaderFields());
 
             response = new ResponseBuilder()
                   .setBody(content)
                   .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
                   .setRedirecturl(connection.getURL().toString())
+                  .setHeaders(responseHeaders)
+                  .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
+                  .setLastStatusCode(connection.getResponseCode())
                   .build();
+
             requestStats.setHasPassedValidation(true);
+            requests.add(requestStats);
             session.addRedirection(request.getUrl(), connection.getURL().toString());
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   connection.getResponseCode(), requestHash);
          } catch (Exception e) {
-            Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
+            Logging.printLogDebug(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
+
+            response.setLastStatusCode(0);
          }
          attempt++;
       }
+
+      JSONObject apacheMetadata = new JSONObject().put("req_javanet_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_javanet_attempts_number", attempt);
+
+      Logging.logInfo(logger, session, apacheMetadata, "JAVANET REQUESTS INFO");
+
+      response.setRequests(requests);
 
       return response;
    }
@@ -146,14 +174,16 @@ public class JavanetDataFetcher implements DataFetcher {
    @Override
    public Response post(Session session, Request request) {
       Response response = new Response();
+      List<RequestsStatistics> requests = new ArrayList<>();
 
       String targetURL = request.getUrl();
       int attempt = 1;
 
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
+         long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
-            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_US);
+            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(ProxyCollection.STORM_RESIDENTIAL_EU);
 
             RequestsStatistics requestStats = new RequestsStatistics();
             requestStats.setAttempt(attempt);
@@ -167,7 +197,7 @@ public class JavanetDataFetcher implements DataFetcher {
             Proxy proxy = null;
 
             if (!proxyStorm.isEmpty() && attempt < 4) {
-               Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_US + " for this request.");
+               Logging.printLogDebug(logger, session, "Using " + ProxyCollection.STORM_RESIDENTIAL_EU + " for this request.");
                proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
             } else {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
@@ -179,6 +209,7 @@ public class JavanetDataFetcher implements DataFetcher {
             connection.setInstanceFollowRedirects(true);
             connection.setUseCaches(false);
             connection.setReadTimeout(FetchUtilities.DEFAULT_CONNECT_TIMEOUT * 2);
+            connection.setConnectTimeout(FetchUtilities.DEFAULT_CONNECT_TIMEOUT * 2);
             connection.setDoInput(true);
             connection.setDoOutput(true);
 
@@ -195,7 +226,7 @@ public class JavanetDataFetcher implements DataFetcher {
 
             // Get Response
             InputStream is = connection.getInputStream();
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             StringBuilder responseStr = new StringBuilder(); // or StringBuffer if Java version 5+
             String line;
             while ((line = rd.readLine()) != null) {
@@ -205,23 +236,27 @@ public class JavanetDataFetcher implements DataFetcher {
             rd.close();
             content = responseStr.toString();
 
+            requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             S3Service.saveResponseContent(session, requestHash, content);
-
 
             response = new ResponseBuilder().setBody(content).setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null).build();
             requestStats.setHasPassedValidation(true);
+            requests.add(requestStats);
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, response, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   connection.getResponseCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing POST request. Error: " + e.getMessage());
             if (session instanceof TestCrawlerSession) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
+
+            response.setLastStatusCode(0);
          }
          attempt++;
       }
 
+      response.setRequests(requests);
       return response;
    }
 

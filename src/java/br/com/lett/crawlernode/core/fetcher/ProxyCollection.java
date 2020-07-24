@@ -28,27 +28,18 @@ public class ProxyCollection {
    public static final String LUMINATI_SERVER_BR = "luminati_server_br";
    public static final String LUMINATI_RESIDENTIAL_BR = "luminati_residential_br";
    public static final String INFATICA_RESIDENTIAL_BR = "infatica_residential_br";
+   public static final String NETNUT_RESIDENTIAL_BR = "netnut_residential_br";
+   public static final String NETNUT_RESIDENTIAL_ES = "netnut_residential_es";
    public static final String INFATICA_RESIDENTIAL_BR_HAPROXY = "infatica_residential_br_haproxy";
    public static final String BR_OXYLABS = "br-oxylabs";
 
-   public static final int MAX_ATTEMPTS_BUY = 2;
-   public static final int MAX_ATTEMPTS_BONANZA = 3;
-
-   public static final int MAX_ATTEMPTS_LUMINATI_SERVER_BR = 2;
-   public static final int MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_BR = 2;
-   public static final int MAX_ATTEMPTS_INFATICA_RESIDENTIAL_BR = 2;
-   public static final int MAX_ATTEMPTS_INFATICA_RESIDENTIAL_BR_HAPROXY = 2;
-
-   public static final int MAX_ATTEMPTS_STORM_RESIDENTIAL_US = 2;
-   public static final int MAX_ATTEMPTS_STORM_RESIDENTIAL_EU = 2;
-   public static final int MAX_ATTEMPTS_NO_PROXY = 1;
+   public static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
    /** Intervals used to select proxy service when running normal information extraction */
    protected Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler = new HashMap<>();
    /** Intervals used to select proxy service when downloading images */
    protected Map<Integer, List<Interval<Integer>>> intervalsMarketsMapImages = new HashMap<>();
 
-   protected static Map<String, Integer> proxyMaxAttempts = new HashMap<>();
    protected Map<String, List<LettProxy>> proxyMap = new HashMap<>();
 
 
@@ -59,16 +50,6 @@ public class ProxyCollection {
       Logging.printLogDebug(logger, proxyMap.size() + " proxies services returned from Mongo Fetcher.");
       proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
 
-      proxyMaxAttempts.put(BUY, MAX_ATTEMPTS_BUY);
-      proxyMaxAttempts.put(BONANZA, MAX_ATTEMPTS_BONANZA);
-      proxyMaxAttempts.put(LUMINATI_SERVER_BR, MAX_ATTEMPTS_LUMINATI_SERVER_BR);
-      proxyMaxAttempts.put(LUMINATI_RESIDENTIAL_BR, MAX_ATTEMPTS_LUMINATI_RESIDENTIAL_BR);
-      proxyMaxAttempts.put(INFATICA_RESIDENTIAL_BR, MAX_ATTEMPTS_INFATICA_RESIDENTIAL_BR);
-      proxyMaxAttempts.put(INFATICA_RESIDENTIAL_BR_HAPROXY, MAX_ATTEMPTS_INFATICA_RESIDENTIAL_BR_HAPROXY);
-      proxyMaxAttempts.put(STORM_RESIDENTIAL_US, MAX_ATTEMPTS_STORM_RESIDENTIAL_US);
-      proxyMaxAttempts.put(STORM_RESIDENTIAL_EU, MAX_ATTEMPTS_STORM_RESIDENTIAL_EU);
-      proxyMaxAttempts.put(BR_OXYLABS, 2);
-      proxyMaxAttempts.put(NO_PROXY, MAX_ATTEMPTS_NO_PROXY);
 
       assembleIntervalsWebcrawler(markets);
       assembleIntervalsImages(markets);
@@ -100,10 +81,7 @@ public class ProxyCollection {
     * @return
     */
    public Integer getProxyMaxAttempts(String serviceName) {
-      if (proxyMaxAttempts.containsKey(serviceName)) {
-         return proxyMaxAttempts.get(serviceName);
-      }
-      return 0;
+      return MAX_ATTEMPTS_PER_PROXY;
    }
 
    private void assembleIntervalsWebcrawler(Markets markets) {
@@ -113,10 +91,8 @@ public class ProxyCollection {
          List<String> proxies = m.getProxies();
          int index = 1;
          for (int i = 0; i < proxies.size(); i++) {
-            if (proxyMaxAttempts.get(proxies.get(i)) != null) {
-               intervals.add(new Interval<Integer>(proxies.get(i), index, index + proxyMaxAttempts.get(proxies.get(i)) - 1));
-               index = index + proxyMaxAttempts.get(proxies.get(i));
-            }
+            intervals.add(new Interval<Integer>(proxies.get(i), index, index + MAX_ATTEMPTS_PER_PROXY - 1));
+            index = index + MAX_ATTEMPTS_PER_PROXY;
          }
          this.intervalsMarketsMapWebcrawler.put(m.getNumber(), intervals);
       }
@@ -129,10 +105,8 @@ public class ProxyCollection {
          List<String> proxies = m.getImageProxies();
          int index = 1;
          for (int i = 0; i < proxies.size(); i++) {
-            if (proxyMaxAttempts.get(proxies.get(i)) != null) {
-               intervals.add(new Interval<Integer>(proxies.get(i), index, index + proxyMaxAttempts.get(proxies.get(i)) - 1));
-               index = index + proxyMaxAttempts.get(proxies.get(i));
-            }
+            intervals.add(new Interval<Integer>(proxies.get(i), index, index + MAX_ATTEMPTS_PER_PROXY - 1));
+            index = index + MAX_ATTEMPTS_PER_PROXY;
          }
          this.intervalsMarketsMapImages.put(m.getNumber(), intervals);
       }

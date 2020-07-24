@@ -156,14 +156,14 @@ public abstract class CrawlerRanking extends Task {
          session.setTaskStatus(Task.STATUS_FAILED);
       }
 
-      // only remove the task from queue if it was flawless
+
       // and if we are not testing, because when testing there is no message processing
       else if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
          Logging.printLogDebug(logger, session, "Task completed.");
          session.setTaskStatus(Task.STATUS_COMPLETED);
       }
 
-      Logging.printLogDebug(logger, session, "END");
+      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
    }
 
 
@@ -172,7 +172,7 @@ public abstract class CrawlerRanking extends Task {
       this.setDataFetcher();
       try {
 
-         Logging.printLogDebug(logger, "Initiate crawler ranking for this location: " + this.location);
+         Logging.printLogInfo(logger, session, "Initiate crawler ranking for this location: " + this.location);
 
          // Processe implementado pelas classes filhas para executar antes de rodar a categorie
          this.processBeforeFetch();
@@ -338,12 +338,12 @@ public abstract class CrawlerRanking extends Task {
       if (!(session instanceof TestRankingSession)) {
          List<Processed> processeds = new ArrayList<>();
          if (internalId != null) {
-            processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId);
+            processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId, session);
          } else if (pid != null) {
-            processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId);
+            processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId, session);
          } else if (url != null) {
             Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
-            processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId);
+            processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
          }
 
 
@@ -429,6 +429,8 @@ public abstract class CrawlerRanking extends Task {
 
       this.log(this.messages.size() + " possible new products to send to SQS.");
 
+      long sendMessagesStartTime = System.currentTimeMillis();
+
       for (Entry<String, Map<String, MessageAttributeValue>> message : this.messages.entrySet()) {
          SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
          entry.setId(String.valueOf(counter)); // the id must be unique in the batch
@@ -443,6 +445,12 @@ public abstract class CrawlerRanking extends Task {
             // Aqui se envia 10 mensagens para serem enviadas pra amazon e no mongo
             populateMessagesInMongoAndAmazon(entries);
             entries.clear();
+
+            JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
+                  .put("aws_type", "sqs")
+                  .put("sqs_queue", "ws-discoverer");
+
+            Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
          }
       }
 

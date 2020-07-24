@@ -152,8 +152,8 @@ public class BrasilColomboCrawler extends Crawler {
       ratingReviews.setDate(session.getDate());
 
       Integer totalComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".header-avaliacao-produto .quantidade-avaliacoes", false, 0);
-      Double avgRating = scrapAvgRating(doc);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+      Double avgRating = CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview);
 
 
       ratingReviews.setTotalRating(totalComments);
@@ -162,16 +162,6 @@ public class BrasilColomboCrawler extends Crawler {
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
-   }
-
-   private Double scrapAvgRating(Document doc) {
-      Double avg = 0d;
-
-      Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".avalicoes-count strong", null, false, ',', session);
-      if (percentage != null) {
-         avg = (percentage * 100) / 5;
-      }
-      return avg;
    }
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
@@ -253,8 +243,8 @@ public class BrasilColomboCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".parcelas-produto-table .parcelas-produto-table-valor", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".parcelas-produto-table .parcelas-produto-table-valor", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".dados-preco-de .dados-preco-de--label", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".dados-preco-valor .dados-preco-valor--label", null, false, ',', session);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
             .build();

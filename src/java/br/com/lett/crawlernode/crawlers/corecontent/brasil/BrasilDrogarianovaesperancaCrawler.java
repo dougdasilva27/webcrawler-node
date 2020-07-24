@@ -62,7 +62,8 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
                         .build())
             .setProxyservice(Arrays.asList(
                   ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.LUMINATI_SERVER_BR))
+                  ProxyCollection.LUMINATI_SERVER_BR,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR))
             .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());

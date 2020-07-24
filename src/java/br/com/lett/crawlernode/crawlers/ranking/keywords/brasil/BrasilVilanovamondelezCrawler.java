@@ -16,6 +16,6 @@ public class BrasilVilanovamondelezCrawler extends BrasilVilanova {
 
   @Override
   protected String getPassword() {
-    return "681543";
+    return "521542";
   }
 }
