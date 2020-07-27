@@ -1,11 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class ChileTottusCrawler extends CrawlerRankingKeywords {
 
@@ -35,21 +35,18 @@ public class ChileTottusCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
 
-         if (results != null) {
+         for (Object e : results) {
 
-            for (Object e : results) {
+            JSONObject skuInfo = (JSONObject) e;
 
-               JSONObject skuInfo = (JSONObject) e;
+            String internalId = skuInfo.optString("sku");
+            String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", "www.tottus.cl") + "/p/";
 
-               String internalId = skuInfo.optString("sku");
-               String productUrl = CrawlerUtils.completeUrl(skuInfo.optString("key"), "https://", "www.tottus.cl") + "/p/";
+            saveDataProduct(internalId, null, productUrl);
 
-               saveDataProduct(internalId, null, productUrl);
-
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-               if (this.arrayProducts.size() == productsLimit) {
-                  break;
-               }
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
             }
          }
       } else {
@@ -65,5 +62,4 @@ public class ChileTottusCrawler extends CrawlerRankingKeywords {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".searchQuery span", true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
-
 }
