@@ -26,7 +26,7 @@ public class ChapecoSuperroyalCrawler extends CrawlerRankingKeywords {
 
         JSONObject productsJSON = fetchJson();
         JSONArray items = productsJSON.optJSONArray("hits");
-        if (items != null & !items.isEmpty()) {
+        if (items != null && !items.isEmpty()) {
 
             if (this.totalProducts == 0) {
                 setTotalProducts(productsJSON);

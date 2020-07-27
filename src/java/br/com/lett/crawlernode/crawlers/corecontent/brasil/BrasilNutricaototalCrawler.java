@@ -135,6 +135,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
 
       return ratingReviews;
    }
@@ -218,7 +219,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
       Elements e = doc.select(selector);
 
       for (Element el : e) {
-         String avRating = e.text().replace("%", "");
+         String avRating = el.text().replace("%", "");
          num = Double.parseDouble(avRating);
          num = (num * 5) / 100;
       }
