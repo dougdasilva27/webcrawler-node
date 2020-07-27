@@ -18,11 +18,11 @@ const val keywordTest = "keyword"
 
 fun main() {
    initialize()
-   val city = "colombia"
-   val marketName = "exito"
-   val url = "https://www.exito.com/maquina-recargableillette-mach3-2-cartuchos-558646/p"
-   val keyword = "mascara de cilios"
-   testType = "insights"
+   val city = ""
+   val marketName = ""
+   val url = ""
+   val keyword = ""
+   testType = ""
    // -> "keyword"
    // -> "insights"
    val market: Market? = fetchMarket(city, marketName)
@@ -47,8 +47,8 @@ private fun fetchMarket(city: String, market: String): Market? {
 }
 
 fun initialize() {
-   pathWrite = "/mnt/room/Workspace/work/crawler/htmls/"
-   phantomjsPath = "/home/charl3ff/workspace/work/phantomjs/phantomjs"
+   pathWrite = ""
+   phantomjsPath = ""
    GlobalConfigurations.executionParameters = ExecutionParameters()
    GlobalConfigurations.executionParameters.setUpExecutionParameters()
 
@@ -60,8 +60,5 @@ fun initialize() {
 
    GlobalConfigurations.processorResultManager = ResultManager(GlobalConfigurations.dbManager)
 
-   // fetching proxies
    GlobalConfigurations.proxies = ProxyCollection(GlobalConfigurations.markets, GlobalConfigurations.dbManager)
-
-//   GlobalConfigurations.proxyService = ProxyService.getInstance()
 }
