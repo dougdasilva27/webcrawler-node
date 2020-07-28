@@ -25,6 +25,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 
 /**
@@ -92,7 +93,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
    private String crawlInternalId(Document doc) {
       String idText = CrawlerUtils.scrapStringSimpleInfo(doc, ".header_info .code", true);
-      return idText != null ? CommonMethods.getLast(idText.split(":")).trim() : null;
+      return idText != null ? idText.replaceAll("^.*?(?<=: )", "") : null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
