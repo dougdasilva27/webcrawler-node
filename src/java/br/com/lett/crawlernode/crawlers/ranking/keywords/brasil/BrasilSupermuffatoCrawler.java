@@ -2,100 +2,76 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords{
+public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords {
 
-	public BrasilSupermuffatoCrawler(Session session) {
-		super(session);
-	}
+   private static final String BASE_URL = "www.supermuffato.com.br/";
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 24;
-	
-		this.log("Página "+ this.currentPage);
-		
-		String keyword = keywordWithoutAccents.replaceAll(" ", "%20");
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.supermuffato.com.br/"+ keyword +"?PageNumber="+ this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);	
-		
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
+   public BrasilSupermuffatoCrawler(Session session) {
+      super(session);
+   }
 
-		Elements id =  this.currentDoc.select("li[layout]");		
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(id.size() >= 1) {
-			
-			int indexProduct = 0;
-			
-			for(Element e : id) {				
-				// InternalPid
-				String internalPid 	= crawlInternalPid(indexProduct);
-				
-				// InternalId
-				String internalId = crawlInternalId(e);
-				
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
-				
-				indexProduct++;
-				
-				saveDataProduct(internalId, internalPid, urlProduct);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-			setTotalProducts();
-		}
-	
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-		if(!(hasNextPage())) setTotalProducts();
-	}
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 24;
+      this.log("Página " + this.currentPage);
 
-	@Override
-	protected boolean hasNextPage() {
-		Elements page = this.currentDoc.select(".prd-list-item-desc > a");
+      String url = "https://www.supermuffato.com.br/buscapagina?" +
+         "ft=" + this.keywordEncoded +
+         "&PS=24" +
+         "&sl=4fb62b72-d10b-407c-ab22-24e271c4df75" +
+         "&cc=24" +
+         "&sm=0" +
+         "&PageNumber=" + this.currentPage;
 
-		//se  elemeno page obtiver algum resultado
-		//tem próxima página
-		return page.size() >= 24;
-	}
-	
+      this.log("Link onde são feitos os crawlers: " + url);
 
-	private String crawlInternalId(Element e){
-		String internalId = null;
-		
-		return internalId;
-	}
-	
-	private String crawlInternalPid(int indexProduct){
-		String internalPid = null;
-		Element pid = this.currentDoc.select("li[id].helperComplement").get(indexProduct);		
-		
-		if(pid != null){
-			internalPid = pid.attr("id").replaceAll("[^0-9]", "").trim();
-		}
-		
-		return internalPid;
-	}
-	
-	private String crawlProductUrl(Element e){
-		String urlProduct = null;
-		Element urlElement = e.select(".prd-list-item-desc > a").first();
-		
-		if(urlElement != null){
-			urlProduct = urlElement.attr("href").trim();
-		}
-		
-		return urlProduct;
-	}
+      //chama função de pegar a url
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select("li[layout]");
+      Elements productsIdList = this.currentDoc.select("li[id].helperComplement");
+
+      if (products.size() >= 1) {
+
+         if (this.totalProducts == 0)
+            setTotalProducts();
+
+         for (int index = 0; index<products.size(); index++) {
+            Element product = products.get(index);
+
+            String internalId = null;
+            String internalPid = crawlInternalPid(productsIdList.get(index));
+            String urlProduct = CrawlerUtils.scrapUrl(product, ".prd-list-item-desc > a", "href", "https", BASE_URL);
+
+            saveDataProduct(internalId, internalPid, urlProduct);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+            if (this.arrayProducts.size() == productsLimit) break;
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+         setTotalProducts();
+      }
+
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+      if (!(hasNextPage())) setTotalProducts();
+   }
+
+   @Override
+   protected void setTotalProducts() {
+      Document html = fetchDocument("https://www.supermuffato.com.br/" + keywordEncoded);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(html, ".resultado-busca-numero span.value", true, 0);
+      this.log("Total da busca: " + this.totalProducts);
+   }
+
+   private String crawlInternalPid(Element productId) {
+      String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(productId, null, "id");
+      String[] split = id.split("_");
+      return split[1];
+   }
 }

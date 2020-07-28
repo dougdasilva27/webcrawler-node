@@ -2,109 +2,76 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.curitiba;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class CuritibaMuffatoCrawler extends CrawlerRankingKeywords {
 
-  public CuritibaMuffatoCrawler(Session session) {
-    super(session);
-  }
+   private static final String BASE_URL = "delivery.supermuffato.com.br/";
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.log("Página " + this.currentPage);
+   public CuritibaMuffatoCrawler(Session session) {
+      super(session);
+   }
 
-    // número de produtos por página do market
-    this.pageSize = 24;
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 24;
+      this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String url =
-        "https://buscadelivery.supermuffato.com.br/busca?q=" + this.keywordEncoded + "&common_filter[saleschannel]=14&page=" + this.currentPage;
-    this.log("Link onde são feitos os crawlers: " + url);
+      String url = "https://delivery.supermuffato.com.br/buscapagina?" +
+         "ft=" + this.keywordEncoded +
+         "&PS=24" +
+         "&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9" +
+         "&cc=24" +
+         "&sm=0" +
+         "&PageNumber=" + this.currentPage;
 
-    // chama função de pegar a url
-    this.currentDoc = fetchDocument(url);
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    Elements products = this.currentDoc.select(".nm-product-item > div");
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select("li[layout]");
+      Elements productsIdList = this.currentDoc.select("li[id].helperComplement");
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (products.size() >= 1) {
-      // se o total de busca não foi setado ainda, chama a função para setar
-      if (this.totalProducts == 0)
-        setTotalProducts();
+      if (products.size() >= 1) {
 
-      for (Element e : products) {
-        // InternalPid
-        String internalPid = crawlInternalPid(e);
+         if (this.totalProducts == 0)
+            setTotalProducts();
 
-        // InternalId
-        String internalId = crawlInternalId(e);
+         for (int index = 0; index<products.size(); index++) {
+            Element product = products.get(index);
 
-        // Url do produto
-        String productUrl = crawlProductUrl(e);
+            String internalId = null;
+            String internalPid = crawlInternalPid(productsIdList.get(index));
+            String urlProduct = CrawlerUtils.scrapUrl(product, ".prd-list-item-desc > a", "href", "https", BASE_URL);
 
-        saveDataProduct(internalId, internalPid, productUrl);
+            saveDataProduct(internalId, internalPid, urlProduct);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
-
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+            if (this.arrayProducts.size() == productsLimit) break;
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+         setTotalProducts();
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado para a página atual!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+      if (!(hasNextPage())) setTotalProducts();
+   }
 
-  @Override
-  protected boolean hasNextPage() {
-    return arrayProducts.size() < this.totalProducts;
-  }
+   @Override
+   protected void setTotalProducts() {
+      Document html = fetchDocument("https://delivery.supermuffato.com.br/" + keywordEncoded);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(html, ".resultado-busca-numero span.value", true, 0);
+      this.log("Total da busca: " + this.totalProducts);
+   }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".neemu-total-products-container").first();
-
-    try {
-      if (totalElement != null)
-        this.totalProducts = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
-    } catch (Exception e) {
-      this.logError(e.getMessage());
-    }
-
-    this.log("Total da busca: " + this.totalProducts);
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = e.attr("data-id");
-
-    return internalId;
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String urlProduct = null;
-    Element urlElement = e.select(".prd-list-item-link:not(.nm-product-img-link)").first();
-
-    if (urlElement != null) {
-      urlProduct = urlElement.attr("href");
-
-      if (!urlProduct.contains("supermuffato")) {
-        urlProduct = "http://delivery.supermuffato.com.br" + urlProduct;
-      } else if (!urlProduct.contains("http")) {
-        urlProduct = "http:" + urlProduct;
-      }
-    }
-
-    return urlProduct;
-  }
+   private String crawlInternalPid(Element productId) {
+      String id = CrawlerUtils.scrapStringSimpleInfoByAttribute(productId, null, "id");
+      String[] split = id.split("_");
+      return split[1];
+   }
 
 }
