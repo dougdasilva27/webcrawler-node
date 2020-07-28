@@ -90,7 +90,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
 
    private String crawlInternalId(Document doc) {
       String idText = CrawlerUtils.scrapStringSimpleInfo(doc, ".header_info .code", true);
-      return idText != null ? idText.replaceAll("^.*?(?<=: )", "") : null;
+      return idText != null ? idText.replaceAll("^.*?(?<=:\\s)", "") : null;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
