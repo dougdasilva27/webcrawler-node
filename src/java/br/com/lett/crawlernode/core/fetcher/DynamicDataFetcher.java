@@ -1,12 +1,14 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-import java.util.ArrayList;
+import java.io.File;
 import java.util.List;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.openqa.selenium.phantomjs.PhantomJSDriverService;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Proxy;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -17,7 +19,6 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -63,48 +64,36 @@ public class DynamicDataFetcher {
       String requestHash = FetchUtilities.generateRequestHash(session);
 
       try {
-         String phantomjsPath = null;
-         if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
-            phantomjsPath = Test.phantomjsPath;
-         } else {
-            phantomjsPath = GlobalConfigurations.executionParameters.getPhantomjsPath();
-         }
-
          LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR);
 
-         DesiredCapabilities caps = DesiredCapabilities.phantomjs();
-         caps.setJavascriptEnabled(true);
-         caps.setCapability("takesScreenshot", true);
-         caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomjsPath);
+         ChromeOptions chromeOptions = new ChromeOptions();
+         chromeOptions.setCapability("takesScreenshot", true);
+         chromeOptions.addArguments("--window-size=1920,1080");
+         chromeOptions.addArguments("--ignore-certificate-errors");
+         // chromeOptions.addArguments("--headless");
 
-         //
-         // Set proxy via client args
-         // Proxy authorization doesnt work with client args
-         // we must set the header Authorization or use a custom header
-         // that the HAProxy is expecting
-         //
-         List<String> cliArgsCap = new ArrayList<>();
 
          if (proxy != null) {
-            cliArgsCap.add("--proxy=" + proxy.getAddress() + ":" + proxy.getPort());
-            cliArgsCap.add("--proxy-auth=" + proxy.getUser() + ":" + proxy.getPass());
-            cliArgsCap.add("--proxy-type=http");
+            Proxy proxySel = new Proxy();
+            proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
+            proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
+
+            chromeOptions.addArguments("--load-images=false");
+            chromeOptions.addExtensions(new File("src/resources/MultiPass.crx"));
+
+            chromeOptions.setCapability("proxy", proxySel);
+
          }
-
-         cliArgsCap.add("--ignore-ssl-errors=true"); // ignore errors in https requests
-         cliArgsCap.add("--load-images=false");
-         cliArgsCap.add("--webdriver-loglevel=NONE");
-
-         caps.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgsCap);
-         caps.setCapability(PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS, "--webdriver-loglevel=NONE");
+         chromeOptions.addArguments("--webdriver-loglevel=NONE");
 
          String userAgent = FetchUtilities.randUserAgent();
-         caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent", userAgent);
+         chromeOptions.addArguments("--user-agent=" + userAgent);
 
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
-         CrawlerWebdriver webdriver = new CrawlerWebdriver(caps, session);
+         CrawlerWebdriver webdriver = new CrawlerWebdriver(chromeOptions, session);
+         configureAuth(webdriver.driver, url, proxy.getUser(), proxy.getPass());
 
          if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
             Main.server.incrementWebdriverInstances();
@@ -120,6 +109,14 @@ public class DynamicDataFetcher {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
          return null;
       }
+   }
+
+   private static void configureAuth(WebDriver driver, String url, String username, String password) {
+      driver.get("chrome-extension://enhldmjbphoeibbpdhmjkchohnidgnah/options.html");
+      driver.findElement(By.id("url")).sendKeys(url);
+      driver.findElement(By.id("username")).sendKeys(username);
+      driver.findElement(By.id("password")).sendKeys(password);
+      driver.findElement(By.className("credential-form-submit")).click();
    }
 
    private static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session, String requestHash) {

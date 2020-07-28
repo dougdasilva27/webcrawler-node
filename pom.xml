@@ -16,7 +16,7 @@
 		<google.gson.version>2.6.1</google.gson.version>
 		<imageio.version>3.4.1</imageio.version>
 		<tika.version>1.5</tika.version>
-		<selenium.version>2.47.0</selenium.version>
+		<selenium.version>3.141.59</selenium.version>
 		<s3.version>1.11.789</s3.version>
 		<sqs.version>1.11.194</sqs.version>
 		<kinesis.version>0.12.11</kinesis.version>
