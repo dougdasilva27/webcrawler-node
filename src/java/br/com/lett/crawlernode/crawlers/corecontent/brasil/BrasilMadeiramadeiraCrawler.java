@@ -53,8 +53,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
       if (isProductPage(doc)) {
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".buy-box-wrapper div[data-product-sku]", "data-product-sku");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "data[data-product-id]", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "data[data-product-id]", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .product-featured-image",
@@ -73,11 +72,12 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
          Offers offers = availableEl.contains("Comprar")? scrapOffers(doc) : new Offers();
 
+         //identificamos uma mudança de internalId no mm e pedimos que reunifiquem essa loja
          // Creating the product
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
-               .setInternalPid(internalPid)
+               .setInternalPid(internalId)
                .setName(name)
                .setOffers(offers)
                .setCategory1(categories.getCategory(0))
