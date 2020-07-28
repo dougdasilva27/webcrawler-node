@@ -20,138 +20,137 @@ import java.util.*;
 
 public class SaopauloImigrantesbebidasCrawler extends Crawler {
 
-    private static final String BASE_URL = "www.imigrantesbebidas.com.br";
-    private static final String MAIN_SELLER_NAME = "Imigrantes Bebidas";
-    private final Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
-            Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.DINERS.toString());
+   private static final String BASE_URL = "www.imigrantesbebidas.com.br";
+   private static final String MAIN_SELLER_NAME = "Imigrantes Bebidas";
+   private final Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
+      Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.DINERS.toString());
 
-    public SaopauloImigrantesbebidasCrawler(Session session) {
-        super(session);
-    }
+   public SaopauloImigrantesbebidasCrawler(Session session) {
+      super(session);
+   }
 
-    @Override
-    public List<Product> extractInformation(Document doc) throws Exception {
-        super.extractInformation(doc);
-        List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-        if (isProductPage(doc)) {
-            JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "head > script:nth-of-type(6)", null, "}", false, true);
+      if (isProductPage(doc)) {
+         JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "head > script:nth-of-type(6)", null, "}", false, true);
 
-            String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".skuId", true);
-            String internalPId = internalId;
-            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productPage__name", true);
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".productGallery__nav__item > img", Collections.singletonList("src"), "https", BASE_URL);
-            String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".productGallery__nav__item > img", Collections.singletonList("src"), "https", BASE_URL, primaryImage);
-            String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".tabs"));
-            int stock = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, ".frmCartQuantity input[name=\"stock_unit\"]", "value", 0);
-            Offers offers = stock > 0 ? scrapOffers(doc) : new Offers();
-            CategoryCollection categories = scrapCategories(productJson);
-            List<String> eans = scrapEans(productJson);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".skuId", true);
+         String internalPId = internalId;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productPage__name", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".productGallery__nav__item > img", Collections.singletonList("src"), "https", BASE_URL);
+         String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".productGallery__nav__item > img", Collections.singletonList("src"), "https", BASE_URL, primaryImage);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".tabs"));
+         boolean availability = doc.selectFirst(".out-of-stock") == null;
+         Offers offers = availability ? scrapOffers(doc) : new Offers();
+         CategoryCollection categories = scrapCategories(productJson);
+         List<String> eans = scrapEans(productJson);
 
-            Product product = ProductBuilder.create()
-                    .setUrl(session.getOriginalURL())
-                    .setInternalId(internalId)
-                    .setInternalPid(internalPId)
-                    .setName(name)
-                    .setPrimaryImage(primaryImage)
-                    .setSecondaryImages(secondaryImage)
-                    .setCategory1(categories.getCategory(0))
-                    .setCategory2(categories.getCategory(1))
-                    .setCategory3(categories.getCategory(2))
-                    .setDescription(description)
-                    .setStock(stock)
-                    .setOffers(offers)
-                    .setEans(eans)
-                    .build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPId)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImage)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setDescription(description)
+            .setOffers(offers)
+            .setEans(eans)
+            .build();
 
-            products.add(product);
+         products.add(product);
 
-        }
+      }
 
-        return products;
-    }
+      return products;
+   }
 
-    private boolean isProductPage(Document doc) {
-        return doc.selectFirst(".productPage") != null;
-    }
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".productPage") != null;
+   }
 
-    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
-        Offers offers = new Offers();
-        Pricing pricing = scrapPricing(doc);
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
 
-        if (pricing != null) {
-            offers.add(Offer.OfferBuilder.create()
-                    .setUseSlugNameAsInternalSellerId(true)
-                    .setSellerFullName(MAIN_SELLER_NAME)
-                    .setSellersPagePosition(1)
-                    .setIsBuybox(false)
-                    .setIsMainRetailer(true)
-                    .setPricing(pricing)
-                    .build());
-        }
-        return offers;
-    }
+      if (pricing != null) {
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(MAIN_SELLER_NAME)
+            .setSellersPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
+      }
+      return offers;
+   }
 
-    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-        Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".productPage__wholeprice", null, true, ',', this.session);
-        Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".productPage__price", null, true, ',', this.session);
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".productPage__wholeprice", null, true, ',', this.session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".productPage__price", null, true, ',', this.session);
 
-        return Pricing.PricingBuilder.create()
-                .setSpotlightPrice(spotlightPrice)
-                .setPriceFrom(priceFrom)
-                .setCreditCards(scrapCreditCards(spotlightPrice))
-                .setBankSlip(scrapBankSlip(spotlightPrice))
-                .build();
-    }
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(scrapCreditCards(spotlightPrice))
+         .setBankSlip(scrapBankSlip(spotlightPrice))
+         .build();
+   }
 
-    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
-        CreditCards creditCards = new CreditCards();
-        Installments installments = new Installments();
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
 
-        installments.add(Installment.InstallmentBuilder.create()
-                .setInstallmentNumber(1)
-                .setInstallmentPrice(spotlightPrice)
-                .build());
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
-        for (String card : cards) {
-            creditCards.add(CreditCard.CreditCardBuilder.create()
-                    .setBrand(card)
-                    .setInstallments(installments)
-                    .setIsShopCard(false)
-                    .build());
-        }
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
 
-        return creditCards;
-    }
+      return creditCards;
+   }
 
-    private BankSlip scrapBankSlip(Double spotlightPrice) throws MalformedPricingException {
-        return BankSlip.BankSlipBuilder.create()
-                .setFinalPrice(spotlightPrice)
-                .build();
-    }
+   private BankSlip scrapBankSlip(Double spotlightPrice) throws MalformedPricingException {
+      return BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+   }
 
-    private CategoryCollection scrapCategories(JSONObject productJson) {
-        CategoryCollection finalCategory = new CategoryCollection();
-        String categories = productJson.optString("category");
-        String[] split = categories.split("\\/");
-        finalCategory.addAll(Arrays.asList(split));
-        return finalCategory;
-    }
+   private CategoryCollection scrapCategories(JSONObject productJson) {
+      CategoryCollection finalCategory = new CategoryCollection();
+      String categories = productJson.optString("category");
+      String[] split = categories.split("\\/");
+      finalCategory.addAll(Arrays.asList(split));
+      return finalCategory;
+   }
 
-    private List<String> scrapEans(JSONObject productJson) {
-        String key = getEansKey(productJson);
-        return key != null ? Collections.singletonList(productJson.optString(key)) : null;
-    }
+   private List<String> scrapEans(JSONObject productJson) {
+      String key = getEansKey(productJson);
+      return key != null ? Collections.singletonList(productJson.optString(key)) : null;
+   }
 
-    private String getEansKey(JSONObject productJson) {
-        Iterator<String> keys = productJson.keys();
-        String currentKey;
-        while (keys.hasNext()) {
-            currentKey = keys.next();
-            if (currentKey.contains("gtin")) {
-                return currentKey;
-            }
-        }
-        return null;
-    }
+   private String getEansKey(JSONObject productJson) {
+      Iterator<String> keys = productJson.keys();
+      String currentKey;
+      while (keys.hasNext()) {
+         currentKey = keys.next();
+         if (currentKey.contains("gtin")) {
+            return currentKey;
+         }
+      }
+      return null;
+   }
 }
