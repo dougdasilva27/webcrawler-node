@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -16,20 +9,35 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import models.pricing.Pricing.PricingBuilder;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 
 /**
  * Date: 20/08/2018
- * 
- * @author victor
  *
+ * @author victor
  */
 public class RiodejaneiroZonasulCrawler extends Crawler {
 
    public static final String HOME_PAGE = "https://www.zonasul.com.br/";
+   private static final String SELLER_FULL_NAME = "Zona Sul";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.HIPER.toString(), Card.AMEX.toString());
 
    // Site não possui rating
 
@@ -52,29 +60,24 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
-         String name = crawlName(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h2.hide_mobile", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb .hide_mobile a");
-         String primaryImage = crawlPrimaryImage(doc);
-         // NO SECONDARY IMAGES
-         String description = crawlDescription(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".bg_branco div.fotorama img", Collections.singletonList("src"), "https", "images.zonasul.com.br");
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".div_line:nth-last-child(2)", ".div_line:nth-last-child(1)"));
          boolean available = doc.select(".miolo_info .content-produto-indisponivel").isEmpty();
-         Float price = available ? crawlPrice(doc) : null;
-         Prices prices = crawlPrices(doc, price);
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setDescription(description)
-               .setMarketplace(new Marketplace())
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setName(name)
+            .setOffers(offers)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .build();
          products.add(product);
       } else {
          Logging.printLogDebug(logger, session, "Not a product page: " + session.getOriginalURL());
@@ -83,154 +86,72 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
       return products;
    }
 
-   /**
-    * Checks if the page acessed is product page or not.
-    * 
-    * @param doc - contais html from the page to be scrapped
-    * @return true if its a skupage.
-    */
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("#produto") != null;
    }
 
-   /**
-    * 
-    * @param doc - contais html from the page to be scrapped
-    * @return the extracted pid from the URL.
-    */
    private String crawlInternalId(Document doc) {
-      String internalId = null;
-
-      Element metaProducts = doc.selectFirst(".header_info .code");
-      if (metaProducts != null) {
-         internalId = CommonMethods.getLast(metaProducts.ownText().split(":")).trim();
-      }
-
-      return internalId;
+      String idText = CrawlerUtils.scrapStringSimpleInfo(doc, ".header_info .code", true);
+      return idText != null ? CommonMethods.getLast(idText.split(":")).trim() : null;
    }
 
-   /**
-    * Gets the sku Name
-    * 
-    * @param doc - contais html from the page to be scrapped
-    * @return the sku Name
-    */
-   private String crawlName(Document doc) {
-      String name = null;
-      Element nameElement = doc.selectFirst("h2.hide_mobile");
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
 
-      if (nameElement != null) {
-         name = nameElement.text();
-      }
-      return name;
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
+
+      return offers;
+
    }
 
-   /**
-    * Get the primary image from the sku.
-    * 
-    * @param doc - the html data to be scrapped
-    * @return - the primary sku image
-    */
-   private String crawlPrimaryImage(Document doc) {
-      String primaryImage = null;
-      Element primaryImageElement = doc.selectFirst(".bg_branco div.fotorama img");
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      if (primaryImageElement != null) {
-         primaryImage = primaryImageElement.attr("src");
-      }
-      if (primaryImage != null && !primaryImage.startsWith("http")) {
-         primaryImage = "https:" + primaryImage;
-      }
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".div_line_priceInfo .price_desconto",
+         null, false, ',', session);
+      Double priceFrom = null;
 
-      return primaryImage;
-   }
-
-   /**
-    * Gets the description of the SKU
-    * 
-    * @param doc - html to be scrapped
-    * @return a html formated into a string
-    */
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
-
-      Elements descs = doc.select(".div_line:not(.hide_mobile)");
-
-      if (descs.size() > 2) {
-         description.append(descs.get(1).html());
-         description.append(descs.get(2).html());
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".div_line_priceInfo .price",
+            null, false, ',', session);
       } else {
-         description.append(descs.html());
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".div_line_priceInfo .price",
+            null, false, ',', session);
       }
 
-      return description.toString();
+      return PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(scrapCreditCards(spotlightPrice))
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).build())
+         .build();
+
    }
 
-   /**
-    * Gets the SKU prices
-    * 
-    * @param doc - html to be scrapped
-    * @return the price scrapped from the sku page
-    */
-   private Float crawlPrice(Document doc) {
-      Float price = null;
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
 
-      Element discountPrice = doc.selectFirst(".content_price.hide_mobile > div.price_desconto");
+      installments.add(InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
-      if (discountPrice != null) {
-         price = MathUtils.parseFloatWithComma(discountPrice.text());
-      } else {
-         Element normalPrice = doc.selectFirst(".content_price.hide_mobile > div.price");
-
-         if (normalPrice != null) {
-            price = MathUtils.parseFloatWithComma(normalPrice.text());
-         }
+      for (String card : cards) {
+         creditCards.add(CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false).build());
       }
 
-      return price;
-   }
-
-   /**
-    * Get the SKU Old price if it exists
-    * 
-    * @param doc - html to be scrapped
-    * @return
-    */
-   private Double crawlOldPrice(Document doc) {
-      Double price = null;
-
-      Element priceDiv = doc.selectFirst(".content_price.hide_mobile > div.price");
-      if (priceDiv != null) {
-         price = MathUtils.parseDoubleWithComma(priceDiv.text());
-      }
-
-      return price;
-   }
-
-   /**
-    * Create a map of Prices and payment way
-    * 
-    * @param doc - html to be scrapped
-    * @param price - price of the SKU
-    * @return
-    */
-   private Prices crawlPrices(Document doc, Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> paymentPriceMap = new TreeMap<>();
-
-         paymentPriceMap.put(1, price);
-         prices.setPriceFrom(crawlOldPrice(doc));
-
-
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), paymentPriceMap);
-         prices.insertCardInstallment(Card.VISA.toString(), paymentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), paymentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), paymentPriceMap);
-
-      }
-      return prices;
+      return creditCards;
    }
 
 }
