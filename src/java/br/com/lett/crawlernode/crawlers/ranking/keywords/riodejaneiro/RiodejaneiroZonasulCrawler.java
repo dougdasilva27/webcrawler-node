@@ -23,7 +23,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void processBeforeFetch() {
-    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.zonasul.com.br/", Arrays.asList("ASP.NET_SessionId"), "www.zonasul.com.br", "/",
+    this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.zonasul.com.br/busca/"+this.keywordEncoded, Arrays.asList("ASP.NET_SessionId"), "www.zonasul.com.br", "/",
         null, session, dataFetcher);
   }
 
