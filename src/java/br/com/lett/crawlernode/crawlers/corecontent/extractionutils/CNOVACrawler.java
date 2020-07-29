@@ -363,7 +363,7 @@ public abstract class CNOVACrawler extends Crawler {
             for (String attr : attrs) {
                String image = CrawlerUtils.scrapStringSimpleInfoByAttribute(imageSelector, null, attr);
 
-               if (image != null) {
+               if (image != null && !image.isEmpty()) {
                   image = encodeUrlPath(image);
 
                   image = CrawlerUtils.completeUrl(image, PROTOCOL, this.marketHost);
