@@ -52,6 +52,10 @@ public class DynamicDataFetcher {
       return fetchPageWebdriver(url, proxyString, session);
    }
 
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
+      return fetchPageWebdriver(url, proxyString, true, session);
+   }
+
    /**
     * Use the webdriver to fetch a page.
     * 
@@ -59,7 +63,7 @@ public class DynamicDataFetcher {
     * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -70,20 +74,22 @@ public class DynamicDataFetcher {
          chromeOptions.setCapability("takesScreenshot", true);
          chromeOptions.addArguments("--window-size=1920,1080");
          chromeOptions.addArguments("--ignore-certificate-errors");
-         // chromeOptions.addArguments("--headless");
 
+         if (!(session instanceof TestCrawlerSession) || headless) {
+            chromeOptions.addArguments("--headless");
+         }
 
          if (proxy != null) {
             Proxy proxySel = new Proxy();
             proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
             proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
 
-            chromeOptions.addArguments("--load-images=false");
+            chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
             chromeOptions.addExtensions(new File("src/resources/MultiPass.crx"));
 
             chromeOptions.setCapability("proxy", proxySel);
-
          }
+
          chromeOptions.addArguments("--webdriver-loglevel=NONE");
 
          String userAgent = FetchUtilities.randUserAgent();
@@ -93,7 +99,10 @@ public class DynamicDataFetcher {
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
          CrawlerWebdriver webdriver = new CrawlerWebdriver(chromeOptions, session);
-         configureAuth(webdriver.driver, url, proxy.getUser(), proxy.getPass());
+
+         if (proxy != null && proxy.getUser() != null) {
+            configureAuth(webdriver.driver, url, proxy.getUser(), proxy.getPass());
+         }
 
          if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
             Main.server.incrementWebdriverInstances();
