@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -27,17 +29,27 @@ import models.prices.Prices;
  * @author Gabriel Dornelas
  *
  */
-public class BelohorizonteSupernossoCrawler extends Crawler {
+public class BelohorizonteSupernossoCrawler extends VTEXOldScraper {
 
   private static final String HOME_PAGE = "https://www.supernossoemcasa.com.br/";
-  private static final String MAIN_SELLER_NAME_LOWER = "super nosso em casa";
+  private static final List<String> MAIN_SELLER_NAME_LOWER = Arrays.asList("super nosso em casa");
 
   public BelohorizonteSupernossoCrawler(Session session) {
     super(session);
     super.config.setMustSendRatingToKinesis(true);
   }
 
-  @Override
+   @Override
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
+
+   @Override
+   protected List<String> getMainSellersNames() {
+      return MAIN_SELLER_NAME_LOWER;
+   }
+
+   /*@Override
   public boolean shouldVisit() {
     String href = this.session.getOriginalURL().toLowerCase();
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
@@ -113,9 +125,15 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
     }
 
     return products;
-  }
+  }*/
 
-  private RatingsReviews crawlRating(Document document, String id) {
+   @Override
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
+      return new VtexRatingCrawler(session, HOME_PAGE, logger, cookies)
+         .extractRatingAndReviews(internalId, doc, dataFetcher);
+   }
+
+   /*private RatingsReviews crawlRating(Document document, String id) {
     return new VtexRatingCrawler(session, HOME_PAGE, logger, cookies)
         .extractRatingAndReviews(id, document, dataFetcher);
   }
@@ -123,5 +141,5 @@ public class BelohorizonteSupernossoCrawler extends Crawler {
 
   private boolean isProductPage(Document document, String url) {
     return document.selectFirst(".productName") != null && url.startsWith(HOME_PAGE);
-  }
+  }*/
 }
