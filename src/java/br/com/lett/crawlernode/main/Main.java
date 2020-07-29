@@ -67,7 +67,7 @@ public class Main {
   }
 
   private static void checkFiles() {
-    File phantom = new File(GlobalConfigurations.executionParameters.getPhantomjsPath());
+    File phantom = new File(GlobalConfigurations.executionParameters.getChromiumPath());
     if (!phantom.exists() && !phantom.isDirectory()) {
       Logging.printLogError(LOGGER, "Phantom webdriver binary not found.");
       System.exit(1);

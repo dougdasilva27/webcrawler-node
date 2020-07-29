@@ -23,7 +23,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 
 /**
- * This class encapsulates an instance of a Remote WebDriver that uses a PhantomJS as backend for
+ * This class encapsulates an instance of a Remote WebDriver that uses a Chromium as backend for
  * Selenium WebDriver. This class also provide methods to manipulate web elements and take web pages
  * screenshots.
  *
