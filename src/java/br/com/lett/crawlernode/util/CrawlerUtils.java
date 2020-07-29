@@ -1536,16 +1536,20 @@ public class CrawlerUtils {
       return pair;
    }
 
+   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
+      return crawlArrayImagesFromScriptMagento(doc, ".product.media script[type=\"text/x-magento-init\"]");
+   }
+
    /**
     * Crawls images from a javascript inside the page for Magento markets.
     * 
     * @param doc
     * @return JSONArray
     */
-   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc) {
+   public static JSONArray crawlArrayImagesFromScriptMagento(Document doc, String selector) {
       JSONArray images = new JSONArray();
 
-      JSONObject scriptJson = CrawlerUtils.selectJsonFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]", null, null, true, false);
+      JSONObject scriptJson = scrapMagentoImagesJson(doc, selector);
 
       if (scriptJson.has("[data-gallery-role=gallery-placeholder]")) {
          JSONObject mediaJson = scriptJson.getJSONObject("[data-gallery-role=gallery-placeholder]");
@@ -1575,6 +1579,25 @@ public class CrawlerUtils {
       }
 
       return images;
+   }
+
+   private static JSONObject scrapMagentoImagesJson(Document doc, String selector) {
+      JSONObject imagesMagento = new JSONObject();
+
+      String imageKey = "mage/gallery/gallery";
+      String imageSpecialkey = "Xumulus_FastGalleryLoad/js/gallery/custom_gallery";
+
+      Elements scripts = doc.select(selector);
+      for (Element e : scripts) {
+         String script = e.html().replace(" ", "");
+
+         if (script.contains("[data-gallery-role=gallery-placeholder]") && (script.contains(imageKey) || script.contains(imageSpecialkey))) {
+            imagesMagento = JSONUtils.stringToJson(script.trim());
+            break;
+         }
+      }
+
+      return imagesMagento;
    }
 
    public static String scrapPrimaryImageMagento(JSONArray images) {

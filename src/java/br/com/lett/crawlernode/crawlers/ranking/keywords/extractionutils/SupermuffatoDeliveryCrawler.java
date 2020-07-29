@@ -1,36 +1,40 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords {
+public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords {
 
-   private static final String BASE_URL = "www.supermuffato.com.br/";
+   private static final String BASE_URL = "delivery.supermuffato.com.br/";
 
-   public BrasilSupermuffatoCrawler(Session session) {
+   public SupermuffatoDeliveryCrawler(Session session) {
       super(session);
    }
+
+   protected String cityCode;
+
+   protected abstract String getCityCode();
 
    @Override
    protected void extractProductsFromCurrentPage() {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.supermuffato.com.br/buscapagina?" +
-         "ft=" + this.keywordEncoded +
-         "&PS=24" +
-         "&sl=4fb62b72-d10b-407c-ab22-24e271c4df75" +
-         "&cc=24" +
-         "&sm=0" +
-         "&PageNumber=" + this.currentPage;
+      String url = "https://delivery.supermuffato.com.br/buscapagina?" +
+            "ft=" + this.keywordEncoded +
+            "&sc=" + cityCode +
+            "&PS=24" +
+            "&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9" +
+            "&cc=24" +
+            "&sm=0" +
+            "&PageNumber=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
-      //chama função de pegar a url
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select("li[layout]");
       Elements productsIdList = this.currentDoc.select("li[id].helperComplement");
@@ -40,7 +44,7 @@ public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords {
          if (this.totalProducts == 0)
             setTotalProducts();
 
-         for (int index = 0; index<products.size(); index++) {
+         for (int index = 0; index < products.size(); index++) {
             Element product = products.get(index);
 
             String internalId = null;
@@ -64,7 +68,7 @@ public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      Document html = fetchDocument("https://www.supermuffato.com.br/" + keywordEncoded);
+      Document html = fetchDocument("https://delivery.supermuffato.com.br/" + keywordEncoded);
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(html, ".resultado-busca-numero span.value", true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
@@ -74,4 +78,5 @@ public class BrasilSupermuffatoCrawler extends CrawlerRankingKeywords {
       String[] split = id.split("_");
       return split[1];
    }
+
 }

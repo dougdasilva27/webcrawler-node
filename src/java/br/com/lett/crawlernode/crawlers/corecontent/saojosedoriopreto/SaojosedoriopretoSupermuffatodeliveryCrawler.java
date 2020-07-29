@@ -1,15 +1,15 @@
-package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
+package br.com.lett.crawlernode.crawlers.corecontent.saojosedoriopreto;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermuffatodeliveryCrawler;
 
-public class CuritibaMuffatoCrawler extends SupermuffatodeliveryCrawler {
+public class SaojosedoriopretoSupermuffatodeliveryCrawler extends SupermuffatodeliveryCrawler {
 
-   public CuritibaMuffatoCrawler(Session session) {
+   public SaojosedoriopretoSupermuffatodeliveryCrawler(Session session) {
       super(session);
    }
 
-   private static final String CITY_CODE = "13";
+   private static final String CITY_CODE = "16";
 
    @Override
    public String handleURLBeforeFetch(String url) {

@@ -1,28 +1,29 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import models.AdvancedRatingReview;
-import models.RatingsReviews;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import models.AdvancedRatingReview;
+import models.RatingsReviews;
 
-import java.util.*;
+public class SupermuffatodeliveryCrawler extends VTEXOldScraper {
 
-public class BrasilSupermuffatoCrawler extends VTEXOldScraper {
+   private static final String HOME_PAGE = "https://delivery.supermuffato.com.br/";
+   private static final List<String> MAIN_SELLER_NAME_LOWER = Arrays.asList("Super Muffato Delivery");
 
-   private static final String HOME_PAGE = "https://www.supermuffato.com.br/";
-   private static final List<String> MAIN_SELLER_NAME_LOWER = Arrays.asList("Super Muffato Eletro");
-
-   public BrasilSupermuffatoCrawler(Session session) {
+   public SupermuffatodeliveryCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -99,24 +100,28 @@ public class BrasilSupermuffatoCrawler extends VTEXOldScraper {
    private String sendRequestToAPI(String internalId, String type, String idWebsite) {
       String apiUrl = "https://awsapis3.netreviews.eu/product";
       String payload =
-         "{\"query\":\"" + type + "\",\"products\":\"" + internalId + "\",\"idWebsite\":\"" + idWebsite + "\",\"plateforme\":\"br\"}";
+            "{\"query\":\"" + type + "\",\"products\":\"" + internalId + "\",\"idWebsite\":\"" + idWebsite + "\",\"plateforme\":\"br\"}";
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json; charset=UTF-8");
       Request request =
-         RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
+            RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
       return new FetcherDataFetcher().post(session, request).getBody();
    }
 
    private String getIdWebsite(Document doc) {
       Optional<Element> optionalUrlToken = doc.select("body > script").stream()
-         .filter(x -> (x.hasAttr("src") &&
-            (x.attr("src").startsWith("https://cl.avis-verifies.com"))))
-         .findFirst();
+            .filter(x -> (x.hasAttr("src") &&
+                  (x.attr("src").startsWith("https://cl.avis-verifies.com"))))
+            .findFirst();
 
-      String attr = optionalUrlToken.get().attr("src");
+      String attr = optionalUrlToken.isPresent() ? optionalUrlToken.get().attr("src") : null;
 
-      String[] strings = attr.substring(attr.indexOf("br/")).split("/");
+      if (attr != null) {
+         String[] strings = attr.substring(attr.indexOf("br/")).split("/");
 
-      return strings[strings.length - 4];
+         return strings[strings.length - 4];
+      }
+
+      return null;
    }
 }

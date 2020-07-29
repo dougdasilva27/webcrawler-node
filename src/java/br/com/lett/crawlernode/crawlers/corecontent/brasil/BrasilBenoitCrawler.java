@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -42,7 +43,7 @@ public class BrasilBenoitCrawler extends Crawler {
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      if (isProductPage(doc) && json.has("Model")) {
+      if (doc.selectFirst("#content-wrapper") != null && json.has("Model")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          JSONObject model = json.getJSONObject("Model");
@@ -67,23 +68,23 @@ public class BrasilBenoitCrawler extends Crawler {
                boolean available = crawlAvailability(sku);
 
                Product product = ProductBuilder.create()
-                     .setUrl(session.getOriginalURL())
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setName(name)
-                     .setPrice(price)
-                     .setPrices(prices)
-                     .setAvailable(available)
-                     .setCategory1(categories.getCategory(0))
-                     .setRatingReviews(ratingsReviews)
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setStock(null)
-                     .setMarketplace(new Marketplace())
-                     .build();
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPrice(price)
+                  .setPrices(prices)
+                  .setAvailable(available)
+                  .setCategory1(categories.getCategory(0))
+                  .setRatingReviews(ratingsReviews)
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setStock(null)
+                  .setMarketplace(new Marketplace())
+                  .build();
                products.add(product);
             }
          }
@@ -102,7 +103,7 @@ public class BrasilBenoitCrawler extends Crawler {
       if (price != null) {
          prices.setBankTicketPrice(price);
          String url = "https://www.benoit.com.br/widget/product_payment_options?SkuID=" + internalId + "&ProductID=" + internalPid
-               + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true";
+            + "&Template=wd.product.payment.options.result.template&ForceWidgetToRender=true";
 
          Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
          Document fetchPage = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
@@ -131,7 +132,7 @@ public class BrasilBenoitCrawler extends Crawler {
             }
 
             prices
-                  .setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(fetchPage, ".wd-content > div > .grid:last-child", null, false, ',', session));
+               .setBankTicketPrice(CrawlerUtils.scrapDoublePriceFromHtml(fetchPage, ".wd-content > div > .grid:last-child", null, false, ',', session));
          } else {
             Map<Integer, Float> installments = new HashMap<>();
             installments.put(1, price);
@@ -270,8 +271,8 @@ public class BrasilBenoitCrawler extends Crawler {
       Float price = null;
 
       if (json.has("Price")) {
-        JSONObject priceJson = json.getJSONObject("Price");
-        price = priceJson.optFloat("SalesPrice");
+         JSONObject priceJson = json.getJSONObject("Price");
+         price = priceJson.optFloat("SalesPrice");
       }
 
       return price;
@@ -285,10 +286,6 @@ public class BrasilBenoitCrawler extends Crawler {
       }
 
       return availability;
-   }
-
-   private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".x-product-top-main") != null;
    }
 
    private CategoryCollection crawlCategories(JSONObject model) {
