@@ -26,6 +26,7 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
    }
 
    val scrapedVariations = mutableListOf<String>()
+   var productsLength = 0;
 
    override fun extractInformation(doc: Document): List<Product> {
       super.extractInformation(doc)
@@ -44,11 +45,15 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
          val variations = doc.select(".form-control.etn-select--custom.variant-select option")?.sliceFirst()
          if (variations != null) {
             scrapedVariations addNonNull doc.selectFirst("#currentSizeValue")?.attr("data-size-value")
+            if (productsLength == 5) return products
             variations
                .filter { it.text().trim() !in scrapedVariations }
                .forEach {
                   val body = dataFetcher.get(session, Request.RequestBuilder.create().setUrl(homePage + it.attr("value")!!).build()).body?.toDoc()
-                  if (body != null) products += extractInformation(body)
+                  if (body != null) {
+                     productsLength++
+                     products += extractInformation(body)
+                  }
                }
          }
       }
