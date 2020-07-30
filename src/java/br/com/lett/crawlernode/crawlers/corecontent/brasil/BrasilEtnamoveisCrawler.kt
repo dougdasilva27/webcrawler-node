@@ -40,17 +40,19 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
             .setSecondaryImages(images.sliceFirst())
             .setOffers(offers)
             .build()
+
+         val variations = doc.select(".form-control.etn-select--custom.variant-select option")?.sliceFirst()
+         if (variations != null) {
+            scrapedVariations addNonNull doc.selectFirst("#currentSizeValue")?.attr("data-size-value")
+            variations
+               .filter { it.text().trim() !in scrapedVariations }
+               .forEach {
+                  val body = dataFetcher.get(session, Request.RequestBuilder.create().setUrl(homePage + it.attr("value")!!).build()).body?.toDoc()
+                  if (body != null) products += extractInformation(body)
+               }
+         }
       }
-      val variations = doc.select(".form-control.etn-select--custom.variant-select option")?.sliceFirst()
-      if (variations != null) {
-         scrapedVariations addNonNull doc.selectFirst("#currentSizeValue")?.attr("data-size-value")
-         variations
-            .filter { it.text().trim() !in scrapedVariations }
-            .forEach {
-               val body = dataFetcher.get(session, Request.RequestBuilder.create().setUrl(homePage + it.attr("value")!!).build()).body?.toDoc()
-               if (body != null) products += extractInformation(body)
-            }
-      }
+
       return products
    }
 
