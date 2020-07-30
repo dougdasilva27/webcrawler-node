@@ -10,12 +10,15 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.Installment.InstallmentBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -26,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilCamicadoCrawler extends Crawler {
 
@@ -151,17 +156,47 @@ public class BrasilCamicadoCrawler extends Crawler {
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      Installments installments = scrapInstallments(doc);
+      Installments installments = new Installments();
 
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+      for (Element element : doc.select(".product-info__installments-text")) {
+         String installmentsText = CrawlerUtils.scrapStringSimpleInfo(element, null, true);
+         String[] splited = installmentsText.split("x");
+
+         if (installmentsText.contains("Renner")) {
+            Installments installmentsRenner = new Installments();
+            Integer installment = Integer.parseInt(splited[0]);
+            Double value = extractPriceFromText(splited[1]);
+
+            installmentsRenner.add(InstallmentBuilder.create()
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(value)
+               .build());
+
+            creditCards.add(CreditCardBuilder.create()
+               .setBrand("Cartão Renner")
+               .setIsShopCard(false)
+               .setInstallments(installmentsRenner)
+               .build());
+
+            creditCards.add(CreditCardBuilder.create()
+               .setBrand("Meu Cartão")
+               .setIsShopCard(false)
+               .setInstallments(installmentsRenner)
+               .build());
+
+         } else {
+            Integer installment = Integer.parseInt(splited[0]);
+            Double value = extractPriceFromText(splited[1]);
+
+            installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(value)
+               .build());
+         }
       }
 
       for (String brand : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
+         creditCards.add(CreditCardBuilder.create()
             .setBrand(brand)
             .setIsShopCard(false)
             .setInstallments(installments)
@@ -171,12 +206,30 @@ public class BrasilCamicadoCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallments(Document doc) {
+   private Double extractPriceFromText(String input) {
+      Double price = null;
+      Pattern pattern = Pattern.compile("([0-9]+,[0-9]+)");
+      Matcher matcher = pattern.matcher(input);
+      if (matcher.find()) {
+         price = MathUtils.parseDoubleWithComma(matcher.group(0));
+      }
+      return price;
+   }
+
+   private Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
       //2x de R$ 46,74 s/ juros no cartão de Crédito
+      String installmentsText = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info__installments-text", true);
+      String[] splited = installmentsText.split("x");
+      if (splited.length > 0) {
+         Integer installment = Integer.parseInt(splited[0]);
+         Double value = MathUtils.parseDoubleWithComma(splited[1].replaceAll("([0-9]+,[0-9]+)", ""));
 
-
-
+         installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(installment)
+            .setInstallmentPrice(value)
+            .build());
+      }
       return installments;
    }
 
