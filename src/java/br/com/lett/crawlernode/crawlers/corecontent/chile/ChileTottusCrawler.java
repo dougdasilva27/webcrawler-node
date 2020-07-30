@@ -62,7 +62,7 @@ public class ChileTottusCrawler extends Crawler {
 
          String internalId = scrapId();
 
-         String name = doc.selectFirst("h1.title").text() + doc.selectFirst("h2.brand").text();
+         String name = doc.selectFirst("h1.title").text() + " " + doc.selectFirst("h2.brand").text();
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs .link.small");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-gallery-image", Collections.singletonList("src"), "http://",
             "www.tottus.cl");
