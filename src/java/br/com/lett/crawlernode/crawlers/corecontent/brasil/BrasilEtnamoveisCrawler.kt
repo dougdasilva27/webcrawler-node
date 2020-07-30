@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card.*
 import br.com.lett.crawlernode.core.models.Product
@@ -13,11 +14,18 @@ import models.pricing.Pricing
 import org.jsoup.nodes.Document
 
 class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
+
+   init {
+      config.fetcher = FetchMode.FETCHER
+   }
+
    private val homePage = "https://www.etna.com.br"
    override fun shouldVisit(): Boolean {
       val href = session.originalURL.toLowerCase()
       return !FILTERS.matcher(href).matches() && href.startsWith(homePage)
    }
+
+   val scrapedVariations = mutableListOf<String>()
 
    override fun extractInformation(doc: Document): List<Product> {
       super.extractInformation(doc)
@@ -35,9 +43,9 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
       }
       val variations = doc.select(".form-control.etn-select--custom.variant-select option")?.sliceFirst()
       if (variations != null) {
-         val currentVariation = doc.selectFirst("#currentSizeValue").attr("data-size-value")
+         scrapedVariations addNonNull doc.selectFirst("#currentSizeValue")?.attr("data-size-value")
          variations
-            .filter { it.text().trim() != currentVariation }
+            .filter { it.text().trim() !in scrapedVariations }
             .forEach {
                val body = dataFetcher.get(session, Request.RequestBuilder.create().setUrl(homePage + it.attr("value")!!).build()).body?.toDoc()
                if (body != null) products += extractInformation(body)
@@ -57,14 +65,15 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
          .setCreditCards(listOf(MASTERCARD, VISA, AMEX, ELO, HIPERCARD, DINERS).toCreditCards(installments))
          .setBankSlip(price?.toBankSlip())
          .setPriceFrom(priceFrom).build()
+      val sellerName = doc.selectFirst(".etn-product__delivery strong")?.text()
       offers.add(
          Offer.OfferBuilder
             .create()
             .setPricing(pricing)
-            .setSellerFullName(doc.selectFirst(".etn-product__delivery strong")?.text())
+            .setSellerFullName(sellerName)
             .setUseSlugNameAsInternalSellerId(true)
             .setIsBuybox(false)
-            .setIsMainRetailer(true)
+            .setIsMainRetailer(sellerName?.matches("Etna".toRegex()) ?: true)
             .build()
       )
       return offers
