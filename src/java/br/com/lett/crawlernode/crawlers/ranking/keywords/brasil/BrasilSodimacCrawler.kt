@@ -5,6 +5,11 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import org.json.JSONObject
 
 class BrasilSodimacCrawler(session: Session?) : CrawlerRankingKeywords(session) {
+   
+   init {
+      pageSize = 28
+   }
+
    override fun extractProductsFromCurrentPage() {
       val url = "https://www.sodimac.com.br/s/search/v1/sobr?q=$keywordEncoded&priceGroup=1018&zone=35745&currentpage=$currentPage"
       val jsonApi = fetchJSONObject(url)

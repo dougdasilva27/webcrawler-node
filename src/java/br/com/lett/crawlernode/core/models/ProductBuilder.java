@@ -6,7 +6,7 @@ import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
-import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.Collection;
 import java.util.List;
@@ -118,7 +118,7 @@ public class ProductBuilder {
    }
 
    public ProductBuilder setSecondaryImages(Collection<String> secondaryImages) {
-      this.secondaryImages = new JSONArray(secondaryImages).toString();
+      this.secondaryImages = JSONObject.valueToString(secondaryImages);
       return this;
    }
 

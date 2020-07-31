@@ -54,11 +54,11 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
             val jsonProduct = getProductFromApi(internalPid, sku)
 
-            val description = jsonProduct.getString("description")
+            val description = jsonProduct.optString("description")
 
             val images = scrapImages(jsonProduct)
 
-            val offers = if (jsonProduct.getBoolean("purchasable")) scrapOffers(jsonProduct, internalPid, sku) else Offers()
+            val offers = if (jsonProduct.optBoolean("purchasable")) scrapOffers(jsonProduct, internalPid, sku) else Offers()
 
             val variants = mutableListOf<String>()
 
@@ -73,7 +73,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
                     .sortedBy {
                         (it as JSONObject).optString("code") ?: ""
                     }.map {
-                        variants addNonNull (it as JSONObject).getString("name")?.trim()?.toUpperCase()
+                        variants addNonNull (it as JSONObject).optString("name")?.trim()?.toUpperCase()
                     }
 
             val name = "${baseName.toUpperCase()} ${variants.joinToString(separator = " ")}"

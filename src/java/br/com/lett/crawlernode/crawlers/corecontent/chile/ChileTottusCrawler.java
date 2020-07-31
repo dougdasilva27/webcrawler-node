@@ -20,11 +20,10 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,11 +55,11 @@ public class ChileTottusCrawler extends Crawler {
 
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
+      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type='application/ld+json']", "", null, false, false);
+      String internalId = jsonInfo.optString("sku", null);
 
-      if (doc.select(".Product") != null) {
+      if (internalId != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
-
-         String internalId = scrapId();
 
          String name = doc.selectFirst("h1.title").text() + " " + doc.selectFirst("h2.brand").text();
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs .link.small");
@@ -91,13 +90,6 @@ public class ChileTottusCrawler extends Crawler {
 
       return products;
 
-   }
-
-   private String scrapId() throws URISyntaxException {
-      String[] tokens = new URI(session.getOriginalURL())
-         .getPath().split("-");
-      String id = tokens[tokens.length - 1];
-      return id.split("/")[0];
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
