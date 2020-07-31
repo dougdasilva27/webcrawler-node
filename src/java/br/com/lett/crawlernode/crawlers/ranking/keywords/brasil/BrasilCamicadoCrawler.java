@@ -1,95 +1,91 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilCamicadoCrawler extends CrawlerRankingKeywords {
 
-	public BrasilCamicadoCrawler(Session session) {
-		super(session);
-	}
+   private static final String BASE_URL = "https://www.camicado.com.br";
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 12;
-			
-		this.log("Página "+ this.currentPage);
-		
-		String key = this.keywordWithoutAccents.replaceAll(" ", "-");
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.camicado.com.br/s/"+ key +"/s/0?q="+ this.keywordEncoded +"&ProductGroup1_ps=36&ProductGroup1_p="+ this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);	
-			
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
-		
-		Elements id =  this.currentDoc.select("ul.products-grid > li");
-		
-		int count=0;
-		
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(id.size() >= 1)
-		{
-			//se o total de busca não foi setado ainda, chama a função para setar
-			if(this.totalProducts == 0) setTotalProducts();
-			
-			for(Element e: id)
-			{
-				count++;
-				//seta o id com o seletor
-				String internalPid 	= null;
-				String internalId 	= e.attr("data-content-id");
-				
-				//monta a url
-				Element eUrl = e.select("h2.product-title > a").first();
-				String productUrl  = eUrl.attr("href");
-				
-				if(!productUrl.contains("camicado")) productUrl = "http://www.camicado.com.br" + productUrl;
-				
-				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("InternalId do produto da "+ count +"º posição da página "+ this.currentPage +": "+ internalId);
-				if(this.arrayProducts.size() == productsLimit) break;
-			}
-		}
-		else
-		{
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+   public BrasilCamicadoCrawler(Session session) {
+      super(session);
+   }
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 48;
+      this.log("Página " + this.currentPage);
 
-	@Override
-	protected boolean hasNextPage() {
-		//tem próxima página
-		//não tem próxima página
-		return this.arrayProducts.size() < this.totalProducts;
-	}
-	
-	@Override
-	protected void setTotalProducts()
-	{
-		Element totalElement = this.currentDoc.select("input.productGroupCount").first();
-		
-		if(totalElement != null)
-		{ 	
-			try
-			{				
-				this.totalProducts = Integer.parseInt(totalElement.attr("value"));
-			}
-			catch(Exception e)
-			{
-				this.logError(e.getMessage());
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
+      JSONObject json = fetchApi();
+
+      JSONArray products = json.optJSONArray("docs");
+
+      if (products != null && !products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts(json);
+         }
+
+         for (Object obj : products) {
+            JSONObject product = (JSONObject) obj;
+
+            String internalId = null;
+            String internalPid = product.optString("parent_product_id");
+            String productUrl = BASE_URL + product.optString("linkId");
+
+            saveDataProduct(internalId, internalPid, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
+
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private void setTotalProducts(JSONObject json) {
+      this.totalProducts = json.optInt("numFound", 0);
+      this.log("Total de produtos: " + this.totalProducts);
+   }
+
+   private JSONObject fetchApi() {
+      JSONObject searchApi = new JSONObject();
+      int start = 48 * (currentPage - 1);
+      String url = "https://recs.richrelevance.com/rrserver/api/find/v1/077c13937e7836b7?" +
+         "query=" + this.keywordEncoded +
+         "&lang=pt" +
+         "&rows=48" +
+         "&placement=search_page.find" +
+         "&start=" + start;
+      this.log("Link onde são feitos os crawlers: " + url);
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Content-Type", "application/json");
+      headers.put("Origin", "https://www.camicado.com.br");
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
+      JSONObject json = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+      if (json.has("placements")) {
+         JSONArray placements = json.getJSONArray("placements");
+
+         if (placements.length() > 0) {
+            searchApi = placements.getJSONObject(0);
+         }
+      }
+
+      return searchApi;
+   }
 }
