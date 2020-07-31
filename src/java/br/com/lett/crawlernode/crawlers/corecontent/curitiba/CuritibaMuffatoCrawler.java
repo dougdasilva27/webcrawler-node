@@ -9,7 +9,7 @@ public class CuritibaMuffatoCrawler extends SupermuffatodeliveryCrawler {
       super(session);
    }
 
-   private static final String CITY_CODE = "13";
+   private static final String CITY_CODE = "14";
 
    @Override
    public String handleURLBeforeFetch(String url) {
