@@ -164,7 +164,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 
          Integer installment = null;
          Double value = null;
-         if(!splited[0].isEmpty() && !splited[1].isEmpty())
+         if(splited[0] != null && splited[1]!= null)
          {
             installment = Integer.parseInt(splited[0]);
             value = extractPriceFromText(splited[1]);
