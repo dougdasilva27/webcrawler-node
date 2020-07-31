@@ -137,7 +137,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__new-value", null, false, ',', this.session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info__old-value", null, false, ',', this.session);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(doc);
       BankSlip bankSlip = scrapBankSlip(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
@@ -154,7 +154,7 @@ public class BrasilCamicadoCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
@@ -214,23 +214,6 @@ public class BrasilCamicadoCrawler extends Crawler {
          price = MathUtils.parseDoubleWithComma(matcher.group(0));
       }
       return price;
-   }
-
-   private Installments scrapInstallments(Document doc) throws MalformedPricingException {
-      Installments installments = new Installments();
-      //2x de R$ 46,74 s/ juros no cartão de Crédito
-      String installmentsText = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info__installments-text", true);
-      String[] splited = installmentsText.split("x");
-      if (splited.length > 0) {
-         Integer installment = Integer.parseInt(splited[0]);
-         Double value = MathUtils.parseDoubleWithComma(splited[1].replaceAll("([0-9]+,[0-9]+)", ""));
-
-         installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(installment)
-            .setInstallmentPrice(value)
-            .build());
-      }
-      return installments;
    }
 
    private JSONObject fetchVariation(String sku, String internalPId) {
