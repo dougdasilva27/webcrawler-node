@@ -162,10 +162,16 @@ public class BrasilCamicadoCrawler extends Crawler {
          String installmentsText = CrawlerUtils.scrapStringSimpleInfo(element, null, true);
          String[] splited = installmentsText.split("x");
 
-         if (installmentsText.contains("Renner")) {
+         Integer installment = null;
+         Double value = null;
+         if(!splited[0].isEmpty() && !splited[1].isEmpty())
+         {
+            installment = Integer.parseInt(splited[0]);
+            value = extractPriceFromText(splited[1]);
+         }
+
+         if (installmentsText.contains("Renner") && installment != null && value != null) {
             Installments installmentsRenner = new Installments();
-            Integer installment = Integer.parseInt(splited[0]);
-            Double value = extractPriceFromText(splited[1]);
 
             installmentsRenner.add(InstallmentBuilder.create()
                .setInstallmentNumber(installment)
@@ -184,10 +190,7 @@ public class BrasilCamicadoCrawler extends Crawler {
                .setInstallments(installmentsRenner)
                .build());
 
-         } else {
-            Integer installment = Integer.parseInt(splited[0]);
-            Double value = extractPriceFromText(splited[1]);
-
+         } else if(installment != null && value != null) {
             installments.add(InstallmentBuilder.create()
                .setInstallmentNumber(installment)
                .setInstallmentPrice(value)
@@ -234,7 +237,7 @@ public class BrasilCamicadoCrawler extends Crawler {
 
    private String scrapVariationName(JSONObject jsonVariation) {
       JSONArray attributes = jsonVariation.optJSONArray("skuAttributes");
-      JSONObject attribute = (JSONObject) attributes.opt(0);
+      JSONObject attribute = attributes.optJSONObject(0);
       return attribute.optString("name");
    }
 
@@ -242,10 +245,12 @@ public class BrasilCamicadoCrawler extends Crawler {
       List<String> finalImages = new ArrayList<>();
       JSONArray images = jsonVariation.optJSONArray("mediaSets");
       for (Object obj : images) {
-         JSONObject image = (JSONObject) obj;
-         String link = image.optString("largeImageUrl");
-         if (link != null) {
-            finalImages.add(link);
+         if(obj instanceof JSONObject){
+            JSONObject image = (JSONObject) obj;
+            String link = image.optString("largeImageUrl");
+            if (link != null) {
+               finalImages.add(link);
+            }
          }
       }
       return finalImages;
