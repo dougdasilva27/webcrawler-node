@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
+import org.json.Cookie
 import org.json.JSONObject
 
 /**
@@ -49,7 +50,13 @@ class BelgiumDelhaizeCrawler(session: Session) : CrawlerRankingKeywords(session)
          "&pageNumber=${currentPage-1}" +
          "&sort=relevance"
 
-      return fetchJSONObject(url)
+      val headers: MutableMap<String, String> = HashMap()
+
+      headers["cookie"] = "groceryCookieLang=fr;"
+
+      val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
+
+      return CrawlerUtils.stringToJson(dataFetcher[session, request].body)
    }
 
    private fun setTotalProductsAndPageSize(search: JSONObject) {
