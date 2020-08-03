@@ -6,11 +6,16 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.*
-import exceptions.MalformedPricingException
+import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.util.addNonNull
+import br.com.lett.crawlernode.util.htmlOf
+import br.com.lett.crawlernode.util.toCreditCards
 import models.Offer
 import models.Offers
-import models.pricing.*
+import models.pricing.BankSlip
+import models.pricing.Installment
+import models.pricing.Installments
+import models.pricing.Pricing
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 
@@ -121,31 +126,30 @@ class BrasilGirafaCrawler(session: Session) : Crawler(session) {
 
       val installments = mutableListOf<Installment>()
 
-      val discount = CrawlerUtils.scrapSimpleInteger(doc, ".produto .precos .laranja", false)
+      val discount = CrawlerUtils.scrapSimpleInteger(doc, ".produto .precos .laranja", false).toDouble()/100
 
       for (e: Element in doc.select(".modal-content .parcelas-table tr")) {
-         val a1 = CrawlerUtils.scrapSimpleInteger(e.child(0), "td", false)
+         val installmentNumber
+            = CrawlerUtils.scrapSimpleInteger(e.child(0), "td", false)
 
 
-         val a2 = CrawlerUtils.scrapDoublePriceFromHtml(e.child(1), null, null, false, ',', session)
-         val a3 = CrawlerUtils.scrapDoublePriceFromHtml(e.child(2), null, null, false, ',', session)
+         val installmentPrice = CrawlerUtils.scrapDoublePriceFromHtml(e.child(1), null, null, false, ',', session)
+         val finalPrice = CrawlerUtils.scrapDoublePriceFromHtml(e.child(2), null, null, false, ',', session)
 
-         val onPageDiscount = if (a1 == 1) {
-            discount.toDouble()/100
+         val onPageDiscount = if (installmentNumber == 1) {
+            discount
          } else {
             null
          }
 
          val installment = Installment.InstallmentBuilder()
-            .setInstallmentNumber(a1)
-            .setInstallmentPrice(a2)
-            .setFinalPrice(a3)
+            .setInstallmentNumber(installmentNumber)
+            .setInstallmentPrice(installmentPrice)
+            .setFinalPrice(finalPrice)
             .setOnPageDiscount(onPageDiscount)
             .build()
 
          installments += installment
-
-
       }
 
       installments.sortBy { it.installmentNumber }
