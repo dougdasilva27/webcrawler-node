@@ -36,7 +36,9 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       }
 
       val name = doc.selectFirst(".product-details .page-title")?.text()
-      val internalId = doc.selectFirst(".ProductDetails .ProductBasketManager .ProductBasketAdder").attr("data-product-id")
+      val internalId = doc.selectFirst(".product-details .Product.component")?.attr("data-item-id")
+
+      val available = doc.selectFirst(".ProductDetails .ProductBasketManager .ProductBasketAdder") != null
 
       val description = doc.selectFirst(".ShowMoreLess__content")?.html()
 
@@ -45,7 +47,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       val primaryImage = scrapPrimaryImage(doc)
       val secondaryImages = scrapSecondaryImages(doc)
 
-      val offers = scrapOffers(doc)
+      val offers = if (available) scrapOffers(doc) else Offers()
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)
