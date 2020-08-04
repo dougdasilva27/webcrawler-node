@@ -107,15 +107,16 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
       val sales = doc.select(".ProductDetails .ProductPromotions .text-bold").eachText()
 
-      val bankSlip : BankSlip = BankSlip.BankSlipBuilder()
-         .setFinalPrice(price)
-         .build()
+      val bankSlip = price.toBankSlip()
+
+       val creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(price)
 
       offers.add(
          Offer.OfferBuilder.create()
             .setPricing(
                Pricing.PricingBuilder.create()
                   .setSpotlightPrice(price)
+                  .setCreditCards(creditCards)
                   .setBankSlip(bankSlip)
                   .build()
             )
