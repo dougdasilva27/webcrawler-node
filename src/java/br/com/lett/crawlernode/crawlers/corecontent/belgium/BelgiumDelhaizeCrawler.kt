@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
+import br.com.lett.crawlernode.crawlers.corecontent.brasil.round
 import br.com.lett.crawlernode.util.*
 import exceptions.MalformedPricingException
 import models.Offer
@@ -102,18 +103,20 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
-      val priceText = doc.selectFirst(".ProductDetails .ultra-bold.test-price-property")?.text() ?: ""
+      val price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ProductDetails .ultra-bold.test-price-property", null, false, ',', session)
 
-      val price = MathUtils.parseDoubleWithComma(priceText)
+      val sales = doc.select(".ProductDetails .ProductPromotions .text-bold").eachText()
 
-      val sales = doc.select(".ProductDetails .ProductPromotions .text-bold").map {
-         it.text()
-      }
+      val bankSlip : BankSlip = BankSlip.BankSlipBuilder()
+         .setFinalPrice(price)
+         .build()
+
       offers.add(
          Offer.OfferBuilder.create()
             .setPricing(
                Pricing.PricingBuilder.create()
                   .setSpotlightPrice(price)
+                  .setBankSlip(bankSlip)
                   .build()
             )
             .setSales(listOf())
