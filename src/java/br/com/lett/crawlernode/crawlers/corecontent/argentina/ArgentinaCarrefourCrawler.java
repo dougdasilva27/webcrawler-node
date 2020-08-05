@@ -1,21 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -26,13 +18,21 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class ArgentinaCarrefourCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.carrefour.com.ar/";
    private static final String SELLER_FULL_NAME = "Carrefour";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ArgentinaCarrefourCrawler(Session session) {
       super(session);
@@ -54,27 +54,22 @@ public class ArgentinaCarrefourCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".fav-btn-open", "data-bind");
          String name = crawlName(doc);
-         boolean available = crawlAvailability(doc);
-         CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
          String secondaryImages = crawlSecondaryImages(doc);
          String description = crawlDescription(doc);
          Integer stock = null;
-         Offers offers = available ? scrapOffer(doc) : new Offers();
+         Offers offers = doc.selectFirst(".btn.btn-add") != null ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setOffers(offers)
-               .setStock(stock).build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setOffers(offers)
+            .setStock(stock).build();
 
          products.add(product);
 
@@ -95,7 +90,7 @@ public class ArgentinaCarrefourCrawler extends Crawler {
    }
 
    private String crawlSecondaryImages(Document doc) {
-      Elements elements = doc.select("div.product-image-gallery .gallery-image[data-zoom-image]");
+      Elements elements = doc.select(".gallery-image[data-zoom-image]");
       JSONArray images = new JSONArray();
       if (elements.size() > 1) {
          for (int i = 1; i < elements.size(); i++) {
@@ -107,21 +102,12 @@ public class ArgentinaCarrefourCrawler extends Crawler {
    }
 
    private String crawlPrimaryImage(Document doc) {
-      Elements elements = doc.select("div.product-image-gallery .gallery-image[data-zoom-image]");
+      Elements elements = doc.select(".gallery-image[data-zoom-image]");
       if (!elements.isEmpty()) {
          return elements.get(0).attr("data-zoom-image");
       }
       return null;
    }
-
-   private CategoryCollection crawlCategories(Document doc) {
-      return new CategoryCollection();
-   }
-
-   private boolean crawlAvailability(Document doc) {
-      return doc.select(".btn.btn-add").first() == null;
-   }
-
 
    private String crawlName(Document doc) {
       if (doc.select("div.product-name h1").first() != null) {
@@ -140,14 +126,14 @@ public class ArgentinaCarrefourCrawler extends Crawler {
       List<String> sales = scrapSales(doc);
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -169,38 +155,36 @@ public class ArgentinaCarrefourCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".regular-price", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-box .price .precio-numero", null, false, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
 
 
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
    }
-
-
 }
