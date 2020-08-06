@@ -81,7 +81,9 @@ class BrasilGirafaCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
-      val installments = scrapInstallments(doc)
+      val discount = (CrawlerUtils.scrapSimpleInteger(doc, ".produto .precos .laranja", false) ?: 0).toDouble()/100
+
+      val installments = scrapInstallments(doc, discount)
 
       val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precos .risco-produto", null, false, ',', session)
 
@@ -91,11 +93,9 @@ class BrasilGirafaCrawler(session: Session) : Crawler(session) {
 
          val creditCards = listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO).toCreditCards(installments)
 
-         val bankSlipDiscount = CrawlerUtils.scrapSimpleInteger(doc, ".produto .precos .laranja", false).toDouble()/100
-
          val bankSlip : BankSlip? = BankSlip.BankSlipBuilder()
             .setFinalPrice(spotlightPrice)
-            .setOnPageDiscount(bankSlipDiscount)
+            .setOnPageDiscount(discount)
             .build()
 
          val sales = doc.select(".produto .precos .desconto").eachText()
@@ -122,11 +122,9 @@ class BrasilGirafaCrawler(session: Session) : Crawler(session) {
       return offers
    }
 
-   private fun scrapInstallments(doc: Document): Installments {
+   private fun scrapInstallments(doc: Document, discount: Double): Installments {
 
       val installments = mutableListOf<Installment>()
-
-      val discount = CrawlerUtils.scrapSimpleInteger(doc, ".produto .precos .laranja", false).toDouble()/100
 
       for (e: Element in doc.select(".modal-content .parcelas-table tr")) {
          val installmentNumber
