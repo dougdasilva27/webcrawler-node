@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
@@ -14,6 +8,13 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.Interval;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class ProxyCollection {
@@ -30,14 +31,19 @@ public class ProxyCollection {
    public static final String INFATICA_RESIDENTIAL_BR = "infatica_residential_br";
    public static final String NETNUT_RESIDENTIAL_BR = "netnut_residential_br";
    public static final String NETNUT_RESIDENTIAL_ES = "netnut_residential_es";
+   public static final String LUMINATI_SERVER_BR_HAPROXY = "luminati_server_haproxy_br";
    public static final String INFATICA_RESIDENTIAL_BR_HAPROXY = "infatica_residential_br_haproxy";
    public static final String BR_OXYLABS = "br-oxylabs";
 
    public static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
-   /** Intervals used to select proxy service when running normal information extraction */
+   /**
+    * Intervals used to select proxy service when running normal information extraction
+    */
    protected Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler = new HashMap<>();
-   /** Intervals used to select proxy service when downloading images */
+   /**
+    * Intervals used to select proxy service when downloading images
+    */
    protected Map<Integer, List<Interval<Integer>>> intervalsMarketsMapImages = new HashMap<>();
 
    protected Map<String, List<LettProxy>> proxyMap = new HashMap<>();
@@ -57,11 +63,11 @@ public class ProxyCollection {
 
    /**
     * Get the array of proxy units corresponding to a proxy service name.
-    * 
+    *
     * @param serviceName the name of the proxy service
-    * @param session the crawler session. Used for logging purposes.
+    * @param session     the crawler session. Used for logging purposes.
     * @return an ArrayList containing all the proxy units for a service. Returns an empty array if the
-    *         service name was not found.
+    * service name was not found.
     */
    public List<LettProxy> getProxy(String serviceName) {
       if (proxyMap.containsKey(serviceName)) {
@@ -76,7 +82,7 @@ public class ProxyCollection {
    /**
     * Get the maximum number of attempts allowed with this proxy service. If the proxy service is not
     * found on the map, the method returns 0 attempts.
-    * 
+    *
     * @param serviceName
     * @return
     */
@@ -113,18 +119,17 @@ public class ProxyCollection {
    }
 
 
-
    /**
     * Select a proxy service to be used, given the number of attempt. To solve this, we create a list
     * of intervals from the maximmum number of attempts per proxy. The list contains all intervals
     * ordered and disjoints. Thus, the problem is: given a a list of ordered and disjoint sets, select
     * the one in which a point is.
-    * 
+    * <p>
     * e.g: buy[1, 1] bonanza[2, 3] attempt = 1 result = buy
-    * 
+    *
     * @param market
     * @param webcrawler true if we must select a proxy from the normal crawling proxies, or false if we
-    *        want to select proxies for image download.
+    *                   want to select proxies for image download.
     * @param attempt
     * @return a String representing the name of the proxy service.
     */

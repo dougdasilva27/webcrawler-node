@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.database;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
+import com.mongodb.client.FindIterable;
+import dbmodels.Tables;
 import org.bson.Document;
 import org.jooq.Condition;
 import org.jooq.Field;
@@ -16,13 +16,14 @@ import org.jooq.conf.ParamType;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.mongodb.client.FindIterable;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
-import dbmodels.Tables;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DatabaseDataFetcher {
 
@@ -46,7 +47,7 @@ public class DatabaseDataFetcher {
 
    /**
     * Fetch the desired market from the database.
-    * 
+    *
     * @param marketCity
     * @param marketName
     * @return
@@ -97,12 +98,12 @@ public class DatabaseDataFetcher {
 
             // create market
             return new Market(r.getValue(marketTable.ID).intValue(),
-                  r.getValue(marketTable.CITY),
-                  r.getValue(marketTable.NAME),
-                  r.getValue(marketTable.CODE),
-                  r.getValue(marketTable.FULLNAME),
-                  proxies,
-                  imageProxies);
+               r.getValue(marketTable.CITY),
+               r.getValue(marketTable.NAME),
+               r.getValue(marketTable.CODE),
+               r.getValue(marketTable.FULLNAME),
+               proxies,
+               imageProxies);
          }
 
       } catch (Exception e) {
@@ -118,7 +119,7 @@ public class DatabaseDataFetcher {
 
    /**
     * Return all proxies from mongo fetcher
-    * 
+    *
     * @return List<LettProxy>
     */
    public Map<String, List<LettProxy>> fetchProxiesFromMongoFetcher() {
