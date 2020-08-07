@@ -15,87 +15,88 @@ import org.jsoup.nodes.Document
 
 class BrasilLefarmaCrawler(session: Session?) : Crawler(session) {
 
-  override fun extractInformation(document: Document): List<Product> {
-    val products = mutableListOf<Product>()
-    if (document.selectFirst(".nome-produto.titulo.cor-secundaria") != null) {
+   override fun extractInformation(document: Document): List<Product> {
+      val products = mutableListOf<Product>()
+      if (document.selectFirst(".nome-produto.titulo.cor-secundaria") != null) {
 
-      val description = document.selectFirst("#descricao").html()
-      val name = document.selectFirst(".nome-produto.titulo")?.text()
-      val internalId = document.selectFirst("div[data-trustvox-product-code-js]")?.attr("data-trustvox-product-code-js")
-      val primaryImage = document.selectFirst("#imagemProduto")?.attr("src")
-      val offers = scrapOffers(document)
-      val categories = document.select(".info-principal-produto ul a")?.eachText(ignoreIndexes = arrayOf(0))
-      val secondaryImages = document.select(".miniaturas.slides a")?.toSecondaryImagesBy(attr = "data-imagem-grande", ignoreIndexes = arrayOf(0))
-      val product = ProductBuilder.create()
-        .setDescription(description)
-        .setCategories(categories)
-        .setPrimaryImage(primaryImage)
-        .setSecondaryImages(secondaryImages)
-        .setOffers(offers)
-        .setUrl(session.originalURL)
-      if (document.selectFirst(".atributo-item") != null) {
-        for (elem in document.select(".atributo-item")) {
-          products.add(
-            product.setInternalId(elem.attr("data-variacao-id"))
-              .setName("$name ${elem.selectFirst(".atributo-item span")?.text()?.trim() ?: ""}".trim()).build()
-          )
-        }
+         val description = document.selectFirst("#descricao").html()
+         val name = document.selectFirst(".nome-produto.titulo")?.text()
+         val internalId = document.selectFirst("div[data-trustvox-product-code-js]")?.attr("data-trustvox-product-code-js")
+         val primaryImage = document.selectFirst("#imagemProduto")?.attr("src")
+         var available = document.selectFirst(".comprar a.botao.botao-comprar") != null
+         val offers = if (available) scrapOffers(document) else Offers()
+         val categories = document.select(".info-principal-produto ul a")?.eachText(ignoreIndexes = arrayOf(0))
+         val secondaryImages = document.select(".miniaturas.slides a")?.toSecondaryImagesBy(attr = "data-imagem-grande", ignoreIndexes = arrayOf(0))
+         val product = ProductBuilder.create()
+            .setDescription(description)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setOffers(offers)
+            .setUrl(session.originalURL)
+         if (document.selectFirst(".atributo-item") != null) {
+            for (elem in document.select(".atributo-item")) {
+               products.add(
+                  product.setInternalId(elem.attr("data-variacao-id"))
+                     .setName("$name ${elem.selectFirst(".atributo-item span")?.text()?.trim() ?: ""}".trim()).build()
+               )
+            }
+         } else {
+            product.setInternalId(internalId)
+               .setName(name)
+               .build()
+            products.add(product.build())
+         }
+      }
+
+      return products
+   }
+
+   private fun scrapOffers(document: Document): Offers {
+      val offers = Offers()
+      val price = document.selectFirst(".preco-promocional.cor-principal")?.toDoubleComma()
+      val priceFrom = document.selectFirst(".principal .preco-venda")?.toDoubleComma()
+
+      val installments = Installments()
+      if (document.selectFirst(".parcela") != null) {
+         for (elem in document.select(".parcela")) {
+            val instNumber = elem.selectFirst(".cor-principal")?.toInt()
+            val instVal = elem.text()?.substringAfter("R$")?.toDoubleComma()
+            installments.add(
+               InstallmentBuilder.create()
+                  .setInstallmentNumber(instNumber)
+                  .setInstallmentPrice(instVal).build()
+            )
+         }
       } else {
-        product.setInternalId(internalId)
-          .setName(name)
-          .build()
-        products.add(product.build())
+         installments.add(
+            InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(price).build()
+         )
       }
-    }
 
-    return products
-  }
+      val bankSlip = document.selectFirst(".text-parcelas.pull-right.cor-principal")?.toDoubleComma()?.toBankSlip()
 
-  private fun scrapOffers(document: Document): Offers {
-    val offers = Offers()
-    val price = document.selectFirst(".preco-promocional.cor-principal")?.toDoubleComma()
-    val priceFrom = document.selectFirst(".principal .preco-venda")?.toDoubleComma()
+      val creditCards = setOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX, Card.HIPERCARD, Card.AURA).toCreditCards(installments)
 
-    val installments = Installments()
-    if (document.selectFirst(".parcela") != null) {
-      for (elem in document.select(".parcela")) {
-        val instNumber = elem.selectFirst(".cor-principal")?.toInt()
-        val instVal = elem.text()?.substringAfter("R$")?.toDoubleComma()
-        installments.add(
-          InstallmentBuilder.create()
-            .setInstallmentNumber(instNumber)
-            .setInstallmentPrice(instVal).build()
-        )
-      }
-    } else {
-      installments.add(
-        InstallmentBuilder.create()
-          .setInstallmentNumber(1)
-          .setInstallmentPrice(price).build()
+      val pricing = PricingBuilder.create()
+         .setSpotlightPrice(price)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build()
+
+      offers.add(
+         OfferBuilder.create()
+            .setPricing(pricing)
+            .setSellerFullName("Le Farma")
+            .setUseSlugNameAsInternalSellerId(true)
+            .setIsMainRetailer(true)
+            .setIsBuybox(false)
+            .build()
       )
-    }
 
-    val bankSlip = document.selectFirst(".text-parcelas.pull-right.cor-principal")?.toDoubleComma()?.toBankSlip()
-
-    val creditCards = setOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX, Card.HIPERCARD, Card.AURA).toCreditCards(installments)
-
-    val pricing = PricingBuilder.create()
-      .setSpotlightPrice(price)
-      .setPriceFrom(priceFrom)
-      .setBankSlip(bankSlip)
-      .setCreditCards(creditCards)
-      .build()
-
-    offers.add(
-      OfferBuilder.create()
-        .setPricing(pricing)
-        .setSellerFullName("Le Farma")
-        .setUseSlugNameAsInternalSellerId(true)
-        .setIsMainRetailer(true)
-        .setIsBuybox(false)
-        .build()
-    )
-
-    return offers
-  }
+      return offers
+   }
 }
