@@ -1,5 +1,15 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.io.File;
+import java.util.List;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.Proxy;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
@@ -10,15 +20,6 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
-import java.util.List;
 
 public class DynamicDataFetcher {
 
@@ -60,7 +61,7 @@ public class DynamicDataFetcher {
     * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -96,10 +97,6 @@ public class DynamicDataFetcher {
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
          CrawlerWebdriver webdriver = new CrawlerWebdriver(chromeOptions, session);
-
-         if (proxy != null && proxy.getUser() != null) {
-            configureAuth(webdriver.driver, url, proxy.getUser(), proxy.getPass());
-         }
 
          if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
             Main.server.incrementWebdriverInstances();
