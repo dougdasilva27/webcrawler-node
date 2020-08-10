@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.Proxy;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,17 +25,16 @@ public class DynamicDataFetcher {
 
    protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
-
-   @Deprecated
    /**
-    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
     * @param url
     * @param session
     * @return
+    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
     */
+   @Deprecated
    public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
       // choose a proxy randomly
-      String proxyString = ProxyCollection.LUMINATI_SERVER_BR;
+      String proxyString = ProxyCollection.LUMINATI_SERVER_BR_HAPROXY;
 
       // // Bifarma block luminati_server
       if (session.getMarket().getName().equals("bifarma")) {
@@ -60,52 +60,34 @@ public class DynamicDataFetcher {
     * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
       try {
          LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
-         ChromeOptions chromeOptions = new ChromeOptions();
-         chromeOptions.setCapability("takesScreenshot", true);
-         chromeOptions.addArguments("--window-size=1920,1080");
-         chromeOptions.addArguments("--ignore-certificate-errors");
-
-         if (!(session instanceof TestCrawlerSession) || headless) {
-            chromeOptions.addArguments("--headless");
-         }
-
-         if (proxy != null) {
-            Proxy proxySel = new Proxy();
-            proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
-            proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
-
-            chromeOptions.addArguments("--blink-settings=imagesEnabled=false");
-            chromeOptions.addExtensions(new File("src/resources/MultiPass.crx"));
-
-            chromeOptions.setCapability("proxy", proxySel);
-         }
-
-         chromeOptions.addArguments("--webdriver-loglevel=NONE");
+         Proxy proxySel = new Proxy();
+         proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
+         proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
 
          String userAgent = FetchUtilities.randUserAgent();
-         chromeOptions.addArguments("--user-agent=" + userAgent);
-
+         ChromeOptions chromeOptions = ChromeOptionsBuilder.create()
+            .setProxy(proxySel)
+            .setHeadless(true)
+            .setSession(session)
+            .setUserAgent(userAgent)
+            .build();
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
          CrawlerWebdriver webdriver = new CrawlerWebdriver(chromeOptions, session);
 
-         if (proxy != null && proxy.getUser() != null) {
-            configureAuth(webdriver.driver, url, proxy.getUser(), proxy.getPass());
-         }
-
          if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
             Main.server.incrementWebdriverInstances();
          }
 
-         webdriver.loadUrl(url);
+         webdriver.loadUrl(url, 5_000);
 
          // saving request content result on Amazon
          S3Service.saveResponseContent(session, requestHash, webdriver.getCurrentPageSource());
@@ -142,11 +124,6 @@ public class DynamicDataFetcher {
       return null;
    }
 
-   /**
-    * @param webdriver
-    * @param url
-    * @return
-    */
    public static Document fetchPage(CrawlerWebdriver webdriver, String url, Session session) {
       try {
          Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");

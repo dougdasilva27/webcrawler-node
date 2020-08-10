@@ -1,26 +1,23 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-import java.io.File;
-import java.util.List;
-import org.apache.commons.io.FileUtils;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.remote.Augmenter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.remote.Augmenter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class encapsulates an instance of a Remote WebDriver that uses a Chromium as backend for
@@ -28,7 +25,6 @@ import br.com.lett.crawlernode.util.Logging;
  * screenshots.
  *
  * @author Samir Leao
- * 
  */
 public class CrawlerWebdriver {
 
@@ -40,6 +36,8 @@ public class CrawlerWebdriver {
 
    public CrawlerWebdriver(ChromeOptions caps, Session session) {
       driver = new ChromeDriver(caps);
+      driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+      driver.manage().window().maximize();
       this.session = session;
    }
 
@@ -85,7 +83,7 @@ public class CrawlerWebdriver {
 
    /**
     * Get the html source of the current page loaded in the webdriver.
-    * 
+    *
     * @return
     */
    public String getCurrentPageSource() {
@@ -94,7 +92,7 @@ public class CrawlerWebdriver {
 
    /**
     * Loads a webpage without any explicit wait.
-    * 
+    *
     * @param url
     * @return
     */
@@ -106,7 +104,7 @@ public class CrawlerWebdriver {
 
    /**
     * Loads a webpage and wait for some time.
-    * 
+    *
     * @param url
     * @param waitTime
     * @return A String containing the page html
@@ -142,7 +140,7 @@ public class CrawlerWebdriver {
 
    /**
     * Get the current loaded page on the webdriver instance.
-    * 
+    *
     * @return
     */
    public String getCurURL() {
@@ -166,7 +164,7 @@ public class CrawlerWebdriver {
 
    /**
     * Get a screenshot from a webpage.
-    * 
+    *
     * @param url
     * @return
     */
@@ -178,7 +176,7 @@ public class CrawlerWebdriver {
 
    /**
     * Get a screenshot from a webpage and save the file.
-    * 
+    *
     * @param url
     * @param path the path where the screenshot will be saved
     */
@@ -194,7 +192,7 @@ public class CrawlerWebdriver {
 
    /**
     * Get a screenshot from the current loaded webpage and save the file.
-    * 
+    *
     * @param url
     * @param path the path where the screenshot will be saved
     */

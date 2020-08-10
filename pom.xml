@@ -16,7 +16,6 @@
         <google.gson.version>2.6.1</google.gson.version>
         <imageio.version>3.4.1</imageio.version>
         <tika.version>1.5</tika.version>
-        <selenium.version>3.141.59</selenium.version>
         <s3.version>1.11.789</s3.version>
         <sqs.version>1.11.194</sqs.version>
         <kinesis.version>0.12.11</kinesis.version>
@@ -178,9 +177,15 @@
 
         <!-- WebDriver -->
         <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>4.1.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
-            <version>${selenium.version}</version>
+            <version>3.141.59</version>
         </dependency>
 
         <!-- Lett database models Already contains these dependencies: jooq, postgresql,
@@ -261,13 +266,6 @@
             <groupId>com.github.spullara.mustache.java</groupId>
             <artifactId>compiler</artifactId>
             <version>${mustache.compiler.version}</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/com.codeborne/phantomjsdriver -->
-        <dependency>
-            <groupId>com.codeborne</groupId>
-            <artifactId>phantomjsdriver</artifactId>
-            <version>${phantomjs.version}</version>
         </dependency>
 
         <dependency>
