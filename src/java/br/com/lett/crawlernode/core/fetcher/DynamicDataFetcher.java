@@ -74,7 +74,7 @@ public class DynamicDataFetcher {
          String userAgent = FetchUtilities.randUserAgent();
          ChromeOptions chromeOptions = ChromeOptionsBuilder.create()
             .setProxy(proxySel)
-            .setHeadless(true)
+            .setHeadless(headless)
             .setSession(session)
             .setUserAgent(userAgent)
             .build();
