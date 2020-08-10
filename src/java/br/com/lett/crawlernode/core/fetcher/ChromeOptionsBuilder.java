@@ -66,13 +66,16 @@ public class ChromeOptionsBuilder {
       if (!(session instanceof TestCrawlerSession) || headless) {
          chromeOptions.setHeadless(true);
       }
+      String binaryPath = WebDriverManager.chromedriver().getBinaryPath();
 
-      System.setProperty("webdriver.chrome.driver", WebDriverManager.chromedriver().getBinaryPath());
+      logger.debug("Web driver binary path: " + binaryPath);
 
+      System.setProperty("webdriver.chrome.driver", binaryPath);
+      chromeOptions.setBinary(binaryPath);
       chromeOptions.setCapability(CapabilityType.TAKES_SCREENSHOT, true);
       chromeOptions.setProxy(proxy)
          .addArguments("--window-size=1920,1080", "--ignore-certificate-errors",
-            "--blink-settings=imagesEnabled=false", "--webdriver-loglevel=NONE");
+            "--blink-settings=imagesEnabled=false", "--verbose", "--disable-dev-shm-usage");
 
       return chromeOptions;
    }
