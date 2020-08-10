@@ -87,7 +87,7 @@ public class DynamicDataFetcher {
             Main.server.incrementWebdriverInstances();
          }
 
-         webdriver.loadUrl(url, 5_000);
+         webdriver.loadUrl(url);
 
          // saving request content result on Amazon
          S3Service.saveResponseContent(session, requestHash, webdriver.getCurrentPageSource());
