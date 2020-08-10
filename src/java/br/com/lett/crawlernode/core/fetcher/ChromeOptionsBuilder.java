@@ -48,7 +48,7 @@ public class ChromeOptionsBuilder {
    }
 
    public ChromeOptions build() {
-      WebDriverManager.chromiumdriver()
+      WebDriverManager.chromedriver()
          .operatingSystem(OperatingSystem.LINUX)
          .setup();
 
@@ -67,7 +67,7 @@ public class ChromeOptionsBuilder {
          chromeOptions.setHeadless(true);
       }
 
-      System.setProperty("webdriver.chrome.driver", WebDriverManager.chromiumdriver().getBinaryPath());
+      System.setProperty("webdriver.chrome.driver", WebDriverManager.chromedriver().getBinaryPath());
 
       chromeOptions.setCapability(CapabilityType.TAKES_SCREENSHOT, true);
       chromeOptions.setProxy(proxy)
