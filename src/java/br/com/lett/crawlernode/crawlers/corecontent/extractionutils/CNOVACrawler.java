@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -57,51 +58,51 @@ import models.pricing.Pricing.PricingBuilder;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (18/08/2016):
- * 
+ *
  * 1) For this crawler, we have one url for mutiples skus.
- * 
+ *
  * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
- * 
+ *
  * 3) There is marketplace information in this ecommerce.
- * 
+ *
  * 4) To get marketplaces we use the url "url + id +/lista-de-lojistas.html"
- * 
+ *
  * 5) The sku page identification is done simply looking the URL format or simply looking the html
  * element.
- * 
+ *
  * 6) Even if a product is unavailable, its price is not displayed, then price is null.
- * 
+ *
  * 7) There is internalPid for skus in this ecommerce. The internalPid is a number that is the same
  * for all the variations of a given sku.
- * 
+ *
  * 8) The first image in secondary images is the primary image.
- * 
+ *
  * 9) When the sku has variations, the variation name it is added to the name found in the main
  * page.
- * 
+ *
  * 10) When the market crawled not appear on the page of the partners, the sku is unavailable.
- * 
+ *
  * 11) Em alguns casos de produtos com variações, o internalId não é o mesmo número que devemos usar
  * para montar a url da lista de lojistas. Nesses casos, nós devemos procurar por um outro id na
  * página principal.
- * 
+ *
  * 12) Em casos de produtos com variação de voltagem, os ids que aparecem no seletor de internalIDs
  * não são os mesmos para acessar a página de marketplace. Em alguns casos esses ids de página de
  * marketplace aparacem na url e no id do produto (Cod item ID). Nesses casos eu pego esses dois ids
  * e acesso a página de marketplace de cada um, e nessa página pego o nome do produto e o document
  * dela e coloco em um mapa. Quando entro na variação eu pego esse mapa e proucuro o document com o
  * nome do produto.
- * 
+ *
  * 13)Quando os ids da url e o (Cod Item ID) são iguais, pego os mesmos marketplaces para as
  * variações, vale lembrar que esse market a página de marketplace é a mesma para as variações.
- * 
+ *
  * 14)Quando as variações não são de voltagem, os ids para entrar na página de marketplace aparaecem
  * no seletor de internalID das variações, logo entro diretamente nas páginas de marketplaces de
  * cada um normalmente.
- * 
+ *
  * 15)Para produtos sem variações, apenas troco o final da url de “.html” para
  * “/lista-de-lojistas.html”.
- * 
+ *
  * Examples: ex1 (available):
  * http://www.extra.com.br/Eletronicos/Televisores/SmartTV/Smart-TV-LED-39-HD-Philco-PH39U21DSGW-com-Conversor-Digital-MidiaCast-PVR-Wi-Fi-Entradas-HDMI-e-Endrada-USB-7323247.html
  * ex2 (unavailable):
@@ -127,7 +128,7 @@ public abstract class CNOVACrawler extends Crawler {
    protected String mainSellerNameLower2;
    protected String marketHost;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
    protected static final String PROTOCOL = "https";
 
    private static final String USER_AGENT = FetchUtilities.randUserAgent();
@@ -166,21 +167,21 @@ public abstract class CNOVACrawler extends Crawler {
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .setFetcheroptions(FetcherOptionsBuilder.create()
-                  .mustUseMovingAverage(false)
-                  .mustRetrieveStatistics(true)
-                  .build())
-            .mustSendContentEncoding(false)
-            .setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.STORM_RESIDENTIAL_US,
-                        ProxyCollection.BUY
-                  )
-            ).build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustUseMovingAverage(false)
+            .mustRetrieveStatistics(true)
+            .build())
+         .mustSendContentEncoding(false)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.STORM_RESIDENTIAL_US,
+               ProxyCollection.BUY
+            )
+         ).build();
 
       Response response = df.get(session, request);
       this.cookies.addAll(response.getCookies());
@@ -188,8 +189,8 @@ public abstract class CNOVACrawler extends Crawler {
       int statusCode = response.getLastStatusCode();
 
       if (response.getBody().isEmpty() || (Integer.toString(statusCode).charAt(0) != '2' &&
-            Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404)) {
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
 
          if (df instanceof FetcherDataFetcher) {
             response = new JavanetDataFetcher().get(session, request);
@@ -260,7 +261,7 @@ public abstract class CNOVACrawler extends Crawler {
                RatingsReviews ratingReviews = crawRating(doc, variationInternalID);
 
                Document variationDocument = sku.hasAttr("selected") ? doc
-                     : Jsoup.parse(fetchPageHtml(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost), session.getOriginalURL()));
+                  : Jsoup.parse(fetchPageHtml(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost), session.getOriginalURL()));
 
                Offers offers = !unnavailable ? scrapOffers(variationDocument) : new Offers();
 
@@ -272,46 +273,10 @@ public abstract class CNOVACrawler extends Crawler {
 
                // Creating the product
                Product product = ProductBuilder.create()
-                     .setUrl(session.getOriginalURL())
-                     .setInternalId(variationInternalID)
-                     .setInternalPid(internalPid)
-                     .setName(variationName)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setEans(eans)
-                     .setOffers(offers)
-                     .setRatingReviews(ratingReviews)
-                     .build();
-
-               products.add(product);
-            }
-         }
-         /*
-          * crawling data of only one product in page
-          */
-         else {
-            JSONObject metadataJSON = CrawlerUtils.selectJsonFromHtml(doc, "script", "varsiteMetadata=", ";", true, true);
-            String idSKU = scrapSkuIdForSingleProductPage(metadataJSON);
-            String internalId = internalPid + (idSKU != null ? "-" + idSKU : "");
-            Offers offers = scrapOffers(doc);
-            RatingsReviews ratingReviews = crawRating(doc, internalId);
-
-            List<String> eans = new ArrayList<>();
-            String ean = scrapEan(doc);
-            if (ean != null) {
-               eans.add(ean);
-            }
-
-            // Creating the product
-            Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
+                  .setInternalId(variationInternalID)
                   .setInternalPid(internalPid)
-                  .setName(name)
+                  .setName(variationName)
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
@@ -322,6 +287,44 @@ public abstract class CNOVACrawler extends Crawler {
                   .setOffers(offers)
                   .setRatingReviews(ratingReviews)
                   .build();
+
+               products.add(product);
+            }
+         }
+         /*
+          * crawling data of only one product in page
+          */
+         else {
+            JSONObject metadataJSON = CrawlerUtils.selectJsonFromHtml(doc, "script", "varsiteMetadata=", ";", true, true);
+
+            String idSKU = scrapSkuIdForSingleProductPage(metadataJSON);
+            String internalId = internalPid + (idSKU != null ? "-" + idSKU : "");
+            boolean unnavailable = checkUnnavaiabilityForAll(doc);
+            Offers offers = !unnavailable ? scrapOffers(doc) : new Offers();
+            RatingsReviews ratingReviews = crawRating(doc, internalId);
+
+            List<String> eans = new ArrayList<>();
+            String ean = scrapEan(doc);
+            if (ean != null) {
+               eans.add(ean);
+            }
+
+            // Creating the product
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setEans(eans)
+               .setOffers(offers)
+               .setRatingReviews(ratingReviews)
+               .build();
 
             products.add(product);
          }
@@ -352,7 +355,7 @@ public abstract class CNOVACrawler extends Crawler {
       String primaryImage = null;
 
       List<String> selectors = Arrays.asList(".carouselBox .thumbsImg li a", ".carouselBox .thumbsImg li a img", "#divFullImage a",
-            "#divFullImage a img");
+         "#divFullImage a img");
 
       for (String selector : selectors) {
          Element imageSelector = doc.selectFirst(selector);
@@ -464,14 +467,14 @@ public abstract class CNOVACrawler extends Crawler {
                      Pricing pricing = scrapSellersPricing(sellerObject);
 
                      offers.add(OfferBuilder.create()
-                           .setInternalSellerId(internalSellerId)
-                           .setSellerFullName(sellerFullName)
-                           .setMainPagePosition(mainPagePosition)
-                           .setSellersPagePosition(position)
-                           .setIsBuybox(isBuyBoxPage)
-                           .setIsMainRetailer(isMainRetailer)
-                           .setPricing(pricing)
-                           .build());
+                        .setInternalSellerId(internalSellerId)
+                        .setSellerFullName(sellerFullName)
+                        .setMainPagePosition(mainPagePosition)
+                        .setSellersPagePosition(position)
+                        .setIsBuybox(isBuyBoxPage)
+                        .setIsMainRetailer(isMainRetailer)
+                        .setPricing(pricing)
+                        .build());
                   }
                   position++;
                }
@@ -490,15 +493,15 @@ public abstract class CNOVACrawler extends Crawler {
    private Pricing scrapSellersPricing(JSONObject sellerObj) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(sellerObj, "price", true);
       BankSlip bankSlip = BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
+         .setFinalPrice(spotlightPrice)
+         .build();
       CreditCards creditCards = scrapSellersCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankSlip)
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
    private CreditCards scrapSellersCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -506,19 +509,19 @@ public abstract class CNOVACrawler extends Crawler {
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       Set<String> allCards = new HashSet<>(this.cards);
       allCards.add(Card.SHOP_CARD.toString());
 
       for (String brand : allCards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(brand)
-               .setIsShopCard(brand.equalsIgnoreCase(Card.SHOP_CARD.toString()))
-               .setInstallments(installments)
-               .build());
+            .setBrand(brand)
+            .setIsShopCard(brand.equalsIgnoreCase(Card.SHOP_CARD.toString()))
+            .setInstallments(installments)
+            .build());
       }
 
       return creditCards;
@@ -535,15 +538,15 @@ public abstract class CNOVACrawler extends Crawler {
       List<String> sales = sale != null ? Arrays.asList(sale) : new ArrayList<>();
 
       return OfferBuilder.create()
-            .setInternalSellerId(internalSellerId)
-            .setSellerFullName(sellerFullName)
-            .setMainPagePosition(1)
-            .setIsBuybox(isBuyBoxPage)
-            .setIsMainRetailer(isMainRetailer)
-            .setSellersPagePosition(sellersPagePosition)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build();
+         .setInternalSellerId(internalSellerId)
+         .setSellerFullName(sellerFullName)
+         .setMainPagePosition(1)
+         .setIsBuybox(isBuyBoxPage)
+         .setIsMainRetailer(isMainRetailer)
+         .setSellersPagePosition(sellersPagePosition)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build();
    }
 
    private Pricing scrapPricingForProductPage(Document doc) throws MalformedPricingException {
@@ -557,11 +560,11 @@ public abstract class CNOVACrawler extends Crawler {
       BankSlip bankSlip = scrapBankslip(doc, spotlightPrice, discount);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankSlip)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
    private BankSlip scrapBankslip(Document doc, Double spotlightPrice, Double discount) throws MalformedPricingException {
@@ -579,9 +582,9 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       return BankSlipBuilder.create()
-            .setFinalPrice(bkPrice)
-            .setOnPageDiscount(bkDiscount)
-            .build();
+         .setFinalPrice(bkPrice)
+         .setOnPageDiscount(bkDiscount)
+         .build();
    }
 
    private CreditCards scrapCreditCardsFromProductPage(Document doc, Double discount, Double spotlightPrice) throws MalformedPricingException {
@@ -590,17 +593,17 @@ public abstract class CNOVACrawler extends Crawler {
       Installments regularCard = scrapInstallments(doc, ".tabsCont #tab01 tr:not(.first)", discount);
       if (regularCard.getInstallments().isEmpty()) {
          regularCard.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(brand)
-               .setIsShopCard(false)
-               .setInstallments(regularCard)
-               .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(regularCard)
+            .build());
       }
 
       Installments shopCard = scrapInstallments(doc, ".tabsCont #tab02 tr:not(.first)", discount);
@@ -610,10 +613,10 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       creditCards.add(CreditCardBuilder.create()
-            .setBrand(Card.SHOP_CARD.toString())
-            .setIsShopCard(true)
-            .setInstallments(shopCard)
-            .build());
+         .setBrand(Card.SHOP_CARD.toString())
+         .setIsShopCard(true)
+         .setInstallments(shopCard)
+         .build());
 
       return creditCards;
    }
@@ -674,11 +677,11 @@ public abstract class CNOVACrawler extends Crawler {
       Double installmentDiscount = maxInstallmentsWithDiscount != null && installment <= maxInstallmentsWithDiscount ? discount : 0d;
 
       return InstallmentBuilder.create()
-            .setInstallmentNumber(installment)
-            .setInstallmentPrice(installmentPrice)
-            .setAmOnPageInterests(interests)
-            .setOnPageDiscount(installmentDiscount)
-            .build();
+         .setInstallmentNumber(installment)
+         .setInstallmentPrice(installmentPrice)
+         .setAmOnPageInterests(interests)
+         .setOnPageDiscount(installmentDiscount)
+         .build();
 
    }
 
@@ -792,7 +795,7 @@ public abstract class CNOVACrawler extends Crawler {
       Element ean = document.select(".productEan").first();
       if (ean != null) {
          description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), new FetcherDataFetcher(),
-               session));
+            session));
       }
 
       return description.toString();
