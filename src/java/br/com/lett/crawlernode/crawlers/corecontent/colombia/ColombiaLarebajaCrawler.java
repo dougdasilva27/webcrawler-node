@@ -183,6 +183,10 @@ public class ColombiaLarebajaCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
+      if (doc.selectFirst(".content-resena p") == null) {
+         return null;
+      }
+
       Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
       Double avgRating = getTotalAvgRating(doc);
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
@@ -197,11 +201,11 @@ public class ColombiaLarebajaCrawler extends Crawler {
    }
 
    private Integer getTotalNumOfRatings(Document doc) {
-      Integer totalNumOfRatings = 0;
+      int totalNumOfRatings = 0;
       Element pResenha = doc.selectFirst(".content-resena p");
-      String resenha = pResenha.text().replaceAll("[^0-9]", "").trim();
 
       if (pResenha != null) {
+         String resenha = pResenha.text().replaceAll("[^0-9]", "").trim();
          totalNumOfRatings = Integer.parseInt(resenha);
       }
 

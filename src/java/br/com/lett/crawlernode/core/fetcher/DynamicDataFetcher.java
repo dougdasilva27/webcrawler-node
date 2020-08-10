@@ -1,17 +1,5 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-import java.io.File;
-import java.util.List;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Proxy;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
@@ -22,6 +10,15 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+import java.util.List;
 
 public class DynamicDataFetcher {
 
@@ -58,17 +55,17 @@ public class DynamicDataFetcher {
 
    /**
     * Use the webdriver to fetch a page.
-    * 
+    *
     * @param url
     * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
       try {
-         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR);
+         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
          ChromeOptions chromeOptions = new ChromeOptions();
          chromeOptions.setCapability("takesScreenshot", true);
@@ -120,14 +117,6 @@ public class DynamicDataFetcher {
       }
    }
 
-   private static void configureAuth(WebDriver driver, String url, String username, String password) {
-      driver.get("chrome-extension://enhldmjbphoeibbpdhmjkchohnidgnah/options.html");
-      driver.findElement(By.id("url")).sendKeys(url);
-      driver.findElement(By.id("username")).sendKeys(username);
-      driver.findElement(By.id("password")).sendKeys(password);
-      driver.findElement(By.className("credential-form-submit")).click();
-   }
-
    private static void sendRequestInfoLogWebdriver(String url, String requestType, LettProxy proxy, String userAgent, Session session, String requestHash) {
 
       JSONObject requestMetadata = new JSONObject();
@@ -154,7 +143,6 @@ public class DynamicDataFetcher {
    }
 
    /**
-    * 
     * @param webdriver
     * @param url
     * @return

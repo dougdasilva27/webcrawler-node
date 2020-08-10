@@ -27,10 +27,10 @@ class BrasilIngredientesonlineCrawler(session: Session) : CrawlerRankingKeywords
 
         for (it in items) {
 
-            val productUrl = it.selectFirst(".product-image-wrapper a").attr("href")
-            val internalId = it.selectFirst(".bt-add button").attr("data-id")
+            val productUrl = it.selectFirst(".product-image-wrapper a")?.attr("href")
+            val internalId = it.selectFirst(".bt-add button")?.attr("data-id")
 
-            saveDataProduct(internalId, null, productUrl)
+            saveDataProduct(internalId, internalId, productUrl)
             log(">>> ✅ productId: $internalId")
         }
     }

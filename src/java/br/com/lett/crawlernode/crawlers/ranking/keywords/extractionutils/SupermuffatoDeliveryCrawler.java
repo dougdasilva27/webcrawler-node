@@ -15,8 +15,6 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
       super(session);
    }
 
-   protected String cityCode;
-
    protected abstract String getCityCode();
 
    @Override
@@ -26,7 +24,7 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
 
       String url = "https://delivery.supermuffato.com.br/buscapagina?" +
             "ft=" + this.keywordEncoded +
-            "&sc=" + cityCode +
+            "&sc=" + getCityCode() +
             "&PS=24" +
             "&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9" +
             "&cc=24" +

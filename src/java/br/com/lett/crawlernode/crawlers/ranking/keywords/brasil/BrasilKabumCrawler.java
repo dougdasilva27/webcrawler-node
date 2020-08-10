@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.select.Elements;
 
 public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 
@@ -72,17 +72,19 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 
    private JSONArray scrapArray() {
       JSONArray json = new JSONArray();
-
       Elements scripts = this.currentDoc.select("body script[type=\"text/javascript\"]");
       String script = scripts.html().replaceAll(" ", "");
 
       if (script.contains("constlistagemDados")) {
 
-         String jsonString = CrawlerUtils.extractSpecificStringFromScript(script, "constlistagemDados=", false, ";", false);
+         String jsonString = CrawlerUtils.extractSpecificStringFromScript(script, "constlistagemDados=", false, "\nconstlistagemCount", false);
          json = CrawlerUtils.stringToJsonArray(jsonString);
-
       }
       return json;
    }
 
+   @Override
+   protected boolean checkIfHasNextPage() {
+      return (arrayProducts.size() % pageSize - currentPage) < 0;
+   }
 }
