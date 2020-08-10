@@ -212,19 +212,25 @@ public class BrasilBitcaoCrawler extends Crawler {
    }
 
    private Offers scrapVariationOffers(Offer baseOffer, Double oldPrice, Double price) throws MalformedPricingException {
-      Offers newOffers = new Offers();
+      Offers offers = new Offers();
 
       if (price != null) {
 
          Offer offer = baseOffer.clone();
 
-         Double priceFrom = offer.getPricing().getPriceFrom();
+         Pricing basePricing = offer.getPricing();
+
+         if(basePricing == null || basePricing.getSpotlightPrice() == null) {
+            return offers;
+         }
+
+         Double priceFrom = basePricing.getPriceFrom();
 
          if (priceFrom != null) {
             priceFrom += oldPrice;
          }
 
-         Double spotlightPrice = offer.getPricing().getSpotlightPrice() + price;
+         Double spotlightPrice = basePricing.getSpotlightPrice() + price;
 
          CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -241,10 +247,10 @@ public class BrasilBitcaoCrawler extends Crawler {
 
          offer.setPricing(pricing);
 
-         newOffers.add(offer);
+         offers.add(offer);
       }
 
-      return newOffers;
+      return offers;
    }
 
    private RatingsReviews scrapRatingReviews(Document doc) {
