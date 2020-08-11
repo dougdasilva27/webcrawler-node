@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import models.Offer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -131,11 +132,17 @@ public class BrasilBitcaoCrawler extends Crawler {
       return variationArray;
    }
 
-   private List<Product> extractVariations(JSONArray variations, Product product) {
+   private List<Product> extractVariations(JSONArray variations, Product product) throws MalformedPricingException {
       List<Product> products = new ArrayList<>();
       Map<String, String> idNameMap = new HashMap<>();
-      Map<String, Float> idPriceMap = new HashMap<>();
-      Map<String, Prices> idPricesMap = new HashMap<>();
+      Map<String, Offers> idOffersMap = new HashMap<>();
+
+
+      if (product.getOffers().isEmpty()) {
+         return products;
+      }
+
+      Offer baseOffer = product.getOffers().get(0);
 
       for (Object obj : variations) {
          if (obj instanceof JSONObject) {
@@ -144,13 +151,11 @@ public class BrasilBitcaoCrawler extends Crawler {
             if (productJson.has("products") && productJson.get("products") instanceof JSONArray) {
                JSONArray skus = productJson.getJSONArray("products");
 
-               Float price = JSONUtils.getFloatValueFromJSON(productJson, "price", true);
-               if (price != null) {
-                  price = price + product.getPrice();
-               }
+               Double price = JSONUtils.getDoubleValueFromJSON(productJson, "price", true);
 
-               Float oldPrice = JSONUtils.getFloatValueFromJSON(productJson, "oldPrice", true);
-               Prices prices = scrapVariationPrices(product.getPrices(), oldPrice, price);
+               Double oldPrice = JSONUtils.getDoubleValueFromJSON(productJson, "oldPrice", true);
+
+               Offers offers = scrapVariationOffers(baseOffer, oldPrice, price);
 
                for (Object o : skus) {
                   if (o instanceof String) {
@@ -162,11 +167,7 @@ public class BrasilBitcaoCrawler extends Crawler {
                         idNameMap.put((String) o, idNameMap.get(o) + " " + productJson.getString("label"));
                      }
 
-                     if (price != null) {
-                        idPriceMap.put((String) o, price);
-                     }
-
-                     idPricesMap.put((String) o, prices);
+                     idOffersMap.put((String) o, offers);
                   }
                }
             }
@@ -179,12 +180,8 @@ public class BrasilBitcaoCrawler extends Crawler {
          clone.setInternalId(key);
          clone.setName(product.getName() + idNameMap.get(key));
 
-         if (idPriceMap.containsKey(key)) {
-            clone.setPrice(idPriceMap.get(key));
-         }
-
-         if (idPricesMap.containsKey(key)) {
-            clone.setPrices(idPricesMap.get(key));
+         if (idOffersMap.containsKey(key)) {
+            clone.setOffers(idOffersMap.get(key));
          }
 
          products.add(clone);
@@ -212,6 +209,48 @@ public class BrasilBitcaoCrawler extends Crawler {
       }
 
       return variationPrices;
+   }
+
+   private Offers scrapVariationOffers(Offer baseOffer, Double oldPrice, Double price) throws MalformedPricingException {
+      Offers offers = new Offers();
+
+      if (price != null) {
+
+         Offer offer = baseOffer.clone();
+
+         Pricing basePricing = offer.getPricing();
+
+         if(basePricing == null || basePricing.getSpotlightPrice() == null) {
+            return offers;
+         }
+
+         Double priceFrom = basePricing.getPriceFrom();
+
+         if (priceFrom != null) {
+            priceFrom += oldPrice;
+         }
+
+         Double spotlightPrice = basePricing.getSpotlightPrice() + price;
+
+         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+         BankSlip bankSlip = BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
+
+         Pricing pricing = PricingBuilder.create()
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
+
+         offer.setPricing(pricing);
+
+         offers.add(offer);
+      }
+
+      return offers;
    }
 
    private RatingsReviews scrapRatingReviews(Document doc) {
@@ -318,7 +357,7 @@ public class BrasilBitcaoCrawler extends Crawler {
    private Pricing scrapPricing(Document doc, String internalId) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-essential .price-box [id*=old-price-] .customize-price", null, true, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#product-price-" + internalId + " .customize-price", null, true, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
             .build();
@@ -333,7 +372,7 @@ public class BrasilBitcaoCrawler extends Crawler {
    }
 
 
-   private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
