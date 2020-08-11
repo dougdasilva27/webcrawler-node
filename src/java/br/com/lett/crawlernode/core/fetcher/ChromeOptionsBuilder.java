@@ -73,9 +73,11 @@ public class ChromeOptionsBuilder {
       System.setProperty("webdriver.chrome.driver", binaryPath);
       chromeOptions.setBinary(binaryPath);
       chromeOptions.setCapability(CapabilityType.TAKES_SCREENSHOT, true);
+      chromeOptions.setCapability(CapabilityType.SUPPORTS_JAVASCRIPT, true);
+      chromeOptions.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true);
       chromeOptions.setProxy(proxy)
          .addArguments("--window-size=1920,1080", "--ignore-certificate-errors",
-            "--blink-settings=imagesEnabled=false", "--verbose", "--disable-dev-shm-usage");
+            "--blink-settings=imagesEnabled=false", "--verbose");
 
       return chromeOptions;
    }

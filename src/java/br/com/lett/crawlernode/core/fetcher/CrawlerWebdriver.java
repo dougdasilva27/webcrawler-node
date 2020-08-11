@@ -32,7 +32,7 @@ public class CrawlerWebdriver {
 
    public WebDriver driver;
 
-   private Session session;
+   private final Session session;
 
    public CrawlerWebdriver(ChromeOptions caps, Session session) {
       driver = new ChromeDriver(caps);
