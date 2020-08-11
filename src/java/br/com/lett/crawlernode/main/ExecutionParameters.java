@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.main;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.server.PoolExecutor;
 import br.com.lett.crawlernode.util.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExecutionParameters {
 
@@ -28,7 +28,6 @@ public class ExecutionParameters {
    private String fetcherUrl;
    private String replicatorUrl;
    private String tmpImageFolder;
-   private String chromiumPath;
    private int nthreads;
    private int coreThreads;
    private String environment;
@@ -71,7 +70,6 @@ public class ExecutionParameters {
       s3BatchPass = System.getenv(EnvironmentVariables.S3_BATCH_PASS);
       setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
       setFetcherUrl(getEnvFetcherUrl());
-      setChromiumPath(getEnvChromiumPath());
       setHikariCpConnectionTimeout();
       setHikariCpIDLETimeout();
       setHikariCpMaxPoolSize();
@@ -108,8 +106,6 @@ public class ExecutionParameters {
       sb.append("\n");
       sb.append("Force image update: " + this.forceImageUpdate);
       sb.append("\n");
-      sb.append("ChromiumPath: " + this.chromiumPath);
-      sb.append("\n");
       sb.append("Use Fetcher: " + this.useFetcher);
       sb.append("\n");
       sb.append("Version: " + this.version);
@@ -129,10 +125,6 @@ public class ExecutionParameters {
 
    private String getEnvReplicatorUrl() {
       return System.getenv(EnvironmentVariables.REPLICATOR_URL);
-   }
-
-   private String getEnvChromiumPath() {
-      return System.getenv(EnvironmentVariables.ENV_CHROMIUM_PATH);
    }
 
    private String getEnvQueueUrlFirstPart() {
@@ -259,14 +251,6 @@ public class ExecutionParameters {
 
    public void setTmpImageFolder(String tmpImageFolder) {
       this.tmpImageFolder = tmpImageFolder;
-   }
-
-   public String getChromiumPath() {
-      return chromiumPath;
-   }
-
-   public void setChromiumPath(String chromiumPath) {
-      this.chromiumPath = chromiumPath;
    }
 
    public Boolean getUseFetcher() {

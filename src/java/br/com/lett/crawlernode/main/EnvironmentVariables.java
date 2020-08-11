@@ -6,7 +6,6 @@ public class EnvironmentVariables {
    public static final String ENV_ENVIRONMENT = "ENVIRONMENT";
    public static final String ENV_FORCE_IMG_UPDATE = "FORCE_IMG_UPDATE";
    public static final String ENV_NTHREADS = "CRAWLER_THREADS";
-   public static final String ENV_CHROMIUM_PATH = "PCHROMIUM_PATH";
    public static final String ENV_TMP_IMG_FOLDER = "TMP_IMG_FOLDER";
    public static final String FETCHER_URL = "FETCHER_URL";
    public static final String HIKARI_CP_CONNECTION_TIMEOUT = "HIKARI_CP_CONNECTION_TIMEOUT";

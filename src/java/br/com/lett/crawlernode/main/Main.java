@@ -9,14 +9,11 @@ import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-
 
 /**
- * 
  * Environment variables: DEBUG : to print debug log messages on console [ON/OFF] ENVIRONMENT
  * [development, production]
- * 
+ *
  * <p>
  * Environments:
  * </p>
@@ -30,48 +27,36 @@ import java.io.File;
  * will run (data will be stored in database and all postprocessing will take place after the main
  * information is crawled.)</li>
  * </ul>
- * 
- * @author Samir Leão
  *
+ * @author Samir Leão
  */
 
 public class Main {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-  public static QueueHandler queueHandler;
-  public static Resources globalResources;
-  public static Server server;
+   public static QueueHandler queueHandler;
+   public static Resources globalResources;
+   public static Server server;
 
-  public static void main(String[] args) {
-    Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
+   public static void main(String[] args) {
+      Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
-    // Setting global configuraions
-    GlobalConfigurations.setConfigurations();
+      // Setting global configuraions
+      GlobalConfigurations.setConfigurations();
 
-    // Create Kinesis KPL child process
-    KPLProducer.getInstance();
+      // Create Kinesis KPL child process
+      KPLProducer.getInstance();
 
-    // Check resources
-    Logging.printLogInfo(LOGGER, "Checking files...");
-    checkFiles();
+      // Check resources
+      Logging.printLogInfo(LOGGER, "Checking files...");
+      // Initialize temporary folder for images download
+      Persistence.initializeImagesDirectories(GlobalConfigurations.markets);
 
-    // Initialize temporary folder for images download
-    Persistence.initializeImagesDirectories(GlobalConfigurations.markets);
+      // Create a queue handler that will contain an Amazon SQS instance
+      queueHandler = new QueueHandler();
 
-    // Create a queue handler that will contain an Amazon SQS instance
-    queueHandler = new QueueHandler();
-
-    // Create the server
-    server = new Server();
-  }
-
-  private static void checkFiles() {
-    File phantom = new File(GlobalConfigurations.executionParameters.getChromiumPath());
-    if (!phantom.exists() && !phantom.isDirectory()) {
-      Logging.printLogError(LOGGER, "Phantom webdriver binary not found.");
-      System.exit(1);
-    }
-  }
-
+      // Create the server
+      server = new Server();
+   }
 }
