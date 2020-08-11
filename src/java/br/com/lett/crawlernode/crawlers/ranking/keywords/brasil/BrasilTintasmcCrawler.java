@@ -48,7 +48,6 @@ public class BrasilTintasmcCrawler extends CrawlerRankingKeywords {
 
       String locationString = CommonMethods.encondeStringURLToISO8859(location.toString(), logger, session);
       urlToRequest = protocolApi + locationString + "&search=" + this.keywordWithoutAccents;
-      System.err.println(urlToRequest);
 
       return urlToRequest;
    }
