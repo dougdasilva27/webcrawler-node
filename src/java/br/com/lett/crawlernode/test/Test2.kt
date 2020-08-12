@@ -83,7 +83,7 @@ internal fun taskProcess(market: Market, parameters: List<String>, sessionFunc: 
 private fun fetchMarket(city: String, marketName: String, marketId: Long): Market? {
    val fetcherDAO = DatabaseDataFetcher(GlobalConfigurations.dbManager)
 
-   return if (city.isEmpty()) {
+   return if (city.isNotEmpty()) {
       fetcherDAO.fetchMarket(city, marketName)
    } else {
       fetcherDAO.fetchMarket(marketId)
