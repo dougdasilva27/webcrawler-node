@@ -1,19 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -30,6 +16,16 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.util.*;
 
 public class BrasilMartinsCrawler extends Crawler {
 
@@ -62,7 +58,7 @@ public class BrasilMartinsCrawler extends Crawler {
          return super.fetch();
       }
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.martinsatacado.com.br/", ProxyCollection.LUMINATI_SERVER_BR, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.martinsatacado.com.br/", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
          webdriver.executeJavascript("$('#go-login').mouseover()");
 
@@ -110,60 +106,60 @@ public class BrasilMartinsCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(
-               logger, session, "Product page identified: " + session.getOriginalURL());
+            logger, session, "Product page identified: " + session.getOriginalURL());
 
          String internalId =
-               CommonMethods.getLast(
-                     CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
+            CommonMethods.getLast(
+               CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".qdDetails .title", true);
          Float price =
-               CrawlerUtils.scrapFloatPriceFromHtml(doc, ".qdValue .value", null, true, ',', session);
+            CrawlerUtils.scrapFloatPriceFromHtml(doc, ".qdValue .value", null, true, ',', session);
          Prices prices = scrapPrices(price);
          CategoryCollection categories =
-               CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
+            CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) > a", true);
          String primaryImage =
-               CrawlerUtils.scrapSimplePrimaryImage(
-                     doc,
-                     ".imagePrincipal img",
-                     Collections.singletonList("src"),
-                     "https",
-                     "imgprd.martins.com.br");
+            CrawlerUtils.scrapSimplePrimaryImage(
+               doc,
+               ".imagePrincipal img",
+               Collections.singletonList("src"),
+               "https",
+               "imgprd.martins.com.br");
          String secondaryImages =
-               CrawlerUtils.scrapSimpleSecondaryImages(
-                     doc,
-                     ".galeryImages img",
-                     Collections.singletonList("src"),
-                     "https",
-                     "imgprd.martins.com.br",
-                     primaryImage);
+            CrawlerUtils.scrapSimpleSecondaryImages(
+               doc,
+               ".galeryImages img",
+               Collections.singletonList("src"),
+               "https",
+               "imgprd.martins.com.br",
+               primaryImage);
          String description =
-               CrawlerUtils.scrapSimpleDescription(
-                     doc,
-                     Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
+            CrawlerUtils.scrapSimpleDescription(
+               doc,
+               Arrays.asList(".qdDetails .cods", ".details", "#especfication", ".body #details"));
          List<String> eans =
-               Collections.singletonList(
-                     CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
+            Collections.singletonList(
+               CrawlerUtils.scrapStringSimpleInfo(doc, ".cods .col-2 p", true));
          RatingsReviews ratingsReviews = scrapRating(doc, internalId);
 
          // Creating the product
          Product product =
-               ProductBuilder.create()
-                     .setUrl(session.getOriginalURL())
-                     .setInternalId(internalId)
-                     .setName(name)
-                     .setPrice(price)
-                     .setPrices(prices)
-                     .setAvailable(price != null)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
-                     .setPrimaryImage(primaryImage)
-                     .setRatingReviews(ratingsReviews)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setMarketplace(new Marketplace())
-                     .setEans(eans)
-                     .build();
+            ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(price != null)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setRatingReviews(ratingsReviews)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setMarketplace(new Marketplace())
+               .setEans(eans)
+               .build();
 
          products.add(product);
 
@@ -177,8 +173,8 @@ public class BrasilMartinsCrawler extends Crawler {
    private RatingsReviews scrapRating(Document doc, String internalId) {
       RatingsReviews ratingsReviews = new RatingsReviews();
       String ratingString =
-            CrawlerUtils.scrapStringSimpleInfoByAttribute(
-                  doc, ".hidden-sm .rating .rating-stars", "data-rating");
+         CrawlerUtils.scrapStringSimpleInfoByAttribute(
+            doc, ".hidden-sm .rating .rating-stars", "data-rating");
       JSONObject jsonRating = JSONUtils.stringToJson(ratingString);
 
       int totalReviews = jsonRating.opt("rating") != null ? jsonRating.optInt("rating") : 0;
