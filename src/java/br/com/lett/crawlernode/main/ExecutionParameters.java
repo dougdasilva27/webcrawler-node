@@ -77,11 +77,18 @@ public class ExecutionParameters {
       setHikariCpValidationTimeout();
       setUseFetcher(getEnvUseFetcher());
       setReplicatorUrl(getEnvReplicatorUrl());
+      setChromePath();
       version = DEFAULT_CRAWLER_VERSION;
 
       Logging.printLogDebug(logger, this.toString());
    }
 
+   public void setChromePath() {
+      String chromePath = System.getenv(EnvironmentVariables.CHROME_PATH);
+      if (chromePath == null)
+         Logging.logWarn(logger, null, null, EnvironmentVariables.CHROME_PATH + " not set");
+      else System.setProperty("webdriver.chrome.driver", chromePath);
+   }
 
    public boolean mustSendToKinesis() {
       return sendToKinesis;

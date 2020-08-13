@@ -26,4 +26,5 @@ public class EnvironmentVariables {
    public static final String S3_BATCH_PASS = "S3_BATCH_PASS";
    public static final String SEND_TO_KINESIS = "SEND_TO_KINESIS";
    public static final String USE_FETCHER = "USE_FETCHER";
+   public static final String CHROME_PATH = "CHROME_PATH";
 }
