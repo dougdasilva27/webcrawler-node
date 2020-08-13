@@ -78,7 +78,7 @@ public class DynamicDataFetcher {
 
          String binaryPath = WebDriverManager.chromedriver().getBinaryPath();
 
-         logger.debug("Chrome driver binary path: " + binaryPath);
+         logger.info("Chrome driver binary path: " + binaryPath);
 
          System.setProperty("webdriver.chrome.driver", binaryPath);
 
