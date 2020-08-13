@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.database;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
-import com.mongodb.client.FindIterable;
-import dbmodels.Tables;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.bson.Document;
 import org.jooq.Condition;
 import org.jooq.Field;
@@ -16,14 +16,13 @@ import org.jooq.conf.ParamType;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.mongodb.client.FindIterable;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
+import dbmodels.Tables;
 
 public class DatabaseDataFetcher {
 
@@ -45,6 +44,7 @@ public class DatabaseDataFetcher {
       this.databaseManager = databaseManager;
    }
 
+
    /**
     * Fetch the desired market from the database.
     *
@@ -55,6 +55,37 @@ public class DatabaseDataFetcher {
    public Market fetchMarket(String marketCity, String marketName) {
       dbmodels.tables.Market marketTable = Tables.MARKET;
 
+      List<Condition> conditions = new ArrayList<>();
+      conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
+
+      return fetchMarket(conditions);
+   }
+
+   /**
+    * Fetch the desired market from the database.
+    *
+    * @param marketId
+    * @return
+    */
+   public Market fetchMarket(Long marketId) {
+      dbmodels.tables.Market marketTable = Tables.MARKET;
+
+      List<Condition> conditions = new ArrayList<>();
+      conditions.add(marketTable.ID.equal(marketId));
+
+      return fetchMarket(conditions);
+   }
+
+   /**
+    * Fetch the desired market from the database.
+    *
+    * @param conditions
+    * @return
+    */
+   private Market fetchMarket(List<Condition> conditions) {
+
+      dbmodels.tables.Market marketTable = Tables.MARKET;
+
       List<Field<?>> fields = new ArrayList<>();
       fields.add(marketTable.ID);
       fields.add(marketTable.CITY);
@@ -63,9 +94,6 @@ public class DatabaseDataFetcher {
       fields.add(marketTable.CODE);
       fields.add(marketTable.PROXIES);
       fields.add(marketTable.PROXIES_IMAGES);
-
-      List<Condition> conditions = new ArrayList<>();
-      conditions.add(marketTable.NAME.equal(marketName).and(marketTable.CITY.equal(marketCity)));
 
       Connection conn = null;
       Statement sta = null;
