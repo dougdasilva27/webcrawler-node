@@ -10,6 +10,8 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import io.github.bonigarcia.wdm.WebDriverManager;
+import io.github.bonigarcia.wdm.config.OperatingSystem;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -65,19 +67,39 @@ public class DynamicDataFetcher {
       String requestHash = FetchUtilities.generateRequestHash(session);
 
       try {
-         LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+         LettProxy proxy = randomProxy(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
          Proxy proxySel = new Proxy();
          proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
          proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
 
          String userAgent = FetchUtilities.randUserAgent();
-         ChromeOptions chromeOptions = ChromeOptionsBuilder.create()
-            .setProxy(proxySel)
-            .setHeadless(headless)
-            .setSession(session)
-            .setUserAgent(userAgent)
-            .build();
+
+
+//         ChromeOptions chromeOptions = ChromeOptionsBuilder.create()
+//            .setProxy(proxySel)
+//            .setHeadless(true)
+//            .setSession(session)
+//            .setUserAgent(userAgent)
+//            .build();
+
+         WebDriverManager.chromedriver()
+//            .operatingSystem(OperatingSystem.MAC)
+            .setup();
+
+         String binaryPath = WebDriverManager.chromedriver().getBinaryPath();
+         System.setProperty("webdriver.chrome.driver", binaryPath);
+
+         ChromeOptions chromeOptions = new ChromeOptions();
+
+         chromeOptions.setProxy(proxySel);
+         chromeOptions.setHeadless(true);
+
+         chromeOptions.setCapability("browserName", "chrome");
+
+         chromeOptions.addArguments("--user-agent=" + userAgent);
+
+         chromeOptions.addArguments("window-size=1024,768", "--no-sandbox");
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
