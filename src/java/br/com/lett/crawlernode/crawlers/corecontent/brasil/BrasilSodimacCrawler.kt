@@ -20,11 +20,18 @@ class BrasilSodimacCrawler(session: Session?) : Crawler(session) {
       super.extractInformation(doc)
       val products: MutableList<Product> = ArrayList()
       if (doc.selectFirst(".product-basic-info") != null) {
+         var productName = doc.selectFirst("h1.product-title").text()
+         val productBrand = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-brand", true)
+		  
+         if(productName != null && productBrand != null) {
+            productName = productBrand + " " + productName
+			   }
+		  
          products += product {
             url = session.originalURL
             internalId = doc.selectFirst(".product-cod").text().split(" ")[1]
-            name = doc.selectFirst("h1.product-title").text()
-
+            name = productName
+			 
             val images = doc.select(".product-swatches img").eachAttr("src").map { img ->
                img.replace("wid=70&hei=70", "wid=420&hei=420")
             }.toMutableList()

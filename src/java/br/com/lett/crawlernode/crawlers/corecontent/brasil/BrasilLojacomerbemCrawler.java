@@ -6,17 +6,15 @@ import java.util.List;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
 import models.RatingsReviews;
 
-public class BrasilSpicyCrawler extends VTEXOldScraper {
+public class BrasilLojacomerbemCrawler extends VTEXOldScraper {
 
-   private static final String HOME_PAGE = "https://www.spicy.com.br/";
-   private static final List<String> SELLERS = Arrays.asList("SPICY");
-   private static final String TRUST_VOX_STORE_ID = "74875";
+   private static final String HOME_PAGE = "https://www.lojacomerbem.com.br/";
+   private static final List<String> SELLERS = Arrays.asList("SYNAPCOM COMERCIO ELETRONICO LTDA");
 
-   public BrasilSpicyCrawler(Session session) {
+   public BrasilLojacomerbemCrawler(Session session) {
       super(session);
    }
 
@@ -38,7 +36,6 @@ public class BrasilSpicyCrawler extends VTEXOldScraper {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject apiJson) {
-      TrustvoxRatingCrawler rating = new TrustvoxRatingCrawler(session, TRUST_VOX_STORE_ID, logger);
-      return rating.extractRatingAndReviews(internalPid, doc, dataFetcher);
+      return null;
    }
 }

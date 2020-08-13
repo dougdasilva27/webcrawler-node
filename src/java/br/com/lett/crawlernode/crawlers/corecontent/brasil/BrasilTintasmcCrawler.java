@@ -1,113 +1,113 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.*;
 
 /**
  * BrasiltintasmcCrawler
  */
 public class BrasilTintasmcCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.tintasmc.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "tintas mc";
-   private static final String YOURVIEWS_API_KEY = "14bf3f36-845e-4e67-8ccf-629f69289f81";
+   private static final String SELLER_FULL_NAME = "Tintas MC";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilTintasmcCrawler(final Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
    }
 
+   private String buildURLToRequest() {
+      String urlToRequest = "";
+
+      String protocolApi = "https://www.obrazul.com.br/api/search/products-v2/?user_location=";
+
+      JSONObject location = new JSONObject();
+      JSONObject address = new JSONObject();
+
+      location.put("lat", "-23.551418");
+      location.put("lng", "-46.72117410000001");
+      location.put("full_address", "Av. das Nações Unidas - Alto de Pinheiros, São Paulo - SP, 05466, Brasil");
+      location.put("address", address);
+      location
+         .put("place_id", "EktBdi4gZGFzIE5hw6fDtWVzIFVuaWRhcyAtIEFsdG8gZGUgUGluaGVpcm9zLCBTw6NvIFBhdWxvIC0gU1AsIDA1NDY2LCBCcmF6aWwiLiosChQKEgm_RA79OlbOlBHcB5b-x2OnrhIUChIJs5ptPTFWzpQRdU3tPpsXy-I");
+
+      address.put("address", "Avenida das Nações Unidas");
+      address.put("neighborhood", "Alto de Pinheiros");
+      address.put("city", "São Paulo");
+      address.put("state", "SP");
+      address.put("_state", "São Paulo");
+      address.put("country", "BR");
+      address.put("_country", "Brasil");
+      address.put("postal_code", "05466");
+
+      String locationString = CommonMethods.encondeStringURLToISO8859(location.toString(), logger, session);
+      String slug = session.getOriginalURL().split("produtos/")[1];
+      urlToRequest = protocolApi + locationString + "&slug=" + slug;
+
+      return urlToRequest;
+   }
+
+   @Override protected Object fetch() {
+      String url = buildURLToRequest();
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authorization", "token 70f16006cb76009ad4d6448910360b5ff55eb9e1"); //This is not the best way to set the token but when this scraper was created this was the only way found...
+
+      Request request = Request.RequestBuilder.create().setHeaders(headers).setUrl(url).build();
+      JSONObject jsonObject = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      JSONArray productsArr = JSONUtils.getJSONArrayValue(jsonObject, "products");
+
+      return productsArr;
+   }
+
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
+   public List<Product> extractInformation(JSONArray productsArr) throws Exception {
+      super.extractInformation(productsArr);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(doc)) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
+      if (session.getOriginalURL().contains("produtos")) {
 
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+         for (Object p : productsArr) {
+            JSONObject prod = (JSONObject) p;
 
-         String internalPid = vtexUtil.crawlInternalPid(skuJson);
-         RatingsReviews ratingReviews = scrapRatingsReviews(skuJson, internalPid);
-
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
-         String description = CrawlerUtils.scrapSimpleDescription(doc,
-               Arrays.asList(".productDescription", "#caracteristicas"));
-
-         // sku data in json
-         JSONArray arraySkus =
-               skuJson != null &&
-                     skuJson.has("skus") &&
-                     !skuJson.isNull("skus")
-                           ? skuJson.getJSONArray("skus")
-                           : new JSONArray();
-
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
-
-            String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
-            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
-            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList("tintasmc"), Card.VISA, session);
-            boolean available = marketplaceMap.containsKey("tintas mc ltda");
-            Prices prices = marketplaceMap.containsKey("tintas mc ltda") ? marketplaceMap.get("tintas mc ltda") : new Prices();
-            Float price = vtexUtil.crawlMainPagePrice(prices);
-            prices.setBankTicketPrice(price);
-            prices.setBankTicketPrice(price);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
-            JSONArray eanArray = CrawlerUtils.scrapEanFromVTEX(doc);
-            RatingsReviews ratingReviewsClone = ratingReviews.clone();
-
-            String ean = i < eanArray.length() ? eanArray.getString(i) : null;
-
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
+            String internalId = scrapInternalId(prod);
+            String name = prod.optString("fullname");
+            String primaryImage = prod.optString("image");
+            String description = prod.optString("short_description");
+            Offers offers = scrapOffer(prod);
 
             // Creating the product
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setMarketplace(marketplace)
-                  .setEans(eans)
-                  .setRatingReviews(ratingReviewsClone)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setOffers(offers)
+               .build();
 
             products.add(product);
+
          }
 
       } else {
@@ -116,55 +116,77 @@ public class BrasilTintasmcCrawler extends Crawler {
       return products;
    }
 
-   private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#___rc-p-dv-id") != null;
-   }
+   private String scrapInternalId(JSONObject prod) {
+      String internalId = "";
+      JSONArray stores = JSONUtils.getJSONArrayValue(prod, "stores");
 
-   private RatingsReviews scrapRatingsReviews(JSONObject json, String internalPid) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
-
-      YourreviewsRatingCrawler yr =
-            new YourreviewsRatingCrawler(session, cookies, logger, YOURVIEWS_API_KEY, this.dataFetcher);
-
-      Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, YOURVIEWS_API_KEY, this.dataFetcher);
-
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
-      Double avgRating = getTotalAvgRating(docRating);
-      AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
-
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-
-      return ratingReviews;
-   }
-
-   private Double getTotalAvgRating(Document docRating) {
-      Double avgRating = 0D;
-      Element rating = docRating.selectFirst("meta[itemprop=ratingValue]");
-
-      if (rating != null) {
-         avgRating = Double.parseDouble(rating.attr("content"));
-      }
-
-      return avgRating;
-   }
-
-   private Integer getTotalNumOfRatings(Document doc) {
-      Integer totalRating = 0;
-      Element totalRatingElement = doc.selectFirst("strong[itemprop=ratingCount]");
-
-      if (totalRatingElement != null) {
-         String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
-
-         if (!totalText.isEmpty()) {
-            totalRating = Integer.parseInt(totalText);
+      if (!stores.isEmpty()) {
+         for (Object arr : stores) {
+            JSONObject store = (JSONObject) arr;
+            internalId = store.optString("productstore_id");
          }
       }
-
-      return totalRating;
+      return internalId;
    }
+
+   private Offers scrapOffer(JSONObject prod) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      JSONArray stores = JSONUtils.getJSONArrayValue(prod, "stores");
+
+      for (Object arr : stores) {
+         JSONObject store = (JSONObject) arr;
+
+         Pricing pricing = scrapPricing(store);
+         List<String> sales = new ArrayList<>();
+
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+      }
+      return offers;
+
+   }
+
+   private Pricing scrapPricing(JSONObject store) throws MalformedPricingException {
+      Double spotlightPrice = store.optDouble("price");
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+
 
 }

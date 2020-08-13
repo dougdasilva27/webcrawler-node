@@ -39,6 +39,13 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
         super.extractInformation(doc)
 
         if (!isProductPage(doc)) {
+
+           //unavailable products
+           if(doc.select(".product .image-product").isNotEmpty()) {
+              return unavailableProducts(doc)
+           }
+
+
             return mutableListOf()
         }
 
@@ -93,6 +100,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
             products addNonNull product
         }
+
         return products
     }
 
@@ -247,4 +255,46 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
     private fun isProductPage(document: Document): Boolean {
         return document.selectFirst(".product_name") != null
     }
+
+   private fun unavailableProducts(doc: Document): MutableList<Product>{
+
+      val imageAtt = doc.selectFirst(".product .product_404 .image-product").attr("src")
+
+      if (imageAtt.isEmpty()) {
+         return mutableListOf()
+      }
+
+      val primaryImage = "http:$imageAtt"
+
+      val internalId = internalPidFromImageLink(primaryImage)
+
+      val name = doc.selectFirst(".product .product_404 .content-wrapper h1").text()
+
+      val product = ProductBuilder()
+         .setUrl(session.originalURL)
+         .setInternalId(internalId)
+         .setName(name)
+         .setPrimaryImage(primaryImage)
+         .setOffers(Offers())
+         .setRatingReviews(null)
+         .build()
+
+      return mutableListOf(product)
+   }
+
+   // http://img.lojasrenner.com.br/item/551942660/small/1.jpg
+   private fun internalPidFromImageLink(imageLink: String): String{
+      val split1 = imageLink.split("/item")
+
+      if (split1.size <= 1) {
+         return ""
+      }
+
+      val split2 = split1[1].split("/small")
+      if (split2.size <= 1) {
+         return ""
+      }
+      return split2[0]
+   }
+
 }
