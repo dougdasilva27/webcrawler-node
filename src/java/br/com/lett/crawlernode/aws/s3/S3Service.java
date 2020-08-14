@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import br.com.lett.crawlernode.aws.ec2.TransferOverFTPS;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -94,13 +93,12 @@ public class S3Service {
     */
    public static void uploadImage(Session session, ObjectMetadata newObjectMetadata, File f, String key, String bucket) throws FileNotFoundException {
 
-      ImageCrawlerSession s = (ImageCrawlerSession) session;
       FileInputStream fileInputStream = new FileInputStream(f);
       PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, fileInputStream, newObjectMetadata);
 
       try {
          s3clientImages.putObject(putObjectRequest);
-         Logging.printLogInfo(logger, session, "[BUCKET - " + bucket + "] Uploaded image #" + s.getImageNumber() + " with success!");
+         Logging.printLogInfo(logger, session, "[BUCKET - " + bucket + "] Uploaded image " + key + " with success!");
 
       } catch (AmazonClientException ace) {
          Logging.printLogError(logger, session, "[BUCKET - " + bucket + "] Error Message:    " + ace.getMessage());
