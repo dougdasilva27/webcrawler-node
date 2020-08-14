@@ -21,11 +21,11 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
 
       if ("/p" in session.originalURL) {
 
-         val name = document.selectFirst(".desc h2 span")?.text()
-         val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".item-product", "data-sku")
+         val name = document.selectFirst("h1")?.text()
+         val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".bt-checkout", "data-sku")
          val categories = document.select("li a[itemprop='item'] span").eachText(ignoreIndexes = arrayOf(0))
          val offers = scrapOffers(document)
-         val primaryImage = document.selectFirst(".align_c.item-image img:last-child")?.attr("src")?.replaceFirst("//", "https://")
+         val primaryImage = document.selectFirst(".cloud-zoom")?.attr("href")?.replaceFirst("//", "https://")
 
          // Creating the product
          products += ProductBuilder.create()
@@ -43,7 +43,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
 
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
-      val price = doc.selectFirst(".sale_price .price")?.toDoubleComma()
+      val price = doc.selectFirst(".sale .sale_price")?.toDoubleComma()
       var priceFrom = doc.selectFirst(".box-pricing .price_off .unit_price")?.toDoubleComma()
 
       price?.let {
