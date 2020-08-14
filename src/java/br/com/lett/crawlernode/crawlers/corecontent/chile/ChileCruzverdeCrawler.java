@@ -23,7 +23,7 @@ import java.util.Set;
 
 public class ChileCruzverdeCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "http://www.cruzverde.cl/";
+   private static final String HOME_PAGE = "www.cruzverde.cl";
    private static final String SELLER_FULL_NAME = "Cruz Verde";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -41,7 +41,7 @@ public class ChileCruzverdeCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoom.js-zoom img", Collections.singletonList("src"), "http://",
-            "www.cruzverde.cl");
+            HOME_PAGE);
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".info-content span p"));
          boolean available = doc.selectFirst(".attributes #add-to-cart-main") != null;
          Offers offers = available ? scrapOffer(doc) : new Offers();
