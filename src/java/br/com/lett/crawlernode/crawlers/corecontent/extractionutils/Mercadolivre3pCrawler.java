@@ -242,7 +242,7 @@ public class Mercadolivre3pCrawler {
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-buybox .ui-pdp-seller__header__title a", false);
+      String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title a", false);
       boolean hasMainOffer = false;
 
       if (sellerFullName != null && !sellerFullName.isEmpty()) {
@@ -367,17 +367,32 @@ public class Mercadolivre3pCrawler {
       return creditCards;
    }
 
-   public Installments scrapInstallments(Element doc) throws MalformedPricingException {
+   public Installments scrapInstallments(Element doc, String selector) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".ui-pdp-payment--md .ui-pdp-media__title", doc, false);
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(selector, doc, false);
       if (!pair.isAnyValueNull()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(pair.getFirst())
-               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
-               .build());
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
+            .build());
       }
 
       return installments;
+   }
+
+   public Installments scrapInstallments(Element doc) throws MalformedPricingException {
+
+      Installments installments = scrapInstallments(doc, ".ui-pdp-payment--md .ui-pdp-media__title");
+
+      if (installments == null || installments.getInstallments().isEmpty()) {
+         return scrapInstallmentsV2(doc);
+      }
+      return installments;
+   }
+
+   public Installments scrapInstallmentsV2(Element doc) throws MalformedPricingException {
+
+      return scrapInstallments(doc, ".ui-pdp-container__row--payment-summary .ui-pdp-media__title");
    }
 }
