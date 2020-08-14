@@ -284,7 +284,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
    // http://img.lojasrenner.com.br/item/551942660/small/1.jpg
    private fun internalPidFromImageLink(imageLink: String): String{
-      val split1 = imageLink.split("/item")
+      val split1 = imageLink.split("/item/")
 
       if (split1.size <= 1) {
          return ""
