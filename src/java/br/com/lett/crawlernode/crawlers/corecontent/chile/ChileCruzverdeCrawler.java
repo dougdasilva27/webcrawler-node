@@ -42,6 +42,8 @@ public class ChileCruzverdeCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoom.js-zoom img", Collections.singletonList("src"), "http://",
             HOME_PAGE);
+         String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".carousel-nav-item img", Collections.singletonList("src"), "http://",
+            HOME_PAGE, primaryImage);
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".info-content span p"));
          boolean available = doc.selectFirst(".attributes #add-to-cart-main") != null;
          Offers offers = available ? scrapOffer(doc) : new Offers();
@@ -53,6 +55,7 @@ public class ChileCruzverdeCrawler extends Crawler {
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImage)
             .setDescription(description)
             .setOffers(offers)
             .build();
