@@ -68,7 +68,6 @@ public class BrasilZattiniCrawler extends Crawler {
 
       JSONObject chaordicJson = crawlChaordicJson(doc);
 
-
       if (chaordicJson.length() > 0) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -295,10 +294,9 @@ public class BrasilZattiniCrawler extends Crawler {
    }
 
 
-
    private Pricing scrapPricing(JSONObject chaordicJson) throws MalformedPricingException {
-      Double priceFrom = chaordicJson.optDouble("old_price");
-      Double spotlightPrice = chaordicJson.optDouble("old_price");
+      Double priceFrom = chaordicJson.has("old_price") ? chaordicJson.getDouble("old_price") : null;
+      Double spotlightPrice = chaordicJson.optDouble("price");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
