@@ -85,9 +85,10 @@ public class ExecutionParameters {
 
    public void setChromePath() {
       String chromePath = System.getenv(EnvironmentVariables.CHROME_PATH);
-      if (chromePath == null)
+      if (chromePath == null) {
          Logging.logWarn(logger, null, null, EnvironmentVariables.CHROME_PATH + " not set");
-      else System.setProperty("webdriver.chrome.driver", chromePath);
+         System.setProperty("webdriver.chrome.driver", "/home/chrome/chromedriver");
+      } else System.setProperty("webdriver.chrome.driver", chromePath);
    }
 
    public boolean mustSendToKinesis() {
