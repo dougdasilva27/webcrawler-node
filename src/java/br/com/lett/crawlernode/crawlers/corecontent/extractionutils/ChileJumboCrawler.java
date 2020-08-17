@@ -31,7 +31,7 @@ public class ChileJumboCrawler extends Crawler {
    public static final String JUMBO_LAFLORIDA_ID = "18";
    public static final String JUMBO_LAREINA_ID = "11";
    public static final String JUMBO_LOSDOMINICOS_ID = "12";
-   public static final String JUMBO_LASCONDES_ID = "12";
+   public static final String JUMBO_LASCONDES_ID = "11";
    public static final String JUMBO_VINA_ID = "16";
 
    private static final String MAIN_SELLER_NAME_LOWER = "jumbo";
