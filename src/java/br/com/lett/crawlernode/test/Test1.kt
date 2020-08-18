@@ -12,7 +12,8 @@ import br.com.lett.crawlernode.database.DatabaseManager
 import br.com.lett.crawlernode.main.ExecutionParameters
 import br.com.lett.crawlernode.main.GlobalConfigurations
 import br.com.lett.crawlernode.processor.ResultManager
-import br.com.lett.crawlernode.test.Test.*
+import br.com.lett.crawlernode.test.Test.pathWrite
+import br.com.lett.crawlernode.test.Test.testType
 
 const val keywordTest = "keyword"
 
@@ -48,7 +49,6 @@ private fun fetchMarket(city: String, market: String): Market? {
 
 fun initialize() {
    pathWrite = ""
-   phantomjsPath = ""
    GlobalConfigurations.executionParameters = ExecutionParameters()
    GlobalConfigurations.executionParameters.setUpExecutionParameters()
 
