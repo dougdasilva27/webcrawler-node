@@ -36,6 +36,7 @@ public class Test {
    private static String city;
    public static String pathWrite;
    public static String testType;
+   public static String phantomjsPath;
 
    private static final Logger LOGGER = LoggerFactory.getLogger(Test.class);
 
@@ -51,6 +52,7 @@ public class Test {
       options.addOption("city", true, "City name");
       options.addOption("pathwrite", true, "Path that product html goes");
       options.addOption("testType", true, "Test type [insights, rating, images]");
+      options.addOption("phantomjsPath", true, "phantonjs");
 
       // parsing command line options
       CommandLineParser parser = new DefaultParser();
@@ -86,6 +88,9 @@ public class Test {
          help();
       }
 
+      if (cmd.hasOption("phantomjsPath"))
+         phantomjsPath = cmd.getOptionValue("phantomjsPath");
+
       // fetch market information
       Market market = fetchMarket();
 
@@ -97,7 +102,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.martinsatacado.com.br/martins/pt/BRL/mercearia-doce/p/amandita-mirabel-chocolate-lacta-emb-contem-1un-de-200g-amandita-martins_1500810",
+                        "https://www.carrefour.com.br/Escova-Dental-Sensodyne-Gentle-Branca-e-Azul/p/9745904",
                         market);
          }
 

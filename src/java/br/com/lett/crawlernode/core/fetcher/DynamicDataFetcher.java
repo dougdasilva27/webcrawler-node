@@ -7,31 +7,34 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.openqa.selenium.Proxy;
-import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
+import org.openqa.selenium.remote.DesiredCapabilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DynamicDataFetcher {
 
    protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
+
+   @Deprecated
    /**
+    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
     * @param url
     * @param session
     * @return
-    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
     */
-   @Deprecated
    public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
       // choose a proxy randomly
       String proxyString = ProxyCollection.LUMINATI_SERVER_BR_HAPROXY;
@@ -49,10 +52,6 @@ public class DynamicDataFetcher {
       return fetchPageWebdriver(url, proxyString, session);
    }
 
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
-      return fetchPageWebdriver(url, proxyString, true, session);
-   }
-
    /**
     * Use the webdriver to fetch a page.
     *
@@ -60,30 +59,53 @@ public class DynamicDataFetcher {
     * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
       try {
+         String phantomjsPath = null;
+         if (session instanceof TestCrawlerSession || session instanceof TestRankingSession) {
+            phantomjsPath = Test.phantomjsPath;
+         } else {
+            phantomjsPath = GlobalConfigurations.executionParameters.getPhantomjsPath();
+         }
+
          LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
-         Proxy proxySel = new Proxy();
-         proxySel.setHttpProxy(proxy.getAddress() + ":" + proxy.getPort());
-         proxySel.setSslProxy(proxy.getAddress() + ":" + proxy.getPort());
+         DesiredCapabilities caps = DesiredCapabilities.phantomjs();
+         caps.setJavascriptEnabled(true);
+         caps.setCapability("takesScreenshot", true);
+         caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomjsPath);
+
+         //
+         // Set proxy via client args
+         // Proxy authorization doesnt work with client args
+         // we must set the header Authorization or use a custom header
+         // that the HAProxy is expecting
+         //
+         List<String> cliArgsCap = new ArrayList<>();
+
+         if (proxy != null) {
+            cliArgsCap.add("--proxy=" + proxy.getAddress() + ":" + proxy.getPort());
+            cliArgsCap.add("--proxy-auth=" + proxy.getUser() + ":" + proxy.getPass());
+            cliArgsCap.add("--proxy-type=http");
+         }
+
+         cliArgsCap.add("--ignore-ssl-errors=true"); // ignore errors in https requests
+         cliArgsCap.add("--load-images=false");
+         cliArgsCap.add("--webdriver-loglevel=NONE");
+
+         caps.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgsCap);
+         caps.setCapability(PhantomJSDriverService.PHANTOMJS_GHOSTDRIVER_CLI_ARGS, "--webdriver-loglevel=NONE");
 
          String userAgent = FetchUtilities.randUserAgent();
+         caps.setCapability(PhantomJSDriverService.PHANTOMJS_PAGE_CUSTOMHEADERS_PREFIX + "User-Agent", userAgent);
 
-         ChromeOptions chromeOptions = new ChromeOptions();
-         chromeOptions.setProxy(proxySel);
-         chromeOptions.setHeadless(headless);
-
-         chromeOptions.setCapability("browserName", "chrome");
-         chromeOptions.addArguments("--user-agent=" + userAgent);
-         chromeOptions.addArguments("window-size=1024,768", "--no-sandbox");
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
-         CrawlerWebdriver webdriver = new CrawlerWebdriver(chromeOptions, session);
+         CrawlerWebdriver webdriver = new CrawlerWebdriver(caps, session);
 
          if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
             Main.server.incrementWebdriverInstances();
@@ -126,6 +148,11 @@ public class DynamicDataFetcher {
       return null;
    }
 
+   /**
+    * @param webdriver
+    * @param url
+    * @return
+    */
    public static Document fetchPage(CrawlerWebdriver webdriver, String url, Session session) {
       try {
          Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");

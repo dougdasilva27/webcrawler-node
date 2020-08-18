@@ -187,7 +187,7 @@ public class Crawler extends Task {
 
          // close the webdriver
          if (webdriver != null && ((RemoteWebDriver) webdriver.driver).getSessionId() != null) {
-            Logging.printLogDebug(logger, session, "Terminating Chromium instance ...");
+            Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
             webdriver.terminate();
          }
 
