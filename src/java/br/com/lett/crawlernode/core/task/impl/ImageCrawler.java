@@ -160,6 +160,7 @@ public class ImageCrawler extends Task {
       ImageCrawlerSession imageCrawlerSession = (ImageCrawlerSession) session;
 
       // upload the transformed version of the image to Amazon
+      File originalImage = new File(imageCrawlerSession.getLocalOriginalFileDir());
       File transformedImageFile = ImageConverter.createTransformedImageFile(imageDownloadResult.imageFile, session);
 
       if (transformedImageFile != null) {
@@ -181,8 +182,10 @@ public class ImageCrawler extends Task {
             newTransformedImageMetadata.setContentType("image/jpeg");
             newTransformedImageMetadata.setContentLength(transformedImageFile.length());
 
+            String key = creatImageKeyOnBucketNew(false, imageCrawlerSession);
+
             S3Service.uploadImage(session, newTransformedImageMetadata, transformedImageFile,
-                  creatImageKeyOnBucketNew(false, imageCrawlerSession), IMAGES_BUCKET_NAME_NEW);
+                  key, IMAGES_BUCKET_NAME_NEW);
          }
          Logging.printLogDebug(LOGGER, session, "Done ... ");
       } else {
@@ -192,7 +195,6 @@ public class ImageCrawler extends Task {
       // upload the original image to Amazon
       if (imageDownloadResult.md5 != null && !imageDownloadResult.imageFormat.isEmpty()) {
          Logging.printLogDebug(LOGGER, session, "Uploading original image to Amazon...");
-         File originalImage = new File(imageCrawlerSession.getLocalOriginalFileDir());
 
          if (oldInsert) {
             ObjectMetadata newObjectMetadata = new ObjectMetadata();
@@ -315,6 +317,8 @@ public class ImageCrawler extends Task {
          }
       } else if (marketId == 307 || marketId == 27 || marketId == 836) {
          request.setSendContentEncoding(false);
+      } else if (marketId == 976) {
+         headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25");
       }
 
       request.setHeaders(headers);
