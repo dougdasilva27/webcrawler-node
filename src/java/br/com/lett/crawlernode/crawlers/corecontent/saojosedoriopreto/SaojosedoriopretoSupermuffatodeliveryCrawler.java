@@ -19,6 +19,6 @@ public class SaojosedoriopretoSupermuffatodeliveryCrawler extends Supermuffatode
 
    @Override
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      return super.crawlProductApi(internalPid, "sc=" + CITY_CODE);
+      return super.crawlProductApi(internalPid, "&sc=" + CITY_CODE);
    }
 }
