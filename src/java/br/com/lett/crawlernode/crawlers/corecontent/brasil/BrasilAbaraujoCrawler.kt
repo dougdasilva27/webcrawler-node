@@ -5,11 +5,7 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.crawlers.corecontent.belgium.BelgiumDelhaizeCrawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.Logging
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
+import br.com.lett.crawlernode.util.*
 import com.google.common.collect.Sets
 import models.Offer
 import models.Offers
@@ -17,7 +13,6 @@ import models.pricing.Installment
 import models.pricing.Installments
 import models.pricing.Pricing
 import org.jsoup.nodes.Document
-import br.com.lett.crawlernode.util.*
 
 class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
 
@@ -85,7 +80,7 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
             .setIsMainRetailer(true)
             .setIsBuybox(false)
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(BelgiumDelhaizeCrawler.SELLER_NAME)
+            .setSellerFullName(SELLER_FULL_NAME)
             .setSales(listOf())
             .build()
       )
