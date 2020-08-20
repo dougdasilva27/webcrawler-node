@@ -18,9 +18,10 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String url = "https://www.cruzverde.cl/busqueda?q=" + this.keywordWithoutAccents + "&search-button=&lang=es_CL&start=" + this.pageSize + "&sz=12";
+      String urlWithoutSpaces = url.replaceAll(" ", "+");
 
-      this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
+      this.log("Link onde são feitos os crawlers: " + urlWithoutSpaces);
+      this.currentDoc = fetchDocument(urlWithoutSpaces);
       Elements products = this.currentDoc.select(".product.product-wrapper");
 
       if (!products.isEmpty()) {
