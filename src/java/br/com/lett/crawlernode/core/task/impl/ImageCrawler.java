@@ -292,7 +292,10 @@ public class ImageCrawler extends Task {
 
       int marketId = session.getMarket().getNumber();
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
+
+      if (marketId != 17) {
+         headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
+      }
 
       if (marketId == 63 || marketId == 62 || marketId == 73) {
          request.setSendContentEncoding(false);
