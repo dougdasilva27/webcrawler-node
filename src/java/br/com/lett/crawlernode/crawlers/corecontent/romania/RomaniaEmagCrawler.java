@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -110,9 +111,30 @@ public class RomaniaEmagCrawler extends Crawler {
       return sales;
    }
 
+   private Double concatPrice(Document doc, String cssSelector1, String cssSelector2) {
+      Double price = 0D;
+
+      String firstDecimalPlace = doc.selectFirst(cssSelector1).ownText();
+      String secondDecimalPlace = doc.selectFirst(cssSelector2).text();
+
+      if (firstDecimalPlace != null && secondDecimalPlace != null) {
+         String priceConcat = firstDecimalPlace + "," + secondDecimalPlace;
+         price = MathUtils.parseDoubleWithComma(priceConcat);
+      }
+
+      return price;
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-old-price s", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".container .product-page-pricing .product-new-price", null, false, ',', session);
+      Double priceFrom = 0D;
+
+      if (doc.selectFirst(".w-50.mrg-rgt-xs .product-old-price s") != null) {
+         priceFrom = concatPrice(doc, ".w-50.mrg-rgt-xs .product-old-price s", "sup");
+      } else {
+         priceFrom = null;
+      }
+
+      Double spotlightPrice = concatPrice(doc, ".w-50.mrg-rgt-xs .product-new-price", "sup");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
