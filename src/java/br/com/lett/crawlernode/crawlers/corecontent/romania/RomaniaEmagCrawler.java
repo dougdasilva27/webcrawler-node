@@ -12,12 +12,14 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,13 +47,13 @@ public class RomaniaEmagCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-highlight button", "data-offer-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-header.has-subtitle-info h1", false);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".mrg-sep-sm div", false);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".mrg-sep-sm", ".container.pad-btm-lg"));
          boolean available = doc.selectFirst(".label.label-in_stock") != null;
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumbnail-wrapper .product-gallery-image", Arrays.asList("href"), "https:", "www.emag.ro/");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".thumbnail-wrapper .product-gallery-image", Arrays.asList("href"), "https:", "www.emag.ro/", primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a");
-         //  RatingsReviews ratingReviews = crawlRatingReviews(internalId);
-         Offers offers = scrapOffer(doc);
+         RatingsReviews ratingReviews = crawlRating(doc);
+         Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -65,7 +67,7 @@ public class RomaniaEmagCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            //  .setRatingReviews(ratingReviews)
+            .setRatingReviews(ratingReviews)
             .setOffers(offers)
             .build();
 
@@ -164,6 +166,75 @@ public class RomaniaEmagCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private RatingsReviews crawlRating(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
+
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".mrg-btm-xxs .star-rating.star-rating-read", false, 0);
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".review-rating-data", null, false, '.', session);
+      AdvancedRatingReview adRating = scrapAdvancedRatingReview(doc);
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAdvancedRatingReview(adRating);
+
+      return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+      Integer stars = 0;
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      Elements reviews = doc.select(".reviews-summary-container .reviews-summary-bars .js-rating-bar:last-child");
+
+      for (Element review : reviews) {
+
+         String stringStarNumber = review.attr("data-value");
+         Integer numberOfStars = !stringStarNumber.isEmpty() ? Integer.parseInt(stringStarNumber) : 0;
+
+         String elementVoteNumber = review.text();
+
+         if (elementVoteNumber != null) {
+
+            String vN = elementVoteNumber.replaceAll("[^0-9]", "").trim();
+            Integer numberOfVotes = !vN.isEmpty() ? Integer.parseInt(vN) : 0;
+
+            switch (numberOfStars) {
+               case 5:
+                  star5 = numberOfVotes;
+                  break;
+               case 4:
+                  star4 = numberOfVotes;
+                  break;
+               case 3:
+                  star3 = numberOfVotes;
+                  break;
+               case 2:
+                  star2 = numberOfVotes;
+                  break;
+               case 1:
+                  star1 = numberOfVotes;
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
 
