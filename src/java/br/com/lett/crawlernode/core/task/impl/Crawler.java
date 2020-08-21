@@ -426,9 +426,9 @@ public class Crawler extends Task {
       StringBuilder url = new StringBuilder()
             .append(GlobalConfigurations.executionParameters.getAwsImageEvauationApiUrl())
             .append("/evaluation")
-            .append("/:" + session.getMarket().getNumber())
-            .append("/:" + internalId)
-            .append("/:1");
+            .append("/" + session.getMarket().getNumber())
+            .append("/" + internalId)
+            .append("/1");
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Token", GlobalConfigurations.executionParameters.getAwsImageEvaluationToken());
@@ -438,7 +438,7 @@ public class Crawler extends Task {
       Request request = RequestBuilder.create()
             .setUrl(url.toString())
             .setHeaders(headers)
-            .setTimeout(1)
+            .setTimeout(5000)
             .build();
 
       new JavanetDataFetcher().delete(session, request);

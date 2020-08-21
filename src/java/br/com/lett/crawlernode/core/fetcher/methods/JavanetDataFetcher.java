@@ -276,6 +276,9 @@ public class JavanetDataFetcher implements DataFetcher {
       List<String> proxies = request.getProxyServices();
 
       long requestStartTime = System.currentTimeMillis();
+
+      String content = "";
+
       try {
          Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
          String proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.STORM_RESIDENTIAL_US : proxies.get(0);
@@ -315,14 +318,25 @@ public class JavanetDataFetcher implements DataFetcher {
             connection.setRequestProperty(entry.getKey(), entry.getValue());
          }
 
-         connection.connect();
+         // Get Response
+         InputStream is = connection.getInputStream();
+         BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+         StringBuilder responseStr = new StringBuilder(); // or StringBuffer if Java version 5+
+         String line;
+         while ((line = rd.readLine()) != null) {
+            responseStr.append(line);
+            responseStr.append('\r');
+         }
+         rd.close();
+
+         content = responseStr.toString();
 
          requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
 
          Map<String, String> responseHeaders = FetchUtilities.headersJavaNetToMap(connection.getHeaderFields());
 
          response = new ResponseBuilder()
-               .setBody("")
+               .setBody(content)
                .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
                .setRedirecturl(connection.getURL().toString())
                .setHeaders(responseHeaders)
@@ -334,6 +348,7 @@ public class JavanetDataFetcher implements DataFetcher {
          requests.add(requestStats);
          session.addRedirection(request.getUrl(), connection.getURL().toString());
       } catch (Exception e) {
+         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
          if (session instanceof TestCrawlerSession) {
             Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
          }
