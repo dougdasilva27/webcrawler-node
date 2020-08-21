@@ -5,13 +5,13 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
 
 public class PortugalAuchanCrawler extends CrawlerRankingKeywords {
 
@@ -20,13 +20,19 @@ public class PortugalAuchanCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.APACHE;
    }
 
+   @Override
+   protected void processBeforeFetch() {
+      super.processBeforeFetch();
+      Logging.printLogDebug(logger, session, "Adding cookie...");
+
+      this.cookies = CrawlerUtils
+         .fetchCookiesFromAPage("https://www.auchan.pt/Frontoffice/", Arrays.asList("ASP.NET_SessionId", "AuchanSessionCookie", "AUCHANCOOKIE"), "www.auchan.pt", "/", cookies, session, null,
+            dataFetcher);
+   }
+
    public Document fetch(String url) {
       String doc = "";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie",
-         "ASP.NET_SessionId=axhfttaqkalpwytwes0bw5kb; AuchanSessionCookie=u4xIamdzL6M_R006lJqK8w_Z88O1WWu20eSHUpBHV3yUXV6SxVniYcx3Ce4kUtWPhVeNncTWrYtLsPhOEtAmLV8notQMFHnKZ95Y9BxAx2EPts5JeipBZQXO1QRKMoN70Jq2iyNVsCFpIR545qpMihRprAz7R7Vb1Vbq_xnTheIIVHN4r1adv4IVTStC1Q6KemoHOtEM3gg7ZYEUDohgsyZiTyUDB0MLP5utKPPr_nVNyyJN-__fHWcy18E8KyovRhD_ua9TVffbuvcRxBt8A1yZzWqS6irvSngRNJGYM_kbnflrHr-QsEwCcbYiTfhghH_Tr6hPhBBVcdMJmJawIl4G_8yzl7uL9_wmS3CuYXX8TM-y43yGabA_9dMag_ep_nSbwXZUObqYa-9KhLv-qflp8M-DmPqqYHKjXoCIH3G1-Se_iQRJTenIZHNMFksK; __RequestVerificationToken_L0Zyb250b2ZmaWNl0=sCoJaqCMarHUs6YNNlDrWIhyLTuulzob5CpjdHc765DeeyDQf_C1KiI3LqwdlurrsvBfsm3AWZndp-mPHS-YI2eCCBfawdbFEjISy1Wkyh41; AUCHANCOOKIE=id=18710ecd-8396-4575-a038-45d8eb285d12&an=1&pl=0&nl=False&se=637332914960490421");
-
-      Request request = Request.RequestBuilder.create().setHeaders(headers).setUrl(url).build();
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url).build();
       doc = this.dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(doc);
@@ -39,8 +45,6 @@ public class PortugalAuchanCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String url = "https://www.auchan.pt/Frontoffice/search/" + this.keywordWithoutAccents;
-      System.err.println(url);
-
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetch(url);
