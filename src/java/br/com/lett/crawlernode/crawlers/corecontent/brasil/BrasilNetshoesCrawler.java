@@ -1,20 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -27,20 +13,27 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.Seller;
-import models.Util;
+import models.*;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * date: 27/03/2018
- * 
- * @author gabriel
  *
+ * @author gabriel
  */
 
 public class BrasilNetshoesCrawler extends Crawler {
@@ -128,9 +121,9 @@ public class BrasilNetshoesCrawler extends Crawler {
 
             // Creating the product
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-                  .setRatingReviews(ratingReviews).setMarketplace(marketplace).build();
+               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+               .setRatingReviews(ratingReviews).setMarketplace(marketplace).build();
 
             products.add(product);
          }
@@ -178,8 +171,8 @@ public class BrasilNetshoesCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
-      Double avgRating = getTotalAvgRating(doc);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating-box__numberOfReviews", false, 0);
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".rating-box__value", null, false, '.', session);
       AdvancedRatingReview adRating = scrapAdvancedRatingReview(doc);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -199,8 +192,6 @@ public class BrasilNetshoesCrawler extends Crawler {
       Integer star5 = 0;
 
       Elements reviews = doc.select("#reviews > div.reviews__customerFeedback > div.reviews__feedback > div > div.reviews__feedback-reviews-rating > span > i");
-
-
 
       for (Element review : reviews) {
 
@@ -238,50 +229,12 @@ public class BrasilNetshoesCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
-   }
-
-   private Double getTotalAvgRating(Document docRating) {
-      String reviewText = "";
-      Double avgRating = 0d;
-      Element rating = docRating.select("span[itemprop=ratingValue]").first();
-
-      if (rating != null) {
-         String text = rating.text().trim();
-         reviewText = text.replaceAll("[^0-9.,]", "");
-         if (!reviewText.isEmpty()) {
-            avgRating = MathUtils.parseDoubleWithDot(reviewText);
-         }
-      }
-
-      return avgRating;
-   }
-
-   /**
-    * Number of ratings appear in html element
-    * 
-    * @param doc
-    * @return
-    */
-   private Integer getTotalNumOfRatings(Document doc) {
-      String reviewText = "";
-      Integer totalRating = 0;
-      Element rating = doc.select("meta[itemprop=reviewCount]").first();
-
-      if (rating.hasAttr("content")) {
-         String votes = rating.attr("content");
-         reviewText = votes.replaceAll("[^0-9]", "");
-         if (!reviewText.isEmpty()) {
-            totalRating = Integer.parseInt(reviewText);
-         }
-      }
-
-      return totalRating;
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
    private String crawlName(JSONObject chaordicJson, JSONObject skuJson) {
@@ -462,7 +415,7 @@ public class BrasilNetshoesCrawler extends Crawler {
    /**
     * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
     * à vista R$ 1.790,00
-    * 
+    *
     * @param internalId
     * @param price
     * @return
