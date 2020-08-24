@@ -47,6 +47,7 @@ public class FetchUtilities {
    public static final String CRAWLER = "CRAWLER";
    public static final String GET_REQUEST = "GET";
    public static final String POST_REQUEST = "POST";
+   public static final String DELETE_REQUEST = "DELETE";
    public static final String CONTENT_ENCODING = "compress, gzip";
 
    public static final String HEADER_SET_COOKIE = "Set-Cookie";
