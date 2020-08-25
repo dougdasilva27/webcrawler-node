@@ -29,9 +29,8 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
             setTotalProducts();
          }
 
-         for (int i = 0; i <= products.size(); i++) {
+         for (Element e : products) {
 
-            Element e = products.get(i);
             String internalId = e.attr("data-pid");
             String productUrl = "https://www.cruzverde.cl" + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, " .image-container a", "href");
 
