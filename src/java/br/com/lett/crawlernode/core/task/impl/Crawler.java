@@ -1,8 +1,11 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -375,6 +378,11 @@ public class Crawler extends Task {
                Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
+
+            if (newProcessedProduct.getPic() == null) {
+               deleteImageEvaluation(newProcessedProduct.getInternalId());
+            }
+
             scheduleImages(persistenceResult, newProcessedProduct);
 
             if (session instanceof SeedCrawlerSession) {
@@ -413,6 +421,27 @@ public class Crawler extends Task {
 
    }
 
+   private void deleteImageEvaluation(String internalId) {
+      StringBuilder url = new StringBuilder()
+            .append(GlobalConfigurations.executionParameters.getAwsImageEvauationApiUrl())
+            .append("/evaluation")
+            .append("/" + session.getMarket().getNumber())
+            .append("/" + internalId)
+            .append("/1");
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Token", GlobalConfigurations.executionParameters.getAwsImageEvaluationToken());
+      headers.put("Request-Id", "crawler_" + session.getSessionId());
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+
+      Request request = RequestBuilder.create()
+            .setUrl(url.toString())
+            .setHeaders(headers)
+            .setTimeout(5000)
+            .build();
+
+      new JavanetDataFetcher().delete(session, request);
+   }
 
    /**
     * It defines wether the crawler must true to extract data or not.
