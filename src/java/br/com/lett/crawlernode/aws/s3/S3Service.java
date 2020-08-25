@@ -115,7 +115,7 @@ public class S3Service {
     * @param session
     * @param file
     */
-   public static void uploadCrawlerSessionContentToAmazon(Session session) {
+   public static void uploadCrawlerSessionContentToAmazo(Session session) {
       try {
          String tarPath = new StringBuilder()
                .append(LOCAL_PATH)

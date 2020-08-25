@@ -13,7 +13,6 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
-import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -182,7 +181,7 @@ public class Crawler extends Task {
    public void onFinish() {
       try {
          if (!(session instanceof TestCrawlerSession)) {
-            S3Service.uploadCrawlerSessionContentToAmazon(session);
+            // S3Service.uploadCrawlerSessionContentToAmazon(session);
          }
 
          // close the webdriver

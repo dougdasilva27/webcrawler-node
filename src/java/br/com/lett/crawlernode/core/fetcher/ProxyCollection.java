@@ -22,6 +22,7 @@ public class ProxyCollection {
 
    public static final String BUY = "buy";
    public static final String BONANZA = "bonanza";
+   public static final String BONANZA_BELGIUM = "bonanza_server_be";
    public static final String STORM_RESIDENTIAL_US = "storm_residential_us";
    public static final String STORM_RESIDENTIAL_EU = "storm_residential_eu";
    public static final String NO_PROXY = "no_proxy";
