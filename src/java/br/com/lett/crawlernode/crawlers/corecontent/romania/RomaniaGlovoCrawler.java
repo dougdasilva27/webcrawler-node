@@ -29,8 +29,8 @@ public class RomaniaGlovoCrawler extends Crawler {
       super(session);
    }
 
-   private final String HOME_PAGE = "https://www.emag.ro/";
-   private static final String SELLER_FULL_NAME = "Emag";
+   private final String HOME_PAGE = "https://glovoapp.com/ro/buc/store/kaufland-buc/collection/78058245";
+   private static final String SELLER_FULL_NAME = "Glovo";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
