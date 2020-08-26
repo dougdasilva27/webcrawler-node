@@ -20,6 +20,7 @@ import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
@@ -132,7 +133,7 @@ public abstract class CrawlerRanking extends Task {
       // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
       // }
 
-      // S3Service.uploadCrawlerSessionContentToAmazon(session);
+      S3Service.uploadCrawlerSessionContentToAmazon(session);
 
       // close the webdriver
       if (webdriver != null) {
