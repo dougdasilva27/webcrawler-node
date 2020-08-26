@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -14,10 +13,10 @@ public class ChileCruzverdeCrawler extends CrawlerRankingKeywords {
    }
 
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 0;
+      this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.cruzverde.cl/busqueda?q=" + this.keywordWithoutAccents + "&search-button=&lang=es_CL&start=" + this.pageSize + "&sz=12";
+      String url = "https://www.cruzverde.cl/busqueda?q=" + this.keywordWithoutAccents + "&search-button=&lang=es_CL";
       String urlWithoutSpaces = url.replaceAll(" ", "+");
 
       this.log("Link onde são feitos os crawlers: " + urlWithoutSpaces);
