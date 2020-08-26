@@ -1,18 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
@@ -21,38 +18,38 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   protected String mainSellerNameLower;
-   protected String mainSellerNameLower2;
+   private static final String API_KEY = "umQBi56tVoP0MBX8h%2B3ZtA%3D%3D";
    protected String marketHost = "www.extra.com.br";
    protected static final String PROTOCOL = "https";
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   public void extractProductsFromCurrentPage() {
+      this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.extra.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + "/b?page=" + this.currentPage;
-      this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = Jsoup.parse(fetchPage(url));
+      JSONObject search = fetchProductsFromAPI();
 
-      Elements products = this.currentDoc.select(".nm-product-item");
-      Elements result = this.currentDoc.select(".naoEncontrado, #divBuscaVaziaSuperior");
+      // se obter 1 ou mais links de produtos e essa página tiver resultado
+      if (search.has("products") && search.getJSONArray("products").length() > 0) {
+         JSONArray products = search.getJSONArray("products");
 
-      if (!products.isEmpty() && result.isEmpty()) {
          if (this.totalProducts == 0) {
-            setTotalProducts();
+            setTotalProducts(search);
          }
-         for (Element e : products) {
-            // InternalPid
-            String internalPid = crawlInternalPid(e);
 
-            // Url do produto
-            String productUrl = crawlProductUrl(e);
+         for (int i = 0; i < products.length(); i++) {
+            JSONObject product = products.getJSONObject(i);
+
+            String internalPid = product.optString("id");
+            String productUrl = product.optString("url");
 
             saveDataProduct(null, internalPid, productUrl);
 
             this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit)
+
+            if (this.arrayProducts.size() == productsLimit) {
                break;
+            }
          }
       } else {
          this.result = false;
@@ -61,66 +58,40 @@ public class SaopauloExtramarketplaceCrawler extends CrawlerRankingKeywords {
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-   }
 
-   private String crawlInternalPid(Element e) {
-      return e.attr("data-productid");
-   }
-
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
-
-      Element url = e.select(".nm-product-name a").first();
-
-      if (url != null) {
-         productUrl = url.attr("href");
-
-         if (!productUrl.startsWith("http")) {
-            productUrl = "https:" + productUrl.split("\\?")[0];
-         }
-      }
-
-      return productUrl;
    }
 
    @Override
-   protected void setTotalProducts() {
-      Element totalElement = null;
-      totalElement = this.currentDoc.select("span[data-totalresults]").first();
-
-      if (totalElement != null) {
-         String text = totalElement.attr("data-totalresults").replaceAll("[^0-9]", "");
-         if (!text.isEmpty()) {
-            this.totalProducts = Integer.parseInt(totalElement.text());
-         }
-      }
-      this.log("Total da busca: " + this.totalProducts);
+   protected boolean hasNextPage() {
+      return this.arrayProducts.size() < this.totalProducts;
    }
 
-   protected String fetchPage(String url) {
+   protected void setTotalProducts(JSONObject search) {
+      if (search.has("size") && search.get("size") instanceof Integer) {
+         this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(search, "size", 0);
+         this.log("Total da busca: " + this.totalProducts);
+      }
+   }
+
+   private JSONObject fetchProductsFromAPI() {
+      String url = new StringBuilder()
+            .append("https://api.linximpulse.com/engage/search/v3/search/")
+            .append("?apiKey=extra")
+            .append("&secretKey=" + API_KEY)
+            .append("&resultsPerPage=21")
+            .append("&terms=" + this.keywordEncoded)
+            .append("&page=" + this.currentPage)
+            .toString();
+
       Map<String, String> headers = new HashMap<>();
-      headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
-      headers.put("Accept-Enconding", "");
-      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("Cache-Control", "no-cache");
-      headers.put("Connection", "keep-alive");
-      headers.put("Host", this.marketHost);
-      headers.put("Referer", PROTOCOL + "://" + this.marketHost + "/");
-      headers.put("Upgrade-Insecure-Requests", "1");
-      headers.put("User-Agent", FetchUtilities.randUserAgent());
+      headers.put("Content-Type", "application/json");
 
       Request request = RequestBuilder.create()
             .setUrl(url)
             .setCookies(cookies)
             .setHeaders(headers)
-            .setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.BUY,
-                        ProxyCollection.STORM_RESIDENTIAL_US
-                  )
-            ).build();
+            .build();
 
-      return this.dataFetcher.get(session, request).getBody();
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
    }
 }
