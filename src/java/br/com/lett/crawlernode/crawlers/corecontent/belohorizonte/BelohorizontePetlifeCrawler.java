@@ -1,28 +1,20 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class BelohorizontePetlifeCrawler extends Crawler {
 
@@ -44,33 +36,33 @@ public class BelohorizontePetlifeCrawler extends Crawler {
          String internalId = internalPid;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title", false);
          Elements priceElem = doc.select(".entry-summary > p.price  span.woocommerce-Price-amount.amount");
-         Float price = MathUtils.parseFloatWithComma(priceElem.last() != null ? priceElem.last().ownText() : null);
+         Float price = MathUtils.parseFloatWithComma(priceElem.last() != null ? priceElem.last().text() : null);
          Prices prices = scrapPrices(doc, price);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb > li:not(.home):not([itemtype]) > span a", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-images .img-thumbnail img",
-               Arrays.asList("href", "content", "src"), "https", CDN_URL);
+            Arrays.asList("href", "content", "src"), "https", CDN_URL);
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-images .img-thumbnail img",
-               Arrays.asList("href", "content", "src"), "https", CDN_URL, primaryImage);
+            Arrays.asList("href", "content", "src"), "https", CDN_URL, primaryImage);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#product-tab[aria-controls=\"tab-description\"]",
-               "#product-tab[aria-controls=\"tab-additional_information\"]", "#tab-description", "#tab-additional_information"));
+            "#product-tab[aria-controls=\"tab-additional_information\"]", "#tab-description", "#tab-additional_information"));
          boolean available = doc.selectFirst(".single_add_to_cart_button") != null;
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .build();
 
          String productsVarationsString = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".variations_form[data-product_variations]", "data-product_variations");
          if (productsVarationsString != null && !productsVarationsString.isEmpty()) {
@@ -136,12 +128,12 @@ public class BelohorizontePetlifeCrawler extends Crawler {
          prices.setBankTicketPrice(price);
          Element bankTicketElem = doc.select(".single > p > span.woocommerce-Price-amount.amount").last();
 
-         Float bankPrice = MathUtils.parseFloatWithComma(bankTicketElem != null ? bankTicketElem.ownText() : null);
+         Float bankPrice = MathUtils.parseFloatWithComma(bankTicketElem != null ? bankTicketElem.text() : null);
          if (bankPrice != null) {
             prices.setBankTicketPrice(bankPrice);
          }
          Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".entry-summary > p.price  span.woocommerce-Price-amount.amount", null, true, ',', session);
-         if (Float.compare(price, priceFrom.floatValue()) != 0) {
+         if (priceFrom != null && Float.compare(price, priceFrom.floatValue()) != 0) {
             prices.setPriceFrom(priceFrom);
          }
 
