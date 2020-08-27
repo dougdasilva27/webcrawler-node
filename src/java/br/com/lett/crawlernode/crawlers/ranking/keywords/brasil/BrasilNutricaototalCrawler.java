@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -40,10 +39,6 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
             saveDataProduct(internalId, null, productUrl);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
-
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
          }
 
       } else {
@@ -67,31 +62,5 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Total da busca: " + this.totalProducts);
-   }
-
-   private String crawlInternalId(Element e, String selector) {
-      Element aux = e.selectFirst(selector);
-      String internalId = null;
-
-      if (aux != null) {
-         String attr = aux.id();
-
-         if (!attr.isEmpty()) {
-            internalId = MathUtils.parseInt(attr).toString();
-         }
-      }
-
-      return internalId;
-   }
-
-   private String crawlProductUrl(Element e, String selector) {
-      Element aux = e.selectFirst(selector);
-      String url = null;
-
-      if (aux != null) {
-         url = CrawlerUtils.sanitizeUrl(aux, "href", "https", "www.nutricaototal.com.br");
-      }
-
-      return url;
    }
 }
