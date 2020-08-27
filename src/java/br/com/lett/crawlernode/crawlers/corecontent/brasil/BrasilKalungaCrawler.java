@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -18,6 +20,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -100,13 +103,13 @@ public class BrasilKalungaCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.select("input#hdnCodProduto").first() != null;
+      return doc.select("input#hdnProduto").first() != null;
    }
 
    private String crawlInternalId(Document doc) {
       String internalId = null;
 
-      Element internalIdElement = doc.select("input#hdnCodProduto").first();
+      Element internalIdElement = doc.select("input#hdnProduto").first();
       if (internalIdElement != null) {
          internalId = internalIdElement.val();
       }
@@ -116,7 +119,7 @@ public class BrasilKalungaCrawler extends Crawler {
 
    private String crawlName(Document document) {
       String name = null;
-      Element nameElement = document.select("h1.h5").first();
+      Element nameElement = document.select("#header-infos-produto h1").first();
 
       if (nameElement != null) {
          name = nameElement.ownText().trim();
@@ -201,99 +204,50 @@ public class BrasilKalungaCrawler extends Crawler {
    }
 
    private boolean crawlAvailability(Document doc) {
-      return doc.select("#ctl00_Body_ibtnComprar").first() != null;
+      return doc.select(".btn-comprar").first() != null;
    }
 
    private RatingsReviews crawRating(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
-      Double avgRating = getTotalAvgRating(doc);
+
+
       AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(doc);
+      Integer totalNumOfEvaluations = CrawlerUtils.extractReviwsNumberOfAdvancedRatingReview(advancedRatingReview);
+      Double avgRating = MathUtils.normalizeNoDecimalPlacesUp(CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview));
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
    }
 
-   private Double getTotalAvgRating(Document doc) {
-      Double avgRating = 0.0;
-      Element rating = doc.selectFirst("span[itemprop=ratingValue]");
-
-      if (rating != null) {
-         String text = rating.ownText().trim();
-
-         if (!text.isEmpty()) {
-            avgRating = MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseFloatWithComma(text).doubleValue());
-         }
-      }
-
-      return avgRating;
-   }
-
-
-   private Integer getTotalNumOfRatings(Document doc) {
-      Integer rating = 0;
-      Element ratingElement = doc.selectFirst("span[itemprop=reviewCount]");
-
-      if (ratingElement != null) {
-         rating = Integer.parseInt(ratingElement.ownText().replaceAll("[^0-9]", "").trim());
-      }
-
-      return rating;
-   }
-
-
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
+      Map<Integer, Integer> starsCount = new HashMap<>();
 
-      Elements reviews = doc.select(".row.avaliacao_box");
+      int totalOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, "#total_avaliacoes", true, 0);
 
-      for (Element review : reviews) {
+      Elements starsProgress = doc.select("#graficoAvaliacao .row");
+      for (Element starProg : starsProgress) {
 
-         Element elementStarNumber = review.selectFirst("[itemprop=reviewRating]");
+         int starNumber = CrawlerUtils.scrapIntegerFromHtml(starProg, "small", true, 0);
 
-         if (elementStarNumber != null) {
+         if (starNumber > 0 && starNumber < 6) {
+            String style = CrawlerUtils.scrapStringSimpleInfoByAttribute(starProg, "div[style]", "style");
+            Double percentage = MathUtils.parseDoubleWithDot(style.replaceAll("[^0-9.]", ""));
 
-            String stringStarNumber = elementStarNumber.selectFirst("span[itemprop=ratingValue]").toString();
-            Integer numberOfStars = MathUtils.parseInt(stringStarNumber);
-
-            switch (numberOfStars) {
-               case 5:
-                  star5 += 1;
-                  break;
-               case 4:
-                  star4 += 1;
-                  break;
-               case 3:
-                  star3 += 1;
-                  break;
-               case 2:
-                  star2 += 1;
-                  break;
-               case 1:
-                  star1 += 1;
-                  break;
-               default:
-                  break;
+            if (percentage != null) {
+               Double count = MathUtils.normalizeNoDecimalPlaces((totalOfEvaluations * (percentage / 100d)));
+               starsCount.put(starNumber, count.intValue());
             }
          }
-      }
 
+      }
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
+            .allStars(starsCount)
             .build();
    }
 
@@ -330,8 +284,8 @@ public class BrasilKalungaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc, String internalId) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".text-muted.m-0 del", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".text-primary.h6 h3", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#container_produto #desconto_content_info_produto", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#container_produto .spanPriceCents", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -351,12 +305,10 @@ public class BrasilKalungaCrawler extends Crawler {
       if (spotlightPrice != null) {
 
          Installments installments = scrapInstallments(doc);
-         if (installments.getInstallments().isEmpty()) {
-            installments.add(InstallmentBuilder.create()
-                  .setInstallmentNumber(1)
-                  .setInstallmentPrice(spotlightPrice)
-                  .build());
-         }
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
 
          for (String card : cards) {
             creditCards.add(CreditCardBuilder.create()
@@ -372,22 +324,13 @@ public class BrasilKalungaCrawler extends Crawler {
 
    public Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
-      Double finalPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#spanSchemaPrice .m-0 .font-weight-bold:last-child", null, false, ',', session);
-      Element installmentsCard = doc.selectFirst("#spanSchemaPrice .m-0 .font-weight-bold");
-      if (installmentsCard != null) {
 
-         String installmentCard = installmentsCard.text();
-         String installmentString = installmentCard.contains("x") && installmentCard != null ? installmentCard.split("x")[0] : null;
-         int installment = installmentString != null && !installmentString.isEmpty() ? Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim()) : null;
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment("#container_produto #parcelamento", doc, true);
 
-         String valueCard = installmentsCard.text();
-         int de = valueCard.contains("de") && valueCard != null ? valueCard.indexOf("de") : null;
-         Double value = valueCard != null ? MathUtils.parseDoubleWithComma(valueCard.substring(de)) : null;
-
+      if (!pair.isAnyValueNull()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(installment)
-               .setInstallmentPrice(value)
-               .setFinalPrice(finalPrice)
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
                .build());
       }
 

@@ -5,12 +5,12 @@ import java.util.List;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 
-public class BrasilPolishopCrawler extends VTEXOldScraper {
+public class BrasilPolishopCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.polishop.com.br/";
    private static final List<String> SELLERS = Arrays.asList("polishop");
