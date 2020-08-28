@@ -31,6 +31,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.concurrent.FutureCallback;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -108,6 +109,14 @@ public class ApacheDataFetcher implements DataFetcher {
             requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
 
+            SocketConfig socketConfig = SocketConfig.custom()
+                  .setSoKeepAlive(false)
+                  .setSoLinger(1)
+                  .setSoReuseAddress(true)
+                  .setSoTimeout(5000)
+                  .setTcpNoDelay(true)
+                  .build();
+
             CookieStore cookieStore = createCookieStore(request.getCookies());
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -146,9 +155,16 @@ public class ApacheDataFetcher implements DataFetcher {
             RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
 
             CloseableHttpClient httpclient =
-                  HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
-                        .setRedirectStrategy(redirectStrategy).setDefaultCredentialsProvider(credentialsProvider).setDefaultHeaders(reqHeaders)
-                        .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory()).setSSLHostnameVerifier(hostNameVerifier).build();
+                  HttpClients.custom()
+                        .setDefaultCookieStore(cookieStore)
+                        .setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
+                        .setRedirectStrategy(redirectStrategy)
+                        .setDefaultCredentialsProvider(credentialsProvider)
+                        .setDefaultHeaders(reqHeaders)
+                        .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory())
+                        .setSSLHostnameVerifier(hostNameVerifier)
+                        .setDefaultSocketConfig(socketConfig)
+                        .build();
 
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);

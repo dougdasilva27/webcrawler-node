@@ -227,23 +227,36 @@ public class FetchUtilities {
 
          if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
             requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT).setConnectTimeout(THIRTY_SECONDS_TIMEOUT).setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
+                  .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT)
+                  .setConnectTimeout(THIRTY_SECONDS_TIMEOUT)
+                  .setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
                   .setProxy(proxy).build();
          } else {
-            requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-                  .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).setProxy(proxy).build();
+            requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
+                  .setRedirectsEnabled(followRedirect) // set // true
+                  .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+                  .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+                  .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+                  .setProxy(proxy)
+                  .build();
          }
 
       } else {
          if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
-            requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT).setConnectTimeout(THIRTY_SECONDS_TIMEOUT).setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
+            requestConfig = RequestConfig.custom()
+                  .setCookieSpec(CookieSpecs.STANDARD)
+                  .setRedirectsEnabled(followRedirect) // set // true
+                  .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT)
+                  .setConnectTimeout(THIRTY_SECONDS_TIMEOUT)
+                  .setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
                   .build();
          } else {
-            requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-                  .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT).build();
+            requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
+                  .setRedirectsEnabled(followRedirect) // set // true
+                  .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+                  .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+                  .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+                  .build();
          }
       }
 
