@@ -27,14 +27,13 @@ class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
          "data-json"))
 
       json ?: Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
+      val price = json?.optFloat("price")
+      if (price == null || price.isNaN()) {
+         return products
+      }
+      json.let {
 
-      json?.let {
-         val price = it.optFloat("price")
-         if (price.isNaN()) {
-            return products
-         }
          val prices = scrapPrices(document, price)
-
          val categories = mutableListOf<String>()
 
          if (it.optString("parent_category") is String) {
