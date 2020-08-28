@@ -197,7 +197,7 @@ public class S3Service {
             Logging.printLogDebug(logger, session, "No files to upload!");
          }
       } catch (IOException e) {
-         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
    }
 
