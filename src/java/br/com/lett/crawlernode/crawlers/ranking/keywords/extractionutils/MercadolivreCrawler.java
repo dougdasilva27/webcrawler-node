@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class MercadolivreCrawler extends CrawlerRankingKeywords {
@@ -39,7 +40,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       this.productUrlHost = productUrlHost;
    }
 
-   private static final String PRODUCTS_SELECTOR = ".results-item .item";
+   private static final String PRODUCTS_SELECTOR = ".ui-search-layout__item div.andes-card";
    protected Integer meliPageSize = 64;
 
    @Override
@@ -52,19 +53,25 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetch(searchUrl);
       this.nextUrl = CrawlerUtils.scrapUrl(currentDoc, ".andes-pagination__button--next > a", "href", "https:", nextUrlHost);
       Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
-      boolean ownStoreResults = !this.currentDoc.select("#categorySearch").isEmpty();
 
-      if (!products.isEmpty() && ownStoreResults) {
+      if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[product-id]", "product-id");
-            internalPid = internalPid == null || internalPid.trim().isEmpty() ? CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[item-id]", "item-id") : internalPid;
+            String productUrl = CrawlerUtils.scrapUrl(e, "a.ui-search-result__content, .ui-search-item__group--title a[title]", "href", "https", productUrlHost);
 
-            String productUrl = CrawlerUtils.scrapUrl(e, ".item__title a", "href", "https", productUrlHost);
-            productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;
+            String internalPid = null;
+            if (productUrl != null) {
+               if (productUrl.startsWith("https://www.mercadolivre.com.br/")) {
+                  productUrl = productUrl != null ? productUrl.split("\\?")[0] : null;
+                  internalPid = CommonMethods.getLast(productUrl.split("/"));
+               } else {
+                  internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "input[name=itemId]", "value");
+               }
+            }
+
 
             saveDataProduct(null, internalPid, productUrl);
 
@@ -108,7 +115,7 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".quantity-results", true, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".ui-search-search-result__quantity-results", true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 
