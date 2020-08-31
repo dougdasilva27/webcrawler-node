@@ -1,5 +1,11 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
@@ -8,13 +14,6 @@ import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.Interval;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 
 public class ProxyCollection {
@@ -65,9 +64,9 @@ public class ProxyCollection {
     * Get the array of proxy units corresponding to a proxy service name.
     *
     * @param serviceName the name of the proxy service
-    * @param session     the crawler session. Used for logging purposes.
+    * @param session the crawler session. Used for logging purposes.
     * @return an ArrayList containing all the proxy units for a service. Returns an empty array if the
-    * service name was not found.
+    *         service name was not found.
     */
    public List<LettProxy> getProxy(String serviceName) {
       if (proxyMap.containsKey(serviceName)) {
@@ -129,7 +128,7 @@ public class ProxyCollection {
     *
     * @param market
     * @param webcrawler true if we must select a proxy from the normal crawling proxies, or false if we
-    *                   want to select proxies for image download.
+    *        want to select proxies for image download.
     * @param attempt
     * @return a String representing the name of the proxy service.
     */
