@@ -28,6 +28,7 @@ public class ExecutionParameters {
    private String fetcherUrl;
    private String replicatorUrl;
    private String tmpImageFolder;
+   private String phantomjsPath;
    private int nthreads;
    private int coreThreads;
    private String environment;
@@ -46,6 +47,9 @@ public class ExecutionParameters {
    private String s3BatchHost;
    private String s3BatchUser;
    private String s3BatchPass;
+
+   private String awsImageEvauationApiUrl;
+   private String awsImageEvaluationToken;
 
    public ExecutionParameters() {
       debug = null;
@@ -68,8 +72,11 @@ public class ExecutionParameters {
       s3BatchRemoteLocation = System.getenv(EnvironmentVariables.S3_BATCH_REMOTE_LOCATION);
       s3BatchUser = System.getenv(EnvironmentVariables.S3_BATCH_USER);
       s3BatchPass = System.getenv(EnvironmentVariables.S3_BATCH_PASS);
+      awsImageEvauationApiUrl = System.getenv(EnvironmentVariables.AWS_IMAGE_EVALUATION_API_URL);
+      awsImageEvaluationToken = System.getenv(EnvironmentVariables.AWS_IMAGE_EVALUATION_TOKEN);
       setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
       setFetcherUrl(getEnvFetcherUrl());
+      setPhantomjsPath(getEnvPhantomjsPath());
       setHikariCpConnectionTimeout();
       setHikariCpIDLETimeout();
       setHikariCpMaxPoolSize();
@@ -77,19 +84,11 @@ public class ExecutionParameters {
       setHikariCpValidationTimeout();
       setUseFetcher(getEnvUseFetcher());
       setReplicatorUrl(getEnvReplicatorUrl());
-      setChromePath();
       version = DEFAULT_CRAWLER_VERSION;
 
       Logging.printLogDebug(logger, this.toString());
    }
 
-   public void setChromePath() {
-      String chromePath = System.getenv(EnvironmentVariables.CHROME_PATH);
-      if (chromePath == null) {
-         Logging.logWarn(logger, null, null, EnvironmentVariables.CHROME_PATH + " not set");
-         System.setProperty("webdriver.chrome.driver", "/home/chrome/chromedriver");
-      } else System.setProperty("webdriver.chrome.driver", chromePath);
-   }
 
    public boolean mustSendToKinesis() {
       return sendToKinesis;
@@ -114,6 +113,8 @@ public class ExecutionParameters {
       sb.append("\n");
       sb.append("Force image update: " + this.forceImageUpdate);
       sb.append("\n");
+      sb.append("PhantomjsPath: " + this.phantomjsPath);
+      sb.append("\n");
       sb.append("Use Fetcher: " + this.useFetcher);
       sb.append("\n");
       sb.append("Version: " + this.version);
@@ -133,6 +134,10 @@ public class ExecutionParameters {
 
    private String getEnvReplicatorUrl() {
       return System.getenv(EnvironmentVariables.REPLICATOR_URL);
+   }
+
+   private String getEnvPhantomjsPath() {
+      return System.getenv(EnvironmentVariables.ENV_PHANTOMJS_PATH);
    }
 
    private String getEnvQueueUrlFirstPart() {
@@ -261,6 +266,14 @@ public class ExecutionParameters {
       this.tmpImageFolder = tmpImageFolder;
    }
 
+   public String getPhantomjsPath() {
+      return phantomjsPath;
+   }
+
+   public void setPhantomjsPath(String phantomjsPath) {
+      this.phantomjsPath = phantomjsPath;
+   }
+
    public Boolean getUseFetcher() {
       return useFetcher;
    }
@@ -371,5 +384,13 @@ public class ExecutionParameters {
 
    public String getS3BatchPass() {
       return s3BatchPass;
+   }
+
+   public String getAwsImageEvauationApiUrl() {
+      return awsImageEvauationApiUrl;
+   }
+
+   public String getAwsImageEvaluationToken() {
+      return awsImageEvaluationToken;
    }
 }

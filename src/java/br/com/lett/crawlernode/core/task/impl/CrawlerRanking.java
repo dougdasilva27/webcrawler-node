@@ -137,7 +137,7 @@ public abstract class CrawlerRanking extends Task {
 
       // close the webdriver
       if (webdriver != null) {
-         Logging.printLogDebug(logger, session, "Terminating Chromium instance...");
+         Logging.printLogDebug(logger, session, "Terminating PhantomJS instance...");
          webdriver.terminate();
       }
 

@@ -6,6 +6,7 @@ public class EnvironmentVariables {
    public static final String ENV_ENVIRONMENT = "ENVIRONMENT";
    public static final String ENV_FORCE_IMG_UPDATE = "FORCE_IMG_UPDATE";
    public static final String ENV_NTHREADS = "CRAWLER_THREADS";
+   public static final String ENV_PHANTOMJS_PATH = "PHANTOMJS_PATH";
    public static final String ENV_TMP_IMG_FOLDER = "TMP_IMG_FOLDER";
    public static final String FETCHER_URL = "FETCHER_URL";
    public static final String HIKARI_CP_CONNECTION_TIMEOUT = "HIKARI_CP_CONNECTION_TIMEOUT";
@@ -26,5 +27,6 @@ public class EnvironmentVariables {
    public static final String S3_BATCH_PASS = "S3_BATCH_PASS";
    public static final String SEND_TO_KINESIS = "SEND_TO_KINESIS";
    public static final String USE_FETCHER = "USE_FETCHER";
-   public static final String CHROME_PATH = "CHROME_PATH";
+   public static final String AWS_IMAGE_EVALUATION_API_URL = "AWS_IMAGE_EVALUATION_API_URL";
+   public static final String AWS_IMAGE_EVALUATION_TOKEN = "AWS_IMAGE_EVALUATION_TOKEN";
 }

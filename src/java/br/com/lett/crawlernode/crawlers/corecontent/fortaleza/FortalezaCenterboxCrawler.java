@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
@@ -36,50 +37,22 @@ public class FortalezaCenterboxCrawler extends Crawler {
    private static final String CEP = "60192-105";
    private static final String SELLER_FULL_NAME = "centerbox";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public FortalezaCenterboxCrawler(Session session) {
       super(session);
 
    }
 
-   private String getToken() {
-      String token = null;
-
-      String apiAdress = "https://loja.centerbox.com.br/static/js/main.89e6b0f2.chunk.js";
-
-      Request request = RequestBuilder.create().setUrl(apiAdress).setCookies(cookies).build();
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      if (content != null) {
-
-         Integer indexOf = content.indexOf("Auth-Token\":\"");
-
-         if (indexOf != null) {
-            Integer lastIndexOf = content.lastIndexOf("\"},$");
-            if (lastIndexOf != null) {
-               String buildJson = "{\"" + content.substring(indexOf, lastIndexOf) + "\"}";
-
-               JSONObject jsonToken = CrawlerUtils.stringToJson(buildJson);
-
-               token = jsonToken.optString("Auth-Token");
-
-            }
-         }
-      }
-
-      return token;
-   }
-
+   // We used a request at the address: https://loja.centerbox.com.br/static/js/main.d585fc0a.chunk.js
+   // to get the token but now the site has changed and when we try to make the request we receive the following response: <noscript>Você precisa habilitar javascript para vizualizar este site</noscript>
 
    @Override
    protected Object fetch() {
       JSONObject api = new JSONObject();
 
-      String token = getToken();
-
       Map<String, String> headers = new HashMap<>();
-      headers.put("Auth-Token", token);
+      headers.put("Auth-Token", "RUsycjRnU1BLTndkblIyTnF1T3FvMGlnUDJKVWx4Nk95eC9IL0RaMU80dz0tLVl3dlBqUjJnK1p2amdheW9WRVlWM0E9PQ");
       headers.put("Connection", "keep-alive");
 
       String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&market_codename=centerbox";
@@ -169,15 +142,15 @@ public class FortalezaCenterboxCrawler extends Crawler {
 
                      // Creating the product
                      Product product = ProductBuilder.create()
-                           .setUrl(session.getOriginalURL())
-                           .setInternalId(internalId)
-                           .setInternalPid(internalPid)
-                           .setName(name)
-                           .setPrimaryImage(primaryImage)
-                           .setDescription(description)
-                           .setStock(stock)
-                           .setOffers(offers)
-                           .build();
+                        .setUrl(session.getOriginalURL())
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(name)
+                        .setPrimaryImage(primaryImage)
+                        .setDescription(description)
+                        .setStock(stock)
+                        .setOffers(offers)
+                        .build();
 
                      products.add(product);
 
@@ -186,9 +159,7 @@ public class FortalezaCenterboxCrawler extends Crawler {
                }
             }
          }
-      } else
-
-      {
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
@@ -203,14 +174,14 @@ public class FortalezaCenterboxCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
       return offers;
    }
 
@@ -220,10 +191,10 @@ public class FortalezaCenterboxCrawler extends Crawler {
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankSlip)
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
 
    }
 
@@ -233,17 +204,17 @@ public class FortalezaCenterboxCrawler extends Crawler {
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;

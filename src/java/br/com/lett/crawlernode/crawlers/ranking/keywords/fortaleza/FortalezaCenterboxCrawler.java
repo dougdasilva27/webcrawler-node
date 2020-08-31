@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.fortaleza;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -21,10 +22,11 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
    private static final String URL_PRODUCT_PAGE = "https://loja.centerbox.com.br?id=";
    private static final String CEP = "60192-105";
 
+   /*
    private String getToken() {
       String token = null;
 
-      String apiAdress = "https://loja.centerbox.com.br/static/js/main.89e6b0f2.chunk.js";
+      String apiAdress = "https://loja.centerbox.com.br/static/js/main.d585fc0a.chunk.js";
 
       Request request = RequestBuilder.create().setUrl(apiAdress).setCookies(cookies).build();
       String content = this.dataFetcher.get(session, request).getBody();
@@ -34,28 +36,29 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
          Integer indexOf = content.indexOf("Auth-Token\":\"");
 
          if (indexOf != null) {
-            Integer lastIndexOf = content.lastIndexOf("\"},$");
+            Integer lastIndexOf = content.lastIndexOf("\"},ne");
             if (lastIndexOf != null) {
                String buildJson = "{\"" + content.substring(indexOf, lastIndexOf) + "\"}";
 
                JSONObject jsonToken = CrawlerUtils.stringToJson(buildJson);
 
                token = jsonToken.optString("Auth-Token");
-
             }
          }
       }
 
       return token;
    }
+*/
 
-   protected Object fetch() {
+   // We used a request at the address: https://loja.centerbox.com.br/static/js/main.d585fc0a.chunk.js
+   // to get the token but now the site has changed and when we try to make the request we receive the following response: <noscript>Você precisa habilitar javascript para vizualizar este site</noscript>
+
+   private JSONObject fetch() {
       JSONObject api = new JSONObject();
 
-      String token = getToken();
-
       Map<String, String> headers = new HashMap<>();
-      headers.put("Auth-Token", token);
+      headers.put("Auth-Token", "RUsycjRnU1BLTndkblIyTnF1T3FvMGlnUDJKVWx4Nk95eC9IL0RaMU80dz0tLVl3dlBqUjJnK1p2amdheW9WRVlWM0E9PQ");
       headers.put("Connection", "keep-alive");
 
       String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&market_codename=centerbox";
@@ -78,7 +81,6 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
          for (Object arr : markets) {
 
             JSONObject jsonM = (JSONObject) arr;
-
             marketId = jsonM.optString("id");
 
          }
@@ -128,7 +130,7 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
                   saveDataProduct(internalId, internalPid, productUrl);
 
                   this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " +
-                        internalPid + " - Url: " + productUrl);
+                     internalPid + " - Url: " + productUrl);
                }
             }
 
@@ -136,7 +138,7 @@ public class FortalezaCenterboxCrawler extends CrawlerRankingKeywords {
             this.result = false;
             this.log("Keyword sem resultado!");
          }
-         this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
       }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 }

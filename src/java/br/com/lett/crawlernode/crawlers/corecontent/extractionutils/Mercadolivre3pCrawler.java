@@ -78,11 +78,7 @@ public class Mercadolivre3pCrawler {
          if (mustAddProduct) {
             JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
             String internalPid = jsonInfo.optString("productID");
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=item_id]", "value");
-
-            if (internalId == null || internalId.isEmpty()) {
-               internalId = jsonInfo.optString("sku");
-            }
+            String internalId = jsonInfo.optString("sku");
 
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
@@ -373,9 +369,9 @@ public class Mercadolivre3pCrawler {
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(selector, doc, false);
       if (!pair.isAnyValueNull()) {
          installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(pair.getFirst())
-            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
-            .build());
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
+               .build());
       }
 
       return installments;

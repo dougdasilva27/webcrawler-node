@@ -22,6 +22,7 @@ public class ProxyCollection {
 
    public static final String BUY = "buy";
    public static final String BONANZA = "bonanza";
+   public static final String BONANZA_BELGIUM = "bonanza_server_be";
    public static final String STORM_RESIDENTIAL_US = "storm_residential_us";
    public static final String STORM_RESIDENTIAL_EU = "storm_residential_eu";
    public static final String NO_PROXY = "no_proxy";
@@ -33,6 +34,7 @@ public class ProxyCollection {
    public static final String LUMINATI_SERVER_BR_HAPROXY = "luminati_server_haproxy_br";
    public static final String INFATICA_RESIDENTIAL_BR_HAPROXY = "infatica_residential_br_haproxy";
    public static final String BR_OXYLABS = "br-oxylabs";
+   public static final String BE_OXYLABS = "oxylabs_server_be";
 
    public static final int MAX_ATTEMPTS_PER_PROXY = 2;
 

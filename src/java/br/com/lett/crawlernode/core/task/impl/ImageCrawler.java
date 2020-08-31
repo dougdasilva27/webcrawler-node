@@ -292,7 +292,10 @@ public class ImageCrawler extends Task {
 
       int marketId = session.getMarket().getNumber();
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
+
+      if (marketId != 17) {
+         headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
+      }
 
       if (marketId == 63 || marketId == 62 || marketId == 73) {
          request.setSendContentEncoding(false);
@@ -317,7 +320,7 @@ public class ImageCrawler extends Task {
          }
       } else if (marketId == 307 || marketId == 27 || marketId == 836) {
          request.setSendContentEncoding(false);
-      } else if (marketId == 976) {
+      } else if (marketId == 976 || marketId == 65) {
          headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25");
       }
 

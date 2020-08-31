@@ -13,8 +13,7 @@ import br.com.lett.crawlernode.database.DatabaseManager
 import br.com.lett.crawlernode.main.ExecutionParameters
 import br.com.lett.crawlernode.main.GlobalConfigurations
 import br.com.lett.crawlernode.processor.ResultManager
-import br.com.lett.crawlernode.test.Test.pathWrite
-import br.com.lett.crawlernode.test.Test.testType
+import br.com.lett.crawlernode.test.Test.*
 
 enum class TestType {
    KEYWORDS, INSIGHTS
@@ -41,6 +40,7 @@ fun main() {
 
    // path to html output
    pathWrite = ""
+   phantomjsPath = ""
 
 
    initialize2()

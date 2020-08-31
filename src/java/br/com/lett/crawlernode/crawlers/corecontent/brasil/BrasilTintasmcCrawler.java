@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -33,6 +34,7 @@ public class BrasilTintasmcCrawler extends Crawler {
    public BrasilTintasmcCrawler(final Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    private String buildURLToRequest() {
