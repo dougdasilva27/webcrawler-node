@@ -1,9 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,9 +23,14 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 
+import javax.print.Doc;
+
 public class BrasilServnutriCrawler extends Crawler {
 
    private static final String HOME_PAGE = "http://www.servnutri.com.br/";
+   private static final String SELLER_NAME = "ServNutri";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilServnutriCrawler(Session session) {
       super(session);
@@ -47,7 +58,7 @@ public class BrasilServnutriCrawler extends Crawler {
          boolean available = checkAvaliability(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product-information p a[href]");
          String primaryImage =
-            CrawlerUtils.scrapSimplePrimaryImage(doc, ".view-product img", Arrays.asList("src", "srcset"), "http//", "www.servnutri.com.br");
+         CrawlerUtils.scrapSimplePrimaryImage(doc, ".view-product img", Arrays.asList("src", "srcset"), "http//", "www.servnutri.com.br");
          String secondaryImages = null; // Didnt have secondary images when it was made
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".single-blog-post", ".shop_attributes"));
 
@@ -73,6 +84,9 @@ public class BrasilServnutriCrawler extends Crawler {
          }
 
       } else {
+         if (isProductPage2(doc)) {
+            return products2(doc);
+         }
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
@@ -162,4 +176,106 @@ public class BrasilServnutriCrawler extends Crawler {
    private boolean checkAvaliability(Document doc) {
       return doc.selectFirst(".product-information .btn-fefault.cart .fa-shopping-cart") != null;
    }
+
+
+   private boolean isProductPage2(Document doc) {
+      return !doc.select(".product.first").isEmpty();
+   }
+
+   private List<Product> products2(Document doc) throws MalformedProductException, OfferException, MalformedPricingException {
+
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product .product_title", false);
+
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".content-products-woocommerce .woocommerce-breadcrumb a:not(:first-child)");
+
+      String internalId = scrapInternalId2(doc);
+
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".woocommerce-Tabs-panel--description", ".woocommerce-Tabs-panel--additional_information"));
+
+      Offers offers = scrapOffers2(doc);
+
+      Product product = new ProductBuilder()
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setInternalPid(internalId)
+         .setName(name)
+         .setCategories(categories)
+         .setDescription(description)
+         .setOffers(offers)
+         .setRatingReviews(null)
+         .build();
+
+      return Collections.singletonList(product);
+   }
+
+   private String scrapInternalId2(Document doc) {
+      String internalIdAtt = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product.first[id]", "id");
+
+      if (internalIdAtt == null) {
+         return null;
+      }
+
+      return internalIdAtt.replace("product-", "");
+   }
+
+   private Offers scrapOffers2(Document doc) throws MalformedPricingException, OfferException {
+
+      Offers offers = new Offers();
+
+      boolean available = doc.selectFirst(".woocommerce-Price-amount bdi") != null;
+
+      if (available) {
+
+         Pricing pricing = scrapPricing2(doc);
+
+         Offer offer = Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build();
+
+         offers.add(offer);
+      }
+      return offers;
+   }
+
+   private Pricing scrapPricing2(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".woocommerce-Price-amount.amount bdi", null, true, ',', session);
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
 }
