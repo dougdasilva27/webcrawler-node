@@ -22,7 +22,10 @@ import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -60,7 +63,11 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h2.hide_mobile", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb .hide_mobile a");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".bg_branco div.fotorama img", Collections.singletonList("src"), "https", "images.zonasul.com.br");
+         String primaryImage = null;
+         List<String> images = doc.select(".bg_branco div.fotorama img").eachAttr("src");
+         if (!images.isEmpty()) {
+            primaryImage = images.remove(0);
+         }
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".div_line:nth-last-child(2)", ".div_line:nth-last-child(1)"));
          boolean available = doc.select(".miolo_info .content-produto-indisponivel").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -74,6 +81,7 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
             .setDescription(description)
             .build();
          products.add(product);
