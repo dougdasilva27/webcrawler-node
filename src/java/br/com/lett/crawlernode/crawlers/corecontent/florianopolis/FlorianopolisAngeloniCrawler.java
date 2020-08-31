@@ -1,5 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONArray;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -8,17 +18,13 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import models.Marketplace;
 import models.prices.Prices;
-import org.apache.xml.utils.URI;
-import org.json.JSONArray;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.util.*;
 
 public class FlorianopolisAngeloniCrawler extends Crawler {
 
@@ -52,10 +58,10 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcumb > a:not(:first-child)");
          String name = crawlName(doc);
          boolean available = doc.select("#productUnavailable").isEmpty()
-             && doc.selectFirst(".box-sem-estoque") == null;
+            && doc.selectFirst(".box-sem-estoque") == null;
          Float price = available ? crawlPrice(internalId, internalPid) : null;
          String defaultImage = CrawlerUtils.scrapUrl(doc, "meta[property=\"og:image\"]", "content", "https", "img.angeloni.com.br");
-         String host = defaultImage != null ? new URI(defaultImage).getHost() : "img.angeloni.com.br";
+         String host = defaultImage != null ? new java.net.URI(defaultImage).getHost() : "img.angeloni.com.br";
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".box-galeria img", Arrays.asList("data-zoom-image", "src"), "https", host);
          String secondaryImages = crawlSecondaryImages(doc, host, primaryImage);
          Integer stock = null;
@@ -64,9 +70,9 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
          Prices prices = crawlPrices(doc, price);
 
          Product product = ProductBuilder.create().setUrl(newUrl).setInternalId(internalId).setInternalPid(internalPid).setName(name).setPrice(price)
-               .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).build();
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
          products.add(product);
 
@@ -115,12 +121,12 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
       Float price = null;
 
       String url = "https://www.angeloni.com.br/super/ajax/productDetailPriceAjax.jsp?productId=" + internalPid
-            + "&skuId=" + internalId + "&ajax=&_=1571244043146";
+         + "&skuId=" + internalId + "&ajax=&_=1571244043146";
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       Document docPrice = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
 
       price = CrawlerUtils.scrapFloatPriceFromHtml(docPrice, ".content__desc-prod__box-valores", "content",
-            true, '.', session);
+         true, '.', session);
 
       return price;
    }
@@ -166,7 +172,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
 
    /**
     * Each card has your owns installments Showcase price is price sight
-    * 
+    *
     * @param doc
     * @param price
     * @return
