@@ -17,129 +17,103 @@ import java.util.Map;
 
 public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
-	private static String token = null;
+   private static String token = null;
 
-	public BrasilKalungaCrawler(Session session) {
-		super(session);
-		super.fetchMode = FetchMode.APACHE;
-	}
+   public BrasilKalungaCrawler(Session session) {
+      super(session);
+      super.fetchMode = FetchMode.APACHE;
+   }
 
-	@Override
-	protected void processBeforeFetch() {
-		if (token == null) {
-			Document parsedDocToken = Jsoup.parse(dataFetcher.get(session, RequestBuilder.create()
-					.setCookies(cookies)
-					.setUrl("https://www.kalunga.com.br/busca/" + keywordEncoded + "/1")
-					.build()).getBody());
-			token = CrawlerUtils.scrapStringSimpleInfoByAttribute(parsedDocToken, "#hdnApi", "value");
-		}
-	}
+   @Override
+   protected void extractProductsFromCurrentPage() {
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
+      this.log("Página " + this.currentPage);
 
-		// número de produtos por página do market
-		this.pageSize = 40;
+      // monta a url com a keyword e a página
+      String url = "https://www.kalunga.com.br/busca/" + this.keywordWithoutAccents + "/1";
 
-		this.log("Página " + this.currentPage);
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select(".blocoproduto .col-4 a:not(.small):first-child");
 
-		JSONObject apiSearch = fetchJsonApi();
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0)
+            setTotalProducts();
 
-		if (apiSearch.has("html") && apiSearch.get("html") instanceof String) {
-			this.currentDoc = Jsoup.parse(apiSearch.getString("html"));
-		} else {
-			this.currentDoc = new Document("");
-		}
+         for (Element e : products) {
+            // InternalPid
+            String internalPid = crawlInternalPid(e);
 
-		Elements products = this.currentDoc.select(".blocoproduto a:not(.small):first-child");
+            // InternalId
+            String internalId = internalPid;
 
-		if (!products.isEmpty()) {
-			// se o total de busca não foi setado ainda, chama a função para setar
-			if (this.totalProducts == 0) {
-				setTotalBusca(apiSearch);
-			}
+            // monta a url
+            String productUrl = crawlProductUrl(e);
 
-			for (Element e : products) {
-				// InternalPid
-				String internalPid = crawlInternalPid(e);
+            saveDataProduct(internalId, internalPid, productUrl);
 
-				// InternalId
-				String internalId = internalPid;
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultados!");
+      }
 
-				// monta a url
-				String productUrl = crawlProductUrl(e);
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-				saveDataProduct(internalId, internalPid, productUrl);
-
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if (this.arrayProducts.size() == productsLimit) {
-					break;
-				}
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultados!");
-		}
-
-		this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
-	}
+   }
 
 
-	protected void setTotalBusca(JSONObject apiSearch) {
-		if (apiSearch.has("quantidade")) {
-			try {
-				this.totalProducts = Integer.parseInt(apiSearch.getString("quantidade"));
-			} catch (Exception e) {
-				this.logError(CommonMethods.getStackTraceString(e));
-			}
-		}
+   protected void setTotalBusca(JSONObject apiSearch) {
+      if (apiSearch.has("quantidade")) {
+         try {
+            this.totalProducts = Integer.parseInt(apiSearch.getString("quantidade"));
+         } catch (Exception e) {
+            this.logError(CommonMethods.getStackTraceString(e));
+         }
+      }
 
-		this.log("Total da busca: " + this.totalProducts);
-	}
+      this.log("Total da busca: " + this.totalProducts);
+   }
 
 
-	private String crawlInternalPid(Element e) {
-		String internalPid;
+   private String crawlInternalPid(Element e) {
+      String internalPid;
 
-		String[] tokens = e.attr("href").split("/");
-		internalPid = tokens[tokens.length - 1].split("\\?")[0].replaceAll("[^0-9]", "");
+      String[] tokens = e.attr("href").split("/");
+      internalPid = tokens[tokens.length - 1].split("\\?")[0].replaceAll("[^0-9]", "");
 
-		return internalPid;
-	}
+      return internalPid;
+   }
 
-	private String crawlProductUrl(Element e) {
-		String productUrl;
-		productUrl = e.attr("href");
+   private String crawlProductUrl(Element e) {
+      String productUrl;
+      productUrl = e.attr("href");
 
-		if (!productUrl.contains("kalunga")) {
-			productUrl = ("https://www.kalunga.com.br/" + productUrl).replace("br//", "br/");
-		}
+      if (!productUrl.contains("kalunga")) {
+         productUrl = ("https://www.kalunga.com.br/" + productUrl).replace("br//", "br/");
+      }
 
-		if (productUrl.contains("?")) {
-			productUrl = productUrl.split("\\?")[0];
-		}
+      if (productUrl.contains("?")) {
+         productUrl = productUrl.split("\\?")[0];
+      }
 
-		return productUrl;
-	}
+      return productUrl;
+   }
 
-	private JSONObject fetchJsonApi() {
-		String url = "https://www.kalunga.com.br/webapi/Busca/BindSearch";
-		String payload = "{\"pageIndex\":\"" + this.currentPage + "\",\"idClassificacao\":\"0\",\"idGrupo\":\"0\","
-				+ "\"tipoOrdenacao\":\"1\",\"termoBuscado\":\"" + this.location + "\",\"itensFiltro\":\"\"," + "\"visao\":\"T\"}";
+   @Override
+   protected void setTotalProducts() {
+      Element totalElement = this.currentDoc.selectFirst(".text-primary.spnQtdeRegistros");
 
-		Map<String, String> headers = new HashMap<>();
-		headers.put("Content-Type", "application/json; charset=UTF-8");
-		headers.put("Authorization", "Basic " + token);
-		headers.put("X-Requested-With", "XMLHttpRequest");
+      try {
+         if (totalElement != null)
+            this.totalProducts = Integer.parseInt(totalElement.text());
+      } catch (Exception e) {
+         this.logError(e.getMessage());
+      }
 
-		String jsonString = fetchStringPOST(url, payload, headers, null);
-		JSONObject apiSearch = new JSONObject();
-
-		if (jsonString.startsWith("{")) {
-			apiSearch = new JSONObject(jsonString);
-		}
-
-		return apiSearch;
-	}
+      this.log("Total da busca: " + this.totalProducts);
+   }
 }
