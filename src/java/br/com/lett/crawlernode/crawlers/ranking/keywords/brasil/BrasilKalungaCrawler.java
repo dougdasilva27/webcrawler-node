@@ -31,7 +31,6 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
       // monta a url com a keyword e a página
       String url = "https://www.kalunga.com.br/busca/" + this.keywordWithoutAccents + "/1";
-      System.err.println(url);
 
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".blocoproduto .col-4 a:not(.small):first-child");
@@ -103,7 +102,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
       return productUrl;
    }
-   
+
    @Override
    protected void setTotalProducts() {
       Element totalElement = this.currentDoc.selectFirst(".text-primary.spnQtdeRegistros");
