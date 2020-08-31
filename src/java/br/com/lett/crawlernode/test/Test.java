@@ -97,7 +97,7 @@ public class Test {
          } else {
             session = SessionFactory
                   .createTestSession(
-                        "https://www.martinsatacado.com.br/martins/pt/BRL/mercearia-doce/p/amandita-mirabel-chocolate-lacta-emb-contem-1un-de-200g-amandita-martins_1500810",
+                        "",
                         market);
          }
 

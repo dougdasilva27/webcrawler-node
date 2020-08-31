@@ -1,13 +1,13 @@
 package br.com.lett.crawlernode.main;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
 import br.com.lett.crawlernode.core.server.Server;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.Logging;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
