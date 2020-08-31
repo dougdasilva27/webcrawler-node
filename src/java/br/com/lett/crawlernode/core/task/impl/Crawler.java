@@ -1,11 +1,8 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -55,7 +52,7 @@ import models.prices.Prices;
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit
  * and extract methods.
- * 
+ *
  * @author Samir Leao
  *
  */
@@ -65,7 +62,7 @@ public class Crawler extends Task {
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
-         + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+      + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
    /**
     * Maximum attempts during active void analysis It's essentially the number of times that we will
@@ -142,7 +139,7 @@ public class Crawler extends Task {
     * This method serializes the crawled sku instance and put its raw bytes on a kinesis stream. The
     * instance passed as parameter is not altered. Instead we perform a clone to securely alter the
     * attributes.
-    * 
+    *
     * @param product
     */
    private void sendToKinesis(Product product) {
@@ -156,8 +153,8 @@ public class Crawler extends Task {
          KPLProducer.getInstance().put(p, session);
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "product");
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
@@ -166,8 +163,8 @@ public class Crawler extends Task {
             KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
 
             JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-                  .put("aws_type", "kinesis")
-                  .put("kinesis_flow_type", "rating");
+               .put("aws_type", "kinesis")
+               .put("kinesis_flow_type", "rating");
 
             Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
          }
@@ -190,7 +187,7 @@ public class Crawler extends Task {
 
          // close the webdriver
          if (webdriver != null && ((RemoteWebDriver) webdriver.driver).getSessionId() != null) {
-            Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
+            Logging.printLogDebug(logger, session, "Terminating Chromium instance ...");
             webdriver.terminate();
          }
 
@@ -367,7 +364,7 @@ public class Crawler extends Task {
     * persist the new ProcessedModel. If the we run all the truco checks, and don't find consistent
     * information, the crawler doesn't persist the new ProcessedModel.
     * </p>
-    * 
+    *
     * @param product
     */
    private void processProduct(Product product) throws Exception {
@@ -376,14 +373,9 @@ public class Crawler extends Task {
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
-
-            if (newProcessedProduct.getPic() == null) {
-               deleteImageEvaluation(newProcessedProduct.getInternalId());
-            }
-
             scheduleImages(persistenceResult, newProcessedProduct);
 
             if (session instanceof SeedCrawlerSession) {
@@ -399,11 +391,11 @@ public class Crawler extends Task {
             }
          } else if (previousProcessedProduct == null) {
             Logging.printLogDebug(logger, session,
-                  "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                     "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
             }
          }
       }
@@ -422,31 +414,10 @@ public class Crawler extends Task {
 
    }
 
-   private void deleteImageEvaluation(String internalId) {
-      StringBuilder url = new StringBuilder()
-            .append(GlobalConfigurations.executionParameters.getAwsImageEvauationApiUrl())
-            .append("/evaluation")
-            .append("/" + session.getMarket().getNumber())
-            .append("/" + internalId)
-            .append("/1");
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Token", GlobalConfigurations.executionParameters.getAwsImageEvaluationToken());
-      headers.put("Request-Id", "crawler_" + session.getSessionId());
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
-
-      Request request = RequestBuilder.create()
-            .setUrl(url.toString())
-            .setHeaders(headers)
-            .setTimeout(5000)
-            .build();
-
-      new JavanetDataFetcher().delete(session, request);
-   }
 
    /**
     * It defines wether the crawler must true to extract data or not.
-    * 
+    *
     * @return
     */
    public boolean shouldVisit() {
@@ -462,7 +433,7 @@ public class Crawler extends Task {
 
    /**
     * Performs any desired transformation on the URL before the actual fetching.
-    * 
+    *
     * @param url the URL we want to modify
     * @return the modified URL, that will be used in the fetching
     */
@@ -479,7 +450,7 @@ public class Crawler extends Task {
     * <li>Fetch: Do a http request and fetch the page data as a DOM.</li>
     * <li>Extraction: Crawl all skus in the URL on the crawling session.</li>
     * </ul>
-    * 
+    *
     * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an
     *         empty array list if no product was found.
     */
@@ -526,7 +497,7 @@ public class Crawler extends Task {
 
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
-    * 
+    *
     * @param Document
     * @return A product with all it's crawled informations
     */
@@ -536,7 +507,7 @@ public class Crawler extends Task {
 
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
-    * 
+    *
     * @param JSONObject
     * @return A product with all it's crawled informations
     */
@@ -546,7 +517,7 @@ public class Crawler extends Task {
 
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
-    * 
+    *
     * @param JSONArray
     * @return A product with all it's crawled informations
     */
@@ -558,12 +529,12 @@ public class Crawler extends Task {
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according
     * to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
     * otherwise we use the DynamicDataFetcher.
-    * 
+    *
     * Subclasses can override this method for crawl another apis and pages. In Princesadonorte the
     * product page has nothing, but we need the url for crawl this market api.
-    * 
+    *
     * Return only {@link Document}
-    * 
+    *
     * @return Parsed HTML in form of a Document.
     */
    protected Object fetch() {
@@ -590,7 +561,7 @@ public class Crawler extends Task {
 
    /**
     * Get only the product with the desired internalId.
-    * 
+    *
     * @param products
     * @param internalId
     * @return The product with the desired internal id, or an empty product if it was not found.
@@ -609,7 +580,7 @@ public class Crawler extends Task {
 
    /**
     * This method performs an active analysis of the void status.
-    * 
+    *
     * @param product the crawled product
     * @return The resultant product from the analysis
     */

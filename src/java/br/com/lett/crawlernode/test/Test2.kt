@@ -26,8 +26,7 @@ fun main() {
    val city = ""
    val marketName = ""
 
-   val marketId: Long = 966 //renner
-
+   val marketId: Long = 440 //martins
 
    val urls = listOf(
       ""
@@ -40,8 +39,6 @@ fun main() {
 
    // path to html output
    pathWrite = ""
-   phantomjsPath = ""
-
 
    initialize2()
    taskProcess(city, marketName, marketId, urls, keywords, currentTest)
@@ -58,6 +55,7 @@ internal fun taskProcess(city: String, marketName: String, marketId: Long, urls:
          testType = "keywords"
          taskProcess(market, keywords, SessionFactory::createTestRankingKeywordsSession)
       } else {
+         testType = "insights"
          taskProcess(market, urls, ::createTestSession)
       }
 
