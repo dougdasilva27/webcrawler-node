@@ -1,23 +1,27 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
-import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.Augmenter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
+import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 
 /**
  * This class encapsulates an instance of a Remote WebDriver that uses a Chromium as backend for
