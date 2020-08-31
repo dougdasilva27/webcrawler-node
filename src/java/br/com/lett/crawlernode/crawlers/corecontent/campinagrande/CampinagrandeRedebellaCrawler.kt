@@ -19,6 +19,8 @@ import models.pricing.Pricing
 import models.pricing.Pricing.PricingBuilder
 import org.json.JSONObject
 import org.jsoup.nodes.Document
+import br.com.lett.crawlernode.test.Test
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
 
 class CampinagrandeRedebellaCrawler(session: Session) : Crawler(session) {
 
@@ -45,7 +47,7 @@ class CampinagrandeRedebellaCrawler(session: Session) : Crawler(session) {
          val secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".image-additional > a", listOf("data-image"), "https", BASE_URL, primaryImage)
          val availability = doc.selectFirst("#button-cart") != null
          val offers = if (availability) scrapOffers(doc, internalId) else Offers()
-         val ratingsReviews = scrapRating(doc)
+         val ratingsReviews = RatingsReviews()
 
          val product = ProductBuilder.create()
             .setUrl(session.originalURL)
@@ -134,7 +136,7 @@ class CampinagrandeRedebellaCrawler(session: Session) : Crawler(session) {
          .mustSendContentEncoding(false)
          .build()
 
-      return CrawlerUtils.stringToJson(dataFetcher.post(session, request).body)
+      return CrawlerUtils.stringToJson(FetcherDataFetcher().post(session, request).body)
 
    }
 
@@ -160,10 +162,4 @@ class CampinagrandeRedebellaCrawler(session: Session) : Crawler(session) {
       }
       return creditCards
    }
-
-   //When this crawler was made no product with rating was found
-   private fun scrapRating(doc: Document): RatingsReviews {
-      return RatingsReviews()
-   }
-
 }
