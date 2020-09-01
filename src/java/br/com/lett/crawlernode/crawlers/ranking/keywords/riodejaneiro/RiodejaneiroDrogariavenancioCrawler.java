@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords {
 
@@ -42,16 +42,16 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
       if (!products.isEmpty()) {
          for (Element e : products) {
             String internalId = null;
-            String internalPid = CrawlerUtils.scrapStringSimpleInfo(e, "data-product-id", true);
+            String internalPid = e.attr("data-product-id");
             String productUrl = CrawlerUtils.scrapUrl(e, "figure.shelf-product__container .shelf-product__image a", "href", "https", HOST);
 
             saveDataProduct(null, internalPid, productUrl);
 
             this.log(
-                  "Position: " + this.position +
-                        " - InternalId: " + internalId +
-                        " - InternalPid: " + internalPid +
-                        " - Url: " + productUrl
+               "Position: " + this.position +
+                  " - InternalId: " + internalId +
+                  " - InternalPid: " + internalPid +
+                  " - Url: " + productUrl
             );
 
             if (this.arrayProducts.size() == productsLimit)
