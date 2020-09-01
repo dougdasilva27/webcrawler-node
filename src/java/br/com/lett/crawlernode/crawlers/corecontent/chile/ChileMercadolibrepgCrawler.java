@@ -6,7 +6,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.Mercadolivre
 public class ChileMercadolibrepgCrawler extends MercadolivreCrawler {
 
    private static final String HOME_PAGE = "https://tienda.mercadolivre.cl/pg";
-   private static final String MAIN_SELLER_NAME_LOWER = "pg";
+   private static final String MAIN_SELLER_NAME_LOWER = "P&G";
 
    public ChileMercadolibrepgCrawler(Session session) {
       super(session);
