@@ -32,7 +32,7 @@
         <hikaricp.version>3.3.0</hikaricp.version>
         <surefire-plugin-version>2.22.0</surefire-plugin-version>
         <temmie-webhook.version>-SNAPSHOT</temmie-webhook.version>
-        <kotlin.version>1.3.72</kotlin.version>
+        <kotlin.version>1.4.0</kotlin.version>
     </properties>
 
     <build>
@@ -83,6 +83,7 @@
                 <executions>
                     <execution>
                         <id>compile</id>
+                        <phase>process-sources</phase>
                         <goals>
                             <goal>compile</goal>
                         </goals>

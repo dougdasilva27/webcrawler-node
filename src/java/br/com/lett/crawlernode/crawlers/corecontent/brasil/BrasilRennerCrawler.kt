@@ -31,232 +31,232 @@ import org.jsoup.nodes.Element
  */
 class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
-    companion object {
-        const val SELLER_NAME: String = "Renner"
-    }
+   companion object {
+      const val SELLER_NAME: String = "Renner"
+   }
 
-    override fun extractInformation(doc: Document): MutableList<Product> {
-        super.extractInformation(doc)
+   override fun extractInformation(doc: Document): MutableList<Product> {
+      super.extractInformation(doc)
 
-        if (!isProductPage(doc)) {
+      if (!isProductPage(doc)) {
 
-           //unavailable products
-           if(doc.select(".product .image-product").isNotEmpty()) {
-              return unavailableProducts(doc)
-           }
+         //unavailable products
+         if (doc.select(".product .image-product").isNotEmpty()) {
+            return unavailableProducts(doc)
+         }
 
 
-            return mutableListOf()
-        }
+         return mutableListOf()
+      }
 
-        val products = mutableListOf<Product>()
+      val products = mutableListOf<Product>()
 
-        val baseName = CrawlerUtils.scrapStringSimpleInfo(doc, ".main_product .product_name span", true)
-        val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb ul li:not(:first-child):not(:last-child) a")
-        val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value")
+      val baseName = CrawlerUtils.scrapStringSimpleInfo(doc, ".main_product .product_name span", true)
+      val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb ul li:not(:first-child):not(:last-child) a")
+      val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value")
 
-        val skus = scrapProductVariations(doc)
+      val skus = scrapProductVariations(doc)
 
-        skus.map { sku ->
+      skus.map { sku ->
 
-            val jsonProduct = getProductFromApi(internalPid, sku)
+         val jsonProduct = getProductFromApi(internalPid, sku)
 
-            val description = jsonProduct.optString("description")
+         val description = jsonProduct.optString("description")
 
-            val images = scrapImages(jsonProduct)
+         val images = scrapImages(jsonProduct)
 
-            val offers = if (jsonProduct.optBoolean("purchasable")) scrapOffers(jsonProduct, internalPid, sku) else Offers()
+         val offers = if (jsonProduct.optBoolean("purchasable")) scrapOffers(jsonProduct, internalPid, sku) else Offers()
 
-            val variants = mutableListOf<String>()
+         val variants = mutableListOf<String>()
 
-            jsonProduct.getJSONArray("skuAttributes")
-                    .filter {
-                        val i = it as JSONObject
-                        val c = i.optString("code")
-                        val m = i.optJSONObject("mediaSet")
+         jsonProduct.getJSONArray("skuAttributes")
+            .filter {
+               val i = it as JSONObject
+               val c = i.optString("code")
+               val m = i.optJSONObject("mediaSet")
 
-                        return@filter (!(c.isNotEmpty() && m == null))
-                    }
-                    .sortedBy {
-                        (it as JSONObject).optString("code") ?: ""
-                    }.map {
-                        variants addNonNull (it as JSONObject).optString("name")?.trim()?.toUpperCase()
-                    }
-
-            val name = "${baseName.toUpperCase()} ${variants.joinToString(separator = " ")}"
-
-            val product = ProductBuilder()
-                    .setUrl(session.originalURL)
-                    .setInternalId(sku)
-                    .setInternalPid(internalPid)
-                    .setName(name)
-                    .setCategories(categories)
-                    .setPrimaryImage(images[0])
-                    .setSecondaryImages(images.subList(1, images.size))
-                    .setDescription(description)
-                    .setOffers(offers)
-                    .setRatingReviews(null)
-                    .build()
-
-            products addNonNull product
-        }
-
-        return products
-    }
-
-    private fun scrapProductVariations(doc: Document): List<String> {
-
-        val ids = mutableListOf<String>()
-
-        val elementsWithColors = doc.select("#js-buy-form input[data-refs]")
-
-        if (elementsWithColors.isNotEmpty()) {
-            for (e in elementsWithColors) {
-                val skus: JSONArray = JSONUtils.stringToJsonArray(e.attr("data-refs"))
-                for (o in skus) {
-                    val skuObj = (o as JSONObject).optString("skuId")
-                    if (skuObj.isNotEmpty()) {
-                        ids += skuObj
-                    }
-                }
+               return@filter (!(c.isNotEmpty() && m == null))
             }
-        } else {
-            val options = doc.select("#js-buy-form input[value]")
-            for (e in options) {
-                ids addNonNull e.`val`()
-            }
-        }
-
-        return ids
-    }
-
-    private fun scrapInstallments(doc: Element): Installments {
-        val installments = Installments()
-
-        doc.select("table tbody tr").map {
-            val text = it.text().replace("/^(<strong>|</strong>)\$/", "")
-            val pair = CrawlerUtils.crawlSimpleInstallmentFromString(text, "de", "s/ juros", true)
-
-            val installment = Installment.InstallmentBuilder
-                    .create()
-                    .setInstallmentNumber(pair.first)
-                    .setInstallmentPrice(pair.second.round())
-                    .setFinalPrice((pair.first * pair.second).round())
-                    .build()
-
-            installments.add(installment)
-        }
-        return installments
-    }
-
-    private fun scrapOffers(doc: JSONObject, productId: String, skuId: String): Offers {
-
-        val offers = Offers()
-
-        val dataOffers = getInstallmentsFromApi(productId, skuId)
-
-        val priceText = doc.getString("listPriceFormatted")
-        val spotlightText = doc.getString("salePriceFormatted")
-
-        var priceFrom = MathUtils.parseDoubleWithComma(priceText)
-        val spotlightPrice = if (doc.getDouble("percentDiscount") > 0) {
-            MathUtils.parseDoubleWithComma(spotlightText)
-        } else {
-            priceFrom
-        }
-
-        spotlightPrice?.let {
-            if (spotlightPrice == priceFrom) {
-                priceFrom = null
+            .sortedBy {
+               (it as JSONObject).optString("code") ?: ""
+            }.map {
+               variants addNonNull (it as JSONObject).optString("name")?.trim()?.toUpperCase()
             }
 
-            val sales = mutableListOf<String>()
+         val name = "${baseName.toUpperCase()} ${variants.joinToString(separator = " ")}"
 
-            sales addNonNull doc.getDouble("percentDiscount").toString()
+         val product = ProductBuilder()
+            .setUrl(session.originalURL)
+            .setInternalId(sku)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(images[0])
+            .setSecondaryImages(images.subList(1, images.size))
+            .setDescription(description)
+            .setOffers(offers)
+            .setRatingReviews(null)
+            .build()
+
+         products addNonNull product
+      }
+
+      return products
+   }
+
+   private fun scrapProductVariations(doc: Document): List<String> {
+
+      val ids = mutableListOf<String>()
+
+      val elementsWithColors = doc.select("#js-buy-form input[data-refs]")
+
+      if (elementsWithColors.isNotEmpty()) {
+         for (e in elementsWithColors) {
+            val skus: JSONArray = JSONUtils.stringToJsonArray(e.attr("data-refs"))
+            for (o in skus) {
+               val skuObj = (o as JSONObject).optString("skuId")
+               if (skuObj.isNotEmpty()) {
+                  ids += skuObj
+               }
+            }
+         }
+      } else {
+         val options = doc.select("#js-buy-form input[value]")
+         for (e in options) {
+            ids addNonNull e.`val`()
+         }
+      }
+
+      return ids
+   }
+
+   private fun scrapInstallments(doc: Element): Installments {
+      val installments = Installments()
+
+      doc.select("table tbody tr").map {
+         val text = it.text().replace("/^(<strong>|</strong>)\$/", "")
+         val pair = CrawlerUtils.crawlSimpleInstallmentFromString(text, "de", "s/ juros", true)
+
+         val installment = Installment.InstallmentBuilder
+            .create()
+            .setInstallmentNumber(pair.first)
+            .setInstallmentPrice(pair.second.toDouble().round())
+            .setFinalPrice((pair.first * pair.second).toDouble().round())
+            .build()
+
+         installments.add(installment)
+      }
+      return installments
+   }
+
+   private fun scrapOffers(doc: JSONObject, productId: String, skuId: String): Offers {
+
+      val offers = Offers()
+
+      val dataOffers = getInstallmentsFromApi(productId, skuId)
+
+      val priceText = doc.getString("listPriceFormatted")
+      val spotlightText = doc.getString("salePriceFormatted")
+
+      var priceFrom = MathUtils.parseDoubleWithComma(priceText)
+      val spotlightPrice = if (doc.getDouble("percentDiscount") > 0) {
+         MathUtils.parseDoubleWithComma(spotlightText)
+      } else {
+         priceFrom
+      }
+
+      spotlightPrice?.let {
+         if (spotlightPrice == priceFrom) {
+            priceFrom = null
+         }
+
+         val sales = mutableListOf<String>()
+
+         sales addNonNull doc.getDouble("percentDiscount").toString()
 
 
-            val rennerCard = CreditCardBuilder()
-                    .setBrand("Cartão Renner")
-                    .setIsShopCard(true)
-                    .setInstallments(
-                            scrapInstallments(dataOffers.getElementsByAttributeValue("data-target_content", "rennerCard").first())
-                    )
-                    .build()
-
-            val otherCars =
-                    listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
-                            Card.HIPERCARD).map { card: Card ->
-                        try {
-                            return@map CreditCardBuilder.create()
-                                    .setBrand(card.toString())
-                                    .setIsShopCard(false)
-                                    .setInstallments(
-                                            scrapInstallments(dataOffers.getElementsByAttributeValue("data-target_content", "creditCard").first())
-                                    )
-                                    .build()
-                        } catch (e: MalformedPricingException) {
-                            throw RuntimeException(e)
-                        }
-                    }
-
-            val creditCards = CreditCards(otherCars)
-
-            creditCards.add(rennerCard)
-
-            offers.add(
-                    Offer.OfferBuilder.create()
-                            .setPricing(
-                                    Pricing.PricingBuilder.create()
-                                            .setCreditCards(creditCards)
-                                            .setSpotlightPrice(spotlightPrice)
-                                            .setBankSlip(spotlightPrice.toBankSlip())
-                                            .setPriceFrom(priceFrom)
-                                            .build()
-                            )
-                            .setSales(sales)
-                            .setIsMainRetailer(true)
-                            .setIsBuybox(false)
-                            .setUseSlugNameAsInternalSellerId(true)
-                            .setSellerFullName(SELLER_NAME)
-                            .build()
+         val rennerCard = CreditCardBuilder()
+            .setBrand("Cartão Renner")
+            .setIsShopCard(true)
+            .setInstallments(
+               scrapInstallments(dataOffers.getElementsByAttributeValue("data-target_content", "rennerCard").first())
             )
-        }
+            .build()
 
-        return offers
-    }
+         val otherCars =
+            listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
+               Card.HIPERCARD).map { card: Card ->
+               try {
+                  return@map CreditCardBuilder.create()
+                     .setBrand(card.toString())
+                     .setIsShopCard(false)
+                     .setInstallments(
+                        scrapInstallments(dataOffers.getElementsByAttributeValue("data-target_content", "creditCard").first())
+                     )
+                     .build()
+               } catch (e: MalformedPricingException) {
+                  throw RuntimeException(e)
+               }
+            }
 
-    private fun scrapImages(doc: JSONObject): List<String> {
+         val creditCards = CreditCards(otherCars)
 
-        return doc.getJSONArray("mediaSets").map { "http:${(it as JSONObject).getString("mediumImageUrl")}" }
-    }
+         creditCards.add(rennerCard)
 
-    private fun getProductFromApi(productId: String, skuId: String): JSONObject {
-        val url = "https://www.lojasrenner.com.br/rest/model/lrsa/api/CatalogActor/refreshProductPage?skuId=$skuId&productId=$productId"
+         offers.add(
+            Offer.OfferBuilder.create()
+               .setPricing(
+                  Pricing.PricingBuilder.create()
+                     .setCreditCards(creditCards)
+                     .setSpotlightPrice(spotlightPrice)
+                     .setBankSlip(spotlightPrice.toBankSlip())
+                     .setPriceFrom(priceFrom)
+                     .build()
+               )
+               .setSales(sales)
+               .setIsMainRetailer(true)
+               .setIsBuybox(false)
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(SELLER_NAME)
+               .build()
+         )
+      }
 
-        val request: Request = Request.RequestBuilder.create().setUrl(url)
-                .mustSendContentEncoding(false)
-                .build()
-        val response: Response = dataFetcher.get(session, request)
+      return offers
+   }
 
-        return CrawlerUtils.stringToJson(response.body)
-    }
+   private fun scrapImages(doc: JSONObject): List<String> {
 
-    private fun getInstallmentsFromApi(productId: String, skuId: String): Document {
-        val url = "https://www.lojasrenner.com.br/store/renner/br/components/ajax/modalCard.jsp?skuId=$skuId&productId=$productId"
+      return doc.getJSONArray("mediaSets").map { "http:${(it as JSONObject).getString("mediumImageUrl")}" }
+   }
 
-        val request: Request = Request.RequestBuilder.create().setUrl(url)
-                .mustSendContentEncoding(false)
-                .build()
-        val response: Response = dataFetcher.get(session, request)
+   private fun getProductFromApi(productId: String, skuId: String): JSONObject {
+      val url = "https://www.lojasrenner.com.br/rest/model/lrsa/api/CatalogActor/refreshProductPage?skuId=$skuId&productId=$productId"
 
-        return Jsoup.parse(response.body)
-    }
+      val request: Request = Request.RequestBuilder.create().setUrl(url)
+         .mustSendContentEncoding(false)
+         .build()
+      val response: Response = dataFetcher.get(session, request)
 
-    private fun isProductPage(document: Document): Boolean {
-        return document.selectFirst(".product_name") != null
-    }
+      return CrawlerUtils.stringToJson(response.body)
+   }
 
-   private fun unavailableProducts(doc: Document): MutableList<Product>{
+   private fun getInstallmentsFromApi(productId: String, skuId: String): Document {
+      val url = "https://www.lojasrenner.com.br/store/renner/br/components/ajax/modalCard.jsp?skuId=$skuId&productId=$productId"
+
+      val request: Request = Request.RequestBuilder.create().setUrl(url)
+         .mustSendContentEncoding(false)
+         .build()
+      val response: Response = dataFetcher.get(session, request)
+
+      return Jsoup.parse(response.body)
+   }
+
+   private fun isProductPage(document: Document): Boolean {
+      return document.selectFirst(".product_name") != null
+   }
+
+   private fun unavailableProducts(doc: Document): MutableList<Product> {
 
       val imageAtt = doc.selectFirst(".product .product_404 .image-product").attr("src")
 
@@ -283,7 +283,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
    }
 
    // http://img.lojasrenner.com.br/item/551942660/small/1.jpg
-   private fun internalPidFromImageLink(imageLink: String): String{
+   private fun internalPidFromImageLink(imageLink: String): String {
       val split1 = imageLink.split("/item/")
 
       if (split1.size <= 1) {

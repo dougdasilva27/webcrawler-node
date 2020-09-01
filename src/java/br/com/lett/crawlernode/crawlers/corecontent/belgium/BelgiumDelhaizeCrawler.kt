@@ -1,18 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belgium
 
 import br.com.lett.crawlernode.core.models.Card
-import br.com.lett.crawlernode.core.models.CategoryCollection
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.crawlers.corecontent.brasil.round
 import br.com.lett.crawlernode.util.*
-import exceptions.MalformedPricingException
 import models.Offer
 import models.Offers
-import models.pricing.*
-import org.json.JSONObject
+import models.pricing.Pricing
 import org.jsoup.nodes.Document
 
 /**
@@ -82,7 +78,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    private fun scrapSecondaryImages(doc: Document): List<String> {
       val images = mutableListOf<String>()
 
-      doc.select(".magnifyWrapper div").filterIndexed{ i, _ -> i>0}.map { it ->
+      doc.select(".magnifyWrapper div").filterIndexed { i, _ -> i > 0 }.map { it ->
 
          val data = it.attr("data-media")
 
@@ -90,7 +86,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
          json?.keys()?.forEach {
             val image = json.optString(it)
-            if (image?.isNotEmpty() == true){
+            if (image?.isNotEmpty() == true) {
                images += "https:${image}"
             }
          }
@@ -111,7 +107,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
       val bankSlip = price.toBankSlip()
 
-       val creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(price)
+      val creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(price)
 
       offers.add(
          Offer.OfferBuilder.create()
