@@ -53,6 +53,7 @@ public class DynamicDataFetcher {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
+      CrawlerWebdriver webdriver = null;
       try {
          LettProxy proxy = randomProxy(proxyString != null ? proxyString : ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
@@ -72,7 +73,7 @@ public class DynamicDataFetcher {
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
-         CrawlerWebdriver webdriver = new CrawlerWebdriver(chromeOptions, session);
+         webdriver = new CrawlerWebdriver(chromeOptions, session);
 
          if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
             Main.server.incrementWebdriverInstances();
@@ -86,6 +87,12 @@ public class DynamicDataFetcher {
          return webdriver;
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+
+         // close the webdriver
+         if (webdriver != null) {
+            Logging.printLogDebug(logger, session, "Terminating Chrome instance because it gave error...");
+            webdriver.terminate();
+         }
          return null;
       }
    }
