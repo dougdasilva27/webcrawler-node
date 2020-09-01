@@ -1,5 +1,14 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import java.util.List;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.Proxy;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
@@ -10,16 +19,6 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.Proxy;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
-import java.util.List;
 
 public class DynamicDataFetcher {
 
@@ -35,16 +34,6 @@ public class DynamicDataFetcher {
    public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
       // choose a proxy randomly
       String proxyString = ProxyCollection.LUMINATI_SERVER_BR_HAPROXY;
-
-      // // Bifarma block luminati_server
-      if (session.getMarket().getName().equals("bifarma")) {
-         proxyString = ProxyCollection.BONANZA;
-      }
-
-      // Dufrio block luminati_server
-      if (session.getMarket().getName().equals("dufrio") || session.getMarket().getName().equals("petz")) {
-         proxyString = ProxyCollection.BUY;
-      }
 
       return fetchPageWebdriver(url, proxyString, session);
    }
