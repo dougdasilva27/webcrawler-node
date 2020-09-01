@@ -27,6 +27,6 @@ class BrasilSanmichelCrawler(session: Session) : CrawlerRankingKeywords(session)
    }
 
    override fun setTotalProducts() {
-      totalProducts = currentDoc.select(".result-counter span")?.get(1)?.text()?.substringAfter("a")?.int() ?: 0
+      totalProducts = currentDoc.select(".result-counter span")?.getOrNull(1)?.text()?.substringAfter("a")?.int() ?: 0
    }
 }
