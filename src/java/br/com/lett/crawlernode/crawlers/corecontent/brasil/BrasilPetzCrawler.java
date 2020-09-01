@@ -1,8 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.*;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -12,7 +25,6 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -26,16 +38,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * date: 27/03/2018
@@ -48,7 +50,7 @@ public class BrasilPetzCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.petz.com.br/";
    private static final String SELLER_FULL_NAME = "Petz";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
    public BrasilPetzCrawler(Session session) {
@@ -60,7 +62,7 @@ public class BrasilPetzCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Document doc = new Document("");
-      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(),ProxyCollection.BUY, session);
+      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
       if (this.webdriver != null) {
          doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
@@ -160,16 +162,16 @@ public class BrasilPetzCrawler extends Crawler {
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          return ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setName(name)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setEans(eans)
-            .setRatingReviews(ratingReviews)
-            .setOffers(offers)
-            .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setEans(eans)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
 
       }
 
@@ -351,14 +353,14 @@ public class BrasilPetzCrawler extends Crawler {
       List<String> sales = scrapSales(doc);
 
       offers.add(OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
       return offers;
    }
@@ -382,15 +384,15 @@ public class BrasilPetzCrawler extends Crawler {
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       BankSlip bankTicket = BankSlipBuilder.create()
-         .setFinalPrice(spotlightPrice)
-         .build();
+            .setFinalPrice(spotlightPrice)
+            .build();
 
       return PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankTicket)
-         .build();
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankTicket)
+            .build();
    }
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -399,17 +401,17 @@ public class BrasilPetzCrawler extends Crawler {
       Installments installments = scrapInstallments(doc);
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
       }
 
       return creditCards;
@@ -438,9 +440,9 @@ public class BrasilPetzCrawler extends Crawler {
                Double value = MathUtils.parseDoubleWithComma(valueCard.substring(deIndex));
 
                installments.add(InstallmentBuilder.create()
-                  .setInstallmentNumber(installment)
-                  .setInstallmentPrice(value)
-                  .build());
+                     .setInstallmentNumber(installment)
+                     .setInstallmentPrice(value)
+                     .build());
             }
          }
       }
