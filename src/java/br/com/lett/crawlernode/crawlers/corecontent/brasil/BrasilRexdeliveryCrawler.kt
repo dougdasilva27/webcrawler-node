@@ -102,7 +102,7 @@ import org.json.JSONObject
 
       val internalPid = productJson.optString("id")
 
-      val offersJson = productJson.optJSONObject("oferta")
+      val offersJson = productJson.optJSONObject("oferta") ?: JSONObject()
 
       val price = productJson.optString("preco")?.toDouble() ?: 0.0
 
@@ -148,16 +148,11 @@ import org.json.JSONObject
       return offers
    }
 
-   private fun scrapPricing(offersJson: JSONObject, price: Double): Pricing? {
-      val spotlightPrice =
+   private fun scrapPricing(offersJson: JSONObject, price: Double): Pricing {
 
-      if (!offersJson.isEmpty) {
-         offersJson.optString("preco_oferta")?.toDouble() ?: 0.0
-      } else {
-         price
-      }
+      val spotlightPrice = offersJson.optString("preco_oferta", null)?.toDouble() ?: price
 
-      val priceFrom = offersJson.optString("preco_antigo")?.toDouble()
+      val priceFrom = offersJson.optString("preco_antigo", null)?.toDouble()
 
       val bankSlip = spotlightPrice.toBankSlip()
 
