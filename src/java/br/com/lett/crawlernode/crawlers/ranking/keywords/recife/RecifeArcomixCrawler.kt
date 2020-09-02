@@ -12,20 +12,22 @@ class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) 
 
     override fun extractProductsFromCurrentPage() {
         pageSize = 30
-        val url = "https://arcomix.com.br/api/categoria"
-        val payload = """
-            {
-            "order": "MV",
-            "pg": $currentPage,
-            "marcas": [],
-            "precoIni": 0,
-            "precoFim": 0,
-            "avaliacoes": [],
-            "produto": "$keywordWithoutAccents",
-            "num_reg_pag": $pageSize,
-            "visualizacao": "CARD"
-            }
-            """.trimIndent()
+       val url = "https://arcomix.com.br/api/busca"
+       val payload = """
+          {
+          "avaliacoes": [],
+          "categorias": [],
+          "descricao": "$keywordWithoutAccents",
+          "marcas": [],
+          "num_reg_pag": $pageSize,
+          "order": "MV",
+          "pg": $currentPage,            
+          "precoIni": 0,
+          "precoFim": 0,
+          "subcategorias": [],            
+          "visualizacao": "CARD"
+          }
+          """.trimIndent()
         val headers = mutableMapOf(CONTENT_TYPE to "application/json; charset=utf-8")
         val request = RequestBuilder.create().setUrl(url).setPayload(payload).setHeaders(headers)
             .mustSendContentEncoding(false).build()
