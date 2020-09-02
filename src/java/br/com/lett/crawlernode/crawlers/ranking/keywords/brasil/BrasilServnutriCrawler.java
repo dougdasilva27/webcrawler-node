@@ -3,9 +3,12 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,36 +27,22 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
     String url = "http://www.servnutri.com.br/page/" + this.currentPage + "/?s=" + key
         + "&post_type=product";
 
-    this.log("Url: " + url);
-
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".productinfo");
+    Elements products = this.currentDoc.select(".product.type-product");
 
-    if (products.size() >= 1) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
-      }
+     for (Element e : products) {
+        String internalId =CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product_type_simple", "data-product_id");
+        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
 
-      for (Element e : products) {
-        String internalId = getProductInternalId(e, ".productinfo a[data-product_id]");
-        String internalPid = null;
-        String productUrl = getProductUrl(e, ".productinfo a[rel]:not([data-product_id])");
+        saveDataProduct(internalId, internalId, productUrl);
 
-        saveDataProduct(internalId, internalPid, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-            + internalPid + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
 
         if (this.arrayProducts.size() == productsLimit) {
-          break;
+           break;
         }
-      }
-
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
         + this.arrayProducts.size() + " produtos crawleados");
@@ -61,52 +50,6 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return this.arrayProducts.size() < this.totalProducts;
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".woocommerce-result-count");
-
-    if (totalElement != null) {
-      Pattern p = Pattern.compile("([0-9]+)");
-
-      // Reverses the string
-      Matcher m = p.matcher(new StringBuilder(totalElement.text().trim()).reverse());
-
-      if (m.find()) {
-        try {
-          // Get the first match on the reversed string and revert it to original
-          this.totalProducts = Integer.parseInt(new StringBuilder(m.group(1)).reverse().toString());
-
-        } catch (Exception e) {
-          this.logError(CommonMethods.getStackTraceString(e));
-        }
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String getProductInternalId(Element e, String selector) {
-    Element aux = e.selectFirst(selector);
-    String internalPid = null;
-
-    if (aux != null) {
-      internalPid = aux.attr("data-product_id");
-    }
-
-    return internalPid;
-  }
-
-  private String getProductUrl(Element e, String selector) {
-    Element aux = e.selectFirst(selector);
-    String productUrl = null;
-
-    if (aux != null) {
-      productUrl = aux.attr("href");
-    }
-
-    return productUrl;
+    return !this.currentDoc.select(".next.page-numbers").isEmpty();
   }
 }
