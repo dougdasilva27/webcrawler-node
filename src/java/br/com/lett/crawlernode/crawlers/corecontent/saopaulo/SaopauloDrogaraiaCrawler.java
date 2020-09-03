@@ -44,10 +44,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#sku", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=\"control_p_sku\"]", "value");
 
          String internalPid = null;
-         Element elementInternalPid = doc.select("input[name=product]").first();
+         Element elementInternalPid = doc.selectFirst("input[name=product]");
          if (elementInternalPid != null) {
             internalPid = elementInternalPid.attr("value").trim();
          }
