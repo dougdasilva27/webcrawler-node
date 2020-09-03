@@ -1,10 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.caratinga;
 
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRanking;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -14,11 +17,10 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class CaratingaSuperirmaoCrawler extends Crawler {
 
@@ -43,6 +45,8 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".card-body .row .col-12 img", Arrays.asList("src"), "https:", "superirmao.loji.com.br");
          boolean availableToBuy = doc.selectFirst(".input-group button .fa-add") != null;
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
+         CategoryCollection categories = scrapCategories(doc);
+
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -50,6 +54,9 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
             .setInternalId(internalId)
             .setInternalPid(internalId)
             .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
             .setOffers(offers)
             .build();
@@ -81,7 +88,6 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
       return offers;
 
    }
-
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".card-body .row .row .col-12 p", null, false, ',', session);
@@ -116,4 +122,24 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
 
       return creditCards;
    }
+
+   private CategoryCollection scrapCategories(Document doc) {
+      CategoryCollection categories = new CategoryCollection();
+
+      String categoryText = CrawlerUtils.scrapStringSimpleInfo(doc, ".col-12.col-sm-8 p", false);
+      if (categoryText != null) {
+         if (categoryText.contains(">")) {
+            String strCat = categoryText.replace("Categoria:", "").replaceAll(">", "").trim();
+            String[] strArray = strCat.split("  ");
+            Collections.addAll(categories, strArray);
+         } else {
+            String strCat = categoryText.replace("Categoria:", "").trim();
+            String[] strArray = strCat.split("  ");
+            Collections.addAll(categories, strArray);
+         }
+      }
+      return categories;
+   }
+
+
 }
