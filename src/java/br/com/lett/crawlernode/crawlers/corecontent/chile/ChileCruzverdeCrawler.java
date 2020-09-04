@@ -38,6 +38,7 @@ public class ChileCruzverdeCrawler extends Crawler {
       if (doc.selectFirst(".product-detail") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-detail", "data-pid");
+         String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-brand.m-0", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoom.js-zoom img", Collections.singletonList("src"), "http://",
@@ -52,7 +53,7 @@ public class ChileCruzverdeCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setName(name)
+            .setName(brand + " " + name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImage)
