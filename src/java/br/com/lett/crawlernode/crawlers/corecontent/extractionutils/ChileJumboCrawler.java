@@ -75,7 +75,7 @@ public class ChileJumboCrawler extends Crawler {
             String brand = skuJson.has("brand") ? skuJson.get("brand").toString() : null;
 
             String internalId = jsonSku.has("itemId") ? jsonSku.get("itemId").toString() : null;
-            String name = jsonSku.has("nameComplete") ? jsonSku.get("nameComplete").toString() : null;
+            String name = jsonSku.has("name") ? jsonSku.get("name").toString() : null;
             String description = scrapDescription(jsonSku, skuJson);
 
             Float pricePromotion = getPromotionShopCardPrice(skuJson, internalId);
