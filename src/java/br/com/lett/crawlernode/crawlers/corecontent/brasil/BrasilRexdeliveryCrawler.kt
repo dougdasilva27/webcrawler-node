@@ -112,7 +112,7 @@ import org.json.JSONObject
 
       val description = doc.optString("informacoes")
 
-      val primaryImage = if (productJson.has("imagem")) "https://s3.amazonaws.com/produtos.vipcommerce.com.br/250x250/${productJson.optString("imagem")}" else ""
+      val primaryImage = if (productJson.has("imagem")) "https://s3.amazonaws.com/produtos.vipcommerce.com.br/250x250/${productJson.optString("imagem")}" else null
 
       val offers = if (available) scrapOffers(offersJson, price) else Offers()
 
