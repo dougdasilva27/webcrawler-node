@@ -41,7 +41,7 @@ public class BrasilLojacolgateCrawler extends Crawler {
    @Override
    protected Object fetch() {
       try {
-         this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, ProxyCollection.BUY, session);
+         this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
          this.webdriver.waitLoad(10000);
 
          if (this.webdriver.driver instanceof JavascriptExecutor) {
