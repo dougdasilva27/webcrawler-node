@@ -21,16 +21,17 @@ class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) 
           "marcas": [],
           "num_reg_pag": $pageSize,
           "order": "MV",
-          "pg": $currentPage,            
-          "precoIni": 0,
-          "precoFim": 0,
+          "pg": $currentPage,
+          "precoFim": 0,            
+          "precoIni": 0,          
           "subcategorias": [],            
           "visualizacao": "CARD"
           }
           """.trimIndent()
-        val headers = mutableMapOf(CONTENT_TYPE to "application/json; charset=utf-8")
+        val headers = mutableMapOf(CONTENT_TYPE to "application/json")
         val request = RequestBuilder.create().setUrl(url).setPayload(payload).setHeaders(headers)
-            .mustSendContentEncoding(false).build()
+            .mustSendContentEncoding(false)
+            .build()
         val productsJson = JSONUtils.stringToJson(dataFetcher.post(session, request).body)?.optJSONArray("Produtos")?: JSONArray()
 
         for (productJson in productsJson) {
