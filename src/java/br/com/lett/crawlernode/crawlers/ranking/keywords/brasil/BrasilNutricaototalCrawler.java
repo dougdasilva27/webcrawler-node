@@ -24,7 +24,7 @@ public class BrasilNutricaototalCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".product-item");
+      Elements products = this.currentDoc.select(".product.product-item");
 
       if (products.size() >= 1) {
          if (this.totalProducts == 0) {
