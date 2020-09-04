@@ -451,7 +451,7 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected Installment setInstallment(Integer installmentNumber, Double value, Double interests, Double totalValue, Double discount) throws MalformedPricingException {
-      if (interests.isNaN() || interests.isInfinite()) {
+      if (interests != null && (interests.isNaN() || interests.isInfinite())) {
          interests = null;
       }
 
