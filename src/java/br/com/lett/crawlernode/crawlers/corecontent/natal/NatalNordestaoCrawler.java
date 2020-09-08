@@ -38,11 +38,13 @@ public class NatalNordestaoCrawler extends Crawler{
    }
 
    private void changeUrl(String oldUrl){
-      int productPosition = oldUrl.indexOf("detalhe");
+      if(oldUrl.contains("detalhe")){
+         int productPosition = oldUrl.indexOf("detalhe");
 
-      String internalIdFromUrl = oldUrl.substring(productPosition).split("/")[1];
+         String internalIdFromUrl = oldUrl.substring(productPosition).split("/")[1];
 
-      this.apiUrl = this.apiUrl + internalIdFromUrl + "/filial/1/centro_distribuicao/2/detalhes";
+         this.apiUrl = this.apiUrl + internalIdFromUrl + "/filial/1/centro_distribuicao/2/detalhes";
+      }
    }
 
    private void getToken(){
