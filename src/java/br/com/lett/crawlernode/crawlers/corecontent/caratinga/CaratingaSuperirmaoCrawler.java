@@ -37,11 +37,11 @@ public class CaratingaSuperirmaoCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (doc.selectFirst(".card .card-body .col-12 h2") != null) {
+      if (doc.selectFirst(".card .card-body .col-12 h3") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".card-body form", "action").split("add/")[1];
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".col-12 h2", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".col-12 h3", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".card-body .row .col-12 img", Arrays.asList("src"), "https:", "superirmao.loji.com.br");
          boolean availableToBuy = doc.selectFirst(".input-group button .fa-add") != null;
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
