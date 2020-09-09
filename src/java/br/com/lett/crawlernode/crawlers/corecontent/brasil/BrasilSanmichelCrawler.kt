@@ -17,22 +17,24 @@ class BrasilSanmichelCrawler(session: Session) : Crawler(session) {
       products += product {
          name = doc.selectFirst(".title a").text()
          url = session.originalURL
-         internalId = doc.selectFirst("input[name='id']").attr("value")
+         internalId = doc.selectFirst(".brand").text()?.substringAfter(": ")?.substringBefore(" -") ?: throw IllegalStateException("Id not found")
          primaryImage = "https://www.meusanmichel.com.br/${doc.selectFirst(".img-responsive").attr("src")}"
          description = doc.selectFirst("#description").text()
          offer {
             isMainRetailer
             sellerFullName = "San Michel"
             useSlugNameAsInternalSellerId
-            pricing {
-               val priceNullable = doc.selectFirst(".price-current").toDoubleComma()
-               priceNullable?.let { price ->
+            if (doc.selectFirst(".available").text() == "Disponível") {
+               pricing {
+                  val priceNullable = doc.selectFirst(".price-current").toDoubleComma()
+                  priceNullable?.let { price ->
 
-                  spotlightPrice = price
-                  priceFrom = doc.selectFirst(".price-prev").toDoubleComma()
+                     spotlightPrice = price
+                     priceFrom = doc.selectFirst(".price-prev").toDoubleComma()
 
-                  bankSlip = price.toBankSlip()
-                  creditCards = setOf(VISA, MASTERCARD, AMEX, ELO, DINERS, DISCOVER, HIPERCARD, AURA, JCB).toCreditCards(price)
+                     bankSlip = price.toBankSlip()
+                     creditCards = setOf(VISA, MASTERCARD, AMEX, ELO, DINERS, DISCOVER, HIPERCARD, AURA, JCB).toCreditCards(price)
+                  }
                }
             }
          }
