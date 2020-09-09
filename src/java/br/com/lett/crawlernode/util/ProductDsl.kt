@@ -59,7 +59,7 @@ class ProductBuilderDsl {
      try {
         offers.add(offerBuilder.build(block))
      }catch (e: Exception){
-        logger.error("Error on offer building", e)
+        logger.warn("Not possible to build offer", e)
      }
   }
 }
