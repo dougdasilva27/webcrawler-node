@@ -70,7 +70,7 @@ public class ChileTottusCrawler extends Crawler {
             secondaryImages.remove(0);
          }
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".react-tabs__tab-panel tbody tr"));
-         Offers offers = doc.selectFirst(".price.medium.currentPrice") != null ? scrapOffer(doc) : new Offers();
+         Offers offers = doc.selectFirst(".column-right-content .price.medium") != null ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
