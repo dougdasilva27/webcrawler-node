@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -20,6 +21,7 @@ import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -90,14 +92,14 @@ public class B2WCrawler extends Crawler {
 
    @Override
    protected Document fetch() {
-      return Jsoup.parse(fetchPage(session.getOriginalURL(), session));
+      return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
    }
 
-   public String fetchPage(String url, Session session) {
+   public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
       Request request = RequestBuilder.create()
             .setUrl(url)
-            .setCookies(this.cookies)
-            .setHeaders(this.headers)
+            .setCookies(cookies)
+            .setHeaders(headers)
             .mustSendContentEncoding(false)
             .setFetcheroptions(
                   FetcherOptionsBuilder.create()
@@ -114,7 +116,7 @@ public class B2WCrawler extends Crawler {
                   )
             ).build();
 
-      String content = this.dataFetcher.get(session, request).getBody();
+      String content = df.get(session, request).getBody();
 
       if (content == null || content.isEmpty()) {
          content = new ApacheDataFetcher().get(session, request).getBody();
@@ -723,7 +725,7 @@ public class B2WCrawler extends Crawler {
          Element iframe = datasheet.selectFirst("iframe");
 
          if (iframe != null) {
-            Document docDescriptionFrame = Jsoup.parse(fetchPage(iframe.attr("src"), session));
+            Document docDescriptionFrame = Jsoup.parse(fetchPage(iframe.attr("src"), dataFetcher, cookies, headers, session));
             if (docDescriptionFrame != null) {
                description.append(docDescriptionFrame.html());
             }
@@ -742,7 +744,7 @@ public class B2WCrawler extends Crawler {
 
          if (desc2 != null && !alreadyCapturedHtmlSlide) {
             String urlDesc2 = homePage + "product-description/acom/" + internalPid;
-            Document docDescriptionFrame = Jsoup.parse(fetchPage(urlDesc2, session));
+            Document docDescriptionFrame = Jsoup.parse(fetchPage(urlDesc2, dataFetcher, cookies, headers, session));
             if (docDescriptionFrame != null) {
                description.append(docDescriptionFrame.html());
             }
