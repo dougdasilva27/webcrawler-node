@@ -1,10 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -53,8 +50,12 @@ public class BrasilNutricaototalCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=\"sku\"]", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title > span", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li[class^=category]");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "head > meta[property=\"og:image\"]", Arrays.asList("content"), "https", "www.nutricaototal.com.br");
-         String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+
+         ArrayList<String> images = crawlImages(doc);
+
+         String primaryImage = images.size() > 0 ? images.remove(0) : null;
+         List<String> secondaryImages = images.size() > 0 ? images : null;
+
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.attribute.overview > div > b", "div.product.attribute.overview > div"));
          Integer stock = null;
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, "span.price", null, true, ',', session);
@@ -81,9 +82,10 @@ public class BrasilNutricaototalCrawler extends Crawler {
       return doc.selectFirst(".product-info-main") != null;
    }
 
-   private String crawlSecondaryImages(Document doc, String primaryImage) {
+   private ArrayList<String> crawlImages(Document doc) {
       String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+
+      ArrayList<String> images = new ArrayList<>();
 
       JSONObject productInfo = CrawlerUtils.selectJsonFromHtml(doc, ".product.media [type=\"text/x-magento-init\"]", null, null, true, false);
 
@@ -96,13 +98,10 @@ public class BrasilNutricaototalCrawler extends Crawler {
                for (int i = 0; i < imagesArray.length(); i++) {
                   JSONObject jsonImg = imagesArray.getJSONObject(i);
                   String image = jsonImg.getString("img");
-
-                  if (!primaryImage.contains(image) && !primaryImage.equals(image)) {
-                     if (image.startsWith(HOME_PAGE)) {
-                        secondaryImagesArray.put(CommonMethods.sanitizeUrl(image));
-                     } else {
-                        secondaryImagesArray.put(CommonMethods.sanitizeUrl(HOME_PAGE + image));
-                     }
+                  if (image.startsWith(HOME_PAGE)) {
+                     images.add(CommonMethods.sanitizeUrl(image));
+                  } else {
+                     images.add(CommonMethods.sanitizeUrl(HOME_PAGE + image));
                   }
                }
             }
@@ -112,21 +111,16 @@ public class BrasilNutricaototalCrawler extends Crawler {
 
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
+      return images;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
-      StringBuilder str = new StringBuilder();
-      str.append("https://www.nutricaototal.com.br/review/product/listAjax/id/");
-      str.append(internalId);
 
-      Document docRating = sendRequest(str.toString());
+      String str = "https://www.nutricaototal.com.br/review/product/listAjax/id/" + internalId;
+
+      Document docRating = sendRequest(str);
 
       Integer totalNumOfEvaluations = crawlNumOfEvaluations(docRating, "ol > li");
       Double avgRating = crawlAvgRating(docRating, "ol > li span[itemprop=\"ratingValue\"]");
