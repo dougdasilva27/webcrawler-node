@@ -257,6 +257,7 @@ public class Mercadolivre3pCrawler {
 
          hasMainOffer = true;
       }
+
       scrapSellersPage(offers, doc, hasMainOffer);
 
       return offers;
@@ -310,6 +311,19 @@ public class Mercadolivre3pCrawler {
             }
 
          } while (nextUrl != null);
+      } else {
+         if (offers.isEmpty()) {
+            Pricing pricing = scrapPricing(doc);
+            List<String> sales = scrapSales(doc);
+            offers.add(OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(mainSellerNameLower)
+               .setIsMainRetailer(true)
+               .setIsBuybox(true)
+               .setPricing(pricing)
+               .setSales(sales)
+               .build());
+         }
       }
    }
 
