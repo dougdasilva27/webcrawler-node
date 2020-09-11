@@ -30,6 +30,8 @@ public abstract class SupernicoliniCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "Super Nicolini";
    protected abstract String getHomepage();
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public SupernicoliniCrawler(Session session){
       super(session);
@@ -117,7 +119,7 @@ public abstract class SupernicoliniCrawler extends Crawler {
       return primaryImage;
    }
 
-   private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
@@ -125,6 +127,14 @@ public abstract class SupernicoliniCrawler extends Crawler {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
             .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
             .build());
       }
 
@@ -142,9 +152,14 @@ public abstract class SupernicoliniCrawler extends Crawler {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.price-wrapper > p > span", null, false, ',', session);
       }
 
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
          .build();
    }
 
