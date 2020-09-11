@@ -2,26 +2,23 @@ package br.com.lett.crawlernode.core.task.base;
 
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.task.impl.ImageCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+
 import java.lang.reflect.Constructor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This class is used to instantiate crawler tasks of an arbitrary type.
- * 
- * @author Samir Leao
  *
+ * @author Samir Leao
  */
 
 public class TaskFactory {
@@ -29,13 +26,11 @@ public class TaskFactory {
    private static Logger logger = LoggerFactory.getLogger(TaskFactory.class);
 
    /**
-    * 
     * @param session
     * @return
     */
    public static Task createTask(Session session) {
-      if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession) {
-
+      if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession) {
          return createCrawlerTask(session);
       }
 
@@ -44,7 +39,7 @@ public class TaskFactory {
       }
 
       if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession
-            || session instanceof TestRankingKeywordsSession) {
+         || session instanceof TestRankingKeywordsSession) {
          return createCrawlerRankingKeywordsTask(session);
       }
 
@@ -60,7 +55,7 @@ public class TaskFactory {
    /**
     * Create an instance of a crawler task for the market in the session.
     * http://stackoverflow.com/questions/5658182/initializing-a-class-with-class-forname-and-which-have-a-constructor-which-tak
-    * 
+    *
     * @param controllerClassName The name of the controller class
     * @return Controller instance
     */
@@ -106,8 +101,8 @@ public class TaskFactory {
 
    /**
     * Assemble the name of a task class.
-    * 
-    * @param the market for which we will run the task
+    *
+    * @param the  market for which we will run the task
     * @param name The name of the market
     * @return The name of the task class
     */
@@ -128,7 +123,7 @@ public class TaskFactory {
 
    /**
     * Assemble the name of a CrawlerRanking class.
-    * 
+    *
     * @param city The city corresponding to this controller
     * @param name The name of the market
     * @return The name of the crawler class

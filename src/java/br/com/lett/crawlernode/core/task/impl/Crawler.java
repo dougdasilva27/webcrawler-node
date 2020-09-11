@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.core.task.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import br.com.lett.crawlernode.core.session.crawler.*;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -27,10 +29,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
@@ -54,7 +52,6 @@ import models.prices.Prices;
  * and extract methods.
  *
  * @author Samir Leao
- *
  */
 
 public class Crawler extends Task {
@@ -143,7 +140,7 @@ public class Crawler extends Task {
     * @param product
     */
    private void sendToKinesis(Product product) {
-      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
+      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession || session instanceof EqiCrawlerSession)) {
          Product p = ProductDTO.convertProductToKinesisFormat(product, session);
 
          Logging.printLogInfo(logger, session, "Sending data to Kinesis ...");
@@ -209,6 +206,10 @@ public class Crawler extends Task {
             Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
          }
 
+         if (session instanceof EqiCrawlerSession) {
+            Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
+         }
+
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
          session.setTaskStatus(Task.STATUS_FAILED);
@@ -252,7 +253,7 @@ public class Crawler extends Task {
       // insights session
       // there is only one product that will be selected
       // by it's internalId, passed by the crawler session
-      if (session instanceof InsightsCrawlerSession) {
+      if (session instanceof InsightsCrawlerSession || session instanceof EqiCrawlerSession) {
 
          // get crawled product by it's internalId
          Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
@@ -452,7 +453,7 @@ public class Crawler extends Task {
     * </ul>
     *
     * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an
-    *         empty array list if no product was found.
+    * empty array list if no product was found.
     */
    public List<Product> extract() throws Exception {
 
@@ -529,10 +530,10 @@ public class Crawler extends Task {
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according
     * to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
     * otherwise we use the DynamicDataFetcher.
-    *
+    * <p>
     * Subclasses can override this method for crawl another apis and pages. In Princesadonorte the
     * product page has nothing, but we need the url for crawl this market api.
-    *
+    * <p>
     * Return only {@link Document}
     *
     * @return Parsed HTML in form of a Document.

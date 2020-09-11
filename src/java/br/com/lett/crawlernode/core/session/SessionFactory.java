@@ -3,12 +3,7 @@ package br.com.lett.crawlernode.core.session;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.RatingReviewsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
@@ -38,6 +33,8 @@ public class SessionFactory {
          return new RankingKeywordsSession(request, scraperType, markets);
       } else if (scraperType.equals(ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString())) {
          return new RankingDiscoverKeywordsSession(request, scraperType, markets);
+      } else if (scraperType.equals(ScrapersTypes.EQI.toString())) {
+         return new EqiCrawlerSession(request, scraperType, markets);
       } else {
          Logging.printLogDebug(logger, "Scraper type not recognized." + "[" + scraperType + "]");
          return null;
