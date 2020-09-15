@@ -31,6 +31,7 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.jsoup.select.Elements;
 
 public class BrasilPetlazerCrawler extends Crawler {
 
@@ -51,21 +52,20 @@ public class BrasilPetlazerCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=\"idProduto\"]", "value");
-         String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".descricao_geral_direita p", true);
+         String internalId = scrapInternalId(doc);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#produto #h1", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".descricao_caminho a", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#fotoflor img", Arrays.asList("src"), "https", HOME_PAGE);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#produto .img-responsive", Arrays.asList("src"), "https", HOME_PAGE);
          String secondaryImages = null;
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".descricao_div_conteudo:not(col-lg-3)"));
-         boolean available = doc.selectFirst("#frete .btn") != null;
+         boolean available = doc.selectFirst(".bt_carrinho") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
-               .setInternalPid(internalPid)
+               .setInternalPid(internalId)
                .setName(name)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
@@ -110,7 +110,7 @@ public class BrasilPetlazerCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".descricao_geral_direita  font b", null, false, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[id=produto] div font[size] b", null, false, '.', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -148,12 +148,15 @@ public class BrasilPetlazerCrawler extends Crawler {
       return creditCards;
    }
 
-   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+   private Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      Element installmentsCard = doc.selectFirst(".descricao_geral_direita p font[style] b");
+      Elements elements = doc.select("div[id=produto] div font b");
 
-      if (installmentsCard != null) {
+      if (elements.size() > 1 && elements.get(1) != null) {
+
+         Element installmentsCard = elements.get(1);
+
          String installmentString = installmentsCard.text().split("x")[0];
          Integer installment = !installmentString.isEmpty() ? MathUtils.parseInt(installmentString) : null;
 
@@ -169,5 +172,20 @@ public class BrasilPetlazerCrawler extends Crawler {
       }
 
       return installments;
+   }
+
+   private String scrapInternalId(Document doc) {
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#produto .img-responsive", Arrays.asList("src"), "https", HOME_PAGE);
+
+      if (primaryImage != null) {
+         String[] split = primaryImage.split("/");
+
+         if (split.length > 0) {
+            return split[split.length-1].replace(".jpg", "");
+         }
+      }
+
+
+      return null;
    }
 }
