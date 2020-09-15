@@ -9,7 +9,7 @@ public class MexicoRappichedrauiciudadmexicoCrawler extends MexicoRappiCrawler {
       super(session);
    }
 
-   private static final String STORE_ID = "990002972";
+   private static final String STORE_ID = "990002982";
 
    @Override
    protected String setStoreId() {
