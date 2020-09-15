@@ -279,16 +279,16 @@ public class Crawler extends Task {
          // after active void analysis we have the resultant
          // product after the extra extraction attempts
          // if the resultant product is not void, the we will process it
-         if (!activeVoidResultProduct.isVoid()) {
+         if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
             try {
-
                processProduct(activeVoidResultProduct);
             } catch (Exception e) {
                Logging.printLogError(logger, session, "Error in process product method: " + CommonMethods.getStackTraceString(e));
-
                SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
                session.registerError(error);
             }
+         } else {
+            Logging.printLogError(logger, session, "EQI instance is not necessary to send to postgres");
          }
 
       }
