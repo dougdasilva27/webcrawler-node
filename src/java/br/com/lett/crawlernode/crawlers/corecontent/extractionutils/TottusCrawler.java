@@ -47,7 +47,6 @@ public abstract class TottusCrawler extends Crawler {
 
       if (internalId != null) {
 
-
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
          String name = doc.selectFirst("h1.title").text() + " " + doc.selectFirst("h2.brand").text();
@@ -120,12 +119,11 @@ public abstract class TottusCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
 
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());

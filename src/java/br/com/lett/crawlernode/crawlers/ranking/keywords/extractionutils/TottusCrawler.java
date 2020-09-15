@@ -28,10 +28,10 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
 
       JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, true, false);
-      JSONObject props = JSONUtils.getJSONValue(jsonInfo, "props");
-      JSONObject pageProps = JSONUtils.getJSONValue(props, "pageProps");
-      JSONObject products = JSONUtils.getJSONValue(pageProps, "products");
-      JSONArray results = JSONUtils.getJSONArrayValue(products, "results");
+      JSONObject props = jsonInfo.optJSONObject("props");
+      JSONObject pageProps = props.optJSONObject("pageProps");
+      JSONObject products = pageProps.optJSONObject("products");
+      JSONArray results = products.optJSONArray("results");
 
 
       if (!results.isEmpty()) {
