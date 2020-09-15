@@ -99,12 +99,16 @@ public class BrasilLojasmmCrawler extends Crawler {
 			// Availability all products (caso específico que todos produtos estão indisponíveis)
 			boolean unnavailableForAll = false;
 
-			if (skus.size() < 1) {
-				skus = doc.select(".ciq option[class]");
+			if (skus.isEmpty()) {
 				unnavailableForAll = true;
+				skus = doc.select(".ciq option[class]");
 			}
 
-			// Price
+         if (skus.isEmpty()) {
+            skus = doc.select(".conteudopreco div[id*=novafoto]");
+         }
+
+         // Price
 			Float price = crawlPrice(doc, unnavailableForAll);
 
 			// Prices
@@ -177,13 +181,14 @@ public class BrasilLojasmmCrawler extends Crawler {
 	}
 
 	private String crawlInternalId(Element sku) {
-		String internalId = null;
 
-		internalId = sku.attr("id").trim();
+		String internalId = sku.attr("id").trim();
 
 		if(internalId.isEmpty()){
 			internalId = sku.attr("value").trim();
-		}
+		} else if (internalId.contains("novafoto")) {
+         internalId = internalId.replace("novafoto", "");
+      }
 
 		return internalId;
 	}
@@ -201,25 +206,23 @@ public class BrasilLojasmmCrawler extends Crawler {
 	}
 
 	private String crawlNameFinal(String name, Element sku) {
-		String nameVariation = name;	
+
 		Element e = sku.select("a span").first();
 
-		if(e != null){
-			String variation = e.text().trim();
-			nameVariation = name + " " + variation;
+		String variation;
 
+		if(e != null){
+			variation = e.text().trim();
 		} else {
-			String variation = sku.text().trim();
+			variation = sku.text().trim();
 
 			if(variation.toLowerCase().contains("esgotado")){
 				String[] tokens = variation.split("-");
 				variation = variation.replace(tokens[tokens.length-1], "").trim().replaceAll("-", "");
 			}
-
-			nameVariation = name + " " + variation;
 		}
 
-		return nameVariation;
+		return (name + " " + variation).trim();
 	}
 
 	private Float crawlPrice(Document doc, boolean unnavailableForAll) {
@@ -338,7 +341,7 @@ public class BrasilLojasmmCrawler extends Crawler {
 			primaryImage = image;
 		}
 
-		if(primaryImage.isEmpty()) {
+      if(primaryImage == null || primaryImage.isEmpty()) {
 			Element specialImage = doc.select(".zoomprincipal > img").first();
 
 			if(specialImage != null) {

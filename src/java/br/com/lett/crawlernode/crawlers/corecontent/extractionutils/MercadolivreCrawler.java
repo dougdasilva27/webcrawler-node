@@ -209,7 +209,6 @@ public class MercadolivreCrawler extends Crawler {
       }
 
       return products;
-
    }
 
    private boolean isProductPage(Document doc) {
@@ -426,7 +425,6 @@ public class MercadolivreCrawler extends Crawler {
       }
       return sellerName;
    }
-
 
    private List<String> scrapSales(Element doc) {
       List<String> sales = new ArrayList<>();
