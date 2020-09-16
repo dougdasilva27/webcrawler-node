@@ -49,13 +49,20 @@ public class JavanetDataFetcher implements DataFetcher {
       int attempt = 1;
 
       long requestsStartTime = System.currentTimeMillis();
-      List<String> proxies = request.getProxyServices();
+      List<String> proxies = new ArrayList<>(request.getProxyServices());
+
+      //checking if it is EQI mode
+      if (proxies != null && session.getQueueName().equals("eqi")){
+         proxies.removeIf(proxy -> proxy.equals(ProxyCollection.INFATICA_RESIDENTIAL_BR));
+         proxies.add(0,ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI);
+      }
 
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
          long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
-            String proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.STORM_RESIDENTIAL_US : proxies.get(0);
+
+            String  proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.STORM_RESIDENTIAL_US : proxies.get(0);
 
             List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(proxyService);
 

@@ -9,10 +9,9 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -352,6 +351,15 @@ public class FetcherDataFetcher implements DataFetcher {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
+      List<String> proxies = new ArrayList<>(request.getProxyServices());
+
+      //checking if it is EQI mode
+      if (proxies != null && session.getQueueName().equals("eqi")){
+         proxies.removeIf(proxy -> proxy.equals(ProxyCollection.INFATICA_RESIDENTIAL_BR));
+         proxies.add(0,ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI);
+         System.err.println(proxies);
+      }
+
       if (options != null) {
          payload = FetcherRequestBuilder.create()
                .setUrl(url)
@@ -362,7 +370,7 @@ public class FetcherDataFetcher implements DataFetcher {
                .setRequiredCssSelector(options.getRequiredCssSelector())
                .setForcedProxies(
                      new FetcherRequestForcedProxies()
-                           .setAny(request.getProxyServices())
+                           .setAny(proxies)
                            .setSpecific(request.getProxy())
                )
                .setParameters(
@@ -382,7 +390,7 @@ public class FetcherDataFetcher implements DataFetcher {
                .setRequestType(method)
                .setForcedProxies(
                      new FetcherRequestForcedProxies()
-                           .setAny(request.getProxyServices())
+                           .setAny(proxies)
                            .setSpecific(request.getProxy())
                )
                .setParameters(
