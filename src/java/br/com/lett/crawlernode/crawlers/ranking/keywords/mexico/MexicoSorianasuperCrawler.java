@@ -87,7 +87,8 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected boolean hasNextPage() {
-    return false;
+
+      return currentDoc.selectFirst(".pagination .active .numeros .numeros") != null;
   }
 
   private String crawlInternalId(Element e) {
