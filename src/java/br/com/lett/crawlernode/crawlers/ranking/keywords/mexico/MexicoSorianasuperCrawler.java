@@ -67,10 +67,9 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String internalId = crawlInternalId(e);
-
         String productUrl = PROTOCOL +DOMAIN + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a[href]:first-child", "href" );
-         System.err.println(productUrl);
-         saveDataProduct(internalId, null, productUrl);
+
+        saveDataProduct(internalId, null, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
