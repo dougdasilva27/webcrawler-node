@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.core.task.impl;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+
+import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.session.Session;
@@ -29,6 +31,8 @@ public abstract class CrawlerRankingKeywords extends CrawlerRanking {
       this.location = ((TestRankingKeywordsSession) session).getLocation();
     } else if (session instanceof RankingDiscoverKeywordsSession) {
       this.location = ((RankingDiscoverKeywordsSession) session).getLocation();
+    } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
+       this.location = ((EqiRankingDiscoverKeywordsSession) session).getLocation();
     }
     // Danger! I remove this because it is too old and it can be unuseless.
     // if (!"mexico".equals(session.getMarket().getCity())) {
