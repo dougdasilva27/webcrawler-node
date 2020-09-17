@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.curitiba;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -12,6 +13,7 @@ import java.util.List;
 public class CuritibaCasafiestaCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.casafiesta.com.br/";
+   private static final String HOST = "www.casafiesta.com.br/";
 
    public CuritibaCasafiestaCrawler(Session session){
       super(session);
@@ -44,7 +46,7 @@ public class CuritibaCasafiestaCrawler extends CrawlerRankingKeywords {
             String internalId = crawlInternalId(e);
 
             // Url do produto
-            String productUrl = crawlProductUrl(e);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".fbits-spot-conteudo a", "href", "https", HOST);
 
             saveDataProduct(internalId, internalPid, productUrl);
 
@@ -60,7 +62,6 @@ public class CuritibaCasafiestaCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
    }
 
-   @Override
    protected boolean hasNextPage() {
       //se  elemeno page obtiver algum resultado
       //tem próxima página
@@ -73,33 +74,37 @@ public class CuritibaCasafiestaCrawler extends CrawlerRankingKeywords {
    }
 
    private String crawlInternalId(Element e){
-      String idProperty = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "id");
 
-      List<String> idSeparated = Arrays.asList(idProperty.split("-"));
-
-      return idSeparated.size() > 0 ? idSeparated.get(idSeparated.size() - 1): null;
+      return CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "id").split("-"));
+//      String idProperty = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "id");
+//
+//      List<String> idSeparated = Arrays.asList(idProperty.split("-"));
+//
+//      return idSeparated.size() > 0 ? idSeparated.get(idSeparated.size() - 1): null;
    }
 
    private String crawlInternalPid(Element e){
 
-      String dataProperty = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".imagem-spot img:first-of-type", "data-original");
-
-      List<String> dataSeparated = Arrays.asList(dataProperty.split(".jpg"));
+      String dataSeparated = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".imagem-spot img:first-of-type", "data-original").split(".jpg")[0];
+//      String dataProperty = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".imagem-spot img:first-of-type", "data-original");
+//
+//      List<String> dataSeparated = Arrays.asList(dataProperty.split(".jpg"));
       String internalPid = null;
       if(!dataSeparated.isEmpty()){
-         List<String> firstPart = Arrays.asList(dataSeparated.get(0).split("/"));
-
-         internalPid = firstPart.size() > 0 ? firstPart.get(firstPart.size() - 1).replaceAll("[^0-9]", "") : null;
+         internalPid = CommonMethods.getLast(dataSeparated.split("/"));
+//         List<String> firstPart = Arrays.asList(dataSeparated.get(0).split("/"));
+//
+//         internalPid = firstPart.size() > 0 ? firstPart.get(firstPart.size() - 1).replaceAll("[^0-9]", "") : null;
       }
 
       return internalPid;
    }
 
-   private String crawlProductUrl(Element e){
-
-      String nonFormattedUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".fbits-spot-conteudo a", "href");
-      return HOME_PAGE + nonFormattedUrl;
-   }
+//   private String crawlProductUrl(Element e){
+//
+//      String nonFormattedUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".fbits-spot-conteudo a", "href");
+//      return HOME_PAGE + nonFormattedUrl;
+//   }
 
 
 }

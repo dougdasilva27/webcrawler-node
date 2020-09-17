@@ -27,9 +27,9 @@ import java.util.*;
 public class CuritibaCasafiestaCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.casafiesta.com.br/";
+   private static final String HOST = "www.casafiesta.com.br/";
    private static final String SELLER_FULL_NAME = "Casa Fiesta";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.DINERS.toString(), Card.HIPER.toString());
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.DINERS.toString(), Card.HIPER.toString());
 
    public CuritibaCasafiestaCrawler(Session session){
       super(session);
@@ -47,10 +47,10 @@ public class CuritibaCasafiestaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produtoInfo-title > h1", false);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".produtoInfo #hdnProdutoId", "value");
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".produtoInfo #hdnProdutoVarianteId-0", "value");
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".fbits-produto-informacoes-extras .nutricional table tbody tr"));
-         CategoryCollection categories = scrapCategories(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-pagina-produto .imagem-etiquetas img", Collections.singletonList("src"), "https", HOME_PAGE);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-pagina-produto .jcarousel #galeria a",Collections.singletonList("data-image"), "https", HOME_PAGE, primaryImage);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".detalhe-produto .fbits-produto-informacoes-extras .informacao-abas"));
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#fbits-breadcrumb li a", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-pagina-produto .imagem-etiquetas img", Collections.singletonList("data-zoom-image"), "https", HOST);
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-pagina-produto .jcarousel #galeria a",Collections.singletonList("data-zoom-image"), "https", HOST, primaryImage);
 
          boolean available = isAvailable(doc);
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -80,24 +80,24 @@ public class CuritibaCasafiestaCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc){
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".detalhe-produto", false) != null;
+      return !doc.select(".detalhe-produto").isEmpty();
    }
 
-   private CategoryCollection scrapCategories(Document doc){
-      CategoryCollection categories = new CategoryCollection();
-
-      Elements categoriesTags = doc.select("#fbits-breadcrumb li a");
-      for(Element e:categoriesTags){
-         categories.add(e.text());
-      }
-      return categories;
-   }
+//   private CategoryCollection scrapCategories(Document doc){
+//      CategoryCollection categories = new CategoryCollection();
+//
+//      Elements categoriesTags = doc.select("#fbits-breadcrumb li a");
+//      for(Element e:categoriesTags){
+//         categories.add(e.text());
+//      }
+//      return categories;
+//   }
 
    private boolean isAvailable(Document doc){
 
       String availability = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[property='product:availability']", "content");
       if(availability != null){
-         return availability.equals("em estoque");
+         return availability.equalsIgnoreCase("em estoque");
       }
       return false;
    }
@@ -159,18 +159,62 @@ public class CuritibaCasafiestaCrawler extends Crawler {
 
    private RatingsReviews scrapRating(Document doc, String internalId){
 
-      RatingsReviews ratingReviews = new RatingsReviews();
-      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, "#avaliacao-Produto > div:nth-child(3) meta[itemprop=ratingCount]", "content",0);
-      Integer totalWrittenReviews = CrawlerUtils.scrapIntegerFromHtmlAttr(doc, "#avaliacao-Produto > div:nth-child(3) meta[itemprop=reviewCount]", "content",0);
-      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#avaliacao-Produto > div:nth-child(3) meta[itemprop=ratingValue]", "content", false, ',', session);
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRating(doc);
 
+      RatingsReviews ratingReviews = new RatingsReviews();
+      Integer totalNumOfEvaluations = advancedRatingReview.getTotalStar1() + advancedRatingReview.getTotalStar2() + advancedRatingReview.getTotalStar3() + advancedRatingReview.getTotalStar4() + advancedRatingReview.getTotalStar5();
+      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#avaliacao-Produto div[itemprop=aggregateRating] meta[itemprop=ratingValue]", "content", false, ',', session);
 
       ratingReviews.setDate(session.getDate());
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setTotalWrittenReviews(totalWrittenReviews);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
 
       return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRating(Document doc){
+
+      int star1 = 0;
+      int star2 = 0;
+      int star3 = 0;
+      int star4 = 0;
+      int star5 = 0;
+
+      Elements reviews = doc.select(".reviewUser div");
+
+      for(Element e:reviews){
+
+         String ratingValue = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "meta[itemprop=ratingValue]","content");
+
+         switch (ratingValue){
+            case "1":
+               star1++;
+               break;
+            case "2":
+               star2++;
+               break;
+            case "3":
+               star3++;
+               break;
+            case "4":
+               star4++;
+               break;
+            case "5":
+               star5++;
+               break;
+            default:
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 }
