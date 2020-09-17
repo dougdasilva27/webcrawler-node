@@ -71,23 +71,11 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
       this.pageSize = 10;
       this.log("Página " + this.currentPage);
 
-      String url = "https://" + HOST + "/catalogsearch/result/?limit=36&q=" + this.keywordEncoded;
-
-      if (this.currentPage > 1 && this.categoryUrl != null) {
-         url = this.categoryUrl + (this.categoryUrl.contains("?") ? "&" : "?") + "p=" + this.currentPage;
-      }
+      String url = "https://" + HOST + "/catalogsearch/result/?q=" + this.keywordEncoded + "&p=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(PRODUCTS_SELECTOR);
-
-      if (this.currentPage == 1) {
-         String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
-
-         if (!url.equals(redirectUrl)) {
-            this.categoryUrl = redirectUrl;
-         }
-      }
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
