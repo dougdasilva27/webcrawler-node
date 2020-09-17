@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.core.task.base;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.*;
+import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
@@ -12,6 +13,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 import java.lang.reflect.Constructor;
 
+import com.sun.org.apache.bcel.internal.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +40,7 @@ public class TaskFactory {
          return createImageCrawlerTask(session);
       }
 
-      if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession
+      if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession || session instanceof EqiRankingDiscoverKeywordsSession
          || session instanceof TestRankingKeywordsSession) {
          return createCrawlerRankingKeywordsTask(session);
       }

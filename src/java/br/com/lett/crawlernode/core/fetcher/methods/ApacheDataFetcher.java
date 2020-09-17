@@ -16,6 +16,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -91,6 +93,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
       long requestsStartTime = System.currentTimeMillis();
 
+
       while (attempt <= session.getMaxConnectionAttemptsCrawler() && ((request.bodyIsRequired() && (response.getBody() == null || response.getBody()
             .isEmpty())) || !request.bodyIsRequired()) && mustContinue) {
          RequestsStatistics requestStats = new RequestsStatistics();
@@ -106,6 +109,12 @@ public class ApacheDataFetcher implements DataFetcher {
             long requestStartTime = System.currentTimeMillis();
 
             randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
+
+            //checking if it is EQI mode
+            if(session.getQueueName().equals("eqi") && randProxy.getSource().equals(ProxyCollection.INFATICA_RESIDENTIAL_BR)){
+              randProxy.setSource(ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI);
+            }
+
             requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
 
