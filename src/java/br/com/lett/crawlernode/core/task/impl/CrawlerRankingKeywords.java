@@ -34,6 +34,7 @@ public abstract class CrawlerRankingKeywords extends CrawlerRanking {
     } else if (session instanceof EqiRankingDiscoverKeywordsSession) {
        this.location = ((EqiRankingDiscoverKeywordsSession) session).getLocation();
     }
+
     // Danger! I remove this because it is too old and it can be unuseless.
     // if (!"mexico".equals(session.getMarket().getCity())) {
     this.keywordWithoutAccents = CommonMethods.removeAccents(this.location.replaceAll("/", " ").replaceAll("\\.", ""));
