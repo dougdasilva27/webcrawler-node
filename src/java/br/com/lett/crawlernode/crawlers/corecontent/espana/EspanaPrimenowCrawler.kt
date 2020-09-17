@@ -82,7 +82,15 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
          val secondaryImgs = JSONArray()
          document.select(".a-spacing-small.item img")?.eachAttr("src", arrayOf(0))
             ?.forEach { img -> secondaryImgs.put(img.replaceFirst("38,50", "640,480")) }
-         val internalId = session.originalURL.substringAfter("dp/").substringBefore("?")
+
+         var internalId = "";
+
+         if (document.selectFirst("#sellerProfileTriggerId") != null) {
+            var sellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,"#sellerProfileTriggerId","href" ).substringAfter("&seller=")
+            internalId = sellerId + "_" + session.originalURL.substringAfter("dp/").substringBefore("?")
+         }else{
+            internalId = session.originalURL.substringAfter("dp/").substringBefore("?")
+         }
 
          val offers = scrapOffers(document)
 
@@ -100,6 +108,10 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
       return products
    }
 
+   private fun scrapSellerName(document: Document): String? {
+      return document.selectFirst("#merchant-info")?.text()?.trim()?.substringAfter("por ");
+   }
+
    private fun scrapOffers(document: Document): Offers {
       val offers = Offers()
 
@@ -115,9 +127,9 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
          val offer = OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
             .setPricing(pricing)
-            .setSellerFullName(document.selectFirst("#merchant-info")?.text()?.trim()?.substringAfter("por "))
+            .setSellerFullName(scrapSellerName(document))
             .setIsBuybox(false)
-            .setIsMainRetailer(true)
+            .setIsMainRetailer(scrapSellerName(document)?.contains("Amazon"))
             .build()
 
          offers.add(offer)
