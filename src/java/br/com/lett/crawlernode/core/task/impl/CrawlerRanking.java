@@ -37,6 +37,7 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
@@ -185,7 +186,7 @@ public abstract class CrawlerRanking extends Task {
             extractProductsFromCurrentPage();
 
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
-            if (session instanceof RankingSession || session instanceof RankingDiscoverSession
+            if (session instanceof RankingSession || session instanceof RankingDiscoverSession || session instanceof EqiRankingDiscoverKeywordsSession
                   && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
 
                sendMessagesToAmazonAndMongo();
@@ -335,7 +336,7 @@ public abstract class CrawlerRanking extends Task {
          }
       }
 
-      if (!(session instanceof TestRankingSession)) {
+      if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
          List<Processed> processeds = new ArrayList<>();
          if (internalId != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId, session);
@@ -365,6 +366,10 @@ public abstract class CrawlerRanking extends Task {
          rankingProducts.setProcessedIds(processedIds);
       }
 
+      if (url != null && session instanceof EqiRankingDiscoverKeywordsSession) {
+         saveProductUrlToQueue(url);
+      }
+
       this.arrayProducts.add(rankingProducts);
    }
 
@@ -378,8 +383,10 @@ public abstract class CrawlerRanking extends Task {
       attr.put(QueueService.MARKET_ID_MESSAGE_ATTR,
             new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
 
+      String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
+
       attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-            .withStringValue(String.valueOf(ScrapersTypes.DISCOVERER.toString())));
+            .withStringValue(String.valueOf(scraperType)));
 
       this.messages.put(url.trim(), attr);
    }
@@ -462,7 +469,13 @@ public abstract class CrawlerRanking extends Task {
     * @param entries
     */
    private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
-      String queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+      String queueName;
+
+      if (session instanceof EqiRankingDiscoverKeywordsSession) {
+         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.CORE_EQI.toString() : QueueName.CORE_EQI_WEBDRIVER.toString();
+      } else {
+         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+      }
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
