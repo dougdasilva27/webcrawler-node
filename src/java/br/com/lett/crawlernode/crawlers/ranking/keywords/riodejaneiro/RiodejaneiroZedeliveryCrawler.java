@@ -1,22 +1,22 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ZedeliveryCrawler.ZedeliveryInfo;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ZedeliveryCrawler.ZedeliveryInfoBuilder;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ZedeliveryCrawlerRanking;
 
-public class BrasilZedeliveryCrawler extends ZedeliveryCrawlerRanking {
+public class RiodejaneiroZedeliveryCrawler extends ZedeliveryCrawlerRanking {
 
-   public BrasilZedeliveryCrawler(Session session) {
+   public RiodejaneiroZedeliveryCrawler(Session session) {
       super(session);
    }
 
-   private String longitude = "-46.6931558";
-   private String latitude = "-23.5674273";
+   private String longitude = "-43.47541510000001";
+   private String latitude = "-23.024845";
    private String street = "Avenida Brigadeiro Faria Lima";
-   private String neighborhood = "Pinheiros";
-   private String city = "S\\u00e3o Paulo";
-   private String province = "SP";
+   private String neighborhood = "Recreio dos Bandeirantes";
+   private String city = "Rio de Janeiro";
+   private String province = "RJ";
 
    @Override
    protected ZedeliveryInfo getZedeliveryInfo() {

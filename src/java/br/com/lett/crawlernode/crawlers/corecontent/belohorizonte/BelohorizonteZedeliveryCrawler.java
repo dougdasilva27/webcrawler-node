@@ -1,20 +1,20 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ZedeliveryCrawler;
 
-public class BrasilZedeliveryCrawler extends ZedeliveryCrawler {
+public class BelohorizonteZedeliveryCrawler extends ZedeliveryCrawler {
 
-   public BrasilZedeliveryCrawler(Session session) {
+   public BelohorizonteZedeliveryCrawler(Session session) {
       super(session);
    }
 
-   private String longitude = "-46.6931558";
-   private String latitude = "-23.5674273";
-   private String street = "Avenida Brigadeiro Faria Lima";
-   private String neighborhood = "Pinheiros";
-   private String city = "S\\u00e3o Paulo";
-   private String province = "SP";
+   private String longitude = "-43.90162520000001";
+   private String latitude = "-19.8721346";
+   private String street = "Avenida Josefino Gonçalves da Silva";
+   private String neighborhood = "Goiânia";
+   private String city = "Belo Horizonte";
+   private String province = "MG";
 
    @Override
    protected ZedeliveryInfo getZedeliveryInfo() {
