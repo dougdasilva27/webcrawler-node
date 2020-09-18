@@ -22,9 +22,9 @@ public class TottusCrawler extends CrawlerRankingKeywords {
       this.pageSize = 15;
       this.log("Página " + this.currentPage);
 
-      String url = "https://" + homePage + "/buscar?q=" + this.keywordWithoutAccents + "&page=" + this.currentPage;
 
-      System.out.println(url);
+      String url = "https://" + homePage + "/buscar?q=" + this.keywordWithoutAccents.replace(" ", "%20") + "&page=" + this.currentPage;
+
       this.currentDoc = fetchDocument(url);
 
       JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, true, false);
