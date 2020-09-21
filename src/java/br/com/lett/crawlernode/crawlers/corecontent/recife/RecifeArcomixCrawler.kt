@@ -6,9 +6,7 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.JSONUtils
-import br.com.lett.crawlernode.util.Logging
-import br.com.lett.crawlernode.util.addNonNull
+import br.com.lett.crawlernode.util.*
 import models.prices.Prices
 import org.json.JSONObject
 
@@ -50,7 +48,18 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                         "${productJson.optString("str_nom_produto", "")} ${model
                             .optString("str_nom_produto_modelo", "")}".trim()
 
-                    val imagesJson = JSONUtils.stringToJson(json.optJSONArray("Imagens")?.opt(0)?.toString()) ?: JSONObject()
+                   val arrayOfImages = CrawlerUtils.scrapImagesListFromJSONArray(json.optJSONArray("Imagens"), "str_img_path", null, "https", "arcomixstr.blob.core.windows.net", session)
+                   val primaryImage = arrayOfImages.removeAt(0);
+
+                   var secondaryImages: MutableList<String> = mutableListOf<String>()
+
+                     for (secondary in arrayOfImages){
+                         val s = "$secondary-g.jpg"
+                        secondaryImages.add(s)
+                     }
+
+
+
                     products += ProductBuilder.create()
                         .setUrl(session.originalURL)
                         .setInternalId(productJson.opt("id_produto")?.toString())
@@ -60,10 +69,11 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                         .setPrices(prices)
                         .setAvailable(!model.optBoolean("bit_esgotado"))
                         .setCategories(categories)
-                        .setPrimaryImage("${imagesJson.optString("str_img_path")}-g.jpg")
+                        .setPrimaryImage("${primaryImage}-g.jpg")
+                       .setSecondaryImages(secondaryImages)
                         .setStock(productJson.optInt("int_qtd_estoque_produto"))
                         .setEans(mutableListOf<String>().also { list ->
-                            list.addNonNull(productJson.optString("str_cod_barras_produto"))
+                           list.addNonNull(productJson.optString("str_cod_barras_produto"))
                         })
                         .build()
                 }
