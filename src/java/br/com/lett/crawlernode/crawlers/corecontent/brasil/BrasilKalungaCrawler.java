@@ -284,8 +284,8 @@ public class BrasilKalungaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc, String internalId) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#container_produto #desconto_content_info_produto", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#container_produto .spanPriceCents", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#desconto_content_info_produto p del", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoinfos__price", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
