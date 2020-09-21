@@ -16,7 +16,7 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
 
    init {
       pageSize = 24
-      fetchMode = FetchMode.FETCHER
+      fetchMode = FetchMode.APACHE
    }
 
    override fun fetchJSONObject(url: String): JSONObject? {
@@ -62,7 +62,7 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
             val skus = elemJson.optJSONArray("sku_list")
             val urlProduct = "https://www.riachuelo.com.br/${elemJson.optString("linkId")}"
 
-            if (!skus.isEmpty) {
+            if (skus?.isEmpty == false) {
                for (internalId in skus) {
                   log("internal $internalId - url $urlProduct")
                   saveDataProduct(internalId.toString(), null, urlProduct, position)
