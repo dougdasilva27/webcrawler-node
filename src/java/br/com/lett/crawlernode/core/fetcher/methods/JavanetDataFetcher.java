@@ -55,9 +55,9 @@ public class JavanetDataFetcher implements DataFetcher {
          long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
-            String proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.STORM_RESIDENTIAL_US : proxies.get(0);
+            String proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.LUMINATI_SERVER_BR_HAPROXY : proxies.get(0);
 
-            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(proxyService);
+            List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(proxyService);
 
             RequestsStatistics requestStats = new RequestsStatistics();
             requestStats.setAttempt(attempt);
@@ -70,9 +70,9 @@ public class JavanetDataFetcher implements DataFetcher {
             String content = "";
             Proxy proxy = null;
 
-            if (!proxyStorm.isEmpty() && attempt < 4) {
+            if (!proxySelected.isEmpty() && attempt < 4) {
                Logging.printLogDebug(logger, session, "Using " + proxyService + " for this request.");
-               proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
+               proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort()));
             } else {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
             }
@@ -121,7 +121,7 @@ public class JavanetDataFetcher implements DataFetcher {
 
             response = new ResponseBuilder()
                   .setBody(content)
-                  .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
+                  .setProxyused(!proxySelected.isEmpty() ? proxySelected.get(0) : null)
                   .setRedirecturl(connection.getURL().toString())
                   .setHeaders(responseHeaders)
                   .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))
