@@ -45,7 +45,7 @@ abstract public class SupersjCrawler extends Crawler {
       int initialIndex = session.getOriginalURL().indexOf("//");
       String[] urlSplit = session.getOriginalURL().substring(initialIndex+2).split("/");
       String skuId = null;
-      if(urlSplit.length > 0){
+      if(urlSplit.length > 1){
          skuId = urlSplit[2];
       }
       BasicClientCookie cookie = new BasicClientCookie("ls.uid_armazem", getLocationId());
@@ -68,14 +68,15 @@ abstract public class SupersjCrawler extends Crawler {
          String name = productJson.optString("str_nom_produto");
          String internalId = String.valueOf(productJson.optInt("id_produto"));
          CategoryCollection categories = scrapCategories(productJson);
-         String primaryImage = productJson.optString("str_img_path_cdn", null) + "-g.jpg";
+         String primaryImage = scrapPrimaryImage(productJson);
          List<String> secondaryImages = scrapSecondaryProducts(json);
          String description = scrapDescription(productJson);
          boolean available = !productJson.optBoolean("bit_esgotado");
          Offers offers = available ? scrapOffers(productJson) : new Offers();
          Double stock2 = productJson.optDouble("int_qtd_estoque_produto", 0.0);
-         int stock = (int) productJson.optDouble("int_qtd_estoque_produto", 0.0);
-         List<String> eans = Arrays.asList(productJson.optString("str_cod_barras_produto"), null);
+         int stock = ((Double) productJson.optDouble("int_qtd_estoque_produto", 0.0)).intValue();
+         String allEans = productJson.optString("str_cod_barras_produto", null);
+         List<String> eans = allEans != null ? Arrays.asList(allEans) : new ArrayList<>();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -103,7 +104,10 @@ abstract public class SupersjCrawler extends Crawler {
    private Offers scrapOffers(JSONObject productJson) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(productJson);
-      List<String> sales = Collections.singletonList(productJson.optString("str_desc_central_promo", null));
+      List<String> sales = new ArrayList<>();
+      if(productJson.optString("str_desc_central_promo", null) != null){
+         sales = Collections.singletonList(productJson.optString("str_desc_central_promo", null));
+      }
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -165,7 +169,7 @@ abstract public class SupersjCrawler extends Crawler {
       int installment = productJson.optInt("int_qtd_parcela", 0);
       double valueElement = productJson.optDouble("mny_vlr_parcela", 0.0);
 
-      if (valueElement != 0.0 && installment != 0) {
+      if (valueElement > 0.0 && installment != 0) {
          Double value = MathUtils.normalizeTwoDecimalPlaces(valueElement);
 
          installments.add(Installment.InstallmentBuilder.create()
@@ -191,6 +195,14 @@ abstract public class SupersjCrawler extends Crawler {
       return categories;
    }
 
+   private String scrapPrimaryImage(JSONObject json){
+      String primaryImage = json.optString("str_img_path_cdn");
+      if(primaryImage != null){
+         primaryImage += "-g.jpg";
+      }
+      return primaryImage;
+   }
+
    private List<String> scrapSecondaryProducts(JSONObject json){
 
       List<String> images = new ArrayList<>();
@@ -198,7 +210,11 @@ abstract public class SupersjCrawler extends Crawler {
       if(imagesArray != null){
          imagesArray.remove(0);
          for(Object i:imagesArray){
-            images.add(((JSONObject) i).optString("str_img_path_cdn", null));
+            String image = ((JSONObject) i).optString("str_img_path_cdn", null);
+            if(image != null){
+               images.add(image);
+            }
+
          }
       }
 
@@ -216,6 +232,5 @@ abstract public class SupersjCrawler extends Crawler {
 
       return description;
    }
-
 
 }

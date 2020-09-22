@@ -14,7 +14,7 @@ import java.util.*;
 
 abstract public class SupersjCrawler extends CrawlerRankingKeywords {
 
-   private static final String HOME_PAGE = "https://www.supersj.com.br/";
+   private static final String PRODUCT_PAGE = "www.supersj.com.br/produto";
    private static final String API = "https://www.supersj.com.br/api/busca";
    private int totalPages;
    private static final List<Cookie> COOKIES = new ArrayList<>();
@@ -67,7 +67,7 @@ abstract public class SupersjCrawler extends CrawlerRankingKeywords {
 
             JSONObject product = productsArray.getJSONObject(i);
             String internalId = String.valueOf(product.optInt("id_produto"));
-            String productUrl = HOME_PAGE + product.optString("str_link_produto");
+            String productUrl = CrawlerUtils.completeUrl(product.optString("str_link_produto"), "https", PRODUCT_PAGE);
 
             if(i==0){
                this.totalPages = product.optInt("ult_pag");
