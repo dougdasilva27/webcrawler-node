@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
@@ -32,6 +33,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -352,6 +354,17 @@ public class FetcherDataFetcher implements DataFetcher {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
+      List<String> proxiesTemp = new ArrayList<>(request.getProxyServices());
+      List<String> proxies = new ArrayList<>();
+
+      if (proxies != null && session instanceof EqiCrawlerSession) {
+         for (String proxy : proxiesTemp) {
+            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
+         }
+      } else {
+         proxies = proxiesTemp;
+      }
+
       if (options != null) {
          payload = FetcherRequestBuilder.create()
                .setUrl(url)
@@ -362,7 +375,7 @@ public class FetcherDataFetcher implements DataFetcher {
                .setRequiredCssSelector(options.getRequiredCssSelector())
                .setForcedProxies(
                      new FetcherRequestForcedProxies()
-                           .setAny(request.getProxyServices())
+                           .setAny(proxies)
                            .setSpecific(request.getProxy())
                )
                .setParameters(
@@ -382,7 +395,7 @@ public class FetcherDataFetcher implements DataFetcher {
                .setRequestType(method)
                .setForcedProxies(
                      new FetcherRequestForcedProxies()
-                           .setAny(request.getProxyServices())
+                           .setAny(proxies)
                            .setSpecific(request.getProxy())
                )
                .setParameters(

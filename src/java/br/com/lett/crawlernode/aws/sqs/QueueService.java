@@ -45,6 +45,8 @@ public class QueueService {
    static {
       queueURLMap = new HashMap<>();
       queueURLMap.put(QueueName.CORE.toString(), QUEUE_URL + QueueName.CORE.toString());
+      queueURLMap.put(QueueName.CORE_EQI.toString(), QUEUE_URL + QueueName.CORE_EQI.toString());
+      queueURLMap.put(QueueName.CORE_EQI_WEBDRIVER.toString(), QUEUE_URL + QueueName.CORE_EQI_WEBDRIVER.toString());
       queueURLMap.put(QueueName.CORE_WEBDRIVER.toString(), QUEUE_URL + QueueName.CORE_WEBDRIVER.toString());
       queueURLMap.put(QueueName.DISCOVERER.toString(), QUEUE_URL + QueueName.DISCOVERER.toString());
       queueURLMap.put(QueueName.DISCOVERER_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_WEBDRIVER.toString());

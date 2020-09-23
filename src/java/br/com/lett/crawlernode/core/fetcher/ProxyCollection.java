@@ -20,6 +20,7 @@ public class ProxyCollection {
 
    private static final Logger logger = LoggerFactory.getLogger(ProxyCollection.class);
 
+   // CORE PROXIES
    public static final String BUY = "buy";
    public static final String BONANZA = "bonanza";
    public static final String BONANZA_BELGIUM = "bonanza_server_be";
@@ -36,6 +37,10 @@ public class ProxyCollection {
    public static final String INFATICA_RESIDENTIAL_BR_HAPROXY = "infatica_residential_br_haproxy";
    public static final String BR_OXYLABS = "br-oxylabs";
    public static final String BE_OXYLABS = "oxylabs_server_be";
+
+   //EQI PROXIES
+   public static final String INFATICA_RESIDENTIAL_BR_EQI = "infatica_residential_br_eqi";
+
 
    public static final int MAX_ATTEMPTS_PER_PROXY = 2;
 

@@ -94,13 +94,14 @@ public class ServerHandler implements HttpHandler {
 
       if (ScrapersTypes.IMAGES_DOWNLOAD.toString().equals(scraperType)) {
          request = new ImageCrawlerRequest();
-      } else if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType) || ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString().equals(scraperType)) {
-         request = new CrawlerRankingKeywordsRequest();
-      } else if (ScrapersTypes.SEED.toString().equals(scraperType)) {
-         request = new CrawlerSeedRequest();
-      } else {
-         request = new Request();
-      }
+      } else if (ScrapersTypes.RANKING_BY_KEYWORDS.toString().equals(scraperType) || ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString().equals(scraperType)
+            || ScrapersTypes.EQI_DISCOVERER.toString().equals(scraperType)) {
+               request = new CrawlerRankingKeywordsRequest();
+            } else if (ScrapersTypes.SEED.toString().equals(scraperType)) {
+               request = new CrawlerSeedRequest();
+            } else {
+               request = new Request();
+            }
 
       request.setRequestMethod(t.getRequestMethod().toUpperCase());
       request.setQueueName(headers.getFirst(SQS_NAME_HEADER));

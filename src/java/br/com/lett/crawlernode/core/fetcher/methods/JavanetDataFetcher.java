@@ -30,6 +30,7 @@ import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -49,7 +50,16 @@ public class JavanetDataFetcher implements DataFetcher {
       int attempt = 1;
 
       long requestsStartTime = System.currentTimeMillis();
-      List<String> proxies = request.getProxyServices();
+      List<String> proxiesTemp = new ArrayList<>(request.getProxyServices());
+      List<String> proxies = new ArrayList<>();
+
+      if (proxies != null && session instanceof EqiCrawlerSession) {
+         for (String proxy : proxiesTemp) {
+            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
+         }
+      } else {
+         proxies = proxiesTemp;
+      }
 
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
          long requestStartTime = System.currentTimeMillis();

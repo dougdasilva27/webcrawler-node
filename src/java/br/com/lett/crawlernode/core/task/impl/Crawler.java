@@ -28,6 +28,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
@@ -54,7 +55,6 @@ import models.prices.Prices;
  * and extract methods.
  *
  * @author Samir Leao
- *
  */
 
 public class Crawler extends Task {
@@ -62,7 +62,7 @@ public class Crawler extends Task {
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
-      + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+         + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
    /**
     * Maximum attempts during active void analysis It's essentially the number of times that we will
@@ -153,8 +153,8 @@ public class Crawler extends Task {
          KPLProducer.getInstance().put(p, session);
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-            .put("aws_type", "kinesis")
-            .put("kinesis_flow_type", "product");
+               .put("aws_type", "kinesis")
+               .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
@@ -163,8 +163,8 @@ public class Crawler extends Task {
             KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
 
             JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "rating");
+                  .put("aws_type", "kinesis")
+                  .put("kinesis_flow_type", "rating");
 
             Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
          }
@@ -278,16 +278,16 @@ public class Crawler extends Task {
          // after active void analysis we have the resultant
          // product after the extra extraction attempts
          // if the resultant product is not void, the we will process it
-         if (!activeVoidResultProduct.isVoid()) {
+         if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
             try {
-
                processProduct(activeVoidResultProduct);
             } catch (Exception e) {
                Logging.printLogError(logger, session, "Error in process product method: " + CommonMethods.getStackTraceString(e));
-
                SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
                session.registerError(error);
             }
+         } else {
+            Logging.printLogError(logger, session, "EQI instance is not necessary to send to postgres");
          }
 
       }
@@ -296,7 +296,7 @@ public class Crawler extends Task {
       // when processing a task of a suggested URL by the webcrawler or
       // an URL scheduled manually, we won't run active void and
       // we must process each crawled product
-      else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession) {
+      else if (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession || session instanceof EqiCrawlerSession) {
          // Before process and save to PostgreSQL
          // we must send the raw crawled data to Kinesis
          for (Product p : products) {
@@ -305,7 +305,9 @@ public class Crawler extends Task {
 
          for (Product product : products) {
             try {
-               processProduct(product);
+               if (!(session instanceof EqiCrawlerSession)) {
+                  processProduct(product);
+               }
             } catch (Exception e) {
                Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
                SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
@@ -373,7 +375,7 @@ public class Crawler extends Task {
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             scheduleImages(persistenceResult, newProcessedProduct);
@@ -391,11 +393,11 @@ public class Crawler extends Task {
             }
          } else if (previousProcessedProduct == null) {
             Logging.printLogDebug(logger, session,
-               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+                  "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+                     "Probably this crawler could not perform the capture, make sure the url is not a void url.");
             }
          }
       }
@@ -529,10 +531,10 @@ public class Crawler extends Task {
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according
     * to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
     * otherwise we use the DynamicDataFetcher.
-    *
+    * <p>
     * Subclasses can override this method for crawl another apis and pages. In Princesadonorte the
     * product page has nothing, but we need the url for crawl this market api.
-    *
+    * <p>
     * Return only {@link Document}
     *
     * @return Parsed HTML in form of a Document.
