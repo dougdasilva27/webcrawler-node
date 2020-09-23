@@ -354,7 +354,7 @@ public class FetcherDataFetcher implements DataFetcher {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      List<String> proxiesTemp = new ArrayList<>(request.getProxyServices());
+      List<String> proxiesTemp = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
       List<String> proxies = new ArrayList<>();
 
       if (proxies != null && session instanceof EqiCrawlerSession) {

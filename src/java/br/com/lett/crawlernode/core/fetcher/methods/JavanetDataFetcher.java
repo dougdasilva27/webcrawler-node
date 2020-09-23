@@ -50,7 +50,7 @@ public class JavanetDataFetcher implements DataFetcher {
       int attempt = 1;
 
       long requestsStartTime = System.currentTimeMillis();
-      List<String> proxiesTemp = new ArrayList<>(request.getProxyServices());
+      List<String> proxiesTemp = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
       List<String> proxies = new ArrayList<>();
 
       if (proxies != null && session instanceof EqiCrawlerSession) {
