@@ -6,7 +6,10 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.*
+import br.com.lett.crawlernode.util.Logging
+import br.com.lett.crawlernode.util.toBankSlip
+import br.com.lett.crawlernode.util.toCreditCards
+import br.com.lett.crawlernode.util.toJson
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
@@ -20,7 +23,7 @@ import org.json.JSONObject
  *
  */
 
-   class BrasilRexdeliveryCrawler(session: Session) : Crawler(session) {
+class BrasilRexdeliveryCrawler(session: Session) : Crawler(session) {
 
    companion object {
       const val SELLER_NAME: String = "Rex Delivery"
@@ -30,12 +33,12 @@ import org.json.JSONObject
       val url = "https://api.rexdelivery.com.br/v1/auth/loja/login"
 
       val payload = """
-          {
-             "domain":"rexdelivery.com.br",
-             "username":"loja",
-             "key":"df072f85df9bf7dd71b6811c34bdbaa4f219d98775b56cff9dfa5f8ca1bf8469"
-          }
-          """.trimIndent()
+       {
+          "domain":"rexdelivery.com.br",
+          "username":"loja",
+          "key":"df072f85df9bf7dd71b6811c34bdbaa4f219d98775b56cff9dfa5f8ca1bf8469"
+       }
+       """.trimIndent()
 
       val headers = mapOf(
          "content-type" to "application/json",

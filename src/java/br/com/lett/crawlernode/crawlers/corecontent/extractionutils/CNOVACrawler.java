@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -128,7 +127,7 @@ public abstract class CNOVACrawler extends Crawler {
    protected String mainSellerNameLower2;
    protected String marketHost;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
    protected static final String PROTOCOL = "https";
 
    private static final String USER_AGENT = FetchUtilities.randUserAgent();
@@ -167,21 +166,21 @@ public abstract class CNOVACrawler extends Crawler {
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
       Request request = RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(cookies)
-         .setHeaders(headers)
-         .setFetcheroptions(FetcherOptionsBuilder.create()
-            .mustUseMovingAverage(false)
-            .mustRetrieveStatistics(true)
-            .build())
-         .mustSendContentEncoding(false)
-         .setProxyservice(
-            Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.STORM_RESIDENTIAL_US,
-               ProxyCollection.BUY
-            )
-         ).build();
+            .setUrl(url)
+            .setCookies(cookies)
+            .setHeaders(headers)
+            .setFetcheroptions(FetcherOptionsBuilder.create()
+                  .mustUseMovingAverage(false)
+                  .mustRetrieveStatistics(true)
+                  .build())
+            .mustSendContentEncoding(false)
+            .setProxyservice(
+                  Arrays.asList(
+                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                        ProxyCollection.STORM_RESIDENTIAL_US,
+                        ProxyCollection.BUY
+                  )
+            ).build();
 
       Response response = df.get(session, request);
       this.cookies.addAll(response.getCookies());
@@ -189,8 +188,8 @@ public abstract class CNOVACrawler extends Crawler {
       int statusCode = response.getLastStatusCode();
 
       if (response.getBody().isEmpty() || (Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
+            Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404)) {
 
          if (df instanceof FetcherDataFetcher) {
             response = new JavanetDataFetcher().get(session, request);
@@ -261,7 +260,7 @@ public abstract class CNOVACrawler extends Crawler {
                RatingsReviews ratingReviews = crawRating(doc, variationInternalID);
 
                Document variationDocument = sku.hasAttr("selected") ? doc
-                  : Jsoup.parse(fetchPageHtml(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost), session.getOriginalURL()));
+                     : Jsoup.parse(fetchPageHtml(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost), session.getOriginalURL()));
 
                Offers offers = !unnavailable ? scrapOffers(variationDocument) : new Offers();
 
@@ -273,20 +272,20 @@ public abstract class CNOVACrawler extends Crawler {
 
                // Creating the product
                Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(variationInternalID)
-                  .setInternalPid(internalPid)
-                  .setName(variationName)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setEans(eans)
-                  .setOffers(offers)
-                  .setRatingReviews(ratingReviews)
-                  .build();
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(variationInternalID)
+                     .setInternalPid(internalPid)
+                     .setName(variationName)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setEans(eans)
+                     .setOffers(offers)
+                     .setRatingReviews(ratingReviews)
+                     .build();
 
                products.add(product);
             }
@@ -311,20 +310,20 @@ public abstract class CNOVACrawler extends Crawler {
 
             // Creating the product
             Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setEans(eans)
-               .setOffers(offers)
-               .setRatingReviews(ratingReviews)
-               .build();
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setEans(eans)
+                  .setOffers(offers)
+                  .setRatingReviews(ratingReviews)
+                  .build();
 
             products.add(product);
          }
@@ -355,7 +354,7 @@ public abstract class CNOVACrawler extends Crawler {
       String primaryImage = null;
 
       List<String> selectors = Arrays.asList(".carouselBox .thumbsImg li a", ".carouselBox .thumbsImg li a img", "#divFullImage a",
-         "#divFullImage a img");
+            "#divFullImage a img");
 
       for (String selector : selectors) {
          Element imageSelector = doc.selectFirst(selector);
@@ -467,14 +466,14 @@ public abstract class CNOVACrawler extends Crawler {
                      Pricing pricing = scrapSellersPricing(sellerObject);
 
                      offers.add(OfferBuilder.create()
-                        .setInternalSellerId(internalSellerId)
-                        .setSellerFullName(sellerFullName)
-                        .setMainPagePosition(mainPagePosition)
-                        .setSellersPagePosition(position)
-                        .setIsBuybox(isBuyBoxPage)
-                        .setIsMainRetailer(isMainRetailer)
-                        .setPricing(pricing)
-                        .build());
+                           .setInternalSellerId(internalSellerId)
+                           .setSellerFullName(sellerFullName)
+                           .setMainPagePosition(mainPagePosition)
+                           .setSellersPagePosition(position)
+                           .setIsBuybox(isBuyBoxPage)
+                           .setIsMainRetailer(isMainRetailer)
+                           .setPricing(pricing)
+                           .build());
                   }
                   position++;
                }
@@ -493,15 +492,15 @@ public abstract class CNOVACrawler extends Crawler {
    private Pricing scrapSellersPricing(JSONObject sellerObj) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(sellerObj, "price", true);
       BankSlip bankSlip = BankSlipBuilder.create()
-         .setFinalPrice(spotlightPrice)
-         .build();
+            .setFinalPrice(spotlightPrice)
+            .build();
       CreditCards creditCards = scrapSellersCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
    }
 
    private CreditCards scrapSellersCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -509,19 +508,19 @@ public abstract class CNOVACrawler extends Crawler {
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
       Set<String> allCards = new HashSet<>(this.cards);
       allCards.add(Card.SHOP_CARD.toString());
 
       for (String brand : allCards) {
          creditCards.add(CreditCardBuilder.create()
-            .setBrand(brand)
-            .setIsShopCard(brand.equalsIgnoreCase(Card.SHOP_CARD.toString()))
-            .setInstallments(installments)
-            .build());
+               .setBrand(brand)
+               .setIsShopCard(brand.equalsIgnoreCase(Card.SHOP_CARD.toString()))
+               .setInstallments(installments)
+               .build());
       }
 
       return creditCards;
@@ -538,15 +537,15 @@ public abstract class CNOVACrawler extends Crawler {
       List<String> sales = sale != null ? Arrays.asList(sale) : new ArrayList<>();
 
       return OfferBuilder.create()
-         .setInternalSellerId(internalSellerId)
-         .setSellerFullName(sellerFullName)
-         .setMainPagePosition(1)
-         .setIsBuybox(isBuyBoxPage)
-         .setIsMainRetailer(isMainRetailer)
-         .setSellersPagePosition(sellersPagePosition)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build();
+            .setInternalSellerId(internalSellerId)
+            .setSellerFullName(sellerFullName)
+            .setMainPagePosition(1)
+            .setIsBuybox(isBuyBoxPage)
+            .setIsMainRetailer(isMainRetailer)
+            .setSellersPagePosition(sellersPagePosition)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build();
    }
 
    private Pricing scrapPricingForProductPage(Document doc) throws MalformedPricingException {
@@ -560,11 +559,11 @@ public abstract class CNOVACrawler extends Crawler {
       BankSlip bankSlip = scrapBankslip(doc, spotlightPrice, discount);
 
       return PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
    }
 
    private BankSlip scrapBankslip(Document doc, Double spotlightPrice, Double discount) throws MalformedPricingException {
@@ -582,9 +581,9 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       return BankSlipBuilder.create()
-         .setFinalPrice(bkPrice)
-         .setOnPageDiscount(bkDiscount)
-         .build();
+            .setFinalPrice(bkPrice)
+            .setOnPageDiscount(bkDiscount)
+            .build();
    }
 
    private CreditCards scrapCreditCardsFromProductPage(Document doc, Double discount, Double spotlightPrice) throws MalformedPricingException {
@@ -593,17 +592,17 @@ public abstract class CNOVACrawler extends Crawler {
       Installments regularCard = scrapInstallments(doc, ".tabsCont #tab01 tr:not(.first)", discount);
       if (regularCard.getInstallments().isEmpty()) {
          regularCard.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-            .setBrand(brand)
-            .setIsShopCard(false)
-            .setInstallments(regularCard)
-            .build());
+               .setBrand(brand)
+               .setIsShopCard(false)
+               .setInstallments(regularCard)
+               .build());
       }
 
       Installments shopCard = scrapInstallments(doc, ".tabsCont #tab02 tr:not(.first)", discount);
@@ -613,10 +612,10 @@ public abstract class CNOVACrawler extends Crawler {
       }
 
       creditCards.add(CreditCardBuilder.create()
-         .setBrand(Card.SHOP_CARD.toString())
-         .setIsShopCard(true)
-         .setInstallments(shopCard)
-         .build());
+            .setBrand(Card.SHOP_CARD.toString())
+            .setIsShopCard(true)
+            .setInstallments(shopCard)
+            .build());
 
       return creditCards;
    }
@@ -677,11 +676,11 @@ public abstract class CNOVACrawler extends Crawler {
       Double installmentDiscount = maxInstallmentsWithDiscount != null && installment <= maxInstallmentsWithDiscount ? discount : 0d;
 
       return InstallmentBuilder.create()
-         .setInstallmentNumber(installment)
-         .setInstallmentPrice(installmentPrice)
-         .setAmOnPageInterests(interests)
-         .setOnPageDiscount(installmentDiscount)
-         .build();
+            .setInstallmentNumber(installment)
+            .setInstallmentPrice(installmentPrice)
+            .setAmOnPageInterests(interests)
+            .setOnPageDiscount(installmentDiscount)
+            .build();
 
    }
 
@@ -795,7 +794,7 @@ public abstract class CNOVACrawler extends Crawler {
       Element ean = document.select(".productEan").first();
       if (ean != null) {
          description.append(CrawlerUtils.crawlDescriptionFromFlixMedia("5779", ean.ownText().replaceAll("[^0-9]", "").trim(), new FetcherDataFetcher(),
-            session));
+               session));
       }
 
       return description.toString();

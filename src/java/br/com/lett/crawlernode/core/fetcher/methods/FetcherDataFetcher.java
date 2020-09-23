@@ -9,9 +9,10 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherRequestBuilder;
@@ -31,6 +33,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -351,13 +354,15 @@ public class FetcherDataFetcher implements DataFetcher {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      List<String> proxies = new ArrayList<>(request.getProxyServices());
+      List<String> proxiesTemp = new ArrayList<>(request.getProxyServices());
+      List<String> proxies = new ArrayList<>();
 
-      //checking if it is EQI mode
-      if (proxies != null && session.getQueueName().equals("eqi")){
-         proxies.removeIf(proxy -> proxy.equals(ProxyCollection.INFATICA_RESIDENTIAL_BR));
-         proxies.add(0,ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI);
-         System.err.println(proxies);
+      if (proxies != null && session instanceof EqiCrawlerSession) {
+         for (String proxy : proxiesTemp) {
+            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
+         }
+      } else {
+         proxies = proxiesTemp;
       }
 
       if (options != null) {

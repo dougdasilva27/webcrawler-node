@@ -131,8 +131,11 @@ public class BrasilRiachueloCrawler extends Crawler {
          } else {
             String internalId = crawlInternalId(doc);
             String name = crawlName(doc);
-            String primaryImage = crawlPrimaryImage(jsonHtml);
-            String secondaryImages = crawlSecondaryImages(jsonHtml);
+
+            String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".fotorama__stage .fotorama__stage__frame img", "src");
+
+            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fotorama__nav__shaft .fotorama_vertical_ratio img:not(:first-child)", Arrays.asList("src"), "https", "produtos.fotos-riachuelo.com.br", primaryImage);
+
             Offers offers = scrapOffers(doc, jsonHtml, internalId);
 
             Product product = ProductBuilder.create()
@@ -267,34 +270,6 @@ public class BrasilRiachueloCrawler extends Crawler {
       }
 
       return secondaryImages.toString();
-   }
-
-   private String crawlPrimaryImage(JSONObject jsonHtml) {
-      String primaryImage = null;
-
-      if (jsonHtml.has("[data-gallery-role=gallery-placeholder]")) {
-         JSONObject galleryPlaceholder = jsonHtml
-            .getJSONObject("[data-gallery-role=gallery-placeholder]");
-
-         if (galleryPlaceholder.has("mage/gallery/gallery")) {
-            JSONObject gallery = galleryPlaceholder.getJSONObject("mage/gallery/gallery");
-
-            if (gallery.has("data")) {
-               JSONArray images = gallery.getJSONArray("data");
-
-               for (Object object : images) {
-                  JSONObject image = (JSONObject) object;
-
-                  if (image.has("isMain") && image.getBoolean("isMain") && image.has("img")) {
-                     primaryImage = image.getString("img");
-
-                  }
-               }
-            }
-         }
-      }
-
-      return primaryImage;
    }
 
    private String crawlName(Document doc) {
@@ -440,18 +415,18 @@ public class BrasilRiachueloCrawler extends Crawler {
    private String crawlPrimaryImageWithVariation(JSONObject skuJson, String internalId) {
       String primaryImage = null;
       if (skuJson.has("jsonConfig")) {
-         JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
+         JSONObject jsonConfig = skuJson.optJSONObject("jsonConfig");
          if (jsonConfig.has("images")) {
-            JSONObject images = jsonConfig.getJSONObject("images");
+            JSONObject images = jsonConfig.optJSONObject("images");
 
             if (images.has(internalId)) {
-               JSONArray image = images.getJSONArray(internalId);
+               JSONArray image = images.optJSONArray(internalId);
 
                for (Object object : image) {
                   JSONObject img = (JSONObject) object;
 
                   if (img.optBoolean("isMain")) {
-                     primaryImage = img.getString("img");
+                     primaryImage = img.optString("img");
                   }
                }
             }

@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -24,19 +25,19 @@ public class BrasilMiamistoreCrawler extends CrawlerRankingKeywords{
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 		
-		Elements products =  this.currentDoc.select("div.wd-browsing-grid-list > ul > li > div");
+		Elements products =  this.currentDoc.select("div.wd-browsing-grid-list ul li div[data-product-id]");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
+		if(!products.isEmpty()) {
 			//se o total de busca não foi setado ainda, chama a função para setar
 			if(this.totalProducts == 0) {
 				setTotalProducts();
 			}
-			
+
 			for(Element e: products) {
-				String internalPid 	= crawlInternalPid(e);
-				String internalId 	= null;
-				String productUrl = crawlProductUrl(e);
+				String internalPid 	= e.attr("data-product-id");
+				String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[data-sku-selected][data-pid]", "data-sku-selected");
+				String productUrl = CrawlerUtils.scrapUrl(e, " .link-produto", "href", "https", "www.miami.com.br");
 				
 				saveDataProduct(internalId, internalPid, productUrl);
 				
@@ -71,24 +72,5 @@ public class BrasilMiamistoreCrawler extends CrawlerRankingKeywords{
 				this.log("Total da busca: " + this.totalProducts);
 			}
 		}
-	}
-	
-	private String crawlInternalPid(Element e){
-		return e.attr("data-product-id");
-	}
-	
-	private String crawlProductUrl(Element e){
-		String productUrl = null;
-		Element url = e.select(".name > a").first();
-		
-		if(url != null) {
-			productUrl = url.attr("href");
-			
-			if(!productUrl.startsWith("https://www.miami.com.br/")) {
-				productUrl = ("https://www.miami.com.br/" + productUrl).replace("br//", "br/");
-			}
-		}
-		
-		return productUrl;
 	}
 }

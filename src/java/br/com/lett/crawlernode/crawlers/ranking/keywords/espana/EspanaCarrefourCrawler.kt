@@ -21,11 +21,16 @@ class EspanaCarrefourCrawler(session: Session) : CrawlerRankingKeywords(session)
 
     for (jsonProduct in jsonBody.optJSONArray("docs")) {
       if (jsonProduct is JSONObject) {
-        saveDataProduct(
-          jsonProduct.optString("catalog_ref_id"),
-          jsonProduct.optString("product_id"),
-          "https://www.carrefour.es${jsonProduct.optString("url")}"
-        )
+  		   val productUrl =  "https://www.carrefour.es${jsonProduct.optString("url")}"
+         val internalId = jsonProduct.optString("catalog_ref_id")
+         val internalPid = jsonProduct.optString("product_id")
+        
+		     saveDataProduct(internalId, internalPid, productUrl)
+		     log("Position: $position - InternalId: $internalId - InternalPid: $internalPid - Url: $productUrl")
+		     
+		     if (arrayProducts.size == productsLimit) {
+            break;
+         }
       }
     }
     row += 24

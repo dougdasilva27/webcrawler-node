@@ -1,17 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -27,6 +15,14 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class BrasilLojamondelezCrawler extends Crawler {
 
@@ -63,7 +59,6 @@ public class BrasilLojamondelezCrawler extends Crawler {
       headers.put("sec-fetch-site", "same-origin");
       headers.put("x-requested-with", "XMLHttpRequest");
 
-
       Request request = RequestBuilder.create().setUrl(LOGIN_URL).setPayload(payload.toString()).setHeaders(headers).build();
       Response response = this.dataFetcher.post(session, request);
 
@@ -82,16 +77,15 @@ public class BrasilLojamondelezCrawler extends Crawler {
       headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
 
       Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setHeaders(headers)
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .build();
 
       return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
    }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
@@ -102,12 +96,9 @@ public class BrasilLojamondelezCrawler extends Crawler {
 
          String internalPid = crawlInternalPid(productJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#info-abas-mobile"));
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"),
-               "https", IMAGES_HOST);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".miniaturas-container.my-3 a:not(:first-child) img", Arrays.asList("src", "href",
-               "src"),
-               "https", IMAGES_HOST, primaryImage);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#nav-descricao"));
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-gallery-thumbnails img", "src");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#product-gallery-thumbnails button:not(:first-child) img", Collections.singletonList("src"), "https", IMAGES_HOST, primaryImage);
 
          JSONArray productsArray = getSkusList(productJson);
 
@@ -121,21 +112,19 @@ public class BrasilLojamondelezCrawler extends Crawler {
             Prices prices = scrapPrices(price);
 
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(price != null && price > 0)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setEans(eans)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(price != null && price > 0)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setEans(eans)
+               .build();
 
             products.add(product);
          }
@@ -163,7 +152,7 @@ public class BrasilLojamondelezCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".container #detalhes-container").isEmpty();
+      return doc.selectFirst(".container .product-details") != null;
    }
 
    private String crawlInternalId(JSONObject skuJson) {

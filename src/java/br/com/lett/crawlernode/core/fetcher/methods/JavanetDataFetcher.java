@@ -30,6 +30,7 @@ import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -49,22 +50,24 @@ public class JavanetDataFetcher implements DataFetcher {
       int attempt = 1;
 
       long requestsStartTime = System.currentTimeMillis();
-      List<String> proxies = new ArrayList<>(request.getProxyServices());
+      List<String> proxiesTemp = new ArrayList<>(request.getProxyServices());
+      List<String> proxies = new ArrayList<>();
 
-      //checking if it is EQI mode
-      if (proxies != null && session.getQueueName().equals("eqi")){
-         proxies.removeIf(proxy -> proxy.equals(ProxyCollection.INFATICA_RESIDENTIAL_BR));
-         proxies.add(0,ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI);
+      if (proxies != null && session instanceof EqiCrawlerSession) {
+         for (String proxy : proxiesTemp) {
+            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
+         }
+      } else {
+         proxies = proxiesTemp;
       }
 
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
          long requestStartTime = System.currentTimeMillis();
          try {
             Logging.printLogDebug(logger, session, "Performing GET request with HttpURLConnection: " + targetURL);
+            String proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.LUMINATI_SERVER_BR_HAPROXY : proxies.get(0);
 
-            String  proxyService = proxies == null || proxies.isEmpty() ? ProxyCollection.STORM_RESIDENTIAL_US : proxies.get(0);
-
-            List<LettProxy> proxyStorm = GlobalConfigurations.proxies.getProxy(proxyService);
+            List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(proxyService);
 
             RequestsStatistics requestStats = new RequestsStatistics();
             requestStats.setAttempt(attempt);
@@ -77,9 +80,9 @@ public class JavanetDataFetcher implements DataFetcher {
             String content = "";
             Proxy proxy = null;
 
-            if (!proxyStorm.isEmpty() && attempt < 4) {
+            if (!proxySelected.isEmpty() && attempt < 4) {
                Logging.printLogDebug(logger, session, "Using " + proxyService + " for this request.");
-               proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyStorm.get(0).getAddress(), proxyStorm.get(0).getPort()));
+               proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort()));
             } else {
                Logging.printLogWarn(logger, session, "Using NO_PROXY for this request: " + targetURL);
             }
@@ -128,7 +131,7 @@ public class JavanetDataFetcher implements DataFetcher {
 
             response = new ResponseBuilder()
                   .setBody(content)
-                  .setProxyused(!proxyStorm.isEmpty() ? proxyStorm.get(0) : null)
+                  .setProxyused(!proxySelected.isEmpty() ? proxySelected.get(0) : null)
                   .setRedirecturl(connection.getURL().toString())
                   .setHeaders(responseHeaders)
                   .setCookies(FetchUtilities.getCookiesFromHeadersJavaNet(connection.getHeaderFields()))

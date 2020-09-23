@@ -327,20 +327,22 @@ public class BrasilAmazonCrawler extends Crawler {
    private RatingsReviews crawlRating(Document document, String internalId) {
 
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
       RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
 
-      if (internalId != null) {
-         Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
-               "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
-         Double avgRating = getTotalAvgRating(document);
+      if (document.select("#cm-cr-dp-no-reviews-message").isEmpty()) {
+         ratingReviews.setDate(session.getDate());
 
-         ratingReviews.setInternalId(internalId);
-         ratingReviews.setTotalRating(totalNumOfEvaluations);
-         ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-         ratingReviews.setAverageOverallRating(avgRating);
-         ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReviews(document, totalNumOfEvaluations));
+         if (internalId != null) {
+            Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
+                  "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
+            Double avgRating = getTotalAvgRating(document);
+
+            ratingReviews.setInternalId(internalId);
+            ratingReviews.setTotalRating(totalNumOfEvaluations);
+            ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+            ratingReviews.setAverageOverallRating(avgRating);
+            ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReviews(document, totalNumOfEvaluations));
+         }
       }
 
       return ratingReviews;
@@ -383,15 +385,19 @@ public class BrasilAmazonCrawler extends Crawler {
             doc.select("#reviewsMedley [data-hook=rating-out-of-text], #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt")
                   .first();
 
+      String text;
+
       if (reviews != null) {
-         String text = reviews.ownText().trim();
+         text = reviews.ownText().trim();
+      } else {
+         text = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".reviewCountTextLinkedHistogram[title]", "title");
+      }
 
-         if (text.contains("de")) {
-            String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
+      if (text.contains("de")) {
+         String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
 
-            if (!avgText.isEmpty()) {
-               avgRating = Double.parseDouble(avgText);
-            }
+         if (!avgText.isEmpty()) {
+            avgRating = Double.parseDouble(avgText);
          }
       }
 
