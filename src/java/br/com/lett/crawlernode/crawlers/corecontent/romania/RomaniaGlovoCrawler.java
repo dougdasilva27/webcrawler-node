@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.romania;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -19,9 +20,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import javax.xml.bind.SchemaOutputResolver;
+import java.util.*;
 
 public class RomaniaGlovoCrawler extends Crawler {
 
@@ -35,18 +35,23 @@ public class RomaniaGlovoCrawler extends Crawler {
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
-   private JSONArray extractAllProductsFromApi() {
-      JSONArray products = new JSONArray();
+   private JSONObject extractAllProductsFromApi() {
 
-      String urlApi = "https://api.glovoapp.com/v3/stores/52287/addresses/152639/collections/78058245";
+      String keywordFromURL = session.getOriginalURL().split("keywords=")[1].split("/")[0];
 
-      Request request = Request.RequestBuilder.create().setUrl(urlApi).build();
-      JSONObject productsJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      String url = "https://api.glovoapp.com/v3/stores/52287/addresses/152639/search?query=" + keywordFromURL;
 
-      JSONArray sections = JSONUtils.getJSONArrayValue(productsJson, "sections");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("glovo-location-city-code", "BUC");
 
-      products = sections;
-      return products;
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setUrl(url)
+         .build();
+      Response response = dataFetcher.get(session, request);
+
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    @Override
@@ -56,14 +61,17 @@ public class RomaniaGlovoCrawler extends Crawler {
 
       if (session.getOriginalURL().contains("product_id=")) {
 
-         JSONArray sections = extractAllProductsFromApi();
+         JSONObject sections = extractAllProductsFromApi();
 
-         for (Object object : sections) {
-            JSONObject sectionsObject = (JSONObject) object;
+         JSONArray results = JSONUtils.getJSONArrayValue(sections, "results");
 
-            if (sectionsObject != null && !sectionsObject.isEmpty()) {
+         for(Object ob: results) {
 
-               JSONArray productsArr = JSONUtils.getJSONArrayValue(sectionsObject, "products");
+            JSONObject resultsObject = (JSONObject) ob;
+
+            if (resultsObject != null && !resultsObject.isEmpty()) {
+
+               JSONArray productsArr = JSONUtils.getJSONArrayValue(resultsObject, "products");
 
                for (Object p : productsArr) {
                   JSONObject prod = (JSONObject) p;
@@ -93,8 +101,9 @@ public class RomaniaGlovoCrawler extends Crawler {
                   }
                }
             }
-         }
 
+
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
