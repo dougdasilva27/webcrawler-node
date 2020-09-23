@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class RomaniaGlovoCrawler extends CrawlerRankingKeywords {
 
-   private static final String BASE_URL = "https://glovoapp.com/en/buc/store/kaufland-buc/product_id=";
+   private  String BASE_URL = "https://glovoapp.com/en/buc/store/kaufland-buc/keywords="+ this.keywordEncoded + "/product_id=";
 
    public RomaniaGlovoCrawler(Session session) {
       super(session);
@@ -38,6 +38,7 @@ public class RomaniaGlovoCrawler extends CrawlerRankingKeywords {
                for (Object prod : products) {
                   if (prod instanceof JSONObject) {
                      JSONObject product = (JSONObject) prod;
+
 
                      String internalId = product.optString("id");
                      String internalPid = product.optString("externalId");
