@@ -61,7 +61,7 @@ public class ArgentinaWalmartCrawler extends CrawlerRankingKeywords{
 				String internalPid 	= crawlInternalPid(product);
 				
 				// InternalId
-				String internalId 	= crawlInternalId(product);
+				String internalId = null;
 				
 				// Url do produto
 				String productUrl = crawlProductUrl(product);
@@ -89,10 +89,6 @@ public class ArgentinaWalmartCrawler extends CrawlerRankingKeywords{
 	   this.totalProducts = ((JSONObject) e).optInt("count");
 
 		this.log("Total da busca: "+this.totalProducts);
-	}
-	
-	private String crawlInternalId(Object e){
-		return null;
 	}
 	
 	private String crawlInternalPid(Object e){
