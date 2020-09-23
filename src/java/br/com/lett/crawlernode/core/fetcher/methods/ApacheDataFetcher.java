@@ -50,7 +50,6 @@ import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.PageContent;
@@ -59,7 +58,6 @@ import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
@@ -109,11 +107,6 @@ public class ApacheDataFetcher implements DataFetcher {
             long requestStartTime = System.currentTimeMillis();
 
             randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
-
-            // checking if it is EQI mode
-            if (session instanceof EqiCrawlerSession && randProxy.getSource().equals(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY)) {
-               randProxy.setSource(ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI);
-            }
 
             requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);

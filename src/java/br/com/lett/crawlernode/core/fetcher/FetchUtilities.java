@@ -32,6 +32,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.parser.Parser;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateUtils;
@@ -170,6 +171,10 @@ public class FetchUtilities {
 
       while (proxies.isEmpty() && attemptTemp <= maxAttempts) {
          serviceName = getProxyService(attemptTemp, session);
+
+         if (session instanceof EqiCrawlerSession && serviceName.equals(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY)) {
+            serviceName = ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI;
+         }
 
          if (serviceName != null) {
             if (GlobalConfigurations.proxies != null) {
