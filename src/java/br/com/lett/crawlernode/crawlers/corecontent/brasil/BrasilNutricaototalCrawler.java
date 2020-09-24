@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -54,7 +57,7 @@ public class BrasilNutricaototalCrawler extends Crawler {
          ArrayList<String> images = crawlImages(doc);
 
          String primaryImage = images.size() > 0 ? images.remove(0) : null;
-         List<String> secondaryImages = images.size() > 0 ? images : null;
+         List<String> secondaryImages = images.size() > 0 ? images : new ArrayList<>();
 
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.attribute.overview > div > b", "div.product.attribute.overview > div"));
          Integer stock = null;
