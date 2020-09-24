@@ -56,8 +56,8 @@ public class BrasilNutricaototalCrawler extends Crawler {
 
          ArrayList<String> images = crawlImages(doc);
 
-         String primaryImage = images.size() > 0 ? images.remove(0) : null;
-         List<String> secondaryImages = images.size() > 0 ? images : new ArrayList<>();
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+         List<String> secondaryImages = !images.isEmpty() ? images : new ArrayList<>();
 
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.product.attribute.overview > div > b", "div.product.attribute.overview > div"));
          Integer stock = null;

@@ -1,15 +1,14 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.util.Collection;
+import java.util.List;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.DateUtils;
 import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
-import org.json.JSONObject;
-
-import java.util.Collection;
-import java.util.List;
 
 
 public class ProductBuilder {
@@ -118,7 +117,7 @@ public class ProductBuilder {
    }
 
    public ProductBuilder setSecondaryImages(Collection<String> secondaryImages) {
-      this.secondaryImages = JSONObject.valueToString(secondaryImages);
+      this.secondaryImages = secondaryImages == null ? null : JSONObject.valueToString(secondaryImages);
       return this;
    }
 
