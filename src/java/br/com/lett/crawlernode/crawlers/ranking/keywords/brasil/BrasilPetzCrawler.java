@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -27,7 +28,7 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocumentWithWebDriver(url, 9000);
 
-    Elements products = this.currentDoc.select(".liProduct > div");
+    Elements products = this.currentDoc.select(".liProduct .petzProduct");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -35,8 +36,8 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
+        String internalPid = e.attr("data-idproduto");
+        String productUrl = CrawlerUtils.completeUrl(e.attr("href"), "https", "www.petz.com.br");
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -77,30 +78,4 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
     }
   }
 
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    Element sku = e.select("meta[itemprop=sku]").first();
-    if (sku != null) {
-      internalPid = sku.attr("content");
-    }
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.select("> a").last();
-
-    if (url != null) {
-      productUrl = url.attr("href");
-
-      if (!productUrl.contains("petz.com")) {
-        productUrl = (HOME_PAGE + productUrl).replace("br//", "br/");
-      }
-    }
-
-    return productUrl;
-  }
 }
