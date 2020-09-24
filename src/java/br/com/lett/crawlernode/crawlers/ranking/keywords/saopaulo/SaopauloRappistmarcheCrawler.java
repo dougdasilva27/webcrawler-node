@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.RappiCr
 public class SaopauloRappistmarcheCrawler extends RappiCrawler {
 
    public SaopauloRappistmarcheCrawler(Session session) {
-      super(session, Arrays.asList("900020814"));
+      super(session, Arrays.asList("900020365"));
    }
 
 }
