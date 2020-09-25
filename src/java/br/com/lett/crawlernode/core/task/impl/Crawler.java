@@ -286,8 +286,6 @@ public class Crawler extends Task {
                SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
                session.registerError(error);
             }
-         } else {
-            Logging.printLogError(logger, session, "EQI instance is not necessary to send to postgres");
          }
 
       }
