@@ -12,7 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.imgprocessing.ImageConverter;
@@ -288,7 +289,14 @@ public class ImageCrawler extends Task {
    private File downloadImage() throws IOException {
       Logging.printLogDebug(LOGGER, session, "Downloading image from market...");
 
-      Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).build();
+      Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setFetcheroptions(FetcherOptionsBuilder.create()
+                  .mustRetrieveByteArray(true)
+                  .mustRetrieveStatistics(true)
+                  .build())
+            .setProxyservice(session.getMarket().getImageProxies())
+            .build();
 
       int marketId = session.getMarket().getNumber();
       Map<String, String> headers = new HashMap<>();
@@ -320,13 +328,13 @@ public class ImageCrawler extends Task {
          }
       } else if (marketId == 307 || marketId == 27 || marketId == 836) {
          request.setSendContentEncoding(false);
-      } else if (marketId == 976 || marketId == 65) {
+      } else if (marketId == 976 || marketId == 65 || session.getMarket().getName().contains("ifood")) {
          headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25");
       }
 
       request.setHeaders(headers);
 
-      return new ApacheDataFetcher().fetchImage(session, request);
+      return new FetcherDataFetcher().fetchImage(session, request);
    }
 
 

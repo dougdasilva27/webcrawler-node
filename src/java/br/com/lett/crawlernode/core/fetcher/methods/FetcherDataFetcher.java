@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -34,6 +35,7 @@ import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -58,7 +60,33 @@ public class FetcherDataFetcher implements DataFetcher {
 
    @Override
    public File fetchImage(Session session, Request request) {
-      return new ApacheDataFetcher().fetchImage(session, request);
+      File localFile = null;
+      Response response = get(session, request);
+
+      String body = response.getBody();
+
+      try {
+         JSONObject bodyJson = new JSONObject(body);
+         JSONArray buffer = bodyJson.optJSONArray("data");
+
+         byte[] bytes = new byte[buffer.length()];
+
+         for (int i = 0, len = bytes.length; i < len; i++) {
+            bytes[i] = ((Integer) buffer.getInt(i)).byteValue();
+         }
+
+         localFile = new File(((ImageCrawlerSession) session).getLocalOriginalFileDir());
+         FileUtils.writeByteArrayToFile(localFile, bytes);
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, session, "Error on convert bytes to file " + e.getMessage());
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+
+         if (localFile != null && localFile.exists()) {
+            localFile.delete();
+         }
+      }
+
+      return localFile;
    }
 
    /**
@@ -371,6 +399,7 @@ public class FetcherDataFetcher implements DataFetcher {
                .setMustUseMovingAverage(options.isMustUseMovingAverage())
                .setRequestType(method)
                .setRetrieveStatistics(options.isRetrieveStatistics())
+               .setRetrieveByteArray(options.isRetrieveByteArray())
                .setForbiddenCssSelector(options.getForbiddenCssSelector())
                .setRequiredCssSelector(options.getRequiredCssSelector())
                .setForcedProxies(
