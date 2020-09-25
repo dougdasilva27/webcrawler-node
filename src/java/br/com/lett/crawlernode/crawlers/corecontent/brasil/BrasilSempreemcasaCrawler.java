@@ -73,20 +73,47 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             .setMarketplace(new Marketplace())
             .build();
 
+         // Products variations ( UNITIES )
+         String internalIdU = internalId + "-1";
+
+         String nameVariationU = nameVariation + " UN.";
+
+         Prices pricesU = crawlPricesU(doc, internalId);
+         Float priceU = CrawlerUtils.extractPriceFromPrices(pricesU, Card.MASTERCARD);
+
+         Product productU = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalIdU)
+            .setInternalPid(internalPid)
+            .setName(nameVariationU)
+            .setDescription(description)
+            .setPrice(priceU)
+            .setPrices(pricesU)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setMarketplace(new Marketplace())
+            .build();
+
+         // In this market was not found unavailable products
+         boolean availableU = true;
+
         // Fixing wrong urls on postgres
         if (session.getOriginalURL().contains("/search?q=")) {
           String fullUrl = CrawlerUtils.scrapUrl(doc, "#PID" + internalPid + " > a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
           if (fullUrl != null) {
             product.setUrl(fullUrl.split("\\?")[0]);
+            productU.setUrl(fullUrl.split("\\?")[0]);
           }
         }
-
         products.add(product);
+        products.add(productU);
       }
     } else {
       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
-
     return products;
   }
 
@@ -111,4 +138,21 @@ public class BrasilSempreemcasaCrawler extends Crawler {
 
     return prices;
   }
+
+   private Prices crawlPricesU(Element doc, String internalId) {
+      Prices prices = new Prices();
+
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(
+         doc, ".product-item__variant-data[data-variant=" + internalId + "] .unity__text", null, true, ',', session);
+
+      if (price != null) {
+         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+         installmentPriceMap.put(1, price);
+         prices.setBankTicketPrice(price);
+
+         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      }
+
+      return prices;
+   }
 }
