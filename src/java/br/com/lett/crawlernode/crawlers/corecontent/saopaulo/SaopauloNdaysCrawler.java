@@ -119,12 +119,11 @@ public class SaopauloNdaysCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
-      if(installments.getInstallments().isEmpty()){
-         installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
 
       for(String card:cards){
          creditCards.add(CreditCard.CreditCardBuilder.create()

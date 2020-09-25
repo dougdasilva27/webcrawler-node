@@ -26,7 +26,7 @@ public class SaopauloNdaysCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select("#content .product-layout");
 
-      if(products != null && products.size() > 0){
+      if(products.size() > 0){
 
          if(this.totalProducts == 0){
             this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#text-pagination-result", "Total", "(", false, false, 0);
