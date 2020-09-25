@@ -76,10 +76,12 @@ public class BrasilSempreemcasaCrawler extends Crawler {
          // Products variations ( UNITIES )
          String internalIdU = internalId + "-1";
 
-         String nameVariationU = nameVariation + " UN.";
+         String nameVariationU = name.concat(" ").concat("1un. - ").concat(e.text().trim());;
 
          Prices pricesU = crawlPricesU(doc, internalId);
          Float priceU = CrawlerUtils.extractPriceFromPrices(pricesU, Card.MASTERCARD);
+
+         boolean availableU = true;
 
          Product productU = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -89,7 +91,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             .setDescription(description)
             .setPrice(priceU)
             .setPrices(pricesU)
-            .setAvailable(available)
+            .setAvailable(availableU)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
@@ -97,8 +99,6 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             .setMarketplace(new Marketplace())
             .build();
 
-         // In this market was not found unavailable products
-         boolean availableU = true;
 
         // Fixing wrong urls on postgres
         if (session.getOriginalURL().contains("/search?q=")) {
