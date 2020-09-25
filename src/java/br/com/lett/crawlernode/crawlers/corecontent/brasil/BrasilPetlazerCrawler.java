@@ -129,24 +129,41 @@ public class BrasilPetlazerCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div[id=produto] div font[size] b", null, false, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+
+      Elements prices = doc.select("div[id=produto] div font b");
+
+      Double priceFrom = null;
+
+      if (prices.size() == 4) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(prices.remove(0), null, null, false, ',', session);
+      }
+
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(prices.first(), null, null, false, ',', session);
+      Double bankSlipPrice = spotlightPrice;
+
+      if (prices.size() == 3) {
+         bankSlipPrice = CrawlerUtils.scrapDoublePriceFromHtml(prices.get(2), null, null, false, ',', session);
+      }
+
+      CreditCards creditCards = scrapCreditCards(prices, spotlightPrice);
+
       BankSlip bankSlip = BankSlipBuilder.create()
-         .setFinalPrice(spotlightPrice)
+         .setFinalPrice(bankSlipPrice)
          .build();
 
       return PricingBuilder.create()
          .setPriceFrom(null)
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Elements prices, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(doc, spotlightPrice);
+      Installments installments = scrapInstallments(prices, spotlightPrice);
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
@@ -159,17 +176,14 @@ public class BrasilPetlazerCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
-      Installments installments = new Installments();
+   private Installments scrapInstallments(Elements prices, Double spotlightPrice) throws MalformedPricingException {
 
-      Elements elements = doc.select("div[id=produto] div font b");
+      Installments installments = new Installments();
 
       Element installmentEl = null;
 
-      if (elements.size() == 2 && elements.get(1) != null) {
-         installmentEl = elements.get(1);
-      } else if (elements.size() == 3 && elements.get(2) != null ) {
-         installmentEl = elements.get(2);
+      if (prices.size() == 3 && prices.get(1) != null) {
+         installmentEl = prices.get(1);
       }
 
       if (installmentEl != null) {
@@ -184,13 +198,14 @@ public class BrasilPetlazerCrawler extends Crawler {
                   .build());
             }
 
-
             installments.add(InstallmentBuilder.create()
                .setInstallmentNumber(installmentPair.getFirst())
                .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installmentPair.getSecond().doubleValue()))
                .build());
          }
-      } else {
+      }
+
+      if (!installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
             .setInstallmentNumber(1)
             .setInstallmentPrice(spotlightPrice)
