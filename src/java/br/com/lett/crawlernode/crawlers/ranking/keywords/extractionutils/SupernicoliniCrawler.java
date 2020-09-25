@@ -64,19 +64,7 @@ public abstract class SupernicoliniCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts()	{
-      String totalPhrase = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".woocommerce-result-count", false);
-
-      if(totalPhrase != null) {
-
-         String totalProducts = totalPhrase.split(" ")[3];
-         try	{
-            this.totalProducts = Integer.parseInt(totalProducts);
-         } catch(Exception e) {
-            this.logError(CommonMethods.getStackTrace(e));
-         }
-
-         this.log("Total da busca: "+this.totalProducts);
-      }
+      this.totalProducts = CrawlerUtils.scrapSimpleInteger(this.currentDoc,".woocommerce-result-count",false);
    }
 
 }
