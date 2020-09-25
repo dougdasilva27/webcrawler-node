@@ -393,7 +393,7 @@ public class BrasilAmazonCrawler extends Crawler {
          text = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".reviewCountTextLinkedHistogram[title]", "title");
       }
 
-      if (text.contains("de")) {
+      if (text != null && text.contains("de")) {
          String avgText = text.split("de")[0].replaceAll("[^0-9,]", "").replace(",", ".").trim();
 
          if (!avgText.isEmpty()) {
