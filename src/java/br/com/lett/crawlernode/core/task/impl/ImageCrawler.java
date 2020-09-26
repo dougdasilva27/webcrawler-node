@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -123,7 +123,7 @@ public class ImageCrawler extends Task {
             boolean delete = simpleDownloadResult.imageFile.delete();
 
             if (delete) {
-               Logging.printLogDebug(LOGGER, session, "Downloaded image file deleted.");
+               Logging.printLogInfo(LOGGER, session, "Downloaded image file deleted.");
             }
          }
 
@@ -231,15 +231,15 @@ public class ImageCrawler extends Task {
          boolean delete = originalImage.delete();
 
          if (delete) {
-            Logging.printLogDebug(LOGGER, session, "Original image file deleted.");
+            Logging.printLogInfo(LOGGER, session, "Original image file deleted.");
          }
       }
 
-      if (transformedImageFile.exists()) {
+      if (transformedImageFile != null && transformedImageFile.exists()) {
          boolean delete = transformedImageFile.delete();
 
          if (delete) {
-            Logging.printLogDebug(LOGGER, session, "Transformed image file deleted.");
+            Logging.printLogInfo(LOGGER, session, "Transformed image file deleted.");
          }
       }
    }
@@ -358,7 +358,7 @@ public class ImageCrawler extends Task {
 
       request.setHeaders(headers);
 
-      return new FetcherDataFetcher().fetchImage(session, request);
+      return new ApacheDataFetcher().fetchImage(session, request);
    }
 
 
