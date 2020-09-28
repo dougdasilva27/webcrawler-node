@@ -1,6 +1,10 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -11,14 +15,12 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +58,21 @@ public class MexicoLacomerCrawler extends Crawler {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
+
+   @Override
+   protected Object fetch() {
+      Request request = Request.RequestBuilder.create()
+              .setUrl(session.getOriginalURL())
+              .setCookies(cookies)
+              .setProxyservice(
+                      Arrays.asList(
+                              ProxyCollection.NETNUT_RESIDENTIAL_MX
+                      )
+              ).build();
+
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+   }
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -106,7 +123,7 @@ public class MexicoLacomerCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.select("div.product-detail-content").first() != null;
+      return doc.select(".row.product-detail-content").first() != null;
    }
 
    private String crawlInternalId(Document document) {
@@ -119,7 +136,7 @@ public class MexicoLacomerCrawler extends Crawler {
 
    /**
     * There is no internalPid.
-    * 
+    *
     * @param document
     * @return
     */
