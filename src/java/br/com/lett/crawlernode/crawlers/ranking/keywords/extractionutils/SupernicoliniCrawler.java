@@ -3,6 +3,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -64,7 +65,17 @@ public abstract class SupernicoliniCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts()	{
-      this.totalProducts = CrawlerUtils.scrapSimpleInteger(this.currentDoc,".woocommerce-result-count",false);
+
+      String allText = CrawlerUtils.scrapStringSimpleInfo(currentDoc,".woocommerce-result-count", false );
+
+      if (allText != null && allText.contains("de")){
+          String totalString = allText.split("de")[1];
+          this.totalProducts = MathUtils.parseInt(totalString.replaceAll("[^0-9.]", "").trim());
+
+      } else {
+         this.totalProducts = MathUtils.parseInt(allText);
+      }
+
    }
 
 }
