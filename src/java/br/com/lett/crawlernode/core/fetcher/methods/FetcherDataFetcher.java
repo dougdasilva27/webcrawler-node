@@ -51,18 +51,18 @@ public class FetcherDataFetcher implements DataFetcher {
 
    @Override
    public Response get(Session session, Request request) {
-      return fetcherRequest(session, request, FetchUtilities.GET_REQUEST);
+      return fetcherRequest(session, request, FetchUtilities.GET_REQUEST, false);
    }
 
    @Override
    public Response post(Session session, Request request) {
-      return fetcherRequest(session, request, FetchUtilities.POST_REQUEST);
+      return fetcherRequest(session, request, FetchUtilities.POST_REQUEST, false);
    }
 
    @Override
    public File fetchImage(Session session, Request request) {
       File localFile = null;
-      Response response = get(session, request);
+      Response response = fetcherRequest(session, request, FetchUtilities.GET_REQUEST, true);
 
       String body = response.getBody();
 
@@ -97,7 +97,7 @@ public class FetcherDataFetcher implements DataFetcher {
     * @param method
     * @return
     */
-   private Response fetcherRequest(Session session, Request request, String method) {
+   private Response fetcherRequest(Session session, Request request, String method, boolean image) {
       Response response = new Response();
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -169,7 +169,10 @@ public class FetcherDataFetcher implements DataFetcher {
 
          response = responseBuilder(responseJson);
          session.addRedirection(request.getUrl(), response.getRedirectUrl());
-         S3Service.saveResponseContent(session, requestHash, response.getBody());
+
+         if (!image) {
+            S3Service.saveResponseContent(session, requestHash, response.getBody());
+         }
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response: " + e.getMessage());
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
