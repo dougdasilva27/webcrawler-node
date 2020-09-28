@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -334,7 +334,7 @@ public class ImageCrawler extends Task {
 
       request.setHeaders(headers);
 
-      return new FetcherDataFetcher().fetchImage(session, request);
+      return new ApacheDataFetcher().fetchImage(session, request);
    }
 
 
