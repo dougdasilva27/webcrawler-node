@@ -84,7 +84,7 @@ public class PortugalElcorteinglesCrawler extends Crawler {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".dataholder", "data-product-id");
-      String name = doc.selectFirst(".pdp-title h1").text();
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc,".pdp-title", false);
       boolean available = doc.selectFirst(".product_controls-button._buy") != null;
       String primaryImage = "https:" + doc.selectFirst(".elements_slider-slide img").attr("src");
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs-item a");
