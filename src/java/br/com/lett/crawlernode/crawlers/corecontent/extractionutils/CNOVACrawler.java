@@ -33,6 +33,7 @@ import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -119,7 +120,13 @@ public abstract class CNOVACrawler extends Crawler {
 
    public CNOVACrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+
+      if (session instanceof EqiCrawlerSession) {
+         super.config.setFetcher(FetchMode.JAVANET);
+      } else {
+         super.config.setFetcher(FetchMode.FETCHER);
+      }
+
       super.config.setMustSendRatingToKinesis(true);
    }
 
