@@ -41,6 +41,7 @@ import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 public class FetcherDataFetcher implements DataFetcher {
@@ -67,7 +68,15 @@ public class FetcherDataFetcher implements DataFetcher {
       String body = response.getBody();
 
       try {
-         JSONObject bodyJson = new JSONObject(body);
+         int responseCode = response.getLastStatusCode();
+
+         if (responseCode == 404 || responseCode == 204) {
+            return localFile;
+         } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+            throw new ResponseCodeException(responseCode);
+         }
+
+         JSONObject bodyJson = JSONUtils.stringToJson(body);
          JSONArray buffer = bodyJson.optJSONArray("data");
 
          byte[] bytes = new byte[buffer.length()];

@@ -119,14 +119,6 @@ public class ImageCrawler extends Task {
             }
          }
 
-         if (simpleDownloadResult.imageFile != null && simpleDownloadResult.imageFile.exists()) {
-            boolean delete = simpleDownloadResult.imageFile.delete();
-
-            if (delete) {
-               Logging.printLogInfo(LOGGER, session, "Downloaded image file deleted.");
-            }
-         }
-
       } catch (Exception e) {
          session.registerError(new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTraceString(e)));
          Logging.printLogError(LOGGER, session, CommonMethods.getStackTraceString(e));
@@ -225,22 +217,6 @@ public class ImageCrawler extends Task {
          Logging.printLogDebug(LOGGER, session, "Done.");
       } else {
          Logging.printLogWarn(LOGGER, session, "Original image was not sent to S3 because it either has a null md5 or an unknown image format");
-      }
-
-      if (originalImage.exists()) {
-         boolean delete = originalImage.delete();
-
-         if (delete) {
-            Logging.printLogInfo(LOGGER, session, "Original image file deleted.");
-         }
-      }
-
-      if (transformedImageFile != null && transformedImageFile.exists()) {
-         boolean delete = transformedImageFile.delete();
-
-         if (delete) {
-            Logging.printLogInfo(LOGGER, session, "Transformed image file deleted.");
-         }
       }
    }
 
