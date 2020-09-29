@@ -51,7 +51,7 @@ public class SaopauloPolipetCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".conteudoAbasProduto .paddingbox", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div #zoomImagemProduto", Arrays.asList("data-zoom-image"), "http://", "polipet.fbitsstatic.net/img/p/");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "div #zoomImagemProduto", Arrays.asList("data-zoom-image"), "http://", "polipet.fbitsstatic.net/img/p/", primaryImage);
-         boolean available = doc.selectFirst(".produto-comprar.acenter #produto-botao-comprar-" + internalId) != null;
+         boolean available = doc.selectFirst("meta[content=\"em estoque\"]") != null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
@@ -96,10 +96,13 @@ public class SaopauloPolipetCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precoPor.com-precoDe", null, false, ',', session);
-
-      if (spotlightPrice != null) {
          Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
+         Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precoPor.com-precoDe", null, false, ',', session);
+
+         if (spotlightPrice == null){
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
+         }
+
          BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
          CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
@@ -109,9 +112,6 @@ public class SaopauloPolipetCrawler extends Crawler {
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
-      }
-
-      return null;
    }
 
 
