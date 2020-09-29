@@ -361,9 +361,24 @@ public class ApacheDataFetcher implements DataFetcher {
             HttpHost proxy = randProxy != null ? new HttpHost(randProxy.getAddress(), randProxy.getPort()) : null;
             RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
 
-            CloseableHttpClient httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).setUserAgent(randUserAgent)
-                  .setDefaultRequestConfig(requestConfig).setDefaultHeaders(reqHeaders).setSSLHostnameVerifier(hostNameVerifier)
-                  .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory()).setDefaultCredentialsProvider(credentialsProvider).build();
+            SocketConfig socketConfig = SocketConfig.custom()
+                  .setSoKeepAlive(false)
+                  .setSoLinger(1)
+                  .setSoReuseAddress(true)
+                  .setSoTimeout(5000)
+                  .setTcpNoDelay(true)
+                  .build();
+
+            CloseableHttpClient httpclient = HttpClients.custom()
+                  .setDefaultCookieStore(cookieStore)
+                  .setUserAgent(randUserAgent)
+                  .setDefaultRequestConfig(requestConfig)
+                  .setDefaultHeaders(reqHeaders)
+                  .setSSLHostnameVerifier(hostNameVerifier)
+                  .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory())
+                  .setDefaultCredentialsProvider(credentialsProvider)
+                  .setDefaultSocketConfig(socketConfig)
+                  .build();
 
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);

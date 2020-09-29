@@ -172,6 +172,7 @@ public class ImageCrawler extends Task {
             ObjectMetadata transformedImageMetadata = new ObjectMetadata();
             transformedImageMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, transformedImageFileMd5);
             transformedImageMetadata.addUserMetadata(S3Service.MD5_ORIGINAL_HEX_FIELD, imageDownloadResult.md5); // also put the md5 of the original image
+            transformedImageMetadata.setContentLength(transformedImageFile.length());
 
             S3Service.uploadImage(session, transformedImageMetadata, transformedImageFile, imageCrawlerSession.getTransformedImageKeyOnBucket(), IMAGES_BUCKET_NAME);
          }
@@ -200,6 +201,7 @@ public class ImageCrawler extends Task {
          if (oldInsert) {
             ObjectMetadata newObjectMetadata = new ObjectMetadata();
             newObjectMetadata.addUserMetadata(S3Service.MD5_HEX_METADATA_FIELD, imageDownloadResult.md5);
+            newObjectMetadata.setContentLength(originalImage.length());
 
             S3Service.uploadImage(session, newObjectMetadata, originalImage, imageCrawlerSession.getOriginalImageKeyOnBucket(), IMAGES_BUCKET_NAME);
          }
