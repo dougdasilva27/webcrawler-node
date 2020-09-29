@@ -115,7 +115,7 @@ public class ApacheDataFetcher implements DataFetcher {
                   .setSoKeepAlive(false)
                   .setSoLinger(1)
                   .setSoReuseAddress(true)
-                  .setSoTimeout(5000)
+                  .setSoTimeout(FetchUtilities.DEFAULT_SOCKET_TIMEOUT)
                   .setTcpNoDelay(true)
                   .build();
 
@@ -365,7 +365,7 @@ public class ApacheDataFetcher implements DataFetcher {
                   .setSoKeepAlive(false)
                   .setSoLinger(1)
                   .setSoReuseAddress(true)
-                  .setSoTimeout(5000)
+                  .setSoTimeout(FetchUtilities.DEFAULT_SOCKET_TIMEOUT)
                   .setTcpNoDelay(true)
                   .build();
 

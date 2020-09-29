@@ -173,15 +173,15 @@ public class SaopauloMamboCrawler extends Crawler {
       String primaryImage = null;
 
       if (json.has("primaryFullImageURL") && !json.get("primaryFullImageURL").toString().equalsIgnoreCase("null")) {
-         primaryImage = CrawlerUtils.completeUrl(json.get("primaryFullImageURL").toString(), "https:", "www.mambo.com.br");
+         primaryImage = CrawlerUtils.completeUrl(json.get("primaryFullImageURL").toString().replace(" ", "%20"), "https:", "www.mambo.com.br");
       } else if (json.has("primaryLargeImageURL") && !json.get("primaryLargeImageURL").toString().equalsIgnoreCase("null")) {
-         primaryImage = CrawlerUtils.completeUrl(json.get("primaryLargeImageURL").toString(), "https:", "www.mambo.com.br");
+         primaryImage = CrawlerUtils.completeUrl(json.get("primaryLargeImageURL").toString().replace(" ", "%20"), "https:", "www.mambo.com.br");
       } else if (json.has("primaryMediumImageURL") && !json.get("primaryMediumImageURL").toString().equalsIgnoreCase("null")) {
-         primaryImage = CrawlerUtils.completeUrl(json.get("primaryMediumImageURL").toString(), "https:", "www.mambo.com.br");
+         primaryImage = CrawlerUtils.completeUrl(json.get("primaryMediumImageURL").toString().replace(" ", "%20"), "https:", "www.mambo.com.br");
       } else if (json.has("primarySmallImageURL") && !json.get("primarySmallImageURL").toString().equalsIgnoreCase("null")) {
-         primaryImage = CrawlerUtils.completeUrl(json.get("primarySmallImageURL").toString(), "https:", "www.mambo.com.br");
+         primaryImage = CrawlerUtils.completeUrl(json.get("primarySmallImageURL").toString().replace(" ", "%20"), "https:", "www.mambo.com.br");
       } else if (json.has("primaryThumbImageURL") && !json.get("primaryThumbImageURL").toString().equalsIgnoreCase("null")) {
-         primaryImage = CrawlerUtils.completeUrl(json.get("primaryThumbImageURL").toString(), "https:", "www.mambo.com.br");
+         primaryImage = CrawlerUtils.completeUrl(json.get("primaryThumbImageURL").toString().replace(" ", "%20"), "https:", "www.mambo.com.br");
       }
 
       return primaryImage;
@@ -210,7 +210,7 @@ public class SaopauloMamboCrawler extends Crawler {
       }
 
       for (Object o : images) {
-         String image = CrawlerUtils.completeUrl(o.toString(), "https:", "www.mambo.com.br");
+         String image = CrawlerUtils.completeUrl(o.toString().replace(" ", "%20"), "https:", "www.mambo.com.br");
 
          if (!image.equalsIgnoreCase(primaryImage)) {
             secondaryImagesArray.put(image);
