@@ -91,28 +91,29 @@ public class BrasilRiachueloCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         JSONObject jsonHtml = crawlJsonHtml(doc);
-
-         JSONObject skuJson = crawlSkuJson(jsonHtml);
+         JSONObject jsonConfig = crawlJsonHtml(doc);
 
          String internalPid = crawlInternalPid(doc);
+
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("#jq-product-info-accordion"));
 
-         JSONObject options = crawlOptions(skuJson);
+         JSONObject options = jsonConfig.optJSONObject("optionPrices");
 
          if (options.length() > 0) {
-            Map<String, Set<String>> variationsMap = crawlVariationsMap(skuJson);
+            Map<String, Set<String>> variationsMap = crawlVariationsMap(jsonConfig);
 
-            for (String internalId : options.keySet()) {
+            for (String id : options.keySet()) {
 
-               boolean available = crawlAvailabilityWithVariation(variationsMap, internalId);
-               String name = crawlNameWithVariation(doc, variationsMap, internalId);
-               String primaryImage = crawlPrimaryImageWithVariation(skuJson, internalId);
+               boolean available = crawlAvailabilityWithVariation(variationsMap, id);
+               String name = crawlNameWithVariation(doc, variationsMap, id);
+               String primaryImage = crawlPrimaryImageWithVariation(jsonConfig, id);
 
-               String secondaryImages = crawlSecondaryImagesWithVariation(skuJson, internalId,
+               String secondaryImages = crawlSecondaryImagesWithVariation(jsonConfig, id,
                   available);
                Integer stock = null;
-               Offers offers = scrapOffers(doc, skuJson, internalId);
+               Offers offers = scrapOffers(doc, jsonConfig, id);
+
+               String internalId = scrapInternalId(jsonConfig, id);
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -136,7 +137,7 @@ public class BrasilRiachueloCrawler extends Crawler {
 
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fotorama__nav__shaft .fotorama_vertical_ratio img:not(:first-child)", Arrays.asList("src"), "https", "produtos.fotos-riachuelo.com.br", primaryImage);
 
-            Offers offers = scrapOffers(doc, jsonHtml, internalId);
+            Offers offers = scrapOffers(doc, jsonConfig, internalId);
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -159,7 +160,12 @@ public class BrasilRiachueloCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapOffers(Document doc, JSONObject json, String internalId)
+   public String scrapInternalId(JSONObject jsonConfig, String id) {
+      JSONObject skuHtml = jsonConfig.optJSONObject("sku-html");
+
+      return skuHtml.getString(id);
+   }
+   private Offers scrapOffers(Document doc, JSONObject jsonConfig, String internalId)
       throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Double price;
@@ -167,7 +173,6 @@ public class BrasilRiachueloCrawler extends Crawler {
          return offers;
       }
 
-      JSONObject jsonConfig = json.optJSONObject("jsonConfig");
       JSONObject eachPrice = null;
       if (jsonConfig != null) {
          JSONObject optionPrices = jsonConfig.optJSONObject("optionPrices");
@@ -308,36 +313,18 @@ public class BrasilRiachueloCrawler extends Crawler {
       return availability;
    }
 
-   private JSONObject crawlSkuJson(JSONObject jsonHtml) {
-      JSONObject skuJson = new JSONObject();
-
-      if (jsonHtml.has("[data-role=swatch-options]")) {
-         JSONObject dataSwatch = jsonHtml.getJSONObject("[data-role=swatch-options]");
-
-         if (dataSwatch.has("Magento_Swatches/js/swatch-renderer")) {
-            skuJson = dataSwatch.getJSONObject("Magento_Swatches/js/swatch-renderer");
-         }
-      }
-
-      return skuJson;
-   }
-
-   private Map<String, Set<String>> crawlVariationsMap(JSONObject skuJson) {
+   private Map<String, Set<String>> crawlVariationsMap(JSONObject jsonConfig) {
       Map<String, Set<String>> variationsMap = new HashMap<>();
       JSONArray options = new JSONArray();
 
-      if (skuJson.has("jsonConfig")) {
-         JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
+      if (jsonConfig.has("attributes")) {
+         JSONObject attributes = jsonConfig.getJSONObject("attributes");
 
-         if (jsonConfig.has("attributes")) {
-            JSONObject attributes = jsonConfig.getJSONObject("attributes");
+         for (String keyStr : attributes.keySet()) {
+            JSONObject attribute = (JSONObject) attributes.get(keyStr);
 
-            for (String keyStr : attributes.keySet()) {
-               JSONObject attribute = (JSONObject) attributes.get(keyStr);
-
-               if (attribute.has("options")) {
-                  options = attribute.getJSONArray("options");
-               }
+            if (attribute.has("options")) {
+               options = attribute.getJSONArray("options");
             }
          }
       }
@@ -372,38 +359,20 @@ public class BrasilRiachueloCrawler extends Crawler {
       return variationsMap;
    }
 
-   private JSONObject crawlOptions(JSONObject skuJson) {
-      JSONObject optionPrices = new JSONObject();
-
-      if (skuJson.has("jsonConfig")) {
-         JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
-
-         if (jsonConfig.has("optionPrices")) {
-            optionPrices = jsonConfig.getJSONObject("optionPrices");
-         }
-      }
-
-      return optionPrices;
-   }
-
-   private String crawlSecondaryImagesWithVariation(JSONObject skuJson, String internalId,
-                                                    boolean available) {
+   private String crawlSecondaryImagesWithVariation(JSONObject jsonConfig, String internalId, boolean available) {
       JSONArray secondaryImages = new JSONArray();
 
-      if (available && skuJson.has("jsonConfig")) {
-         JSONObject jsonConfig = skuJson.getJSONObject("jsonConfig");
-         if (jsonConfig.has("images")) {
-            JSONObject images = jsonConfig.getJSONObject("images");
+      if (available && jsonConfig.has("images")) {
+         JSONObject images = jsonConfig.getJSONObject("images");
 
-            if (images.has(internalId)) {
-               JSONArray image = images.getJSONArray(internalId);
+         if (images.has(internalId)) {
+            JSONArray image = images.getJSONArray(internalId);
 
-               for (Object object : image) {
-                  JSONObject img = (JSONObject) object;
+            for (Object object : image) {
+               JSONObject img = (JSONObject) object;
 
-                  if (img.has("isMain") && !img.getBoolean("isMain") && img.has("img")) {
-                     secondaryImages.put(img.getString("img"));
-                  }
+               if (img.has("isMain") && !img.getBoolean("isMain") && img.has("img")) {
+                  secondaryImages.put(img.getString("img"));
                }
             }
          }
@@ -412,22 +381,19 @@ public class BrasilRiachueloCrawler extends Crawler {
       return secondaryImages.toString();
    }
 
-   private String crawlPrimaryImageWithVariation(JSONObject skuJson, String internalId) {
+   private String crawlPrimaryImageWithVariation(JSONObject jsonConfig, String internalId) {
       String primaryImage = null;
-      if (skuJson.has("jsonConfig")) {
-         JSONObject jsonConfig = skuJson.optJSONObject("jsonConfig");
-         if (jsonConfig.has("images")) {
-            JSONObject images = jsonConfig.optJSONObject("images");
+      if (jsonConfig.has("images")) {
+         JSONObject images = jsonConfig.optJSONObject("images");
 
-            if (images.has(internalId)) {
-               JSONArray image = images.optJSONArray(internalId);
+         if (images.has(internalId)) {
+            JSONArray image = images.optJSONArray(internalId);
 
-               for (Object object : image) {
-                  JSONObject img = (JSONObject) object;
+            for (Object object : image) {
+               JSONObject img = (JSONObject) object;
 
-                  if (img.optBoolean("isMain")) {
-                     primaryImage = img.optString("img");
-                  }
+               if (img.optBoolean("isMain")) {
+                  primaryImage = img.optString("img");
                }
             }
          }
@@ -473,14 +439,19 @@ public class BrasilRiachueloCrawler extends Crawler {
    }
 
    private JSONObject crawlJsonHtml(Document doc) {
-      JSONObject skuJson = new JSONObject();
 
-      return doc.select("script[type='text/x-magento-init']")
+      JSONObject jsonHtml =  doc.select("script[type='text/x-magento-init']")
          .stream()
          .filter(element -> element.html().contains("jsonConfig"))
          .map(script -> CrawlerUtils.stringToJson(script.html()))
          .findFirst()
-         .orElse(skuJson);
+         .orElse(new JSONObject());
+
+      JSONObject dataSwatch = jsonHtml.optJSONObject("[data-role=swatch-options]");
+
+      JSONObject swatchRenderer = dataSwatch.optJSONObject("Magento_Swatches/js/swatch-renderer");
+
+      return swatchRenderer.optJSONObject("jsonConfig");
    }
 
    private boolean isProductPage(Document doc) {
