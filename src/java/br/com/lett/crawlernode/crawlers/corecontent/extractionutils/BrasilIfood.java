@@ -179,11 +179,14 @@ public abstract class BrasilIfood extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject jsonOffers) throws MalformedPricingException {
+
+      Double priceFrom = jsonOffers.has("unitOriginalPrice")? jsonOffers.optDouble("unitOriginalPrice"): null;
       Double spotlightPrice = jsonOffers.optDouble("unitPrice");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
             .setCreditCards(creditCards)
             .build();
 

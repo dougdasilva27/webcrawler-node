@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -77,7 +78,7 @@ public abstract class VTEXScraper extends Crawler {
       return products;
    }
 
-   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) {
+   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) throws UnsupportedEncodingException {
    }
 
    protected boolean isProductPage(Document doc) {
