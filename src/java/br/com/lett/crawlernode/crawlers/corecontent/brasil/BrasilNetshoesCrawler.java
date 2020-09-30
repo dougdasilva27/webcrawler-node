@@ -109,6 +109,7 @@ public class BrasilNetshoesCrawler extends Crawler {
             boolean availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equals("available");
             Document docSku = availableToBuy && arraySkus.length() > 1 ? crawlDocumentSku(internalId, jsonSku, doc) : doc;
 
+
             Map<String, Prices> marketplaceMap = availableToBuy ? crawlMarketplace(docSku) : new HashMap<>();
             boolean available = availableToBuy && marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
 
@@ -184,12 +185,12 @@ public class BrasilNetshoesCrawler extends Crawler {
    }
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
-      Integer stars = 0;
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
+      int stars = 0;
+      int star1 = 0;
+      int star2 = 0;
+      int star3 = 0;
+      int star4 = 0;
+      int star5 = 0;
 
       Elements reviews = doc.select("#reviews > div.reviews__customerFeedback > div.reviews__feedback > div > div.reviews__feedback-reviews-rating > span > i");
 
@@ -349,12 +350,11 @@ public class BrasilNetshoesCrawler extends Crawler {
       Map<String, Prices> marketplace = new HashMap<>();
 
       String sellerName = MAIN_SELLER_NAME_LOWER;
-      Element sellerNameElement = doc.select(".product-seller-name").first();
+      String sellerNameFromHTML = CrawlerUtils.scrapStringSimpleInfo(doc,".product-seller-name .product__seller_name span", false);
 
-      if (sellerNameElement != null) {
-         sellerName = sellerNameElement.ownText().toLowerCase();
+      if (sellerNameFromHTML != null) {
+         sellerName = sellerNameFromHTML;
       }
-
       marketplace.put(sellerName, crawlPrices(doc));
 
       return marketplace;
@@ -423,40 +423,37 @@ public class BrasilNetshoesCrawler extends Crawler {
    private Prices crawlPrices(Document doc) {
       Prices prices = new Prices();
 
-      Element priceElement = doc.select(".price > strong").first();
+      Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".default-price span strong", null, false, ',', session);
+      prices.setBankTicketPrice(price);
 
-      if (priceElement != null) {
-         Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
-         prices.setBankTicketPrice(price);
+      Map<Integer, Float> mapInstallments = new HashMap<>();
+      mapInstallments.put(1, price);
 
-         Map<Integer, Float> mapInstallments = new HashMap<>();
-         mapInstallments.put(1, price);
+      Element installmentsElement = doc.select(".installments-price").first();
 
-         Element installmentsElement = doc.select(".installments-price").first();
+      if (installmentsElement != null) {
+         String text = installmentsElement.ownText().toLowerCase();
 
-         if (installmentsElement != null) {
-            String text = installmentsElement.ownText().toLowerCase();
+         if (text.contains("x")) {
+            int x = text.indexOf('x');
 
-            if (text.contains("x")) {
-               int x = text.indexOf('x');
+            String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
+            Float priceInstallment = MathUtils.parseFloatWithComma(text.substring(x));
 
-               String installment = text.substring(0, x).replaceAll("[^0-9]", "").trim();
-               Float priceInstallment = MathUtils.parseFloatWithComma(text.substring(x));
-
-               if (!installment.isEmpty() && priceInstallment != null) {
-                  mapInstallments.put(Integer.parseInt(installment), priceInstallment);
-               }
+            if (!installment.isEmpty() && priceInstallment != null) {
+               mapInstallments.put(Integer.parseInt(installment), priceInstallment);
             }
          }
-
-         prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.ELO.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
       }
+
+      prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.ELO.toString(), mapInstallments);
+      prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
+
 
       return prices;
    }
