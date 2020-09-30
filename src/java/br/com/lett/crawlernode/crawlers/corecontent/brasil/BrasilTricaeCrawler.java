@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -177,32 +178,33 @@ public class BrasilTricaeCrawler extends Crawler {
 	}
 
 	private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
-		Double price = CrawlerUtils.getDoubleValueFromJSON(productJson, "price", false, true);
-		Double priceFrom = CrawlerUtils.getDoubleValueFromJSON(productJson, "specialPrice", false, true);
-		if (price == 0D) {
-			price = priceFrom;
-			priceFrom = null;
-		}
+
+		String priceString = productJson.optString("price");
+		String specialPriceString = productJson.optString("specialPrice");
+
+		Double spotlightPrice = MathUtils.parseDoubleWithComma(priceString);
+		Double priceFrom = MathUtils.parseDoubleWithComma(specialPriceString);
 
 		return Pricing.PricingBuilder.create()
-				.setSpotlightPrice(price)
+				.setSpotlightPrice(spotlightPrice)
 				.setPriceFrom(priceFrom)
-				.setCreditCards(scrapCreditCards(price, productJson.optJSONObject("installments")))
+				.setCreditCards(scrapCreditCards(productJson.optJSONObject("installments")))
 				.build();
 	}
 
-	private CreditCards scrapCreditCards(Double spotlightPrice, JSONObject installmentsJson) throws MalformedPricingException {
+	private CreditCards scrapCreditCards(JSONObject installmentsJson) throws MalformedPricingException {
 		CreditCards creditCards = new CreditCards();
 		Installments installments = new Installments();
 
-		installments.add(InstallmentBuilder.create()
-				.setInstallmentNumber(CrawlerUtils.getIntegerValueFromJSON(installmentsJson, "count", null))
-				.setInstallmentPrice(CrawlerUtils.getDoubleValueFromJSON(installmentsJson, "value", false, true))
-				.build());
+		String installmentNumber = installmentsJson.optString("count");
+		String installmentValue = installmentsJson.optString("value");
+
+		Integer count = MathUtils.parseInt(installmentNumber);
+		Double  value = MathUtils.parseDoubleWithComma(installmentValue);
 
 		installments.add(InstallmentBuilder.create()
-				.setInstallmentNumber(1)
-				.setInstallmentPrice(spotlightPrice)
+				.setInstallmentNumber(count)
+				.setInstallmentPrice(value)
 				.build());
 
 		for (String card : cards) {
