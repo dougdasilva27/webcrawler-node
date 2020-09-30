@@ -1,19 +1,20 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import models.AdvancedRatingReview;
 import models.RatingsReviews;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
 
 public class PaguemenosCrawler extends VTEXNewScraper {
 
@@ -23,6 +24,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    private static final String HOME_PAGE = "https://www.paguemenos.com.br/";
+   private static final String API_TOKEN = "e7c22a525979dba2d63a94c2666965a3c76dd289b1937645eb2131d801d3ef7b";
    private static final List<String> MAIN_SELLERS = Arrays.asList("Pague Menos", "Farmácias Pague Menos");
    private RatingsReviews rating = new RatingsReviews();
 
@@ -37,7 +39,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) {
+   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) throws UnsupportedEncodingException {
       super.processBeforeScrapVariations(doc, productJson, internalPid);
       this.rating = scrapRating(internalPid);
    }
@@ -52,131 +54,84 @@ public class PaguemenosCrawler extends VTEXNewScraper {
       return this.rating;
    }
 
-   protected RatingsReviews scrapRating(String internalPid) {
+   protected RatingsReviews scrapRating(String internalPid) throws UnsupportedEncodingException {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Document docRating = crawlPageRatings(session.getOriginalURL(), internalPid);
+      JSONObject jsonRating = crawlPageRatings(internalPid);
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
-      Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
+      JSONObject element = null;
+      Integer totalNumOfEvaluations = null;
+      Double avgRating = null;
 
-      ratingReviews.setTotalRating(getTotalNumOfReviews(docRating));
+      if(jsonRating != null){
+         JSONObject data = jsonRating.optJSONObject("data");
+         JSONObject productReviews = data.optJSONObject("productReviews");
+         element = productReviews.optJSONObject("Element");
+      }
+
+      if(element != null) {
+         totalNumOfEvaluations = element.optInt("TotalRatings", 0);
+         avgRating = element.optDouble("Rating", 0.0);
+      }
+
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(scrapAdvancedRating(element));
       return ratingReviews;
    }
 
-   /**
-    * Page Ratings Url: http://www.paguemenos.com.br/userreview Ex payload:
-    * productId=290971&productLinkId=ninho-fases-1-composto-lacteo Required headers to crawl this page
-    * 
-    * Ex: Média de avaliações: 5 votos
-    *
-    * 3 Votos nenhum voto 1 Voto 1 Voto nenhum voto
-    * 
-    * 
-    * @param url
-    * @param internalPid
-    * @return document
-    */
-   private Document crawlPageRatings(String url, String internalPid) {
-      Document doc = new Document(url);
+   private AdvancedRatingReview scrapAdvancedRating(JSONObject reviews){
 
-      // Parameter in url for request POST ex: "led-32-ilo-hd-smart-d300032-" IN URL
-      // "http://www.walmart.com.ar/led-32-ilo-hd-smart-d300032-/p"
-      String[] tokens = url.split("/");
-      String productLinkId = tokens[tokens.length - 2];
+      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
 
-      String payload = "productId=" + internalPid + "&productLinkId=" + productLinkId;
+      if(reviews != null){
+         JSONArray ratingList = reviews.optJSONObject("RatingHistogram").optJSONArray("RatingList");
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/x-www-form-urlencoded");
-      headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
+         if(ratingList !=null){
 
-      Request request = RequestBuilder.create().setUrl("https://www.paguemenos.com.br/userreview").setCookies(cookies).setHeaders(headers)
-            .setPayload(payload).build();
-      String response = this.dataFetcher.post(session, request).getBody();
-
-      if (response != null) {
-         doc = Jsoup.parse(response);
-      }
-
-      return doc;
-   }
-
-   /**
-    * Average is calculate
-    * 
-    * @param document
-    * @return
-    */
-   private Double getTotalAvgRating(Document docRating, Integer totalRating) {
-      Double avgRating = 0d;
-      Elements rating = docRating.select("ul.rating li");
-
-      if (totalRating != null && totalRating > 0) {
-         Double total = 0.0;
-
-         for (Element e : rating) {
-            Element star = e.select("strong.rating-demonstrativo").first();
-            Element totalStar = e.select("> span:not([class])").first();
-
-            if (totalStar != null) {
-               String votes = totalStar.text().replaceAll("[^0-9]", "").trim();
-
-               if (!votes.isEmpty()) {
-                  Integer totalVotes = Integer.parseInt(votes);
-                  if (star != null) {
-                     if (star.hasClass("avaliacao50")) {
-                        total += totalVotes * 5;
-                     } else if (star.hasClass("avaliacao40")) {
-                        total += totalVotes * 4;
-                     } else if (star.hasClass("avaliacao30")) {
-                        total += totalVotes * 3;
-                     } else if (star.hasClass("avaliacao20")) {
-                        total += totalVotes * 2;
-                     } else if (star.hasClass("avaliacao10")) {
-                        total += totalVotes * 1;
-                     }
-                  }
+            for(int i = 0; i < ratingList.length(); i++){
+               switch (i){
+                  case 0:
+                     advancedRatingReview.setTotalStar5(((JSONObject) ratingList.get(i)).optInt("Total",0));
+                     break;
+                  case 1:
+                     advancedRatingReview.setTotalStar4(((JSONObject) ratingList.get(i)).optInt("Total",0));
+                     break;
+                  case 2:
+                     advancedRatingReview.setTotalStar3(((JSONObject) ratingList.get(i)).optInt("Total",0));
+                     break;
+                  case 3:
+                     advancedRatingReview.setTotalStar2(((JSONObject) ratingList.get(i)).optInt("Total",0));
+                     break;
+                  case 4:
+                     advancedRatingReview.setTotalStar1(((JSONObject) ratingList.get(i)).optInt("Total",0));
+                     break;
+                  default:
                }
             }
          }
-
-         avgRating = MathUtils.normalizeTwoDecimalPlaces(total / totalRating);
       }
 
-      return avgRating;
+      return advancedRatingReview;
    }
 
-   /**
-    * Number of ratings appear in page rating
-    * 
-    * @param docRating
-    * @return
-    */
-   private Integer getTotalNumOfRatings(Document docRating) {
-      Integer totalRating = 0;
-      Element totalRatingElement = docRating.select(".media em > span").first();
+   private JSONObject crawlPageRatings(String internalPid) throws UnsupportedEncodingException {
+      String jsonProductId = "{\"productId\":\"" + internalPid + "\",\"page\":1,\"count\":5,\"orderBy\":0,\"filters\":\"\"}";
+      String encodedString = Base64.getEncoder().encodeToString(jsonProductId.getBytes());
 
-      if (totalRatingElement != null) {
-         String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
+      String api = "https://www.paguemenos.com.br/_v/public/graphql/v1?workspace=master&maxAge=medium&appsEtag=remove&domain=store&locale=pt-BR&__bindingId=23424e23-86bb-4397-98b0-238d88d7f528&operationName=productReviews&extensions=";
 
-         if (!totalText.isEmpty()) {
-            totalRating = Integer.parseInt(totalText);
-         }
-      }
+      String query = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + API_TOKEN +"\",\"sender\":\"yourviews.yourviewsreviews@0.x\",\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
+         "\"variables\":\"" + encodedString + "\"}";
 
-      return totalRating;
-   }
+      String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
-   /**
-    * Number of ratings appear in page rating
-    * 
-    * @param docRating
-    * @return
-    */
-   private Integer getTotalNumOfReviews(Document docRating) {
-      return docRating.select(".resenhas .quem > li").size();
+      Request request = RequestBuilder.create().setUrl(api+encodedQuery)
+            .build();
+      String response = this.dataFetcher.get(session, request).getBody();
+
+      return JSONUtils.stringToJson(response);
    }
 }
