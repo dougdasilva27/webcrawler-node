@@ -45,7 +45,9 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
 	
   override fun extractInformation(document: Document): MutableList<Product> {
     val products = mutableListOf<Product>()
-    if ("ProductId" in session.originalURL) {
+
+    if (document.selectFirst(".productInfoArea") != null) {
+
       val name = document.selectFirst(".productTitle")?.text()
       val internalId = document.selectFirst(".ProductCode")?.attr("value")
       val description = document.selectFirst(".productDetailArea .productDetailSubArea")?.html()
@@ -63,6 +65,8 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
         .setOffers(offers)
         .build()
 
+    } else {
+            Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
     return products
   }
