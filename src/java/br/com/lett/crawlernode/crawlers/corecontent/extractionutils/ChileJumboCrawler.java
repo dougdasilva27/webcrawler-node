@@ -36,8 +36,8 @@ public class ChileJumboCrawler extends Crawler {
 
    private static final String MAIN_SELLER_NAME_LOWER = "jumbo";
    private static final String MAIN_SELLER_NAME_LOWER_2 = "cyber monday";
-   public static final String HOME_PAGE = "https://www2.jumbo.cl/";
-   public static final String HOST = "www2.jumbo.cl";
+   public static final String HOME_PAGE = "https://www.jumbo.cl/";
+   public static final String HOST = "www.jumbo.cl";
 
    private JSONObject promotionsJson = new JSONObject();
 
