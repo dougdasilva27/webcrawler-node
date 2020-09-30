@@ -18,7 +18,7 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
 
    private JSONArray extractJsonFromApi() {
 
-      String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search/?ft=" + this.keywordWithoutAccents + "&_from=0&_to=8&O=OrderByReleaseDateDESC";
+      String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search/?ft=" + this.keywordWithoutAccents.replace(" ", "%20") + "&_from=0&_to=8&O=OrderByReleaseDateDESC";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
