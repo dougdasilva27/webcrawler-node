@@ -1,15 +1,23 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
+import java.net.MalformedURLException;
+
 public class ArgentinaFarmacityCrawler extends CrawlerRankingKeywords {
 
   public ArgentinaFarmacityCrawler(Session session) {
     super(session);
+    super.fetchMode = FetchMode.FETCHER;
   }
 
   @Override
@@ -17,10 +25,10 @@ public class ArgentinaFarmacityCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
     this.pageSize = 20;
 
-    String url = "https://www.farmacity.com/" + this.keywordEncoded + "?PageNumber=" + this.currentPage;
+    String url = "https://www.farmacity.com/" + this.keywordWithoutAccents.replace(" ", "%20")  + "?PageNumber=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url, null);
+    this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select(".main .prateleira ul > li[layout]");
     Elements productsPid = this.currentDoc.select(".prateleira ul > li[id]");
