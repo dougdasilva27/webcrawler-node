@@ -303,7 +303,7 @@ public class ImageCrawler extends Task {
       int marketId = session.getMarket().getNumber();
       Map<String, String> headers = new HashMap<>();
 
-      if (marketId != 17 && marketId != 6) {
+      if (marketId != 17 && marketId != 6 && marketId != 1059) {
          headers.put(HttpHeaders.ACCEPT, "image/jpg, image/apng");
       }
 

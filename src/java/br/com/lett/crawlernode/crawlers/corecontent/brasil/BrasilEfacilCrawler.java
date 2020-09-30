@@ -1,49 +1,50 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.net.URLEncoder;
-import java.util.*;
-
-import br.com.lett.crawlernode.core.fetcher.models.FetcherRequest;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import com.google.common.collect.Sets;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import models.*;
-import models.pricing.*;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.prices.Prices;
-import org.jsoup.select.Elements;
-
-import javax.print.DocFlavor;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.AdvancedRatingReview;
+import models.Offer;
+import models.Offers;
+import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 
 public class BrasilEfacilCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "eFácil";
-   private static final String API = "https://www.efacil.com.br/webapp/wcs/stores/servlet/GetCatalogEntryDetailsByIDView";
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-   public BrasilEfacilCrawler(Session session){
+   public BrasilEfacilCrawler(Session session) {
       super(session);
    }
 
@@ -60,9 +61,9 @@ public class BrasilEfacilCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=productId]", "value");
          CategoryCollection categories = scrapCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-photo a", Collections.singletonList("href"), "https", "efacil.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".wrap-thumbnails .thumbnails a", Collections.singletonList("href"),"https", "efacil.com.br", primaryImage);
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".wrap-thumbnails .thumbnails a", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
          String description = scrapDescription(doc);
-         boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer",false) != null;
+         boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;
          Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
 
          String nameWithoutVariations = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".payment-forms input", "value");
@@ -72,17 +73,17 @@ public class BrasilEfacilCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setName(name)
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setCategories(categories)
-            .setDescription(description)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setOffers(offers)
-            .setRatingReviews(reviews)
-            .build();
+               .setUrl(session.getOriginalURL())
+               .setName(name)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setCategories(categories)
+               .setDescription(description)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setOffers(offers)
+               .setRatingReviews(reviews)
+               .build();
 
          products.add(product);
 
@@ -93,42 +94,29 @@ public class BrasilEfacilCrawler extends Crawler {
       return products;
    }
 
-   private boolean isProductPage(Document doc){
-
-      String type = null;
-      String linkType = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#main > .content", "itemtype");
-      if(linkType != null){
-         String[] linkSplited = linkType.split("/");
-         if(linkSplited.length > 0){
-            type = linkSplited[linkSplited.length - 1];
-         }
-      }
-
-      if(type!=null){
-         return type.equals("Product");
-      }
-      return false;
+   private boolean isProductPage(Document doc) {
+      return !doc.select("input[name=productId]").isEmpty();
    }
 
-   private String scrapInternalPid(Document doc){
+   private String scrapInternalPid(Document doc) {
 
       String internalPid = null;
       String[] fullTag = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-details > div", "id").split("_");
 
-      if(fullTag.length > 0){
+      if (fullTag.length > 0) {
          internalPid = fullTag[1];
       }
 
       return internalPid;
    }
 
-   private CategoryCollection scrapCategories(Document doc){
+   private CategoryCollection scrapCategories(Document doc) {
 
       return CrawlerUtils.crawlCategories(doc, "#widget_breadcrumb > ul > li > a", false);
 
    }
 
-   private String scrapDescription(Document doc){
+   private String scrapDescription(Document doc) {
 
       String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#tab2_content > div:nth-child(1)", false);
       description += CrawlerUtils.scrapStringSimpleInfo(doc, "#especificacoes-content", false);
@@ -140,7 +128,7 @@ public class BrasilEfacilCrawler extends Crawler {
 
       String nameFormatted = URLEncoder.encode(nameWithoutVariations, "UTF-8");
       String imageFormatted = URLEncoder.encode("/" + imageUrl.split("https://efacil.com.br/")[1], "UTF-8");
-      String encodedUrl = URLEncoder.encode(session.getOriginalURL().replace("https:","").trim(), "UTF-8");
+      String encodedUrl = URLEncoder.encode(session.getOriginalURL().replace("https:", "").trim(), "UTF-8");
 
       String apiRating = "https://trustvox.com.br/widget/root?&code=" + code + "&store_id=545&url=" + "https:" + encodedUrl + "&name=" + nameFormatted + "&photos_urls[]=https:" + imageFormatted;
 
@@ -155,7 +143,9 @@ public class BrasilEfacilCrawler extends Crawler {
 
       Integer totalNumOfEvaluations = getTotalNumOfRatings(rating);
       Double avgRating = getTotalAvgRating(rating);
+
       AdvancedRatingReview advancedRating = getAdvancedRating(rating);
+
       ratingReviews.setDate(session.getDate());
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
@@ -174,18 +164,23 @@ public class BrasilEfacilCrawler extends Crawler {
 
       Set<String> keys = stars.keySet();
 
-      for(String key:keys){
-         switch (key){
+      for (String key : keys) {
+         switch (key) {
             case "1":
                advancedRating.setTotalStar1(stars.getInt(key));
+               break;
             case "2":
                advancedRating.setTotalStar2(stars.getInt(key));
+               break;
             case "3":
                advancedRating.setTotalStar3(stars.getInt(key));
+               break;
             case "4":
                advancedRating.setTotalStar4(stars.getInt(key));
+               break;
             case "5":
                advancedRating.setTotalStar5(stars.getInt(key));
+               break;
             default:
          }
       }
@@ -213,14 +208,14 @@ public class BrasilEfacilCrawler extends Crawler {
       List<String> sales = scrapSales(internalPid, internalId);
 
       offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(getSellerName(doc))
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(getSellerName(doc).equalsIgnoreCase(SELLER_FULL_NAME))
-         .setSales(sales)
-         .setPricing(pricing)
-         .build());
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(getSellerName(doc))
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(getSellerName(doc).equalsIgnoreCase(SELLER_FULL_NAME))
+            .setSales(sales)
+            .setPricing(pricing)
+            .build());
 
       return offers;
 
@@ -230,24 +225,24 @@ public class BrasilEfacilCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".line-through", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".priceby span span", null, false, ',', session);
       Double bankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceViewInCash > span.blue > span", null, false, ',', session);
-      if(bankSlip == null){
-         bankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#ProductPriceView > div.priceby > span.large > span", null, false, ',',session);
+      if (bankSlip == null) {
+         bankSlip = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#ProductPriceView > div.priceby > span.large > span", null, false, ',', session);
       }
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setBankSlip(scrapBankSlip(bankSlip))
-         .setCreditCards(creditCards)
-         .build();
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setBankSlip(scrapBankSlip(bankSlip))
+            .setCreditCards(creditCards)
+            .build();
 
    }
 
-   private BankSlip scrapBankSlip(Double bankSlipPrice) throws MalformedPricingException{
+   private BankSlip scrapBankSlip(Double bankSlipPrice) throws MalformedPricingException {
       return BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(bankSlipPrice)
-         .build();
+            .setFinalPrice(bankSlipPrice)
+            .build();
    }
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -256,17 +251,17 @@ public class BrasilEfacilCrawler extends Crawler {
       Installments installments = scrapInstallments(doc);
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
       }
 
       return creditCards;
@@ -285,16 +280,16 @@ public class BrasilEfacilCrawler extends Crawler {
             Double value = MathUtils.parseDoubleWithComma(valueElement.text());
 
             installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(installment)
-               .setInstallmentPrice(value)
-               .build());
+                  .setInstallmentNumber(installment)
+                  .setInstallmentPrice(value)
+                  .build());
          }
       }
 
       return installments;
    }
 
-   private List<String> scrapSales(String internalPid, String internalId){
+   private List<String> scrapSales(String internalPid, String internalId) {
 
       String apiPrice = "https://www.efacil.com.br/webapp/wcs/stores/servlet/ProductPriceView?storeId=10154&catalogId=10051&productInfoPage=true&type=product&productIdPRD=" + internalPid + "&catalogEntryId=" + internalId;
 
@@ -304,19 +299,21 @@ public class BrasilEfacilCrawler extends Crawler {
       headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("Accept-Encoding", "gzip, deflate, br");
       headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+
       Request request = RequestBuilder.create().setUrl(apiPrice).setHeaders(headers).mustSendContentEncoding(false).build();
       String response = this.dataFetcher.get(session, request).getBody();
       Document htmlPrice = Jsoup.parse(response);
 
       List<String> sales = new ArrayList<>();
       String sale = CrawlerUtils.scrapStringSimpleInfo(htmlPrice, "#entryPriceAtacarejo", false);
-      if(sale!=null){
+      if (sale != null) {
          sales.add(sale);
       }
+
       return sales;
    }
 
-   private String getSellerName(Document doc){
+   private String getSellerName(Document doc) {
 
       return CrawlerUtils.scrapStringSimpleInfo(doc, "#nomeEntregue", false);
    }
