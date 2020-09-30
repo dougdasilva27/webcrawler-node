@@ -51,6 +51,10 @@ public class MexicoAmazonCrawler extends CrawlerRankingKeywords {
         String internalId = internalPid;
         String productUrl = crawlProductUrl(internalPid);
 
+        if (internalPid.isEmpty()) {
+           continue;
+        }
+        
         saveDataProduct(internalId, internalPid, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
