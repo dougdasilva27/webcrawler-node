@@ -1,19 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -26,6 +12,16 @@ import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
@@ -33,7 +29,6 @@ public class BrasilBifarmaCrawler extends Crawler {
 
   public BrasilBifarmaCrawler(Session session) {
     super(session);
-    super.config.setFetcher(FetchMode.WEBDRIVER);
   }
 
   @Override
@@ -42,51 +37,11 @@ public class BrasilBifarmaCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
   }
 
-
-  @Override
-  protected Object fetch() {
-    Document doc = new Document("");
-    this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-
-    if (this.webdriver != null) {
-      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-
-      Element script = doc.select("head script").last();
-      Element robots = doc.select("meta[name=robots]").first();
-
-      if (script != null && robots != null) {
-        String eval = script.html().trim();
-
-        if (!eval.isEmpty()) {
-          Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
-          this.webdriver.executeJavascript(eval);
-        }
-      }
-
-      String requestHash = FetchUtilities.generateRequestHash(session);
-      this.webdriver.waitLoad(12000);
-
-      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-
-      // saving request content result on Amazon
-      S3Service.saveResponseContent(session, requestHash, doc.toString());
-    }
-
-    return doc;
-  }
-
   @Override
   public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
     List<Product> products = new ArrayList<>();
 
     JSONObject productInfo = crawlProductInfo(doc);
-
-    if (productInfo.length() < 1 && this.webdriver != null) {
-      this.webdriver.waitLoad(10000);
-      doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-      productInfo = crawlProductInfo(doc);
-    }
 
     if (productInfo.length() > 0) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -117,10 +72,8 @@ public class BrasilBifarmaCrawler extends Crawler {
           .setPrice(price)
           .setPrices(prices)
           .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setRatingReviews(ratingAndReviews)
-          .setCategory3(categories.getCategory(2))
+          .setCategories(categories)
+         .setRatingReviews(ratingAndReviews)
           .setPrimaryImage(primaryImage)
           .setSecondaryImages(secondaryImages)
           .setDescription(description)
@@ -343,14 +296,10 @@ public class BrasilBifarmaCrawler extends Crawler {
    * @return
    */
   private JSONObject crawlProductInfo(Document doc) {
-    JSONObject info = new JSONObject();
 
     JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "chaordicProduct =", "};", false, false);
-    if (json.has("product")) {
-      info = json.getJSONObject("product");
-    }
 
-    return info;
+    return json.optJSONObject("product");
   }
 
   private String crawlEan(Document doc) {
