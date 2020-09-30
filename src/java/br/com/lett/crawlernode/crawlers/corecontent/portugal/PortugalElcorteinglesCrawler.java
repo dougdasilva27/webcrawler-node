@@ -83,13 +83,13 @@ public class PortugalElcorteinglesCrawler extends Crawler {
     if (isProductPage(doc)) {
       Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".dataholder", "data-product-id");
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc,".pdp-title", false);
-      boolean available = doc.selectFirst(".product_controls-button._buy") != null;
-      String primaryImage = "https:" + doc.selectFirst(".elements_slider-slide img").attr("src");
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs-item a");
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".pdp-info-container"));
-      Offers offers = available ? scrapOffer(doc) : new Offers();
+       String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".dataholder", "data-product-id");
+       String name = CrawlerUtils.scrapStringSimpleInfo(doc,".pdp-title", false);
+       boolean available = doc.selectFirst(".product_controls-button._buy") != null;
+       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".elements_slider-slide img", Collections.singletonList("src"), "https", "cdn.grupoelcorteingles.es");
+       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs-item a");
+       String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".pdp-info-container"));
+       Offers offers = available ? scrapOffer(doc) : new Offers();
 
       JSONObject ratingApi = apiRatingReview(internalId);
 
@@ -115,7 +115,7 @@ public class PortugalElcorteinglesCrawler extends Crawler {
   }
 
   private boolean isProductPage(Document document) {
-    return document.selectFirst(".dataholder.js-product") != null;
+     return document.selectFirst(".full_vp.pdp-content-vp") != null;
   }
 
   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
@@ -235,8 +235,8 @@ public class PortugalElcorteinglesCrawler extends Crawler {
 
       JSONObject ratingReviews = (JSONObject) review;
 
-      if (ratingReviews != null) {
-        rating.put(ratingReviews.optInt("RatingValue"), ratingReviews.optInt("Count"));
+      if (ratingReviews != null && rating != null) {
+         rating.put(ratingReviews.optInt("RatingValue"), ratingReviews.optInt("Count"));
       }
     }
     AdvancedRatingReview.Builder advRatingReview = new AdvancedRatingReview.Builder();
