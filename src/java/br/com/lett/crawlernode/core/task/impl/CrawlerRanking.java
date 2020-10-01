@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -268,7 +269,7 @@ public abstract class CrawlerRanking extends Task {
    protected void processBeforeFetch() {}
 
    // função que extrai os produtos da página atual
-   protected abstract void extractProductsFromCurrentPage();
+   protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException;
 
    /**
     * função que retorna se há ou não uma próxima página default: total de produtos maior que os
