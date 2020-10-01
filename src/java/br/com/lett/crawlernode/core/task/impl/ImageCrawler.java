@@ -330,7 +330,7 @@ public class ImageCrawler extends Task {
          }
       } else if (marketId == 307 || marketId == 27 || marketId == 836) {
          request.setSendContentEncoding(false);
-      } else if (marketId == 976 || marketId == 65 || session.getMarket().getName().contains("ifood")) {
+      } else if (marketId == 976 || marketId == 65 || marketId == 1033 || session.getMarket().getName().contains("ifood")) {
          headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25");
       }
 
