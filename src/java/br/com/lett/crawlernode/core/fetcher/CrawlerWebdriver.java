@@ -12,6 +12,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.Augmenter;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,6 +140,12 @@ public class CrawlerWebdriver {
       jse.executeScript("arguments[0].click();", element);
    }
 
+   public void clickOnElementViaJavascript(String selector, int waitTime) {
+      WebElement element = findElementByCssSelector(selector);
+      clickOnElementViaJavascript(element);
+      waitLoad(waitTime);
+   }
+
    /**
     * Get the current loaded page on the webdriver instance.
     *
@@ -206,4 +214,24 @@ public class CrawlerWebdriver {
          Logging.printLogWarn(logger, "Error saving screenshot! [" + ex.getMessage() + "]");
       }
    }
+
+   public void sendToInput(String selector, String inputText, int waitTime) {
+      WebElement input = findElementByCssSelector(selector);
+      input.sendKeys(inputText);
+      waitLoad(waitTime);
+   }
+
+   public void findAndClick(String selector, int waitTime) {
+      WebElement el = findElementByCssSelector(selector);
+      if (el != null) {
+         el.click();
+         waitLoad(waitTime);
+      }
+   }
+
+   public void waitForElement(String cssSelector, int timeOutInSeconds) {
+      WebDriverWait wait = new WebDriverWait(driver, timeOutInSeconds);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
 }
