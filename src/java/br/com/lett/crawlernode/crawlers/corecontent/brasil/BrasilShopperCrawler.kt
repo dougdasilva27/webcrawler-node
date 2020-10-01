@@ -61,6 +61,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       //wait product for id. If not found, returns void
       try {
+         log("wait for: product div")
          webdriver.waitForElement("div[data-produto=\"${internalId}\"]", 60)
       } catch (e: TimeoutException) {
          return Jsoup.parse(webdriver.currentPageSource)
