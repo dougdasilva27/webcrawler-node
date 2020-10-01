@@ -59,7 +59,7 @@ public class BrasilMartinsCrawler extends Crawler {
       }
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.martinsatacado.com.br/", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-
+         webdriver.waitLoad(25000);
          webdriver.executeJavascript("$('#go-login').mouseover()");
 
          webdriver.waitLoad(2000);
@@ -95,7 +95,7 @@ public class BrasilMartinsCrawler extends Crawler {
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 10);
+      WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
