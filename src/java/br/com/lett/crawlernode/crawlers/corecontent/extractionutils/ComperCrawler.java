@@ -17,7 +17,7 @@ import models.RatingsReviews;
 
 public abstract class ComperCrawler extends VTEXOldScraper {
 
-   private static final String HOME_PAGE = "https://www.comperdelivery.com.br/";
+   private static final String HOME_PAGE = "https://www.comper.com.br/";
    private static final String MAIN_SELLER_NAME = "sdb comercio de alimentos ltda.";
    protected final String storeId = getStoreId();
 
@@ -40,7 +40,7 @@ public abstract class ComperCrawler extends VTEXOldScraper {
 
       for (Cookie cookieResponse : response.getCookies()) {
          BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-         cookie.setDomain("www.comperdelivery.com.br");
+         cookie.setDomain("www.comper.com.br");
          cookie.setPath("/");
          this.cookies.add(cookie);
       }

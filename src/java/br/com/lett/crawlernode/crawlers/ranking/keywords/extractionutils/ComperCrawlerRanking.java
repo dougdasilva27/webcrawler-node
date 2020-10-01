@@ -26,7 +26,7 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    protected final String storeId = getStoreId();
-   private static final String HOME_PAGE = "https://www.comperdelivery.com.br/";
+   private static final String HOME_PAGE = "https://www.comper.com.br/";
    private String userAgent;
    private LettProxy proxyUsed;
 
@@ -46,13 +46,13 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
 
       for (Cookie cookieResponse : response.getCookies()) {
          BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-         cookie.setDomain("www.comperdelivery.com.br");
+         cookie.setDomain("www.comper.com.br");
          cookie.setPath("/");
          this.cookies.add(cookie);
       }
 
       Request request2 = RequestBuilder.create()
-            .setUrl("https://www.comperdelivery.com.br/store/SetStore?storeId=" + storeId)
+            .setUrl("https://www.comper.com.br/store/SetStore?storeId=" + storeId)
             .setCookies(cookies)
             .setHeaders(headers)
             .build();
@@ -73,7 +73,7 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.comperdelivery.com.br/" + this.keywordEncoded + "#" + this.currentPage;
+      String url = "https://www.comper.com.br/" + this.keywordEncoded + "?PageNumber=" + this.currentPage;
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, this.userAgent);
@@ -90,7 +90,7 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href"), "http://", "www.comperdelivery.com.br");
+            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href"), "https", "www.comper.com.br");
             String internalId = e.attr("data-product-id");
 
             saveDataProduct(internalId, null, productUrl);
