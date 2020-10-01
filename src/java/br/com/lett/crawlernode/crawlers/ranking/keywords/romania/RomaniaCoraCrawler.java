@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -15,15 +16,21 @@ public class RomaniaCoraCrawler extends CrawlerRankingKeywords {
 
    public RomaniaCoraCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
    }
+
+   private JSONArray itemsOnPage = new JSONArray();
 
    @Override
    protected void extractProductsFromCurrentPage() {
       this.pageSize = 10;
       this.log("Página " + this.currentPage);
 
+
       JSONObject json = fetchJSON();
       JSONArray items = json.optJSONArray("items");
+
+      itemsOnPage = new JSONArray();
 
       if (items != null && !items.isEmpty()) {
          if (totalProducts == 0) {
@@ -36,6 +43,9 @@ public class RomaniaCoraCrawler extends CrawlerRankingKeywords {
                JSONObject entity = item.optJSONObject("entity");
                String internalId = entity.optString("id");
                String internalPid = entity.optString("partnumber");
+
+               itemsOnPage.put(internalPid);
+
                String productUrl = HOST_PAGE + entity.optString("seoUrl");
 
                saveDataProduct(internalId, internalPid, productUrl);
@@ -76,7 +86,7 @@ public class RomaniaCoraCrawler extends CrawlerRankingKeywords {
 
       payload.put("pager", pager);
       payload.put("filters", new JSONArray());
-      payload.put("itemsOnPage", new JSONArray());
+      payload.put("itemsOnPage", itemsOnPage);
       payload.put("queryStr", keywordEncoded);
 
       Request request = Request.RequestBuilder.create()
