@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -15,8 +14,10 @@ import br.com.lett.crawlernode.util.toCreditCards
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
+import okhttp3.HttpUrl
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+
 
 /**
  * Date: 28/09/20
@@ -33,8 +34,17 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    private val login: String = "kennedybarcelos@lett.digital"
    private val password: String = "K99168938690"
 
-   override fun fetch(): Any {
+   override fun fetch(): Document {
+
+      val internalId = getProductIdFromURL()
+
+      if (internalId.isEmpty()) {
+         return Document(session.originalURL)
+      }
+
       webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session)
+
+      log("waiting home page")
 
       webdriver.waitLoad(20000)
 
@@ -43,35 +53,35 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       webdriver.sendToInput(".access-login input[name=email]", login, 500)
       webdriver.sendToInput(".access-login input[name=senha]", password, 500)
 
+
+      log("submit login")
       webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 25000)
 
-      val internalId = getProductIdFromURL()
-
+      log("open product popup")
       webdriver.findAndClick("div[data-produto=\"${internalId}\"]", 5000)
 
       return Jsoup.parse(webdriver.currentPageSource)
    }
 
-   private fun getProductIdFromURL(): String {
-      val split = session.originalURL.split("/")
 
-      return if (split.isNotEmpty()) {
-         split.last()
-      } else {
-         ""
-      }
+   //pattern: https://shopper.com.br/shop?product=1995
+   private fun getProductIdFromURL(): String {
+
+      return HttpUrl.parse(session.originalURL)?.queryParameter("product") ?: ""
    }
 
    override fun extractInformation(doc: Document): MutableList<Product> {
 
-      if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
+      log("scrap product")
+
+      if (!isProductPage(doc)) {
+         log("Not a product page " + session.originalURL)
          return mutableListOf()
       }
 
       val productDetails = doc.selectFirst(".mfp-content #popupProduto")
 
-      val name = productDetails.selectFirst("prod-nome.")?.text()
+      val name = productDetails.selectFirst(".prod-nome")?.text()
 
       val internalId = doc.selectFirst(".prod-item[data-produto]")?.attr("data-produto")
 
@@ -88,7 +98,6 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          .setName(name)
          .setPrimaryImage(primaryImage)
          .setOffers(offers)
-         .setRatingReviews(null)
          .build()
 
       return mutableListOf(product)
@@ -131,6 +140,10 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       )
 
       return offers
+   }
+
+   fun log(message: String) {
+      Logging.printLogDebug(logger, session, message)
    }
 
    private fun isProductPage(document: Document): Boolean {
