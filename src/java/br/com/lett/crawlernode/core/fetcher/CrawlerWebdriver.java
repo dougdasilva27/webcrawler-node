@@ -229,5 +229,9 @@ public class CrawlerWebdriver {
       }
    }
 
+   public void waitForElement(String cssSelector, int timeOutInSeconds) {
+      WebDriverWait wait = new WebDriverWait(driver, timeOutInSeconds);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
 
 }

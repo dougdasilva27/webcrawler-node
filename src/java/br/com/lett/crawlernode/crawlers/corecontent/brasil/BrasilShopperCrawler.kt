@@ -17,7 +17,7 @@ import models.pricing.Pricing
 import okhttp3.HttpUrl
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-
+import org.openqa.selenium.TimeoutException
 
 /**
  * Date: 28/09/20
@@ -42,27 +42,35 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          return Document(session.originalURL)
       }
 
-      webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session)
+      webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, false,session)
 
       log("waiting home page")
 
-      webdriver.waitLoad(20000)
+      webdriver.waitForElement("button.login", 25)
 
-      webdriver.clickOnElementViaJavascript("button.login", 5000)
+      webdriver.clickOnElementViaJavascript("button.login", 1000)
 
-      webdriver.sendToInput(".access-login input[name=email]", login, 500)
-      webdriver.sendToInput(".access-login input[name=senha]", password, 500)
+      webdriver.waitForElement(".access-login input[name=email]", 25)
 
+      webdriver.sendToInput(".access-login input[name=email]", login, 100)
+
+      webdriver.sendToInput(".access-login input[name=senha]", password, 100)
 
       log("submit login")
-      webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 25000)
+      webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 2000)
+
+      //wait product for id. If not found, returns void
+      try {
+         webdriver.waitForElement("div[data-produto=\"${internalId}\"]", 60)
+      } catch (e: TimeoutException) {
+         return Jsoup.parse(webdriver.currentPageSource)
+      }
 
       log("open product popup")
       webdriver.findAndClick("div[data-produto=\"${internalId}\"]", 5000)
 
       return Jsoup.parse(webdriver.currentPageSource)
    }
-
 
    //pattern: https://shopper.com.br/shop?product=1995
    private fun getProductIdFromURL(): String {
