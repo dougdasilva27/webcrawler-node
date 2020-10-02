@@ -127,7 +127,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          Card.HIPERCARD,
          Card.JCB,
          Card.CABAL,
-         Card.SOROCRED,
+         Card.SOROCRED
       ).toCreditCards(price)
 
       offers.add(
