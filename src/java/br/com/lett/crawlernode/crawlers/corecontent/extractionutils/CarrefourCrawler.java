@@ -1,28 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.MathUtils;
-import exceptions.MalformedPricingException;
-import models.AdvancedRatingReview;
-import models.RatingsReviews;
-import models.pricing.BankSlip;
-import org.apache.http.cookie.Cookie;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import exceptions.MalformedPricingException;
+import models.AdvancedRatingReview;
+import models.RatingsReviews;
+import models.pricing.BankSlip;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-public abstract class CarrefourCrawler extends VTEXNewScraper{
+public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    private static final List<String> SELLERS = Arrays.asList("Carrefour");
-   private static final List<Cookie> COOKIES = new ArrayList<>();
 
    public CarrefourCrawler(Session session) {
       super(session);
@@ -31,29 +27,35 @@ public abstract class CarrefourCrawler extends VTEXNewScraper{
    protected abstract String getLocation();
 
    @Override
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      JSONObject productApi = new JSONObject();
+   public void handleCookiesBeforeFetch() {
+      super.handleCookiesBeforeFetch();
 
-      String url = "https://" + getHomePage() + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
-
-      BasicClientCookie cookie = new BasicClientCookie("ls.uid_armazem", getLocation());
-      cookie.setDomain(getHomePage());
+      BasicClientCookie cookie = new BasicClientCookie("userLocationData", getLocation());
+      cookie.setDomain(getHomePage().replace("https://", "").replace("/", ""));
       cookie.setPath("/");
-      COOKIES.add(cookie);
-
-      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(COOKIES).build();
-      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
-
-      if (!array.isEmpty()) {
-         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
-      }
-
-      return productApi;
+      this.cookies.add(cookie);
    }
 
    @Override
    protected List<String> getMainSellersNames() {
       return SELLERS;
+   }
+
+   @Override
+   protected Double scrapSpotlightPrice(Document doc, String internalId, Double principalPrice, JSONObject comertial, JSONObject discountsJson) {
+      Double spotlightPrice = super.scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
+
+      try {
+         BankSlip bank = scrapBankSlip(principalPrice, comertial, discountsJson, false);
+
+         if (bank.getFinalPrice() < spotlightPrice) {
+            spotlightPrice = bank.getFinalPrice();
+         }
+      } catch (MalformedPricingException e) {
+         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+      }
+
+      return spotlightPrice;
    }
 
    @Override
@@ -68,13 +70,12 @@ public abstract class CarrefourCrawler extends VTEXNewScraper{
             for (Object o : cardsArray) {
                JSONObject paymentJson = (JSONObject) o;
 
-               String paymentCode = paymentJson.optString("paymentSystem");
                String name = paymentJson.optString("paymentName");
 
                if (name.toLowerCase().contains("boleto")) {
-                  if(paymentJson.has("installments")){
+                  if (paymentJson.has("installments")) {
                      JSONArray bankSlipInstallments = paymentJson.optJSONArray("installments");
-                     for(Object i: bankSlipInstallments){
+                     for (Object i : bankSlipInstallments) {
                         bankSlipPrice = ((JSONObject) i).optDouble("total") / 100;
                      }
                   }
@@ -89,9 +90,9 @@ public abstract class CarrefourCrawler extends VTEXNewScraper{
       }
 
       return BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(bankSlipPrice)
-         .setOnPageDiscount(discount)
-         .build();
+            .setFinalPrice(bankSlipPrice)
+            .setOnPageDiscount(discount)
+            .build();
    }
 
    @Override
