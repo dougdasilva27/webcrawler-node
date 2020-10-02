@@ -5,8 +5,17 @@ import java.util.List;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -22,9 +31,80 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    public CarrefourCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    protected abstract String getLocation();
+
+   protected String fetchPage(String url) {
+
+      Request request = RequestBuilder.create()
+            .setUrl(url)
+            .setCookies(cookies)
+            .setFetcheroptions(
+                  FetcherOptionsBuilder.create()
+                        .mustUseMovingAverage(false)
+                        .mustRetrieveStatistics(true)
+                        .build())
+            .setProxyservice(Arrays.asList(
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
+                  ProxyCollection.LUMINATI_SERVER_BR))
+            .build();
+
+      int attempts = 0;
+      Response response = this.dataFetcher.get(session, request);
+      String body = response.getBody();
+
+      Integer statusCode = 0;
+      List<RequestsStatistics> requestsStatistics = response.getRequests();
+      if (!requestsStatistics.isEmpty()) {
+         statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
+      }
+
+      boolean retry = statusCode == null ||
+            (Integer.toString(statusCode).charAt(0) != '2'
+                  && Integer.toString(statusCode).charAt(0) != '3'
+                  && statusCode != 404);
+
+      // If fetcher don't return the expected response we try with apache
+      // If apache do the same, we try with javanet
+      if (retry) {
+         do {
+            if (attempts == 0) {
+               body = new ApacheDataFetcher().get(session, request).getBody();
+            } else if (attempts == 1) {
+               body = new JavanetDataFetcher().get(session, request).getBody();
+            }
+
+            attempts++;
+         } while (attempts < 2 && (body == null || body.isEmpty()));
+      }
+
+      return body;
+   }
+
+   @Override
+   protected Object fetch() {
+      return Jsoup.parse(fetchPage(session.getOriginalURL()));
+   }
+
+   @Override
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+      JSONObject productApi = new JSONObject();
+
+      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
+
+      String body = fetchPage(url);
+      JSONArray array = CrawlerUtils.stringToJsonArray(body);
+
+      if (!array.isEmpty()) {
+         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      }
+
+      return productApi;
+   }
+
 
    @Override
    public void handleCookiesBeforeFetch() {
