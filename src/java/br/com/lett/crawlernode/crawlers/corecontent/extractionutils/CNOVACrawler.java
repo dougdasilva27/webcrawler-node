@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import models.AdvancedRatingReview;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -832,8 +834,41 @@ public abstract class CNOVACrawler extends Crawler {
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(doc, totalNumOfEvaluations));
 
       return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, int totalNumOfEvaluations){
+
+      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+
+      Elements stars = doc.select(".yv-header-cont .yv-indice-star ul li");
+
+      for(Element star: stars){
+
+         int starTitle = CrawlerUtils.scrapIntegerFromHtmlAttr(star, ".yv-star", "title", 0);
+         double startNum = totalNumOfEvaluations * (double) CrawlerUtils.scrapIntegerFromHtml(star, "span", null, null, false, true, 0) / 100 ;
+         switch (starTitle){
+            case 1:
+               advancedRatingReview.setTotalStar1(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               break;
+            case 2:
+               advancedRatingReview.setTotalStar2(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               break;
+            case 3:
+               advancedRatingReview.setTotalStar3(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               break;
+            case 4:
+               advancedRatingReview.setTotalStar4(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               break;
+            case 5:
+               advancedRatingReview.setTotalStar5(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               break;
+         }
+      }
+
+      return advancedRatingReview;
    }
 
    private Integer getTotalRating(Document doc) {
