@@ -6,9 +6,7 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
-import br.com.lett.crawlernode.util.toJson
+import br.com.lett.crawlernode.util.*
 import models.Offer.OfferBuilder
 import models.Offers
 import models.pricing.Pricing
@@ -25,47 +23,59 @@ class PortoalegreTreichelCrawler(session: Session) : Crawler(session) {
         id = tokens[index + 1]
       }
     }
-    return dataFetcher.get(
+
+    val response = dataFetcher.get(
       session, RequestBuilder.create()
-        .setUrl("https://delivery.atacadotreichel.com.br/api/produto?id=${id!!}")
+        .setUrl("https://delivery.atacadotreichel.com.br/api/produto?id=${id}")
         .build()
-    ).body?.toJson()!!
+    ).body
+
+     if(response != null){
+        return JSONUtils.stringToJson(response)
+     }
+     return response
   }
 
   override fun extractInformation(json: JSONObject): MutableList<Product> {
-    val products = mutableListOf<Product>()
-    val images = mutableListOf<String>()
+     val products = mutableListOf<Product>()
+     val images = mutableListOf<String>()
 
-    for (imgJson in json.optJSONArray("Imagens")) {
-      if (imgJson is JSONObject) {
+     // Is a product page
+     if(json.has("id_produto")){
+        for (imgJson in json.optJSONArray("Imagens")) {
+           if (imgJson is JSONObject) {
 
-        images += "${imgJson.optString("str_img_path")}-g.jpg"
-      }
-    }
+              images += "${imgJson.optString("str_img_path")}-g.jpg"
+           }
+        }
 
-    for (elem in json.optJSONArray("Produtos")) {
-      if (elem is JSONObject) {
+        for (elem in json.optJSONArray("Produtos")) {
+           if (elem is JSONObject) {
 
-        val internalId = json.optString("id_produto")
-        val offers = scrapOffers(elem)
-        val name = elem.optString("str_nom_produto")
-        val eans = listOf(elem.optString("str_cod_barras_produto"))
-        val stock = elem.optInt("int_qtd_estoque_produto")
-        val description = elem.optString("str_meta_description_ecom_produto")
+              val internalId = json.optString("id_produto")
+              val offers = scrapOffers(elem)
+              val name = elem.optString("str_nom_produto")
+              val eans = listOf(elem.optString("str_cod_barras_produto"))
+              val stock = elem.optInt("int_qtd_estoque_produto")
+              val description = elem.optString("str_meta_description_ecom_produto")
 
-        products += ProductBuilder.create()
-          .setUrl(session.originalURL)
-          .setInternalId(internalId)
-          .setName(name)
-          .setStock(stock)
-          .setPrimaryImage(images.removeAt(0))
-          .setSecondaryImages(images)
-          .setDescription(description)
-          .setEans(eans)
-          .setOffers(offers)
-          .build()
-      }
-    }
+              products += ProductBuilder.create()
+                 .setUrl(session.originalURL)
+                 .setInternalId(internalId)
+                 .setName(name)
+                 .setStock(stock)
+                 .setPrimaryImage(images.removeAt(0))
+                 .setSecondaryImages(images)
+                 .setDescription(description)
+                 .setEans(eans)
+                 .setOffers(offers)
+                 .build()
+           }
+        }
+     } else{
+        Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
+     }
+
     return products
   }
 
