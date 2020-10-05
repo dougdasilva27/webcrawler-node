@@ -58,8 +58,10 @@ public class JavanetDataFetcher implements DataFetcher {
          for (String proxy : proxiesTemp) {
             proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
          }
-      } else {
-         proxies = proxiesTemp;
+      } else if (proxies != null) {
+         for (String proxy : proxiesTemp) {
+            proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY : proxy);
+         }
       }
 
       while (attempt < 4 && (response.getBody() == null || response.getBody().isEmpty())) {
