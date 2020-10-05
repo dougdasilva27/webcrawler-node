@@ -1,14 +1,12 @@
-package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
-
+package br.com.lett.crawlernode.crawlers.corecontent.criciuma;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BistekCrawler;
 
-public class FlorianopolisBistekCrawler extends BistekCrawler {
+public class CriciumaBistekCrawler extends BistekCrawler {
 
-   private static final String LOCATION = "12";
-
-   public FlorianopolisBistekCrawler(Session session) {
+   private static final String LOCATION = "10";
+   public CriciumaBistekCrawler(Session session) {
       super(session);
    }
 
