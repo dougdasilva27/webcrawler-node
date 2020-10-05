@@ -117,6 +117,8 @@ public class FetcherDataFetcher implements DataFetcher {
 
       long requestsStartTime = System.currentTimeMillis();
 
+      String requestId = null;
+
       try {
          Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 18;
 
@@ -172,7 +174,8 @@ public class FetcherDataFetcher implements DataFetcher {
             JSONObject statistics = responseJson.getJSONObject("statistics");
 
             if (statistics.has("request_id")) {
-               Logging.printLogInfo(logger, session, "Request Fetcher Id: " + statistics.get("request_id"));
+               requestId = statistics.get("request_id").toString();
+               Logging.printLogInfo(logger, session, "Request Fetcher Id: " + requestId);
             }
          }
 
@@ -187,7 +190,7 @@ public class FetcherDataFetcher implements DataFetcher {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      sendRequestInfoLog(request, response, method, session, requestHash);
+      sendRequestInfoLog(request, response, method, session, requestHash, requestId, System.currentTimeMillis() - requestsStartTime);
 
       JSONObject apacheMetadata = new JSONObject().put("req_fetcher_elapsed_time", System.currentTimeMillis() - requestsStartTime)
             .put("req_fetcher_attempts_number", 1);
@@ -463,7 +466,7 @@ public class FetcherDataFetcher implements DataFetcher {
     * @param session
     * @param requestHash
     */
-   public static void sendRequestInfoLog(Request request, Response response, String method, Session session, String requestHash) {
+   public static void sendRequestInfoLog(Request request, Response response, String method, Session session, String requestHash, String requestId, Long elapsedTime) {
       JSONObject requestMetadata = new JSONObject();
 
       List<RequestsStatistics> requestsStatistics = response.getRequests();
@@ -482,6 +485,8 @@ public class FetcherDataFetcher implements DataFetcher {
       requestMetadata.put("req_method", method);
       requestMetadata.put("req_location", request != null ? request.getUrl() : "");
       requestMetadata.put("req_type", "FETCHER");
+      requestMetadata.put("req_elapsed_time", elapsedTime);
+      requestMetadata.put("fetcher_req_id", requestId);
 
       Logging.logInfo(logger, session, requestMetadata, "Registrando requisição...");
 
