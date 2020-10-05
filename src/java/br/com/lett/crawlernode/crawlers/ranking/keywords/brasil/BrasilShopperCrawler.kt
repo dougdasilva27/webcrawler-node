@@ -35,7 +35,7 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
          webdriver.sendToInput(".access-login input[name=senha]", password, 500)
 
          log("submit login")
-         webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 25000)
+         webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 5000)
 
          currentDoc = Jsoup.parse(webdriver.currentPageSource)
       } catch (e: Exception) {
@@ -44,7 +44,7 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
    }
 
    private fun requestProducts(): Document {
-      webdriver.loadUrl("https://shopper.com.br/shop/busca?q=${keywordEncoded}", 2000)
+      webdriver.loadUrl("https://shopper.com.br/shop/busca?q=${keywordEncoded}", 20000)
       return Jsoup.parse(webdriver.currentPageSource)
    }
 
