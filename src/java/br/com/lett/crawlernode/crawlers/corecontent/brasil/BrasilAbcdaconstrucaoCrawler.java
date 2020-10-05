@@ -1,29 +1,33 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 23/10/2019
- * 
+ *
  * @author Gabriel Dornelas
  *
  */
@@ -34,25 +38,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    public BrasilAbcdaconstrucaoCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
-   }
-
-   @Override
-   protected Object fetch() {
-      String id = CommonMethods.getLast(session.getOriginalURL().split("\\?")[0].split("/"));
-      String payload = "c=detalhe-produto&id=" + id;
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-      String urlToFetch = "https://www.abcdaconstrucao.com.br/ajax/produtos.ajax.php";
-
-      Request request = RequestBuilder.create()
-            .setUrl(urlToFetch)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .setPayload(payload)
-            .build();
-
-      return Jsoup.parse(this.dataFetcher.post(session, request).getBody());
    }
 
    @Override
@@ -69,32 +54,31 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a.desejo[id]", "id");
-         String internalPid = scrapInternalPid(doc);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.title-product", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbAbc a:not(:first-child)");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#galeriaThumb > a", Arrays.asList("data-zoom-image", "data-image"), "https:",
-               "vendas.digitalabc.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeriaThumb > a", Arrays.asList("data-zoom-image", "data-image"),
-               "https:", "vendas.digitalabc.com.br", primaryImage);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("body > div > h2.subtitle, body > div > [style]"));
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
+         String internalPid = internalId;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".prodTitle", false);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#fbits-breadcrumb li a span");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoomImagemProduto", Arrays.asList("src"), "https:",
+                 "abcdaconstrucao.fbitsstatic.net/");
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeria .fbits-produto-imagensMinicarrossel-item a", Arrays.asList("data-zoom-image", "data-image"),
+                 "https:", "abcdaconstrucao.fbitsstatic.net/", primaryImage);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".paddingbox", false);
+         Offers offers = scrapOffer(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrices(new Prices())
-               .setAvailable(false)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(new Marketplace())
-               .build();
+                 .setUrl(session.getOriginalURL())
+                 .setInternalId(internalId)
+                 .setInternalPid(internalPid)
+                 .setName(name)
+                 .setCategory1(categories.getCategory(0))
+                 .setCategory2(categories.getCategory(1))
+                 .setCategory3(categories.getCategory(2))
+                 .setPrimaryImage(primaryImage)
+                 .setSecondaryImages(secondaryImages)
+                 .setDescription(description)
+                 .setOffers(offers)
+                 .build();
 
          products.add(product);
 
@@ -106,17 +90,117 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("a.desejo[id]") != null;
+      return doc.selectFirst(".detalhe-produto") != null;
    }
 
-   private String scrapInternalPid(Document doc) {
-      String internalPid = null;
 
-      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".box-white-product > p", true);
-      if (brand != null) {
-         internalPid = CommonMethods.getLast(brand.split(":")).trim();
+   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(doc);
+
+      offers.add(Offer.OfferBuilder.create()
+              .setUseSlugNameAsInternalSellerId(true)
+              .setSellerFullName("abd da constução")
+              .setMainPagePosition(1)
+              .setIsBuybox(false)
+              .setIsMainRetailer(true)
+              .setPricing(pricing)
+              .setSales(sales)
+              .build());
+
+      return offers;
+
+   }
+
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst(".fbits-preco-off");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
       }
 
-      return internalPid;
+      return sales;
    }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor.com-precoDe", null, false, ',', session);
+
+      if (priceFrom == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#fbits-div-preco-off input", "value", false, ',', session);
+      }
+
+      CreditCards creditCards = scrapCreditCards(doc,spotlightPrice);
+      Double bank = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoPreco-boleto .precoParcela .fbits-parcela", null, false, ',', session);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bank, null);
+
+      return Pricing.PricingBuilder.create()
+              .setPriceFrom(priceFrom)
+              .setSpotlightPrice(spotlightPrice)
+              .setCreditCards(creditCards)
+              .setBankSlip(bankSlip)
+              .build();
+
+   }
+
+   private CreditCards scrapCreditCards(Document doc,Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(doc);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+                 .setInstallmentNumber(1)
+                 .setInstallmentPrice(spotlightPrice)
+                 .build());
+      }
+
+      Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+              Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+                 .setBrand(card)
+                 .setInstallments(installments)
+                 .setIsShopCard(false)
+                 .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Elements installmentsCard = doc.select(".details-content p");
+
+      for (Element e : installmentsCard) {
+
+         if (e != null) {
+
+            String installmentString = e.text();
+
+            Integer installment = installmentString.contains("x")? MathUtils.parseInt(installmentString.split("x")[0]): null;
+
+            //4 x sem juros de R$ 29,49 no Cartão
+            String valueString =  installmentString.contains("R$")? installmentString.split("R")[1].replace("$ ", ""): null;
+            String valueString2 = valueString != null && valueString.contains(" ")? valueString.split(" ")[0]: null;
+
+            double installmentValue = valueString2 != null ? MathUtils.parseDoubleWithComma(valueString2): null;
+
+            installments.add(Installment.InstallmentBuilder.create()
+                    .setInstallmentNumber(installment)
+                    .setInstallmentPrice(installmentValue)
+                    .build());
+         }
+      }
+
+      return installments;
+   }
+
+
 }
