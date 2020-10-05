@@ -7,6 +7,8 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CommonMethods
 import br.com.lett.crawlernode.util.Logging
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import java.net.URLEncoder
 
 /**
  * Date: 01/10/20
@@ -41,7 +43,14 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
       }
    }
 
+   private fun requestProducts(): Document {
+      webdriver.loadUrl("https://shopper.com.br/shop/busca?q=${keywordEncoded}", 2000)
+      return Jsoup.parse(webdriver.currentPageSource)
+   }
+
    override fun extractProductsFromCurrentPage() {
+
+      currentDoc = requestProducts()
 
       val products = currentDoc.select(".prod-item[data-produto]")
 
@@ -53,10 +62,12 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
          val internalId = product.attr("data-produto")
 
-         val productUrl = "https://shopper.com.br/shop?product=${internalId}"
+         val name = product.selectFirst("prod-name")?.text()
+
+         val productUrl = "https://shopper.com.br/shop/busca?q=${URLEncoder.encode(name, "UTF-8")}"
 
          saveDataProduct(internalId, internalId, productUrl)
-         log(">>> ✅ productId: $internalId url: $productUrl")
+         log(">>> productId: $internalId - url: $productUrl - name: $name")
       }
    }
 }
