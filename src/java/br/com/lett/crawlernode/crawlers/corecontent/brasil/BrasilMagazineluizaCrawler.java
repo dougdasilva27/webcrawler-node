@@ -228,7 +228,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     * Product page identification *
     *******************************/
    private boolean isProductPage(Document doc) {
-      return doc.select("h1[itemprop=name]").first() != null;
+      return doc.select("h1[itemprop=name], h1.header-product__title").first() != null;
    }
 
    /**
@@ -255,7 +255,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     */
    private String crawlNameFrontPage(Document doc, String id) {
       String name = null;
-      Element elementName = doc.select("h1[itemprop=name]").first();
+      Element elementName = doc.select("h1[itemprop=name], h1.header-product__title").first();
 
       if (elementName != null) {
          name = elementName.text();
