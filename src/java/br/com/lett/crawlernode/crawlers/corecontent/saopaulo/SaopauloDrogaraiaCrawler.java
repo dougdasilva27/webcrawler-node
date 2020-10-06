@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -15,6 +16,7 @@ import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -126,7 +128,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          return doc.selectFirst(".product-image-gallery > img").attr("title");
       }
    }
-   
+
    private Prices crawlPrices(Document doc, Float price) {
       Prices prices = new Prices();
 
@@ -201,6 +203,53 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
    private RatingsReviews crawRating(Document doc, String internalId) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "71450", logger);
-      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+      RatingsReviews ratingsReviews = trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+      if(ratingsReviews.getTotalReviews() == 0){
+         ratingsReviews = scrapAlternativeRating(internalId);
+      }
+
+      return ratingsReviews;
+   }
+
+   private String alternativeRatingFetch(String internalId){
+
+      StringBuilder apiRating = new StringBuilder();
+
+      apiRating.append("https://trustvox.com.br/widget/shelf/v2/products_rates?codes[]=")
+         .append(internalId)
+         .append("&store_id=71450&callback=_tsRatesReady");
+
+      Request request = RequestBuilder.create().setUrl(apiRating.toString()).build();
+
+      return this.dataFetcher.get(session, request).getBody();
+   }
+
+   private RatingsReviews scrapAlternativeRating(String internalId){
+
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      String ratingResponse = alternativeRatingFetch(internalId);
+
+      // Split in parentheses
+      String[] responseSplit = ratingResponse.split("\\s*[()]\\s*");
+
+      JSONObject rating;
+
+      if(responseSplit.length > 1){
+         String ratingFormatted = responseSplit[1];
+         rating = CrawlerUtils.stringToJson(ratingFormatted);
+
+         JSONArray productRateArray = rating.optJSONArray("products_rates");
+
+         int totalReviews = ((JSONObject) productRateArray.get(0)).optInt("count");
+
+         double avgReviews = ((JSONObject) productRateArray.get(0)).optDouble("average");
+
+         ratingsReviews.setTotalRating(totalReviews);
+         ratingsReviews.setTotalWrittenReviews(totalReviews);
+         ratingsReviews.setAverageOverallRating(avgReviews);
+      }
+      return ratingsReviews;
    }
 }
+
