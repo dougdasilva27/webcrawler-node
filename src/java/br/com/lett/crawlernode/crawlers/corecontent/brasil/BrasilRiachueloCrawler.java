@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -85,7 +86,6 @@ public class BrasilRiachueloCrawler extends Crawler {
       return this.dataFetcher.get(session, request).getBody();
    }
 
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
@@ -97,7 +97,9 @@ public class BrasilRiachueloCrawler extends Crawler {
 
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("#jq-product-info-accordion"));
 
-         JSONObject options = jsonConfig.optJSONObject("optionPrices");
+         JSONObject options = JSONUtils.getJSONValue(jsonConfig,"optionPrices");
+
+
 
          if (options.length() > 0) {
             Map<String, Set<String>> variationsMap = crawlVariationsMap(jsonConfig);
@@ -447,11 +449,11 @@ public class BrasilRiachueloCrawler extends Crawler {
          .findFirst()
          .orElse(new JSONObject());
 
-      JSONObject dataSwatch = jsonHtml.optJSONObject("[data-role=swatch-options]");
+      JSONObject dataSwatch = JSONUtils.getJSONValue(jsonHtml, "[data-role=swatch-options]");
 
-      JSONObject swatchRenderer = dataSwatch.optJSONObject("Magento_Swatches/js/swatch-renderer");
+      JSONObject swatchRenderer = JSONUtils.getJSONValue(dataSwatch, "Magento_Swatches/js/swatch-renderer");
 
-      return swatchRenderer.optJSONObject("jsonConfig");
+      return JSONUtils.getJSONValue(swatchRenderer,"jsonConfig");
    }
 
    private boolean isProductPage(Document doc) {
