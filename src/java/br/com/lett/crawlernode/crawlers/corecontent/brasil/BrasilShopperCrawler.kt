@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -15,9 +16,9 @@ import models.Offer
 import models.Offers
 import models.pricing.Pricing
 import okhttp3.HttpUrl
+import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.openqa.selenium.TimeoutException
 
 /**
  * Date: 28/09/20
@@ -35,10 +36,9 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    private val password: String = "K99168938690"
 
    override fun fetch(): Document {
+      val name = productNameByURL().toLowerCase()
 
-      val internalId = getProductIdFromURL()
-
-      if (internalId.isEmpty()) {
+      if (name.isEmpty()) {
          return Document(session.originalURL)
       }
 
@@ -48,7 +48,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       webdriver.waitForElement("button.login", 25)
 
-      webdriver.clickOnElementViaJavascript("button.login", 1000)
+      webdriver.clickOnElementViaJavascript("button.login", 2000)
 
       webdriver.waitForElement(".access-login input[name=email]", 25)
 
@@ -59,43 +59,58 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       log("submit login")
       webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 2000)
 
-      //wait product for id. If not found, returns void
-      try {
-         webdriver.waitForElement("div[data-produto=\"${internalId}\"]", 60)
-      } catch (e: TimeoutException) {
-         return Jsoup.parse(webdriver.currentPageSource)
+      cookies = webdriver.driver.manage().cookies.map {
+         BasicClientCookie(it.name, it.value)
       }
 
-      log("open product popup")
-      webdriver.findAndClick("div[data-produto=\"${internalId}\"]", 5000)
-
-      return Jsoup.parse(webdriver.currentPageSource)
+      return requestProduct()
    }
 
-   //pattern: https://shopper.com.br/shop?product=1995
-   private fun getProductIdFromURL(): String {
+   private fun requestProduct(): Document {
 
-      return HttpUrl.parse(session.originalURL)?.queryParameter("product") ?: ""
+      val url = session.originalURL
+
+      val headers: MutableMap<String, String> = HashMap()
+
+      headers["authority"] = "shopper.com.br"
+      headers["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      headers["sec-fetch-dest"] = "document"
+      headers["referer"] = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+//      headers["cookie"] = "sessionid=okawtmk320xtcg6w3f879pnl3oaueclw;"
+      headers["cookie"] = cookies.filter {
+         it.name == "sessionid" || it.name == "csrftoken"
+      }.joinToString(";") {
+         "${it.name}=${it.value}"
+      }
+
+      val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
+
+      return Jsoup.parse(dataFetcher[session, request].body)
+   }
+
+   //pattern: https://shopper.com.br/shop/busca?q=ENCODED%20NAME
+   private fun productNameByURL(): String {
+      return HttpUrl.parse(session.originalURL)?.queryParameter("q") ?: ""
    }
 
    override fun extractInformation(doc: Document): MutableList<Product> {
 
       log("scrap product")
 
-      if (!isProductPage(doc)) {
+      val productDetails = doc.selectFirst(".prod-item")
+
+      val name = productDetails?.selectFirst(".prod-name")?.text() ?: ""
+
+      if (!isProductPage(name)) {
          log("Not a product page " + session.originalURL)
          return mutableListOf()
       }
 
-      val productDetails = doc.selectFirst(".mfp-content #popupProduto")
+      val internalId = productDetails.selectFirst(".prod-item[data-produto]")?.attr("data-produto")
 
-      val name = productDetails.selectFirst(".prod-nome")?.text()
+      val primaryImage = productDetails.selectFirst(".prod-photo img")?.attr("data-src")
 
-      val internalId = doc.selectFirst(".prod-item[data-produto]")?.attr("data-produto")
-
-      val primaryImage = doc.selectFirst(".prod-foto img")?.attr("src")
-
-      val available = doc.selectFirst(".prod-buttons .add-text") != null
+      val available = productDetails.selectFirst(".prod-buttons .add-text") != null
 
       val offers = if (available) scrapOffers(doc) else Offers()
 
@@ -114,7 +129,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
-      val price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod-economia span", null, false, ',', session)
+      val price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod-prices p", null, false, ',', session)
 
       val bankSlip = price.toBankSlip()
 
@@ -154,7 +169,10 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       Logging.printLogDebug(logger, session, message)
    }
 
-   private fun isProductPage(document: Document): Boolean {
-      return document.selectFirst(".mfp-content #popupProduto") != null
+   private fun isProductPage(nameFromHtml: String): Boolean {
+
+      val nameFromURL = productNameByURL()
+
+      return nameFromHtml.toLowerCase() == nameFromURL.toLowerCase()
    }
 }

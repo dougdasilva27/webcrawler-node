@@ -1,16 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
 
@@ -18,36 +12,19 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
-  protected Document fetch() {
-    StringBuilder payload = new StringBuilder();
-    payload.append("c=busca_produtos")
-        .append("&busca=").append(this.keywordEncoded)
-        .append("&limite=").append(this.currentPage)
-        .append("&categorias=")
-        .append("&marcas=")
-        .append("&subCategorias=");
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-    String urlToFetch = "https://www.abcdaconstrucao.com.br/ajax/busca.ajax.php";
-
-    Request request = RequestBuilder.create()
-        .setUrl(urlToFetch)
-        .setCookies(cookies)
-        .setHeaders(headers)
-        .setPayload(payload.toString())
-        .build();
-
-    return Jsoup.parse(this.dataFetcher.post(session, request).getBody());
-  }
-
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 32;
+
+    this.pageSize = 24;
+
     this.log("Página " + this.currentPage);
 
-    this.currentDoc = fetch();
-    Elements products = this.currentDoc.select(".product-card");
+    String url = "https://www.abcdaconstrucao.com.br/busca?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+    this.log("Link onde são feitos os crawlers: " + url);
+
+
+    this.currentDoc = fetchDocument(url);
+    Elements products = this.currentDoc.select(".spotContent");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -55,16 +32,20 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.desejo[id]", "id");
-        String productUrl = CrawlerUtils.scrapUrl(e, " > a", "href", "https:", "www.abcdaconstrucao.com.br");
+
+        //scrap internalId
+        String rawInternal = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".lista-desejos-spot a", "id");
+        String internalId = rawInternal.contains("produto-")? rawInternal.split("produto-")[1]: null;
+
+        String productUrl = CrawlerUtils.scrapUrl(e, ".spot-parte-um", "href", "https:", "www.abcdaconstrucao.com.br");
 
         saveDataProduct(internalId, null, productUrl);
 
         this.log(
-            "Position: " + this.position +
-                " - InternalId: " + internalId +
-                " - InternalPid: " + null +
-                " - Url: " + productUrl
+                "Position: " + this.position +
+                        " - InternalId: " + internalId +
+                        " - InternalPid: " + null +
+                        " - Url: " + productUrl
         );
 
         if (this.arrayProducts.size() == productsLimit) {
@@ -81,23 +62,7 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    StringBuilder payload = new StringBuilder();
-    payload.append("c=qtd")
-        .append("&busca=").append(this.keywordEncoded);
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-    String urlToFetch = "https://www.abcdaconstrucao.com.br/ajax/busca.ajax.php";
-
-    Request request = RequestBuilder.create()
-        .setUrl(urlToFetch)
-        .setCookies(cookies)
-        .setHeaders(headers)
-        .setPayload(payload.toString())
-        .build();
-
-    Document doc = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, "body", true, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".fbits-qtd-produtos-pagina", true, 0);
     this.log("Total: " + this.totalProducts);
   }
 
