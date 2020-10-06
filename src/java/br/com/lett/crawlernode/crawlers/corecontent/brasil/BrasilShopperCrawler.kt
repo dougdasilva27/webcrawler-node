@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -15,9 +16,9 @@ import models.Offer
 import models.Offers
 import models.pricing.Pricing
 import okhttp3.HttpUrl
+import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.openqa.selenium.TimeoutException
 
 /**
  * Date: 28/09/20
@@ -47,7 +48,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       webdriver.waitForElement("button.login", 25)
 
-      webdriver.clickOnElementViaJavascript("button.login", 1000)
+      webdriver.clickOnElementViaJavascript("button.login", 2000)
 
       webdriver.waitForElement(".access-login input[name=email]", 25)
 
@@ -58,16 +59,33 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       log("submit login")
       webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 2000)
 
-      webdriver.loadUrl(session.originalURL, 25000)
-
-      try {
-         log("wait for: product div")
-         webdriver.waitForElement("div[data-produto]", 60)
-      } catch (e: TimeoutException) {
-         return Jsoup.parse(webdriver.currentPageSource)
+      cookies = webdriver.driver.manage().cookies.map {
+         BasicClientCookie(it.name, it.value)
       }
 
-      return Jsoup.parse(webdriver.currentPageSource)
+      return requestProduct()
+   }
+
+   private fun requestProduct(): Document {
+
+      val url = session.originalURL
+
+      val headers: MutableMap<String, String> = HashMap()
+
+      headers["authority"] = "shopper.com.br"
+      headers["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      headers["sec-fetch-dest"] = "document"
+      headers["referer"] = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+//      headers["cookie"] = "sessionid=okawtmk320xtcg6w3f879pnl3oaueclw;"
+      headers["cookie"] = cookies.filter {
+         it.name == "sessionid" || it.name == "csrftoken"
+      }.joinToString(";") {
+         "${it.name}=${it.value}"
+      }
+
+      val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
+
+      return Jsoup.parse(dataFetcher[session, request].body)
    }
 
    //pattern: https://shopper.com.br/shop/busca?q=ENCODED%20NAME
