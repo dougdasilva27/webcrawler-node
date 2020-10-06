@@ -108,7 +108,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       val internalId = productDetails.selectFirst(".prod-item[data-produto]")?.attr("data-produto")
 
-      val primaryImage = productDetails.selectFirst(".prod-foto img")?.attr("src")
+      val primaryImage = productDetails.selectFirst(".prod-photo img")?.attr("src")
 
       val available = productDetails.selectFirst(".prod-buttons .add-text") != null
 
