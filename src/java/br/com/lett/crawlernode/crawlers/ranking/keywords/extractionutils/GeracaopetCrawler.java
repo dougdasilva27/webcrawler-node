@@ -1,10 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class GeracaopetCrawler extends CrawlerRankingKeywords {
   protected String cep;
@@ -22,28 +24,40 @@ public class GeracaopetCrawler extends CrawlerRankingKeywords {
     this.cookies.add(cookie);
   }
 
+  private JSONArray acessAPI(){
+
+    String url = "https://api.geracaopet.com.br/api/V2/catalogs/products/search?text=" + this.keywordEncoded + "&page=0&perPage=32";
+    this.log("Link onde são feitos os crawlers: " + url);
+    Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+    JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session,request).getBody());
+    JSONObject data = !response.isEmpty()? response.optJSONObject("data"): new JSONObject();
+
+    return data.optJSONArray("products");
+
+  }
+
+
   @Override
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
     this.pageSize = 16;
 
-    String url = "https://www.geracaopet.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+    JSONArray products = acessAPI();
 
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url, cookies);
-
-    Elements products = this.currentDoc.select(".results .products-grid li");
 
     if (!products.isEmpty()) {
 
-      for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
+      for (Object e : products) {
 
-        saveDataProduct(null, internalPid, productUrl);
+        JSONObject product = (JSONObject) e;
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        String internalId = product.optString("sku");
+        String productUrl = product.optString("url");
+
+        saveDataProduct(internalId, null, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
@@ -53,38 +67,6 @@ public class GeracaopetCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    return !this.currentDoc.select(".next").isEmpty();
-  }
-
-  private String crawlProductUrl(Element e) {
-    Element ancor = e.selectFirst(".product-item-name .product-item-link");
-    String url = null;
-
-    if (ancor != null) {
-      url = ancor.attr("href");
-    }
-
-    return url;
-  }
-
-  private String crawlInternalPid(Element e) {
-    Elements dataRole = e.select("div[data-role]");
-    String internalPid = null;
-
-    if (dataRole.hasAttr("data-product-id")) {
-      internalPid = dataRole.attr("data-product-id");
-    } else if (dataRole.hasAttr("data-role")) {
-      internalPid = dataRole.attr("data-role");
-      if (internalPid.startsWith("swatch-opt")) {
-        internalPid = internalPid.replaceAll("[^0-9]", "");
-      }
-    }
-
-    return internalPid;
   }
 
 }
