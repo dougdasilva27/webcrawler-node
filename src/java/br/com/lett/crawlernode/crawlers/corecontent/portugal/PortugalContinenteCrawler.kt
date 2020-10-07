@@ -20,6 +20,8 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
 import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher
 import java.util.Arrays
+import java.lang.StringBuilder
+import br.com.lett.crawlernode.util.CrawlerUtils
 
 class PortugalContinenteCrawler(session: Session) : Crawler(session) {
 
@@ -48,7 +50,7 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
 
     if (document.selectFirst(".productInfoArea") != null) {
 
-      val name = document.selectFirst(".productTitle")?.text()
+      val name = scrapName(document)
       val internalId = document.selectFirst(".ProductCode")?.attr("value")
       val description = document.selectFirst(".productDetailArea .productDetailSubArea")?.html()
 
@@ -70,6 +72,21 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
     }
     return products
   }
+	
+	fun scrapName(doc: Document): String? {
+		val name = StringBuilder();
+		
+		name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".productTitle", true));
+		
+		if(name.isNotEmpty()) {
+			name.append(" ");
+			name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".productSubtitle", true));
+			name.append(" ");
+			name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".productSubsubtitle", true));
+		}
+		
+		return name.toString().trim();
+	}
 
   fun scrapOffers(doc: Document): Offers {
     val offers = Offers()
