@@ -13,7 +13,6 @@ import br.com.lett.crawlernode.util.Logging;
 
 import java.lang.reflect.Constructor;
 
-import com.sun.org.apache.bcel.internal.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

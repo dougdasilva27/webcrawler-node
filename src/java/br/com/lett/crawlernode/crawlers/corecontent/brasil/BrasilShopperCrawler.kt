@@ -19,6 +19,7 @@ import okhttp3.HttpUrl
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 
 /**
  * Date: 28/09/20
@@ -93,18 +94,31 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       return HttpUrl.parse(session.originalURL)?.queryParameter("q") ?: ""
    }
 
+   private fun scrapProductDiv(doc: Document): Element? {
+      val products = doc.select(".prod-item")
+
+      for (productDiv in products) {
+         val name = productDiv?.selectFirst(".prod-name")?.text() ?: ""
+
+         if (!isProductPage(name)) {
+            return productDiv
+         }
+      }
+      return null
+   }
+
    override fun extractInformation(doc: Document): MutableList<Product> {
 
       log("scrap product")
 
-      val productDetails = doc.selectFirst(".prod-item")
+      val productDetails = scrapProductDiv(doc)
 
-      val name = productDetails?.selectFirst(".prod-name")?.text() ?: ""
-
-      if (!isProductPage(name)) {
+      if (productDetails == null) {
          log("Not a product page " + session.originalURL)
          return mutableListOf()
       }
+
+      val name = productDetails.selectFirst(".prod-name")?.text() ?: ""
 
       val internalId = productDetails.selectFirst(".prod-item[data-produto]")?.attr("data-produto")
 
