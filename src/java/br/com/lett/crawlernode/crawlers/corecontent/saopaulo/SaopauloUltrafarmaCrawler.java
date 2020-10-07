@@ -73,22 +73,22 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
       // Creating the product
       Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setInternalPid(internalPid)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setRatingReviews(crawlRatingReviews(doc))
-          .setMarketplace(new Marketplace())
-          .build();
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setRatingReviews(crawlRatingReviews(doc))
+              .setMarketplace(new Marketplace())
+              .build();
 
       products.add(product);
 
@@ -104,9 +104,9 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
     String productDetails = null;
     description.append(CrawlerUtils.scrapSimpleDescription(doc,
-        Arrays.asList(".product-references .product-seller-brand-name",
-            "#pdp-section-outras-informacoes",
-            ".product-details-section[id~=anvisa]")));
+            Arrays.asList(".product-references .product-seller-brand-name",
+                    "#pdp-section-outras-informacoes",
+                    ".product-details-section[id~=anvisa]")));
 
     Element productDetailsElement = doc.selectFirst(".product-details-container .product-details-section:not([ng-if]):not([id])");
 
@@ -233,18 +233,18 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
     Elements stars = doc.select(".resume-label li span:first-child");
     Elements votes = doc.select(".amount-reviews");
 
-    if(stars != null){
+    if(stars.size() == votes.size()) {
 
-      for(int i = 0; i < stars.size(); i++){
+      for (int i = 0; i < stars.size(); i++) {
 
         Element starElement = stars.get(i);
         Element voteElement = votes.get(i);
 
         String starNumber = starElement.attr("class");
-        int star = !starNumber.isEmpty()? MathUtils.parseInt(starNumber): 0;
+        int star = !starNumber.isEmpty() ? MathUtils.parseInt(starNumber) : 0;
 
         String voteNumber = CrawlerUtils.scrapStringSimpleInfo(voteElement, null, true);
-        int vote = !voteNumber.isEmpty() ? MathUtils.parseInt(voteNumber): 0;
+        int vote = !voteNumber.isEmpty() ? MathUtils.parseInt(voteNumber) : 0;
 
         switch (star) {
           case 50:
@@ -267,7 +267,6 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
         }
       }
     }
-
     return new AdvancedRatingReview.Builder()
             .totalStar1(star1)
             .totalStar2(star2)
