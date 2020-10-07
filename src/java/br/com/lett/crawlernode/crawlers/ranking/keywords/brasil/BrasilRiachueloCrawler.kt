@@ -38,7 +38,6 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
          ).setProxyservice(
             listOf(
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.STORM_RESIDENTIAL_US,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NO_PROXY
             )
