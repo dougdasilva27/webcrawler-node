@@ -24,7 +24,7 @@ public class JSONUtils {
    public static JSONObject getJSONValue(JSONObject json, String key) {
       JSONObject value = new JSONObject();
 
-      if (json.has(key) && json.get(key) instanceof JSONObject) {
+      if (json != null && json.has(key) && json.get(key) instanceof JSONObject) {
          value = json.getJSONObject(key);
       }
 
