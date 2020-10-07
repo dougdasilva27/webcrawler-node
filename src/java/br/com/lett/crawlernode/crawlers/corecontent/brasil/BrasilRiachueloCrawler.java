@@ -44,7 +44,7 @@ public class BrasilRiachueloCrawler extends Crawler {
 
    public BrasilRiachueloCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -77,7 +77,6 @@ public class BrasilRiachueloCrawler extends Crawler {
          ).setProxyservice(
             Arrays.asList(
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.STORM_RESIDENTIAL_US,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
                ProxyCollection.NO_PROXY
             )
