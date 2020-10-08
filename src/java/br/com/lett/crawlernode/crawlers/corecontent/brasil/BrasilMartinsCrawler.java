@@ -58,7 +58,10 @@ public class BrasilMartinsCrawler extends Crawler {
          return super.fetch();
       }
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.martinsatacado.com.br/", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+
+         Logging.printLogDebug(logger, session, "awaiting product page without login");
+
          webdriver.waitLoad(25000);
          webdriver.executeJavascript("$('#go-login').mouseover()");
 
@@ -77,14 +80,14 @@ public class BrasilMartinsCrawler extends Crawler {
          WebElement pass = webdriver.driver.findElement(By.cssSelector("#j_password"));
          pass.sendKeys(password);
 
-         webdriver.waitLoad(5000);
+         Logging.printLogDebug(logger, session, "awaiting login button");
+         webdriver.waitLoad(10000);
 
          waitForElement(webdriver.driver, ".pt-btn-login");
          WebElement login = webdriver.driver.findElement(By.cssSelector(".pt-btn-login"));
          webdriver.clickOnElementViaJavascript(login);
-         webdriver.waitLoad(6000);
 
-         webdriver.loadUrl(session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "awaiting product page");
          webdriver.waitLoad(6000);
 
          return Jsoup.parse(webdriver.getCurrentPageSource());
