@@ -13,7 +13,7 @@ public class BrasilCarrefoursantoamaroCrawler extends CarrefourCrawler {
 
 
    public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
-   public static final String LOCATION = "04555-002";
+   public static final String LOCATION = "04754-030";
 
 
    public BrasilCarrefoursantoamaroCrawler(Session session) {

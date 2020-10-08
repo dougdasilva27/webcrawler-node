@@ -23,7 +23,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
-   private String keySHA256 = "55d1acadcd2e3ae60a6ea44fd238bffa5db5b72f06bfcfe6d8b46aba285f2cec";
+   private String keySHA256 = "2a6f4c4ae41652ce655318156b22ea477ffb83e8412fbd28e0ae52cab1496f3c";
 
    @Override
    protected void processBeforeFetch() {
