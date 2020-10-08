@@ -45,7 +45,7 @@ public abstract class RomaniaBringoCrawler extends Crawler {
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".bringo-product-details-tabs-menu", ".bringo-product-details-tabs-content"));
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bringo-breadcrumb a", true);
          RatingsReviews ratingsReviews = scrapRatingReviews(doc);
-         boolean available = doc.select(".bringo-product-details > .row:nth-of-type(1) .add-to-cart-btn") != null;
+         boolean available = !doc.select(".bringo-product-details > .row:nth-of-type(1) .add-to-cart-btn").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -69,7 +69,7 @@ public abstract class RomaniaBringoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc){
-      return doc.select(".bringo-product-details") != null;
+      return !doc.select(".bringo-product-details").isEmpty();
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
