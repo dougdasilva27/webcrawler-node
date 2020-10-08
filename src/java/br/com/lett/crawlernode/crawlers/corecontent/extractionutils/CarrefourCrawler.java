@@ -17,7 +17,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -40,7 +39,11 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       String internalPid = super.scrapInternalpid(doc);
 
       if (internalPid == null) {
-         internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".vtex-product-identifier-0-x-product-identifier__value", true);
+         JSONObject runTimeJSON = scrapRuntimeJson(doc);
+         JSONObject route = runTimeJSON.optJSONObject("route");
+         JSONObject params = route != null ? route.optJSONObject("params") : new JSONObject();
+
+         internalPid = params.optString("id", null);
       }
 
       return internalPid;
@@ -92,8 +95,6 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
             attempts++;
          } while (attempts < 2 && (body == null || body.isEmpty()));
       }
-
-      CommonMethods.saveDataToAFile(body, Test.pathWrite + "CARREFOUR.html");
 
       return body;
    }

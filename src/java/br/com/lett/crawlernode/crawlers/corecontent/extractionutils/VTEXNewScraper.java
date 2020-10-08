@@ -21,7 +21,7 @@ public abstract class VTEXNewScraper extends VTEXScraper {
       return initialJson.optString("productId", null);
    }
 
-   private JSONObject scrapRuntimeJson(Document doc) {
+   protected JSONObject scrapRuntimeJson(Document doc) {
       JSONObject runtimeJson = new JSONObject();
       String token = "__RUNTIME__ =";
 
