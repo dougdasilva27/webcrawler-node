@@ -839,7 +839,7 @@ public abstract class CNOVACrawler extends Crawler {
       return ratingReviews;
    }
 
-   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc, int totalNumOfEvaluations){
+   protected AdvancedRatingReview scrapAdvancedRatingReview(Document doc, int totalNumOfEvaluations){
 
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
 
