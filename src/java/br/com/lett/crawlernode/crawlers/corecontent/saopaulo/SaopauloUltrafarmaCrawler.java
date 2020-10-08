@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,9 +8,19 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 public class SaopauloUltrafarmaCrawler extends Crawler {
 
@@ -37,39 +37,6 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
     return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
   }
 
-  // @Override
-  // protected Document fetch() {
-  // Document doc = new Document("");
-  // this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-  //
-  // if (this.webdriver != null) {
-  // doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-  //
-  // Element script = doc.select("head script").last();
-  // Element robots = doc.select("meta[name=robots]").first();
-  //
-  // if (script != null && robots != null) {
-  // String eval = script.html().trim();
-  //
-  // if (!eval.isEmpty()) {
-  // Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
-  // this.webdriver.executeJavascript(eval);
-  // }
-  // }
-  //
-  // String requestHash = FetchUtilities.generateRequestHash(session);
-  // this.webdriver.waitLoad(12000);
-  //
-  // doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-  // Logging.printLogDebug(logger, session, "Terminating PhantomJS instance ...");
-  // this.webdriver.terminate();
-  //
-  // // saving request content result on Amazon
-  // S3Service.saveResponseContent(session, requestHash, doc.toString());
-  // }
-  //
-  // return doc;
-  // }
 
   @Override
   public void handleCookiesBeforeFetch() {
@@ -106,22 +73,22 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
       // Creating the product
       Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setInternalPid(internalPid)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setRatingReviews(crawlRatingReviews(doc))
-          .setMarketplace(new Marketplace())
-          .build();
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setRatingReviews(crawlRatingReviews(doc))
+              .setMarketplace(new Marketplace())
+              .build();
 
       products.add(product);
 
@@ -137,9 +104,9 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
     String productDetails = null;
     description.append(CrawlerUtils.scrapSimpleDescription(doc,
-        Arrays.asList(".product-references .product-seller-brand-name",
-            "#pdp-section-outras-informacoes",
-            ".product-details-section[id~=anvisa]")));
+            Arrays.asList(".product-references .product-seller-brand-name",
+                    "#pdp-section-outras-informacoes",
+                    ".product-details-section[id~=anvisa]")));
 
     Element productDetailsElement = doc.selectFirst(".product-details-container .product-details-section:not([ng-if]):not([id])");
 
@@ -239,10 +206,10 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
     RatingsReviews ratingReviews = new RatingsReviews();
     Integer totalReviews = computeTotalReviewsCount(doc);
 
-    ratingReviews.setDate(session.getDate());
     ratingReviews.setTotalRating(totalReviews);
     ratingReviews.setTotalWrittenReviews(totalReviews);
     ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
+    ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(doc));
 
     return ratingReviews;
   }
@@ -254,6 +221,62 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
   private Double crawlAverageOverallRating(Document doc) {
     return CrawlerUtils.scrapDoublePriceFromHtml(doc, "p > em:nth-child(1)", null, false, ',', session);
   }
+
+
+  private AdvancedRatingReview scrapAdvancedRatingReview(Document doc) {
+    int star1 = 0;
+    int star2 = 0;
+    int star3 = 0;
+    int star4 = 0;
+    int star5 = 0;
+
+    Elements stars = doc.select(".resume-label li span:first-child");
+    Elements votes = doc.select(".amount-reviews");
+
+    if(stars.size() == votes.size()) {
+
+      for (int i = 0; i < stars.size(); i++) {
+
+        Element starElement = stars.get(i);
+        Element voteElement = votes.get(i);
+
+        String starNumber = starElement.attr("class");
+        int star = !starNumber.isEmpty() ? MathUtils.parseInt(starNumber) : 0;
+
+        String voteNumber = CrawlerUtils.scrapStringSimpleInfo(voteElement, null, true);
+        int vote = !voteNumber.isEmpty() ? MathUtils.parseInt(voteNumber) : 0;
+
+        switch (star) {
+          case 50:
+            star5 = vote;
+            break;
+          case 40:
+            star4 = vote;
+            break;
+          case 30:
+            star3 = vote;
+            break;
+          case 20:
+            star2 = vote;
+            break;
+          case 10:
+            star1 = vote;
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+  }
+
+
 
   private boolean isProductPage(Document doc) {
     return doc.selectFirst(".product") != null;
