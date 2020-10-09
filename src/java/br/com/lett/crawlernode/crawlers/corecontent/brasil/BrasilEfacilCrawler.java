@@ -1,13 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.net.URLEncoder;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.json.JSONObject;
+
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -21,12 +23,10 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -63,13 +63,10 @@ public class BrasilEfacilCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-photo a", Collections.singletonList("href"), "https", "efacil.com.br");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".wrap-thumbnails .thumbnails a", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
          String description = scrapDescription(doc);
-         boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;
-         Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
+         boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;         Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
 
-         String nameWithoutVariations = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".payment-forms input", "value");
          String code = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-code", false);
-         RatingsReviews reviews = scrapRating(internalId, nameWithoutVariations, primaryImage, code);
-
+         RatingsReviews reviews = new TrustvoxRatingCrawler(session, "545", logger).extractRatingAndReviews(code, doc, dataFetcher);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -123,84 +120,6 @@ public class BrasilEfacilCrawler extends Crawler {
 
       return description;
    }
-
-   private RatingsReviews scrapRating(String internalId, String nameWithoutVariations, String imageUrl, String code) throws java.io.UnsupportedEncodingException {
-
-      String nameFormatted = URLEncoder.encode(nameWithoutVariations, "UTF-8");
-      String imageFormatted = URLEncoder.encode("/" + imageUrl.split("https://efacil.com.br/")[1], "UTF-8");
-      String encodedUrl = URLEncoder.encode(session.getOriginalURL().replace("https:", "").trim(), "UTF-8");
-
-      String apiRating = "https://trustvox.com.br/widget/root?&code=" + code + "&store_id=545&url=" + "https:" + encodedUrl + "&name=" + nameFormatted + "&photos_urls[]=https:" + imageFormatted;
-
-      RatingsReviews ratingReviews = new RatingsReviews();
-
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36");
-      Request request = RequestBuilder.create().setUrl(apiRating).setHeaders(headers).mustSendContentEncoding(true).build();
-      String response = this.dataFetcher.get(session, request).getBody();
-      JSONObject rating = JSONUtils.stringToJson(response);
-
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(rating);
-      Double avgRating = getTotalAvgRating(rating);
-
-      AdvancedRatingReview advancedRating = getAdvancedRating(rating);
-
-      ratingReviews.setDate(session.getDate());
-      ratingReviews.setInternalId(internalId);
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setAdvancedRatingReview(advancedRating);
-
-      return ratingReviews;
-   }
-
-   private AdvancedRatingReview getAdvancedRating(JSONObject rating) {
-      AdvancedRatingReview advancedRating = new AdvancedRatingReview();
-
-      JSONObject rate = JSONUtils.getJSONValue(rating, "rate");
-      JSONObject stars = JSONUtils.getJSONValue(rate, "histogram");
-
-      Set<String> keys = stars.keySet();
-
-      for (String key : keys) {
-         switch (key) {
-            case "1":
-               advancedRating.setTotalStar1(stars.getInt(key));
-               break;
-            case "2":
-               advancedRating.setTotalStar2(stars.getInt(key));
-               break;
-            case "3":
-               advancedRating.setTotalStar3(stars.getInt(key));
-               break;
-            case "4":
-               advancedRating.setTotalStar4(stars.getInt(key));
-               break;
-            case "5":
-               advancedRating.setTotalStar5(stars.getInt(key));
-               break;
-            default:
-         }
-      }
-
-      return advancedRating;
-   }
-
-   private Integer getTotalNumOfRatings(JSONObject rating) {
-
-      JSONObject rate = JSONUtils.getJSONValue(rating, "rate");
-      return JSONUtils.getIntegerValueFromJSON(rate, "count", 0);
-
-   }
-
-   private Double getTotalAvgRating(JSONObject rating) {
-
-      JSONObject rate = JSONUtils.getJSONValue(rating, "rate");
-      return JSONUtils.getDoubleValueFromJSON(rate, "average", true);
-   }
-
 
    private Offers scrapOffer(Document doc, String internalPid, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
