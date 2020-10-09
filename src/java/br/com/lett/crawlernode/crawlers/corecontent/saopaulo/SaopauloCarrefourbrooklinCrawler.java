@@ -16,7 +16,7 @@ public class SaopauloCarrefourbrooklinCrawler extends CarrefourCrawler {
    }
 
    public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
-   public static final String LOCATION = "04702-000";
+   public static final String LOCATION = "04555-002";
 
    @Override
    protected String getLocation() {
