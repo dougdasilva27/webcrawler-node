@@ -266,7 +266,7 @@ public abstract class CNOVACrawler extends Crawler {
                String variationInternalID = internalPid + "-" + sku.val();
                boolean unnavailable = sku.text().contains("Esgotado");
                String variationName = assembleVariationName(name, sku);
-               RatingsReviews ratingReviews = crawRating(doc, variationInternalID);
+               RatingsReviews ratingReviews = crawRating(doc);
 
                Document variationDocument = sku.hasAttr("selected") ? doc
                      : Jsoup.parse(fetchPageHtml(CrawlerUtils.sanitizeUrl(sku, "data-url", PROTOCOL, this.marketHost), session.getOriginalURL()));
@@ -285,9 +285,7 @@ public abstract class CNOVACrawler extends Crawler {
                      .setInternalId(variationInternalID)
                      .setInternalPid(internalPid)
                      .setName(variationName)
-                     .setCategory1(categories.getCategory(0))
-                     .setCategory2(categories.getCategory(1))
-                     .setCategory3(categories.getCategory(2))
+                     .setCategories(categories)
                      .setPrimaryImage(primaryImage)
                      .setSecondaryImages(secondaryImages)
                      .setDescription(description)
@@ -309,7 +307,7 @@ public abstract class CNOVACrawler extends Crawler {
             String internalId = internalPid + (idSKU != null ? "-" + idSKU : "");
             boolean unnavailable = checkUnnavaiabilityForAll(doc);
             Offers offers = !unnavailable ? scrapOffers(doc) : new Offers();
-            RatingsReviews ratingReviews = crawRating(doc, internalId);
+            RatingsReviews ratingReviews = crawRating(doc);
 
             List<String> eans = new ArrayList<>();
             String ean = scrapEan(doc);
@@ -323,9 +321,7 @@ public abstract class CNOVACrawler extends Crawler {
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
+                  .setCategories(categories)
                   .setPrimaryImage(primaryImage)
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
@@ -824,7 +820,7 @@ public abstract class CNOVACrawler extends Crawler {
       return ean;
    }
 
-   private RatingsReviews crawRating(Document doc, String internalId) {
+   private RatingsReviews crawRating(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
@@ -849,21 +845,24 @@ public abstract class CNOVACrawler extends Crawler {
 
          int starTitle = CrawlerUtils.scrapIntegerFromHtmlAttr(star, ".yv-star", "title", 0);
          double startNum = totalNumOfEvaluations * (double) CrawlerUtils.scrapIntegerFromHtml(star, "span", null, null, false, true, 0) / 100 ;
+
+         int rating = (int)startNum;
+
          switch (starTitle){
             case 1:
-               advancedRatingReview.setTotalStar1(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               advancedRatingReview.setTotalStar1(rating);
                break;
             case 2:
-               advancedRatingReview.setTotalStar2(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               advancedRatingReview.setTotalStar2(rating);
                break;
             case 3:
-               advancedRatingReview.setTotalStar3(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               advancedRatingReview.setTotalStar3(rating);
                break;
             case 4:
-               advancedRatingReview.setTotalStar4(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               advancedRatingReview.setTotalStar4(rating);
                break;
             case 5:
-               advancedRatingReview.setTotalStar5(MathUtils.normalizeNoDecimalPlacesUp(startNum).intValue());
+               advancedRatingReview.setTotalStar5(rating);
                break;
          }
       }
@@ -895,7 +894,7 @@ public abstract class CNOVACrawler extends Crawler {
    }
 
    /**
-    * @param Double
+    * @param doc
     * @return
     */
    private Double getTotalAvgRating(Document doc) {
