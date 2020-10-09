@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import models.AdvancedRatingReview;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -105,7 +107,7 @@ public class BrasilEnutriCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".add-to-cart-buttons").isEmpty();
+      return !doc.select(".product-view").isEmpty();
    }
 
    private String crawlInternalId(Document doc) {
@@ -188,6 +190,7 @@ public class BrasilEnutriCrawler extends Crawler {
       ratingReviews.setInternalId(internalId);
       ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
       ratingReviews.setTotalWrittenReviews(getTotalRating(doc));
+      ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(doc));
 
       return ratingReviews;
    }
@@ -217,5 +220,44 @@ public class BrasilEnutriCrawler extends Crawler {
 
    private Integer getTotalRating(Document document) {
       return CrawlerUtils.scrapIntegerFromHtml(document, ".rating-links", false, 0);
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document doc){
+
+      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+
+      Elements starsReviews = doc.select("ul.reviews__list li .x-out-of-5 span.x");
+
+      if(starsReviews != null){
+
+         for(Element e: starsReviews){
+
+            switch (e.text()){
+               case "1":
+                  int stars1 = advancedRatingReview.getTotalStar1();
+                  advancedRatingReview.setTotalStar1(stars1+1);
+
+               case "2":
+                  int stars2 = advancedRatingReview.getTotalStar1();
+                  advancedRatingReview.setTotalStar2(stars2+1);
+                  break;
+               case "3":
+                  int stars3 = advancedRatingReview.getTotalStar1();
+                  advancedRatingReview.setTotalStar3(stars3+1);
+                  break;
+               case "4":
+                  int stars4 = advancedRatingReview.getTotalStar1();
+                  advancedRatingReview.setTotalStar4(stars4+1);
+                  break;
+               case "5":
+                  int stars5 = advancedRatingReview.getTotalStar1();
+                  advancedRatingReview.setTotalStar5(stars5+1);
+                  break;
+               default:
+            }
+         }
+      }
+
+      return advancedRatingReview;
    }
 }
