@@ -34,7 +34,7 @@ public class JSONUtils {
    public static JSONArray getJSONArrayValue(JSONObject json, String key) {
       JSONArray value = new JSONArray();
 
-      if (json.has(key) && json.get(key) instanceof JSONArray) {
+      if (json != null && json.has(key) && json.get(key) instanceof JSONArray) {
          value = json.getJSONArray(key);
       }
 

@@ -1,30 +1,20 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
+import com.google.common.collect.Sets;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -36,6 +26,13 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * 
@@ -84,7 +81,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       JSONObject skuJsonInfo = crawlFullSKUInfo(doc);
 
       String internalId = crawlInternalId(skuJsonInfo);
-      String internalPid = internalId;
       String frontPageName = crawlNameFrontPage(doc, internalId);
       CategoryCollection categories = crawlCategories(doc);
       String primaryImage = crawlPrimaryImage(doc);
@@ -98,11 +94,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(frontPageName)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
+            .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
@@ -234,7 +228,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    /**
     * Crawl Internal ID
     * 
-    * @param doc
+    * @param skuJson
     * @return
     */
    private String crawlInternalId(JSONObject skuJson) {
@@ -433,21 +427,63 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    public RatingsReviews crawlRatingNew(Document doc, String internalId) {
 
-      RatingsReviews ratingReviews = crawlRatingReviews(doc);
+      RatingsReviews ratingReviews = crawlRatingReviews(doc, internalId);
       ratingReviews.setInternalId(internalId);
 
       return ratingReviews;
    }
 
-   private RatingsReviews crawlRatingReviews(Document doc) {
+   private RatingsReviews crawlRatingReviews(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       ratingReviews.setDate(session.getDate());
 
       ratingReviews.setTotalRating(getTotalReviewCount(doc));
       ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
+      ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(internalId));
 
       return ratingReviews;
+   }
+
+   private JSONObject fetchAdvancedRating(String internalId, int page) {
+      String url = "https://www.magazineluiza.com.br/review/"+internalId + "?page=" +page;
+      Request request = Request.RequestBuilder.create().setUrl(url).build();
+      return JSONUtils.stringToJson(dataFetcher.get(session, request).getBody());
+
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(String internalId) {
+
+      int totalPages = 0;
+
+      Map<Integer, Integer> starsCount = new HashMap<>();
+
+      for (int page = 1; page <= totalPages || totalPages == 0; ++page) {
+         JSONObject ratingJson = fetchAdvancedRating(internalId, page);
+         JSONObject data = JSONUtils.getJSONValue(ratingJson, "data");
+
+         if (totalPages == 0) {
+            totalPages = data.optInt("pages", -1);
+         }
+
+         JSONArray objects = JSONUtils.getJSONArrayValue(data, "objects");
+
+         for (Object ratingObject: objects) {
+            if (ratingObject instanceof JSONObject) {
+               int rating = ((JSONObject) ratingObject).optInt("rating");
+               if (rating > 0 && rating <= 5) {
+                  Integer count = starsCount.getOrDefault(rating, 0) +1;
+                  starsCount.put(rating,  count);
+               } else {
+                  Logging.printLogError(logger, session, "rating error: rating star error");
+               }
+            }
+         }
+      }
+
+      return new AdvancedRatingReview.Builder()
+         .allStars(starsCount)
+         .build();
    }
 
    private Integer getTotalReviewCount(Document doc) {
