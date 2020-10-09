@@ -32,7 +32,6 @@ public class ChileSalcobrandCrawler extends Crawler {
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
@@ -69,13 +68,10 @@ public class ChileSalcobrandCrawler extends Crawler {
                   .setPrice(price)
                   .setPrices(prices)
                   .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
+                  .setCategories(categories)
                   .setPrimaryImage(primaryImage)
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
-                  .setMarketplace(new Marketplace())
                   .setRatingReviews(ratingsReviews)
                   .setStock(stock)
                   .build();
@@ -116,7 +112,15 @@ public class ChileSalcobrandCrawler extends Crawler {
     */
    private JSONArray fetchStockAPI(String internalPid) {
       String url = "https://salcobrand.cl/api/v1/stock?sku=" + internalPid;
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("referer", session.getOriginalURL());
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setCookies(cookies)
+         .build();
 
       return CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
    }
