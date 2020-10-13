@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
+import models.RatingsReviews
 import models.prices.Prices
 import org.json.JSONObject
 
@@ -35,6 +36,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
         if (modelos != null) {
             for (model in modelos) {
                 if (model is JSONObject) {
+                    val internalId = productJson.opt("id_produto").toString()
                     val price = model.optFloat("mny_vlr_promo_tabela_preco")
                     val prices = scrapPrices(model, price)
 
@@ -49,7 +51,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                             .optString("str_nom_produto_modelo", "")}".trim()
 
                    val arrayOfImages = CrawlerUtils.scrapImagesListFromJSONArray(json.optJSONArray("Imagens"), "str_img_path", null, "https", "arcomixstr.blob.core.windows.net", session)
-                   val primaryImage = arrayOfImages.removeAt(0);
+                   val primaryImage = arrayOfImages.removeAt(0)
 
                    var secondaryImages: MutableList<String> = mutableListOf<String>()
 
@@ -58,11 +60,13 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                         secondaryImages.add(s)
                      }
 
+                   val ratingsReviews = scrapRatingReviews(internalId)
+
 
 
                     products += ProductBuilder.create()
                         .setUrl(session.originalURL)
-                        .setInternalId(productJson.opt("id_produto")?.toString())
+                        .setInternalId(internalId)
                         .setInternalPid(model.opt("id_produto_modelo")?.toString())
                         .setName(name)
                         .setPrice(price)
@@ -75,6 +79,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                         .setEans(mutableListOf<String>().also { list ->
                            list.addNonNull(productJson.optString("str_cod_barras_produto"))
                         })
+                       .setRatingReviews(ratingsReviews)
                         .build()
                 }
             }
@@ -103,4 +108,24 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
         }
         return prices
     }
+
+   private fun scrapRatingReviews(internalId: String) : RatingsReviews {
+
+      val ratingsReviews = RatingsReviews()
+      val reviews: JSONObject
+
+      val response = dataFetcher.get(
+         session, RequestBuilder.create()
+         .setUrl("https://arcomix.com.br/api/produto/GetAvaliacaoProduto?id=$internalId")
+         .build()
+      ).body
+
+      if(response != null){
+         reviews = JSONUtils.stringToJson(response)
+         ratingsReviews.setTotalRating(reviews.optInt("intQtdAvaliacao"))
+         ratingsReviews.totalWrittenReviews = reviews.optInt("intQtdAvaliacao")
+         ratingsReviews.averageOverallRating = reviews.optDouble("intNotaAvaliacao")
+      }
+      return ratingsReviews
+   }
 }
