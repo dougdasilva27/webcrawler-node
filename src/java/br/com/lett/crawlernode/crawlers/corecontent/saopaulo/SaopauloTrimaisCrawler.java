@@ -111,7 +111,7 @@ public class SaopauloTrimaisCrawler extends VTEXOldScraper {
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-      Request request = Request.RequestBuilder.create().setUrl(apiRating).setHeaders(headers).setPayload("productId=15096&categoryId=537&productLinkId=13548-capeletti-de-queijo-massa-leve-400g&qtdReviewsToBeShown=3").setCookies(cookies).build();
+      Request request = Request.RequestBuilder.create().setUrl(apiRating).setHeaders(headers).setPayload(formData.toString()).setCookies(cookies).build();
 
       String response = this.dataFetcher.post(session, request).getBody();
 
