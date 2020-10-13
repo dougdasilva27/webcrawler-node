@@ -3,6 +3,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import models.AdvancedRatingReview;
+import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -87,6 +90,7 @@ public class KochCrawler extends Crawler {
             String internalId = skuJson.optString("id_produto", null);
             boolean buyable = !skuJson.optBoolean("bit_esgotado", true);
             Offers offers = buyable ? scrapOffers(skuJson) : new Offers();
+            RatingsReviews ratingsReviews = scrapRatingReviews(api);
 
             Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
@@ -100,6 +104,7 @@ public class KochCrawler extends Crawler {
                   .setCategory1(categories.getCategory(0))
                   .setCategory2(categories.getCategory(1))
                   .setCategory3(categories.getCategory(2))
+                  .setRatingReviews(ratingsReviews)
                   .build();
 
             products.add(product);
@@ -254,5 +259,62 @@ public class KochCrawler extends Crawler {
       }
 
       return categories;
+   }
+
+   private RatingsReviews scrapRatingReviews(JSONObject api){
+
+      RatingsReviews ratingsReviews = new RatingsReviews();
+      JSONArray avaliacoes = api.optJSONArray("Avaliacoes");
+
+      if(avaliacoes != null && !avaliacoes.isEmpty()){
+
+         int totalReviews = avaliacoes.length();
+         int totalValueReviews = 0;
+         ratingsReviews.setTotalRating(totalReviews);
+         ratingsReviews.setTotalWrittenReviews(totalReviews);
+         for(Object e: avaliacoes){
+
+            totalValueReviews += ((JSONObject) e).optInt("int_nota_review");
+         }
+         ratingsReviews.setAverageOverallRating((double)totalValueReviews/totalReviews);
+         ratingsReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(avaliacoes));
+      } else{
+         ratingsReviews.setTotalRating(0);
+         ratingsReviews.setTotalWrittenReviews(0);
+         ratingsReviews.setAverageOverallRating(0.0);
+      }
+
+      return ratingsReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONArray avaliacoes){
+
+      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+
+      for(Object e: avaliacoes){
+
+         int reviewValue = ((JSONObject) e).optInt("int_nota_review");
+
+         switch (reviewValue){
+            case 1:
+               advancedRatingReview.setTotalStar1(reviewValue);
+               break;
+            case 2:
+               advancedRatingReview.setTotalStar2(reviewValue);
+               break;
+            case 3:
+               advancedRatingReview.setTotalStar3(reviewValue);
+               break;
+            case 4:
+               advancedRatingReview.setTotalStar4(reviewValue);
+               break;
+            case 5:
+               advancedRatingReview.setTotalStar5(reviewValue);
+               break;
+            default:
+         }
+      }
+
+      return advancedRatingReview;
    }
 }
