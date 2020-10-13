@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
 import models.Offer.OfferBuilder
 import models.Offers
+import models.RatingsReviews
 import models.pricing.Pricing
 import org.json.JSONObject
 
@@ -58,6 +59,7 @@ class PortoalegreTreichelCrawler(session: Session) : Crawler(session) {
               val eans = listOf(elem.optString("str_cod_barras_produto"))
               val stock = elem.optInt("int_qtd_estoque_produto")
               val description = elem.optString("str_meta_description_ecom_produto")
+              val ratingsReviews = scrapRatingReviews(internalId)
 
               products += ProductBuilder.create()
                  .setUrl(session.originalURL)
@@ -69,6 +71,7 @@ class PortoalegreTreichelCrawler(session: Session) : Crawler(session) {
                  .setDescription(description)
                  .setEans(eans)
                  .setOffers(offers)
+                 .setRatingReviews(ratingsReviews)
                  .build()
            }
         }
@@ -102,4 +105,24 @@ class PortoalegreTreichelCrawler(session: Session) : Crawler(session) {
 
     return offers
   }
+
+   private fun scrapRatingReviews(internalId: String) : RatingsReviews{
+
+      val ratingsReviews = RatingsReviews()
+      val reviews: JSONObject
+
+      val response = dataFetcher.get(
+         session, RequestBuilder.create()
+         .setUrl("https://delivery.atacadotreichel.com.br/api/produto/GetAvaliacaoProduto?id=$internalId")
+         .build()
+      ).body
+
+      if(response != null){
+         reviews = JSONUtils.stringToJson(response)
+         ratingsReviews.setTotalRating(reviews.optInt("intQtdAvaliacao"))
+         ratingsReviews.totalWrittenReviews = reviews.optInt("intQtdAvaliacao")
+         ratingsReviews.averageOverallRating = reviews.optDouble("intNotaAvaliacao")
+      }
+      return ratingsReviews
+   }
 }
