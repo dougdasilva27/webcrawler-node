@@ -100,7 +100,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       for (productDiv in products) {
          val name = productDiv?.selectFirst(".prod-name")?.text() ?: ""
 
-         if (!isProductPage(name)) {
+         if (isProductPage(name)) {
             return productDiv
          }
       }
