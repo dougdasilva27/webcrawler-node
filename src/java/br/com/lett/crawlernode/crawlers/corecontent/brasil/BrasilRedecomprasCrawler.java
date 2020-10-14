@@ -3,6 +3,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import models.AdvancedRatingReview;
+import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -117,6 +120,7 @@ public class BrasilRedecomprasCrawler extends Crawler {
              */
 
             Offers offers = available ? scrapOffer(produto) : new Offers();
+            RatingsReviews ratingsReviews = scrapRatingReviews(internalId);
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -129,6 +133,7 @@ public class BrasilRedecomprasCrawler extends Crawler {
                   .setCategory3(produto.optString("str_tricategoria"))
                   .setPrimaryImage(primaryImage)
                   .setOffers(offers)
+                  .setRatingReviews(ratingsReviews)
                   .build();
 
             products.add(product);
@@ -213,6 +218,93 @@ public class BrasilRedecomprasCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private JSONObject fetchRating(String internalId){
+
+      String apiUrl = "https://delivery.redecompras.com/api/produto/GetAvaliacoesClienteProduto?id=" + internalId + "&pag=undefined";
+
+      Request request = RequestBuilder.create().setUrl(apiUrl).build();
+
+      String response = this.dataFetcher.get(session, request).getBody();
+
+      return JSONUtils.stringToJson(response);
+   }
+
+   private RatingsReviews scrapRatingReviews(String internalId){
+
+     JSONObject jsonResponse = fetchRating(internalId);
+
+      JSONArray avaliacoes = jsonResponse.optJSONArray("AvaliacaoCliente");
+
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      int totalRating = 0;
+      int totalValueReviews = 0;
+
+      if(avaliacoes != null && !avaliacoes.isEmpty()){
+
+         totalRating = avaliacoes.length();
+         ratingsReviews.setTotalRating(totalRating);
+         ratingsReviews.setTotalWrittenReviews(totalRating);
+
+         for(Object e: avaliacoes){
+
+            totalValueReviews += ((JSONObject) e).optInt("int_nota_review");
+
+         }
+
+         ratingsReviews.setAverageOverallRating((double)totalValueReviews/totalRating);
+         ratingsReviews.setAdvancedRatingReview(scrapAdvancedRatingReviews(avaliacoes));
+      } else{
+         ratingsReviews.setTotalRating(totalRating);
+         ratingsReviews.setTotalWrittenReviews(totalRating);
+         ratingsReviews.setAverageOverallRating(0.0);
+      }
+      return ratingsReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReviews(JSONArray avaliacoes){
+
+      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+
+      int stars1 = 0;
+      int stars2 = 0;
+      int stars3 = 0;
+      int stars4 = 0;
+      int stars5 = 0;
+
+      for(Object e: avaliacoes){
+
+         int reviewValue = ((JSONObject) e).optInt("int_nota_review");
+
+         switch (reviewValue){
+            case 1:
+               stars1 ++;
+               break;
+            case 2:
+               stars2 ++;
+               break;
+            case 3:
+               stars3 ++;
+               break;
+            case 4:
+               stars4 ++;
+               break;
+            case 5:
+               stars5 ++;
+               break;
+            default:
+         }
+      }
+
+      advancedRatingReview.setTotalStar1(stars1);
+      advancedRatingReview.setTotalStar2(stars2);
+      advancedRatingReview.setTotalStar3(stars3);
+      advancedRatingReview.setTotalStar4(stars4);
+      advancedRatingReview.setTotalStar5(stars5);
+
+      return advancedRatingReview;
    }
 
 
