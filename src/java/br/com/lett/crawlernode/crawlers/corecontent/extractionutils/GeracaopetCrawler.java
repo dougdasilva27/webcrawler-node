@@ -70,7 +70,7 @@ public class GeracaopetCrawler extends Crawler {
 
          String internalPid = data.optString("sku");
          String description = data.optString("description");
-         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(data.optJSONArray("imageGallery"), "file", null, "https", "www.geracaopet.com.br", session);
+         List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(data.optJSONArray("imageGallery"), "file", null, "https", "products-info-public.s3-sa-east-1.amazonaws.com/images/1000", session);
          String primaryImage = images.isEmpty() ? null : images.remove(0);
          String secondaryImages = images.isEmpty() ? null : CommonMethods.listToJSONArray(images).toString();
 
