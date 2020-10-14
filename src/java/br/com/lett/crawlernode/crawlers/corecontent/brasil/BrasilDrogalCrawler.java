@@ -1,25 +1,24 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -277,13 +276,20 @@ public class BrasilDrogalCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       Integer totalNumOfEvaluations = getTotalNumOfRatings(document);
       Double avgRating = getTotalAvgRating(document, totalNumOfEvaluations);
-      ratingReviews.setDate(session.getDate());
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(document);
 
+
+      ratingReviews.setDate(session.getDate());
       ratingReviews.setInternalId(internalId);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
+      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
+
+      // For this website the rating is always belong with a comment
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       return ratingReviews;
    }
+
 
    private Double getTotalAvgRating(Document doc, Integer ratingCount) {
       double avgRating = 0D;
@@ -301,6 +307,57 @@ public class BrasilDrogalCrawler extends Crawler {
       }
 
       return avgRating;
+   }
+
+   private Document fetchAdvancedRating(int page) {
+      StringBuilder url = new StringBuilder(this.session.getOriginalURL()).append("?p=").append(page);
+      Request request = Request.RequestBuilder.create().setUrl(url.toString()).build();
+      return Jsoup.parse(dataFetcher.get(session, request).getBody());
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(Document document) {
+
+      // Select all 'li' with no class, this selector get all elements page (1, 2, 3...) of rating pagination
+      Element paginationExists = document.select(".pagination").first();
+
+      Logging.printLogDebug(logger, session, "Will run rating");
+      // The size of ratingElementsPage is the number of pages
+      int totalPages = 1;
+      int pageIterator = 1;
+
+      if (paginationExists != null) {
+         Elements ratingElementsPage = document.select(".pagination>ul>li:not([class])");
+         totalPages = ratingElementsPage.size();
+      };
+
+
+      Map<Integer, Integer> starsCount = new HashMap<>();
+
+      Document currentDocument = document;
+      while (pageIterator <= totalPages) {
+         Logging.printLogDebug(logger, session, "Will run rating " + totalPages);
+         if (pageIterator > 1) {
+            currentDocument = fetchAdvancedRating(pageIterator);
+         }
+
+         Elements ratingComments = currentDocument.select("div#ratings div.float span.rating-star>span");
+
+         ratingComments.forEach(element -> {
+            Integer ratingValue = Integer.parseInt(element.html().trim());
+            if (ratingValue > 0 && ratingValue <= 5) {
+               Integer count = starsCount.getOrDefault(ratingValue, 0) + 1;
+               starsCount.put(ratingValue, count);
+            } else {
+               Logging.printLogError(logger, session, "rating error: rating star error");
+            }
+         });
+
+         pageIterator++;
+      }
+
+      return new AdvancedRatingReview.Builder()
+         .allStars(starsCount)
+         .build();
    }
 
    /**
