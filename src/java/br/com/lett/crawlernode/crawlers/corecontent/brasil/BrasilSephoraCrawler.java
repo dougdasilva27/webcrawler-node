@@ -80,7 +80,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
             List<String> secondaryImages = crawlSecondaryImages(doc);
 
-            Offers Øoffers = scrapOffers(jsonPrice);
+            Offers offers = scrapOffers(jsonPrice);
 
             RatingsReviews ratingReviews = crawRating(doc);
 
