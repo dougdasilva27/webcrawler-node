@@ -1,32 +1,31 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
+import br.com.lett.crawlernode.util.*;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
 import models.prices.Prices;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * date: 05/09/2018
@@ -59,56 +58,45 @@ public class BrasilSephoraCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject chaordicJson = crawlChaordicJson(doc);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".no-display input[name=product]", "value");
 
-         String internalPid = crawlInternalPid(chaordicJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home, .product) a", false);
+
          String description = crawlDescription(doc);
 
-         // sku data in json
-         JSONArray arraySkus = chaordicJson != null && chaordicJson.has("offers") ? chaordicJson.getJSONArray("offers") : new JSONArray();
+         JSONObject priceProducts = fetchPrice(internalPid);
 
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
+         String nameBase = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", false);
 
-            String internalId = crawlInternalId(jsonSku);
-            Element variantElement = crawlVariationElement(doc, i);
-            String name = variantElement != null ? crawlName(chaordicJson, variantElement)
-                  : CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
-            String primaryImage = crawlPrimaryImage(doc, variantElement);
+         for (String internalId : priceProducts.keySet()) {
 
-            Map<String, Prices> marketplaceMap = crawlMarketplace(jsonSku, doc);
-            boolean available = jsonSku.has("availability") && jsonSku.get("availability").toString().contains("InStock")
-                  && marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
+            JSONObject jsonPrice = JSONUtils.getJSONValue(priceProducts, internalId);
 
-            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
-            Prices prices = marketplaceMap.get(MAIN_SELLER_NAME_LOWER);
-            Float price = crawlPrice(prices);
-            String secondaryImages = crawlSecondaryImages(doc);
-            String ean = crawlEan(jsonSku);
+            Element variantEl = crawlVariationElement(doc, internalId);
+
+            String name = scrapName(variantEl, nameBase);
+
+            String primaryImage = crawlPrimaryImage(doc, internalId);
+
+            List<String> secondaryImages = crawlSecondaryImages(doc);
+
+            Offers Øoffers = scrapOffers(jsonPrice);
+
             RatingsReviews ratingReviews = crawRating(doc);
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
 
             // Creating the product
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setMarketplace(marketplace)
-                  .setEans(eans)
-                  .setRatingReviews(ratingReviews)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setOffers(offers)
+               .setRatingReviews(ratingReviews)
+               .build();
 
             products.add(product);
          }
@@ -132,40 +120,119 @@ public class BrasilSephoraCrawler extends Crawler {
     * General methods *
     *******************/
 
-   private String crawlInternalId(JSONObject skuJson) {
-      String internalId = null;
-
-      if (skuJson.has("sku")) {
-         internalId = skuJson.getString("sku").trim();
-      }
-
-      return internalId;
+   private String scrapName(Element variantEl, String nameBase) {
+      return nameBase != null ? nameBase + " " +CrawlerUtils.scrapStringSimpleInfo(variantEl, "label p.reference.info", false) : null;
    }
 
-   private String crawlInternalPid(JSONObject json) {
-      String internalPid = null;
+   private Offers scrapOffers(JSONObject jsonPrice) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
 
-      if (json.has("sku")) {
-         internalPid = json.get("sku").toString();
+      if (!JSONUtils.getValue(jsonPrice, "is_salable").equals(true)) {
+         return offers;
       }
 
-      return internalPid;
+      Pricing pricing = scrapPricing(jsonPrice);
+
+      List<String> sales = scrapSales(jsonPrice);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(MAIN_SELLER_NAME_LOWER)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+      return offers;
    }
 
-   private String crawlVariationId(Element variantElement) {
-      return variantElement.attr("data-productid");
-   }
+   private Pricing scrapPricing(JSONObject jsonPrice) throws MalformedPricingException {
 
-   private Element crawlVariationElement(Document doc, int productPosition) {
-      Element variantElement = new Element("<div></div>");
+      Double spotlightPrice = CrawlerUtils.getDoubleValueFromJSON(jsonPrice, "current_price", true, false);
 
-      Elements variations = doc.select("#product-info-grouped li[id]");
+      Double priceFrom = CrawlerUtils.getDoubleValueFromJSON(jsonPrice, "price", true, false);
 
-      if (variations.size() > productPosition) {
-         variantElement = doc.selectFirst("#product-info-grouped li[id]:nth-child(" + (productPosition + 1) + ")");
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      if (priceFrom <= spotlightPrice) {
+         priceFrom = null;
       }
 
-      return variantElement;
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+
+   }
+
+   private List<String> scrapSales(JSONObject jsonPrice) {
+      List<String> sales = new ArrayList<>();
+
+      Object showDiscount = JSONUtils.getValue(jsonPrice, "show_discount");
+
+      if (showDiscount instanceof Integer) {
+         String sale = showDiscount.toString()+"% OFF";
+         sales.add(sale);
+      }
+
+      return sales;
+   }
+
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Set<Card> cards = Sets.newHashSet(
+         Card.VISA,
+         Card.MASTERCARD,
+         Card.AURA,
+         Card.DINERS,
+         Card.HIPER,
+         Card.AMEX
+      );
+
+      Installments installments = new Installments();
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+      for (Card card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card.toString())
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   private Element crawlVariationElement(Document doc, String internalId) {
+
+      return doc.selectFirst(".col-bundle li[data-productid=\" " + internalId + "\"]");
+   }
+
+   private JSONObject scrapJsonSku(JSONObject chaordicJson, String sku) {
+      JSONArray offers = JSONUtils.getJSONArrayValue(chaordicJson, "offers");
+
+      for (Object obj: offers) {
+         if (obj instanceof JSONObject) {
+            JSONObject offer = (JSONObject) obj;
+            if (sku.equals(JSONUtils.getStringValue(offer, "sku"))) {
+               return offer;
+            }
+         }
+      }
+      return new JSONObject();
    }
 
    private String crawlName(JSONObject chaordicJson, Element variantElement) {
@@ -195,55 +262,27 @@ public class BrasilSephoraCrawler extends Crawler {
       return price;
    }
 
-   private String crawlPrimaryImage(Document doc, Element variantElement) {
-      String primaryImage = null;
+   private String crawlPrimaryImage(Document doc, String internalId) {
+      String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#variant-" + internalId + "[data-zoom-image]", "data-zoom-image");
 
-      Element image = doc.selectFirst("#image-main[data-zoom-image]");
-
-      if (variantElement != null) {
-         String variationImage = variantElement.attr("data-base-image").trim();
-         String variantId = crawlVariationId(variantElement);
-         Element variantImage = doc.selectFirst("#variant-" + variantId + "[data-zoom-image]");
-
-         if (variantImage != null && !variationImage.isEmpty()) {
-            image = variantImage;
-         }
-      }
-
-      if (image != null) {
-         primaryImage = CrawlerUtils.sanitizeUrl(image, Arrays.asList("data-zoom-image", "src"), "https:", "sephora-resize.s3.amazonaws.com");
+      if (primaryImage == null) {
+         primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#image-main[data-zoom-image]", "data-zoom-image");
       }
 
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(Document doc) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> crawlSecondaryImages(Document doc) {
+      List<String> secondaryImagesArray = new ArrayList<>();
 
       Elements images = doc.select("#container_gallery .link-media-gallery");
-
       for (int i = 1; i < images.size(); i++) {
-         Element e = images.get(i);
-
-         String image = e.attr("data-zoom-image").trim();
-
-         if (image.isEmpty()) {
-            image = e.attr("src");
+         String image = images.attr("data-zoom-image").trim();
+         if (!image.isEmpty()) {
+            secondaryImagesArray.add(image);
          }
-
-         if (!image.startsWith("http")) {
-            image = "https:" + image;
-         }
-
-         secondaryImagesArray.put(image);
       }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
+      return secondaryImagesArray;
    }
 
    private Map<String, Prices> crawlMarketplace(JSONObject jsonSku, Document doc) {
@@ -279,22 +318,23 @@ public class BrasilSephoraCrawler extends Crawler {
    /**
     * To crawl installments in this site, we need crawl the installments array rule, like this:
     * [["40","1",""],["60","2",""],["80","3",""],["100","4",""],["120","5",""],["140","6",""],["160","7",""],["180","8",""],["200","9",""],["","10",""]]
-    * 
+    * <p>
     * I found this array because in this site, the installments values are calculated, so
-    * 
-    * 
+    * <p>
+    * <p>
     * - if the price is lower then 40 will have 1 installment
-    * 
+    * <p>
     * - if the price is lower then 60 and greater then 40 will have 2 installments
-    * 
+    * <p>
     * ...
     *
-    * @param price
+    * @param doc
     * @param jsonSku
     * @return
     */
    private Prices crawlPrices(JSONObject jsonSku, Document doc) {
       Prices prices = new Prices();
+
 
       if (jsonSku.has("price")) {
          Float price = CrawlerUtils.getFloatValueFromJSON(jsonSku, "price", true, false);
@@ -390,14 +430,15 @@ public class BrasilSephoraCrawler extends Crawler {
       return skuJson;
    }
 
-   private String crawlEan(JSONObject json) {
-      String ean = null;
+   private List<String> crawlEan(JSONObject json) {
+      String ean = json.optString("gtin13");
 
-      if (json.has("gtin13") && json.get("gtin13") instanceof String) {
-         ean = json.getString("gtin13");
+      List<String> eans = new ArrayList<>();
+
+      if (!ean.isEmpty()) {
+         eans.add(ean);
       }
-
-      return ean;
+      return eans;
    }
 
    private RatingsReviews crawRating(Document doc) {
@@ -442,6 +483,15 @@ public class BrasilSephoraCrawler extends Crawler {
       }
 
       return totalRating;
+   }
+
+   private JSONObject fetchPrice(String id) {
+      String url = "https://www.sephora.com.br/restapi/price/getpricesbyparent/product/" + id;
+
+      Request request = Request.RequestBuilder.create().setUrl(url).build();
+      String response = this.dataFetcher.get(session, request).getBody();
+
+      return JSONUtils.stringToJson(response);
    }
 
 }
