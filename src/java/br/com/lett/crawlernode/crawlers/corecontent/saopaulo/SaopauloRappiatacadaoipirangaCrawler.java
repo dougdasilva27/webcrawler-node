@@ -6,7 +6,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 public class SaopauloRappiatacadaoipirangaCrawler extends BrasilRappiCrawler {
 
    private static final String STORE_TYPE = "atacadao";
-   private static final String LOCATION = "lng=-23.5778785&lat=-46.6045826";
+   private static final String LOCATION = "lng=-46.6022277&lat=-23.5779717";
 
    public SaopauloRappiatacadaoipirangaCrawler(Session session) {
       super(session);
