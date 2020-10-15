@@ -18,29 +18,28 @@ public class FlorianopolisHippoCrawler extends CrawlerRankingKeywords {
 
       this.log("Página " + this.currentPage);
       String url = "http://www.hippo.com.br/produtos/?busca=" + this.keywordEncoded + "&bt_buscar=";
+
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
 
-      this.id = this.currentDoc.select("div.product-block h3 a.btn-quickview-box");
+      Elements products = this.currentDoc.select(".product-block .imagem a");
 
-      int count = 0;
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
 
-      if (this.id.size() >= 1) {
-         if (this.totalProducts == 0) setTotalProducts();
-
-         for (Element e : this.id) {
-            count++;
+         for (Element e : products) {
             String internalPid = e.attr("data-codigo");
             String internalId = e.attr("data-id");
-
-            //monta a url
-            String productUrl = e.attr("data-path");
+            String productUrl  = e.attr("data-path");
 
             saveDataProduct(internalId, internalPid, productUrl);
 
-            this.log("InternalPid do produto da " + count + " posição  da página " + this.currentPage + ": " + internalPid);
-            if (this.arrayProducts.size() == productsLimit) break;
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
 
          }
       }
