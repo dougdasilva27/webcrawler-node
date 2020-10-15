@@ -56,7 +56,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
          boolean available = doc.selectFirst(".add-to-cart-buttons") != null;
 
-         String name = crawlName(doc, available);
+         String name = crawlName(doc);
 
          Float price = null;
          Element elementPrice = doc.select(".product-shop .regular-price").first();
@@ -110,23 +110,20 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return products;
    }
 
-   private String crawlName(Document doc, boolean available) {
+   private String crawlName(Document doc) {
       StringBuilder name = new StringBuilder();
 
-      if (available) {
-         Element firstName = doc.selectFirst(".product-name h1");
-         if (firstName != null) {
-            name.append(firstName.text());
+      String mainName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1 span", true);
+      if (mainName != null) {
+         name.append(mainName);
 
-            Elements attributes = doc.select(".product-attributes .show-hover");
-            for (Element e : attributes) {
-               name.append(" ").append(e.ownText().trim());
-            }
+         Elements secondNameElement = doc.select("li.marca.show-hover, li.quantidade.show-hover");
+
+         if(secondNameElement != null){
+            name.append(" ").append(secondNameElement.text());
          }
-         return name.toString().replace("  ", " ").trim();
-      } else {
-         return doc.selectFirst(".product-image-gallery > img").attr("title");
       }
+      return name.toString();
    }
 
    private Prices crawlPrices(Document doc, Float price) {
