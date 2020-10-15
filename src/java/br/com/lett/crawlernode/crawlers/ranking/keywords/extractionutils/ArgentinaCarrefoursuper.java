@@ -1,33 +1,34 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    private static final String PRODUCTS_SELECTOR = ".home-product-cards .product-card .producto-info .open-modal[title]";
    private static final String HOST = "supermercado.carrefour.com.ar";
-   private String categoryUrl;
+   private String storeId;
+
 
    /**
     * This function might return a cep from specific store
@@ -36,34 +37,42 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
     */
    protected abstract String getCep();
 
+
    @Override
    public void processBeforeFetch() {
-      super.processBeforeFetch();
+      String url = "https://supermercado.carrefour.com.ar/envios/ajax/validatePostcode?postcode="+getCep();
+
+      Request request = RequestBuilder.create().setUrl(url).build();
+
+      JSONObject body = JSONUtils.stringToJson(new ApacheDataFetcher().get(session, request).getBody());
+
+      storeId = body.optString("store");
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      this.currentDoc = new Document(url);
+
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
+      }
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
 
-      String payload = "codigo_postal=" + getCep();
+      headers.put("cookie", "sucursal_id="+storeId+";");
+      headers.put("authority", "supermercado.carrefour.com.ar");
 
       Request request = RequestBuilder.create()
-            .setUrl("https://supermercado.carrefour.com.ar/stock/")
-            .setCookies(cookies)
-            .setPayload(payload)
-            .setHeaders(headers)
-            .setProxyservice(Arrays.asList(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
-            .setStatusCodesToIgnore(Arrays.asList(302))
-            .setFollowRedirects(false)
-            .setBodyIsRequired(false)
-            .mustSendContentEncoding(false)
-            .build();
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
 
-      List<Cookie> cookiesResponse = new FetcherDataFetcher().post(session, request).getCookies();
-      for (Cookie c : cookiesResponse) {
-         BasicClientCookie cookie = new BasicClientCookie(c.getName(), c.getValue());
-         cookie.setDomain(HOST);
-         cookie.setPath("/");
-         this.cookies.add(cookie);
-      }
+      Response response = dataFetcher.get(session, request);
+
+      Document doc = Jsoup.parse(response.getBody());
+
+      takeAScreenshot(url, cookies);
+      return doc;
    }
 
    @Override
@@ -88,10 +97,11 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
 
             saveDataProduct(internalId, null, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit)
+            Element nameEl = e.selectFirst(".title.title-food");
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl + " - Name: " + (nameEl != null ? nameEl.text() : ""));
+            if (this.arrayProducts.size() == productsLimit) {
                break;
-
+            }
          }
       } else {
          this.result = false;
@@ -99,11 +109,6 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
-
-   @Override
-   protected boolean hasNextPage() {
-      return this.categoryUrl != null ? this.currentDoc.select(PRODUCTS_SELECTOR).size() >= this.pageSize : super.hasNextPage();
    }
 
    protected void setTotalProductsCarrefour() {
