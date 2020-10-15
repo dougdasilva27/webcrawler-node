@@ -12,7 +12,9 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
+import models.RatingsReviews;
 import models.prices.Prices;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -78,6 +80,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
           Float price = crawlPrice(json);
           Prices prices = crawlPrices(price, doc);
           boolean available = crawlAvailability(json);
+          RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
           // Creating the product
           Product product = ProductBuilder.create()
@@ -95,6 +98,7 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
               .setSecondaryImages(secondaryImages)
               .setDescription(description)
               .setMarketplace(new Marketplace())
+              .setRatingReviews(ratingsReviews)
               .build();
 
           products.add(product);
@@ -266,6 +270,78 @@ public class BrasilPrincesadonorteCrawler extends Crawler {
     }
 
     return prices;
+  }
+
+  private RatingsReviews scrapRatingReviews(Document doc){
+
+     RatingsReviews ratingsReviews = new RatingsReviews();
+
+     int totalReviews = doc.select(".ratings-table").size();
+     double avgRating = 0.0;
+
+     Double percentageRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .rating", "style", true, '.', session);
+
+     if(percentageRating != null){
+        avgRating = percentageRating / 100 * 5;
+     }
+
+     ratingsReviews.setTotalRating(totalReviews);
+     ratingsReviews.setTotalWrittenReviews(totalReviews);
+     ratingsReviews.setAverageOverallRating(avgRating);
+     ratingsReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(doc));
+
+     return ratingsReviews;
+  }
+
+  private AdvancedRatingReview scrapAdvancedRatingReview(Document doc){
+
+     AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+
+     Elements ratings = doc.select(".ratings-table");
+
+     int stars1 = 0;
+     int stars2 = 0;
+     int stars3 = 0;
+     int stars4 = 0;
+     int stars5 = 0;
+
+     for(Element e: ratings){
+
+        int stars = 0;
+        Double starsformatted = CrawlerUtils.scrapDoublePriceFromHtml(e, ".ratings-table tr:first-child .rating", "style", true, '.', session);
+
+        if(starsformatted != null){
+           stars = (int)(starsformatted / 100 * 5);
+        }
+
+        switch (stars){
+           case 1:
+              stars1++;
+              break;
+           case 2:
+              stars2++;
+              break;
+           case 3:
+              stars3++;
+              break;
+           case 4:
+              stars4++;
+              break;
+           case 5:
+              stars5++;
+              break;
+           default:
+        }
+     }
+
+     advancedRatingReview.setTotalStar1(stars1);
+     advancedRatingReview.setTotalStar2(stars2);
+     advancedRatingReview.setTotalStar3(stars3);
+     advancedRatingReview.setTotalStar4(stars4);
+     advancedRatingReview.setTotalStar5(stars5);
+
+     return advancedRatingReview;
+
   }
 
 }
