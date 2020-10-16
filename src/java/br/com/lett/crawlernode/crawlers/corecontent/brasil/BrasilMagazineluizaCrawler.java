@@ -222,7 +222,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     * Product page identification *
     *******************************/
    private boolean isProductPage(Document doc) {
-      return doc.select("h1[itemprop=name], h1.header-product__title").first() != null;
+      return doc.select(".js-header-product").first() != null;
    }
 
    /**
@@ -253,6 +253,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       if (elementName != null) {
          name = elementName.text();
+      } else{
+         name = CrawlerUtils.scrapStringSimpleInfo(doc, ".header-product__title--unavailable", true);
       }
 
       Elements variations = doc.select(".input__select.information-values__variation-select option");
