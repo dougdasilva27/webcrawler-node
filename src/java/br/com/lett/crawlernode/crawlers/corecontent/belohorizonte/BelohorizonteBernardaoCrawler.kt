@@ -7,8 +7,10 @@ import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.Logging
+import models.AdvancedRatingReview
 import models.Offer.OfferBuilder
 import models.Offers
+import models.RatingsReviews
 import models.pricing.BankSlip.BankSlipBuilder
 import models.pricing.CreditCard.CreditCardBuilder
 import models.pricing.CreditCards
@@ -17,6 +19,8 @@ import models.pricing.Installments
 import models.pricing.Pricing
 import models.pricing.Pricing.PricingBuilder
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+import org.jsoup.select.Elements
 
 class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
 
@@ -45,6 +49,7 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
          val availability = scrapAvailability(doc)
 
          val offers = if (availability) scrapOffers(doc) else Offers()
+         val ratingsReviews = scrapRatingReviews(doc)
 
          val product = ProductBuilder.create()
             .setUrl(session.originalURL)
@@ -58,6 +63,7 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
+            .setRatingReviews(ratingsReviews)
             .build()
 
          products.add(product)
@@ -139,5 +145,18 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
             .setInstallmentPrice(spotlightPrice)
             .build())
       return installments
+   }
+
+   private fun scrapRatingReviews(doc: Document) : RatingsReviews {
+
+      // In the moment that this function was done, there wasn't any reviews in the market.
+      val ratingsReviews = RatingsReviews()
+
+      ratingsReviews.setTotalRating(0)
+      ratingsReviews.totalWrittenReviews = 0
+      ratingsReviews.averageOverallRating = 0.0
+      ratingsReviews.advancedRatingReview = AdvancedRatingReview()
+
+      return ratingsReviews
    }
 }
