@@ -5,14 +5,15 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.eachText
-import br.com.lett.crawlernode.util.toCreditCards
-import br.com.lett.crawlernode.util.toDoubleComma
+import br.com.lett.crawlernode.util.*
+import models.AdvancedRatingReview
 import models.Offer.OfferBuilder
 import models.Offers
+import models.RatingsReviews
 import models.pricing.Pricing.PricingBuilder
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+import org.jsoup.select.Elements
 
 class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(session) {
 
@@ -26,6 +27,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
          val categories = document.select("li a[itemprop='item'] span").eachText(ignoreIndexes = arrayOf(0))
          val offers = scrapOffers(document)
          val primaryImage = document.selectFirst(".cloud-zoom")?.attr("href")?.replaceFirst("//", "https://")
+         val ratingReviews: RatingsReviews = scrapRating(document)
 
          // Creating the product
          products += ProductBuilder.create()
@@ -35,6 +37,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
             .setOffers(offers)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setRatingReviews(ratingReviews)
             .build()
       }
 
@@ -70,5 +73,61 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
          )
       }
       return offers
+   }
+
+   private fun scrapRating(doc: Document): RatingsReviews {
+      val ratingReviews = RatingsReviews()
+
+      ratingReviews.date = session.date
+      ratingReviews.setTotalRating(scrapTotalRating(doc))
+      ratingReviews.averageOverallRating = scrapOverallRating(doc)
+      ratingReviews.totalWrittenReviews = scrapTotalWrittenReviews(doc)
+      ratingReviews.advancedRatingReview = scrapAdvancedTotalReviews(doc)
+
+      return ratingReviews
+   }
+
+   private fun scrapTotalRating(doc: Document): Int {
+      val ratingReviewsElements: Elements = doc.select("div#ratings .ratings-item")
+      return ratingReviewsElements.size
+   }
+
+   private fun scrapOverallRating(doc: Document): Double {
+      val totalRating = scrapTotalRating(doc)
+      var starsCount = 0.0
+
+      for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
+         val stars: Double = ratingReviewElement.select("p.rating-star>span").first().ownText().trim().toDouble()
+         starsCount += stars
+      }
+
+      var response = 0.0
+      if (starsCount > 0)
+         response = starsCount / totalRating.toDouble()
+      return response
+   }
+
+   private fun scrapTotalWrittenReviews(doc: Document): Int {
+      var count = 0
+
+      for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
+         if (ratingReviewElement.select("p.rating-opinion").first().ownText().trim().isNotEmpty())
+            count++
+      }
+
+      return count
+   }
+
+   private fun scrapAdvancedTotalReviews(doc: Document): AdvancedRatingReview {
+      val advancedRatingReview = AdvancedRatingReview.Builder()
+      val starsCount = mutableMapOf<Int, Int>()
+
+      for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
+         val star = ratingReviewElement.select("p.rating-star>span").first().ownText().trim().toInt()
+         val count = starsCount.getOrDefault(star, 0) + 1
+         starsCount[star] = count
+      }
+
+      return advancedRatingReview.allStars(starsCount).build()
    }
 }
