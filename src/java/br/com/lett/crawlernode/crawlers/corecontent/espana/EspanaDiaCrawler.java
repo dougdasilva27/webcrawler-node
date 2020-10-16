@@ -59,7 +59,7 @@ public class EspanaDiaCrawler extends Crawler {
             Collections.singletonList("href"), "https", "www.dia.es");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#carousel_alternate .item a img",
             Collections.singletonList("src"), "https", "www.dia.es", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".short-description .std", ".tab-content .std"));
+         String description = scrapDescription(doc);
          Offers offers = available ? scrapOffer(doc) : null;
          RatingsReviews ratingReviews = scrapRatingReviews(doc, internalId, categories);
 
@@ -142,6 +142,23 @@ public class EspanaDiaCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+
+   private String scrapDescription(Document doc) {
+      StringBuilder description = new StringBuilder();
+      Elements descriptionTabTitles = doc.select("ul#tab_strip>li h2>a").not("[href=\"#tab-reviews\"]");
+
+      for (Element descriptionTabTitle : descriptionTabTitles) {
+         description.append(descriptionTabTitle.outerHtml());
+
+         String contentDescriptionArchor = descriptionTabTitle.attr("href");
+         Element contentDescription = doc.selectFirst("div#prod_tabs>" + contentDescriptionArchor);
+
+         description.append(contentDescription.html());
+      }
+
+      return description.toString();
    }
 
 
