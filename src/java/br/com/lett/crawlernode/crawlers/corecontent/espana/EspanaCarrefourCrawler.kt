@@ -30,7 +30,7 @@ class EspanaCarrefourCrawler(session: Session) : Crawler(session) {
 
       val categories = document.select(".breadcrumb__item").eachText(ignoreIndexes = arrayOf(0))
 
-      val description = document.selectFirst(".product-details")?.html()
+      val description = CrawlerUtils.scrapSimpleDescription(document, mutableListOf(".nutrition", ".product-details"))
 
       val images = document.select(".pics-slider__thumbnail img")?.eachAttr("src")
         ?.map { src -> "\\d.*(?=x_)".toRegex().replace(src, "768") }?.toMutableList()
