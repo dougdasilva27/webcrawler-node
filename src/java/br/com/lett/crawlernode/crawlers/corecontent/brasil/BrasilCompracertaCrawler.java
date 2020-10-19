@@ -1,7 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
+
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,10 +21,11 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRati
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
 import models.RatingsReviews;
 
-public class BrasilCompracertaCrawler extends VTEXOldScraper {
+public class BrasilCompracertaCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.compracerta.com.br/";
    private static final List<String> SELLERS = Arrays.asList("Compra certa", "Compracerta", "Whirlpool", "Consul", "Brastemp");
+   private static final String API_TOKEN = "c3073c1616a463d2149576e841169c9ee031c9a76a7eb41723427097bd10ae3a";
 
    public BrasilCompracertaCrawler(Session session) {
       super(session);
@@ -56,64 +66,45 @@ public class BrasilCompracertaCrawler extends VTEXOldScraper {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      RatingReviewsCollection ratingCollection = new TrustvoxRatingCrawler(session, "1756", null).extractRatingAndReviewsForVtex(doc, dataFetcher);
-      return ratingCollection.getRatingReviews(internalId);
+      return new TrustvoxRatingCrawler(session, "1756", null).extractRatingAndReviews(internalId, doc, this.dataFetcher);
    }
 
    @Override
-   protected String scrapDescription(Document doc, JSONObject productJson) {
-      StringBuilder description = new StringBuilder();
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      String description = "";
 
-      Element especificDescriptionTitle = doc.selectFirst("#especificacoes > h2");
-      if (especificDescriptionTitle != null) {
-         description.append(especificDescriptionTitle.html());
+      JSONArray items = productJson.optJSONArray("items");
+      String id = null;
+      if(items != null){
+         id = "{\"sku\":\"" +((JSONObject) items.get(0)).optString("itemId") + "\"}";
       }
 
-      if (productJson.has("RealHeight")) {
-         description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealHeight").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-               .append("</table>");
+      assert id != null;
+      String encodedString = Base64.getEncoder().encodeToString(id.getBytes());
+
+      String api = "https://www.compracerta.com.br/_v/public/graphql/v1?workspace=master&maxAge=long&appsEtag=remove&domain=store&locale=pt-BR&__bindingId=dcb4b5dd-4083-47f9-b2de-da54656f88b0&operationName=ProductSku&extensions=";
+
+      String query = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + API_TOKEN +"\",\"sender\":\"compracerta.product-details@0.x\",\"provider\":\"compracerta.store-graphql@0.x\"},\"variables\":\"" + encodedString + "\"}";
+
+      String encodedQuery = URLEncoder.encode(query, "UTF-8");
+
+      Request request = Request.RequestBuilder.create().setUrl(api+encodedQuery)
+         .build();
+      JSONObject response = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+      if(response.has("data")){
+         JSONArray productArray = response.optJSONObject("data").optJSONArray("productSku");
+
+         JSONObject productDetail = ((JSONObject) productArray.get(0));
+
+         description += productDetail.optString("RealHeight") + "\nAltura\n";
+         description += productDetail.optString("RealWidth") + "\nLargura\n";
+         description += productDetail.optString("RealLength") + "\nComprimento\n";
+         description += productDetail.optString("RealWeightKg") + "\nPeso\n";
       }
 
-      if (productJson.has("RealWidth")) {
-         description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealWidth").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-               .append("</table>");
-      }
+      description += CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-dimensions-box",".product-infos-tabs"));
+      return description;
 
-      if (productJson.has("RealLength")) {
-         description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealLength").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-               .append("</table>");
-      }
-
-      if (productJson.has("RealWeightKg")) {
-         description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealWeightKg").toString().replace(".0", "") + " kg").append("</td>").append("</tbody>")
-               .append("</table>");
-      }
-
-
-      Element caracteristicas = doc.select("#caracteristicas").first();
-
-      if (caracteristicas != null) {
-         Element caracTemp = caracteristicas.clone();
-         caracTemp.select(".group.Prateleira").remove();
-
-         Elements nameFields = caracteristicas.select(".name-field, h4");
-         for (Element e : nameFields) {
-            String classString = e.attr("class");
-
-            if (classString.toLowerCase().contains("modulo") || classString.toLowerCase().contains("foto")) {
-               caracTemp.select("th." + classString.trim().replace(" ", ".")).remove();
-            }
-         }
-
-         caracTemp.select("h4.group, .Galeria, .Video, .Manual-do-Produto, h4.Arquivos").remove();
-         description.append(caracTemp.html());
-
-      }
-
-      return description.toString();
    }
 }
