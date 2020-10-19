@@ -31,6 +31,37 @@ public class JSONUtils {
       return value;
    }
 
+   // access internal field in json
+   // ex1: {"key1":{"key2": "value"}} -> String value = getValueRecursive(json, "key1.key2", String.class)
+   // ex2: {"key1":[{"key2":2}]}      -> Integer value = getValueRecursive(json, "key1.0.key2", Integer.class)
+   public static <T> T getValueRecursive(Object json, String path, Class<T> clazz) {
+
+      String[] keys = path.split("\\.");
+
+      Object currentObject = json;
+
+      for (String key : keys) {
+         if (currentObject instanceof JSONObject) {
+            currentObject = ((JSONObject) currentObject).opt(key);
+         } else if (currentObject instanceof JSONArray) {
+            int keyInt = Integer.parseInt(key);
+            if (keyInt >= 0 && keyInt < ((JSONArray) currentObject).length()) {
+               currentObject = ((JSONArray) currentObject).opt(keyInt);
+            }
+         }
+
+         if (currentObject == null) {
+            return null;
+         }
+      }
+
+      try {
+         return clazz.cast(currentObject);
+      } catch (Exception e) {
+         return null;
+      }
+   }
+
    public static JSONArray getJSONArrayValue(JSONObject json, String key) {
       JSONArray value = new JSONArray();
 

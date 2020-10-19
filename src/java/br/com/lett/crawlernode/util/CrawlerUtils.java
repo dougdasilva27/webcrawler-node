@@ -1621,6 +1621,36 @@ public class CrawlerUtils {
       return secondaryImages;
    }
 
+   public static String scrapImagesMagento(JSONArray images, Boolean isPrimary) {
+      String secondaryImages = null;
+      JSONArray secondaryImagesArray = new JSONArray();
+
+      for (int i = 0; i < images.length(); i++) {
+         Object obj = images.get(i);
+         String image = null;
+
+         if (obj instanceof JSONObject) {
+            JSONObject jsonImage = (JSONObject) obj;
+            if (jsonImage.has("isMain") && isPrimary == jsonImage.getBoolean("isMain") && jsonImage.has("full")) {
+               image = jsonImage.optString("full", null);
+               if (isPrimary) {
+                  return image;
+               }
+            }
+         } else if (obj instanceof String) {
+            image = obj.toString();
+         }
+
+         if (image != null) {
+            secondaryImagesArray.put(image);
+         }
+      }
+      if (secondaryImagesArray.length() > 0) {
+         secondaryImages = secondaryImagesArray.toString();
+      }
+      return secondaryImages;
+   }
+
    /**
     * Get total products of search in crawler Ranking
     *
