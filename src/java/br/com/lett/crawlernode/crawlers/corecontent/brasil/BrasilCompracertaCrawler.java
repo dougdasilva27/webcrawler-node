@@ -94,13 +94,18 @@ public class BrasilCompracertaCrawler extends VTEXNewScraper {
 
       if(response.has("data")){
          JSONArray productArray = response.optJSONObject("data").optJSONArray("productSku");
+         JSONObject productDetail = null;
 
-         JSONObject productDetail = ((JSONObject) productArray.get(0));
+         if(!productArray.isEmpty()){
+            productDetail = ((JSONObject) productArray.get(0));
+         }
 
-         description += productDetail.optString("RealHeight") + "\nAltura\n";
-         description += productDetail.optString("RealWidth") + "\nLargura\n";
-         description += productDetail.optString("RealLength") + "\nComprimento\n";
-         description += productDetail.optString("RealWeightKg") + "\nPeso\n";
+         if(productDetail != null){
+            description += productDetail.optString("RealHeight") + "\nAltura\n";
+            description += productDetail.optString("RealWidth") + "\nLargura\n";
+            description += productDetail.optString("RealLength") + "\nComprimento\n";
+            description += productDetail.optString("RealWeightKg") + "\nPeso\n";
+         }
       }
 
       description += CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-dimensions-box",".product-infos-tabs"));
