@@ -123,6 +123,9 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
             name.append(" ").append(secondNameElement.text());
          }
       }
+      if(name.toString().equals("")){
+         return CrawlerUtils.scrapStringSimpleInfo(doc, "li.product", false);
+      }
       return name.toString();
    }
 
