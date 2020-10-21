@@ -9,7 +9,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
  * @author Fellype Layunne
  */
 public class SaopauloRappistmarchepavaoCrawler extends BrasilRappiCrawler {
-   private static final String STORE_TYPE = "stmarcheexpress";
+   private static final String STORE_TYPE = "st_marche_express";
    private static final String LOCATION = "lat=-23.6000459&lng=-46.6737028";
 
    public SaopauloRappistmarchepavaoCrawler(Session session) {
