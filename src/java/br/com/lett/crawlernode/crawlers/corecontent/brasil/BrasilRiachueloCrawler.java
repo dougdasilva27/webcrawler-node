@@ -186,6 +186,10 @@ public class BrasilRiachueloCrawler extends Crawler {
                '.', session);
       }
 
+      if (price == null) {
+         return offers;
+      }
+
       Double priceFrom = CrawlerUtils
          .scrapDoublePriceFromHtml(doc, ".old-price span[data-price-amount]", "data-price-amount",
             false, '.', session);
