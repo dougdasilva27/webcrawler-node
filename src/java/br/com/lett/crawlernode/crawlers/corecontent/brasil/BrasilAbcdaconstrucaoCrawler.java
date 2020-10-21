@@ -63,7 +63,8 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeria .fbits-produto-imagensMinicarrossel-item a", Arrays.asList("data-zoom-image", "data-image"),
                  "https:", "abcdaconstrucao.fbitsstatic.net/", primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".paddingbox", false);
-         Offers offers = scrapOffer(doc);
+         boolean available = doc.selectFirst(".fbits-geral.fbits-produto-indisponivel") == null;
+         Offers offers = available? scrapOffer(doc): new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -92,7 +93,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".detalhe-produto") != null;
    }
-
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -135,16 +135,16 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#fbits-div-preco-off input", "value", false, ',', session);
       }
 
-      CreditCards creditCards = scrapCreditCards(doc,spotlightPrice);
-      Double bank = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoPreco-boleto .precoParcela .fbits-parcela", null, false, ',', session);
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bank, null);
+       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+       Double bank = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoPreco-boleto .precoParcela .fbits-parcela", null, false, ',', session);
+       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bank, null);
 
-      return Pricing.PricingBuilder.create()
-              .setPriceFrom(priceFrom)
-              .setSpotlightPrice(spotlightPrice)
-              .setCreditCards(creditCards)
-              .setBankSlip(bankSlip)
-              .build();
+       return Pricing.PricingBuilder.create()
+          .setPriceFrom(priceFrom)
+          .setSpotlightPrice(spotlightPrice)
+          .setCreditCards(creditCards)
+          .setBankSlip(bankSlip)
+          .build();
 
    }
 
