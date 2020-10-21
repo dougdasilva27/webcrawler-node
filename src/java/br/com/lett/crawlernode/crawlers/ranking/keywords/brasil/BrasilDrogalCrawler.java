@@ -7,66 +7,66 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 public class BrasilDrogalCrawler extends CrawlerRankingKeywords {
 
-  public BrasilDrogalCrawler(Session session) {
-    super(session);
-  }
+   public BrasilDrogalCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 56;
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 56;
 
-    this.log("Página " + this.currentPage);
+      this.log("Página " + this.currentPage);
 
-    String url = "https://www.drogal.com.br/" + this.keywordEncoded + "/?p=" + this.currentPage;
-    this.log("Link onde são feitos os crawlers: " + url);
+      String url = "https://www.drogal.com.br/" + this.keywordEncoded + "/?p=" + this.currentPage;
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
+      this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".list-products li > div");
+      Elements products = this.currentDoc.select(".list-products li > div");
 
-    if (!products.isEmpty()) {
+      if (!products.isEmpty()) {
 
-      for (Element e : products) {
-        String internalId = crawlInternalId(e);
-        String productUrl = crawlProductUrl(e);
+         for (Element e : products) {
+            String internalPid = crawlInternalPid(e);
+            String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, null, productUrl);
+            saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
 
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-  @Override
-  protected boolean hasNextPage() {
-    return !this.currentDoc.select("a.view-more[data-direction=next]").isEmpty();
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select("a.view-more[data-direction=next]").isEmpty();
+   }
 
-  private String crawlInternalId(Element e) {
-    return e.attr("data-sku");
-  }
+   private String crawlInternalPid(Element e) {
+      return e.attr("data-sku");
+   }
 
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
+   private String crawlProductUrl(Element e) {
+      String productUrl = null;
 
-    Element url = e.select("a.link").first();
-    if (url != null) {
-      productUrl = url.attr("href");
+      Element url = e.select("a.link").first();
+      if (url != null) {
+         productUrl = url.attr("href");
 
-      if (!productUrl.contains("drogal")) {
-        productUrl = ("https://www.drogal.com.br/" + productUrl).replace("br//", "br/");
+         if (!productUrl.contains("drogal")) {
+            productUrl = ("https://www.drogal.com.br/" + productUrl).replace("br//", "br/");
+         }
       }
-    }
 
-    return productUrl;
-  }
+      return productUrl;
+   }
 }
