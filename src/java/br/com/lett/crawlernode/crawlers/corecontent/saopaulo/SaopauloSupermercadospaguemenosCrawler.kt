@@ -103,8 +103,6 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
             val stars: Double = ratingText.ownText().trim().toDouble()
             starsCount += stars
          }
-         val stars: Double = ratingReviewElement.select("p.rating-star>span").first().ownText().trim().toDouble()
-         starsCount += stars
       }
 
       var response = 0.0
