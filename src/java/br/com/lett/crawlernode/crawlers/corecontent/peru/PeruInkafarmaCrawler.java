@@ -31,7 +31,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JAVANET);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
