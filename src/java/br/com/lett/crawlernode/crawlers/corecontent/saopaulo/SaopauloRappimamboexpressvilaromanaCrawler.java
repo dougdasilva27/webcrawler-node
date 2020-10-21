@@ -9,7 +9,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
  * @author Fellype Layunne
  */
 public class SaopauloRappimamboexpressvilaromanaCrawler extends BrasilRappiCrawler {
-   private static final String STORE_TYPE = "mambo-express";
+   private static final String STORE_TYPE = "mambo_express";
    private static final String LOCATION = "lat=-23.5376576&lng=-46.6975506";
 
    public SaopauloRappimamboexpressvilaromanaCrawler(Session session) {
