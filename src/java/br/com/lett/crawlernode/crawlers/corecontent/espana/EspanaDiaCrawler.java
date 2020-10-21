@@ -154,8 +154,9 @@ public class EspanaDiaCrawler extends Crawler {
 
          String contentDescriptionArchor = descriptionTabTitle.attr("href");
          Element contentDescription = doc.selectFirst("div#prod_tabs>" + contentDescriptionArchor);
-
-         description.append(contentDescription.html());
+         if (contentDescription != null) {
+            description.append(contentDescription.html());
+         }
       }
 
       return description.toString();
