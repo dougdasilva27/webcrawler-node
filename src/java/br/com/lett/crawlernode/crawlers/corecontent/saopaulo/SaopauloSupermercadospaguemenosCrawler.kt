@@ -119,7 +119,8 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       var count = 0
 
       for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
-         if (ratingReviewElement.select("p.rating-opinion").first().ownText().trim().isNotEmpty())
+         val ratingText: Element = ratingReviewElement.selectFirst("p.rating-opinion")
+         if (ratingText != null && ratingText.ownText().trim().isNotEmpty())
             count++
       }
 
