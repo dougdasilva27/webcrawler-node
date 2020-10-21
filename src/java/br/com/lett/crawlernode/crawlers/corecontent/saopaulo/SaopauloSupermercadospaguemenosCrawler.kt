@@ -93,7 +93,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
    }
 
    private fun scrapOverallRating(doc: Document): Double {
-      val totalRating = scrapTotalRating(doc)
+      val totalRating = scrapTotalRating(doc).toDouble()
       var starsCount = 0.0
 
       for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
@@ -108,8 +108,10 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       }
 
       var response = 0.0
-      if (starsCount > 0)
-         response = starsCount / totalRating.toDouble()
+      if (starsCount > 0 && totalRating > 0) {
+         response = starsCount / totalRating
+      }
+
       return response
    }
 
