@@ -132,9 +132,12 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       val starsCount = mutableMapOf<Int, Int>()
 
       for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
-         val star = ratingReviewElement.select("p.rating-star>span").first().ownText().trim().toInt()
-         val count = starsCount.getOrDefault(star, 0) + 1
-         starsCount[star] = count
+         val ratingText: Element = ratingReviewElement.selectFirst("p.rating-star>span")
+         if (ratingText != null) {
+            val star = ratingText.ownText().trim().toInt()
+            val count = starsCount.getOrDefault(star, 0) + 1
+            starsCount[star] = count
+         }
       }
 
       return advancedRatingReview.allStars(starsCount).build()
