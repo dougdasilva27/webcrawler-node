@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -74,12 +73,6 @@ public class BrasilRiachueloCrawler extends Crawler {
                .mustRetrieveStatistics(true)
                .setForbiddenCssSelector("#px-captcha")
                .build()
-         ).setProxyservice(
-            Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR,
-               ProxyCollection.NO_PROXY
-            )
          ).build();
 
       return this.dataFetcher.get(session, request).getBody();
@@ -92,27 +85,29 @@ public class BrasilRiachueloCrawler extends Crawler {
       if (isProductPage(doc)) {
          JSONObject jsonConfig = crawlJsonHtml(doc);
 
+         JSONArray jsonImages = crawlJsonImageData(doc);
+
          String internalPid = crawlInternalPid(doc);
 
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("#jq-product-info-accordion"));
 
          JSONObject options = JSONUtils.getJSONValue(jsonConfig,"optionPrices");
 
-
-
          if (options.length() > 0) {
             Map<String, Set<String>> variationsMap = crawlVariationsMap(jsonConfig);
 
             for (String id : options.keySet()) {
 
-               boolean available = crawlAvailabilityWithVariation(variationsMap, id);
-               String name = crawlNameWithVariation(doc, variationsMap, id);
-               String primaryImage = crawlPrimaryImageWithVariation(jsonConfig, id);
+               boolean available = crawlAvailabilityWithVariation(jsonConfig, id);
 
-               String secondaryImages = crawlSecondaryImagesWithVariation(jsonConfig, id,
-                  available);
+               String name = crawlNameWithVariation(doc, variationsMap, id);
+               String primaryImage = crawlPrimaryImageWithVariation(jsonImages, jsonConfig, id);
+
+               String secondaryImages = crawlSecondaryImagesWithVariation(jsonImages, jsonConfig, id, available, primaryImage);
+
                Integer stock = null;
-               Offers offers = scrapOffers(doc, jsonConfig, id);
+
+               Offers offers = scrapOffers(doc, jsonConfig, id, available);
 
                String internalId = scrapInternalId(jsonConfig, id);
 
@@ -134,11 +129,11 @@ public class BrasilRiachueloCrawler extends Crawler {
             String internalId = crawlInternalId(doc);
             String name = crawlName(doc);
 
-            String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".fotorama__stage .fotorama__stage__frame img", "src");
+            String primaryImage = scrapSimplePrimaryImage(jsonImages);
 
-            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fotorama__nav__shaft .fotorama_vertical_ratio img:not(:first-child)", Arrays.asList("src"), "https", "produtos.fotos-riachuelo.com.br", primaryImage);
+            String secondaryImages = scrapSimpleSecondaryImage(jsonImages);
 
-            Offers offers = scrapOffers(doc, jsonConfig, internalId);
+            Offers offers = scrapOffers(doc, jsonConfig, internalId, true);
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -166,11 +161,11 @@ public class BrasilRiachueloCrawler extends Crawler {
 
       return skuHtml.getString(id);
    }
-   private Offers scrapOffers(Document doc, JSONObject jsonConfig, String internalId)
+   private Offers scrapOffers(Document doc, JSONObject jsonConfig, String internalId, boolean available)
       throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Double price;
-      if (doc.selectFirst("#product-addtocart-button") == null) {
+      if (!available || doc.selectFirst("#product-addtocart-button") == null) {
          return offers;
       }
 
@@ -189,6 +184,10 @@ public class BrasilRiachueloCrawler extends Crawler {
          price = CrawlerUtils
             .scrapDoublePriceFromHtml(doc, "#product-price-" + internalId, "data-price-amount", false,
                '.', session);
+      }
+
+      if (price == null) {
+         return offers;
       }
 
       Double priceFrom = CrawlerUtils
@@ -250,34 +249,6 @@ public class BrasilRiachueloCrawler extends Crawler {
          .collect(Collectors.toList());
    }
 
-   private String crawlSecondaryImages(JSONObject jsonHtml) {
-      JSONArray secondaryImages = new JSONArray();
-
-      if (jsonHtml.has("[data-gallery-role=gallery-placeholder]")) {
-         JSONObject galleryPlaceholder = jsonHtml
-            .getJSONObject("[data-gallery-role=gallery-placeholder]");
-
-         if (galleryPlaceholder.has("mage/gallery/gallery")) {
-            JSONObject gallery = galleryPlaceholder.getJSONObject("mage/gallery/gallery");
-
-            if (gallery.has("data")) {
-               JSONArray images = gallery.getJSONArray("data");
-
-               for (Object object : images) {
-                  JSONObject image = (JSONObject) object;
-
-                  if (image.has("isMain") && !image.getBoolean("isMain") && image.has("img")) {
-                     secondaryImages.put(image.getString("img"));
-
-                  }
-               }
-            }
-         }
-      }
-
-      return secondaryImages.toString();
-   }
-
    private String crawlName(Document doc) {
 
       Element title = doc.selectFirst("h1 span[itemprop=\"name\"]");
@@ -301,17 +272,11 @@ public class BrasilRiachueloCrawler extends Crawler {
       return internalId;
    }
 
-   private boolean crawlAvailabilityWithVariation(Map<String, Set<String>> variationsMap,
-                                                  String internalId) {
-      boolean availability = false;
+   private boolean crawlAvailabilityWithVariation(JSONObject jsonConfig, String internalId) {
 
-      if (variationsMap.containsKey(internalId)) {
-         String name = variationsMap.get(internalId).toString();
-         if (!name.contains("disabled")) {
-            availability = true;
-         }
-      }
-      return availability;
+      String installment = JSONUtils.getValueRecursive(jsonConfig, "installment-html." +internalId, String.class);
+
+      return installment != null;
    }
 
    private Map<String, Set<String>> crawlVariationsMap(JSONObject jsonConfig) {
@@ -360,32 +325,56 @@ public class BrasilRiachueloCrawler extends Crawler {
       return variationsMap;
    }
 
-   private String crawlSecondaryImagesWithVariation(JSONObject jsonConfig, String internalId, boolean available) {
-      JSONArray secondaryImages = new JSONArray();
+   private String crawlSecondaryImagesWithVariation(JSONArray jsonImages, JSONObject jsonConfig, String internalId, boolean available, String primaryImage) {
+      String secondaryImages = null;
+      JSONArray secondaryImagesArray = new JSONArray();
 
-      if (available && jsonConfig.has("images")) {
-         JSONObject images = jsonConfig.getJSONObject("images");
+      if (available) {
 
-         if (images.has(internalId)) {
-            JSONArray image = images.getJSONArray(internalId);
+         Object imagesObg = JSONUtils.getValue(jsonConfig, "images");
 
-            for (Object object : image) {
-               JSONObject img = (JSONObject) object;
+         if (imagesObg instanceof JSONObject) {
+            JSONObject images = (JSONObject) imagesObg;
 
-               if (img.has("isMain") && !img.getBoolean("isMain") && img.has("img")) {
-                  secondaryImages.put(img.getString("img"));
+            if (images.has(internalId)) {
+               JSONArray image = images.getJSONArray(internalId);
+
+               for (Object object : image) {
+                  JSONObject img = (JSONObject) object;
+
+                  if (img.has("isMain") && !img.getBoolean("isMain") && img.has("img")) {
+                     secondaryImagesArray.put(img.getString("img"));
+                  }
                }
             }
+         } else {
+            secondaryImages = scrapSimpleSecondaryImage(jsonImages);
          }
       }
 
-      return secondaryImages.toString();
+      if (secondaryImagesArray.length() > 0) {
+         secondaryImages = secondaryImagesArray.toString();
+      }
+
+      return secondaryImages;
    }
 
-   private String crawlPrimaryImageWithVariation(JSONObject jsonConfig, String internalId) {
+   private String scrapSimpleSecondaryImage(JSONArray jsonImages) {
+      return CrawlerUtils.scrapImagesMagento(jsonImages, false);
+   }
+
+   private String scrapSimplePrimaryImage(JSONArray jsonImages) {
+      return CrawlerUtils.scrapImagesMagento(jsonImages, true);
+   }
+
+   private String crawlPrimaryImageWithVariation(JSONArray jsonImages, JSONObject jsonConfig, String internalId) {
       String primaryImage = null;
-      if (jsonConfig.has("images")) {
-         JSONObject images = jsonConfig.optJSONObject("images");
+
+      Object imagesObg = JSONUtils.getValue(jsonConfig, "images");
+
+      if (imagesObg instanceof JSONObject) {
+
+         JSONObject images = (JSONObject) imagesObg;
 
          if (images.has(internalId)) {
             JSONArray image = images.optJSONArray(internalId);
@@ -399,12 +388,14 @@ public class BrasilRiachueloCrawler extends Crawler {
             }
          }
       }
+      else {
+         primaryImage = scrapSimplePrimaryImage(jsonImages);
+      }
 
       return primaryImage;
    }
 
-   private String crawlNameWithVariation(Document doc, Map<String, Set<String>> variationsMap,
-                                         String internalId) {
+   private String crawlNameWithVariation(Document doc, Map<String, Set<String>> variationsMap, String internalId) {
       Element title = doc.selectFirst("h1 span[itemprop=\"name\"]");
       String name = null;
 
@@ -448,11 +439,32 @@ public class BrasilRiachueloCrawler extends Crawler {
          .findFirst()
          .orElse(new JSONObject());
 
-      JSONObject dataSwatch = JSONUtils.getJSONValue(jsonHtml, "[data-role=swatch-options]");
+      JSONObject jsonConfig = JSONUtils.getValueRecursive(jsonHtml, "[data-role=swatch-options].Magento_Swatches/js/swatch-renderer.jsonConfig", JSONObject.class);
 
-      JSONObject swatchRenderer = JSONUtils.getJSONValue(dataSwatch, "Magento_Swatches/js/swatch-renderer");
+      if (jsonConfig != null) {
+         return jsonConfig;
+      }
 
-      return JSONUtils.getJSONValue(swatchRenderer,"jsonConfig");
+      return new JSONObject();
+   }
+
+   private JSONArray crawlJsonImageData(Document doc) {
+
+      JSONObject jsonHtml =  doc.select("script[type='text/x-magento-init']")
+         .stream()
+         .filter(element -> element.html().contains("[data-gallery-role=gallery-placeholder]"))
+         .map(script -> CrawlerUtils.stringToJson(script.html()))
+         .findFirst()
+         .orElse(new JSONObject());
+
+      JSONArray dataGallery = JSONUtils.getValueRecursive(jsonHtml, "[data-gallery-role=gallery-placeholder].Xumulus_FastGalleryLoad/js/gallery/custom_gallery.data", JSONArray.class);
+
+      if (dataGallery != null) {
+         return dataGallery;
+      }
+
+
+      return new JSONArray();
    }
 
    private boolean isProductPage(Document doc) {

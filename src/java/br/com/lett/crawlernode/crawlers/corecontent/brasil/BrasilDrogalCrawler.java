@@ -1,17 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.prices.Prices;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,10 +11,21 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
+import models.Marketplace;
+import models.RatingsReviews;
+import models.prices.Prices;
 
 /**
  *
@@ -52,6 +55,7 @@ public class BrasilDrogalCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(doc);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#content_product [data-sku]", "data-sku");
          String name = crawlName(doc);
          Float price = crawlMainPagePrice(doc);
          boolean available = price != null;
@@ -64,21 +68,22 @@ public class BrasilDrogalCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-                 .setUrl(session.getOriginalURL())
-                 .setInternalId(internalId)
-                 .setRatingReviews(ratingsReviews)
-                 .setName(name)
-                 .setPrice(price)
-                 .setPrices(prices)
-                 .setAvailable(available)
-                 .setCategory1(categories.getCategory(0))
-                 .setCategory2(categories.getCategory(1))
-                 .setCategory3(categories.getCategory(2))
-                 .setPrimaryImage(primaryImage)
-                 .setSecondaryImages(secondaryImages)
-                 .setDescription(description)
-                 .setMarketplace(new Marketplace())
-                 .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setRatingReviews(ratingsReviews)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(available)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setMarketplace(new Marketplace())
+               .build();
 
          products.add(product);
 
@@ -317,7 +322,8 @@ public class BrasilDrogalCrawler extends Crawler {
 
    private AdvancedRatingReview scrapAdvancedRatingReview(Document document) {
 
-      // Select all 'li' with no class, this selector get all elements page (1, 2, 3...) of rating pagination
+      // Select all 'li' with no class, this selector get all elements page (1, 2, 3...) of rating
+      // pagination
       Element paginationExists = document.select(".pagination").first();
 
       Logging.printLogDebug(logger, session, "Will run rating");
@@ -328,7 +334,7 @@ public class BrasilDrogalCrawler extends Crawler {
       if (paginationExists != null) {
          Elements ratingElementsPage = document.select(".pagination>ul>li:not([class])");
          totalPages = ratingElementsPage.size();
-      };
+      } ;
 
 
       Map<Integer, Integer> starsCount = new HashMap<>();
@@ -356,8 +362,8 @@ public class BrasilDrogalCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-         .allStars(starsCount)
-         .build();
+            .allStars(starsCount)
+            .build();
    }
 
    /**

@@ -15,9 +15,8 @@ public abstract class VTEXNewScraper extends VTEXScraper {
       super(session);
    }
 
-   protected String scrapInternalPidOldWay(Document doc) {
-      JSONObject runTimeJSON = scrapRuntimeJson(doc);
-      JSONObject initialJson = scrapProductJson(runTimeJSON);
+   protected String scrapInternalPidOldWay(JSONObject runtimeJSON) {
+      JSONObject initialJson = scrapProductJson(runtimeJSON);
       return initialJson.optString("productId", null);
    }
 
@@ -70,9 +69,21 @@ public abstract class VTEXNewScraper extends VTEXScraper {
       }
 
       if (internalPid == null) {
-         internalPid = scrapInternalPidOldWay(doc);
+         JSONObject runtimeJSON = scrapRuntimeJson(doc);
+         internalPid = scrapInternalPidOldWay(runtimeJSON);
+
+         if (internalPid == null) {
+            internalPid = scrapInternalpidThirdWay(runtimeJSON);
+         }
       }
 
       return internalPid;
+   }
+
+   protected String scrapInternalpidThirdWay(JSONObject runtimeJSON) {
+      JSONObject route = runtimeJSON.optJSONObject("route");
+      JSONObject params = route != null ? route.optJSONObject("params") : new JSONObject();
+
+      return params.optString("id", null);
    }
 }

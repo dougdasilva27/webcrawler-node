@@ -1,5 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.romania;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -10,20 +21,17 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.*;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.util.*;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 
 public class RomaniaEmagCrawler extends Crawler {
 
@@ -32,18 +40,19 @@ public class RomaniaEmagCrawler extends Crawler {
    private final String HOME_PAGE = "https://www.emag.ro/supermarket/d";
    private static final String SELLER_FULL_NAME = "Emag";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public RomaniaEmagCrawler(Session session) {
       super(session);
    }
 
-   @Override protected Object fetch() {
+   @Override
+   protected Object fetch() {
       String url = session.getOriginalURL();
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Cookie",
-         "EMAGVISITOR=a%3A1%3A%7Bs%3A7%3A%22user_id%22%3Bi%3A2024580195347975914%3B%7D; site_version_11=not_mobile; EMAG_VIEW=not_mobile; ltuid=1599074195.138-b24ce42a01649d8df35e123caf9ffe88362ef632; EMAGUUID=1598879521-291954679-31430.446; _pdr_internal=GA1.2.5464345008.1599074195; eab290=c; profile_token=pftk_7165403916746472080; loginTooltipShown=1; _gcl_au=1.1.1094787864.1599074447; G_ENABLED_IDPS=google; _scid=c538a4af-60d8-41d8-bf9a-0ee452eeed17; _pin_unauth=dWlkPU0yUTNZV1l3WXpZdE1UZ3pNeTAwTURVMExUZzBPVGd0WkRRNE9HSmtOamt5T0RFeiZycD1abUZzYzJV; __gads=ID=ae9aa331d1556e73:T=1599074460:S=ALNI_MZPen0PNzhKsK9sSchpR8Wtq6bxOw; _sctr=1|1599015600000; EMAGROSESSID=d1c99e13d3eee65cf9365ce0c0f80d2d; eab275=a; eab279=a; eab282=a; eab283=a; sr=1920x1080; vp=1920x1008; _rsv=2; _rscd=1; _rsdc=2; listingDisplayId=2; supermarket_delivery_address=%7B%22name%22%3A%22Bucure%5Cu015fti%22%2C%22id%22%3A4954%2C%22delivery_type%22%3A2%2C%22storage_type%22%3A%7B%221%22%3A%221%22%2C%222%22%3A%221%22%2C%223%22%3A%221%22%7D%2C%22delivery_categories%22%3A%7B%22Fructe+si+Legume%22%3A1%2C%22Lactate%2C+Oua+si+Paine%22%3A1%2C%22Carne%2C+Mezeluri+si+Pes+...%22%3A1%2C%22Produse+congelate%22%3A1%2C%22Alimente+de+baza%2C+cons+...%22%3A1%2C%22Cafea%2C+cereale%2C+dulciu+...%22%3A1%2C%22Bauturi+si+tutun%22%3A1%2C%22Ingrijire+copii%22%3A1%2C%22Intretinerea+casei+si++...%22%3A1%2C%22Ingrijire+personala+%22%3A1%2C%22Vinoteca%22%3A1%2C%22Produse+naturale+si+sa+...%22%3A1%7D%7D; supermarket_delivery_zone=%7B%22id%22%3A4954%2C%22name%22%3A%22Bucure%5Cu015fti%22%7D; campaign_notifications={\"4535\":1}; delivery_locality_id=4958; _uetsid=055bd66b1122354e5eef99173501229f; _uetvid=43ccf5f349725a648f90f16e7ac9221d; _pdr_view_id=1599144227-14804.696-563806517; _dc_gtm_UA-220157-3=1");
+            "EMAGVISITOR=a%3A1%3A%7Bs%3A7%3A%22user_id%22%3Bi%3A2024580195347975914%3B%7D; site_version_11=not_mobile; EMAG_VIEW=not_mobile; ltuid=1599074195.138-b24ce42a01649d8df35e123caf9ffe88362ef632; EMAGUUID=1598879521-291954679-31430.446; _pdr_internal=GA1.2.5464345008.1599074195; eab290=c; profile_token=pftk_7165403916746472080; loginTooltipShown=1; _gcl_au=1.1.1094787864.1599074447; G_ENABLED_IDPS=google; _scid=c538a4af-60d8-41d8-bf9a-0ee452eeed17; _pin_unauth=dWlkPU0yUTNZV1l3WXpZdE1UZ3pNeTAwTURVMExUZzBPVGd0WkRRNE9HSmtOamt5T0RFeiZycD1abUZzYzJV; __gads=ID=ae9aa331d1556e73:T=1599074460:S=ALNI_MZPen0PNzhKsK9sSchpR8Wtq6bxOw; _sctr=1|1599015600000; EMAGROSESSID=d1c99e13d3eee65cf9365ce0c0f80d2d; eab275=a; eab279=a; eab282=a; eab283=a; sr=1920x1080; vp=1920x1008; _rsv=2; _rscd=1; _rsdc=2; listingDisplayId=2; supermarket_delivery_address=%7B%22name%22%3A%22Bucure%5Cu015fti%22%2C%22id%22%3A4954%2C%22delivery_type%22%3A2%2C%22storage_type%22%3A%7B%221%22%3A%221%22%2C%222%22%3A%221%22%2C%223%22%3A%221%22%7D%2C%22delivery_categories%22%3A%7B%22Fructe+si+Legume%22%3A1%2C%22Lactate%2C+Oua+si+Paine%22%3A1%2C%22Carne%2C+Mezeluri+si+Pes+...%22%3A1%2C%22Produse+congelate%22%3A1%2C%22Alimente+de+baza%2C+cons+...%22%3A1%2C%22Cafea%2C+cereale%2C+dulciu+...%22%3A1%2C%22Bauturi+si+tutun%22%3A1%2C%22Ingrijire+copii%22%3A1%2C%22Intretinerea+casei+si++...%22%3A1%2C%22Ingrijire+personala+%22%3A1%2C%22Vinoteca%22%3A1%2C%22Produse+naturale+si+sa+...%22%3A1%7D%7D; supermarket_delivery_zone=%7B%22id%22%3A4954%2C%22name%22%3A%22Bucure%5Cu015fti%22%7D; campaign_notifications={\"4535\":1}; delivery_locality_id=4958; _uetsid=055bd66b1122354e5eef99173501229f; _uetvid=43ccf5f349725a648f90f16e7ac9221d; _pdr_view_id=1599144227-14804.696-563806517; _dc_gtm_UA-220157-3=1");
       System.err.println(headers);
 
       Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setCookies(this.cookies).build();
@@ -60,9 +69,7 @@ public class RomaniaEmagCrawler extends Crawler {
 
       if (doc.selectFirst(".container .page-title") != null) {
 
-
-
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-highlight .btn.btn-primary.btn-emag", "data-offer-id");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#main-container input[name=\"product[]\"]", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-header.has-subtitle-info h1", false);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".mrg-sep-sm", ".container.pad-btm-lg"));
          boolean available = doc.selectFirst(".label.label-in_stock") != null;
@@ -74,19 +81,19 @@ public class RomaniaEmagCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalId)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setRatingReviews(ratingReviews)
-            .setOffers(offers)
-            .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
 
          products.add(product);
 
@@ -104,14 +111,14 @@ public class RomaniaEmagCrawler extends Crawler {
       List<String> sales = scrapSales(doc);
 
       offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
       return offers;
 
@@ -159,10 +166,10 @@ public class RomaniaEmagCrawler extends Crawler {
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .build();
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .build();
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -171,17 +178,17 @@ public class RomaniaEmagCrawler extends Crawler {
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
       }
 
       return creditCards;
@@ -247,12 +254,12 @@ public class RomaniaEmagCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-         .totalStar1(star1)
-         .totalStar2(star2)
-         .totalStar3(star3)
-         .totalStar4(star4)
-         .totalStar5(star5)
-         .build();
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
 

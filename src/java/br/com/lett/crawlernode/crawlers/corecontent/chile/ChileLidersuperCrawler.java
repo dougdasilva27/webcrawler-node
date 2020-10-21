@@ -1,18 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -23,9 +10,16 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * Date: 04/12/2018
@@ -49,7 +43,6 @@ public class ChileLidersuperCrawler extends Crawler {
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
@@ -58,7 +51,7 @@ public class ChileLidersuperCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "span[itemprop=productID]", true);
          String name = scrapName(doc);
          Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#productPrice .price", true);
-         Prices prices = crawlPrices(price, doc);
+         Prices prices = crawlPrices(price);
          Integer stock = crawlStock(internalId);
          boolean available = stock > 0;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a > span");
@@ -66,15 +59,24 @@ public class ChileLidersuperCrawler extends Crawler {
          String primaryImage = !images.isEmpty() ? images.get(0) : null;
          String secondaryImages = crawlSecondaryImages(images);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product-features"));
-         RatingsReviews ratingReviews = null;
 
          JSONObject jsonEan = selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]");
          List<String> eans = scrapEans(jsonEan);
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-            .setStock(stock).setMarketplace(new Marketplace()).setRatingReviews(ratingReviews).setEans(eans).build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setEans(eans)
+            .build();
 
          products.add(product);
 
@@ -146,7 +148,14 @@ public class ChileLidersuperCrawler extends Crawler {
          String image = e.text();
 
          if (image.contains("file:/")) {
-            images.add("http://images.lider.cl/wmtcl?source=url[" + image + "]&sink");
+
+            String format = "";
+
+            if (image.contains(".jpg")) {
+               format = "=format[jpg]";
+            }
+
+            images.add("http://images.lider.cl/wmtcl?source=url[" + image + "]&sink" + format);
          }
       }
 
@@ -198,11 +207,10 @@ public class ChileLidersuperCrawler extends Crawler {
    /**
     * In the time when this crawler was made, this market hasn't installments informations
     *
-    * @param doc
     * @param price
     * @return
     */
-   private Prices crawlPrices(Float price, Document doc) {
+   private Prices crawlPrices(Float price) {
       Prices prices = new Prices();
 
       if (price != null) {
