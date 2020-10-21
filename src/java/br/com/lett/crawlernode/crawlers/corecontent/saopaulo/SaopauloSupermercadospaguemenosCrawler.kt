@@ -97,6 +97,12 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       var starsCount = 0.0
 
       for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
+         val ratingText: Element = ratingReviewElement.selectFirst("p.rating-star>span")
+
+         if (ratingText != null) {
+            val stars: Double = ratingText.ownText().trim().toDouble()
+            starsCount += stars
+         }
          val stars: Double = ratingReviewElement.select("p.rating-star>span").first().ownText().trim().toDouble()
          starsCount += stars
       }
