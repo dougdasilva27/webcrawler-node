@@ -11,7 +11,6 @@ public class BrasilCompracertaoutletCrawler extends BrasilCompracertaCrawler {
 
    @Override
    protected boolean isProductPage(Document doc) {
-      String producReference = crawlProductReference(doc).toLowerCase();
-      return !doc.select(".productName").isEmpty() && producReference.endsWith("_out");
+      return !doc.select(".render-route-store-product").isEmpty();
    }
 }

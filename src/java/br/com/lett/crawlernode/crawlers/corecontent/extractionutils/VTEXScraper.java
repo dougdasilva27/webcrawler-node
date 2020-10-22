@@ -140,7 +140,7 @@ public abstract class VTEXScraper extends Crawler {
       return categories;
    }
 
-   protected String scrapDescription(Document doc, JSONObject productJson) {
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
       return JSONUtils.getStringValue(productJson, "description");
    }
 
