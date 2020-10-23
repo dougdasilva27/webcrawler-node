@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 public class SaopauloRappiatacadaoipirangaCrawler extends RappiCrawler {
    public SaopauloRappiatacadaoipirangaCrawler(Session session) {
-      super(session, Arrays.asList("900004927"));
+      super(session, Arrays.asList("900159165"));
    }
 
 }
