@@ -7,13 +7,25 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.toJson
 import org.json.JSONObject
 
-class BelgiumColruytCrawler(session: Session) : CrawlerRankingKeywords(session) {
+abstract class BelgiumColruytCrawler(session: Session) : CrawlerRankingKeywords(session) {
    init {
       pageSize = 21
    }
 
+   /*
+   * para pegar o placeId tem que entrar na home do site https://www.colruyt.be/fr
+   * ir em Liste de courses no lado direito da tela, colocar o `code postal` ou o endereço
+   * e escolher a unidade em Sélectionné e CONFIRMER.
+   * Depois, escolher o produto.
+   *
+   * Apos isso, para pegar o placeId, abre a ferramenta network do navegador e procura pela requisição:
+   * https://ecgproductmw.colruyt.be/ecgproductmw/v2/fr/products/0000?clientCode=clp&placeId=????
+   *
+   * */
+   abstract fun getPlaceId(): String
+
    override fun extractProductsFromCurrentPage() {
-      val url = "https://ecgproductsearchmw.colruyt.be/ecgproductsearchmw/v1/fr/products?searchTerm=$keywordEncoded&placeId=604&client=clp&page=$currentPage&size=$pageSize"
+      val url = "https://ecgproductsearchmw.colruyt.be/ecgproductsearchmw/v1/fr/products?searchTerm=$keywordEncoded&placeId=${getPlaceId()}&client=clp&page=$currentPage&size=$pageSize"
       val json = fetchJSON(url)
       totalProducts = json.optInt("productsFound", 0)
       log("Total de produtos: $totalProducts")
