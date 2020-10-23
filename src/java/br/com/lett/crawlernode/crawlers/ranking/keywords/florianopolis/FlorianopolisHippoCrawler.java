@@ -67,29 +67,32 @@ public class FlorianopolisHippoCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
 
       String token = getToken();
-      JSONObject json = crawlApi(token);
-      JSONArray produtosArray = JSONUtils.getJSONArrayValue(json, "produtos");
 
-      if (produtosArray.length() >= 1) {
+      if(token != null) {
 
-         for (Object e : produtosArray) {
+         JSONObject json = crawlApi(token);
+         JSONArray produtosArray = JSONUtils.getJSONArrayValue(json, "produtos");
 
-            JSONObject product = (JSONObject) e;
+         if (produtosArray.length() >= 1) {
 
-            String internalPid = product.optString("id");
+            for (Object e : produtosArray) {
 
-            String internalId = product.optString("produto_id");
+               JSONObject product = (JSONObject) e;
 
-            String urlProductIncomplete = product.optString("link");
-            String urlHost = "www.hippo.com.br/produtos/detalhe/" + internalId;
+               String internalPid = product.optString("id");
 
-            String urlProduct = CrawlerUtils.completeUrl(urlProductIncomplete, "http://", urlHost);
+               String internalId = product.optString("produto_id");
 
-            saveDataProduct(internalId, internalPid, urlProduct);
+               String urlProductIncomplete = product.optString("link");
+               String urlHost = "www.hippo.com.br/produtos/detalhe/" + internalId;
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-            if (this.arrayProducts.size() == productsLimit) break;
+               String urlProduct = CrawlerUtils.completeUrl(urlProductIncomplete, "http://", urlHost);
 
+               saveDataProduct(internalId, internalPid, urlProduct);
+
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+               if (this.arrayProducts.size() == productsLimit) break;
+            }
          }
       } else {
          this.result = false;
