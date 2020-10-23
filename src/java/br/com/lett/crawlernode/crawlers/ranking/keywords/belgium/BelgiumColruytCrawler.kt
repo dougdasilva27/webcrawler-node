@@ -32,8 +32,8 @@ abstract class BelgiumColruytCrawler(session: Session) : CrawlerRankingKeywords(
       json.optJSONArray("products")?.forEach { elem ->
          if (elem is JSONObject) {
             val id = elem.optString("commercialArticleNumber")
-            val internalId = elem.optString("productId")
-            val productUrl = "https://www.colruyt.be/fr/produits/${elem.optString("name").replace(' ', '-')}-$id"
+            val internalId = elem.optString("commercialArticleNumber")
+            val productUrl = "https://www.colruyt.be/fr/produits/${elem.optString("name").replace(' ', '-').replace('.', '-')}-$internalId"
             saveDataProduct(internalId, internalId, url)
 
             log("Position: $position - internalId: $internalId - Url: $productUrl")
