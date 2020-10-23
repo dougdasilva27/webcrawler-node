@@ -12,6 +12,9 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
@@ -23,7 +26,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
-   private String keySHA256 = "2a6f4c4ae41652ce655318156b22ea477ffb83e8412fbd28e0ae52cab1496f3c";
+   private String keySHA256 = "109ae48eddc134c4ddc905dd28eaec70e7f9e82ca20d52cdf69ca6de50ddda79";
 
    @Override
    protected void processBeforeFetch() {
