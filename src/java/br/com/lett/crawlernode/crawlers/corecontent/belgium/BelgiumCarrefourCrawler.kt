@@ -13,12 +13,23 @@ import models.Offer.OfferBuilder
 import models.Offers
 import models.pricing.Pricing
 import models.pricing.Pricing.PricingBuilder
+import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.nodes.Document
 
-class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
+abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
 
    private val BASE_URL = "drive.carrefour.eu"
    private val SELLER_FULL_NAME = "carrefour"
+
+   abstract fun getShopId(): String
+   abstract fun getChosenDelivery(): String
+
+   override fun handleCookiesBeforeFetch() {
+
+      cookies.add(BasicClientCookie("Carrefour", "shopId:${getShopId()}"))
+      cookies.add(BasicClientCookie("chosen-delivery", getChosenDelivery()))
+      cookies.add(BasicClientCookie("chosen-delivery-address", getChosenDelivery()))
+   }
 
    override fun extractInformation(doc: Document): MutableList<Product> {
       super.extractInformation(doc)
