@@ -31,12 +31,12 @@ abstract class BelgiumColruytCrawler(session: Session) : CrawlerRankingKeywords(
       log("Total de produtos: $totalProducts")
       json.optJSONArray("products")?.forEach { elem ->
          if (elem is JSONObject) {
-            val internalId = elem.optString("commercialArticleNumber")
-            val internalPid = internalId
-            val productUrl = "https://www.colruyt.be/fr/produits/${elem.optString("name").replace(' ', '-')}-$internalId"
-            saveDataProduct(internalId, internalPid, url)
+            val id = elem.optString("commercialArticleNumber")
+            val internalId = elem.optString("productId")
+            val productUrl = "https://www.colruyt.be/fr/produits/${elem.optString("name").replace(' ', '-')}-$id"
+            saveDataProduct(internalId, internalId, url)
 
-            log("Position: $position - InternalId: $internalId - InternalPid: $internalPid - Url: $productUrl")
+            log("Position: $position - internalId: $internalId - Url: $productUrl")
          }
       }
       log("Finalizando Crawler de produtos da página $currentPage - até agora ${arrayProducts.size} produtos crawleados")
