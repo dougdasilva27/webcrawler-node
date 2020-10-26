@@ -2,7 +2,17 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,6 +22,8 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
@@ -23,7 +35,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
-   private String keySHA256 = "2a6f4c4ae41652ce655318156b22ea477ffb83e8412fbd28e0ae52cab1496f3c";
+   private String keySHA256 = "";
 
    @Override
    protected void processBeforeFetch() {
@@ -35,6 +47,101 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       this.cookies.add(cookie);
    }
 
+   protected String fetchPage(String url) {
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .build())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR))
+         .build();
+
+      int attempts = 0;
+      Response response = this.dataFetcher.get(session, request);
+      String body = response.getBody();
+
+      Integer statusCode = 0;
+      List<RequestsStatistics> requestsStatistics = response.getRequests();
+      if (!requestsStatistics.isEmpty()) {
+         statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
+      }
+
+      boolean retry = statusCode == null ||
+         (Integer.toString(statusCode).charAt(0) != '2'
+            && Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404);
+
+      // If fetcher don't return the expected response we try with apache
+      // If apache do the same, we try with javanet
+      if (retry) {
+         do {
+            if (attempts == 0) {
+               body = new ApacheDataFetcher().get(session, request).getBody();
+            } else if (attempts == 1) {
+               body = new JavanetDataFetcher().get(session, request).getBody();
+            }
+
+            attempts++;
+         } while (attempts < 2 && (body == null || body.isEmpty()));
+      }
+
+      return body;
+   }
+
+   private Document fetchDocument(){
+
+      StringBuilder searchPage = new StringBuilder();
+
+      searchPage.append(getHomePage())
+         .append("busca/")
+         .append(this.keywordEncoded)
+         .append("?page=")
+         .append(this.currentPage);
+
+      String apiUrl = searchPage.toString().replace("+", "%20");
+
+      //Request request = Request.RequestBuilder.create().setUrl(apiUrl).setCookies(this.cookies).build();
+
+      return Jsoup.parse(fetchPage(apiUrl));
+   }
+
+   private void scrapHashCode(){
+      JSONObject runtimeJson = new JSONObject();
+
+      String nonFormattedJson = this.currentDoc.select("template[data-varname=__STATE__] script").first().html();
+
+      if(nonFormattedJson != null){
+         runtimeJson = CrawlerUtils.stringToJson(nonFormattedJson);
+      }
+
+      if(runtimeJson != null){
+
+         for(String e: runtimeJson.keySet()){
+
+            if(e.contains("$ROOT_QUERY.productSearch")){
+
+               String[] splited = e.split("hash\\\":\\\"");
+
+               if(splited.length > 0){
+
+                  String[] result = splited[1].split("\\\"");
+
+                  if(result.length > 0){
+                     this.keySHA256 = result[0];
+                  }
+               }
+            }
+         }
+      }
+   }
+
    protected abstract String getHomePage();
 
    protected abstract String getLocation();
@@ -43,6 +150,11 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() {
       this.log("Página " + this.currentPage);
       this.pageSize = 50;
+
+      if(this.currentPage == 1){
+         this.currentDoc = fetchDocument();
+         scrapHashCode();
+      }
 
       JSONObject searchApi = fetchSearchApi();
       JSONArray products = searchApi.has("products") ? searchApi.getJSONArray("products") : new JSONArray();
