@@ -115,7 +115,7 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
    }
 
    override fun extractInformation(doc: Document): MutableList<Product> {
-
+      Logging.printLogInfo(logger, session, "Product page identified: " + session.originalURL)
       val products = mutableListOf<Product>()
 
       val productId = scrapProductId(doc)
@@ -147,6 +147,10 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
                offer {  }
             }
          }
+      }
+
+      if (products.isEmpty()) {
+         Logging.printLogInfo(logger, session, "not a product page: " + session.originalURL)
       }
       return products
    }
