@@ -5,7 +5,8 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ComperC
 
 public class CampograndeComperCrawler extends ComperCrawlerRanking {
 
-   private static final String STORE_ID = "6602";
+   private static final String STORE_ID = "2";
+   private static final String STORE_UF = "MS";
 
    public CampograndeComperCrawler(Session session) {
       super(session);
@@ -14,5 +15,10 @@ public class CampograndeComperCrawler extends ComperCrawlerRanking {
    @Override
    protected String getStoreId() {
       return STORE_ID;
+   }
+
+   @Override
+   protected String getStoreUf() {
+      return STORE_UF;
    }
 }
