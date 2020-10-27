@@ -11,67 +11,68 @@ import org.jsoup.select.Elements;
 
 public class SaopauloAmericanasCrawler extends B2WCrawlerRanking {
 
-  public SaopauloAmericanasCrawler(Session session) {
-    super(session);
-  }
+   public SaopauloAmericanasCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected String getStoreName() {
-    return "americanas";
-  }
+   @Override
+   protected String getStoreName() {
+      return "americanas";
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-     this.pageSize = 24;
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 24;
 
-     this.log("Página " + this.currentPage);
-     String url = "https://www." + getStoreName() + ".com.br/busca/" + this.keywordWithoutAccents.replace(" ", "%20")
-        + "?limite=24&offset=" + (this.currentPage -1) * pageSize ;
-     this.log("Link onde são feitos os crawlers: " + url);
+      this.log("Página " + this.currentPage);
+      String url = "https://www." + getStoreName() + ".com.br/busca/" + this.keywordWithoutAccents.replace(" ", "%20")
+         + "?limit=24&offset=" + (this.currentPage -1) * pageSize ;
 
-     this.currentDoc = Jsoup.parse(B2WCrawler.fetchPage(url, this.dataFetcher, cookies, headers, session));
+      this.log("Link onde são feitos os crawlers: " + url);
 
-     Elements products = this.currentDoc.select(".src__Wrapper-sc-1di8q3f-0 a");
+      this.currentDoc = Jsoup.parse(B2WCrawler.fetchPage(url, this.dataFetcher, cookies, headers, session));
 
-     if (!products.isEmpty()) {
-        if (this.totalProducts == 0) {
-           setTotalProducts();
-        }
+      Elements products = this.currentDoc.select(".grid__StyledGrid-sc-1man2hx-0 .col__StyledCol-sc-1snw5v3-0 .src__Wrapper-sc-1di8q3f-2");
 
-        for (Element e : products) {
-           String productUrl = CrawlerUtils.completeUrl(e.attr("href").split("\\?")[0], "https", "www." + getStoreName() + ".com.br");
-           String internalPid = scrapInternalPid(productUrl);
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
 
-           saveDataProduct(null, internalPid, productUrl);
+         for (Element e : products) {
+            String productUrl = CrawlerUtils.scrapUrl(e, "a", "href", "https", "www." + getStoreName() + ".com.br");
+            String internalPid = scrapInternalPid(productUrl);
 
-           this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-           if (this.arrayProducts.size() == productsLimit)
-              break;
-        }
-     } else {
-        this.result = false;
-        this.log("Keyword sem resultado!");
-     }
-  }
+            saveDataProduct(null, internalPid, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
+   }
 
    private String scrapInternalPid(String url) {
 
-     String[] productPidSplit = null;
+      String[] productPidSplit = null;
 
-     String productSplit = CommonMethods.getLast(url.split("produto/"));
-     if(!productSplit.isEmpty()){
-        String[] secondSplit = productSplit.split("/");
+      String productSplit = CommonMethods.getLast(url.split("produto/"));
+      if(!productSplit.isEmpty()){
+         String[] secondSplit = productSplit.split("/");
 
-        if(secondSplit.length > 0){
-           productPidSplit = secondSplit[0].split("\\?");
-        }
-     }
+         if(secondSplit.length > 0){
+            productPidSplit = secondSplit[0].split("\\?");
+         }
+      }
 
-     if(productPidSplit != null){
-        return productPidSplit[0];
-     }
-     return null;
-//     return CommonMethods.getLast(url.split("produto/")).split("/")[0].split("\\?")[0];
+      if(productPidSplit != null){
+         return productPidSplit[0];
+      }
+      return null;
+
    }
 
    @Override
