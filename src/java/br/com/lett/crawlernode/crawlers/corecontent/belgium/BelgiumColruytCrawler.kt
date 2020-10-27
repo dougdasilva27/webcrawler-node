@@ -45,7 +45,7 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
       headers["Cookie"] = "dtCookie=5\$5FD52BE26ADA8ECC8D788EDBF09E5125; TS01c7c76d=016303f95555a8652f1152cfa5a384322d42013b0d8b94c7429ba0a0bc056ac37c752d25bc28bf34e2505991dfea6a1b2bf576ca11; TS0113bcfc=016303f95555a8652f1152cfa5a384322d42013b0d8b94c7429ba0a0bc056ac37c752d25bc28bf34e2505991dfea6a1b2bf576ca11"
 
       val cookie = BasicClientCookie("noLocalizar", "true")
-      cookie.domain = "www.disco.com.ar"
+      cookie.domain = "www.colruyt.be"
       cookie.path = "/"
       cookies.add(cookie)
 
@@ -55,8 +55,7 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
          .setHeaders(headers)
          .setCookies(cookies)
          .setProxyservice(listOf(
-            ProxyCollection.BE_OXYLABS,
-            ProxyCollection.STORM_RESIDENTIAL_US,
+            ProxyCollection.BONANZA_BELGIUM,
             ProxyCollection.NETNUT_RESIDENTIAL_ES))
          .build()
       )?.body
@@ -80,8 +79,7 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(listOf(
-            ProxyCollection.BE_OXYLABS,
-            ProxyCollection.STORM_RESIDENTIAL_US,
+            ProxyCollection.BONANZA_BELGIUM,
             ProxyCollection.NETNUT_RESIDENTIAL_ES))
          .build()
       )?.body
