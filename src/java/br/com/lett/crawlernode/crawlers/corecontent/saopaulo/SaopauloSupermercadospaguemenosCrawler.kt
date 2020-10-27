@@ -97,7 +97,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       var starsCount = 0.0
 
       for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
-         val ratingText: Element = ratingReviewElement.selectFirst("p.rating-star>span")
+         var ratingText: Element? = ratingReviewElement.selectFirst("p.rating-star>span")
 
          if (ratingText != null) {
             val stars: Double = ratingText.ownText().trim().toDouble()
@@ -117,7 +117,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       var count = 0
 
       for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
-         val ratingText: Element = ratingReviewElement.selectFirst("p.rating-opinion")
+         val ratingText: Element? = ratingReviewElement.selectFirst("p.rating-opinion")
          if (ratingText != null && ratingText.ownText().trim().isNotEmpty())
             count++
       }
@@ -130,7 +130,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       val starsCount = mutableMapOf<Int, Int>()
 
       for (ratingReviewElement: Element in doc.select("div#ratings .ratings-item")) {
-         val ratingText: Element = ratingReviewElement.selectFirst("p.rating-star>span")
+         val ratingText: Element? = ratingReviewElement.selectFirst("p.rating-star>span")
          if (ratingText != null) {
             val star = ratingText.ownText().trim().toInt()
             val count = starsCount.getOrDefault(star, 0) + 1

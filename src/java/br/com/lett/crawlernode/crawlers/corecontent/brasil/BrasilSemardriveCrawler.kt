@@ -132,7 +132,7 @@ abstract class BrasilSemardriveCrawler(session: Session) : Crawler(session) {
          Card.HIPERCARD,
          Card.MASTERCARD,
          Card.SOROCRED,
-         Card.VISA,
+         Card.VISA
       ).toCreditCards(price)
 
       offers.add(
