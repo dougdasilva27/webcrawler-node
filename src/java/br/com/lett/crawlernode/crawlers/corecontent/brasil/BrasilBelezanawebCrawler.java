@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
@@ -34,6 +36,7 @@ public class BrasilBelezanawebCrawler extends Crawler {
   public BrasilBelezanawebCrawler(Session session) {
     super(session);
     super.config.setMustSendRatingToKinesis(true);
+    super.config.setFetcher(FetchMode.FETCHER);
   }
 
   @Override
