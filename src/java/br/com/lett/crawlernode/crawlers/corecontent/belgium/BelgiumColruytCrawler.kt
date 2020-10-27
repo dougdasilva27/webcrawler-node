@@ -12,6 +12,9 @@ import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONObject
 import org.jsoup.nodes.Document
 import java.util.*
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
+import br.com.lett.crawlernode.test.Test
 
 abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
 
@@ -40,25 +43,27 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
       headers["Cache-Control"] = "max-age=0"
       headers["Connection"] = "keep-alive"
       headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.80 Safari/537.36"
-      headers["Referer"] = session.originalURL
+      headers["Referer"] = "https://www.colruyt.be/fr/produits?page=1&searchTerm=saucis&suggestion=none&type=product"
       headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
-      headers["Cookie"] = "dtCookie=5\$5FD52BE26ADA8ECC8D788EDBF09E5125; TS01c7c76d=016303f95555a8652f1152cfa5a384322d42013b0d8b94c7429ba0a0bc056ac37c752d25bc28bf34e2505991dfea6a1b2bf576ca11; TS0113bcfc=016303f95555a8652f1152cfa5a384322d42013b0d8b94c7429ba0a0bc056ac37c752d25bc28bf34e2505991dfea6a1b2bf576ca11"
 
-      val cookie = BasicClientCookie("noLocalizar", "true")
-      cookie.domain = "www.colruyt.be"
-      cookie.path = "/"
-      cookies.add(cookie)
-
-      val result = dataFetcher.get(
+      val result = FetcherDataFetcher().get(
          session, RequestBuilder.create()
          .setUrl(session.originalURL)
          .setHeaders(headers)
          .setCookies(cookies)
+         .setFetcheroptions(
+					  FetcherOptionsBuilder.create()
+				        .setRequiredCssSelector("div[data-vue=productDetail]")
+							  .mustRetrieveStatistics(true)
+				        .build()
+				  )
          .setProxyservice(listOf(
+            ProxyCollection.LUMINATI_SERVER_BR,
             ProxyCollection.BONANZA_BELGIUM,
             ProxyCollection.NETNUT_RESIDENTIAL_ES))
          .build()
       )?.body
+	   
       return result?.toDoc()?: throw IllegalStateException("It was not possible to fetch")
    }
 
@@ -79,6 +84,7 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(listOf(
+            ProxyCollection.LUMINATI_SERVER_BR,
             ProxyCollection.BONANZA_BELGIUM,
             ProxyCollection.NETNUT_RESIDENTIAL_ES))
          .build()
@@ -93,22 +99,15 @@ abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
    * Caso mesmo assim não venha, o crawler retorna void
    * */
    fun scrapProductId(doc: Document): String {
-
       var currentDoc = doc
-      for (i in 0..2) {
-         val url = currentDoc.selectFirst("div[data-vue=productDetail]")?.attr("data-model-url")
-
-         val productId = url?.substringAfter("model.")?.substringBefore(".json") ?: ""
-
-         if (productId.isNotEmpty() && productId != "json") {
-            return productId
-
-         } else {
-            Logging.printLogDebug(logger, session, "re-request")
-            waitLoad(5000)
-            currentDoc = fetch()
-         }
+      val url = currentDoc.selectFirst("div[data-vue=productDetail]")?.attr("data-model-url")
+  
+      val productId = url?.substringAfter("model.")?.substringBefore(".json") ?: ""
+  
+      if (productId.isNotEmpty() && productId != "json") {
+         return productId
       }
+	   
       return ""
    }
 
