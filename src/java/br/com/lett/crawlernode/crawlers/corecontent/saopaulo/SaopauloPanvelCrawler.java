@@ -272,6 +272,10 @@ public class SaopauloPanvelCrawler extends Crawler {
       String primaryImage = null;
       Element primaryImageElement = document.select(".slideshow__slides div > img").first();
 
+      if (primaryImageElement == null) {
+         primaryImageElement = document.selectFirst(".slideshow__slides div img");
+      }
+
       if (primaryImageElement != null) {
          primaryImage = primaryImageElement.attr("src").trim();
       }
@@ -284,6 +288,10 @@ public class SaopauloPanvelCrawler extends Crawler {
       JSONArray secondaryImagesArray = new JSONArray();
 
       Elements imagesElement = document.select(".slideshow__slides div > img");
+
+      if (imagesElement.isEmpty()) {
+         imagesElement = document.select(".slideshow__slides div img");
+      }
 
       for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
          String image = imagesElement.get(i).attr("src").trim();
