@@ -52,7 +52,6 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = CrawlerUtils.extractSpecificStringFromScript(idsScript, INTERNALPID_ID, false, "';", false);
-         CategoryCollection categories = new CategoryCollection();
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".single-product-gallery-item a", Arrays.asList("href"), "https:",
             "www.aguiaveterinaria.com.br");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-sku-image .image-highlight a.main-product img",
@@ -72,9 +71,6 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
                   .setPrimaryImage(primaryImage)
                   .setSecondaryImages(secondaryImages)
                   .setDescription(description)
@@ -94,9 +90,6 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
@@ -115,6 +108,11 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
 
    private Offers scrapOffers(Element doc, boolean isVariation) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
+
+      if (doc.selectFirst(".buttons-holder .indisponivel") != null ) {
+         return offers;
+      }
+
       Pricing pricing = scrapPricing(doc, isVariation);
 
       if (pricing != null) {
@@ -132,8 +130,14 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Element doc, boolean isVariation) throws MalformedPricingException {
-      Double spotlightPrice = isVariation ? scrapPriceVariation(doc) :
-         CrawlerUtils.scrapDoublePriceFromHtml(doc, ".final_price", "content", false, ',', session);
+      Double spotlightPrice;
+
+      if (isVariation) {
+         spotlightPrice = scrapPriceVariation(doc);
+      } else {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".final_price", "content", false, ',', session);
+      }
+
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "input[data-promo]", "data-promo", true, '.', session);
       if (priceFrom == null || priceFrom <= 0F) {
@@ -170,11 +174,11 @@ public class PortoalegreAguiaveterinariaCrawler extends Crawler {
       return creditCards;
    }
 
-   private Float scrapPriceVariation(Element variationElement) {
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(variationElement, "input", "data-promo", true, '.', session);
+   private Double scrapPriceVariation(Element variationElement) {
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(variationElement, "input", "data-promo", true, '.', session);
 
       if (price == null || price <= 0f) {
-         price = CrawlerUtils.scrapFloatPriceFromHtml(variationElement, "input", "data-preco", true, '.', session);
+         price = CrawlerUtils.scrapDoublePriceFromHtml(variationElement, "input", "data-preco", true, '.', session);
       }
 
       return price;

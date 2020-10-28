@@ -2,6 +2,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CarrefourCrawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * 02/02/2018
@@ -28,4 +35,9 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
       return HOME_PAGE;
    }
 
+
+   @Override
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".vtex-flex-layout-0-x-flexRowContent--product-details-container  div[style]", false);
+   }
 }
