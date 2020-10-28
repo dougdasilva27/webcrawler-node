@@ -3,17 +3,14 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -26,63 +23,52 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    protected final String storeId = getStoreId();
-   private static final String HOME_PAGE = "https://www.comper.com.br/";
+   protected final String storeUf = getStoreUf();
    private String userAgent;
-   private LettProxy proxyUsed;
+
 
    protected abstract String getStoreId();
+   protected abstract String getStoreUf();
 
-   @Override
-   protected void processBeforeFetch() {
-      this.userAgent = FetchUtilities.randUserAgent();
+   private int fetchTotalProducts(){
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, this.userAgent);
+      int totalProducts = 0;
 
-      Request request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).setHeaders(headers).build();
-      Response response = this.dataFetcher.get(session, request);
+      String url = "https://www.comper.com.br/" + this.keywordEncoded + "?utm_source=" + storeUf;
+      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc="+getStoreId());
+      cookie.setDomain("www.comper.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
 
-      this.proxyUsed = response.getProxyUsed();
+      Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody()) ;
 
-      for (Cookie cookieResponse : response.getCookies()) {
-         BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-         cookie.setDomain("www.comper.com.br");
-         cookie.setPath("/");
-         this.cookies.add(cookie);
+      if(response != null){
+
+         totalProducts = CrawlerUtils.scrapIntegerFromHtml(response, ".resultado-busca-numero .value", true, 0);
       }
 
-      Request request2 = RequestBuilder.create()
-            .setUrl("https://www.comper.com.br/store/SetStore?storeId=" + storeId)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .build();
-      Response response2 = this.dataFetcher.get(session, request2);
-
-      for (Cookie cookieResponse : response2.getCookies()) {
-         BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-         cookie.setDomain("www.comperdelivery.com.br");
-         cookie.setPath("/");
-         this.cookies.add(cookie);
-      }
+      return totalProducts;
    }
 
    @Override
    public void extractProductsFromCurrentPage() {
       // número de produtos por página do market
-      this.pageSize = 20;
+      this.pageSize = 32;
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.comper.com.br/" + this.keywordEncoded + "?PageNumber=" + this.currentPage;
+      String url = "https://www.comper.com.br/buscapagina?&ft=" + this.keywordEncoded + "&PS=32&sl=df48a27d-fc0a-47cd-8087-ac49751cd86b&cc=32&sm=0&PageNumber="
+         + this.currentPage + "&O=OrderByScoreDESC&sc=" + getStoreId();
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.USER_AGENT, this.userAgent);
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).setProxy(proxyUsed).build();
+      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       this.currentDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Elements products = this.currentDoc.select(".main-shelf .main-shelf ul .shelf-item");
+      Elements products = this.currentDoc.select("ul .shelf-item");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -110,7 +96,7 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".resultado-busca-numero .value", true, 0);
+      this.totalProducts = fetchTotalProducts();
       this.log("Total da busca: " + this.totalProducts);
    }
 
