@@ -6,7 +6,8 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ComperC
 
 public class CuiabaComperCrawler extends ComperCrawlerRanking {
 
-   private static final String STORE_ID = "6637";
+   private static final String STORE_ID = "1";
+   private static final String STORE_UF = "MT";
 
    public CuiabaComperCrawler(Session session) {
       super(session);
@@ -15,5 +16,10 @@ public class CuiabaComperCrawler extends ComperCrawlerRanking {
    @Override
    protected String getStoreId() {
       return STORE_ID;
+   }
+
+   @Override
+   protected String getStoreUf() {
+      return STORE_UF;
    }
 }

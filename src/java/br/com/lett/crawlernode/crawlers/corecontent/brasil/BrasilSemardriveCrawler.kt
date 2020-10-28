@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
@@ -15,10 +14,8 @@ import br.com.lett.crawlernode.util.toCreditCards
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
-import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import java.time.Instant
 import java.util.*
 
 /**
@@ -41,18 +38,30 @@ abstract class BrasilSemardriveCrawler(session: Session) : Crawler(session) {
    abstract fun getZipCode(): String
 
    override fun handleCookiesBeforeFetch() {
+
+      val doc = fetch()
+
+      val token = doc.selectFirst("meta[name=csrf-token]")?.attr("content") ?: ""
+
       val url = "https://drive.gruposemar.com.br/current_stock"
 
       val headers: MutableMap<String, String> = HashMap()
-      headers["content-type"] = "application/x-www-form-urlencoded; charset=UTF-8"
-      headers["origin"] = "https://drive.gruposemar.com.br"
       headers["accept"] = "*/*;q=0.5, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript"
+      headers["x-csrf-token"] = token
+      headers["content-type"] = "application/x-www-form-urlencoded; charset=UTF-8"
+
+      val cookiesStr = cookies.map {
+         return@map "${it.name}=${it.value};"
+      }.joinToString(" ")
+
+      headers["cookie"] = cookiesStr
 
       val payload = "utf8=%E2%9C%93" +
          "&_method=put" +
          "&order%5Bshipping_mode%5D=delivery" +
          "&order%5Bship_address_attributes%5D%5Btemporary%5D=true" +
-         "&order%5Bship_address_attributes%5D%5Bzipcode%5D=${getZipCode()}"
+         "&order%5Bship_address_attributes%5D%5Bzipcode%5D=${getZipCode()}" +
+         "&button="
 
       val response = FetcherDataFetcher().post(
          session, Request.RequestBuilder.create()
@@ -61,18 +70,25 @@ abstract class BrasilSemardriveCrawler(session: Session) : Crawler(session) {
          .setHeaders(headers)
          .build()
       )
-      cookies = response.cookies
+
+      cookies = response?.cookies ?: listOf()
    }
 
    override fun fetch(): Document {
 
-      val token = cookies.first {
+      val token = cookies.firstOrNull {
          it.name == "guest_token"
-      }?.value ?: ""
+      }?.value
 
       val headers: MutableMap<String, String> = HashMap()
 
-      headers["cookie"] = "guest_token=${token};"
+      if (token != null) {
+         val cookiesStr = cookies.map {
+            return@map "${it.name}=${it.value};"
+         }.joinToString(" ")
+
+         headers["cookie"] = cookiesStr
+      }
       headers["authority"] = "drive.gruposemar.com.br"
       headers["accept"] = "text/html, application/xhtml+xml"
       headers["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
@@ -83,6 +99,8 @@ abstract class BrasilSemardriveCrawler(session: Session) : Crawler(session) {
          .build()
 
       val response = dataFetcher.get(session, request)
+
+      cookies = response.cookies
 
       return Jsoup.parse(response?.body ?: "")
    }
