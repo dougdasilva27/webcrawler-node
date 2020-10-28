@@ -3,6 +3,13 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -21,21 +28,29 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 21;
+    this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    this.currentDoc = fetchCurrentPage();
-    Elements products = this.currentDoc.select(".listaprod li");
+    JSONObject searchJson = fetchJsonResponse();
+
+    this.totalProducts = searchJson.optInt("total");
+    JSONArray products = searchJson.optJSONArray("data");
 
     if (!products.isEmpty()) {
 
-      for (Element e : products) {
-        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "meta[itemprop=productID]", "content");
-        String productUrl = CrawlerUtils.scrapUrl(e, "a[itemprop=url]", "href", "https", "www.gazin.com.br");
+      for (Object e: products) {
 
-        saveDataProduct(null, internalPid, productUrl);
+         JSONObject product = (JSONObject) e;
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+         String internalId = scrapInternalId(product);
+
+         String internalPid = product.optString("id");
+
+         String productUrl = scrapProductUrl(product,internalId);
+
+        saveDataProduct(internalId, internalPid, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
 
@@ -48,11 +63,6 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
-  protected boolean hasNextPage() {
-    return !this.currentDoc.select(".conteudo .BarraPaginas a:last-child input").isEmpty();
-  }
-
   /**
    * For this site you need to click on a button to follow search pages, even on the first page has a
    * button to list products, if you click the page reload and appears the search page
@@ -61,36 +71,68 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
    * 
    * @return
    */
-  private Document fetchCurrentPage() {
-    Document doc = new Document("");
-    
-    try {
-      if (this.currentPage == 1) {
-        String url = "https://www.gazin.com.br/" + URLEncoder.encode(location.replace(" ", "-"), StandardCharsets.ISO_8859_1.toString()) + ".mht";
-        doc = fetchDocument(url);
-        String in = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=in]", "value");
-  
-        // this happen because when returns more than one category, we just crawl the first page
-        if (in != null && doc.select("#conteudoProdutosSB > div > .mProdutosEspacoAntPonto").size() < 2) {
-          url = "https://www.gazin.com.br/comprar/encontrar.php?des=s&in=" + URLEncoder.encode(in, StandardCharsets.ISO_8859_1.toString());
-          doc = fetchDocument(url);
-        }
-      } else {
-        StringBuilder url = new StringBuilder();
-        url.append("https://www.gazin.com.br/comprar/encontrar.php?");
-  
-        Elements inputs = this.currentDoc.select(".conteudo .BarraPaginas a:last-child input");
-        for (Element e : inputs) {
-          url.append("&").append(e.attr("name")).append("=").append(URLEncoder.encode(e.val(), StandardCharsets.ISO_8859_1.toString()));
+  private JSONObject fetchJsonResponse() throws {
+
+     String originalKeyword = this.keywordEncoded.replace("+", "%20");
+
+     HashMap<String, String> headers = new HashMap<>();
+     headers.put("canal", "gazin-ecommerce");
+
+     String api = "https://marketplace-api.gazin.com.br/v1/canais/produtos?page="
+        + this.currentPage + "&per_page=20&busca="
+        + originalKeyword + "&order=titulo&sort=asc&per_page=20";
+
+     Request request = Request.RequestBuilder.create().setUrl(api).setHeaders(headers).build();
+
+     return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+
+
+  }
+
+  private String scrapProductUrl(JSONObject product, String internalId){
+
+     String slugName = "";
+     String combination = "sem-cor";
+     JSONObject variation = product.optJSONObject("variacao");
+
+     if(variation != null){
+        JSONObject productObject = variation.optJSONObject("produto");
+        JSONArray combinationArray = variation.optJSONArray("combinacoes");
+
+        if(!combinationArray.isEmpty()){
+           combination = ((JSONObject) combinationArray.get(0)).optString("valor_slug");
         }
 
-        doc = fetchDocument(url.toString());
-      }
-    } catch(UnsupportedEncodingException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
+        if(productObject != null){
+           slugName = productObject.optString("slug");
+        }
+     }
 
-    return doc;
+     StringBuilder url = new StringBuilder();
+     url.append("https://www.gazin.com.br/produto/")
+        .append(internalId + "/")
+        .append(slugName)
+        .append("?cor=" + combination);
+
+
+      return url.toString();
+  }
+
+  private String scrapInternalId(JSONObject product){
+
+     String internalId = null;
+     JSONObject variation = product.optJSONObject("variacao");
+
+     if(variation != null){
+
+        JSONObject productJson = variation.optJSONObject("produto");
+
+        if(productJson != null){
+           internalId = productJson.optString("id");
+        }
+     }
+     return  internalId;
   }
 
 }
