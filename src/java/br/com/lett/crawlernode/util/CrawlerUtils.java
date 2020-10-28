@@ -1117,6 +1117,43 @@ public class CrawlerUtils {
       return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Arrays.asList(card), session);
    }
 
+   public static void incrementAdvancedRating(AdvancedRatingReview advancedRating, Integer star) {
+      if (star == null) {
+         return;
+      }
+
+      switch (star) {
+         case 1:
+            advancedRating.setTotalStar1(advancedRating.getTotalStar1() + 1);
+            break;
+         case 2:
+            advancedRating.setTotalStar2(advancedRating.getTotalStar2() + 1);
+            break;
+         case 3:
+            advancedRating.setTotalStar3(advancedRating.getTotalStar3() + 1);
+            break;
+         case 4:
+            advancedRating.setTotalStar4(advancedRating.getTotalStar4() + 1);
+            break;
+         case 5:
+            advancedRating.setTotalStar5(advancedRating.getTotalStar5() + 1);
+            break;
+         default:
+            break;
+      }
+   }
+
+   public static AdvancedRatingReview advancedRatingEmpty(){
+      AdvancedRatingReview advancedRating = new AdvancedRatingReview();
+      advancedRating.setTotalStar1(0);
+      advancedRating.setTotalStar2(0);
+      advancedRating.setTotalStar3(0);
+      advancedRating.setTotalStar4(0);
+      advancedRating.setTotalStar5(0);
+
+      return advancedRating;
+   }
+
    /**
     * AssembleMarketplaceFromMap
     * <p>

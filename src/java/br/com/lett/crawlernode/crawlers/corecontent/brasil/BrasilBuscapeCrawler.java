@@ -3,10 +3,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -89,12 +90,53 @@ public class BrasilBuscapeCrawler extends Crawler {
 
       products.add(product);
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+    } else if(doc.selectFirst("#__NEXT_DATA__") != null) {
+      return scrapV2(doc);
+    }else {
+       Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
     }
 
     return products;
+  }
 
+  private List<Product> scrapV2(Document doc) throws MalformedProductException {
+     List<Product> products = new ArrayList<>();
+
+     JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
+
+     JSONObject productGeneral = JSONUtils.getValueRecursive(dataJson, "props.pageProps.page.product", JSONObject.class);
+
+     if (productGeneral == null) {
+        return products;
+     }
+
+     JSONObject productJson = JSONUtils.getJSONValue(productGeneral, "product");
+
+     String internalId = productJson.optString("id");
+     String name = productJson.optString("name");
+
+     CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumb_List__1RAzt li:not(:first-child) span");
+     String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ProductPageBody_Col__23zGY"));
+     String primaryImage = productJson.optString("image");
+     Marketplace marketplace = scrapMarketplacesV2(internalId, productJson);
+     RatingsReviews ratingAndReviews = scrapRatingAndReviewsV2(internalId, productGeneral);
+
+     Product product = ProductBuilder.create()
+        .setUrl(session.getOriginalURL())
+        .setInternalId(internalId)
+        .setName(name)
+        .setPrices(new Prices())
+        .setAvailable(false)
+        .setCategories(categories)
+        .setPrimaryImage(primaryImage)
+        .setRatingReviews(ratingAndReviews)
+        .setDescription(description)
+        .setMarketplace(marketplace)
+        .build();
+
+     products.add(product);
+
+     return products;
   }
 
   private List<Document> getSellersHtmls(Document doc, String internalId) {
@@ -155,6 +197,36 @@ public class BrasilBuscapeCrawler extends Crawler {
     return CrawlerUtils.assembleMarketplaceFromMap(offersMap, Arrays.asList("buscapé"), Card.VISA, session);
   }
 
+  private Marketplace scrapMarketplacesV2(String internalId, JSONObject productJson) {
+    Map<String, Prices> offersMap = new HashMap<>();
+
+     int stores = productJson.optInt("stores");
+
+     String url = "https://api-v1.zoom.com.br/esfiha/product/"+internalId+"?order=DEFAULT&page=1&pageSize="+stores;
+
+     Request request = RequestBuilder.create()
+        .setUrl(url)
+        .setCookies(cookies)
+        .build();
+
+     JSONObject jsonStore = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+     JSONArray hits = JSONUtils.getJSONArrayValue(jsonStore, "hits");
+
+     for (Object hit: hits) {
+        if (hit instanceof JSONObject) {
+           String sellerName = JSONUtils.getValueRecursive(hit, "seller.name", String.class);
+           if (sellerName != null) {
+              Prices prices = scrapPricesV2(JSONUtils.getJSONValue((JSONObject) hit, "sales_condition"));
+              offersMap.put(sellerName.toLowerCase(), prices);
+           }
+
+        }
+     }
+
+    return CrawlerUtils.assembleMarketplaceFromMap(offersMap, Arrays.asList("buscapé"), Card.VISA, session);
+  }
+
   private Prices scrapPricesOnNewSite(Element doc) {
     Prices prices = new Prices();
 
@@ -176,10 +248,41 @@ public class BrasilBuscapeCrawler extends Crawler {
     return prices;
   }
 
+  private Prices scrapPricesV2(JSONObject priceJson) {
+
+    Prices prices = new Prices();
+
+    Float price = priceJson.optFloat("price");
+
+    if (price > 0) {
+      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+      installmentPriceMap.put(1, price);
+      prices.setBankTicketPrice(price);
+
+      JSONArray installmentsArray = JSONUtils.getJSONArrayValue(priceJson, "installments");
+      for (Object installmentJSON: installmentsArray) {
+         if (installmentJSON instanceof JSONObject) {
+            int installment = ((JSONObject) installmentJSON).optInt("amount_months");
+            if (installment > 1) {
+               float installmentPrice = ((JSONObject) installmentJSON).optFloat("price", 0);
+               if (installmentPrice > 0) {
+                  installmentPriceMap.put(installment, installmentPrice);
+               }
+            }
+         }
+      }
+
+      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
+    }
+
+    return prices;
+  }
+
   private String scrapPrimaryImage(Document doc) {
     JSONArray jsonImg = getImageJSON(doc);
     String imagem = null;
-    if (jsonImg instanceof JSONArray) {
+    if (jsonImg != null) {
       JSONObject imageJson = jsonImg.getJSONObject(0);
       imagem = getImageFromJSONOfNewSite(imageJson);
     }
@@ -204,17 +307,16 @@ public class BrasilBuscapeCrawler extends Crawler {
     Elements scripts = doc.select("body > script");
     JSONArray jsonImg = null;
     JSONObject jsonProduct = null;
-    for (Iterator<Element> iterator = scripts.iterator(); iterator.hasNext();) {
-      Element element = iterator.next();
-      if (element.toString().contains("ProductUrl:\"" + session.getOriginalURL() + '"')) {
-        String jsonStringProduct = CrawlerUtils.extractSpecificStringFromScript(element.toString(), "Zoom.Context.load(", true, "});", false);
-        jsonProduct = JSONUtils.stringToJson(jsonStringProduct);
-        break;
-      }
-    }
-    if (jsonProduct instanceof JSONObject) {
+     for (Element element : scripts) {
+        if (element.toString().contains("ProductUrl:\"" + session.getOriginalURL() + '"')) {
+           String jsonStringProduct = CrawlerUtils.extractSpecificStringFromScript(element.toString(), "Zoom.Context.load(", true, "});", false);
+           jsonProduct = JSONUtils.stringToJson(jsonStringProduct);
+           break;
+        }
+     }
+    if (jsonProduct != null) {
       JSONObject jsonSuperZoom = jsonProduct.optJSONObject("SuperZoom");
-      if (jsonSuperZoom instanceof JSONObject) {
+      if (jsonSuperZoom != null) {
         jsonImg = jsonSuperZoom.optJSONArray("img");
       }
     }
@@ -224,11 +326,11 @@ public class BrasilBuscapeCrawler extends Crawler {
   private String getImageFromJSONOfNewSite(JSONObject imageJson) {
     String image = null;
 
-    if (imageJson.optString("l") instanceof String) {
+    if (imageJson.opt("l") instanceof String) {
       image = CrawlerUtils.completeUrl(imageJson.get("l").toString().trim(), PROTOCOL, HOST);
-    } else if (imageJson.optString("m") instanceof String) {
+    } else if (imageJson.opt("m") instanceof String) {
       image = CrawlerUtils.completeUrl(imageJson.get("m").toString().trim(), PROTOCOL, HOST);
-    } else if (imageJson.optString("t") instanceof String) {
+    } else if (imageJson.opt("t") instanceof String) {
       image = CrawlerUtils.completeUrl(imageJson.get("t").toString().trim(), PROTOCOL, HOST);
     }
 
@@ -253,15 +355,47 @@ public class BrasilBuscapeCrawler extends Crawler {
     return ratingReviews;
   }
 
+   private RatingsReviews scrapRatingAndReviewsV2(String internalId, JSONObject productJson) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      ratingReviews.setDate(session.getDate());
+      ratingReviews.setInternalId(internalId);
+
+      Integer totalNumOfEvaluations = productJson.optInt("countOfComments");
+      Double avgRating = JSONUtils.getValueRecursive(productJson, "product.rating", Double.class);
+      ratingReviews.setTotalRating(totalNumOfEvaluations);
+      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0D);
+      ratingReviews.setAdvancedRatingReview(getAdvancedRatingV2(productJson));
+
+      return ratingReviews;
+   }
+
+
+   private  AdvancedRatingReview getAdvancedRatingV2(JSONObject productJson) {
+      AdvancedRatingReview advancedRating = CrawlerUtils.advancedRatingEmpty();
+
+      JSONArray comments = JSONUtils.getJSONArrayValue(productJson, "comments");
+
+      for (Object comment: comments) {
+         if (comment instanceof JSONObject) {
+            Integer star = ((JSONObject) comment).optInt("rating");
+            CrawlerUtils.incrementAdvancedRating(advancedRating, star);
+         }
+      }
+
+      return advancedRating;
+   }
+
   private AdvancedRatingReview getAdvancedRating(String internalId, int total) {
     int pageNumber = 0;
     int totalProds = 0;
-    AdvancedRatingReview advancedRating = new AdvancedRatingReview();
-    advancedRating.setTotalStar1(0);
-    advancedRating.setTotalStar2(0);
-    advancedRating.setTotalStar3(0);
-    advancedRating.setTotalStar4(0);
-    advancedRating.setTotalStar5(0);
+    AdvancedRatingReview advancedRating = CrawlerUtils.advancedRatingEmpty();
+
+    if (total == 0) {
+       return advancedRating;
+    }
+
     String response = null;
     Document document = null;
     do {
@@ -281,29 +415,22 @@ public class BrasilBuscapeCrawler extends Crawler {
       if (!response.isEmpty()) {
         document = Jsoup.parse(response);
 
-        for (Iterator<Element> iterator = document.select(".product-rating :first-child").iterator(); iterator.hasNext();) {
-          Element element = iterator.next();
-          int star = MathUtils.parseInt(element.className());
-          totalProds++;
-          switch (star) {
-            case 1:
-              advancedRating.setTotalStar1(advancedRating.getTotalStar1() + 1);
-              break;
-            case 2:
-              advancedRating.setTotalStar2(advancedRating.getTotalStar2() + 1);
-              break;
-            case 3:
-              advancedRating.setTotalStar3(advancedRating.getTotalStar3() + 1);
-              break;
-            case 4:
-              advancedRating.setTotalStar4(advancedRating.getTotalStar4() + 1);
-              break;
-            case 5:
-              advancedRating.setTotalStar5(advancedRating.getTotalStar5() + 1);
-              break;
-            default:
-              break;
-          }
+        Elements ratingDoc = document.select(".product-rating :first-child");
+        if (!ratingDoc.isEmpty()) {
+           for (Element element : ratingDoc) {
+              Integer star = MathUtils.parseInt(element.className());
+              if (star != null) {
+                 totalProds++;
+                 CrawlerUtils.incrementAdvancedRating(advancedRating, star);
+              }
+           }
+        }
+         else {
+           JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(document, "#__NEXT_DATA__", null, null, false, false);
+           JSONObject productJson = JSONUtils.getValueRecursive(dataJson, "props.pageProps.page.product", JSONObject.class);
+           if (productJson != null ) {
+              return getAdvancedRatingV2(productJson);
+           }
         }
       }
       pageNumber++;
