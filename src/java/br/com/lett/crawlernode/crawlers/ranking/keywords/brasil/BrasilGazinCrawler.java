@@ -71,7 +71,7 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
    * 
    * @return
    */
-  private JSONObject fetchJsonResponse() throws {
+  private JSONObject fetchJsonResponse(){
 
      String originalKeyword = this.keywordEncoded.replace("+", "%20");
 
