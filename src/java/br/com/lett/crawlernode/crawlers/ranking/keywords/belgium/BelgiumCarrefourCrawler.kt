@@ -3,10 +3,20 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.belgium
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
+import org.apache.http.impl.cookie.BasicClientCookie
 
-class BelgiumCarrefourCrawler(session: Session) : CrawlerRankingKeywords(session) {
+abstract class BelgiumCarrefourCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    private val BASE_URL = "drive.carrefour.eu"
+
+   abstract fun getShopId(): String
+   abstract fun getChosenDelivery(): String
+
+   override fun processBeforeFetch() {
+      cookies.add(BasicClientCookie("Carrefour", "shopId:${getShopId()}"))
+      cookies.add(BasicClientCookie("chosen-delivery", getChosenDelivery()))
+      cookies.add(BasicClientCookie("chosen-delivery-address", getChosenDelivery()))
+   }
 
    override fun extractProductsFromCurrentPage() {
       pageSize = 24

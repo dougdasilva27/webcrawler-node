@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.belgium
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
+import br.com.lett.crawlernode.core.models.CategoryCollection
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
@@ -9,63 +10,184 @@ import br.com.lett.crawlernode.util.*
 import exceptions.MalformedPricesException
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONObject
+import org.jsoup.nodes.Document
 import java.util.*
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
+import br.com.lett.crawlernode.test.Test
 
-class BelgiumColruytCrawler(session: Session) : Crawler(session) {
+abstract class BelgiumColruytCrawler(session: Session) : Crawler(session) {
 
-   override fun handleCookiesBeforeFetch() {
-      Logging.printLogDebug(logger, session, "Adding cookie...")
-      cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.colruyt.be/fr/produits", Arrays.asList("ASP.NET_SessionId"), "eproductmw.colruyt.be", "/",
-         cookies, session, HashMap(), dataFetcher)
-      val cookie = BasicClientCookie("noLocalizar", "true")
-      cookie.domain = "www.disco.com.ar"
-      cookie.path = "/"
-      cookies.add(cookie)
+   /*
+   * para pegar o placeId tem que entrar na home do site https://www.colruyt.be/fr
+   * ir em Liste de courses no lado direito da tela, colocar o `code postal` ou o endereço
+   * e escolher a unidade em Sélectionné e CONFIRMER.
+   * Depois, escolher o produto.
+   *
+   * Apos isso, para pegar o placeId, abre a ferramenta network do navegador e procura pela requisição:
+   * https://ecgproductmw.colruyt.be/ecgproductmw/v2/fr/products/0000?clientCode=clp&placeId=????
+   *
+   * */
+   abstract fun getPlaceId(): String
+
+   override fun fetch(): Document {
+
+      val headers: MutableMap<String, String> = HashMap()
+
+      headers["Upgrade-Insecure-Requests"] = "1"
+      headers["Accept-Language"] = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+      headers["Sec-Fetch-Site"] = "same-origin"
+      headers["Sec-Fetch-Mode"] = "navigate"
+      headers["Sec-Fetch-User"] = "?1"
+      headers["Sec-Fetch-Dest"] = "document"
+      headers["Cache-Control"] = "max-age=0"
+      headers["Connection"] = "keep-alive"
+      headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.80 Safari/537.36"
+      headers["Referer"] = "https://www.colruyt.be/fr/produits?page=1&searchTerm=saucis&suggestion=none&type=product"
+      headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+
+      val result = FetcherDataFetcher().get(
+         session, RequestBuilder.create()
+         .setUrl(session.originalURL)
+         .setHeaders(headers)
+         .setCookies(cookies)
+         .setFetcheroptions(
+					  FetcherOptionsBuilder.create()
+				        .setRequiredCssSelector("div[data-vue=productDetail]")
+							  .mustRetrieveStatistics(true)
+				        .build()
+				  )
+         .setProxyservice(listOf(
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.BONANZA_BELGIUM,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES))
+         .build()
+      )?.body
+	   
+      return result?.toDoc()?: throw IllegalStateException("It was not possible to fetch")
    }
 
-   override fun fetch(): Any {
-      val headers: MutableMap<String, String> = HashMap()
-      headers["Cookie"] = "DG_ZUID=E071E6EC-9AC1-3BDD-96DD-78EFAB377B7E; DG_HID=7B9A156F-E448-3827-83FA-604B4DD98430; DG_SID=51.254.117.237:wP1NKH8WH7lH974t55znO88ezakZEZ5OZTa6WpXhceQ; DG_IID=C5788001-A86F-3DE7-811E-0B6E65502FA2; DG_UID=A41A8DDD-0FA4-3E98-BF02-2A9B1315F27C;"
+   fun fetchProduct(productId: String, placeId: String): JSONObject? {
 
-      val id = session.originalURL?.split("/")?.last()?.split("-")?.last() ?: throw IllegalStateException("Token must not be null")
-      val url = "https://eproductmw.colruyt.be/eproductmw/rest/v1/fr/stores/3515/product-by-id/$id.json"
+      if (productId.isEmpty() || placeId.isEmpty()) {
+         return null
+      }
+
+      val headers: MutableMap<String, String> = HashMap()
+      headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.80 Safari/537.36"
+      headers["Origin"] = "https://www.colruyt.be"
+
+      val url = "https://ecgproductmw.colruyt.be/ecgproductmw/v2/fr/products/${productId}?clientCode=clp&placeId=${placeId}&dataGroup=ALL"
+
       val result = dataFetcher.get(
          session, RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setProxyservice(listOf(
-            ProxyCollection.BE_OXYLABS,
-            ProxyCollection.STORM_RESIDENTIAL_US,
+            ProxyCollection.LUMINATI_SERVER_BR,
+            ProxyCollection.BONANZA_BELGIUM,
             ProxyCollection.NETNUT_RESIDENTIAL_ES))
          .build()
       )?.body
-      return result?.toJson() ?: throw IllegalStateException("It was not possible to fetch $url")
+      return result?.toJson()
    }
 
-   override fun extractInformation(json: JSONObject): MutableList<Product> {
+   /*
+   * Esse site tem um problema que quando você entra na página de algum produto,
+   * as vezes não retorna nada. Por isso fiz uma essa função para tentar mais 3 vezes
+   * até conseguir vim a página corretamente.
+   * Caso mesmo assim não venha, o crawler retorna void
+   * */
+   fun scrapProductId(doc: Document): String {
+      var currentDoc = doc
+      val url = currentDoc.selectFirst("div[data-vue=productDetail]")?.attr("data-model-url")
+  
+      val productId = url?.substringAfter("model.")?.substringBefore(".json") ?: ""
+  
+      if (productId.isNotEmpty() && productId != "json") {
+         return productId
+      }
+	   
+      return ""
+   }
+
+   override fun extractInformation(doc: Document): MutableList<Product> {
+      Logging.printLogInfo(logger, session, "Product page identified: " + session.originalURL)
       val products = mutableListOf<Product>()
-      val data = json.optJSONObject("data")
+
+      val productId = scrapProductId(doc)
+
+      val data = fetchProduct(productId, getPlaceId())
+
       data?.let { jsonObject ->
          products += product {
             url = session.originalURL
-            categories = jsonObject.optString("topCategoryName").split("/")
-            name = jsonObject.optString("seoArticleName")
-            description = jsonObject.optString("fullDescription")
-            primaryImage = jsonObject.optString("detailImage")
-            internalId = jsonObject.optString("commercialId")
+            categories = scrapCategories(jsonObject)
+            name = "${jsonObject.optString("brand")} ${jsonObject.optString("name")}".trim()
+            description = jsonObject.optString("description")
+            primaryImage = jsonObject.optString("fullImage")
+            internalId = jsonObject.optString("commercialArticleNumber")
             internalPid = internalId
-            offer {
-               isMainRetailer
-               useSlugNameAsInternalSellerId
-               sellerFullName = "Colruyt"
-               pricing {
-                  val price = jsonObject.optString("price1").toDoubleComma()
-                  spotlightPrice = price
-                  bankSlip = price?.toBankSlip() ?: throw MalformedPricesException()
+
+            if (jsonObject.optBoolean("isAvailable")) {
+               offer {
+                  isMainRetailer
+                  useSlugNameAsInternalSellerId
+                  sellerFullName = "Colruyt"
+                  pricing {
+                     val price = jsonObject.optJSONObject("price")?.optDouble("basicPrice")
+                     spotlightPrice = price
+                     bankSlip = price?.toBankSlip() ?: throw MalformedPricesException()
+                  }
                }
+            } else {
+               offer {  }
             }
          }
       }
+
+      if (products.isEmpty()) {
+         Logging.printLogInfo(logger, session, "not a product page: " + session.originalURL)
+      }
       return products
+   }
+
+   fun scrapCategories(json: JSONObject): CategoryCollection {
+
+      val categories = CategoryCollection()
+
+      val jsonArray = JSONUtils.getJSONArrayValue(json, "categories")
+
+      if (jsonArray.isEmpty) {
+         return categories
+      }
+      var currentCategory: Any? = jsonArray[0]
+      for (x in 0..2) {
+
+         if (currentCategory == null) {
+            break
+         }
+
+         if (currentCategory is JSONObject) {
+            val name = currentCategory.optString("name")
+            if(name != null) {
+               categories.add(name)
+               val children = currentCategory.optJSONArray("children")
+               currentCategory = children?.get(0)
+            } else {
+               break
+            }
+         }
+      }
+
+      return categories
+   }
+
+   fun waitLoad(time: Int) {
+      try {
+         Thread.sleep(time.toLong())
+      } catch (e: InterruptedException) {
+         e.printStackTrace()
+      }
    }
 }
