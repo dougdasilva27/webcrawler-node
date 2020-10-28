@@ -10,6 +10,11 @@ import models.Offer
 import models.Offers
 import models.pricing.Pricing
 import org.jsoup.nodes.Document
+import org.jsoup.Jsoup
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
+import br.com.lett.crawlernode.test.Test
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher
 
 /**
  * Date: 30/07/20
@@ -24,9 +29,80 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       const val SELLER_NAME: String = "Delhaize"
    }
 
+	 override fun fetch(): Document {
+		  dataFetcher = FetcherDataFetcher();
+		 
+		  val headers: MutableMap<String, String> = HashMap()
+		  headers["user-agent"] = "Mozilla/5.0 (X11; Linux x86_64; AppleWebKit/537.36 (KHTML] = like Gecko; Chrome/86.0.4240.75 Safari/537.36";
+		 
+	    val result = dataFetcher.get(
+         session, RequestBuilder.create()
+         .setUrl("https://www.delhaize.be/fr-be/")
+				 .setHeaders(headers)
+         .build()
+      );
+		 
+		 
+		 var jsessionId :String? = null; 
+		 
+		 for(cookie in result.getCookies()) {
+  			if(cookie.getName().equals("JSESSIONID")) {
+    				jsessionId = cookie.getValue();
+    				break;
+  			} 
+		 }
+		 
+		 val homeDocument = Jsoup.parse(result?.body);
+		 
+		 val token = CrawlerUtils.scrapStringSimpleInfoByAttribute(homeDocument, "#CSRFTokenMaster", "value");
+		 
+		 headers["cookie"] = "JSESSIONID=${jsessionId};"
+		 headers["authority"] = "www.delhaize.be";
+     headers["cache-control"] = "max-age=0";
+     headers["upgrade-insecure-requests"] = "1";
+     headers["origin"] = "https://www.delhaize.be";
+     headers["content-type"] = "application/x-www-form-urlencoded";
+     headers["accept"] = "text/html] =application/xhtml+xml] =application/xml;q=0.9] =image/avif] =image/webp] =image/apng] =*/*;q=0.8] =application/signed-exchange;v=b3;q=0.9";
+     headers["sec-fetch-site"] = "same-origin";
+     headers["sec-fetch-mode"] = "navigate";
+     headers["sec-fetch-user"] = "?1";
+     headers["sec-fetch-dest"] = "document";
+     headers["referer"] = "https://www.delhaize.be/fr-be/collectionpoint";
+     headers["accept-language"] = "pt-BR] =pt;q=0.9] =en-US;q=0.8] =en;q=0.7] =es;q=0.6";
+		 
+		 val payload = "posName=10014037&warehouseCode=10014037&CSRFToken=${token}"
+		 
+		 System.err.println(jsessionId);
+		 System.err.println(token);
+		 
+		 dataFetcher.post(
+         session, RequestBuilder.create()
+         .setUrl("https://www.delhaize.be/storelocator/selectAsCollectionPoint?lastViewedPage=%252Fstorelocator%253Fintcmp%253Dlocatormenu%2523query%25253D1500&goBackAfterRegistration=true")
+				 .setFollowRedirects(false)
+				 .setHeaders(headers)
+				 .setPayload(payload)
+				 .mustSendContentEncoding(false)
+         .build()
+      );
+		 
+		 val headers2: MutableMap<String, String> = HashMap()
+		 headers2["cookie"] = "JSESSIONID=${jsessionId};"
+		 
+		  val response = dataFetcher.get(
+         session, RequestBuilder.create()
+         .setUrl(session.originalURL)
+         .setHeaders(headers2)
+         .build()
+      )?.body;
+		 
+		 return Jsoup.parse(response);
+	 }
+	
    override fun extractInformation(doc: Document): MutableList<Product> {
       super.extractInformation(doc)
 
+	      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DELHAIZE.html");
+	   
       if (!isProductPage(doc)) {
          return mutableListOf()
       }
@@ -101,7 +177,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
-      val price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ProductDetails .ultra-bold.test-price-property", null, false, ',', session)
+      var price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ProductDetails .ultra-bold.test-price-property > span:last-child", null, false, ',', session)
 
       val sales = doc.select(".ProductDetails .ProductPromotions .text-bold").eachText()
 

@@ -1,20 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
@@ -53,24 +49,19 @@ public class SaopauloTendadriveCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (doc.selectFirst(".box-product") != null) {
+      if (doc.selectFirst("#__NEXT_DATA__") != null) {
 
          JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
          JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
 
-         List<String> categories = doc.select(".breadcrumbs a").eachText();
-         if (!categories.isEmpty()) {
-            categories.remove(0);
-         }
-         String description =
-               CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".more-info", " product-table"));
+         String description = scrapDescription(skuJson);
 
          String internalId = skuJson.optString("sku");
          String name = skuJson.optString("name");
          List<String> images = scrapImages(skuJson);
-         String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
-         String secondaryImages = images != null && !images.isEmpty() ? new JSONArray(images).toString() : null;
-         Offers offers = scrapOffers(doc, skuJson);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+         String secondaryImages = !images.isEmpty() ? new JSONArray(images).toString() : null;
+         Offers offers = scrapOffers(skuJson);
          Integer stock = skuJson.optInt("totalStock");
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
 
@@ -80,7 +71,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
                      .setOffers(offers)
                      .setInternalId(internalId)
                      .setName(name)
-                     .setCategories(categories)
                      .setPrimaryImage(primaryImage)
                      .setSecondaryImages(secondaryImages)
                      .setDescription(description)
@@ -97,20 +87,35 @@ public class SaopauloTendadriveCrawler extends Crawler {
       return products;
    }
 
-   private Offers scrapOffers(Element elem, JSONObject skuJson)
-         throws MalformedPricingException, OfferException {
-      Offers offers = new Offers();
-      List<String> sales = null;
-      Element saleElem = elem.selectFirst(".PriceQtdComponent");
-      if (saleElem != null) {
-         String sale = saleElem.text();
-         if (sale != null) {
-            if (sale.contains("un.R")) {
-               sales = Collections.singletonList(sale.replace(".", ". "));
-            }
+   private String scrapDescription(JSONObject skuJson) {
+      StringBuilder description = new StringBuilder();
+
+      description.append(skuJson.optString("description"));
+
+      JSONArray specs = skuJson.optJSONArray("specifications");
+
+      if (specs != null) {
+         description.append("<table id=\"specs\">");
+
+         for (Object obj : specs) {
+            JSONObject spec = (JSONObject) obj;
+
+            description.append("<tr>");
+            description.append("<td> " + spec.optString("name") + "</td>");
+            description.append("<td> " + spec.optString("value") + "</td>");
+            description.append("</tr>");
          }
+
+         description.append("</table>");
       }
 
+
+      return description.toString();
+   }
+
+   private Offers scrapOffers(JSONObject skuJson)
+         throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
       Double price = skuJson.optDouble("price");
       CreditCards creditCards = new CreditCards();
 
@@ -139,7 +144,6 @@ public class SaopauloTendadriveCrawler extends Crawler {
                               .build())
                   .setIsMainRetailer(true)
                   .setUseSlugNameAsInternalSellerId(true)
-                  .setSales(sales)
                   .build());
 
       return offers;
