@@ -239,6 +239,11 @@ public class Mercadolivre3pCrawler {
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title a", false);
+
+      if (sellerFullName == null) {
+         sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title", false);
+      }
+
       boolean hasMainOffer = false;
 
       if (sellerFullName != null && !sellerFullName.isEmpty()) {
@@ -316,13 +321,13 @@ public class Mercadolivre3pCrawler {
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
             offers.add(OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(mainSellerNameLower)
-               .setIsMainRetailer(true)
-               .setIsBuybox(true)
-               .setPricing(pricing)
-               .setSales(sales)
-               .build());
+                  .setUseSlugNameAsInternalSellerId(true)
+                  .setSellerFullName(mainSellerNameLower)
+                  .setIsMainRetailer(true)
+                  .setIsBuybox(true)
+                  .setPricing(pricing)
+                  .setSales(sales)
+                  .build());
          }
       }
    }
