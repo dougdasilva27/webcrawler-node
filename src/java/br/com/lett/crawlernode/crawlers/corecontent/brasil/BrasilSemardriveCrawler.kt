@@ -173,10 +173,6 @@ abstract class BrasilSemardriveCrawler(session: Session) : Crawler(session) {
    }
 
    private fun isProductPage(doc: Document): Boolean {
-      return doc.selectFirst(".product-details .product-name") != null && zipCodeIsAvailable(doc)
-   }
-
-   private fun zipCodeIsAvailable(doc: Document): Boolean {
-      return doc.selectFirst(".user-menu li a[data-remote] span")?.text()?.contains(getZipCode()) == true
+      return doc.selectFirst(".product-details .product-name") != null
    }
 }
