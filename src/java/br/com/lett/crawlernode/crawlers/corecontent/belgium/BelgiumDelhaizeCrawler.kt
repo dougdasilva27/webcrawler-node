@@ -97,8 +97,6 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    override fun extractInformation(doc: Document): MutableList<Product> {
       super.extractInformation(doc)
 
-	    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DELA.html")
-	   
       if (!isProductPage(doc)) {
          return mutableListOf()
       }
