@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -24,7 +25,7 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
     // chama função de pegar o html
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select("#item-list .item");
+    Elements products = this.currentDoc.select(".wrapper .item-card");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -33,7 +34,7 @@ public class BrasilNetshoesCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String internalPid = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
+        String productUrl = CrawlerUtils.scrapUrl(e, ".item-card__images__image-link", "href", "https:", "www.netshoes.com.br");
 
         saveDataProduct(null, internalPid, productUrl);
 
