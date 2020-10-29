@@ -29,12 +29,20 @@ abstract class ColruytCrawler(session: Session) : CrawlerRankingKeywords(session
       val json = fetchJSON(url)
       totalProducts = json.optInt("productsFound", 0)
       log("Total de produtos: $totalProducts")
+	   
       json.optJSONArray("products")?.forEach { elem ->
          if (elem is JSONObject) {
-            val id = elem.optString("commercialArticleNumber")
+            val pid = elem.optString("productId")
             val internalId = elem.optString("commercialArticleNumber")
-            val productUrl = "https://www.colruyt.be/fr/produits/${elem.optString("name").replace(' ', '-').replace('.', '-')}-$internalId"
-            saveDataProduct(internalId, internalId, url)
+			 
+            var name : String = elem.optString("name").trim();
+			 
+            if(name.isEmpty()) {
+               name = elem.optString("brand").trim();
+            }
+			 
+            val productUrl = "https://www.colruyt.be/fr/produits/${name.toLowerCase().replace(' ', '-').replace('.', '-')}-$internalId?pid=${pid}"
+            saveDataProduct(internalId, pid, url)
 
             log("Position: $position - internalId: $internalId - Url: $productUrl")
          }
