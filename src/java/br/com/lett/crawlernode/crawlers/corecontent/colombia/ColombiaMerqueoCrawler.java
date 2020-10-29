@@ -211,10 +211,10 @@ public class ColombiaMerqueoCrawler extends Crawler {
       List<String> slugs = scrapSlugs(originalURL);
 
       String apiUrl =
-            "https://merqueo.com/api/2.0/stores/63/find?department_slug=" + slugs.get(1)
-                  + "&shelf_slug=" + slugs.get(2)
-                  + "&product_slug=" + slugs.get(3)
-                  + "&limit=7";
+         "https://merqueo.com/api/2.0/stores/64/find?department_slug=" + slugs.get(1)
+            + "&shelf_slug=" + slugs.get(2)
+            + "&product_slug=" + slugs.get(3)
+            + "&limit=7&zoneId=103&adq=1";
 
       Request request = RequestBuilder
             .create()
