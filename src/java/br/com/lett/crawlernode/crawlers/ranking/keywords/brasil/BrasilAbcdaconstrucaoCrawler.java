@@ -24,7 +24,7 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
 
 
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".spotContent");
+    Elements products = this.currentDoc.select(".spots-interna .fbits-item-lista-spot");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -34,8 +34,8 @@ public class BrasilAbcdaconstrucaoCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         //scrap internalId
-        String rawInternal = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".lista-desejos-spot a", "id");
-        String internalId = rawInternal.contains("produto-")? rawInternal.split("produto-")[1]: null;
+        String rawInternal = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id");
+        String internalId = rawInternal != null && rawInternal.contains("produto-spot-item-")? rawInternal.split("item-")[1]: null;
 
         String productUrl = CrawlerUtils.scrapUrl(e, ".spot-parte-um", "href", "https:", "www.abcdaconstrucao.com.br");
 
