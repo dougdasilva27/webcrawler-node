@@ -42,7 +42,7 @@ abstract class ColruytCrawler(session: Session) : CrawlerRankingKeywords(session
             }
 			 
             val productUrl = "https://www.colruyt.be/fr/produits/${name.toLowerCase().replace(' ', '-').replace('.', '-')}-$internalId?pid=${pid}"
-            saveDataProduct(internalId, pid, url)
+            saveDataProduct(internalId, pid, productUrl)
 
             log("Position: $position - internalId: $internalId - Url: $productUrl")
          }
