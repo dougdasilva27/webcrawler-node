@@ -135,6 +135,9 @@ public class B2WCrawler extends Crawler {
       // Pega só o que interessa do json da api
       JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
 
+      JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
+      JSONObject offersJSON = apolloJson != null && !apolloJson.isEmpty() ? SaopauloB2WCrawlersUtils.extractApolloOffersJson(apolloJson) : new JSONObject();
+
       // verifying if url starts with home page because on crawler seed,
       // some seeds can be of another store
       if (infoProductJson.has("skus") && session.getOriginalURL().startsWith(this.homePage)) {
@@ -148,12 +151,20 @@ public class B2WCrawler extends Crawler {
          RatingsReviews ratingReviews = crawlRatingReviews(frontPageJson, internalPid);
          List<String> eans = crawlEan(infoProductJson);
 
-         Map<String, String> skuOptions = this.crawlSkuOptions(infoProductJson);
+         JSONArray skuOptions = this.crawlSkuOptions(infoProductJson);
 
-         for (Entry<String, String> entry : skuOptions.entrySet()) {
-            String internalId = entry.getKey();
-            String name = entry.getValue().trim();
-            Offers offers = scrapOffers(doc, internalId, internalPid);
+         for (Object obj : skuOptions) {
+            JSONObject skuJson = (JSONObject) obj;
+            String internalId = skuJson.optString("id");
+            String name = skuJson.optString("name");
+            Offers offers;
+
+            if (skuJson.has("offers")) {
+               offers = scrapOffersnewWay(skuJson, offersJSON, internalId);
+            } else {
+               offers = scrapOffers(doc, internalId, internalPid);
+            }
+
             setMainRetailer(offers);
 
             // Creating the product
@@ -185,6 +196,9 @@ public class B2WCrawler extends Crawler {
    private void setMainRetailer(Offers offers) {
       if (offers.containsSeller(MAIN_B2W_NAME_LOWER)) {
          Offer offer = offers.getSellerByName(MAIN_B2W_NAME_LOWER);
+         offer.setIsMainRetailer(true);
+      } else if (offers.containsSeller(MAIN_B2W_NAME_LOWER.toUpperCase())) {
+         Offer offer = offers.getSellerByName(MAIN_B2W_NAME_LOWER.toUpperCase());
          offer.setIsMainRetailer(true);
       } else if (offers.containsSeller(sellerNameLower)) {
          Offer offer = offers.getSellerByName(sellerNameLower);
@@ -392,6 +406,62 @@ public class B2WCrawler extends Crawler {
       return eans;
    }
 
+   private Offers scrapOffersnewWay(JSONObject skuJson, JSONObject offersJson, String sku) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+
+      JSONArray offersArray = offersJson.has(sku) ? offersJson.getJSONArray(sku) : skuJson.optJSONArray("offers");
+
+      if (offersArray != null && !offersArray.isEmpty()) {
+         Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
+
+         for (int i = 0; i < offersArray.length(); i++) {
+            JSONObject info = (JSONObject) offersArray.get(i);
+
+            boolean isBuyBox = offersArray.length() > 1;
+            String sellerName = info.optQuery("/seller/name").toString().trim();
+            String sellerId = info.optQuery("/seller/id").toString();
+
+            Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
+            Integer sellersPagePosition = null;
+
+            JSONObject pricesJson = info.has("defaultPrice") ? info : SaopauloB2WCrawlersUtils.extractPricesJson(info);
+
+            Pricing pricing = scrapPricing(pricesJson, i, sellerId, mapOfSellerIdAndPrice);
+
+            Offer offer = OfferBuilder.create()
+                  .setInternalSellerId(sellerId)
+                  .setSellerFullName(sellerName)
+                  .setMainPagePosition(mainPagePosition)
+                  .setSellersPagePosition(sellersPagePosition)
+                  .setPricing(pricing)
+                  .setIsBuybox(isBuyBox)
+                  .setIsMainRetailer(false)
+                  .build();
+
+            offers.add(offer);
+         }
+
+         if (offers.size() > 1) {
+            // Sellers page positios is order by price, in this map, price is the value
+            Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
+
+            int position = 1;
+
+            for (Entry<String, Double> entry : sortedMap.entrySet()) {
+               for (Offer offer : offers.getOffersList()) {
+                  if (offer.getInternalSellerId().equals(entry.getKey())) {
+                     offer.setSellersPagePosition(position);
+                  }
+               }
+
+               position++;
+            }
+         }
+      }
+
+      return offers;
+   }
+
    private Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
@@ -454,6 +524,7 @@ public class B2WCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice)
          throws MalformedPricingException {
+
       Double priceFrom = scrapPriceFrom(info);
       CreditCards creditCards = scrapCreditCards(info);
       Double spotlightPrice = scrapSpotlightPrice(info, creditCards, offerIndex);
@@ -462,7 +533,7 @@ public class B2WCrawler extends Crawler {
       mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
+            .setPriceFrom(priceFrom > 0d ? priceFrom : null)
             .setSpotlightPrice(spotlightPrice)
             .setCreditCards(creditCards)
             .setBankSlip(bt)
@@ -483,8 +554,7 @@ public class B2WCrawler extends Crawler {
    private Double scrapSpotlightPrice(JSONObject info, CreditCards creditCards, int offerIndex) {
       Double featuredPrice = null;
 
-      Double price1x =
-            creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
+      Double price1x = creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
       Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
       Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
 
@@ -538,8 +608,8 @@ public class B2WCrawler extends Crawler {
       return internalPid;
    }
 
-   private Map<String, String> crawlSkuOptions(JSONObject infoProductJson) {
-      Map<String, String> skuMap = new HashMap<>();
+   private JSONArray crawlSkuOptions(JSONObject infoProductJson) {
+      JSONArray skuMap = new JSONArray();
 
       if (infoProductJson.has("skus")) {
          JSONArray skus = infoProductJson.getJSONArray("skus");
@@ -547,7 +617,10 @@ public class B2WCrawler extends Crawler {
          for (int i = 0; i < skus.length(); i++) {
             JSONObject sku = skus.getJSONObject(i);
 
+
             if (sku.has("internalId")) {
+               JSONObject skuJson = new JSONObject();
+
                String internalId = sku.getString("internalId");
                StringBuilder name = new StringBuilder();
 
@@ -568,7 +641,14 @@ public class B2WCrawler extends Crawler {
                   }
                }
 
-               skuMap.put(internalId, name.toString().trim());
+               skuJson.put("name", name.toString());
+               skuJson.put("id", internalId);
+
+               if (sku.has("offers")) {
+                  skuJson.put("offers", sku.optJSONArray("offers"));
+               }
+
+               skuMap.put(skuJson);
             }
          }
       }
@@ -643,6 +723,11 @@ public class B2WCrawler extends Crawler {
       Integer quantity = installmentJson.getInt("quantity");
       Double value = installmentJson.getDouble("value");
       Double interest = JSONUtils.getDoubleValueFromJSON(installmentJson, "taxedInterestRate", true);
+
+      if (interest == null || interest == 0d) {
+         interest = JSONUtils.getDoubleValueFromJSON(installmentJson, "interestRate", true);
+      }
+
       Double finalPrice = JSONUtils.getDoubleValueFromJSON(installmentJson, "total", true);
 
       JSONObject discountJson = installmentJson.optJSONObject("discount");

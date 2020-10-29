@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.util.Arrays;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -37,10 +39,10 @@ public class SaopauloB2WCrawlersUtils {
       for (Element e : scripts) {
          String json = e.outerHtml();
 
-         if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("};")) {
+         if ((json.contains("__PRELOADED_STATE__") || json.contains("__INITIAL_STATE__")) && json.contains("}")) {
 
             int x = json.indexOf("_ =") + 3;
-            int y = json.lastIndexOf("};");
+            int y = json.lastIndexOf('}');
 
             json = json.substring(x, y + 1);
             skus = CrawlerUtils.stringToJson(json);
@@ -68,70 +70,82 @@ public class SaopauloB2WCrawlersUtils {
    public static JSONObject assembleJsonProductWithNewWay(JSONObject initialJson) {
       JSONObject jsonProduct = new JSONObject();
 
+      JSONObject productJson = new JSONObject();
+
       if (initialJson.has("product")) {
-         JSONObject productJson = initialJson.getJSONObject("product");
+         productJson = initialJson.optJSONObject("product");
 
-         JSONArray skus = getJSONSkus(initialJson);
+         JSONArray skus = optJSONSkus(initialJson);
          jsonProduct.put("skus", skus);
+      } else if (initialJson.has("products")) {
+         JSONObject products = initialJson.optJSONObject("products");
 
-         String internalPid = null;
+         if (!products.isEmpty()) {
+            productJson = products.optJSONObject(products.keys().next());
 
-         if (productJson.has("id")) {
-            internalPid = productJson.getString("id");
-            jsonProduct.put("internalPid", internalPid);
+            JSONArray skus = optJSONSkus(productJson);
+            jsonProduct.put("skus", skus);
          }
-
-         if (productJson.has("name")) {
-            jsonProduct.put("name", productJson.get("name"));
-         }
-
-         JSONObject jsonForPrices;
-         if (productJson.has("offers")) {
-            jsonForPrices = productJson;
-         } else {
-            jsonForPrices = initialJson;
-         }
-
-         JSONObject jsonPrices = extractJsonOffers(jsonForPrices, internalPid);
-         jsonProduct.put("prices", jsonPrices);
-
-         JSONObject jsonImages = getJSONImages(productJson);
-         jsonProduct.put("images", jsonImages);
-
-         JSONArray jsonCategories = getJSONCategories(productJson);
-         jsonProduct.put("categories", jsonCategories);
-
       }
+
+
+      String internalPid = null;
+
+      if (productJson.has("id")) {
+         internalPid = productJson.optString("id");
+         jsonProduct.put("internalPid", internalPid);
+      }
+
+      if (productJson.has("name")) {
+         jsonProduct.put("name", productJson.get("name"));
+      }
+
+      JSONObject jsonForPrices;
+      if (productJson.has("offers")) {
+         jsonForPrices = productJson;
+      } else {
+         jsonForPrices = initialJson;
+      }
+
+      JSONObject jsonPrices = extractJsonOffers(jsonForPrices, internalPid);
+      jsonProduct.put("prices", jsonPrices);
+
+      JSONObject jsonImages = optJSONImages(productJson);
+      jsonProduct.put("images", jsonImages);
+
+      JSONArray jsonCategories = optJSONCategories(productJson);
+      jsonProduct.put("categories", jsonCategories);
+
 
       return jsonProduct;
 
    }
 
-   private static JSONArray getJSONSkus(JSONObject initialJson) {
+   private static JSONArray optJSONSkus(JSONObject initialJson) {
       JSONArray skus = new JSONArray();
 
       if (initialJson.has("skus")) {
-         JSONArray skusJson = initialJson.getJSONArray("skus");
+         JSONArray skusJson = initialJson.optJSONArray("skus");
 
          for (int i = 0; i < skusJson.length(); i++) {
-            JSONObject skuJson = skusJson.getJSONObject(i);
+            JSONObject skuJson = skusJson.optJSONObject(i);
             JSONObject sku = new JSONObject();
 
             if (skuJson.has("id")) {
-               sku.put("internalId", skuJson.getString("id"));
+               sku.put("internalId", skuJson.optString("id"));
 
                if (skuJson.has("name")) {
                   StringBuilder name = new StringBuilder();
-                  sku.put("name", skuJson.getString("name"));
+                  sku.put("name", skuJson.optString("name"));
 
-                  if (skuJson.has("diffs")) {
-                     JSONArray diffs = skuJson.getJSONArray("diffs");
+                  if (skuJson.has("diffs") && !skuJson.isNull("diffs")) {
+                     JSONArray diffs = skuJson.optJSONArray("diffs");
 
                      for (int j = 0; j < diffs.length(); j++) {
-                        JSONObject variation = diffs.getJSONObject(j);
+                        JSONObject variation = diffs.optJSONObject(j);
 
                         if (variation.has("value")) {
-                           name.append(" " + variation.getString("value").trim());
+                           name.append(" " + variation.optString("value").trim());
                         }
                      }
 
@@ -139,7 +153,15 @@ public class SaopauloB2WCrawlersUtils {
                   }
                }
                if (skuJson.has("eans") && !skuJson.isNull("eans")) {
-                  sku.put("eans", skuJson.getJSONArray("eans"));
+                  sku.put("eans", skuJson.optJSONArray("eans"));
+               }
+
+               if (skuJson.has("offers")) {
+                  JSONObject offers = skuJson.optJSONObject("offers");
+
+                  if (offers != null && offers.has("result")) {
+                     sku.put("offers", offers.optJSONArray("result"));
+                  }
                }
             }
 
@@ -149,39 +171,39 @@ public class SaopauloB2WCrawlersUtils {
       return skus;
    }
 
-   private static JSONArray getJSONCategories(JSONObject productJson) {
+   private static JSONArray optJSONCategories(JSONObject productJson) {
       JSONArray jsonCategories = new JSONArray();
 
       if (productJson.has("category")) {
-         JSONObject category = productJson.getJSONObject("category");
+         JSONObject category = productJson.optJSONObject("category");
 
          if (category.has("breadcrumb")) {
-            jsonCategories = category.getJSONArray("breadcrumb");
+            jsonCategories = category.optJSONArray("breadcrumb");
          }
       }
 
       return jsonCategories;
    }
 
-   private static JSONObject getJSONImages(JSONObject productJson) {
+   private static JSONObject optJSONImages(JSONObject productJson) {
       JSONObject jsonImages = new JSONObject();
 
       if (productJson.has("images")) {
-         JSONArray imagesArray = productJson.getJSONArray("images");
+         JSONArray imagesArray = productJson.optJSONArray("images");
          JSONArray secondaryImages = new JSONArray();
 
          for (int i = 0; i < imagesArray.length(); i++) {
-            JSONObject images = imagesArray.getJSONObject(i);
+            JSONObject images = imagesArray.optJSONObject(i);
             String image = null;
 
             if (images.has("extraLarge")) {
-               image = images.getString("extraLarge");
+               image = images.optString("extraLarge");
             } else if (images.has("large")) {
-               image = images.getString("large");
+               image = images.optString("large");
             } else if (images.has("big")) {
-               image = images.getString("big");
+               image = images.optString("big");
             } else if (images.has("medium")) {
-               image = images.getString("medium");
+               image = images.optString("medium");
             }
 
             if (i == 0) {
@@ -203,20 +225,27 @@ public class SaopauloB2WCrawlersUtils {
       JSONArray offersJsonArray = new JSONArray();
 
       if (initialJson.has("offers") && initialJson.get("offers") instanceof JSONArray) {
-         offersJsonArray = initialJson.getJSONArray("offers");
+         offersJsonArray = initialJson.optJSONArray("offers");
+      } else if (initialJson.has("offers") && initialJson.get("offers") instanceof JSONObject) {
+         JSONObject offerJson = initialJson.optJSONObject("offers");
+
+         if (offerJson.has("result")) {
+            offersJsonArray = offerJson.optJSONArray("result");
+         }
+
       } else if (initialJson.has("entities")) {
-         JSONObject entities = initialJson.getJSONObject("entities");
+         JSONObject entities = initialJson.optJSONObject("entities");
 
          if (entities.has("offers")) {
-            JSONObject offerObject = entities.getJSONObject("offers");
+            JSONObject offerObject = entities.optJSONObject("offers");
 
             if (offerObject.has(internalPid)) {
-               offersJsonArray = offerObject.getJSONArray(internalPid);
+               offersJsonArray = offerObject.optJSONArray(internalPid);
             }
          }
 
          if ((offersJsonArray == null || offersJsonArray.length() < 1) && entities.has("pickUpStoreOffers")) {
-            JSONObject offerObject = entities.getJSONObject("pickUpStoreOffers");
+            JSONObject offerObject = entities.optJSONObject("pickUpStoreOffers");
             JSONObject productOffer = offerObject.optJSONObject(internalPid);
             if (productOffer != null && productOffer.has("result")) {
                offersJsonArray = productOffer.optJSONArray("result");
@@ -228,7 +257,7 @@ public class SaopauloB2WCrawlersUtils {
          JSONArray moreQuantityOfInstallments = new JSONArray();
 
          for (int i = 0; i < offersJsonArray.length(); i++) {
-            JSONObject jsonOffer = offersJsonArray.getJSONObject(i);
+            JSONObject jsonOffer = offersJsonArray.optJSONObject(i);
             JSONObject jsonSeller = new JSONObject();
 
             String idProduct = crawlIdProduct(jsonOffer);
@@ -239,14 +268,14 @@ public class SaopauloB2WCrawlersUtils {
                manageEmbedded(jsonOffer, jsonSeller);
 
                if (jsonOffer.has("paymentOptions")) {
-                  JSONObject payment = jsonOffer.getJSONObject("paymentOptions");
+                  JSONObject payment = jsonOffer.optJSONObject("paymentOptions");
 
                   setBoleto(payment, jsonSeller);
                   setCard(payment, jsonSeller, moreQuantityOfInstallments);
                }
 
                if (jsonPrices.has(idProduct)) {
-                  JSONArray installments = jsonPrices.getJSONArray(idProduct);
+                  JSONArray installments = jsonPrices.optJSONArray(idProduct);
                   installments.put(jsonSeller);
 
                   jsonPrices.put(idProduct, installments);
@@ -269,15 +298,17 @@ public class SaopauloB2WCrawlersUtils {
       String idProduct = null;
 
       if (jsonOffer.has("_links")) {
-         JSONObject links = jsonOffer.getJSONObject("_links");
+         JSONObject links = jsonOffer.optJSONObject("_links");
 
          if (links.has("sku")) {
-            JSONObject sku = links.getJSONObject("sku");
+            JSONObject sku = links.optJSONObject("sku");
 
             if (sku.has("id")) {
-               idProduct = sku.getString("id");
+               idProduct = sku.optString("id");
             }
          }
+      } else if (jsonOffer.has("sku")) {
+         idProduct = jsonOffer.optString("sku");
       }
 
       return idProduct;
@@ -285,10 +316,10 @@ public class SaopauloB2WCrawlersUtils {
 
    private static void manageEmbedded(JSONObject jsonOffer, JSONObject jsonSeller) {
       if (jsonOffer.has("_embedded")) {
-         JSONObject embedded = jsonOffer.getJSONObject("_embedded");
+         JSONObject embedded = jsonOffer.optJSONObject("_embedded");
 
          if (embedded.has("seller")) {
-            JSONObject seller = embedded.getJSONObject("seller");
+            JSONObject seller = embedded.optJSONObject("seller");
 
             setStock(seller, jsonSeller);
 
@@ -305,7 +336,7 @@ public class SaopauloB2WCrawlersUtils {
 
    private static void setBoleto(JSONObject payment, JSONObject jsonSeller) {
       if (payment.has("BOLETO")) {
-         JSONObject boleto = payment.getJSONObject("BOLETO");
+         JSONObject boleto = payment.optJSONObject("BOLETO");
 
          if (boleto.has("price")) {
             jsonSeller.put("bankSlip", boleto.getDouble("price"));
@@ -318,10 +349,10 @@ public class SaopauloB2WCrawlersUtils {
 
    private static void setCard(JSONObject payment, JSONObject jsonSeller, JSONArray moreQuantityOfInstallments) {
       if (payment.has("CARTAO_VISA")) {
-         JSONObject visa = payment.getJSONObject("CARTAO_VISA");
+         JSONObject visa = payment.optJSONObject("CARTAO_VISA");
 
          if (visa.has("installments")) {
-            JSONArray installments = visa.getJSONArray("installments");
+            JSONArray installments = visa.optJSONArray("installments");
             jsonSeller.put("installments", installments);
 
             if (installments.length() > moreQuantityOfInstallments.length()) {
@@ -335,10 +366,10 @@ public class SaopauloB2WCrawlersUtils {
       }
 
       if (payment.has("CARTAO_SUBA_MASTERCARD")) {
-         JSONObject shopCard = payment.getJSONObject("CARTAO_SUBA_MASTERCARD");
+         JSONObject shopCard = payment.optJSONObject("CARTAO_SUBA_MASTERCARD");
 
          if (shopCard.has("installments")) {
-            JSONArray installments = shopCard.getJSONArray("installments");
+            JSONArray installments = shopCard.optJSONArray("installments");
             jsonSeller.put("installmentsShopCard", installments);
 
             if (installments.length() > moreQuantityOfInstallments.length()) {
@@ -348,10 +379,10 @@ public class SaopauloB2WCrawlersUtils {
       }
 
       if (payment.has("CARTAO_ACOM_MASTERCARD")) {
-         JSONObject shopCard = payment.getJSONObject("CARTAO_ACOM_MASTERCARD");
+         JSONObject shopCard = payment.optJSONObject("CARTAO_ACOM_MASTERCARD");
 
          if (shopCard.has("installments")) {
-            JSONArray installments = shopCard.getJSONArray("installments");
+            JSONArray installments = shopCard.optJSONArray("installments");
             jsonSeller.put("installmentsShopCard", installments);
 
             if (installments.length() > moreQuantityOfInstallments.length()) {
@@ -361,10 +392,10 @@ public class SaopauloB2WCrawlersUtils {
       }
 
       if (payment.has("CARTAO_SHOP_MASTERCARD")) {
-         JSONObject shopCard = payment.getJSONObject("CARTAO_SHOP_MASTERCARD");
+         JSONObject shopCard = payment.optJSONObject("CARTAO_SHOP_MASTERCARD");
 
          if (shopCard.has("installments")) {
-            JSONArray installments = shopCard.getJSONArray("installments");
+            JSONArray installments = shopCard.optJSONArray("installments");
             jsonSeller.put("installmentsShopCard", installments);
 
             if (installments.length() > moreQuantityOfInstallments.length()) {
@@ -376,13 +407,13 @@ public class SaopauloB2WCrawlersUtils {
 
    private static void setStock(JSONObject seller, JSONObject jsonSeller) {
       if (seller.has("availability")) {
-         JSONObject availability = seller.getJSONObject("availability");
+         JSONObject availability = seller.optJSONObject("availability");
 
          if (availability.has("_embedded")) {
-            JSONObject embeddedStock = availability.getJSONObject("_embedded");
+            JSONObject embeddedStock = availability.optJSONObject("_embedded");
 
             if (embeddedStock.has("stock")) {
-               JSONObject jsonStock = embeddedStock.getJSONObject("stock");
+               JSONObject jsonStock = embeddedStock.optJSONObject("stock");
 
                if (jsonStock.has("quantity")) {
                   jsonSeller.put("stock", jsonStock.getInt("quantity"));
@@ -401,5 +432,122 @@ public class SaopauloB2WCrawlersUtils {
       }
 
       return internalID;
+   }
+
+   public static JSONObject extractPricesJson(JSONObject offerJson) {
+      JSONObject pricesJson = new JSONObject();
+
+      JSONArray moreQuantityOfInstallments = new JSONArray();
+
+      pricesJson.put("priceFrom", pricesJson.optDouble("salesPrice", 0d));
+      extractBoleto(offerJson, pricesJson, "boleto");
+      extractCards(offerJson, pricesJson, moreQuantityOfInstallments);
+
+      pricesJson.put("moreQuantityOfInstallments", moreQuantityOfInstallments);
+
+      return pricesJson;
+   }
+
+   private static void extractBoleto(JSONObject offerJson, JSONObject pricesJson, String key) {
+      if (offerJson.has(key)) {
+         JSONObject boleto = offerJson.optJSONObject(key);
+
+         if (boleto.has("price")) {
+            pricesJson.put("bankSlip", boleto.getDouble("price"));
+
+            JSONObject discountJson = boleto.optJSONObject("discount");
+            pricesJson.put("bankSlipDiscount", discountJson != null ? discountJson.optDouble("rate", 0d) / 100d : 0d);
+         }
+      }
+   }
+
+   private static void extractCards(JSONObject offerJson, JSONObject pricesJson, JSONArray moreQuantityOfInstallments) {
+      List<String> cards = Arrays.asList("cartaoVisa");
+
+      for (String card : cards) {
+         if (offerJson.has(card)) {
+            JSONObject visa = offerJson.optJSONObject(card);
+
+            JSONArray minInstallments = visa.optJSONArray("minQuantity");
+            JSONArray maxInstallments = visa.optJSONArray("maxQuantity");
+
+            JSONArray installments = minInstallments;
+            for (Object obj : maxInstallments) {
+               installments.put((JSONObject) obj);
+            }
+
+            pricesJson.put("installments", installments);
+
+            if (installments.length() > moreQuantityOfInstallments.length()) {
+               moreQuantityOfInstallments = installments;
+            }
+
+            if (visa.has("price")) {
+               pricesJson.put("defaultPrice", visa.get("price"));
+            }
+         }
+      }
+   }
+
+   public static JSONObject extractApolloOffersJson(JSONObject apoloJson) {
+      JSONObject offersJson = new JSONObject();
+
+      for (String key : apoloJson.keySet()) {
+
+         if (key.startsWith("OffersResult:")) {
+            JSONObject offerResult = apoloJson.optJSONObject(key);
+
+            if (offerResult != null) {
+               String sku = offerResult.optString("sku");
+
+               if (sku != null) {
+                  JSONObject sellerJson = new JSONObject();
+
+                  String sellerKey = offerResult.optQuery("/seller/__ref").toString().trim();
+                  sellerJson.put("seller", apoloJson.optJSONObject(sellerKey));
+
+                  extractBoleto(offerResult, sellerJson, "paymentOptions({\"type\":\"BOLETO\"})");
+                  extractApolloCards(offerResult, sellerJson);
+
+                  if (sellerJson.has("defaultPrice")) {
+                     if (offersJson.has(sku)) {
+                        offersJson.getJSONArray(sku).put(sellerJson);
+                     } else {
+                        JSONArray skuOffers = new JSONArray();
+                        skuOffers.put(sellerJson);
+
+                        offersJson.put(sku, skuOffers);
+                     }
+                  }
+               }
+            }
+         }
+      }
+
+      return offersJson;
+   }
+
+   private static void extractApolloCards(JSONObject offerJson, JSONObject pricesJson) {
+      List<String> cards = Arrays.asList("paymentOptions({\"type\":\"CARTAO_VISA\"})", "paymentOptions({\"type\":\"CARTAO_ACOM_MASTERCARD\"})");
+
+      for (String card : cards) {
+         if (offerJson.has(card)) {
+            JSONObject visa = offerJson.optJSONObject(card);
+
+            JSONArray minInstallments = visa.optJSONArray("installment({\"filter\":\"min\"})");
+            JSONArray maxInstallments = visa.optJSONArray("installment({\"filter\":\"max\"})");
+
+            JSONArray installments = minInstallments;
+            for (Object obj : maxInstallments) {
+               installments.put((JSONObject) obj);
+            }
+
+            pricesJson.put("installments", installments);
+
+            if (visa.has("price")) {
+               pricesJson.put("defaultPrice", visa.get("price"));
+            }
+         }
+      }
    }
 }

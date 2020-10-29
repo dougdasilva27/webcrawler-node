@@ -17,7 +17,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
-      super.subSellers = Arrays.asList("lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs");
+      super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs");
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.homePage = HOME_PAGE;
    }
