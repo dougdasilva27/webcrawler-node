@@ -72,8 +72,6 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 		 
 		 val payload = "posName=10014037&warehouseCode=10014037&CSRFToken=${token}"
 		 
-		 System.err.println(jsessionId);
-		 System.err.println(token);
 		 
 		 dataFetcher.post(
          session, RequestBuilder.create()
@@ -86,7 +84,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       );
 		 
 		 val headers2: MutableMap<String, String> = HashMap()
-		 headers2["cookie"] = "JSESSIONID=${jsessionId};"
+		 headers2["cookie"] = "JSESSIONID=Y411-03456a83-bafb-49e1-9740-3d836695c55f;"
 		 
 		  val response = dataFetcher.get(
          session, RequestBuilder.create()
@@ -101,7 +99,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    override fun extractInformation(doc: Document): MutableList<Product> {
       super.extractInformation(doc)
 
-	      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DELHAIZE.html");
+	    CommonMethods.saveDataToAFile(doc, Test.pathWrite + "DELA.html")
 	   
       if (!isProductPage(doc)) {
          return mutableListOf()
