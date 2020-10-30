@@ -22,6 +22,7 @@ public class BrasilPolishopCrawler extends CrawlerRankingKeywords {
       String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
       String url = "https://www.polishop.com.br/" + key + "?_q=" + key + "&map=ft&page=" + this.currentPage;
+
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
@@ -32,7 +33,7 @@ public class BrasilPolishopCrawler extends CrawlerRankingKeywords {
          for (Object e : productsJson) {
             if (e instanceof JSONObject) {
 
-               String productUrl = ((JSONObject) e).optString("url");
+               String productUrl = ((JSONObject) e).optString("url") + "/p";
                saveDataProduct(null, null, productUrl);
                this.log("Position: " + this.position + " - Url: " + productUrl);
             }
