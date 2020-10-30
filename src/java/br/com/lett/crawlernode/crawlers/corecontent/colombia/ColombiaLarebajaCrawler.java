@@ -37,7 +37,7 @@ public class ColombiaLarebajaCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = crawlInternalId(doc);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripciones h1", true);
+         String name = crawlName(doc);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc,
                ".pricened, div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora, [id^=subtotal-producto-unidad-]",
                null, false, ',', session);
@@ -76,6 +76,23 @@ public class ColombiaLarebajaCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String crawlName(Document doc) {
+      String name = null;
+      Element nameEl = doc.selectFirst(".descripciones h1");
+
+      if (nameEl != null) {
+         name = nameEl.ownText().trim();
+         Element subNameEl = nameEl.nextElementSibling();
+         if (subNameEl != null) {
+            String subName = subNameEl.text().trim();
+            if (subName.toUpperCase().contains(" X ")) {
+               name = name + " " + subName;
+            }
+         }
+      }
+      return name;
    }
 
    private String crawlDescription(Document doc) {
