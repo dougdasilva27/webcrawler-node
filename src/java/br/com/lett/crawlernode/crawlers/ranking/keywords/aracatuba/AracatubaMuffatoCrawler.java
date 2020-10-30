@@ -1,11 +1,11 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.araçatuba;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.aracatuba;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.SupermuffatoDeliveryCrawler;
 
-public class AraçAtubaMuffatoCrawler extends SupermuffatoDeliveryCrawler {
+public class AracatubaMuffatoCrawler extends SupermuffatoDeliveryCrawler {
 
-   public AraçAtubaMuffatoCrawler(Session session) {
+   public AracatubaMuffatoCrawler(Session session) {
       super(session);
    }
 

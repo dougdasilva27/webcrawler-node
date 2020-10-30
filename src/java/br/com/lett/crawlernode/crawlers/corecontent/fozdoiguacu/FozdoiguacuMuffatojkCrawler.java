@@ -1,12 +1,12 @@
-package br.com.lett.crawlernode.crawlers.corecontent.fozdoiguaçu;
+package br.com.lett.crawlernode.crawlers.corecontent.fozdoiguacu;
 
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermuffatodeliveryCrawler;
 
-public class FozdoiguaçuMuffatojkCrawler extends SupermuffatodeliveryCrawler {
+public class FozdoiguacuMuffatojkCrawler extends SupermuffatodeliveryCrawler {
 
-   public FozdoiguaçuMuffatojkCrawler(Session session) {
+   public FozdoiguacuMuffatojkCrawler(Session session) {
       super(session);
    }
 

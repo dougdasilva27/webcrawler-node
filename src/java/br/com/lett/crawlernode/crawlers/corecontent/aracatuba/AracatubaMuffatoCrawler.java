@@ -1,12 +1,12 @@
-package br.com.lett.crawlernode.crawlers.corecontent.araçatuba;
+package br.com.lett.crawlernode.crawlers.corecontent.aracatuba;
 
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermuffatodeliveryCrawler;
 
-public class AraçAtubaMuffatoCrawler extends SupermuffatodeliveryCrawler {
+public class AracatubaMuffatoCrawler extends SupermuffatodeliveryCrawler {
 
-   public AraçAtubaMuffatoCrawler(Session session) {
+   public AracatubaMuffatoCrawler(Session session) {
       super(session);
    }
 
