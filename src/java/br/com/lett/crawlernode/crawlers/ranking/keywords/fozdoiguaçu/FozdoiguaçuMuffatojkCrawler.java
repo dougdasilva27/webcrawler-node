@@ -3,9 +3,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.fozdoiguaçu;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.SupermuffatoDeliveryCrawler;
 
-public class FozdoiguaçUMuffatojkCrawler extends SupermuffatoDeliveryCrawler {
+public class FozdoiguaçuMuffatojkCrawler extends SupermuffatoDeliveryCrawler {
 
-   public FozdoiguaçUMuffatojkCrawler(Session session) {
+   public FozdoiguaçuMuffatojkCrawler(Session session) {
       super(session);
    }
 

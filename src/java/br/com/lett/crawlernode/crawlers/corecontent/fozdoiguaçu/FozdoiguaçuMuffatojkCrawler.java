@@ -4,9 +4,9 @@ import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermuffatodeliveryCrawler;
 
-public class FozdoiguaçUMuffatojkCrawler extends SupermuffatodeliveryCrawler {
+public class FozdoiguaçuMuffatojkCrawler extends SupermuffatodeliveryCrawler {
 
-   public FozdoiguaçUMuffatojkCrawler(Session session) {
+   public FozdoiguaçuMuffatojkCrawler(Session session) {
       super(session);
    }
 
