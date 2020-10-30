@@ -37,8 +37,6 @@ public abstract class CooprsupermercadosCrawler extends VTEXOldScraper{
       HashMap<String, String> headers = new HashMap<>();
       headers.put("Content-type", "application/json");
 
-      //JSONObject payloadJson = CrawlerUtils.stringToJson(payload);
-
       Request request = Request.RequestBuilder.create().setUrl("https://www.cooplojaonline.com.br/api/sessions/").setHeaders(headers).setPayload(payload)
          .build();
       Response response = this.dataFetcher.post(session, request);
