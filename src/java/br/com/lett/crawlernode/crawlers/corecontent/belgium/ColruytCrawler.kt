@@ -62,7 +62,7 @@ abstract class ColruytCrawler(session: Session) : Crawler(session) {
        products += product {
           url = session.originalURL
           categories = scrapCategories(jsonObject)
-          name = "${jsonObject.optString("brand")} ${jsonObject.optString("name")}".trim()
+          name = "${jsonObject.optString("brand")} ${jsonObject.optString("name")} ${jsonObject.optString("content")}".trim()
           description = jsonObject.optString("description")
           primaryImage = jsonObject.optString("fullImage")
           internalId = jsonObject.optString("commercialArticleNumber")
