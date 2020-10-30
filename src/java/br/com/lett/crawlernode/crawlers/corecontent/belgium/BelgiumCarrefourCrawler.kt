@@ -15,6 +15,7 @@ import models.pricing.Pricing
 import models.pricing.Pricing.PricingBuilder
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.nodes.Document
+import java.lang.StringBuilder
 
 abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
 
@@ -39,7 +40,7 @@ abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
          Logging.printLogDebug(logger, session, "Product page identified: ${session.originalURL}")
          val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".pdp-titleSection", "data-productid")
          val internalPid = internalId
-         val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod-title", true)
+         val name = scrapNameAndBrand(doc);
          val categories = CrawlerUtils.crawlCategories(doc, "#cfbreadcrumbsdesktop .nounderline", true)
          val description = CrawlerUtils.scrapElementsDescription(doc, listOf(".description-section-inner > div[id]"))
          val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image-gallery1 > div > img", listOf("src"), "https", BASE_URL)
@@ -99,4 +100,24 @@ abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
          .setCreditCards(listOf(Card.VISA, Card.MAESTRO, Card.MASTERCARD, Card.AMEX).toCreditCards(spotlightPrice))
          .build()
    }
+
+   private fun scrapNameAndBrand(doc: Document): String {
+
+      var brandWithName = "";
+
+      val brandName = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod-brand", false);
+      val justName =  CrawlerUtils.scrapStringSimpleInfo(doc, ".prod-title", true);
+
+      if(brandName != null){
+         val  sb =  StringBuilder();
+         sb.append(brandName)
+         sb.append(" ")
+         sb.append(justName)
+         brandWithName = sb.toString();
+
+         return brandWithName;
+      }
+      return justName;
+   }
+
 }
