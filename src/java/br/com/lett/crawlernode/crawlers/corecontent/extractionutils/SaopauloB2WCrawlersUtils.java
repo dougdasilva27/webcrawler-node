@@ -266,13 +266,6 @@ public class SaopauloB2WCrawlersUtils {
 
       if (initialJson.has("offers") && initialJson.get("offers") instanceof JSONArray) {
          offersJsonArray = initialJson.optJSONArray("offers");
-      } else if (initialJson.has("offers") && initialJson.get("offers") instanceof JSONObject) {
-         JSONObject offerJson = initialJson.optJSONObject("offers");
-
-         if (offerJson.has("result")) {
-            offersJsonArray = offerJson.optJSONArray("result");
-         }
-
       } else if (initialJson.has("entities")) {
          JSONObject entities = initialJson.optJSONObject("entities");
 
@@ -291,6 +284,13 @@ public class SaopauloB2WCrawlersUtils {
                offersJsonArray = productOffer.optJSONArray("result");
             }
          }
+      } else if (initialJson.has("offers") && initialJson.get("offers") instanceof JSONObject) {
+         JSONObject offerJson = initialJson.optJSONObject("offers");
+
+         if (offerJson.has("result")) {
+            offersJsonArray = offerJson.optJSONArray("result");
+         }
+
       }
 
       if (offersJsonArray != null && offersJsonArray.length() > 0) {
