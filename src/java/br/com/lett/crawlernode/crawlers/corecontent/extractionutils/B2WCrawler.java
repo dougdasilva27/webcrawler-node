@@ -131,11 +131,11 @@ public class B2WCrawler extends Crawler {
 
       // Json da pagina principal
       JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
+      JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
 
       // Pega só o que interessa do json da api
-      JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson);
+      JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson, apolloJson);
 
-      JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
       JSONObject offersJSON = apolloJson != null && !apolloJson.isEmpty() ? SaopauloB2WCrawlersUtils.extractApolloOffersJson(apolloJson) : new JSONObject();
 
       // verifying if url starts with home page because on crawler seed,
@@ -159,7 +159,7 @@ public class B2WCrawler extends Crawler {
             String name = skuJson.optString("name");
             Offers offers;
 
-            if (skuJson.has("offers")) {
+            if (!offersJSON.isEmpty()) {
                offers = scrapOffersnewWay(skuJson, offersJSON, internalId);
             } else {
                offers = scrapOffers(doc, internalId, internalPid);
