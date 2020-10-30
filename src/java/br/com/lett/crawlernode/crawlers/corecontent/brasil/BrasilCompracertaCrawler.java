@@ -5,20 +5,16 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import models.RatingsReviews;
 
 public class BrasilCompracertaCrawler extends VTEXNewScraper {
@@ -50,12 +46,12 @@ public class BrasilCompracertaCrawler extends VTEXNewScraper {
    @Override
    protected boolean isProductPage(Document doc) {
       String producReference = crawlProductReference(doc).toLowerCase();
-      return !doc.select(".productName").isEmpty() && !producReference.endsWith("_out");
+      return !producReference.isEmpty() && !producReference.endsWith("_out");
    }
 
    protected String crawlProductReference(Document doc) {
       String producReference = "";
-      Element prod = doc.select(".skuReference").first();
+      Element prod = doc.select(".vtex-product-identifier-0-x-product-identifier__value").first();
 
       if (prod != null) {
          producReference = prod.ownText().trim();
@@ -75,8 +71,8 @@ public class BrasilCompracertaCrawler extends VTEXNewScraper {
 
       JSONArray items = productJson.optJSONArray("items");
       String id = null;
-      if(items != null){
-         id = "{\"sku\":\"" +((JSONObject) items.get(0)).optString("itemId") + "\"}";
+      if (items != null) {
+         id = "{\"sku\":\"" + ((JSONObject) items.get(0)).optString("itemId") + "\"}";
       }
 
       assert id != null;
@@ -84,23 +80,23 @@ public class BrasilCompracertaCrawler extends VTEXNewScraper {
 
       String api = "https://www.compracerta.com.br/_v/public/graphql/v1?workspace=master&maxAge=long&appsEtag=remove&domain=store&locale=pt-BR&__bindingId=dcb4b5dd-4083-47f9-b2de-da54656f88b0&operationName=ProductSku&extensions=";
 
-      String query = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + API_TOKEN +"\",\"sender\":\"compracerta.product-details@0.x\",\"provider\":\"compracerta.store-graphql@0.x\"},\"variables\":\"" + encodedString + "\"}";
+      String query = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + API_TOKEN + "\",\"sender\":\"compracerta.product-details@0.x\",\"provider\":\"compracerta.store-graphql@0.x\"},\"variables\":\"" + encodedString + "\"}";
 
       String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
-      Request request = Request.RequestBuilder.create().setUrl(api+encodedQuery)
-         .build();
+      Request request = Request.RequestBuilder.create().setUrl(api + encodedQuery)
+            .build();
       JSONObject response = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      if(response.has("data")){
+      if (response.has("data")) {
          JSONArray productArray = response.optJSONObject("data").optJSONArray("productSku");
          JSONObject productDetail = null;
 
-         if(!productArray.isEmpty()){
+         if (!productArray.isEmpty()) {
             productDetail = ((JSONObject) productArray.get(0));
          }
 
-         if(productDetail != null){
+         if (productDetail != null) {
             description += productDetail.optString("RealHeight") + "\nAltura\n";
             description += productDetail.optString("RealWidth") + "\nLargura\n";
             description += productDetail.optString("RealLength") + "\nComprimento\n";
@@ -108,7 +104,7 @@ public class BrasilCompracertaCrawler extends VTEXNewScraper {
          }
       }
 
-      description += CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-dimensions-box",".product-infos-tabs"));
+      description += CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-dimensions-box", ".product-infos-tabs"));
       return description;
 
    }
