@@ -1,23 +1,22 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class BrasilRappiCrawler extends RappiCrawler {
 
    private static final String HOME_PAGE = "https://www.rappi.com";
    private static final String STORES_API_URL = "https://services.rappi.com.br/api/base-crack/principal?";
-   public static final String PRODUCTS_API_URL = "https://services.rappi.com.br/api/search-client/search/v2/products";
-   private static final String DETAILS_API_URL = "https://services.rappi.com.br/api/cpgs-graphql-domain/";
    protected static final String IMAGES_DOMAIN = "images.rappi.com.br/products";
 
    private final String locationParameters = setLocationParameters();
@@ -26,7 +25,7 @@ public abstract class BrasilRappiCrawler extends RappiCrawler {
 
    public BrasilRappiCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    protected abstract String setStoreType();
@@ -62,91 +61,78 @@ public abstract class BrasilRappiCrawler extends RappiCrawler {
          productId = CommonMethods.getLast(productUrl.split("\\?")[0].split("_"));
       }
 
-      if (productId != null && storeType != null && storeId != null) {
-         Map<String, String> headers = new HashMap<>();
+      if (productId != null && storeId != null) {
+         JSONObject data = JSONUtils.stringToJson(fetchProduct(productId, storeId, fetchToken()));
 
-         String url = "https://services.rappi.com.br/windu/products/store/" + storeId + "/product/" + productId;
-         Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).mustSendContentEncoding(false).build();
+         JSONArray components = JSONUtils.getValueRecursive(data, "data.components", JSONArray.class);
 
-         String page = this.dataFetcher.get(session, request).getBody();
-
-         if (page.startsWith("{") && page.endsWith("}")) {
-            try {
-               JSONObject apiResponse = new JSONObject(page);
-
-               if (apiResponse.has("product") && apiResponse.get("product") instanceof JSONObject) {
-                  productsInfo = apiResponse.getJSONObject("product");
+         if (components != null) {
+            for (Object json: components) {
+               if (json instanceof JSONObject) {
+                  String nameComponents = ((JSONObject) json).optString("name");
+                  if (nameComponents.equals("product_information")) {
+                     productsInfo = JSONUtils.getJSONValue((JSONObject) json, "resource");
+                  }
                }
-
-            } catch (Exception e) {
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }
          }
       }
-
       return productsInfo;
+   }
+
+   String fetchProduct(String productId, String storeId, String token) {
+
+      String url = "https://services.rappi.com.br/api/dynamic/context/content";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("language", "pt");
+      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
+      headers.put("content-type", "application/json");
+      headers.put("authorization", token);
+
+      String payload = "{\"state\":{\"product_id\":\""+productId+"\"},\"limit\":100,\"offset\":0,\"context\":\"product_detail\",\"stores\":["+storeId+"]}";
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setPayload(payload)
+         .build();
+
+      return this.dataFetcher.post(session, request).getBody();
+   }
+
+   String fetchToken() {
+      String url = "https://services.rappi.com.br/api/auth/guest_access_token";
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "application/json, text/plain, */*");
+      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
+      headers.put("content-type", "application/json");
+
+      String payload = "{\"headers\":{\"normalizedNames\":{},\"lazyUpdate\":null},\"grant_type\":\"guest\"}";
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setPayload(payload)
+         .mustSendContentEncoding(false)
+         .build();
+
+      JSONObject json = JSONUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+
+      String token = json.optString("access_token");
+      String tokenType = json.optString("token_type");
+
+      if (tokenType.equals("Bearer")) {
+         token = tokenType + " " + token;
+      }
+
+      return token;
    }
 
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
-
-   @Override
-   protected JSONArray crawlProductImagesFromApi(String productId, String storeId) {
-      JSONArray productImages = new JSONArray();
-
-      if (productId != null && storeId != null) {
-         Map<String, String> headers = new HashMap<>();
-         headers.put("Content-Type", "application/json");
-
-         try {
-            long productIdNumber = Long.parseLong(productId);
-            long storeIdNumber = Long.parseLong(storeId);
-
-            JSONObject payload = new JSONObject();
-            payload.put("operationName", "fetchProductDetails");
-            payload.put("variables", new JSONObject().put("productId", productIdNumber).put("storeId", storeIdNumber));
-            payload.put("query", "query fetchProductDetails($productId: Int!, $storeId: Int!) " +
-                  "{\n productDetail(productId: $productId, storeId: $storeId) {\n longDescription\n " +
-                  "images {\n name\n }\n toppings {\n id\n description\n toppingTypeId\n " +
-                  "minToppingsForCategories\n maxToppingsForCategories\n index\n presentationTypeId\n " +
-                  "topping {\n id\n description\n toppingCategoryId\n price\n maxLimit\n index\n }\n " +
-                  "}\n nutritionFactsImg {\n name\n }\n additionalInformation {\n attribute\n value\n " +
-                  "}\n ingredients {\n name\n }\n }\n}\n");
-
-            Request request = RequestBuilder.create()
-                  .setUrl(DETAILS_API_URL)
-                  .setHeaders(headers)
-                  .mustSendContentEncoding(false)
-                  .setPayload(payload.toString())
-                  .build();
-
-            String page = this.dataFetcher.post(session, request).getBody();
-
-            if (page.startsWith("{") && page.endsWith("}")) {
-               JSONObject apiResponse = new JSONObject(page);
-
-               if (apiResponse.has("data") && apiResponse.get("data") instanceof JSONObject) {
-                  apiResponse = apiResponse.getJSONObject("data");
-
-                  if (apiResponse.has("productDetail") && apiResponse.get("productDetail") instanceof JSONObject) {
-                     apiResponse = apiResponse.getJSONObject("productDetail");
-
-                     if (apiResponse.has("images") && apiResponse.get("images") instanceof JSONArray) {
-                        productImages = apiResponse.getJSONArray("images");
-                     }
-                  }
-               }
-            }
-         } catch (Exception e) {
-            Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
-         }
-      }
-
-
-      return productImages;
    }
 
    private Map<String, String> crawlStores() {

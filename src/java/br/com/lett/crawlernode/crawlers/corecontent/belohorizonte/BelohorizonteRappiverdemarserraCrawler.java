@@ -11,9 +11,15 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 public class BelohorizonteRappiverdemarserraCrawler extends BrasilRappiCrawler {
    private static final String STORE_TYPE = "verdemar";
    private static final String LOCATION = "lat=-19.9375636&lng=-43.9216193";
+   private static final String STORE_ID = "900020342";
 
    public BelohorizonteRappiverdemarserraCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   protected String setStoreId() {
+      return STORE_ID;
    }
 
    @Override

@@ -7,6 +7,7 @@ public class SaopauloRappiCrawler extends BrasilRappiCrawler {
 
    private static final String STORE_TYPE = "";
    private static final String LOCATION = "lat=-23.584&lng=-46.671";
+   private static final String STORE_ID = "700001704";
 
    public SaopauloRappiCrawler(Session session) {
       super(session);
@@ -15,6 +16,11 @@ public class SaopauloRappiCrawler extends BrasilRappiCrawler {
    @Override
    protected String setStoreType() {
       return STORE_TYPE;
+   }
+
+   @Override
+   protected String setStoreId() {
+      return STORE_ID;
    }
 
    @Override

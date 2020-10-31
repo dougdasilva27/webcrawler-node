@@ -5,6 +5,8 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 
 public class SaopauloRappidrogasiljardimpaulistaCrawler extends BrasilRappiCrawler {
 
+   private static final String STORE_ID = "900130114";
+
    public SaopauloRappidrogasiljardimpaulistaCrawler(Session session) {
       super(session);
    }
@@ -12,6 +14,11 @@ public class SaopauloRappidrogasiljardimpaulistaCrawler extends BrasilRappiCrawl
    @Override
    protected String setStoreType() {
       return "drogasilmarket2";
+   }
+
+   @Override
+   protected String setStoreId() {
+      return STORE_ID;
    }
 
    @Override

@@ -7,6 +7,7 @@ public class RiodejaneiroRappidrogaraiaipanemaCrawler extends BrasilRappiCrawler
 
    private static final String STORE_TYPE = "raia";
    private static final String LOCATION = "lng=-43.2049749&lat=-22.9842173";
+   private static final String STORE_ID = "900005268";
 
    public RiodejaneiroRappidrogaraiaipanemaCrawler(Session session) {
       super(session);
@@ -15,6 +16,11 @@ public class RiodejaneiroRappidrogaraiaipanemaCrawler extends BrasilRappiCrawler
    @Override
    protected String setStoreType() {
       return STORE_TYPE;
+   }
+
+   @Override
+   protected String setStoreId() {
+      return STORE_ID;
    }
 
    @Override

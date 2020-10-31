@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 public class SaopauloRappicarrefourjardimpaulistaCrawler extends BrasilRappiCrawler {
    private static final String STORE_TYPE = "carrefour";
    private static final String LOCATION = "lat=-23.5668679&lng=-46.6567335";
+   private static final String STORE_ID = "900020401";
 
    public SaopauloRappicarrefourjardimpaulistaCrawler(Session session) {
       super(session);
@@ -19,6 +20,11 @@ public class SaopauloRappicarrefourjardimpaulistaCrawler extends BrasilRappiCraw
    @Override
    protected String setStoreType() {
       return STORE_TYPE;
+   }
+
+   @Override
+   protected String setStoreId() {
+      return STORE_ID;
    }
 
    @Override
