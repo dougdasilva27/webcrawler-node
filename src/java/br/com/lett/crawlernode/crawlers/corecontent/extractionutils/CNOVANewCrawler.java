@@ -158,9 +158,9 @@ public abstract class CNOVANewCrawler extends Crawler {
 
       int statusCode = response.getLastStatusCode();
 
-      if (tryAgain && (response.getBody().isEmpty() || (Integer.toString(statusCode).charAt(0) != '2' &&
+      if (tryAgain && (Integer.toString(statusCode).charAt(0) != '2' &&
             Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404))) {
+            && statusCode != 404)) {
 
          response = new FetcherDataFetcher().get(session, request);
       }
@@ -259,48 +259,49 @@ public abstract class CNOVANewCrawler extends Crawler {
       JSONObject offersJson = JSONUtils.stringToJson(fetchPage(url).getBody());
       JSONArray sellerInfo = offersJson.optJSONArray("sellers");
 
-      // The Business logic is: if we have more than 1 seller is buy box
-      boolean isBuyBox = sellerInfo.length() > 1;
+      if (sellerInfo != null) {
+         // The Business logic is: if we have more than 1 seller is buy box
+         boolean isBuyBox = sellerInfo.length() > 1;
 
-      for (int i = 0; i < sellerInfo.length(); i++) {
-         JSONObject info = (JSONObject) sellerInfo.get(i);
+         for (int i = 0; i < sellerInfo.length(); i++) {
+            JSONObject info = (JSONObject) sellerInfo.get(i);
 
-         if (info.has("name") && !info.isNull("name") && info.has("id") && !info.isNull("id")) {
-            String name = info.optString("name");
-            String internalSellerId = info.optString("id");
-            Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
-            Integer sellersPagePosition = i + 1;
+            if (info.has("name") && !info.isNull("name") && info.has("id") && !info.isNull("id")) {
+               String name = info.optString("name");
+               String internalSellerId = info.optString("id");
+               Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
+               Integer sellersPagePosition = i + 1;
 
-            boolean isMainRetailer = false;
+               boolean isMainRetailer = false;
 
-            for (String sellerName : getSellerName()) {
-               if (sellerName.equalsIgnoreCase(name)) {
-                  isMainRetailer = true;
+               for (String sellerName : getSellerName()) {
+                  if (sellerName.equalsIgnoreCase(name)) {
+                     isMainRetailer = true;
+                  }
                }
-            }
 
-            boolean principalSeller = info.optBoolean("elected", false);
-            List<String> salesList = principalSeller ? scrapSales(offersJson) : new ArrayList<>();
+               boolean principalSeller = info.optBoolean("elected", false);
+               List<String> salesList = principalSeller ? scrapSales(offersJson) : new ArrayList<>();
 
-            Pricing pricing = scrapPricing(offersJson, info, principalSeller);
+               Pricing pricing = scrapPricing(offersJson, info, principalSeller);
 
-            if (pricing != null) {
-               Offer offer = OfferBuilder.create()
-                     .setInternalSellerId(internalSellerId)
-                     .setSellerFullName(name)
-                     .setMainPagePosition(mainPagePosition)
-                     .setSellersPagePosition(sellersPagePosition)
-                     .setPricing(pricing)
-                     .setIsBuybox(isBuyBox)
-                     .setIsMainRetailer(isMainRetailer)
-                     .setSales(salesList)
-                     .build();
+               if (pricing != null) {
+                  Offer offer = OfferBuilder.create()
+                        .setInternalSellerId(internalSellerId)
+                        .setSellerFullName(name)
+                        .setMainPagePosition(mainPagePosition)
+                        .setSellersPagePosition(sellersPagePosition)
+                        .setPricing(pricing)
+                        .setIsBuybox(isBuyBox)
+                        .setIsMainRetailer(isMainRetailer)
+                        .setSales(salesList)
+                        .build();
 
-               offers.add(offer);
+                  offers.add(offer);
+               }
             }
          }
       }
-
 
       return offers;
    }
