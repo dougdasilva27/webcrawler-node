@@ -101,7 +101,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
          return mutableListOf()
       }
 
-      val name = doc.selectFirst(".product-details .page-title")?.text()
+      val name = scrapName(doc)
       val internalId = doc.selectFirst(".product-details .Product.component")?.attr("data-item-id")
 
       val available = doc.selectFirst(".ProductDetails .ProductBasketManager .ProductBasketAdder") != null
@@ -131,6 +131,18 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       return mutableListOf(product)
    }
 
+   private fun scrapName(doc: Document): String{
+
+      var name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details .page-title", false) + " " +
+         CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title-info", false)
+
+      if(doc.selectFirst(".ProductDetails.product-details") == null){
+         name += " " + CrawlerUtils.scrapStringSimpleInfo(doc, ".test-qty-property", false)
+      }
+
+      return name
+
+   }
    private fun scrapPrimaryImage(doc: Document): String {
       val data = doc.selectFirst(".magnifyWrapper div").attr("data-media")
 
