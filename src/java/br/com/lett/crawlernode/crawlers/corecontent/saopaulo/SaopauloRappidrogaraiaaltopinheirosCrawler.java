@@ -7,24 +7,14 @@ public class SaopauloRappidrogaraiaaltopinheirosCrawler extends BrasilRappiCrawl
 
    private static final String STORE_TYPE = "raia";
    private static final String LOCATION = "lng=-46.7076327&lat=-23.5537518";
-   private static final String STORE_ID = "900004067";
+   public static final String STORE_ID = "900004067";
 
    public SaopauloRappidrogaraiaaltopinheirosCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return STORE_TYPE;
-   }
-
-   @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return LOCATION;
    }
 }

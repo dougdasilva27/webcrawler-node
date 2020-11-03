@@ -12,7 +12,7 @@ public class MexicoRappisorianamonterreyCrawler extends MexicoRappiCrawlerRankin
    }
 
    @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
    }
 }

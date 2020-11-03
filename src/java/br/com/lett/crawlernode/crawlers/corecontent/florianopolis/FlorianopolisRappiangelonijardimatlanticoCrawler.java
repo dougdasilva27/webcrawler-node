@@ -11,24 +11,14 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 public class FlorianopolisRappiangelonijardimatlanticoCrawler extends BrasilRappiCrawler {
    private static final String STORE_TYPE = "angeloni";
    private static final String LOCATION = "lat=-27.5792902&lng=-48.588944";
-   private static final String STORE_ID = "900049319";
+   public static final String STORE_ID = "900049319";
 
    public FlorianopolisRappiangelonijardimatlanticoCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return STORE_TYPE;
-   }
-
-   @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return LOCATION;
    }
 }

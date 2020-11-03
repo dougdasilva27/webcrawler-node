@@ -7,24 +7,14 @@ public class SaopauloRappistmarchemoemapavaoCrawler extends BrasilRappiCrawler {
 
    private static final String STORE_TYPE = "st_marche";
    private static final String LOCATION = "lng=-46.6646497&lat=-23.6022758";
-   private static final String STORE_ID = "900037057";
+   public static final String STORE_ID = "900037057";
 
    public SaopauloRappistmarchemoemapavaoCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return STORE_TYPE;
-   }
-
-   @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return LOCATION;
    }
 }

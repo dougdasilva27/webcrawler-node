@@ -5,24 +5,14 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 
 public class SaopauloRappistmarchemoemaiiCrawler extends BrasilRappiCrawler {
 
-   private static final String STORE_ID = "900037057";
+   public static final String STORE_ID = "900037057";
 
    public SaopauloRappistmarchemoemaiiCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return "st_marche";
-   }
-
-   @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return "lat=-23.6022758&lng=-46.6646497";
    }
 }

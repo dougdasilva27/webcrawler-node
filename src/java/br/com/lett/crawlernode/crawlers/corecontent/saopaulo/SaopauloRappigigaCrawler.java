@@ -6,24 +6,14 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 public class SaopauloRappigigaCrawler extends BrasilRappiCrawler {
   private static final String STORE_TYPE = "giga";
   private static final String LOCATION = "lat=-23.5078641&lng=-46.68407819999999";
-  private static final String STORE_ID = "900022260";
+  public static final String STORE_ID = "900022260";
 
   public SaopauloRappigigaCrawler(Session session) {
     super(session);
   }
 
-  @Override
-  protected String setStoreType() {
-    return STORE_TYPE;
-  }
-
    @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
    }
-
-  @Override
-  protected String setLocationParameters() {
-    return LOCATION;
-  }
 }
