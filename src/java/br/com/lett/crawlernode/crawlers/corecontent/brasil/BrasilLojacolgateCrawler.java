@@ -29,7 +29,7 @@ public class BrasilLojacolgateCrawler extends Crawler {
    private static final String HOST = "lojacolgate.com.br";
 
    private static final String LOGIN_URL = "https://lojacolgate.com.br/pt/login";
-   private static final String CNPJ = "45.543.915/0001-81";
+   private static final String CNPJ = "97.348.676/0001-02";
    private static final String PASSWORD = "12345678";
 
    public BrasilLojacolgateCrawler(Session session) {
