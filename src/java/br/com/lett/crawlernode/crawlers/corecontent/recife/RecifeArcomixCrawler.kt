@@ -52,6 +52,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                     categories addNonNull productJson.optString("str_subcategoria", null)
                     categories addNonNull productJson.optString("str_tricategoria", null)
 
+                   val description = productJson.optString("str_meta_description_ecom_produto")
 
                     val name =
                         "${productJson.optString("str_nom_produto", "")} ${model
@@ -80,6 +81,7 @@ class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
                         .setPrices(prices)
                         .setAvailable(!model.optBoolean("bit_esgotado"))
                         .setCategories(categories)
+                        .setDescription(description)
                         .setPrimaryImage("${primaryImage}-g.jpg")
                        .setSecondaryImages(secondaryImages)
                         .setStock(productJson.optInt("int_qtd_estoque_produto"))
