@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -14,42 +15,37 @@ public class BrasilHavanCrawler extends CrawlerRankingKeywords {
 
 	@Override
 	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
+
 		this.pageSize = 24;
 			
 		this.log("Página "+ this.currentPage);
 		
 		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 		
-		//monta a url com a keyword e a página
-		String url = "http://www.havan.com.br/"+ key +"?PageNumber="+ this.currentPage +"&PS=50";
+
+		String url = "https://www.havan.com.br/catalogsearch/result//index/?p="+ this.currentPage+ "&q="+key;
 		this.log("Link onde são feitos os crawlers: "+url);	
 			
-		//chama função de pegar a url
+
 		this.currentDoc = fetchDocument(url);
 		
-		Elements products =  this.currentDoc.select("div.prateleira ul > li[layout]");
+		Elements products =  this.currentDoc.select(".product .product-item-info");
 		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+
 		if(products.size() >= 1) {
-			//se o total de busca não foi setado ainda, chama a função para setar
+
 			if(this.totalProducts == 0) {
 				setTotalProducts();
 			}
 			
 			for(Element e: products) {
-				//seta o id com o seletor
-				Element pid = e.select("> input.qd_cpProdId").first();
-				String internalPid 	= pid.attr("value");
-				String internalId 	= null;
+
+				String internalPid 	= CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product div", "value");
+				String productUrl  = CrawlerUtils.scrapUrl(e, ".hover-itens .more-info", "href", "https:", "www.havan.com.br");
 				
-				//monta a url
-				Element eUrl = e.select("h3.shelf-qd-v1-product-name > a").first();
-				String productUrl  = eUrl.attr("href");
+				saveDataProduct(null, internalPid, productUrl);
 				
-				saveDataProduct(internalId, internalPid, productUrl);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+				this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 				if(this.arrayProducts.size() == productsLimit) {
 					break;
 				}
@@ -71,7 +67,7 @@ public class BrasilHavanCrawler extends CrawlerRankingKeywords {
 	
 	@Override
 	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select("span.resultado-busca-numero > span.value").first();
+		Element totalElement = this.currentDoc.select(".toolbar-amount .toolbar-number:last-child").first();
 		
 		if(totalElement != null) { 	
 			try	{				
