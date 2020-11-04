@@ -68,6 +68,8 @@ public abstract class CNOVANewCrawler extends Crawler {
 
    protected abstract String getStore();
 
+   protected abstract String getInitials();
+
    protected abstract List<String> getSellerName();
 
 
@@ -254,7 +256,7 @@ public abstract class CNOVANewCrawler extends Crawler {
    private Offers scrapOffers(String internalId) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
-      String url = "https://pdp-api." + getStore() + ".com.br/api/v2/sku/" + internalId + "/price/source/PF";
+      String url = "https://pdp-api." + getStore() + ".com.br/api/v2/sku/" + internalId + "/price/source/" + getInitials();
 
       JSONObject offersJson = JSONUtils.stringToJson(fetchPage(url).getBody());
       JSONArray sellerInfo = offersJson.optJSONArray("sellers");
@@ -537,7 +539,7 @@ public abstract class CNOVANewCrawler extends Crawler {
    private RatingsReviews crawlRatingReviews(String skuInternalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
-      String url = "https://pdp-api." + getStore() + ".com.br/api/v2/reviews/product/" + skuInternalPid + "/source/PF?page=0&size=1&orderBy=DATE";
+      String url = "https://pdp-api." + getStore() + ".com.br/api/v2/reviews/product/" + skuInternalPid + "/source/" + getInitials() + "?page=0&size=1&orderBy=DATE";
       JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(fetchPage(url).getBody());
 
       JSONObject review = ratingReviewsEndpointResponse.optJSONObject("review");

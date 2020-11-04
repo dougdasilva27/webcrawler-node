@@ -8,7 +8,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CNOVANewCraw
 public class SaopauloPontofrioCrawler extends CNOVANewCrawler {
 
    private static final String STORE = "pontofrio";
-
+   private static final String INITIALS = "PF";
    private static final List<String> SELLER_NAMES = Arrays.asList("Pontofrio", "pontofrio.com");
 
    public SaopauloPontofrioCrawler(Session session) {
@@ -23,5 +23,10 @@ public class SaopauloPontofrioCrawler extends CNOVANewCrawler {
    @Override
    protected List<String> getSellerName() {
       return SELLER_NAMES;
+   }
+
+   @Override
+   protected String getInitials() {
+      return INITIALS;
    }
 }
