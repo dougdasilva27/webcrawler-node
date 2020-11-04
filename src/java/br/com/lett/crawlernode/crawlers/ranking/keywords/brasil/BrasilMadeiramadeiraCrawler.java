@@ -25,7 +25,6 @@ public class BrasilMadeiramadeiraCrawler extends CrawlerRankingKeywords {
             jsonProducts = rawJson.optJSONArray("products");
          }
       }
-
       return jsonProducts;
    }
 
