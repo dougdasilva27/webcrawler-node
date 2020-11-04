@@ -25,7 +25,7 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 
     // monta a url com a keyword e a página
     String url =
-        "https://www.nagem.com.br/navegacao?busca=" + this.keywordEncoded;
+        "https://www.nagem.com.br/navegacao?busca=" + this.keywordEncoded + "&p=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
 
