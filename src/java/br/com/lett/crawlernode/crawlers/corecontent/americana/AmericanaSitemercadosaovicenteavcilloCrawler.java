@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.belem;
+package br.com.lett.crawlernode.crawlers.corecontent.americana;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,18 +6,17 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
 
 /**
- * @author gabriel date: 2019-09-24
+ * @author gabriel date: 2020-11-04
  */
-public class BelemSitemercadosupermercadodubairroCrawler extends BrasilSitemercadoCrawler {
-
-   public BelemSitemercadosupermercadodubairroCrawler(Session session) {
+public class AmericanaSitemercadosaovicenteavcilloCrawler extends BrasilSitemercadoCrawler {
+   public AmericanaSitemercadosaovicenteavcilloCrawler(Session session) {
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadodubairro/belem-loja-julio-cesar-val-de-caes-avenida-julio-cesar";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadossaovicente/americana-loja-sao-vicente-av-cillos-jardim-sao-jose-av-de-cillo";
 
-   public static final int IDLOJA = 2535;
-   public static final int IDREDE = 1649;
+   public static final int IDLOJA = 5818;
+   public static final int IDREDE = 2663;
 
    @Override
    protected String getHomePage() {
