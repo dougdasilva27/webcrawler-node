@@ -532,39 +532,58 @@ public class SaopauloB2WCrawlersUtils {
    public static JSONObject extractApolloOffersJson(JSONObject apoloJson) {
       JSONObject offersJson = new JSONObject();
 
-      for (String key : apoloJson.keySet()) {
+      JSONObject rootQuery = apoloJson.optJSONObject("ROOT_QUERY");
+      if (rootQuery != null) {
+         for (String key : rootQuery.keySet()) {
+            if (key.startsWith("product(")) {
+               JSONObject productJSON = rootQuery.optJSONObject(key);
 
-         if (key.startsWith("OffersResult:")) {
-            JSONObject offerResult = apoloJson.optJSONObject(key);
+               Object obj = productJSON.optQuery("/offers/result");
+               if (obj instanceof JSONArray) {
+                  JSONArray offerResult = (JSONArray) obj;
 
-            if (offerResult != null) {
-               String sku = offerResult.optString("sku");
+                  for (Object o : offerResult) {
+                     JSONObject offerObj = (JSONObject) o;
 
-               if (sku != null) {
-                  JSONObject sellerJson = new JSONObject();
-
-                  String sellerKey = offerResult.optQuery("/seller/__ref").toString().trim();
-                  sellerJson.put("seller", apoloJson.optJSONObject(sellerKey));
-
-                  extractBoleto(offerResult, sellerJson, "paymentOptions({\"type\":\"BOLETO\"})");
-                  extractApolloCards(offerResult, sellerJson);
-
-                  if (sellerJson.has("defaultPrice")) {
-                     if (offersJson.has(sku)) {
-                        offersJson.getJSONArray(sku).put(sellerJson);
-                     } else {
-                        JSONArray skuOffers = new JSONArray();
-                        skuOffers.put(sellerJson);
-
-                        offersJson.put(sku, skuOffers);
-                     }
+                     extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
                   }
                }
+
+               break;
             }
          }
       }
 
       return offersJson;
+   }
+
+   private static void extractOffer(JSONObject apoloJson, String key, JSONObject offersJson) {
+      JSONObject offerResult = apoloJson.optJSONObject(key);
+
+      if (offerResult != null) {
+         String sku = offerResult.optString("sku");
+
+         if (sku != null) {
+            JSONObject sellerJson = new JSONObject();
+
+            String sellerKey = offerResult.optQuery("/seller/__ref").toString().trim();
+            sellerJson.put("seller", apoloJson.optJSONObject(sellerKey));
+
+            extractBoleto(offerResult, sellerJson, "paymentOptions({\"type\":\"BOLETO\"})");
+            extractApolloCards(offerResult, sellerJson);
+
+            if (sellerJson.has("defaultPrice")) {
+               if (offersJson.has(sku)) {
+                  offersJson.getJSONArray(sku).put(sellerJson);
+               } else {
+                  JSONArray skuOffers = new JSONArray();
+                  skuOffers.put(sellerJson);
+
+                  offersJson.put(sku, skuOffers);
+               }
+            }
+         }
+      }
    }
 
    private static void extractApolloCards(JSONObject offerJson, JSONObject pricesJson) {

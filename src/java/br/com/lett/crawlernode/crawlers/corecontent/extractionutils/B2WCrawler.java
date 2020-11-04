@@ -421,12 +421,12 @@ public class B2WCrawler extends Crawler {
             String sellerName = info.optQuery("/seller/name").toString().trim();
             String sellerId = info.optQuery("/seller/id").toString();
 
-            Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
-            Integer sellersPagePosition = null;
+            Integer mainPagePosition = i == 0 ? 1 : null;
+            Integer sellersPagePosition = i == 0 ? 1 : null;
 
             JSONObject pricesJson = info.has("defaultPrice") ? info : SaopauloB2WCrawlersUtils.extractPricesJson(info);
 
-            Pricing pricing = scrapPricing(pricesJson, i, sellerId, mapOfSellerIdAndPrice);
+            Pricing pricing = scrapPricing(pricesJson, i, sellerId, mapOfSellerIdAndPrice, true);
 
             Offer offer = OfferBuilder.create()
                   .setInternalSellerId(sellerId)
@@ -445,7 +445,7 @@ public class B2WCrawler extends Crawler {
             // Sellers page positios is order by price, in this map, price is the value
             Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
-            int position = 1;
+            int position = 2;
 
             for (Entry<String, Double> entry : sortedMap.entrySet()) {
                for (Offer offer : offers.getOffersList()) {
@@ -485,7 +485,7 @@ public class B2WCrawler extends Crawler {
                String internalSellerId = info.get("id").toString();
                Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
                Integer sellersPagePosition = null;
-               Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice);
+               Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice, false);
 
                Offer offer = OfferBuilder.create()
                      .setInternalSellerId(internalSellerId)
@@ -522,15 +522,17 @@ public class B2WCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice)
+   private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
          throws MalformedPricingException {
 
       Double priceFrom = scrapPriceFrom(info);
       CreditCards creditCards = scrapCreditCards(info);
-      Double spotlightPrice = scrapSpotlightPrice(info, creditCards, offerIndex);
+      Double spotlightPrice = scrapSpotlightPrice(info, creditCards, offerIndex, newWay);
       BankSlip bt = scrapBankTicket(info);
 
-      mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
+      if (!newWay || offerIndex != 0) {
+         mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
+      }
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom > 0d ? priceFrom : null)
@@ -551,29 +553,33 @@ public class B2WCrawler extends Crawler {
             .build();
    }
 
-   private Double scrapSpotlightPrice(JSONObject info, CreditCards creditCards, int offerIndex) {
+   private Double scrapSpotlightPrice(JSONObject info, CreditCards creditCards, int offerIndex, boolean newWay) {
       Double featuredPrice = null;
 
-      Double price1x = creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
-      Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
-      Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
+      if (!newWay || offerIndex == 0) {
+         Double price1x = creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
+         Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
+         Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
 
 
-      if (offerIndex + 1 <= 3) {
-         for (Double value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
-            if (featuredPrice == null || (value != null && value < featuredPrice)) {
-               featuredPrice = value;
+         if (offerIndex + 1 <= 3) {
+            for (Double value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
+               if (featuredPrice == null || (value != null && value < featuredPrice)) {
+                  featuredPrice = value;
+               }
+            }
+         } else {
+
+            if (defaultPrice != null) {
+               featuredPrice = defaultPrice;
+            } else if (price1x != null) {
+               featuredPrice = price1x;
+            } else if (bankTicket != null) {
+               featuredPrice = bankTicket;
             }
          }
       } else {
-
-         if (defaultPrice != null) {
-            featuredPrice = defaultPrice;
-         } else if (price1x != null) {
-            featuredPrice = price1x;
-         } else if (bankTicket != null) {
-            featuredPrice = bankTicket;
-         }
+         featuredPrice = info.optDouble("defaultPrice");
       }
 
       return featuredPrice;
