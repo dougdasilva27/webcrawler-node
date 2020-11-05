@@ -11,18 +11,14 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 public class SaopauloRappimamboexpressvilaromanaCrawler extends BrasilRappiCrawler {
    private static final String STORE_TYPE = "mambo_express";
    private static final String LOCATION = "lat=-23.5376576&lng=-46.6975506";
+   public static final String STORE_ID = "900136785";
 
    public SaopauloRappimamboexpressvilaromanaCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return STORE_TYPE;
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return LOCATION;
+   protected String getStoreId() {
+      return STORE_ID;
    }
 }

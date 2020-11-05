@@ -7,18 +7,14 @@ public class RiodejaneiroRappizonasullaranjeirasCrawler extends BrasilRappiCrawl
 
    private static final String STORE_TYPE = "zonasul_express";
    private static final String LOCATION = "lat=-22.9338297&lng=-43.1806187";
+   public static final String STORE_ID = "900141059";
 
    public RiodejaneiroRappizonasullaranjeirasCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return STORE_TYPE;
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return LOCATION;
+   protected String getStoreId() {
+      return STORE_ID;
    }
 }

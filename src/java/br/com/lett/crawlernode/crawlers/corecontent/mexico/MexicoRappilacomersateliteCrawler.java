@@ -12,7 +12,7 @@ public class MexicoRappilacomersateliteCrawler extends MexicoRappiCrawler {
     public static final String STORE_ID = "942000254";
 
    @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
    }
 }
