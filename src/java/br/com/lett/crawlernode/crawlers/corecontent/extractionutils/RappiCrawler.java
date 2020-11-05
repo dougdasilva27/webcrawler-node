@@ -188,7 +188,7 @@ public abstract class RappiCrawler extends Crawler {
 
          offers.add(offer);
       } catch (Exception e) {
-         Logging.printLogWarn(logger, session, "Not a product page " + session.getOriginalURL());
+         Logging.printLogWarn(logger, session, "offers error: " + session.getOriginalURL());
       }
 
       return offers;
