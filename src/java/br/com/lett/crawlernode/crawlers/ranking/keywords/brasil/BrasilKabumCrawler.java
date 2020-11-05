@@ -32,7 +32,7 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
       if (!isCategory) {
          url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string=" + this.keywordEncoded + "&pagina=" + this.currentPage;
       } else {
-         url = this.baseUrl + "&pagina=" + this.currentPage;
+         url = this.baseUrl + "?pagina=" + this.currentPage;
       }
 
       this.log("Link onde são feitos os crawlers: " + url);
