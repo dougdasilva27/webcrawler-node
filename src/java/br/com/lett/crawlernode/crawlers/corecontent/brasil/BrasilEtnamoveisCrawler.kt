@@ -7,11 +7,19 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
+import models.AdvancedRatingReview
 import models.Offer
 import models.Offers
+import models.RatingsReviews
+import models.pricing.Installment
 import models.pricing.Installments
 import models.pricing.Pricing
+import org.json.JSONObject
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.select.Elements
+import java.util.HashMap
+import kotlin.math.roundToInt
 
 class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
 
@@ -26,7 +34,7 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
    }
 
    val scrapedVariations = mutableListOf<String>()
-   var productsLength = 0;
+   var productsLength = 0
 
    override fun extractInformation(doc: Document): List<Product> {
       super.extractInformation(doc)
@@ -40,6 +48,7 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
             .setCategories(doc.select(".breadcrumb li").eachText(arrayOf(0)))
             .setSecondaryImages(images.sliceFirst())
             .setOffers(offers)
+            .setRatingReviews(scrapRatingReviews())
             .build()
 
          val variations = doc.select(".form-control.etn-select--custom.variant-select option")?.sliceFirst()
@@ -64,8 +73,18 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
       val price = doc.selectFirst(".etn-price__list")?.toDoubleComma()
-      val priceFrom = doc.selectFirst(".etn-price__old")?.toDoubleComma()
-      val installments = Installments(setOf(doc.installment(".easy-installment")))
+      var priceFrom: Double? = null
+      var installments = Installments()
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(price)
+         .build())
+      if(doc.selectFirst("etn-price__old") != null){
+         priceFrom = doc.selectFirst("etn-price__old")?.toDoubleComma()
+      }
+      if(doc.selectFirst(".easy-installment") != null){
+         installments = Installments(setOf(doc.installment(".easy-installment")))
+      }
       val pricing = Pricing.PricingBuilder
          .create()
          .setSpotlightPrice(price)
@@ -84,5 +103,86 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
             .build()
       )
       return offers
+   }
+
+   private fun fetchRatings(): Document{
+
+      val headers = HashMap<String, String>()
+      headers["Content-Type"] = "text/html;charset=UTF-8"
+      var url = session.originalURL
+
+      if(session.originalURL.contains("?")){
+         url = url.substring(0,session.originalURL.indexOf("?prod_list"))
+      }
+
+      val request = Request.RequestBuilder.create().setUrl(url + "/reviewhtml/3").setHeaders(headers).build()
+
+      return Jsoup.parse(dataFetcher[session, request].body)
+   }
+
+   private fun scrapRatingReviews(): RatingsReviews{
+      val ratingReviews = RatingsReviews()
+      val page = fetchRatings()
+
+      val numberOfRatingsReviews = page.select("li.review-entry").size
+      val reviews = page.select(".rating-stars")
+      var totalValueReviews = 0.0
+      for(review in reviews){
+
+         val ratingInfo: JSONObject = CrawlerUtils.stringToJSONObject(review.attr("data-rating"))
+
+         val ratingValue = ratingInfo.optString("rating").toDouble().roundToInt()
+
+         totalValueReviews += ratingValue
+      }
+      val avgRatingReviews = totalValueReviews / numberOfRatingsReviews
+
+      ratingReviews.setTotalRating(numberOfRatingsReviews)
+      ratingReviews.totalWrittenReviews = numberOfRatingsReviews
+      ratingReviews.averageOverallRating = avgRatingReviews
+      ratingReviews.advancedRatingReview = scrapAdvancedRating(reviews)
+
+      return ratingReviews
+
+   }
+
+   private fun scrapAdvancedRating(reviews: Elements): AdvancedRatingReview{
+      val advancedRatingReview = AdvancedRatingReview()
+      var stars1 = 0
+      var stars2 = 0
+      var stars3 = 0
+      var stars4 = 0
+      var stars5 = 0
+
+      for(e in reviews){
+
+         val ratingInfo: JSONObject = CrawlerUtils.stringToJSONObject(e.attr("data-rating"))
+
+         val ratingValue = ratingInfo.optString("rating").toDouble().roundToInt()
+         when(ratingValue){
+            1 -> {
+               stars1++
+               advancedRatingReview.totalStar1 = stars1
+            }
+            2 -> {
+               stars2++
+               advancedRatingReview.totalStar2 = stars2
+            }
+            3 -> {
+               stars3++
+               advancedRatingReview.totalStar3 = stars3
+            }
+            4 -> {
+               stars4++
+               advancedRatingReview.totalStar4 = stars4
+            }
+            5 -> {
+               stars5++
+               advancedRatingReview.totalStar5 = stars5
+            }
+         }
+      }
+
+      return advancedRatingReview
    }
 }
