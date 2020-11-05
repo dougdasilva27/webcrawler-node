@@ -170,21 +170,26 @@ public abstract class RappiCrawler extends Crawler {
       return products;
    }
 
-   public static Offers scrapOffers(JSONObject jsonSku) throws MalformedPricingException, OfferException {
+   public Offers scrapOffers(JSONObject jsonSku){
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(jsonSku);
-      List<String> sales = scrapSales(pricing);
 
-      Offer offer = new OfferBuilder().setSellerFullName("Rappi")
-         .setInternalSellerId(jsonSku.optString("store_id", null))
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setPricing(pricing)
-         .setIsMainRetailer(true)
-         .setSales(sales)
-         .build();
+      try {
+         Pricing pricing = scrapPricing(jsonSku);
+         List<String> sales = scrapSales(pricing);
 
-      offers.add(offer);
+         Offer offer = new OfferBuilder().setSellerFullName("Rappi")
+            .setInternalSellerId(jsonSku.optString("store_id", null))
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setPricing(pricing)
+            .setIsMainRetailer(true)
+            .setSales(sales)
+            .build();
+
+         offers.add(offer);
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, session, "Not a product page " + session.getOriginalURL());
+      }
 
       return offers;
    }
