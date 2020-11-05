@@ -28,7 +28,7 @@ public class ChileRappijumboCrawler extends RappiCrawler {
 
    public ChileRappijumboCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
