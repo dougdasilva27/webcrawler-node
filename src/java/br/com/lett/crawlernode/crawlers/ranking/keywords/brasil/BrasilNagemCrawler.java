@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.MathUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -24,7 +25,8 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 
     // monta a url com a keyword e a página
     String url =
-        "http://www.nagem.com.br/navegacao?busca=" + this.keywordEncoded + "&p=" + this.currentPage;
+        "https://www.nagem.com.br/navegacao?busca=" + this.keywordEncoded + "&p=" + this.currentPage;
+
     this.log("Link onde são feitos os crawlers: " + url);
 
     // chama função de pegar a url
@@ -73,24 +75,27 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
     return this.arrayProducts.size() < this.totalProducts;
   }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("#spanpaginacao").first();
+   @Override
+   protected void setTotalProducts() {
 
-    if (totalElement != null) {
-      String text = totalElement.text().toLowerCase();
+      Elements scripts =  this.currentDoc.select(".container-fluid script");
 
-      if (text.contains("de")) {
-        int x = text.indexOf("de") + 2;
-        String value = text.substring(x).replaceAll("[^0-9]", "").trim();
+      if (scripts != null){
+         for(Element script: scripts){
+            String scriptString = script.toString();
 
-        if (!value.isEmpty()) {
-          this.totalProducts = Integer.parseInt(value);
-        }
+            if(scriptString != null && scriptString.contains("qtdresultado =") && scriptString.contains(";")){
+
+               String totalResults = scriptString.split("qtdresultado =")[1].split(";")[0];
+               this.totalProducts = totalResults != null? MathUtils.parseInt(totalResults): 0;
+
+            }
+         }
+
       }
-    }
 
-    this.log("Total da busca: " + this.totalProducts);
+
+     this.log("Total da busca: " + this.totalProducts);
   }
 
 
@@ -123,4 +128,5 @@ public class BrasilNagemCrawler extends CrawlerRankingKeywords {
 
     return urlProduct;
   }
+
 }
