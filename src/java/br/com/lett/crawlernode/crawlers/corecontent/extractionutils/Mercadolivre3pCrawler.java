@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,6 +24,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -242,6 +245,18 @@ public class Mercadolivre3pCrawler {
 
       if (sellerFullName == null) {
          sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title", false);
+
+         if (sellerFullName == null) {
+            String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ui-pdp-container__row--seller-info a", "href");
+
+            if (url != null) {
+               try {
+                  sellerFullName = URLDecoder.decode(CommonMethods.getLast(url.split("\\?")[0].split("/")), "UTF-8");
+               } catch (UnsupportedEncodingException e) {
+                  Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+               }
+            }
+         }
       }
 
       boolean hasMainOffer = false;
