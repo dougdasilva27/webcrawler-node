@@ -20,7 +20,7 @@ public class DrogariaMinasbrasilNetCrawler extends CrawlerRankingKeywords {
     this.pageSize = 16;
     this.log("Página " + this.currentPage);
 
-    String url = "https://" + this.host + "/" + this.keywordEncoded + "?p=" + this.currentPage;
+    String url = "https://" + this.host + "/catalogsearch/result/?q=" + this.keywordEncoded;
     this.log("Link onde são feitos os crawlers: " + url);
 
     this.currentDoc = fetchDocument(url);
@@ -35,7 +35,7 @@ public class DrogariaMinasbrasilNetCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
         String internalPid = null;
         String internalId = crawlInternalId(e);
-        String productUrl = CrawlerUtils.scrapUrl(e, ".product-name a", "href", "https", this.host);
+        String productUrl = CrawlerUtils.scrapUrl(e, ".product.-list .product-picture a", "href", "https", this.host);
 
         saveDataProduct(internalId, internalPid, productUrl);
 
