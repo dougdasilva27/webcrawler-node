@@ -55,7 +55,6 @@ public class BrasilMundoverdeCrawler extends CrawlerRankingKeywords {
    @Override
    protected void setTotalProducts() {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".vtex-search-result-3-x-totalProducts--layout span", null, null, false, false, 0);
-      System.err.println(this.totalProducts);
       this.log("Total de produtos: " + this.totalProducts);
    }
 }
