@@ -36,7 +36,6 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
    }
 
    override fun extractInformation(doc: Document): MutableList<Product> {
-      super.extractInformation(doc)
 
       if (!isProductPage(doc)) {
 
@@ -231,7 +230,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
    }
 
    private fun getProductFromApi(productId: String, skuId: String): JSONObject {
-      val url = "https://www.lojasrenner.com.br/rest/model/lrsa/api/CatalogActor/refreshProductPage?skuId=$skuId&productId=$productId"
+      val url = "https://www.lojasrenner.com.br/rest/model/lrsa/api/CatalogActor/refreshProductPage?pushSite=rennerBrasilDesktop&skuId=$skuId&productId=$productId"
 
       val request: Request = Request.RequestBuilder.create().setUrl(url)
          .mustSendContentEncoding(false)
