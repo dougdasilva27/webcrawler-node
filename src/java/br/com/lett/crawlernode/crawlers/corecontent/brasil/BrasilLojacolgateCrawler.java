@@ -67,6 +67,8 @@ public class BrasilLojacolgateCrawler extends Crawler {
          this.webdriver.clickOnElementViaJavascript(login);
          this.webdriver.waitLoad(2000);
 
+         this.webdriver.driver.manage().getCookies().forEach(this.webdriver.driver.manage()::addCookie);
+
          this.webdriver.loadUrl(session.getOriginalURL());
          this.webdriver.waitLoad(10000);
 
