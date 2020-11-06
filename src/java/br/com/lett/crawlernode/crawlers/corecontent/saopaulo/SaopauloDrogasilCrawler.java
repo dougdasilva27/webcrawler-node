@@ -32,6 +32,8 @@ import models.prices.Prices;
 
 public class SaopauloDrogasilCrawler extends Crawler {
 
+   private static final String STOREID = "71447";
+
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
@@ -277,80 +279,54 @@ public class SaopauloDrogasilCrawler extends Crawler {
    }
 
    private RatingsReviews crawRating(Document doc, String internalId) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-
-      ratingReviews.setDate(session.getDate());
-      ratingReviews.setInternalId(internalId);
-
-      JSONObject trustVoxResponse = requestTrustVoxEndpoint(internalId);
-      AdvancedRatingReview advancedRatingReview = TrustvoxRatingCrawler.getTotalStarsFromEachValueWithRate(trustVoxResponse);
-
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-      ratingReviews.setTotalRating(getTotalNumOfRatings(trustVoxResponse));
-      ratingReviews.setTotalWrittenReviews(getTotalNumOfRatings(trustVoxResponse));
-      ratingReviews.setAverageOverallRating(getTotalRating(trustVoxResponse));
-
-      return ratingReviews;
+      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, STOREID, logger);
+      RatingsReviews ratingsReviews = trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+      if(ratingsReviews.getTotalReviews() == 0){
+         ratingsReviews = scrapAlternativeRating(internalId);
+      }
+      return ratingsReviews;
    }
 
-   private Integer getTotalNumOfRatings(JSONObject trustVoxResponse) {
-      Integer total = 0;
+   private String alternativeRatingFetch(String internalId){
 
-      if (trustVoxResponse.has("rate")) {
-         JSONObject rate = trustVoxResponse.getJSONObject("rate");
+      StringBuilder apiRating = new StringBuilder();
 
-         if (rate.has("count")) {
-            total = rate.getInt("count");
-         }
-      }
+      apiRating.append("https://trustvox.com.br/widget/shelf/v2/products_rates?codes[]=")
+         .append(internalId)
+         .append("&store_id=")
+         .append(STOREID)
+         .append("&callback=_tsRatesReady");
 
-      return total;
+      Request request = RequestBuilder.create().setUrl(apiRating.toString()).build();
+
+      return this.dataFetcher.get(session, request).getBody();
    }
 
-   private Double getTotalRating(JSONObject trustVoxResponse) {
-      Double totalRating = 0.0;
-      if (trustVoxResponse.has("rate")) {
-         JSONObject rate = trustVoxResponse.getJSONObject("rate");
+   private RatingsReviews scrapAlternativeRating(String internalId){
 
-         if (rate.has("average")) {
-            totalRating = rate.getDouble("average");
-         }
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      String ratingResponse = alternativeRatingFetch(internalId);
+
+      // Split in parentheses
+      String[] responseSplit = ratingResponse.split("\\s*[()]\\s*");
+
+      JSONObject rating;
+
+      if(responseSplit.length > 1){
+         String ratingFormatted = responseSplit[1];
+         rating = CrawlerUtils.stringToJson(ratingFormatted);
+
+         JSONArray productRateArray = rating.optJSONArray("products_rates");
+
+         int totalReviews = ((JSONObject) productRateArray.get(0)).optInt("count");
+
+         double avgReviews = ((JSONObject) productRateArray.get(0)).optDouble("average");
+
+         ratingsReviews.setTotalRating(totalReviews);
+         ratingsReviews.setTotalWrittenReviews(totalReviews);
+         ratingsReviews.setAverageOverallRating(avgReviews);
       }
-
-      return totalRating;
-   }
-
-   private JSONObject requestTrustVoxEndpoint(String id) {
-      StringBuilder requestURL = new StringBuilder();
-
-      requestURL.append("http://trustvox.com.br/widget/root?code=");
-      requestURL.append(id);
-
-      requestURL.append("&");
-      requestURL.append("store_id=71447");
-
-      requestURL.append("&url=");
-      requestURL.append(session.getOriginalURL());
-
-      requestURL.append("&product_extra_attributes%5Bgroup%5D=PERFUMARIA");
-
-      Map<String, String> headerMap = new HashMap<>();
-      headerMap.put(HttpHeaders.ACCEPT, "application/vnd.trustvox-v2+json");
-      headerMap.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8");
-
-      Request request = RequestBuilder.create().setUrl(requestURL.toString()).setCookies(cookies).setHeaders(headerMap).build();
-      String response = this.dataFetcher.get(session, request).getBody();
-
-      JSONObject trustVoxResponse;
-      try {
-         trustVoxResponse = new JSONObject(response);
-      } catch (JSONException e) {
-         Logging.printLogWarn(logger, session, "Error creating JSONObject from trustvox response.");
-         Logging.printLogWarn(logger, session, CommonMethods.getStackTraceString(e));
-
-         trustVoxResponse = new JSONObject();
-      }
-
-      return trustVoxResponse;
+      return ratingsReviews;
    }
 }
