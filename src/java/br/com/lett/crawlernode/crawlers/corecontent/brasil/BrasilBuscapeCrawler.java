@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import br.com.lett.crawlernode.test.Test2Kt;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -56,44 +58,48 @@ public class BrasilBuscapeCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
 
-      List<Product> products = new ArrayList<>();
-
       if (!doc.select(".prod-page").isEmpty()) {
-         JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, null, false, false);
-
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=prodid]", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".zbreadcrumb li:not(:first-child) a");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".tech-spec-table"));
-         String primaryImage = scrapPrimaryImage(doc);
-         String secondaryImages = scrapSecondaryImages(doc, primaryImage);
-         List<Document> offersHtmls = getSellersHtmls(doc, internalId);
-         Marketplace marketplace = scrapMarketplaces(offersHtmls);
-         RatingsReviews ratingAndReviews = scrapRatingAndReviews(internalId, productJson);
-         // Creating the product
-         Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setName(name)
-               .setPrices(new Prices())
-               .setAvailable(false)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setRatingReviews(ratingAndReviews)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(marketplace)
-               .build();
-
-         products.add(product);
-
+         return scrapV1(doc);
       } else if (doc.selectFirst("#__NEXT_DATA__") != null) {
          return scrapV2(doc);
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+         return new ArrayList<>();
       }
+   }
+
+   private List<Product> scrapV1(Document doc) throws MalformedProductException {
+      List<Product> products = new ArrayList<>();
+
+      JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, null, false, false);
+
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=prodid]", "value");
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
+      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".zbreadcrumb li:not(:first-child) a");
+      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".tech-spec-table"));
+      String primaryImage = scrapPrimaryImageV1(doc);
+      String secondaryImages = scrapSecondaryImagesV1(doc, primaryImage);
+      List<Document> offersHtmls = getSellersHtmlsV1(doc, internalId);
+      Marketplace marketplace = scrapMarketplacesV1(offersHtmls);
+      RatingsReviews ratingAndReviews = scrapRatingAndReviewsV1(internalId, productJson);
+      // Creating the product
+      Product product = ProductBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setName(name)
+         .setPrices(new Prices())
+         .setAvailable(false)
+         .setCategory1(categories.getCategory(0))
+         .setCategory2(categories.getCategory(1))
+         .setCategory3(categories.getCategory(2))
+         .setPrimaryImage(primaryImage)
+         .setRatingReviews(ratingAndReviews)
+         .setSecondaryImages(secondaryImages)
+         .setDescription(description)
+         .setMarketplace(marketplace)
+         .build();
+
+      products.add(product);
 
       return products;
    }
@@ -109,6 +115,8 @@ public class BrasilBuscapeCrawler extends Crawler {
          return products;
       }
 
+      List<String> images = scrapImages(productGeneral);
+
       JSONObject productJson = JSONUtils.getJSONValue(productGeneral, "product");
 
       String internalId = productJson.optString("id");
@@ -116,7 +124,13 @@ public class BrasilBuscapeCrawler extends Crawler {
 
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumb_List__1RAzt li:not(:first-child) span");
       String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ProductPageBody_Col__23zGY .ProductPageBody_DetailsSection___68li"));
-      String primaryImage = productJson.optString("image");
+
+      String primaryImage = null;
+
+      if (images.size() > 0) {
+         primaryImage = images.remove(0);
+      }
+
       Marketplace marketplace = scrapMarketplacesV2(internalId, productJson);
       RatingsReviews ratingAndReviews = scrapRatingAndReviewsV2(internalId, productGeneral);
 
@@ -128,6 +142,7 @@ public class BrasilBuscapeCrawler extends Crawler {
             .setAvailable(false)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
             .setRatingReviews(ratingAndReviews)
             .setDescription(description)
             .setMarketplace(marketplace)
@@ -138,7 +153,27 @@ public class BrasilBuscapeCrawler extends Crawler {
       return products;
    }
 
-   private List<Document> getSellersHtmls(Document doc, String internalId) {
+   private List<String> scrapImages(JSONObject productGeneral) {
+      List<String> images = new ArrayList<>();
+
+      JSONArray mediaImages = JSONUtils.getJSONArrayValue(productGeneral, "mediaImages");
+
+      for (Object mediaImageObj: mediaImages) {
+         if (mediaImageObj instanceof JSONObject) {
+            JSONObject mediaImage = (JSONObject) mediaImageObj;
+            if (mediaImage.optString("type").equals("PRODUCT_ZOOM")) {
+               String image = mediaImage.optString("url");
+               if (!image.isEmpty()){
+                  images.add(image);
+               }
+            }
+         }
+      }
+
+      return images;
+   }
+
+   private List<Document> getSellersHtmlsV1(Document doc, String internalId) {
       List<Document> htmls = new ArrayList<>();
       htmls.add(doc);
 
@@ -176,7 +211,7 @@ public class BrasilBuscapeCrawler extends Crawler {
       return htmls;
    }
 
-   private Marketplace scrapMarketplaces(List<Document> docuements) {
+   private Marketplace scrapMarketplacesV1(List<Document> docuements) {
       Map<String, Prices> offersMap = new HashMap<>();
 
       for (Document doc : docuements) {
@@ -201,7 +236,7 @@ public class BrasilBuscapeCrawler extends Crawler {
 
       int stores = productJson.optInt("stores");
 
-      String url = "https://api-v1.zoom.com.br/esfiha/product/" + internalId + "?order=DEFAULT&page=1&pageSize=" + stores;
+      String url = "https://api-v1.zoom.com.br/esfiha/product/" + internalId + "?order=DEFAULT&page=1&pageSize=100";
 
       Request request = RequestBuilder.create()
             .setUrl(url)
@@ -278,7 +313,7 @@ public class BrasilBuscapeCrawler extends Crawler {
       return prices;
    }
 
-   private String scrapPrimaryImage(Document doc) {
+   private String scrapPrimaryImageV1(Document doc) {
       JSONArray jsonImg = getImageJSON(doc);
       String imagem = null;
       if (jsonImg != null) {
@@ -288,7 +323,7 @@ public class BrasilBuscapeCrawler extends Crawler {
       return imagem;
    }
 
-   private String scrapSecondaryImages(Document doc, String primaryImage) {
+   private String scrapSecondaryImagesV1(Document doc, String primaryImage) {
       JSONArray secondaryImagesArray = new JSONArray();
       JSONArray jsonImg = getImageJSON(doc);
 
@@ -336,7 +371,7 @@ public class BrasilBuscapeCrawler extends Crawler {
       return image;
    }
 
-   private RatingsReviews scrapRatingAndReviews(String internalId, JSONObject productJson) {
+   private RatingsReviews scrapRatingAndReviewsV1(String internalId, JSONObject productJson) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       ratingReviews.setDate(session.getDate());
@@ -369,7 +404,6 @@ public class BrasilBuscapeCrawler extends Crawler {
 
       return ratingReviews;
    }
-
 
    private AdvancedRatingReview getAdvancedRatingV2(JSONObject productJson) {
       AdvancedRatingReview advancedRating = CrawlerUtils.advancedRatingEmpty();
