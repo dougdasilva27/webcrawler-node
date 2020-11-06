@@ -209,6 +209,14 @@ public class B2WCrawler extends Crawler {
                Offer offer = offers.getSellerByName(seller);
                offer.setIsMainRetailer(true);
                break;
+            } else if (offers.containsSeller(seller.toLowerCase())) {
+               Offer offer = offers.getSellerByName(seller.toLowerCase());
+               offer.setIsMainRetailer(true);
+               break;
+            } else if (offers.containsSeller(seller.toUpperCase())) {
+               Offer offer = offers.getSellerByName(seller.toUpperCase());
+               offer.setIsMainRetailer(true);
+               break;
             }
          }
       }
