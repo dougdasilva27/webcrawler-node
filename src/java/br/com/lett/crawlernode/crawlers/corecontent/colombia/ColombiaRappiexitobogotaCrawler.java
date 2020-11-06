@@ -33,7 +33,7 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
 
    public ColombiaRappiexitobogotaCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.FETCHER);
+      this.config.setFetcher(FetchMode.APACHE);
    }
 
    private static final String HOME_PAGE = "https://www.rappi.com.co/";
@@ -183,21 +183,26 @@ public class ColombiaRappiexitobogotaCrawler extends Crawler {
       return products;
    }
 
-   public static Offers scrapOffers(JSONObject jsonSku) throws MalformedPricingException, OfferException {
+   public Offers scrapOffers(JSONObject jsonSku) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(jsonSku);
-      List<String> sales = scrapSales(pricing);
 
-      Offer offer = new Offer.OfferBuilder().setSellerFullName("Rappi")
-         .setInternalSellerId(jsonSku.optString("store_id", null))
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setPricing(pricing)
-         .setIsMainRetailer(true)
-         .setSales(sales)
-         .build();
+      try {
+         Pricing pricing = scrapPricing(jsonSku);
+         List<String> sales = scrapSales(pricing);
 
-      offers.add(offer);
+         Offer offer = new Offer.OfferBuilder().setSellerFullName("Rappi")
+            .setInternalSellerId(jsonSku.optString("store_id", null))
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setPricing(pricing)
+            .setIsMainRetailer(true)
+            .setSales(sales)
+            .build();
+
+         offers.add(offer);
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, session, "offers error: " + CommonMethods.getStackTraceString(e));
+      }
 
       return offers;
    }
