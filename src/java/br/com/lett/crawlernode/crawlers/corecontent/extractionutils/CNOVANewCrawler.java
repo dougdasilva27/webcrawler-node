@@ -525,7 +525,7 @@ public abstract class CNOVANewCrawler extends Crawler {
 
       Object id = productJson.optQuery("/sku/id");
       if (id != null) {
-         String url = "https://www." + getStore() + "-imagens.com.br/html/conteudo-produto/73/" + id + "/" + id + ".html";
+         String url = "https://www.pontofrio-imagens.com.br/html/conteudo-produto/73/" + id + "/" + id + ".html";
          description.append(fetchPage(url, false).getBody());
       }
 

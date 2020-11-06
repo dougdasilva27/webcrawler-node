@@ -116,7 +116,7 @@ public class FetchUtilities {
       errorCodes = Arrays.asList("403");
 
       highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao", "drogariapovao", "webcontinental", "drogarianissei", "lacomer", "poupafarma",
-            "unicaarcondicionado", "multisom", "confianca", "medicamentosbrasil");
+            "unicaarcondicionado", "multisom", "confianca", "medicamentosbrasil", "extramarketplace");
    }
 
    /**
