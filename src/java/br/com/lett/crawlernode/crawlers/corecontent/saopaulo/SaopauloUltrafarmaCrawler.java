@@ -229,6 +229,10 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
      Elements votes = doc.select(".amount-reviews");
      double totalvalue = 0;
 
+     if(totalReviews == 0){
+        return 0.0;
+     }
+
      for(Element e: votes){
 
          totalvalue += CrawlerUtils.scrapIntegerFromHtml(e, null, true, 0) * (5-votes.indexOf(e));
