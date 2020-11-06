@@ -127,6 +127,7 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
       val numberOfRatingsReviews = page.select("li.review-entry").size
       val reviews = page.select(".rating-stars")
       var totalValueReviews = 0.0
+      var avgRatingReviews = 0.0
       for(review in reviews){
 
          val ratingInfo: JSONObject = CrawlerUtils.stringToJSONObject(review.attr("data-rating"))
@@ -135,7 +136,9 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
 
          totalValueReviews += ratingValue
       }
-      val avgRatingReviews = totalValueReviews / numberOfRatingsReviews
+      if(numberOfRatingsReviews != 0){
+         avgRatingReviews  = totalValueReviews / numberOfRatingsReviews
+      }
 
       ratingReviews.setTotalRating(numberOfRatingsReviews)
       ratingReviews.totalWrittenReviews = numberOfRatingsReviews
