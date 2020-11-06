@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import br.com.lett.crawlernode.test.Test2Kt;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
