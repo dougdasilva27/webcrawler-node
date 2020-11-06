@@ -1,10 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -33,6 +31,7 @@ import models.prices.Prices;
 public class BrasilHomerefillCrawler extends Crawler {
 
    private final String HOME_PAGE = "https://www.homerefill.com.br/";
+   private static final String HOST = "https://s3-sa-east-1.amazonaws.com/";
 
    public BrasilHomerefillCrawler(Session session) {
       super(session);
@@ -71,10 +70,10 @@ public class BrasilHomerefillCrawler extends Crawler {
          CategoryCollection categories = crawlCategories(doc);
 
          // Primary image
-         String primaryImage = crawlPrimaryImage(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".molecule-product-featured__figure .zoo-item", Collections.singletonList("data-zoo-image"), "https", HOST);
 
          // Secondary images
-         String secondaryImages = crawlSecondaryImages();
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".molecule-product-featured__figure .zoo-item", Collections.singletonList("data-zoo-image"), "https", HOST, primaryImage);
 
          // Description
          String description = crawlDescription();
@@ -170,33 +169,6 @@ public class BrasilHomerefillCrawler extends Crawler {
 
    private Marketplace assembleMarketplaceFromMap(Map<String, Float> marketplaceMap) {
       return new Marketplace();
-   }
-
-   private String crawlPrimaryImage(Document document) {
-      String primaryImage = null;
-      Element primaryImageElement = document.select(".molecule-product-featured__figure > img").first();
-
-      if (primaryImageElement != null) {
-         String image = primaryImageElement.attr("src");
-
-         if (image != null) {
-            primaryImage = image.trim();
-         }
-
-      }
-
-      return primaryImage;
-   }
-
-   private String crawlSecondaryImages() {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
    }
 
    private CategoryCollection crawlCategories(Document document) {

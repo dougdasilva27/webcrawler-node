@@ -23,7 +23,7 @@ public class BrasilCasadofazendeiroCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     String url = "https://" + HOME_PAGE + "/index.php?route=product/search&search=" + 
-        this.keywordEncoded + "&page=" +  this.currentPage;
+        this.keywordWithoutAccents + "&page=" +  this.currentPage;
     
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);

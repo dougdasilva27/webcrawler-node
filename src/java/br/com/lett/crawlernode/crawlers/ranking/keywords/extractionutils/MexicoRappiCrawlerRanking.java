@@ -13,13 +13,13 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 public abstract class MexicoRappiCrawlerRanking extends CrawlerRankingKeywords {
 
    private static final String PRODUCTS_API_URL = "https://services.mxgrability.rappi.com/api/search-client/search/v2/products?page=";
-   private final String STORE = setStoreId();
+   private final String STORE = getStoreId();
 
    public MexicoRappiCrawlerRanking(Session session) {
       super(session);
    }
 
-   protected abstract String setStoreId();
+   protected abstract String getStoreId();
 
    @Override
    public void extractProductsFromCurrentPage() {

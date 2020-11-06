@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -27,7 +28,7 @@ public class BrasilFrigelarCrawler extends CrawlerRankingKeywords {
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 
-		Elements products =  this.currentDoc.select(".vitrine li[layout] .shelf__product-item");
+		Elements products =  this.currentDoc.select(".vitrine .n3colunas ul li[layout]");
 		
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {
@@ -35,18 +36,13 @@ public class BrasilFrigelarCrawler extends CrawlerRankingKeywords {
 			if(this.totalProducts == 0) setTotalProducts();
 			
 			for(Element e: products) {
-				// InternalPid
-				String internalPid 	= crawlInternalPid(e);
+
+				String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, " .comparar-produto input", "rel");
+				String urlProduct = CrawlerUtils.scrapUrl(e,".img-produto a", "href", "https:", "www.frigelar.com.br");
 				
-				// InternalId
-				String internalId 	= crawlInternalId(e);
+				saveDataProduct(null, internalPid, urlProduct);
 				
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
-				
-				saveDataProduct(internalId, internalPid, urlProduct);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+				this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
 				if(this.arrayProducts.size() == productsLimit) break;
 				
 			}

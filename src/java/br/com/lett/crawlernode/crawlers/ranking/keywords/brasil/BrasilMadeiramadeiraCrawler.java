@@ -1,10 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilMadeiramadeiraCrawler extends CrawlerRankingKeywords {
 
@@ -12,17 +14,31 @@ public class BrasilMadeiramadeiraCrawler extends CrawlerRankingKeywords {
     super(session);
   }
 
+   private JSONArray extractJSONFromHTML(){
+      JSONArray jsonProducts = new JSONArray();
+
+      Elements scripts = this.currentDoc.select("head script");
+      for (Element e: scripts){
+         if(e.html() != null && e.html().contains("window.segment_data =")){
+            String json = e.html().split("window.segment_data =")[1];
+            JSONObject rawJson = CrawlerUtils.stringToJson(json.replace(";",""));
+            jsonProducts = rawJson.optJSONArray("products");
+         }
+      }
+      return jsonProducts;
+   }
+
   @Override
   protected void extractProductsFromCurrentPage() {
-    this.pageSize = 48;
+    this.pageSize = 36;
 
     this.log("Página " + this.currentPage);
-    String url = "https://www.madeiramadeira.com.br/busca?q=" + this.keywordEncoded + "&sortby=relevance&resultsperpage=48&page=" + this.currentPage;
+    String url = "https://www.madeiramadeira.com.br/busca?page="+ this.currentPage + "&q=" + this.keywordEncoded;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".product-box__item");
+    JSONArray products = extractJSONFromHTML();
 
     if (!products.isEmpty()) {
 
@@ -30,9 +46,11 @@ public class BrasilMadeiramadeiraCrawler extends CrawlerRankingKeywords {
         setTotalProducts();
       }
 
-      for (Element e : products) {
-        String internalPid = scrapInternalPid(e);
-        String productUrl = scrapUrl(e);
+      for (Object o : products) {
+         JSONObject product = (JSONObject) o;
+
+        String internalPid = product.optString("product_id");
+        String productUrl = CrawlerUtils.completeUrl(product.optString("url"), "https:", "www.madeiramadeira.com.br");
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -53,35 +71,8 @@ public class BrasilMadeiramadeiraCrawler extends CrawlerRankingKeywords {
         + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  private String scrapUrl(Element e) {
-    Element urlElement = e.selectFirst(".product__name a");
-    String url = null;
-
-
-    if (urlElement != null) {
-      url = CrawlerUtils.completeUrl(urlElement.attr("href"), "https", "www.madeiramadeira.com.br");
-    }
-
-    return url;
-  }
-
-  private String scrapInternalPid(Element e) {
-    return e.attr("data-listing-product-id");
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(
-        "#wrapper > div.container.seller__products-box > div > div.col-xs-10 > div.row.col-xs-12.margin-bottom-10 > div:nth-child(3) > div.col-xs-2.no-padding--right.margin-top-10 > span");
-
-    if (totalElement != null) {
-      try {
-        this.totalProducts = Integer.parseInt(totalElement.text().replaceAll("[^0-9]", "").trim());
-      } catch (Exception e) {
-        this.logError(e.getMessage());
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return this.currentDoc.selectFirst("#pagination-progress-page") != null;
+   }
 }

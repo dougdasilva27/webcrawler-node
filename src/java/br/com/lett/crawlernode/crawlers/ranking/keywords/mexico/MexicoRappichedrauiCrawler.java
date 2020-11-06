@@ -5,14 +5,14 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.MexicoR
 
 public class MexicoRappichedrauiCrawler extends MexicoRappiCrawlerRanking {
 
-   private static final String STORE_ID = "990002972";
+   public static final String STORE_ID = "990002972";
 
    public MexicoRappichedrauiCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
    }
 }

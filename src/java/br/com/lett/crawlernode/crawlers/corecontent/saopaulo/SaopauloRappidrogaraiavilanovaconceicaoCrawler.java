@@ -7,18 +7,14 @@ public class SaopauloRappidrogaraiavilanovaconceicaoCrawler extends BrasilRappiC
 
    private static final String STORE_TYPE = "raia";
    private static final String LOCATION = "lng=-46.6704586&lat=-23.5952732";
+   public static final String STORE_ID = "900005057";
 
    public SaopauloRappidrogaraiavilanovaconceicaoCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return STORE_TYPE;
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return LOCATION;
+   protected String getStoreId() {
+      return STORE_ID;
    }
 }

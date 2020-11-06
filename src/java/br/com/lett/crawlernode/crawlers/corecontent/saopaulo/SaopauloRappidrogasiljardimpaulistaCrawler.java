@@ -5,17 +5,14 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 
 public class SaopauloRappidrogasiljardimpaulistaCrawler extends BrasilRappiCrawler {
 
+   public static final String STORE_ID = "900130114";
+
    public SaopauloRappidrogasiljardimpaulistaCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String setStoreType() {
-      return "drogasilmarket2";
-   }
-
-   @Override
-   protected String setLocationParameters() {
-      return "lat=-23.584293&lng=-46.674584";
+   protected String getStoreId() {
+      return STORE_ID;
    }
 }

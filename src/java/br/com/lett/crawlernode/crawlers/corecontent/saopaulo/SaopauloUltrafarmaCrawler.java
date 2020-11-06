@@ -208,18 +208,33 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
 
     ratingReviews.setTotalRating(totalReviews);
     ratingReviews.setTotalWrittenReviews(totalReviews);
-    ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc));
+    ratingReviews.setAverageOverallRating(crawlAverageOverallRating(doc, totalReviews));
     ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(doc));
 
     return ratingReviews;
   }
 
   private Integer computeTotalReviewsCount(Document doc) {
-    return doc.select("#reviews > blockquote").size();
+     Elements votes = doc.select(".amount-reviews");
+     int totalRatings = 0;
+
+     for(Element e: votes){
+        totalRatings += CrawlerUtils.scrapIntegerFromHtml(e, null, true, 0);
+     }
+     return totalRatings;
+
   }
 
-  private Double crawlAverageOverallRating(Document doc) {
-    return CrawlerUtils.scrapDoublePriceFromHtml(doc, "p > em:nth-child(1)", null, false, ',', session);
+  private Double crawlAverageOverallRating(Document doc, int totalReviews) {
+     Elements votes = doc.select(".amount-reviews");
+     double totalvalue = 0;
+
+     for(Element e: votes){
+
+         totalvalue += CrawlerUtils.scrapIntegerFromHtml(e, null, true, 0) * (5-votes.indexOf(e));
+     }
+
+     return totalvalue / totalReviews;
   }
 
 

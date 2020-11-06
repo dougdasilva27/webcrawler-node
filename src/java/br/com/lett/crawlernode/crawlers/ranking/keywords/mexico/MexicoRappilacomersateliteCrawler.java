@@ -12,7 +12,7 @@ public class MexicoRappilacomersateliteCrawler extends MexicoRappiCrawlerRanking
    }
 
    @Override
-   protected String setStoreId() {
+   protected String getStoreId() {
       return STORE_ID;
    }
 }
