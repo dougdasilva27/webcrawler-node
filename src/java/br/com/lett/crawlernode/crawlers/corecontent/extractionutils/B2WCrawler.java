@@ -232,7 +232,7 @@ public class B2WCrawler extends Crawler {
     * @param document
     * @return
     */
-   private RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
+   protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       ratingReviews.setDate(session.getDate());
