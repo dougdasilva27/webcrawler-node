@@ -26,6 +26,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,7 +67,7 @@ public class BrasilTanakaoCrawler extends Crawler {
          String primaryImage =
             CrawlerUtils.scrapSimplePrimaryImage(
                doc, ".product-image-gallery .gallery-image", Arrays.asList("data-zoom-image", "src"), "https", HOME_PAGE);
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-image-thumbs li a img", Collections.singletonList("src"), "https", HOME_PAGE, primaryImage);
+         List<String> secondaryImages = scrapSecondaryImages(doc);
          String description =
             CrawlerUtils.scrapElementsDescription(
                doc,
@@ -272,5 +274,19 @@ public class BrasilTanakaoCrawler extends Crawler {
             .collect(Collectors.toList());
 
       return new Offers(offerList);
+   }
+
+   private List<String> scrapSecondaryImages(Document doc){
+      List<String> secondaryImages = new ArrayList<>();
+
+      Elements images = doc.select(".product-image-thumbs li a img");
+
+      for(Element e: images){
+         if(images.indexOf(e) != 0){
+            secondaryImages.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, null, "src"));
+         }
+      }
+
+      return secondaryImages;
    }
 }
