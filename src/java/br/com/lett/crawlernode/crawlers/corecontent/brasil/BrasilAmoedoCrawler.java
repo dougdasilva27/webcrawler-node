@@ -15,10 +15,7 @@ import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (23/08/2016):
@@ -80,7 +77,7 @@ public class BrasilAmoedoCrawler extends Crawler {
          boolean available = !doc.select(".stock:not(.unavailable)").isEmpty();
          CategoryCollection categories = new CategoryCollection();
          JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-         String primaryImage = crawlPrimaryImage(images);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product.media link:nth-of-type(2)", Collections.singletonList("href"), "https", HOME_PAGE);
          String secondaryImages = crawlSecondaryImages(images);
          String description = crawlDescription(doc);
          Marketplace marketplace = crawlMarketplace();
