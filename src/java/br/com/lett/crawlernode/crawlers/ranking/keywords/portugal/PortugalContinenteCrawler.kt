@@ -36,7 +36,7 @@ class PortugalContinenteCrawler(session: Session?) : CrawlerRankingKeywords(sess
               "Value": ""
             }
           ],
-          "SearchText": "$keywordWithoutAccents",
+          "SearchText": "$keywordEncoded",
           "SearchScope": "1",
           "CategoryId": "",
           "NumberOfItemsToReturn": "20",
@@ -53,6 +53,7 @@ class PortugalContinenteCrawler(session: Session?) : CrawlerRankingKeywords(sess
         }
       }""".replace(" ", "").replace("\n", "")
       ).build()
+     println(request.payload)
     val body = dataFetcher.post(session, request)?.body
     val jsonObject = CrawlerUtils.stringToJSONObject(body)
     val result = jsonObject?.optJSONObject("d")
