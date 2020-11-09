@@ -70,7 +70,6 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
       if (apiSearch.has("quantidade")) {
          try {
             this.totalProducts = Integer.parseInt(apiSearch.getString("quantidade"));
-            System.err.println(this.totalProducts);
          } catch (Exception e) {
             this.logError(CommonMethods.getStackTraceString(e));
          }
