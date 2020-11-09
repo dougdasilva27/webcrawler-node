@@ -46,7 +46,7 @@ public class PortugalElcorteinglesCrawler extends Crawler {
 
    public PortugalElcorteinglesCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
