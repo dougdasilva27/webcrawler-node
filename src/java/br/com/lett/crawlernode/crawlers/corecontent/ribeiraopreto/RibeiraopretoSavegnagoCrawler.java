@@ -107,7 +107,7 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
             String internalId = vtexUtil.crawlInternalId(jsonSku);
             JSONObject apiJSON = vtexUtil.crawlApi(internalId, "?sc=2");
             String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
-            String description = scrapDescription(doc, internalId);
+            String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription"));
             Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, false);
             Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER), Card.VISA, session);
             boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
@@ -161,15 +161,6 @@ public class RibeiraopretoSavegnagoCrawler extends Crawler {
 
       return ratingReviews;
 
-   }
-
-   private String scrapDescription(Document doc, String internalId) {
-      StringBuilder description = new StringBuilder();
-
-      description.append(CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".productDescription")));
-      description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
-
-      return description.toString();
    }
 
 }
