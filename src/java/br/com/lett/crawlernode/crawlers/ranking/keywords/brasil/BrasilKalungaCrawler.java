@@ -30,7 +30,7 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       // monta a url com a keyword e a página
-      String url = "https://www.kalunga.com.br/busca/" + this.keywordWithoutAccents + "/1";
+      String url = "https://www.kalunga.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "/1";
 
       this.currentDoc = fetchDocument(url);
       Elements products = this.currentDoc.select(".blocoproduto .col-4 a:not(.small):first-child");
