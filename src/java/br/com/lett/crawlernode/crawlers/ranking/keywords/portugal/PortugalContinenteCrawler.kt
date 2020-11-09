@@ -1,17 +1,21 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.portugal
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.*
 
 class PortugalContinenteCrawler(session: Session?) : CrawlerRankingKeywords(session) {
 
-  init {
-    pageSize = 20
-  }
+   init {
+      pageSize = 20
+      fetchMode = FetchMode.FETCHER;
+   }
 
   override fun extractProductsFromCurrentPage() {
 
@@ -52,8 +56,11 @@ class PortugalContinenteCrawler(session: Session?) : CrawlerRankingKeywords(sess
           "PreventProductsInBasket": "false"
         }
       }""".replace(" ", "").replace("\n", "")
-      ).build()
-     println(request.payload)
+      ) .setProxyservice(Arrays.asList(
+          ProxyCollection.INFATICA_RESIDENTIAL_BR,
+          ProxyCollection.NETNUT_RESIDENTIAL_ES
+       )).build()
+
     val body = dataFetcher.post(session, request)?.body
     val jsonObject = CrawlerUtils.stringToJSONObject(body)
     val result = jsonObject?.optJSONObject("d")
