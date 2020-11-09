@@ -44,7 +44,7 @@ public class PortugalAuchanCrawler extends CrawlerRankingKeywords {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.auchan.pt/Frontoffice/search/" + this.keywordWithoutAccents;
+      String url = "https://www.auchan.pt/Frontoffice/search/" + this.keywordWithoutAccents.replace(" ", "%20");
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetch(url);
