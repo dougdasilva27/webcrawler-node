@@ -20,6 +20,7 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
       pageSize = 100
 
       val search = fetchProductsFromAPI()
+
       val products = JSONUtils.getJSONArrayValue(search, "products")
 
       if (this.totalProducts == 0) {
@@ -80,6 +81,10 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
 
       val request = Request.RequestBuilder.create().setUrl(url).build()
 
-      return dataFetcher.get(session, request).body.toJson()
+      val response =  dataFetcher.get(session, request)
+
+      cookies = response.cookies
+
+      return response.body.toJson()
    }
 }
