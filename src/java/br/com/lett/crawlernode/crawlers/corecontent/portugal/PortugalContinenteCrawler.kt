@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.portugal
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
 import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.models.Product
@@ -39,7 +40,7 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
          .setUrl(session.getOriginalURL())
          .setProxyservice(Arrays.asList(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
          .build();
-      val response = JavanetDataFetcher().get(session, request);
+      val response = ApacheDataFetcher().get(session, request);
 
       return Jsoup.parse(response.getBody());
    }
@@ -50,7 +51,7 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
     if (document.selectFirst(".productInfoArea") != null) {
 
       val name = scrapName(document)
-      val internalId = document.selectFirst(".ProductCode")?.attr("value")
+      val internalId = document.selectFirst(".ecsf_advertising_banner")?.attr("pid")
       val description = document.selectFirst(".productDetailArea .productDetailSubArea")?.html()
 
       val offers = scrapOffers(document)
