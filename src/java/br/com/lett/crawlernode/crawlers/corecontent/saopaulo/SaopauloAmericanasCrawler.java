@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -8,12 +10,18 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.B2WCrawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
+import org.json.JSONObject;
 
 public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private static final String HOME_PAGE = "https://www.americanas.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
+   private static final int RATING_API_VERSION = 1;
+   private static final String KEY_SHA_256 = "3a716c1d89ae750c969fadfecf3d88e8057880358c57ddc29f3255083cdd6505";
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
@@ -46,5 +54,66 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       }
 
       this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.americanas.com.br", "/", null, session, dataFetcher);
+   }
+
+   @Override
+   protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      JSONObject ratingInfo = new JSONObject();
+
+      JSONObject rating = fetchRatingApi(skuInternalPid);
+
+      if(rating.has("data")){
+
+         JSONObject product = rating.optJSONObject("data").optJSONObject("product");
+
+         if(product != null){
+
+            ratingInfo = product.optJSONObject("rating");
+         }
+      }
+
+      ratingReviews.setTotalWrittenReviews(ratingInfo.optInt("reviews"));
+      ratingReviews.setTotalRating(ratingInfo.optInt("reviews"));
+      ratingReviews.setAverageOverallRating(ratingInfo.optDouble("average"));
+
+      return  ratingReviews;
+   }
+
+   private JSONObject fetchRatingApi(String internalId) {
+      StringBuilder url = new StringBuilder();
+      url.append("https://catalogo-bff-v1-americanas.b2w.io/graphql?");
+
+      JSONObject variables = new JSONObject();
+      JSONObject extensions = new JSONObject();
+      JSONObject persistedQuery = new JSONObject();
+
+      variables.put("productId", internalId);
+      variables.put("offset", 5);
+
+      persistedQuery.put("version", RATING_API_VERSION);
+      persistedQuery.put("sha256Hash", KEY_SHA_256);
+
+      extensions.put("persistedQuery", persistedQuery);
+
+      StringBuilder payload = new StringBuilder();
+      payload.append("operationName=productReviews");
+      payload.append("&device=desktop");
+      payload.append("&oneDayDelivery=undefined");
+      try {
+         payload.append("&variables=" + URLEncoder.encode(variables.toString(), "UTF-8"));
+         payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
+      url.append(payload.toString());
+
+      Logging.printLogDebug(logger, session, "Link onde são feitos os crawlers:" + url);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url.toString())
+         .build();
+
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
    }
 }
