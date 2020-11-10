@@ -24,21 +24,23 @@ public class ProxyCollection {
    public static final String BUY = "buy";
    public static final String BONANZA = "bonanza";
    public static final String BONANZA_BELGIUM = "bonanza_server_be";
-   public static final String STORM_RESIDENTIAL_US = "storm_residential_us";
-   public static final String STORM_RESIDENTIAL_EU = "storm_residential_eu";
-   public static final String NO_PROXY = "no_proxy";
+   public static final String BONANZA_BELGIUM_HAPROXY = "bonanza_server_be_haproxy";
    public static final String LUMINATI_SERVER_BR = "luminati_server_br";
+   public static final String LUMINATI_SERVER_BR_HAPROXY = "luminati_server_haproxy_br";
    public static final String LUMINATI_RESIDENTIAL_BR = "luminati_residential_br";
+   public static final String LUMINATI_RESIDENTIAL_BR_HAPROXY = "luminati_residential_br_haproxy";
    public static final String INFATICA_RESIDENTIAL_BR = "infatica_residential_br";
    public static final String NETNUT_RESIDENTIAL_BR = "netnut_residential_br";
+   public static final String NETNUT_RESIDENTIAL_BR_HAPROXY = "netnut_residential_br_haproxy";
    public static final String NETNUT_RESIDENTIAL_ES = "netnut_residential_es";
+   public static final String NETNUT_RESIDENTIAL_ES_HAPROXY = "netnut_residential_ES_haproxy";
    public static final String NETNUT_RESIDENTIAL_MX = "netnut_residential_mx";
-   public static final String LUMINATI_SERVER_BR_HAPROXY = "luminati_server_haproxy_br";
    public static final String INFATICA_RESIDENTIAL_BR_HAPROXY = "infatica_residential_br_haproxy";
    public static final String BR_OXYLABS = "br-oxylabs";
    public static final String BE_OXYLABS = "oxylabs_server_be";
+   public static final String NO_PROXY = "no_proxy";
 
-   //EQI PROXIES
+   // EQI PROXIES
    public static final String INFATICA_RESIDENTIAL_BR_EQI = "infatica_residential_br_eqi";
 
 

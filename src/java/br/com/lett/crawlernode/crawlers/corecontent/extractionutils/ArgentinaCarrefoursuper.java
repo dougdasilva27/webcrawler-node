@@ -1,5 +1,19 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -13,7 +27,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -24,14 +37,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
-import java.text.Normalizer;
-import java.util.*;
 
 /**
  * Date: 2019-08-28
@@ -48,13 +53,13 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
    private static final String HOST = "supermercado.carrefour.com.ar";
    private static final String SELLER_FULL_NAME = "Carrefoursuper";
    protected Set<String> cards =
-      Sets.newHashSet(
-         Card.VISA.toString(),
-         Card.MASTERCARD.toString(),
-         Card.AURA.toString(),
-         Card.DINERS.toString(),
-         Card.HIPER.toString(),
-         Card.AMEX.toString());
+         Sets.newHashSet(
+               Card.VISA.toString(),
+               Card.MASTERCARD.toString(),
+               Card.AURA.toString(),
+               Card.DINERS.toString(),
+               Card.HIPER.toString(),
+               Card.AMEX.toString());
 
    /**
     * This function might return a cep from specific store
@@ -64,11 +69,11 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
    @Override
    protected Object fetch() {
       Request request =
-         RequestBuilder.create()
-            .setCookies(cookies)
-            .setUrl(session.getOriginalURL())
-            .mustSendContentEncoding(false)
-            .build();
+            RequestBuilder.create()
+                  .setCookies(cookies)
+                  .setUrl(session.getOriginalURL())
+                  .mustSendContentEncoding(false)
+                  .build();
 
       Response response = dataFetcher.get(session, request);
 
@@ -84,19 +89,19 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
       String payload = "codigo_postal=" + getCep();
 
       Request request =
-         RequestBuilder.create()
-            .setUrl("https://supermercado.carrefour.com.ar/stock/")
-            .setCookies(cookies)
-            .setPayload(payload)
-            .setHeaders(headers)
-            .setProxyservice(
-               Arrays.asList(
-                  ProxyCollection.STORM_RESIDENTIAL_US, ProxyCollection.INFATICA_RESIDENTIAL_BR))
-            .setStatusCodesToIgnore(Collections.singletonList(302))
-            .setFollowRedirects(false)
-            .setBodyIsRequired(false)
-            .mustSendContentEncoding(false)
-            .build();
+            RequestBuilder.create()
+                  .setUrl("https://supermercado.carrefour.com.ar/stock/")
+                  .setCookies(cookies)
+                  .setPayload(payload)
+                  .setHeaders(headers)
+                  .setProxyservice(
+                        Arrays.asList(
+                              ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.INFATICA_RESIDENTIAL_BR))
+                  .setStatusCodesToIgnore(Collections.singletonList(302))
+                  .setFollowRedirects(false)
+                  .setBodyIsRequired(false)
+                  .mustSendContentEncoding(false)
+                  .build();
 
       List<Cookie> cookiesResponse = new FetcherDataFetcher().post(session, request).getCookies();
       for (Cookie c : cookiesResponse) {
@@ -114,46 +119,46 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(
-            logger, session, "Product page identified: " + this.session.getOriginalURL());
+               logger, session, "Product page identified: " + this.session.getOriginalURL());
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name .h1", false);
 
          String primaryImage =
-            CrawlerUtils.scrapSimplePrimaryImage(
-               doc,
-               ".gallery-image[data-zoom-image]",
-               Arrays.asList("data-zoom-image", "src"),
-               "https:",
-               HOST);
+               CrawlerUtils.scrapSimplePrimaryImage(
+                     doc,
+                     ".gallery-image[data-zoom-image]",
+                     Arrays.asList("data-zoom-image", "src"),
+                     "https:",
+                     HOST);
          String secondaryImages =
-            CrawlerUtils.scrapSimpleSecondaryImages(doc,
-               ".gallery-image[data-zoom-image]",
-               Arrays.asList("data-zoom-image", "src"),
-               "https:",
-               HOST,
-               primaryImage);
+               CrawlerUtils.scrapSimpleSecondaryImages(doc,
+                     ".gallery-image[data-zoom-image]",
+                     Arrays.asList("data-zoom-image", "src"),
+                     "https:",
+                     HOST,
+                     primaryImage);
 
          String internalId =
-            CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
+               CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
          String description =
-            CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(
-               ".descripcion-texto",
-               ".descripcion-content.clearfix",
-               ".especificaciones-wrapper h2",
-               ".especificaciones-wrapper ul > li"));
+               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(
+                     ".descripcion-texto",
+                     ".descripcion-content.clearfix",
+                     ".especificaciones-wrapper h2",
+                     ".especificaciones-wrapper ul > li"));
          boolean availableToBuy = doc.selectFirst(".info-y-galleria-wrapper .btn.btn-add") != null;
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product =
-            ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setName(name)
-               .setOffers(offers)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .build();
+               ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setName(name)
+                     .setOffers(offers)
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .build();
 
          products.add(product);
 
@@ -175,15 +180,15 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
       Pricing pricing = scrapPricing(doc);
       if (pricing != null) {
          offers.add(
-            OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(SELLER_FULL_NAME)
-               .setMainPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(true)
-               .setPricing(pricing)
-               .setSales(sales)
-               .build());
+               OfferBuilder.create()
+                     .setUseSlugNameAsInternalSellerId(true)
+                     .setSellerFullName(SELLER_FULL_NAME)
+                     .setMainPagePosition(1)
+                     .setIsBuybox(false)
+                     .setIsMainRetailer(true)
+                     .setPricing(pricing)
+                     .setSales(sales)
+                     .build());
       }
       return offers;
    }
@@ -193,8 +198,8 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
       String firstSales = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-shop .offer", false);
       String secondSales =
-         CrawlerUtils.scrapStringSimpleInfo(
-            doc, ".price-info .price.precio-oferta-productos-destacados", true);
+            CrawlerUtils.scrapStringSimpleInfo(
+                  doc, ".price-info .price.precio-oferta-productos-destacados", true);
 
       if (firstSales != null && !firstSales.isEmpty()) {
          sales.add(firstSales);
@@ -210,21 +215,21 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
       Double spotlightPrice =
-         CrawlerUtils.scrapDoublePriceFromHtml(
-            doc,
-            ".price-info .precio-regular-productos-destacados, .price-info .regular-price",
-            null,
-            false,
-            ',',
-            session);
+            CrawlerUtils.scrapDoublePriceFromHtml(
+                  doc,
+                  ".price-info .precio-regular-productos-destacados, .price-info .regular-price",
+                  null,
+                  false,
+                  ',',
+                  session);
       if (spotlightPrice != null) {
          CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
          return PricingBuilder.create()
-            .setPriceFrom(null)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .build();
+               .setPriceFrom(null)
+               .setSpotlightPrice(spotlightPrice)
+               .setCreditCards(creditCards)
+               .build();
       }
       return null;
    }
@@ -236,11 +241,11 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
 
       for (String card : cards) {
          creditCards.add(
-            CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+               CreditCardBuilder.create()
+                     .setBrand(card)
+                     .setInstallments(installments)
+                     .setIsShopCard(false)
+                     .build());
       }
 
       return creditCards;
@@ -251,10 +256,10 @@ public abstract class ArgentinaCarrefoursuper extends Crawler {
       Installments installments = new Installments();
 
       installments.add(
-         InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+            InstallmentBuilder.create()
+                  .setInstallmentNumber(1)
+                  .setInstallmentPrice(spotlightPrice)
+                  .build());
 
       return installments;
    }

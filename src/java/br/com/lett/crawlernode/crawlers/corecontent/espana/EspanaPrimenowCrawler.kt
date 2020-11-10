@@ -42,7 +42,6 @@ class EspanaPrimenowCrawler(session: Session) : Crawler(session) {
             .setProxyservice(
                listOf(
                   ProxyCollection.NETNUT_RESIDENTIAL_ES,
-                  ProxyCollection.STORM_RESIDENTIAL_EU,
                   ProxyCollection.INFATICA_RESIDENTIAL_BR
                )
             )

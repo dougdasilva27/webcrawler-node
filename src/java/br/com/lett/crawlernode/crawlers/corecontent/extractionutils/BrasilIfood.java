@@ -82,7 +82,6 @@ public abstract class BrasilIfood extends Crawler {
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
                         ProxyCollection.BUY,
-                        ProxyCollection.STORM_RESIDENTIAL_US,
                         ProxyCollection.NETNUT_RESIDENTIAL_BR
                   )
             ).build();
@@ -180,7 +179,7 @@ public abstract class BrasilIfood extends Crawler {
 
    private Pricing scrapPricing(JSONObject jsonOffers) throws MalformedPricingException {
 
-      Double priceFrom = jsonOffers.has("unitOriginalPrice")? jsonOffers.optDouble("unitOriginalPrice"): null;
+      Double priceFrom = jsonOffers.has("unitOriginalPrice") ? jsonOffers.optDouble("unitOriginalPrice") : null;
       Double spotlightPrice = jsonOffers.optDouble("unitPrice");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 

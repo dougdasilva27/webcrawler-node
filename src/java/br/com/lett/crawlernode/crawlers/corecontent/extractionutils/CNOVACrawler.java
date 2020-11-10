@@ -10,8 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import models.AdvancedRatingReview;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -44,6 +42,7 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
@@ -186,7 +185,6 @@ public abstract class CNOVACrawler extends Crawler {
             .setProxyservice(
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.STORM_RESIDENTIAL_US,
                         ProxyCollection.BUY
                   )
             ).build();
@@ -835,20 +833,20 @@ public abstract class CNOVACrawler extends Crawler {
       return ratingReviews;
    }
 
-   protected AdvancedRatingReview scrapAdvancedRatingReview(Document doc, int totalNumOfEvaluations){
+   protected AdvancedRatingReview scrapAdvancedRatingReview(Document doc, int totalNumOfEvaluations) {
 
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
 
       Elements stars = doc.select(".yv-header-cont .yv-indice-star ul li");
 
-      for(Element star: stars){
+      for (Element star : stars) {
 
          int starTitle = CrawlerUtils.scrapIntegerFromHtmlAttr(star, ".yv-star", "title", 0);
-         double startNum = totalNumOfEvaluations * (double) CrawlerUtils.scrapIntegerFromHtml(star, "span", null, null, false, true, 0) / 100 ;
+         double startNum = totalNumOfEvaluations * (double) CrawlerUtils.scrapIntegerFromHtml(star, "span", null, null, false, true, 0) / 100;
 
-         int rating = (int)startNum;
+         int rating = (int) startNum;
 
-         switch (starTitle){
+         switch (starTitle) {
             case 1:
                advancedRatingReview.setTotalStar1(rating);
                break;

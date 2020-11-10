@@ -100,7 +100,6 @@ public abstract class BrasilIfood extends CrawlerRankingKeywords {
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
                         ProxyCollection.BUY,
-                        ProxyCollection.STORM_RESIDENTIAL_US,
                         ProxyCollection.NETNUT_RESIDENTIAL_BR
                   )
             ).build();

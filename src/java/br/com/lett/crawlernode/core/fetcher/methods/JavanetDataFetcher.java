@@ -145,7 +145,7 @@ public class JavanetDataFetcher implements DataFetcher {
             requests.add(requestStats);
             session.addRedirection(request.getUrl(), connection.getURL().toString());
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   connection.getResponseCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
@@ -256,7 +256,7 @@ public class JavanetDataFetcher implements DataFetcher {
             requestStats.setHasPassedValidation(true);
             requests.add(requestStats);
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.STORM_RESIDENTIAL_US, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   connection.getResponseCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogWarn(logger, session, "Attempt " + attempt + " -> Error performing POST request. Error: " + e.getMessage());

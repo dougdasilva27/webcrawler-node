@@ -56,7 +56,6 @@ abstract class ColruytCrawler(session: Session) : CrawlerRankingKeywords(session
          .setUrl(url)
          .setProxyservice(listOf(
             ProxyCollection.BE_OXYLABS,
-            ProxyCollection.STORM_RESIDENTIAL_US,
             ProxyCollection.NETNUT_RESIDENTIAL_ES))
          .build()
       )?.body

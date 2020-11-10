@@ -33,8 +33,7 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
                .setProxyservice(
                      Arrays.asList(
                            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                           ProxyCollection.STORM_RESIDENTIAL_EU,
-                           ProxyCollection.STORM_RESIDENTIAL_US,
+                           ProxyCollection.NETNUT_RESIDENTIAL_BR,
                            ProxyCollection.BUY
                      )
                ).mustSendContentEncoding(false)

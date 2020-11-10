@@ -111,7 +111,6 @@ public class B2WCrawler extends Crawler {
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
                         ProxyCollection.BUY,
-                        ProxyCollection.STORM_RESIDENTIAL_US,
                         ProxyCollection.NETNUT_RESIDENTIAL_BR
                   )
             ).build();

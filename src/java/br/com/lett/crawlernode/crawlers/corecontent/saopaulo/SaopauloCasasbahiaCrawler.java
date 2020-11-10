@@ -1,18 +1,32 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import java.util.Arrays;
+import java.util.List;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CNOVACrawler;
+import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CNOVANewCrawler;
 
-public class SaopauloCasasbahiaCrawler extends CNOVACrawler {
+public class SaopauloCasasbahiaCrawler extends CNOVANewCrawler {
 
-   private static final String MAIN_SELLER_NAME_LOWER = "casas bahia";
-   private static final String MAIN_SELLER_NAME_LOWER_2 = "casasbahia.com.br";
-   private static final String HOST = "www.casasbahia.com.br";
+   private static final String STORE = "casasbahia";
+   private static final String INITIALS = "CB";
+   private static final List<String> SELLER_NAMES = Arrays.asList("Casas Bahia", "casasbahia.com.br");
 
    public SaopauloCasasbahiaCrawler(Session session) {
       super(session);
-      super.mainSellerNameLower = MAIN_SELLER_NAME_LOWER;
-      super.mainSellerNameLower2 = MAIN_SELLER_NAME_LOWER_2;
-      super.marketHost = HOST;
+   }
+
+   @Override
+   protected String getStore() {
+      return STORE;
+   }
+
+   @Override
+   protected List<String> getSellerName() {
+      return SELLER_NAMES;
+   }
+
+   @Override
+   protected String getInitials() {
+      return INITIALS;
    }
 }
