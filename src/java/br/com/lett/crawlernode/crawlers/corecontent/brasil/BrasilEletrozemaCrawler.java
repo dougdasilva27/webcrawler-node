@@ -42,7 +42,7 @@ public class BrasilEletrozemaCrawler extends Crawler {
 
       String[] tokens = session.getOriginalURL().split("\\?")[0].split("/");
       String id = CommonMethods.getLast(tokens);
-      String pathName = tokens[tokens.length - 2];
+      String pathName = tokens.length > 0 ? tokens[tokens.length - 2]: null;
 
       String apiUrl =
          "https://www.zema.com/ccstoreui/v1/pages/produto/" + pathName + "/" + id + "?dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
