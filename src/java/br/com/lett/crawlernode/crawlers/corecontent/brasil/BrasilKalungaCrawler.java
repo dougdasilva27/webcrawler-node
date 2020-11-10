@@ -41,7 +41,7 @@ public class BrasilKalungaCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.kalunga.com.br/";
    private static final String SELLER_FULL_NAME = "Kalunga";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilKalungaCrawler(Session session) {
       super(session);
@@ -77,20 +77,20 @@ public class BrasilKalungaCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setRatingReviews(ratingReviews)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setRatingReviews(ratingReviews)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -141,7 +141,7 @@ public class BrasilKalungaCrawler extends Crawler {
 
    /**
     * Quando este crawler foi feito, nao tinha imagens secundarias
-    * 
+    *
     * @param doc
     * @return
     */
@@ -230,13 +230,13 @@ public class BrasilKalungaCrawler extends Crawler {
 
       int totalOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, "#total_avaliacoes", true, 0);
 
-      Elements starsProgress = doc.select("#graficoAvaliacao .row");
+      Elements starsProgress = doc.select(".grafics__item");
       for (Element starProg : starsProgress) {
 
-         int starNumber = CrawlerUtils.scrapIntegerFromHtml(starProg, "small", true, 0);
+         int starNumber = CrawlerUtils.scrapIntegerFromHtml(starProg, ".grafics__text--small", true, 0);
 
          if (starNumber > 0 && starNumber < 6) {
-            String style = CrawlerUtils.scrapStringSimpleInfoByAttribute(starProg, "div[style]", "style");
+            String style = CrawlerUtils.scrapStringSimpleInfoByAttribute(starProg, ".grafics__progress--bar", "style");
             Double percentage = MathUtils.parseDoubleWithDot(style.replaceAll("[^0-9.]", ""));
 
             if (percentage != null) {
@@ -247,8 +247,8 @@ public class BrasilKalungaCrawler extends Crawler {
 
       }
       return new AdvancedRatingReview.Builder()
-            .allStars(starsCount)
-            .build();
+         .allStars(starsCount)
+         .build();
    }
 
    private Offers offers(Document doc, String internalId) throws MalformedPricingException, OfferException {
@@ -257,14 +257,14 @@ public class BrasilKalungaCrawler extends Crawler {
       List<String> sales = scrapSales(doc);
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -288,15 +288,15 @@ public class BrasilKalungaCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoinfos__price", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
+         .setFinalPrice(spotlightPrice)
+         .build();
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankSlip)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
    private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
@@ -306,16 +306,16 @@ public class BrasilKalungaCrawler extends Crawler {
 
          Installments installments = scrapInstallments(doc);
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
          for (String card : cards) {
             creditCards.add(CreditCardBuilder.create()
-                  .setBrand(card)
-                  .setInstallments(installments)
-                  .setIsShopCard(false)
-                  .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
          }
       }
 
@@ -329,9 +329,9 @@ public class BrasilKalungaCrawler extends Crawler {
 
       if (!pair.isAnyValueNull()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(pair.getFirst())
-               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
-               .build());
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+            .build());
       }
 
       return installments;
