@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.extractionutils;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -21,10 +18,9 @@ import org.jsoup.nodes.Document;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -34,7 +30,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -163,31 +158,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       return sb.toString();
    }
 
-   protected Response fetchPage(String url) {
-      return fetchPage(url, true);
-   }
-
-   protected JSONObject fetchApi(String url) {
-      JSONObject json = new JSONObject();
-
-      List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
-
-      org.jsoup.Connection.Response res;
-      try {
-         res = Jsoup.connect(url)
-               .ignoreContentType(true)
-               .ignoreHttpErrors(true)
-               .proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxySelected.get(0).getAddress(), proxySelected.get(0).getPort())))
-               .execute();
-         json = JSONUtils.stringToJson(res.body());
-      } catch (IOException e) {
-         Logging.printLogWarn(logger, session, "JSOUP REQUEST ERROR: " + CommonMethods.getStackTrace(e));
-      }
-
-      return json;
-   }
-
-   protected Response fetchPage(String url, boolean tryAgain) {
+   protected Response fetchApi(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("accept-encoding", "gzip, deflate, br");
@@ -200,6 +171,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       headers.put("sec-fetch-user", "?1");
       headers.put("upgrade-insecure-requests", "1");
 
+
       Request request = RequestBuilder.create()
             .setUrl(url)
             .setCookies(cookies)
@@ -210,22 +182,36 @@ public abstract class CNOVANewCrawler extends Crawler {
             .setHeaders(headers)
             .setProxyservice(
                   Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.LUMINATI_SERVER_BR
+                        ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+                        ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
                   )
             ).build();
 
 
-      DataFetcher df = new FetcherDataFetcher();
-      Response response = df.get(session, request);
+      Response response = new JsoupDataFetcher().get(session, request);
 
       int statusCode = response.getLastStatusCode();
 
-      if (tryAgain && (Integer.toString(statusCode).charAt(0) != '2' &&
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
             Integer.toString(statusCode).charAt(0) != '3'
             && statusCode != 404)) {
 
-         response = new ApacheDataFetcher().get(session, request);
+         Request requestNew = RequestBuilder.create()
+               .setUrl(url)
+               .setCookies(cookies)
+               .setFetcheroptions(FetcherOptionsBuilder.create()
+                     .mustUseMovingAverage(false)
+                     .mustRetrieveStatistics(true)
+                     .build())
+               .setHeaders(headers)
+               .setProxyservice(
+                     Arrays.asList(
+                           ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                           ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+                     )
+               ).build();
+
+         response = new FetcherDataFetcher().get(session, requestNew);
       }
 
       return response;
@@ -299,7 +285,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       if (!skuId.equals(productSkuJson.optString("id"))) {
          String url = session.getOriginalURL().replace(skuId, productSkuJson.optString("id"));
 
-         Document doc = Jsoup.parse(fetchPage(url).getBody());
+         Document doc = Jsoup.parse(fetchApi(url).getBody());
          JSONObject loadJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, true);
          Object obj = loadJson.optQuery("/props/initialState/Product/sku");
 
@@ -319,7 +305,7 @@ public abstract class CNOVANewCrawler extends Crawler {
 
       String url = "https://pdp-api." + getStore() + ".com.br/api/v2/sku/" + internalId + "/price/source/" + getInitials();
 
-      JSONObject offersJson = fetchApi(url); // JSONUtils.stringToJson(fetchPage(url).getBody());
+      JSONObject offersJson = JSONUtils.stringToJson(fetchApi(url).getBody());
       JSONArray sellerInfo = offersJson.optJSONArray("sellers");
 
       if (sellerInfo != null) {
@@ -605,7 +591,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       String url = "https://pdp-api." + getStore() + ".com.br/api/v2/reviews/product/" + skuInternalPid + "/source/" + getInitials() + "?page=0&size=1&orderBy=DATE";
-      JSONObject ratingReviewsEndpointResponse = fetchApi(url); // CrawlerUtils.stringToJson(fetchPage(url).getBody());
+      JSONObject ratingReviewsEndpointResponse = JSONUtils.stringToJson(fetchApi(url).getBody());
 
       JSONObject review = ratingReviewsEndpointResponse.optJSONObject("review");
 
