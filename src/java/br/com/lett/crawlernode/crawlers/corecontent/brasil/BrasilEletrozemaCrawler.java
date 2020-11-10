@@ -42,18 +42,19 @@ public class BrasilEletrozemaCrawler extends Crawler {
 
       String[] tokens = session.getOriginalURL().split("\\?")[0].split("/");
       String id = CommonMethods.getLast(tokens);
-      String pathName = tokens.length > 0 ? tokens[tokens.length - 2]: null;
+      String pathName = tokens.length > 1 ? tokens[tokens.length - 2]: null;
 
-      String apiUrl =
-         "https://www.zema.com/ccstoreui/v1/pages/produto/" + pathName + "/" + id + "?dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
+      if(pathName != null) {
+         String apiUrl =
+            "https://www.zema.com/ccstoreui/v1/pages/produto/" + pathName + "/" + id + "?dataOnly=false&cacheableDataOnly=true&productTypesRequired=true";
 
-      Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
-      JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+         Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
+         JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      if (response.has("data")) {
-         api = response.getJSONObject("data");
+         if (response.has("data")) {
+            api = response.getJSONObject("data");
+         }
       }
-
       return api;
    }
 
