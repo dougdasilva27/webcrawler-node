@@ -170,7 +170,7 @@ public abstract class CNOVANewCrawler extends Crawler {
    protected JSONObject fetchApi(String url) {
       JSONObject json = new JSONObject();
 
-      List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY);
+      List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
 
       org.jsoup.Connection.Response res;
       try {
@@ -181,8 +181,7 @@ public abstract class CNOVANewCrawler extends Crawler {
                .execute();
          json = JSONUtils.stringToJson(res.body());
       } catch (IOException e) {
-         // TODO Auto-generated catch block
-         e.printStackTrace();
+         Logging.printLogWarn(logger, session, "JSOUP REQUEST ERROR: " + CommonMethods.getStackTrace(e));
       }
 
       return json;

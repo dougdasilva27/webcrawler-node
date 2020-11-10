@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.Arrays;
 import java.util.List;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CNOVANewCrawler;
 
@@ -13,6 +14,7 @@ public class SaopauloCasasbahiaCrawler extends CNOVANewCrawler {
 
    public SaopauloCasasbahiaCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
