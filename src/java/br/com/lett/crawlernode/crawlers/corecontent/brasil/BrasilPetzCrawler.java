@@ -299,15 +299,17 @@ public class BrasilPetzCrawler extends Crawler {
       String secondaryImages = null;
       JSONArray secondaryImagesArray = new JSONArray();
 
-      Elements images = doc.select(".sp-wrap .slick-track a:not(:first-child)");
+      Elements images = doc.select(".slick-slide a");
 
       for (Element e : images) {
          String image = CrawlerUtils.sanitizeUrl(e, "href", "https:", "www.petz.com.br");
 
-
-         if (!image.equals(primaryImage)) {
-            secondaryImagesArray.put(image);
+         if(image != null){
+            if (!image.equals(primaryImage)) {
+               secondaryImagesArray.put(image);
+            }
          }
+
       }
 
       if (secondaryImagesArray.length() > 0) {
