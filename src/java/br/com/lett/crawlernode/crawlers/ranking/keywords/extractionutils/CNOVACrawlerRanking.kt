@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
 import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.JSONUtils
 import br.com.lett.crawlernode.util.toJson
 import org.json.JSONObject
+import java.util.*
 
 /**
  * Date: 09/11/20
@@ -79,12 +84,46 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
          "&apiKey=${getApiKey()}" +
          "&page=$currentPage"
 
-      val request = Request.RequestBuilder.create().setUrl(url).build()
+      val headers: MutableMap<String, String> = HashMap()
+      headers["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      headers["accept-encoding"] = "gzip, deflate, br"
+      headers["accept-language"] = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+      headers["cache-control"] = "no-cache"
+      headers["pragma"] = "no-cache"
+      headers["sec-fetch-dest"] = "document"
+      headers["sec-fetch-mode"] = "navigate"
+      headers["sec-fetch-site"] = "none"
+      headers["sec-fetch-user"] = "?1"
+      headers["upgrade-insecure-requests"] = "1"
 
-      val response =  dataFetcher.get(session, request)
+      val request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustUseMovingAverage(false)
+            .mustRetrieveStatistics(true)
+            .build())
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            )
+         ).build()
 
-      cookies = response.cookies
+      return alternativeFetch(request).body.toJson()
+   }
 
-      return response.body.toJson()
+   private fun alternativeFetch(request: Request): Response {
+
+      var response = JsoupDataFetcher().get(session, request)
+
+      val statusCode = response.lastStatusCode
+
+      if (statusCode.toString()[0] != '2' && statusCode.toString()[0] != '3' && statusCode != 404) {
+         response = dataFetcher.get(session, request)
+      }
+     
+      return response
    }
 }
