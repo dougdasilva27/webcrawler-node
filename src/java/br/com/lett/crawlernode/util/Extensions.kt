@@ -57,7 +57,7 @@ fun Elements.eachAttr(attr: String, ignoreIndexes: Array<Int> = arrayOf()): List
 /**
  * @return [JSONObject] in a cool way
  */
-fun String?.toJson(): JSONObject = if (this != null)
+fun String?.toJson(): JSONObject = if (this != null && this.isNotEmpty())
    JSONObject(this)
 else JSONObject()
 

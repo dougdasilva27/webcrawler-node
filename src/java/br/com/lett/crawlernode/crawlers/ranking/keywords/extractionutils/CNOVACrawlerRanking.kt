@@ -25,6 +25,7 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
       pageSize = 100
 
       val search = fetchProductsFromAPI()
+
       val products = JSONUtils.getJSONArrayValue(search, "products")
 
       if (this.totalProducts == 0) {
@@ -122,7 +123,7 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
       if (statusCode.toString()[0] != '2' && statusCode.toString()[0] != '3' && statusCode != 404) {
          response = dataFetcher.get(session, request)
       }
-
+     
       return response
    }
 }

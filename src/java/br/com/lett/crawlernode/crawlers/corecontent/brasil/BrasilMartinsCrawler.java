@@ -13,18 +13,22 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.DataOutput;
 import java.util.*;
 
 public class BrasilMartinsCrawler extends Crawler {
@@ -180,9 +184,12 @@ public class BrasilMartinsCrawler extends Crawler {
             doc, ".hidden-sm .rating .rating-stars", "data-rating");
       JSONObject jsonRating = JSONUtils.stringToJson(ratingString);
 
-      int totalReviews = jsonRating.opt("rating") != null ? jsonRating.optInt("rating") : 0;
+      double avgRating = jsonRating.opt("rating") != null ? jsonRating.optInt("rating") : 0;
+      int totalReviews = CrawlerUtils.scrapIntegerFromHtml(doc, ".box-review > div:nth-child(3) u", true, 0);
+
       ratingsReviews.setTotalRating(totalReviews);
       ratingsReviews.setTotalWrittenReviews(totalReviews);
+      ratingsReviews.setAverageOverallRating(avgRating);
       ratingsReviews.setDate(session.getDate());
       ratingsReviews.setInternalId(internalId);
       return ratingsReviews;
