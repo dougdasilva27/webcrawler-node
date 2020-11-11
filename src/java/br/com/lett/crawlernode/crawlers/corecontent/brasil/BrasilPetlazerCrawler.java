@@ -165,6 +165,13 @@ public class BrasilPetlazerCrawler extends Crawler {
 
       Installments installments = scrapInstallments(prices, spotlightPrice);
 
+      if(installments.getInstallments().isEmpty()) {
+         installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
             .setBrand(card)
