@@ -20,27 +20,31 @@ public class BrasilPetlazerCrawler extends CrawlerRankingKeywords {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.petlazer.com.br/Busca/" + this.keywordEncoded + "/" + this.currentPage + ".html";
+      String url = "https://www.petlazer.com.br/Busca/" + this.keywordWithoutAccents + "/" + this.currentPage + ".html";
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".col-lg-3.col-md-3.top-m-20px");
+      Elements products = this.currentDoc.select(".container .col-lg-3.col-md-3.top-m-20px");
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalId = null;
+            String internalPid = null;
 
-            String productUrl = CrawlerUtils.scrapUrl(e, ".col-lg-3.col-md-3 a", Arrays.asList("href"), "https", HOME_PAGE);
+            String productUrl = CrawlerUtils.scrapUrl(e, "a", Arrays.asList("href"), "https", HOME_PAGE);
+
+            if(productUrl != null){
+
             Integer pidString = productUrl.indexOf("produto/");
             String id = productUrl.substring(pidString).split("/")[1];
-            internalId = id != null ? id : null; // O unico lugar onde foi possivel encontrar o internalId foi dentro da URL
+               internalPid = id != null ? id : null; // O unico lugar onde foi possivel encontrar o internalId foi dentro da URL
 
-            saveDataProduct(null, internalId, productUrl);
+            }
+            saveDataProduct(null, internalPid, productUrl);
 
             this.log(
                   "Position: " + this.position +
-                        " - InternalId: " + internalId +
-                        " - InternalPid: " + null +
+                        " - InternalId: " + null +
+                        " - InternalPid: " + internalPid +
                         " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit)
