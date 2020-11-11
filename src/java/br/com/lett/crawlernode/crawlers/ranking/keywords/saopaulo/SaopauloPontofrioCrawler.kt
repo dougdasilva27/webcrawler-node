@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.CNOVACr
 class SaopauloPontofrioCrawler(session: Session) : CNOVACrawlerRanking(session) {
 
    init {
-      super.fetchMode = FetchMode.APACHE
+      super.fetchMode = FetchMode.FETCHER
    }
 
    override fun getApiKey(): String {
