@@ -46,7 +46,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
          JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product__breadcrumb .bread-crumb ul li[typeof=\"v:Breadcrumb\"]", true);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".product__breadcrumb .bread-crumb ul li span[itemprop=\"name\"]", true);
 
          // sku data in json
          JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
