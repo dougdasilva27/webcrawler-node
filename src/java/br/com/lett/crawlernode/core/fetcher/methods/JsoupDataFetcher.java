@@ -99,7 +99,7 @@ public class JsoupDataFetcher implements DataFetcher {
 
             List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(proxyServiceName);
 
-            Logging.printLogDebug(logger, session, "Performing GET request with JSOUP: " + request.getUrl());
+            Logging.printLogDebug(logger, session, "Performing GET request with JSOUP with " + proxyServiceName + ": " + request.getUrl());
 
             org.jsoup.Connection.Response res;
 
@@ -148,7 +148,7 @@ public class JsoupDataFetcher implements DataFetcher {
             requests.add(requestStats);
             session.addRedirection(request.getUrl(), res.url().toString());
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, proxyServiceName, FetchUtilities.GET_REQUEST, randUserAgent, session,
                   res.statusCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());

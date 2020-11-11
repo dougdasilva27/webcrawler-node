@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -30,6 +29,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
@@ -82,60 +82,7 @@ public abstract class CNOVANewCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("accept-encoding", "");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
-      headers.put("cache-control", "no-cache");
-      headers.put("pragma", "no-cache");
-      headers.put("sec-fetch-dest", "document");
-      headers.put("sec-fetch-mode", "navigate");
-      headers.put("sec-fetch-site", "none");
-      headers.put("sec-fetch-user", "?1");
-      headers.put("upgrade-insecure-requests", "1");
-
-
-      Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .mustSendContentEncoding(false)
-            .setFetcheroptions(FetcherOptionsBuilder.create()
-                  .mustUseMovingAverage(false)
-                  .mustRetrieveStatistics(true)
-                  .build())
-            .setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                        ProxyCollection.LUMINATI_SERVER_BR
-                  )
-            ).build();
-
-      Response response = this.dataFetcher.get(session, request);
-
-      int statusCode = response.getLastStatusCode();
-
-      if (response.getBody().isEmpty() || (Integer.toString(statusCode).charAt(0) != '2' &&
-            Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404)) {
-
-         if (dataFetcher instanceof FetcherDataFetcher) {
-            response = new ApacheDataFetcher().get(session, request);
-         } else {
-            response = new FetcherDataFetcher().get(session, request);
-         }
-
-      }
-
-      Document doc = Jsoup.parse(response.getBody());
-
-      List<Cookie> cookiesResponse = response.getCookies();
-      for (Cookie cookieResponse : cookiesResponse) {
-         cookies.add(CrawlerUtils.setCookie(cookieResponse.getName(), cookieResponse.getValue(), getStore() + ".com.br", "/"));
-      }
-
-      return doc;
+      return Jsoup.parse(fetchPage(session.getOriginalURL()).getBody());
    }
 
    protected String encodeUrlPath(String url) {
@@ -158,7 +105,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       return sb.toString();
    }
 
-   protected Response fetchApi(String url) {
+   protected Response fetchPage(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("accept-encoding", "gzip, deflate, br");
@@ -220,6 +167,8 @@ public abstract class CNOVANewCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
+
+      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "CNOVA.htmlS");
 
       // Json da pagina principal
       JSONObject loadJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, true);
@@ -285,7 +234,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       if (!skuId.equals(productSkuJson.optString("id"))) {
          String url = session.getOriginalURL().replace(skuId, productSkuJson.optString("id"));
 
-         Document doc = Jsoup.parse(fetchApi(url).getBody());
+         Document doc = Jsoup.parse(fetchPage(url).getBody());
          JSONObject loadJson = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, true);
          Object obj = loadJson.optQuery("/props/initialState/Product/sku");
 
@@ -305,7 +254,7 @@ public abstract class CNOVANewCrawler extends Crawler {
 
       String url = "https://pdp-api." + getStore() + ".com.br/api/v2/sku/" + internalId + "/price/source/" + getInitials();
 
-      JSONObject offersJson = JSONUtils.stringToJson(fetchApi(url).getBody());
+      JSONObject offersJson = JSONUtils.stringToJson(fetchPage(url).getBody());
       JSONArray sellerInfo = offersJson.optJSONArray("sellers");
 
       if (sellerInfo != null) {
@@ -591,7 +540,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       String url = "https://pdp-api." + getStore() + ".com.br/api/v2/reviews/product/" + skuInternalPid + "/source/" + getInitials() + "?page=0&size=1&orderBy=DATE";
-      JSONObject ratingReviewsEndpointResponse = JSONUtils.stringToJson(fetchApi(url).getBody());
+      JSONObject ratingReviewsEndpointResponse = JSONUtils.stringToJson(fetchPage(url).getBody());
 
       JSONObject review = ratingReviewsEndpointResponse.optJSONObject("review");
 
