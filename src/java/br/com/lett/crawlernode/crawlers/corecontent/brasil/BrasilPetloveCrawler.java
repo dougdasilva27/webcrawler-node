@@ -312,7 +312,7 @@ public class BrasilPetloveCrawler extends Crawler {
 
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
-      Elements elementCategories = document.select(".list-category li a > span[itemprop]");
+      Elements elementCategories = document.select(".breadcrumb li a > span[itemprop]");
 
       for (Element e : elementCategories) {
          String cat = e.ownText().trim();
