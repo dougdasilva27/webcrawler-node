@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
@@ -14,7 +15,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
-import org.json.JSONObject;
 
 public class SaopauloAmericanasCrawler extends B2WCrawler {
 
@@ -59,25 +59,25 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    @Override
    protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
-      JSONObject ratingInfo = new JSONObject();
-
       JSONObject rating = fetchRatingApi(skuInternalPid);
 
-      if(rating.has("data")){
+      if (rating.has("data")) {
 
          JSONObject product = rating.optJSONObject("data").optJSONObject("product");
 
-         if(product != null){
+         if (product != null) {
 
-            ratingInfo = product.optJSONObject("rating");
+            JSONObject ratingInfo = product.optJSONObject("rating");
+
+            if (ratingInfo != null) {
+               ratingReviews.setTotalWrittenReviews(ratingInfo.optInt("reviews", 0));
+               ratingReviews.setTotalRating(ratingInfo.optInt("reviews", 0));
+               ratingReviews.setAverageOverallRating(ratingInfo.optDouble("average", 0d));
+            }
          }
       }
 
-      ratingReviews.setTotalWrittenReviews(ratingInfo.optInt("reviews"));
-      ratingReviews.setTotalRating(ratingInfo.optInt("reviews"));
-      ratingReviews.setAverageOverallRating(ratingInfo.optDouble("average"));
-
-      return  ratingReviews;
+      return ratingReviews;
    }
 
    private JSONObject fetchRatingApi(String internalId) {
@@ -111,8 +111,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       Logging.printLogDebug(logger, session, "Link onde são feitos os crawlers:" + url);
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(url.toString())
-         .build();
+            .setUrl(url.toString())
+            .build();
 
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
    }
