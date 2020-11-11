@@ -1118,25 +1118,29 @@ public class CrawlerUtils {
    }
 
    public static void incrementAdvancedRating(AdvancedRatingReview advancedRating, Integer star) {
+      incrementAdvancedRating(advancedRating, star, 1);
+   }
+
+   public static void incrementAdvancedRating(AdvancedRatingReview advancedRating, Integer star, Integer value) {
       if (star == null) {
          return;
       }
 
       switch (star) {
          case 1:
-            advancedRating.setTotalStar1(advancedRating.getTotalStar1() + 1);
+            advancedRating.setTotalStar1(advancedRating.getTotalStar1() + value);
             break;
          case 2:
-            advancedRating.setTotalStar2(advancedRating.getTotalStar2() + 1);
+            advancedRating.setTotalStar2(advancedRating.getTotalStar2() + value);
             break;
          case 3:
-            advancedRating.setTotalStar3(advancedRating.getTotalStar3() + 1);
+            advancedRating.setTotalStar3(advancedRating.getTotalStar3() + value);
             break;
          case 4:
-            advancedRating.setTotalStar4(advancedRating.getTotalStar4() + 1);
+            advancedRating.setTotalStar4(advancedRating.getTotalStar4() + value);
             break;
          case 5:
-            advancedRating.setTotalStar5(advancedRating.getTotalStar5() + 1);
+            advancedRating.setTotalStar5(advancedRating.getTotalStar5() + value);
             break;
          default:
             break;
