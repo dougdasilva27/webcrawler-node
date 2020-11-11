@@ -508,8 +508,10 @@ public class CommonMethods {
    public static JSONArray listToJSONArray(List<?> list) {
       JSONArray array = new JSONArray();
 
-      for (Object o : list) {
-         array.put(o);
+      if (list != null) {
+         for (Object o : list) {
+            array.put(o);
+         }
       }
 
       return array;

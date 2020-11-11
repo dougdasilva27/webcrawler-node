@@ -42,7 +42,8 @@ public class Product implements Serializable {
    private String category2;
    private String category3;
    private String primaryImage;
-   private String secondaryImages;
+
+   private List<String> secondaryImages = new ArrayList<>();;
    private String description;
 
    private Integer stock;
@@ -163,11 +164,28 @@ public class Product implements Serializable {
       }
    }
 
-   public String getSecondaryImages() {
+   public List<String> getSecondaryImages() {
       return secondaryImages;
    }
 
+   @Deprecated // set secondary Images with a List<Strin>
    public void setSecondaryImages(String secondaryImages) {
+      List<String> secondaryImagesList = new ArrayList<>();
+
+      if (secondaryImages != null) {
+         JSONArray images = new JSONArray(secondaryImages);
+
+         for (Object o : images) {
+            if (o instanceof String) {
+               secondaryImagesList.add(o.toString());
+            }
+         }
+      }
+
+      this.secondaryImages = secondaryImagesList;
+   }
+
+   public void setSecondaryImages(List<String> secondaryImages) {
       this.secondaryImages = secondaryImages;
    }
 
@@ -278,15 +296,7 @@ public class Product implements Serializable {
    public String toString() {
       StringBuilder sb = new StringBuilder();
 
-      String images = this.secondaryImages != null ? this.secondaryImages.replace("[", "").replace("]", "").trim() : "";
-      int secondaryImagesNumber = 0;
-
-      if (images.contains(",")) {
-         secondaryImagesNumber = images.split("\",").length;
-      } else if (!images.isEmpty()) {
-         secondaryImagesNumber = 1;
-      }
-
+      int secondaryImagesNumber = this.secondaryImages.size();
       int categoriesNumber = (this.category1 != null ? 1 : 0) + (this.category2 != null ? 1 : 0) + (this.category3 != null ? 1 : 0);
 
       sb.append("\n" + "url: " + this.url + "\n");
@@ -318,7 +328,7 @@ public class Product implements Serializable {
             .put("available", available).put("category1", (category1 != null ? category1 : JSONObject.NULL))
             .put("category2", (category2 != null ? category2 : JSONObject.NULL)).put("category3", (category3 != null ? category3 : JSONObject.NULL))
             .put("primaryImage", (primaryImage != null ? primaryImage : JSONObject.NULL))
-            .put("secondaryImages", (secondaryImages != null ? secondaryImages : JSONObject.NULL))
+            .put("secondaryImages", (this.secondaryImages != null ? CommonMethods.listToJSONArray(this.secondaryImages) : JSONObject.NULL))
             .put("marketplace", (marketplace != null ? marketplace.toString() : JSONObject.NULL)).put("stock", (stock != null ? stock : JSONObject.NULL))
             .put("description", (description != null ? description : JSONObject.NULL)).put("eans", (eans != null ? eans : Collections.EMPTY_LIST))
             .put("offers", (offers != null ? offers.toStringDebug() : Collections.EMPTY_LIST))
@@ -329,8 +339,8 @@ public class Product implements Serializable {
 
    public String serializeToKinesis() {
       JSONArray secondaryImagesArray = null;
-      if (secondaryImages != null && !secondaryImages.isEmpty()) {
-         secondaryImagesArray = new JSONArray(secondaryImages);
+      if (this.secondaryImages != null && !this.secondaryImages.isEmpty()) {
+         secondaryImagesArray = CommonMethods.listToJSONArray(this.secondaryImages);
       } else {
          secondaryImagesArray = new JSONArray();
       }
