@@ -11,7 +11,6 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 public class BrasilPetluniCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "www.petluni.com.br";
-   private String keywordKey;
 
    public BrasilPetluniCrawler(Session session) {
       super(session);
@@ -22,7 +21,14 @@ public class BrasilPetluniCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
-      this.currentDoc = fetchPage();
+
+
+      String url = "https://www.petluni.com.br/"+this.keywordWithoutAccents.replace(" ", "%20")+"#" + this.currentPage;
+
+      this.currentDoc = fetchDocument(url);
+
+      this.log("Link onde são feitos os crawlers: " + url);
+
       Elements products = this.currentDoc.select("[class*=productRow] ul > li:not(.helperComplement)");
 
       if (!products.isEmpty()) {
@@ -46,36 +52,6 @@ public class BrasilPetluniCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private Document fetchPage() {
-      Document doc = new Document("");
-
-      if (this.currentPage == 1) {
-         String url = "https://www.petluni.com.br/" + this.keywordEncoded;
-         this.log("Link onde são feitos os crawlers: " + url);
-         doc = fetchDocument(url);
-
-         Elements scripts = doc.select("script[type=text/javascript]");
-         String token = "/busca?fq=";
-
-         for (Element e : scripts) {
-            String html = e.html();
-
-            if (html.contains(token)) {
-               this.keywordKey = CrawlerUtils.extractSpecificStringFromScript(html, "fq=", false, "&", false);
-               break;
-
-            }
-         }
-      } else if (this.keywordKey != null) {
-         String url = "https://www.petluni.com.br/buscapagina?fq=" + this.keywordKey
-               + "&PS=12&sl=3d657529-c612-410e-b17d-114ca4bbb22a&cc=6&sm=0&PageNumber=" + this.currentPage;
-
-         this.log("Link onde são feitos os crawlers: " + url);
-         doc = fetchDocument(url);
-      }
-
-      return doc;
-   }
 
    @Override
    protected boolean hasNextPage() {
