@@ -52,7 +52,6 @@ public class BrasilFastshopCrawler extends Crawler {
       super(session);
       this.config.setMustSendRatingToKinesis(true);
    }
-
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
@@ -62,12 +61,12 @@ public class BrasilFastshopCrawler extends Crawler {
       if (productAPIJSON.length() > 0) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         CategoryCollection categories = new CategoryCollection(); // was not found categories in this market
+         CategoryCollection categories = crawlCategories(internalPid);
          StringBuilder description = crawlDescription(internalPid);
 
          // sku data in json
-         JSONArray arraySkus = productAPIJSON != null && productAPIJSON.has("voltage") ? productAPIJSON.getJSONArray("voltage") : new JSONArray();
-
+         JSONArray arraySkus =  productAPIJSON.has("voltage") ? productAPIJSON.getJSONArray("voltage") : new JSONArray();
+         //productAPIJSON != null  ja feito na linha 61;
          for (int i = 0; i < arraySkus.length(); i++) {
             JSONObject variationJson = arraySkus.getJSONObject(i);
 
@@ -132,6 +131,22 @@ public class BrasilFastshopCrawler extends Crawler {
 
       return internalId;
    }
+
+   private CategoryCollection crawlCategories(String partnerId){
+      CategoryCollection category = new CategoryCollection();
+      String apiUrl = "https://www.fastshop.com.br/wcs/resources/v1/categories/breadcrumb/" + partnerId;
+      Request request = RequestBuilder.create().setUrl(apiUrl).setCookies(cookies).build();
+      JSONObject apiJson = CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
+      JSONArray jsonArray = JSONUtils.getJSONArrayValue(apiJson,"result");
+      if (jsonArray.length()>0) {
+         jsonArray = jsonArray.optJSONArray(jsonArray.length() - 1);
+         for (int i = 0; i < jsonArray.length(); i++) {
+            category.add(jsonArray.getJSONObject(i).optString("name",""));
+         }
+      }
+      return category;
+   }
+
 
    private String crawlName(JSONObject apiJson, JSONObject skuJson) {
       StringBuilder name = new StringBuilder();
