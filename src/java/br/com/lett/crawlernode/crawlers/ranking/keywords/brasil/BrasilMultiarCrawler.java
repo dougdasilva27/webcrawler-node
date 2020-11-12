@@ -12,7 +12,6 @@ public class BrasilMultiarCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private boolean isCategory;
 
    @Override
    protected void extractProductsFromCurrentPage() {
@@ -24,25 +23,12 @@ public class BrasilMultiarCrawler extends CrawlerRankingKeywords {
       String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
 
       // monta a url com a keyword e a página
-      String url = "http://www.multiar.com.br/" + key;
-
-      if (this.currentPage > 1) {
-         if (!this.isCategory) {
-            url = "http://www.multiar.com.br/buscapagina?ft=" + key + "&PS=24" + "&sl=379a0b55-f6f6-4127-8d29-0be97c93ba9a&cc=0&sm=0&PageNumber="
-               + this.currentPage;
-         }
-      }
+      String url = "https://www.leveros.com.br/" + key + "#" +this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
       // chama função de pegar a url
       this.currentDoc = fetchDocument(url);
-
-      Element elementIsCategory = this.currentDoc.select("div.bread-crumb > ul > li.last").first();
-
-      if (this.currentPage == 1) {
-         this.isCategory = elementIsCategory != null;
-      }
 
       Elements products = this.currentDoc.select("div.prateleira.vitrine > ul > li[layout]");
 
