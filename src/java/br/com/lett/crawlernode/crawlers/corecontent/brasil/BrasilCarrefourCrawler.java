@@ -34,10 +34,4 @@ public class BrasilCarrefourCrawler extends CarrefourCrawler {
    protected String getHomePage() {
       return HOME_PAGE;
    }
-
-
-   @Override
-   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".vtex-flex-layout-0-x-flexRowContent--product-details-container  div[style]", false);
-   }
 }
