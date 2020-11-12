@@ -30,7 +30,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
    public BrasilBifarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.WEBDRIVER);
    }
 
    @Override
