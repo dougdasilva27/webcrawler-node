@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -31,10 +33,11 @@ import models.prices.Prices;
 
 public class BrasilNagemCrawler extends Crawler {
 
-   private final String HOME_PAGE = "http://www.nagem.com.br/";
+   private final String HOME_PAGE = "https://www.nagem.com.br/";
 
    public BrasilNagemCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
       super.config.setMustSendRatingToKinesis(true);
    }
 
@@ -64,27 +67,28 @@ public class BrasilNagemCrawler extends Crawler {
          String description = crawlDescription(doc);
          Integer stock = null;
          Marketplace marketplace = crawlMarketplace();
-         RatingsReviews ratingReviews = crawRating(internalPid);
+         RatingsReviews ratingReviews = CrawlerUtils.scrapRatingReviewsFromYourViews(internalPid, "9e9071fe-79c1-4bd1-976f-6558758e2821", ".yv-col-md-4 span strong", "meta[itemprop=\"ratingValue\"]", ".yv-paging.yv-hasresults:not(:last-child)", ".yv-col-md-8", ".fa-star", this.dataFetcher, session, logger, cookies);
+
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setMarketplace(marketplace)
-               .setRatingReviews(ratingReviews)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(marketplace)
+            .setRatingReviews(ratingReviews)
+            .build();
 
          products.add(product);
 
@@ -160,7 +164,7 @@ public class BrasilNagemCrawler extends Crawler {
          primaryImage = primaryImageElement.attr("src").trim();
 
          if (!primaryImage.startsWith(HOME_PAGE)) {
-            primaryImage = (HOME_PAGE + primaryImage).replace("br//", "br/");
+            primaryImage = ("https:" + primaryImage).replace("br//", "br/");
          }
       }
 
@@ -177,7 +181,7 @@ public class BrasilNagemCrawler extends Crawler {
          String image = e.attr("src").trim();
 
          if (!image.startsWith(HOME_PAGE)) {
-            image = (HOME_PAGE + image).replace("br//", "br/");
+            image = ("https:" + image).replace("br//", "br/");
          }
 
          secondaryImagesArray.put(image);
@@ -220,7 +224,6 @@ public class BrasilNagemCrawler extends Crawler {
          }
 
 
-
          if (!descriptionElement.text().trim().isEmpty()) {
             description.append(descriptionElement.html());
          }
@@ -235,9 +238,9 @@ public class BrasilNagemCrawler extends Crawler {
 
    /**
     * There is no bankSlip price.
-    * 
+    * <p>
     * 1x de 739,00
-    * 
+    *
     * @param doc
     * @param price
     * @return
@@ -258,178 +261,73 @@ public class BrasilNagemCrawler extends Crawler {
          headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
          Request request = RequestBuilder.create().setUrl("http://www.nagem.com.br/produto/pagamentoproduto").setCookies(cookies).setHeaders(headers)
-               .setPayload(urlParameters).build();
-         Document doc = Jsoup.parse(this.dataFetcher.post(session, request).getBody());
+            .setPayload(urlParameters).build();
+         String docString = this.dataFetcher.post(session, request).getBody();
 
-         Elements cards = doc.select(".modal-body > ul.nav-tabs > li > a");
+         if (docString != null) {
 
-         for (Element e : cards) {
-            Map<Integer, Float> installmentPriceMap = new TreeMap<>();
+            Document doc = Jsoup.parse(docString);
+            Elements cards = doc.select(".modal-body > ul.nav-tabs > li > a");
 
-            String card = e.ownText().toLowerCase().trim();
-            String element = e.attr("href");
+            for (Element e : cards) {
+               Map<Integer, Float> installmentPriceMap = new TreeMap<>();
 
-            switch (card) {
-               case "visa":
-                  card = Card.VISA.toString();
-                  break;
+               String card = e.ownText().toLowerCase().trim();
+               String element = e.attr("href");
 
-               case "mastercard":
-                  card = Card.MASTERCARD.toString();
-                  break;
+               switch (card) {
+                  case "visa":
+                     card = Card.VISA.toString();
+                     break;
 
-               case "diners":
-                  card = Card.DINERS.toString();
-                  break;
+                  case "mastercard":
+                     card = Card.MASTERCARD.toString();
+                     break;
 
-               case "american express":
-                  card = Card.AMEX.toString();
-                  break;
+                  case "diners":
+                     card = Card.DINERS.toString();
+                     break;
 
-               case "hipercard":
-                  card = Card.HIPERCARD.toString();
-                  break;
+                  case "american express":
+                     card = Card.AMEX.toString();
+                     break;
 
-               case "elo":
-                  card = Card.ELO.toString();
-                  break;
+                  case "hipercard":
+                     card = Card.HIPERCARD.toString();
+                     break;
 
-               default:
-                  break;
-            }
+                  case "elo":
+                     card = Card.ELO.toString();
+                     break;
 
-            Elements installments = doc.select(element + " tr");
+                  default:
+                     break;
+               }
 
-            for (Element installment : installments) {
-               Element firstValue = installment.select("td").first();
+               Elements installments = doc.select(element + " tr");
 
-               if (firstValue != null) {
-                  String text = firstValue.ownText().toLowerCase();
+               for (Element installment : installments) {
+                  Element firstValue = installment.select("td").first();
 
-                  if (text.contains("x")) {
-                     Integer installmentNumber = Integer.parseInt(text.split("x")[0].replaceAll("[^0-9]", ""));
-                     Float installmentValue = MathUtils.parseFloatWithComma(text.split("x")[1]);
+                  if (firstValue != null) {
+                     String text = firstValue.ownText().toLowerCase();
 
-                     installmentPriceMap.put(installmentNumber, installmentValue);
+                     if (text.contains("x")) {
+                        Integer installmentNumber = Integer.parseInt(text.split("x")[0].replaceAll("[^0-9]", ""));
+                        Float installmentValue = MathUtils.parseFloatWithComma(text.split("x")[1]);
+
+                        installmentPriceMap.put(installmentNumber, installmentValue);
+                     }
                   }
                }
-            }
 
-            prices.insertCardInstallment(card, installmentPriceMap);
+               prices.insertCardInstallment(card, installmentPriceMap);
+            }
          }
       }
-
       return prices;
    }
 
-   private RatingsReviews crawRating(String internalPid) {
-      YourreviewsRatingCrawler yourReviews = new YourreviewsRatingCrawler(session, cookies, logger, "9e9071fe-79c1-4bd1-976f-6558758e2821", this.dataFetcher);
-      RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
-
-      Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, "9e9071fe-79c1-4bd1-976f-6558758e2821", dataFetcher);
-      Integer totalNumOfEvaluations = yourReviews.getTotalNumOfRatingsFromYourViews(docRating);
-      Double avgRating = yourReviews.getTotalAvgRatingFromYourViews(docRating);
-      AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(docRating, internalPid);
-
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-
-      return ratingReviews;
-   }
-
-
-
-   public AdvancedRatingReview getTotalStarsFromEachValue(Document doc, String internalPid) {
-      Document docRating;
-      Integer currentPage = 1;
-
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
-
-      do {
-         currentPage++;
-         docRating = crawlAllPagesRatingsFromYourViews(internalPid, "9e9071fe-79c1-4bd1-976f-6558758e2821", dataFetcher, currentPage);
-         System.err.println(docRating);
-         Elements reviews = doc.select(".yv-col-md-8");
-         for (Element element : reviews) {
-            Elements stars = element.select(".fa-star");
-
-            if (stars.size() == 1) {
-               star1++;
-            }
-
-            if (stars.size() == 2) {
-               star2++;
-            }
-
-            if (stars.size() == 3) {
-               star3++;
-            }
-
-            if (stars.size() == 4) {
-               star4++;
-            }
-
-            if (stars.size() == 5) {
-               star5++;
-            }
-
-         }
-      } while (hasNextPage(docRating, currentPage));
-      return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
-   }
-
-   private boolean hasNextPage(Document docRating, Integer currentPage) {
-      boolean hasNextPage = false;
-
-      Elements pages = docRating.select(".yv-paging.yv-hasresults:not(:last-child)");
-
-      if (!pages.isEmpty() && !pages.get(pages.size() - 1).text().trim().equals(currentPage.toString())) {
-         hasNextPage = true;
-      }
-
-      return hasNextPage;
-   }
-
-
-
-   public Document crawlAllPagesRatingsFromYourViews(String internalPid, String storeKey, DataFetcher dataFetcher, Integer currentPage) {
-      Document doc = new Document("");
-
-      String url = "https://service.yourviews.com.br/review/getreview?page=2&storeKey" + storeKey + "&productStoreId=" + internalPid + "&orderby="
-            + currentPage + "&callback=_jqjsp&";
-
-
-      // https://service.yourviews.com.br/review/getreview?page=2&storeKey=9e9071fe-79c1-4bd1-976f-6558758e2821&productStoreId=492035&orderby=4&callback=_jqjsp&_1581102346152=
-
-
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      String response = dataFetcher.get(session, request).getBody().trim();
-
-      if (response.startsWith("<")) {
-         doc = Jsoup.parse(response);
-      } else if (response.contains("({")) {
-         int x = response.indexOf("({") + 1;
-         int y = response.lastIndexOf("})");
-
-         String responseJson = response.substring(x, y + 1).trim();
-         JSONObject json = CrawlerUtils.stringToJson(responseJson);
-
-         if (json.has("html")) {
-            doc = Jsoup.parse(json.get("html").toString());
-         } else {
-            doc = Jsoup.parse(response);
-         }
-      }
-
-      return doc;
-   }
 
 }
 
