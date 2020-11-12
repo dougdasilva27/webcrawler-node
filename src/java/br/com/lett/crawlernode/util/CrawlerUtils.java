@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 import exceptions.MalformedPricingException;
 import models.*;
 import models.prices.Prices;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.SQLOutput;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.Map.Entry;
@@ -2131,7 +2133,7 @@ public class CrawlerUtils {
       Element rating = docRating.selectFirst(cssSelector);
 
       if (rating != null) {
-         avgRating = Double.parseDouble(rating.text());
+         avgRating = MathUtils.parseDoubleWithDot(rating.toString());
       }
 
       return avgRating;
