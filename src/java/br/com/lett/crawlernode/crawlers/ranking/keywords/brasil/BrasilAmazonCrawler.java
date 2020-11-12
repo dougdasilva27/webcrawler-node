@@ -15,7 +15,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
