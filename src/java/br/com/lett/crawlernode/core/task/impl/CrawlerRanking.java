@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -714,7 +716,21 @@ public abstract class CrawlerRanking extends Task {
          this.session.setOriginalURL(url);
       }
 
-      return DynamicDataFetcher.fetchPageWebdriver(url, session);
+      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,false, session);
+   }
+
+   /**
+    * Inicia o webdriver
+    *
+    * @param url
+    * @param proxy
+    */
+   protected CrawlerWebdriver startWebDriver(String url,String proxy) {
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
+      }
+
+      return DynamicDataFetcher.fetchPageWebdriver(url, proxy, session);
    }
 
    /**
@@ -734,7 +750,7 @@ public abstract class CrawlerRanking extends Task {
     * @param timeout
     * @return
     */
-   protected Document fetchDocumentWithWebDriver(String url, Integer timeout) {
+   protected Document fetchDocumentWithWebDriver(String url, Integer timeout,String proxy) {
       if (this.currentPage == 1) {
          this.session.setOriginalURL(url);
       }
@@ -742,7 +758,7 @@ public abstract class CrawlerRanking extends Task {
       // se o webdriver não estiver iniciado, inicio ele
       if (this.webdriver == null) {
          Document doc = new Document(url);
-         this.webdriver = startWebDriver(url);
+         this.webdriver = startWebDriver(url,proxy);
 
          if (this.webdriver != null) {
             if (timeout != null) {
@@ -761,6 +777,10 @@ public abstract class CrawlerRanking extends Task {
       }
 
       return DynamicDataFetcher.fetchPage(this.webdriver, url, this.session);
+   }
+
+   protected Document fetchDocumentWithWebDriver(String url, Integer timeout) {
+      return fetchDocumentWithWebDriver(url,timeout,ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY);
    }
 
    protected void takeAScreenshot(String url) {
