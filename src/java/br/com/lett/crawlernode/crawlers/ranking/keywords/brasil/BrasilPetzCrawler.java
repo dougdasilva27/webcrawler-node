@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -26,9 +27,9 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
     String url = "https://www.petz.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
     this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocumentWithWebDriver(url, 9000);
+     this.currentDoc = fetchDocumentWithWebDriver(url, 10000, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
-    Elements products = this.currentDoc.select(".liProduct .petzProduct");
+     Elements products = this.currentDoc.select(".liProduct .petzProduct");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
