@@ -118,7 +118,7 @@ public class BrasilPetloveCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#product") != null;
+      return doc.selectFirst("#product .review-stars") != null;
    }
 
    private String crawlInternalPid(JSONObject json) {
