@@ -780,7 +780,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    protected Document fetchDocumentWithWebDriver(String url, Integer timeout) {
-      return fetchDocumentWithWebDriver(url,timeout,ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY);
+      return fetchDocumentWithWebDriver(url,timeout,ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
    }
 
    protected void takeAScreenshot(String url) {
