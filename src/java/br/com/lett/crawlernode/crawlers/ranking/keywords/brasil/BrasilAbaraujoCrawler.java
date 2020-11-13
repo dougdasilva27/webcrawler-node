@@ -19,7 +19,7 @@ public class BrasilAbaraujoCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.abaraujo.com/loja/busca.php?loja=808976&palavra_busca=" + this.currentPage + "&pg=" + this.keywordEncoded;
+      String url = "https://www.abaraujo.com/loja/busca.php?loja=808976&palavra_busca=" + this.keywordEncoded + "&pg=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
@@ -56,7 +56,9 @@ public class BrasilAbaraujoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage() {
-      return this.currentDoc.selectFirst(".catalogo-pages .btns-paginator:not(:first-child)") != null;
+   protected void setTotalProducts(){
+
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".catalogo-pagination strong", true, 0);
+      this.log("Total: " + this.totalProducts);
    }
 }
