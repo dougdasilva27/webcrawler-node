@@ -208,7 +208,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       Offers offers = new Offers();
       int position = 1;
       for (Document doc : htmls) {
-         String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-price-details .product-price-details-sold-by b", true);
+         String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-price-details-sold-by span", true);
          String sellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#ExibeFormasPagamento[data-siteid]", "data-siteid");
 
          Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-details .product-price-details-new-price", null, false, ',', session);
