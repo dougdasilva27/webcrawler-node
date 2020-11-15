@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import com.google.common.base.CharMatcher;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.Offers;
@@ -173,7 +174,7 @@ public class Product implements Serializable {
       List<String> secondaryImagesList = new ArrayList<>();
 
       if (secondaryImages != null) {
-         JSONArray images = new JSONArray(secondaryImages);
+         JSONArray images = JSONUtils.stringToJsonArray(secondaryImages);
 
          for (Object o : images) {
             if (o instanceof String) {

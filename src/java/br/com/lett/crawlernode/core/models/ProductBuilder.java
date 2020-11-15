@@ -6,6 +6,7 @@ import java.util.List;
 import org.json.JSONArray;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.DateUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
@@ -117,7 +118,7 @@ public class ProductBuilder {
       List<String> imagesList = new ArrayList<>();
 
       if (secondaryImages != null) {
-         JSONArray images = new JSONArray(secondaryImages);
+         JSONArray images = JSONUtils.stringToJsonArray(secondaryImages);
 
          for (Object o : images) {
             if (o instanceof String) {
