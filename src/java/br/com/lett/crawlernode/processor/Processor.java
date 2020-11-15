@@ -71,7 +71,7 @@ public class Processor {
       String cat2 = product.getCategory2();
       String cat3 = product.getCategory3();
       String foto = product.getPrimaryImage();
-      String secondaryPics = product.getSecondaryImages();
+      String secondaryPics = product.getSecondaryImages() != null && !product.getSecondaryImages().isEmpty() ? CommonMethods.listToJSONArray(product.getSecondaryImages()).toString() : null;
       String description = product.getDescription();
       Marketplace marketplace = product.getMarketplace();
       Offers offers = product.getOffers();

@@ -1,10 +1,12 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.json.JSONObject;
+import org.json.JSONArray;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.DateUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
@@ -34,7 +36,7 @@ public class ProductBuilder {
    private String category2;
    private String category3;
    private String primaryImage;
-   private String secondaryImages;
+   private List<String> secondaryImages;
    private String description;
    private Integer stock;
    private List<String> eans;
@@ -111,13 +113,26 @@ public class ProductBuilder {
       return this;
    }
 
+   @Deprecated
    public ProductBuilder setSecondaryImages(String secondaryImages) {
-      this.secondaryImages = secondaryImages;
+      List<String> imagesList = new ArrayList<>();
+
+      if (secondaryImages != null) {
+         JSONArray images = JSONUtils.stringToJsonArray(secondaryImages);
+
+         for (Object o : images) {
+            if (o instanceof String) {
+               imagesList.add(o.toString());
+            }
+         }
+      }
+
+      this.secondaryImages = imagesList;
       return this;
    }
 
-   public ProductBuilder setSecondaryImages(Collection<String> secondaryImages) {
-      this.secondaryImages = secondaryImages == null ? null : JSONObject.valueToString(secondaryImages);
+   public ProductBuilder setSecondaryImages(List<String> secondaryImages) {
+      this.secondaryImages = secondaryImages == null ? new ArrayList<>() : secondaryImages;
       return this;
    }
 
@@ -204,6 +219,20 @@ public class ProductBuilder {
 
       if (this.available && this.price == null) {
          throw new MalformedProductException("Price can't be null when product is available");
+      }
+
+      if (this.secondaryImages != null && !this.secondaryImages.isEmpty()) {
+         boolean hasNullValues = false;
+         for (String image : this.secondaryImages) {
+            if (image == null) {
+               hasNullValues = true;
+               break;
+            }
+         }
+
+         if (hasNullValues) {
+            throw new MalformedProductException("Secondary images cannot have any value null");
+         }
       }
    }
 
