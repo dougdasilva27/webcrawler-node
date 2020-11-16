@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -44,20 +42,10 @@ public class BrasilGimbaCrawler extends Crawler {
    @Override
    protected Object fetch() {
       String html = "";
-      if (config.getFetcher() == FetchMode.WEBDRIVER) {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
-
-         if (webdriver != null) {
-            html = webdriver.getCurrentPageSource();
-         }
-      } else {
-         Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
-         Response response = dataFetcher.get(session, request);
-
-         cookies.addAll(response.getCookies());
-         html = response.getBody();
-      }
-
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+      Response response = dataFetcher.get(session, request);
+      cookies.addAll(response.getCookies());
+      html = response.getBody();
       return Jsoup.parse(html);
    }
 
@@ -107,38 +95,39 @@ public class BrasilGimbaCrawler extends Crawler {
 
    private String scrapDescription(Document doc) {
 
-      String urlpid = session.getOriginalURL();
-      String pid = urlpid.substring(urlpid.indexOf("PID=") + 4);
       String verificationToken = doc.selectFirst("[name=__RequestVerificationToken]").attr("value");
-      String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id=" + pid + "&kit=false";
-      String payload = "__RequestVerificationToken=" + verificationToken;
-      String cookietoken = null;
-      for (Cookie cookie : cookies) {
-         if (cookie.getName().equals("__RequestVerificationToken")) {
-            cookietoken = cookie.getValue();
+      if(verificationToken!=null) {
+         String urlpid = session.getOriginalURL();
+         String pid = urlpid.substring(urlpid.indexOf("PID=") + 4);
+         String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id=" + pid + "&kit=false";
+         String payload = "__RequestVerificationToken=" + verificationToken;
+         String cookietoken = null;
+         for (Cookie cookie : cookies) {
+            if (cookie.getName().equals("__RequestVerificationToken")) {
+               cookietoken = cookie.getValue();
+            }
+         }
+         String requestCookieValue = "__RequestVerificationToken=" + cookietoken + ";";
+         Map<String, String> headres = new HashMap<>();
+         headres.put("cookie", requestCookieValue); // __cfduid=df74acc0656409981cd5a6e4e04f12f5a1605298735; .ASPXANONYMOUS=liD39ovw1gEkAAAAZmE1NzIyNDktOWI1My00Y2E5LTgxMjYtMWRlYzgxZGNiNDg01aMqC0bPXAwlY7j8ByT7s6tUDtE1; ASP.NET_SessionId=0bddw0vlpcd0owdu2euozo1k; PROMOTOR_GIMBA=");
+         headres.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36");
+         headres.put("Content-Type", "application/x-www-form-urlencoded");
+         headres.put("Host", "www.gimba.com.br");
+
+         Request request = Request.RequestBuilder
+            .create()
+            .setUrl(url)
+            .setHeaders(headres)
+            .setPayload(payload)
+            .build();
+
+         String responce = dataFetcher.post(session, request).getBody();
+         if (responce != null) {
+            Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(responce));
+            String description = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
+            return description;
          }
       }
-      String requestCookieValue = "__RequestVerificationToken=" + cookietoken + ";";
-      Map<String, String> headres = new HashMap<>();
-      headres.put("cookie", requestCookieValue); // __cfduid=df74acc0656409981cd5a6e4e04f12f5a1605298735; .ASPXANONYMOUS=liD39ovw1gEkAAAAZmE1NzIyNDktOWI1My00Y2E5LTgxMjYtMWRlYzgxZGNiNDg01aMqC0bPXAwlY7j8ByT7s6tUDtE1; ASP.NET_SessionId=0bddw0vlpcd0owdu2euozo1k; PROMOTOR_GIMBA=");
-      headres.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36");
-      headres.put("Content-Type", "application/x-www-form-urlencoded");
-      headres.put("Host", "www.gimba.com.br");
-
-      Request request = Request.RequestBuilder
-         .create()
-         .setUrl(url)
-         .setHeaders(headres)
-         .setPayload(payload)
-         .build();
-
-      String responce = dataFetcher.post(session, request).getBody();
-      if (responce != null) {
-         Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(responce));
-         String description = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
-         return description;
-      }
-
       return null;
    }
 
