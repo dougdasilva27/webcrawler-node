@@ -14,7 +14,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 import exceptions.MalformedPricingException;
 import models.*;
 import models.prices.Prices;
