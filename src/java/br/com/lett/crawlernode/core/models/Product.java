@@ -297,7 +297,7 @@ public class Product implements Serializable {
    public String toString() {
       StringBuilder sb = new StringBuilder();
 
-      int secondaryImagesNumber = this.secondaryImages.size();
+      int secondaryImagesNumber = this.secondaryImages != null ? this.secondaryImages.size() : 0;
       int categoriesNumber = (this.category1 != null ? 1 : 0) + (this.category2 != null ? 1 : 0) + (this.category3 != null ? 1 : 0);
 
       sb.append("\n" + "url: " + this.url + "\n");
