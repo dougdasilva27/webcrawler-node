@@ -94,9 +94,8 @@ public class BrasilGimbaCrawler extends Crawler {
    }
 
    private String scrapDescription(Document doc) {
-
-      String verificationToken = doc.selectFirst("[name=__RequestVerificationToken]").attr("value");
-      if(verificationToken!=null) {
+      String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=__RequestVerificationToken]", "value");
+      if (verificationToken!=null) {
          String urlpid = session.getOriginalURL();
          String pid = urlpid.substring(urlpid.indexOf("PID=") + 4);
          String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id=" + pid + "&kit=false";
@@ -109,7 +108,7 @@ public class BrasilGimbaCrawler extends Crawler {
          }
          String requestCookieValue = "__RequestVerificationToken=" + cookietoken + ";";
          Map<String, String> headres = new HashMap<>();
-         headres.put("cookie", requestCookieValue); // __cfduid=df74acc0656409981cd5a6e4e04f12f5a1605298735; .ASPXANONYMOUS=liD39ovw1gEkAAAAZmE1NzIyNDktOWI1My00Y2E5LTgxMjYtMWRlYzgxZGNiNDg01aMqC0bPXAwlY7j8ByT7s6tUDtE1; ASP.NET_SessionId=0bddw0vlpcd0owdu2euozo1k; PROMOTOR_GIMBA=");
+         headres.put("cookie", requestCookieValue);
          headres.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36");
          headres.put("Content-Type", "application/x-www-form-urlencoded");
          headres.put("Host", "www.gimba.com.br");
@@ -128,6 +127,7 @@ public class BrasilGimbaCrawler extends Crawler {
             return description;
          }
       }
+
       return null;
    }
 
