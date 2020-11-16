@@ -145,7 +145,7 @@ public class B2WCrawler extends Crawler {
          String internalPid = this.crawlInternalPid(infoProductJson);
          CategoryCollection categories = crawlCategories(infoProductJson);
          String primaryImage = this.crawlPrimaryImage(infoProductJson);
-         String secondaryImages = this.crawlSecondaryImages(infoProductJson);
+         List<String> secondaryImages = this.crawlSecondaryImages(infoProductJson);
          String description = this.crawlDescription(internalPid, doc);
          RatingsReviews ratingReviews = crawlRatingReviews(frontPageJson, internalPid);
          List<String> eans = crawlEan(infoProductJson);
@@ -228,7 +228,7 @@ public class B2WCrawler extends Crawler {
     * 
     * The RatingReviews crawled in this method, is the same across all skus variations in a page.
     *
-    * @param document
+    * @param
     * @return
     */
    protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
@@ -353,7 +353,7 @@ public class B2WCrawler extends Crawler {
     * Crawl the bazaar voice endpoint passKey on the sku page. The passKey is located inside a script
     * tag, which contains a json object is several metadata, including the passKey.
     * 
-    * @param document
+    * @param embeddedJSONObject
     * @return
     */
    private String crawlBazaarVoiceEndpointPassKey(JSONObject embeddedJSONObject) {
@@ -773,8 +773,8 @@ public class B2WCrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(JSONObject infoProductJson) {
-      String secondaryImages = null;
+   private List<String> crawlSecondaryImages(JSONObject infoProductJson) {
+      List<String> secondaryImages = new ArrayList<>();
 
       JSONArray secondaryImagesArray = new JSONArray();
 
@@ -787,7 +787,7 @@ public class B2WCrawler extends Crawler {
       }
 
       if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
+         secondaryImages = secondaryImagesArray.toList().stream().map(Object::toString).collect(Collectors.toList());
       }
 
       return secondaryImages;
