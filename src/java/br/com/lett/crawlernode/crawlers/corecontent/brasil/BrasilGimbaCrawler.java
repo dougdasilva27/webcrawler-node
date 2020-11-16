@@ -86,7 +86,7 @@ public class BrasilGimbaCrawler extends Crawler {
             offers = scrapOffer(doc);
          }
 //         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhe-produto-novo .fonte-descricao-prod dd p b", false);
-         String description = scrapDescriptionHard(doc);
+         String description = scrapDescription(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -111,14 +111,12 @@ public class BrasilGimbaCrawler extends Crawler {
       return products;
    }
 
-   private String scrapDescriptionHard(Document doc){
+   private String scrapDescription(Document doc){
 
-      String result = "";
       String urlpid = session.getOriginalURL();
       String pid = urlpid.substring(urlpid.indexOf("PID=")+4);
       String verificationToken = doc.selectFirst("[name=__RequestVerificationToken]").attr("value");
       String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id="+pid+"&kit=false";
-//      String payload ="__RequestVerificationToken=%20KumdF5wJhwqhWwj5iEPmCgowlhXBzJw8VROLBu3oOAFD--0DBclzSOVwXp7nmOGc6cO0DT29-MJQEouxleQPXkQgXVY1";
       String payload ="__RequestVerificationToken="+verificationToken;
       String cookietoken = null;
       for (Cookie cookie :cookies) {
@@ -143,15 +141,11 @@ public class BrasilGimbaCrawler extends Crawler {
       String responce = dataFetcher.post(session,request).getBody();
       if ( responce != null) {
          Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(responce));
-         System.err.println(document);
-
-         Elements e = doc.select(".fonte-descricao-prod dd p");
-         System.err.println(e);
-         String string = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
-         System.err.println(string);
+         String description = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
+         return description;
       }
 
-      return result;
+      return null;
    }
 
 
