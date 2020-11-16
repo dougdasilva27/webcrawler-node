@@ -14,8 +14,6 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -23,12 +21,9 @@ import models.Offers;
 import models.pricing.*;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -82,11 +77,10 @@ public class BrasilGimbaCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#breadCrumb div a");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".main-thumb a", Arrays.asList("href"), "https:", "www.gimba.com.br");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#thumb a", Arrays.asList("href"), "https:", "www.gimba.com.br", primaryImage);
-         if(available) {
+         if (available) {
             offers = scrapOffer(doc);
          }
-//         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhe-produto-novo .fonte-descricao-prod dd p b", false);
-         String description = scrapDescriptionHard(doc);
+         String description = scrapDescription(doc);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -111,27 +105,25 @@ public class BrasilGimbaCrawler extends Crawler {
       return products;
    }
 
-   private String scrapDescriptionHard(Document doc){
+   private String scrapDescription(Document doc) {
 
-      String result = "";
       String urlpid = session.getOriginalURL();
-      String pid = urlpid.substring(urlpid.indexOf("PID=")+4);
+      String pid = urlpid.substring(urlpid.indexOf("PID=") + 4);
       String verificationToken = doc.selectFirst("[name=__RequestVerificationToken]").attr("value");
-      String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id="+pid+"&kit=false";
-//      String payload ="__RequestVerificationToken=%20KumdF5wJhwqhWwj5iEPmCgowlhXBzJw8VROLBu3oOAFD--0DBclzSOVwXp7nmOGc6cO0DT29-MJQEouxleQPXkQgXVY1";
-      String payload ="__RequestVerificationToken="+verificationToken;
+      String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id=" + pid + "&kit=false";
+      String payload = "__RequestVerificationToken=" + verificationToken;
       String cookietoken = null;
-      for (Cookie cookie :cookies) {
-         if(cookie.getName().equals("__RequestVerificationToken")){
-            cookietoken=cookie.getValue();
+      for (Cookie cookie : cookies) {
+         if (cookie.getName().equals("__RequestVerificationToken")) {
+            cookietoken = cookie.getValue();
          }
       }
-      String requestCookieValue ="__RequestVerificationToken="+cookietoken+";";
-      Map<String,String> headres = new HashMap<>();
-      headres.put("cookie",requestCookieValue); // __cfduid=df74acc0656409981cd5a6e4e04f12f5a1605298735; .ASPXANONYMOUS=liD39ovw1gEkAAAAZmE1NzIyNDktOWI1My00Y2E5LTgxMjYtMWRlYzgxZGNiNDg01aMqC0bPXAwlY7j8ByT7s6tUDtE1; ASP.NET_SessionId=0bddw0vlpcd0owdu2euozo1k; PROMOTOR_GIMBA=");
-      headres.put("user-agent","Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36");
-      headres.put("Content-Type","application/x-www-form-urlencoded");
-      headres.put("Host","www.gimba.com.br");
+      String requestCookieValue = "__RequestVerificationToken=" + cookietoken + ";";
+      Map<String, String> headres = new HashMap<>();
+      headres.put("cookie", requestCookieValue); // __cfduid=df74acc0656409981cd5a6e4e04f12f5a1605298735; .ASPXANONYMOUS=liD39ovw1gEkAAAAZmE1NzIyNDktOWI1My00Y2E5LTgxMjYtMWRlYzgxZGNiNDg01aMqC0bPXAwlY7j8ByT7s6tUDtE1; ASP.NET_SessionId=0bddw0vlpcd0owdu2euozo1k; PROMOTOR_GIMBA=");
+      headres.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36");
+      headres.put("Content-Type", "application/x-www-form-urlencoded");
+      headres.put("Host", "www.gimba.com.br");
 
       Request request = Request.RequestBuilder
          .create()
@@ -140,22 +132,15 @@ public class BrasilGimbaCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      String responce = dataFetcher.post(session,request).getBody();
-      if ( responce != null) {
+      String responce = dataFetcher.post(session, request).getBody();
+      if (responce != null) {
          Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(responce));
-         System.err.println(document);
-
-         Elements e = doc.select(".fonte-descricao-prod dd p");
-         System.err.println(e);
-         String string = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
-         System.err.println(string);
+         String description = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
+         return description;
       }
 
-      return result;
+      return null;
    }
-
-
-
 
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
@@ -180,7 +165,7 @@ public class BrasilGimbaCrawler extends Crawler {
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#valores-dados #valores-dados-preco-de", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#valores-dados-preco-por-valor", null, false, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc,spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       Double bankSlipValue = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#boleto-estrutura strong", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bankSlipValue, null);
 
@@ -194,7 +179,7 @@ public class BrasilGimbaCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(Document doc,Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -223,7 +208,7 @@ public class BrasilGimbaCrawler extends Crawler {
 
       Element installmentsElement = doc.selectFirst("#valores-dados-preco-parcelamento");
 
-      if(installmentsElement != null) {
+      if (installmentsElement != null) {
          String installmentTxt = installmentsElement.text();
 
          if (installmentTxt.contains("de")) {
@@ -232,7 +217,7 @@ public class BrasilGimbaCrawler extends Crawler {
             int installment = installmentString != null ? MathUtils.parseInt(installmentString) : null;
 
             String valueString = installmentTxt.split("de")[1];
-            Double value = valueString != null? MathUtils.parseDoubleWithComma(valueString): null;
+            Double value = valueString != null ? MathUtils.parseDoubleWithComma(valueString) : null;
 
             installments.add(Installment.InstallmentBuilder.create()
                .setInstallmentNumber(installment)
