@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -15,13 +17,13 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.http.cookie.Cookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class BrasilGimbaCrawler extends Crawler {
 
@@ -38,6 +40,17 @@ public class BrasilGimbaCrawler extends Crawler {
    }
 
    @Override
+   protected Object fetch() {
+      String html = "";
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
+      Response response = dataFetcher.get(session, request);
+      cookies.addAll(response.getCookies());
+      html = response.getBody();
+      return Jsoup.parse(html);
+   }
+
+
+   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
@@ -45,14 +58,18 @@ public class BrasilGimbaCrawler extends Crawler {
       if (doc.selectFirst("#produtoCadastro") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+         Offers offers = new Offers();
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#codigoProduto p", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produto-nome", false);
          boolean available = doc.selectFirst("#botao-comprar .btn-add-new") != null;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#breadCrumb div a");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".main-thumb a", Arrays.asList("href"), "https:", "www.gimba.com.br");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#thumb a", Arrays.asList("href"), "https:", "www.gimba.com.br", primaryImage);
-         Offers offers = scrapOffer(doc);
-         String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhe-produto-novo .fonte-descricao-prod dd p b", false);
+         if (available) {
+            offers = scrapOffer(doc);
+         }
+         String description = scrapDescription(doc);
+
          // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -76,6 +93,44 @@ public class BrasilGimbaCrawler extends Crawler {
       return products;
    }
 
+   private String scrapDescription(Document doc) {
+      String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=__RequestVerificationToken]", "value");
+      if (verificationToken!=null) {
+         String urlpid = session.getOriginalURL();
+         String pid = urlpid.substring(urlpid.indexOf("PID=") + 4);
+         String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id=" + pid + "&kit=false";
+         String payload = "__RequestVerificationToken=" + verificationToken;
+         String cookietoken = null;
+         for (Cookie cookie : cookies) {
+            if (cookie.getName().equals("__RequestVerificationToken")) {
+               cookietoken = cookie.getValue();
+            }
+         }
+         String requestCookieValue = "__RequestVerificationToken=" + cookietoken + ";";
+         Map<String, String> headres = new HashMap<>();
+         headres.put("cookie", requestCookieValue);
+         headres.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36");
+         headres.put("Content-Type", "application/x-www-form-urlencoded");
+         headres.put("Host", "www.gimba.com.br");
+
+         Request request = Request.RequestBuilder
+            .create()
+            .setUrl(url)
+            .setHeaders(headres)
+            .setPayload(payload)
+            .build();
+
+         String responce = dataFetcher.post(session, request).getBody();
+         if (responce != null) {
+            Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(responce));
+            String description = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
+            return description;
+         }
+      }
+
+      return null;
+   }
+
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -96,11 +151,10 @@ public class BrasilGimbaCrawler extends Crawler {
 
    }
 
-
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#valores-dados #valores-dados-preco-de", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#valores-dados-preco-por-valor", null, false, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc,spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       Double bankSlipValue = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#boleto-estrutura strong", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bankSlipValue, null);
 
@@ -114,7 +168,7 @@ public class BrasilGimbaCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(Document doc,Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -143,7 +197,7 @@ public class BrasilGimbaCrawler extends Crawler {
 
       Element installmentsElement = doc.selectFirst("#valores-dados-preco-parcelamento");
 
-      if(installmentsElement != null) {
+      if (installmentsElement != null) {
          String installmentTxt = installmentsElement.text();
 
          if (installmentTxt.contains("de")) {
@@ -152,7 +206,7 @@ public class BrasilGimbaCrawler extends Crawler {
             int installment = installmentString != null ? MathUtils.parseInt(installmentString) : null;
 
             String valueString = installmentTxt.split("de")[1];
-            Double value = valueString != null? MathUtils.parseDoubleWithComma(valueString): null;
+            Double value = valueString != null ? MathUtils.parseDoubleWithComma(valueString) : null;
 
             installments.add(Installment.InstallmentBuilder.create()
                .setInstallmentNumber(installment)
