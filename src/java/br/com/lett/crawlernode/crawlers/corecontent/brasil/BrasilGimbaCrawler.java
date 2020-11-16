@@ -38,7 +38,6 @@ public class BrasilGimbaCrawler extends Crawler {
 
    public BrasilGimbaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JAVANET);
    }
 
    @Override
@@ -113,6 +112,8 @@ public class BrasilGimbaCrawler extends Crawler {
    }
 
    private String scrapDescriptionHard(Document doc){
+
+      String result = "";
       String urlpid = session.getOriginalURL();
       String pid = urlpid.substring(urlpid.indexOf("PID=")+4);
       String verificationToken = doc.selectFirst("[name=__RequestVerificationToken]").attr("value");
@@ -140,14 +141,15 @@ public class BrasilGimbaCrawler extends Crawler {
          .build();
 
       String responce = dataFetcher.post(session,request).getBody();
-      responce = responce.replaceAll("\"","");
-//      responce = StringEscapeUtils.unescapeJava(responce);
-      String responce2 = responce.replaceAll("\u003c","<").replaceAll("\u003e",">");
-      System.out.println(responce2);
-      Document document = Jsoup.parseBodyFragment(responce);
-      Elements elements = document.getAllElements();
-//      elements.forEach(element -> System.out.println(element.text()));
-      String result =  CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd p b", false);
+      if ( responce != null) {
+         Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(responce));
+         System.err.println(document);
+
+         Elements e = doc.select(".fonte-descricao-prod dd p");
+         System.err.println(e);
+         String string = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
+         System.err.println(string);
+      }
 
       return result;
    }
