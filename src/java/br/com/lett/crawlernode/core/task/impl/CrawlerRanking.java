@@ -716,7 +716,7 @@ public abstract class CrawlerRanking extends Task {
          this.session.setOriginalURL(url);
       }
 
-      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,false, session);
+      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,false, session);
    }
 
    /**
