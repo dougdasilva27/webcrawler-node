@@ -236,17 +236,17 @@ public class SaopauloB2WCrawlersUtils {
             JSONObject images = imagesArray.optJSONObject(i);
             String image = null;
 
-            if (images.has("extraLarge")) {
-               image = images.optString("extraLarge");
-            } else if (images.has("large")) {
-               image = images.optString("large");
-            } else if (images.has("big")) {
-               image = images.optString("big");
-            } else if (images.has("medium")) {
-               image = images.optString("medium");
+            if (!images.optString("extraLarge").isEmpty()) {
+               image = images.optString("extraLarge").trim();
+            } else if (!images.optString("large").isEmpty()) {
+               image = images.optString("large").trim();
+            } else if (!images.optString("big").isEmpty()) {
+               image = images.optString("big").trim();
+            } else if (!images.optString("medium").isEmpty()) {
+               image = images.optString("medium").trim();
             }
 
-            if (!image.trim().isEmpty()) {
+            if (image != null && !image.isEmpty()) {
                if (!jsonImages.has("primaryImage")) {
                   jsonImages.put("primaryImage", image);
                } else {
