@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -29,6 +31,7 @@ public class SaopauloDicicoCrawler extends Crawler {
 
    public SaopauloDicicoCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
