@@ -554,10 +554,17 @@ public class B2WCrawler extends Crawler {
    }
 
    private BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
-      return BankSlipBuilder.create()
-            .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "bankSlip", true))
-            .setOnPageDiscount(JSONUtils.getDoubleValueFromJSON(info, "bankSlipDiscount", true))
-            .build();
+
+      if (info.has("bankSlip")) {
+         return BankSlipBuilder.create()
+               .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "bankSlip", true))
+               .setOnPageDiscount(JSONUtils.getDoubleValueFromJSON(info, "bankSlipDiscount", true))
+               .build();
+      } else {
+         return BankSlipBuilder.create()
+               .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "defaultPrice", true))
+               .build();
+      }
    }
 
    private Double scrapSpotlightPrice(JSONObject info, CreditCards creditCards, int offerIndex, boolean newWay) {
@@ -727,6 +734,23 @@ public class B2WCrawler extends Crawler {
                .setIsShopCard(true)
                .setInstallments(installments)
                .build());
+      }
+
+
+      if (creditCards.getCreditCards().isEmpty() && seller.has("defaultPrice")) {
+         Installments installments = new Installments();
+         installments.add(InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(seller.optDouble("defaultPrice"))
+               .build());
+
+         for (String flag : cards) {
+            creditCards.add(CreditCardBuilder.create()
+                  .setBrand(flag)
+                  .setIsShopCard(false)
+                  .setInstallments(installments)
+                  .build());
+         }
       }
 
       return creditCards;

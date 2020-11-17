@@ -246,10 +246,12 @@ public class SaopauloB2WCrawlersUtils {
                image = images.optString("medium");
             }
 
-            if (i == 0) {
-               jsonImages.put("primaryImage", image);
-            } else {
-               secondaryImages.put(image);
+            if (!image.trim().isEmpty()) {
+               if (!jsonImages.has("primaryImage")) {
+                  jsonImages.put("primaryImage", image);
+               } else {
+                  secondaryImages.put(image);
+               }
             }
          }
 
@@ -571,6 +573,14 @@ public class SaopauloB2WCrawlersUtils {
 
             extractBoleto(offerResult, sellerJson, "paymentOptions({\"type\":\"BOLETO\"})");
             extractApolloCards(offerResult, sellerJson);
+
+            if (!sellerJson.has("defaultPrice")) {
+               Double defaultPrice = offerResult.optDouble("salesPrice", 0d);
+
+               if (defaultPrice > 0d) {
+                  sellerJson.put("defaultPrice", defaultPrice);
+               }
+            }
 
             if (sellerJson.has("defaultPrice")) {
                if (offersJson.has(sku)) {

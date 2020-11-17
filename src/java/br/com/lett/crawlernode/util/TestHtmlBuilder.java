@@ -224,10 +224,14 @@ public class TestHtmlBuilder {
    private static void putSecondaryImages(JSONObject productJson, Map<String, Object> scopes) {
       if (productJson.has(SECONDARY_IMAGES) && !productJson.isNull(SECONDARY_IMAGES)) {
          List<String> secondaryImages = new ArrayList<>();
-         JSONArray imagesArray = new JSONArray(productJson.getString(SECONDARY_IMAGES));
+         JSONArray imagesArray = productJson.optJSONArray(SECONDARY_IMAGES);
 
-         for (int i = 0; i < imagesArray.length(); i++) {
-            secondaryImages.add(imagesArray.getString(i));
+         if (imagesArray != null) {
+            for (int i = 0; i < imagesArray.length(); i++) {
+               secondaryImages.add(imagesArray.getString(i));
+            }
+         } else {
+            imagesArray = new JSONArray();
          }
 
          scopes.put(SECONDARY_IMAGES, secondaryImages);
