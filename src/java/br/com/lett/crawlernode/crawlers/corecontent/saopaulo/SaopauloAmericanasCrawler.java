@@ -61,9 +61,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       JSONObject rating = fetchRatingApi(skuInternalPid);
 
-      if (rating.has("data")) {
+      JSONObject data = rating.optJSONObject("data");
 
-         JSONObject product = rating.optJSONObject("data").optJSONObject("product");
+      if (data != null) {
+
+         JSONObject product = data.optJSONObject("product");
 
          if (product != null) {
 
