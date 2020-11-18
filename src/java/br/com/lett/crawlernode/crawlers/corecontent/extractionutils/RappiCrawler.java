@@ -141,7 +141,7 @@ public abstract class RappiCrawler extends Crawler {
          String internalPid = crawlInternalPid(productJson);
          String description = crawlDescription(productJson);
          String primaryImage = crawlPrimaryImage(jsonSku);
-         String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
+         List<String> secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
          CategoryCollection categories = crawlCategories(productJson);
          String name = crawlName(productJson);
          List<String> eans = scrapEan(productJson);
@@ -312,9 +312,9 @@ public abstract class RappiCrawler extends Crawler {
       return CrawlerUtils.completeUrl(primaryImage, "https",  getImagePrefix());
    }
 
-   protected String crawlSecondaryImages(JSONObject json, String primaryImage) {
+   protected List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
       JSONArray imagesArray = JSONUtils.getJSONArrayValue(json, "images");
-      JSONArray resultImages = new JSONArray();
+      ArrayList<String> resultImages = new ArrayList<>();
 
       if (imagesArray.length() > 1) {
          for (int i = 1; i < imagesArray.length(); i++) {
@@ -322,12 +322,12 @@ public abstract class RappiCrawler extends Crawler {
             String imagePath = CrawlerUtils.completeUrl(imagesArray.optString(i), "https",  getImagePrefix());
 
             if (imagePath != null && !imagePath.equals(primaryImage)) {
-               resultImages.put(imagePath);
+               resultImages.add(imagePath);
             }
          }
       }
 
-      return imagesArray.toString();
+      return resultImages;
    }
 
    protected CategoryCollection crawlCategories(JSONObject json) {
