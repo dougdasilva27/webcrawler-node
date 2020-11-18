@@ -61,7 +61,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       JSONObject rating = fetchRatingApi(skuInternalPid);
 
-      if (rating.has("data") && rating.has("product")) {
+      if (rating.has("data")) {
 
          JSONObject product = rating.optJSONObject("data").optJSONObject("product");
 
@@ -73,6 +73,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
                ratingReviews.setTotalWrittenReviews(ratingInfo.optInt("reviews", 0));
                ratingReviews.setTotalRating(ratingInfo.optInt("reviews", 0));
                ratingReviews.setAverageOverallRating(ratingInfo.optDouble("average", 0d));
+            }
+            else{
+               ratingReviews.setTotalWrittenReviews(0);
+               ratingReviews.setTotalRating(0);
+               ratingReviews.setAverageOverallRating(0.0);
             }
          }
       }
