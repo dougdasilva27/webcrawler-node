@@ -44,7 +44,7 @@ public class Product implements Serializable {
    private String category3;
    private String primaryImage;
 
-   private List<String> secondaryImages = new ArrayList<>();;
+   private List<String> secondaryImages = new ArrayList<>();
    private String description;
 
    private Integer stock;
@@ -187,7 +187,14 @@ public class Product implements Serializable {
    }
 
    public void setSecondaryImages(List<String> secondaryImages) {
-      this.secondaryImages = secondaryImages;
+      if (secondaryImages != null) {
+         this.secondaryImages = new ArrayList<>();
+         for (String s : secondaryImages) {
+            if (s != null) {
+               this.secondaryImages.add(s);
+            }
+         }
+      }
    }
 
    public String getDescription() {
