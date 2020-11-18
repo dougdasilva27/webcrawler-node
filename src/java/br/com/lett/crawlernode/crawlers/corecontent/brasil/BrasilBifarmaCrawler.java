@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -16,6 +18,7 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -31,6 +34,19 @@ public class BrasilBifarmaCrawler extends Crawler {
    public BrasilBifarmaCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.WEBDRIVER);
+   }
+
+   @Override
+   protected Object fetch() {
+      Document doc = new Document("");
+      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+
+      if(this.webdriver != null){
+         doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
+         this.webdriver.waitLoad(20000);
+      }
+
+      return  doc;
    }
 
    @Override
