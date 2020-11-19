@@ -21,7 +21,7 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 		this.log("Link onde são feitos os crawlers: " + url);
 
 		if (this.currentPage == 1) {
-			this.currentDoc = fetchDocumentWithWebDriver(url, 9000);
+			this.currentDoc = fetchDocumentWithWebDriver(url, 20000);
 		} else {
 			this.currentDoc = fetchDocumentWithWebDriver(url);
 		}

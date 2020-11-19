@@ -35,6 +35,7 @@ import br.com.lett.crawlernode.util.Logging;
  */
 public class S3Service {
 
+   private static final String AMAZON_HTML_URL = "https://s3.console.aws.amazon.com/s3/object/";
    public static final String SCREENSHOT_UPLOAD_TYPE = "screenshot";
    public static final String HTML_UPLOAD_TYPE = "html";
    public static final String MD5_HEX_METADATA_FIELD = "md5hex";
@@ -162,6 +163,15 @@ public class S3Service {
             try {
                Logging.printLogDebug(logger, session, "Uploading HTML to S3");
 
+               String amazonFinalUrl = new StringBuilder()
+                  .append(AMAZON_HTML_URL)
+                  .append(LOGS_BUCKET_NAME)
+                  .append("?region=")
+                  .append(Regions.US_EAST_1.toString().toLowerCase().replace('_','-'))
+                  .append("&prefix=")
+                  .append(amazonLocation)
+                  .toString();
+
                s3clientCrawlerSessions.putObject(new PutObjectRequest(LOGS_BUCKET_NAME, amazonLocation, compressedFile));
 
                JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendS3FilesStartTime)
@@ -171,6 +181,8 @@ public class S3Service {
                Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
                Logging.printLogDebug(logger, session, "HTML uploaded successfully!");
+
+               Logging.printLogInfo(logger, session, "S3 HTML:\n" + amazonFinalUrl);
             } catch (AmazonServiceException ase) {
                Logging.printLogError(logger, session, " - Caught an AmazonServiceException, which " + "means your request made it "
                      + "to Amazon S3, but was rejected with an error response" + " for some reason.");
