@@ -5,7 +5,7 @@ import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiC
 
 public class SaopauloRappicarrefourexpressCrawler extends BrasilRappiCrawler {
 
-   public static final String STORE_ID = "900132624";
+   public static final String STORE_ID = "900024801";
 
    public SaopauloRappicarrefourexpressCrawler(Session session) {
       super(session);
