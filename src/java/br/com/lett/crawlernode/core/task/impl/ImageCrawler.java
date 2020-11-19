@@ -311,9 +311,10 @@ public class ImageCrawler extends Task {
          request.setSendContentEncoding(false);
 
          headers.put(HttpHeaders.CONNECTION, "keep-alive");
-         headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+         headers.put(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8");
          headers.put(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br");
          headers.put(HttpHeaders.ACCEPT_LANGUAGE, "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+         headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25");
 
          switch (marketId) {
             case 63:
@@ -330,7 +331,7 @@ public class ImageCrawler extends Task {
          }
       } else if (marketId == 307 || marketId == 27 || marketId == 836) {
          request.setSendContentEncoding(false);
-      } else if (marketId == 976 || marketId == 65 || marketId == 23 || marketId == 1033 || session.getMarket().getName().contains("ifood")) {
+      } else if (marketId == 407 || marketId == 976 || marketId == 65 || marketId == 23 || marketId == 1033 || session.getMarket().getName().contains("ifood")) {
          headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25");
       }
 
