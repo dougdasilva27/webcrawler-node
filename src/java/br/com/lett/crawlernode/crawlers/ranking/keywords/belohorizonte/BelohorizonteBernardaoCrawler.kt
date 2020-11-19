@@ -25,7 +25,7 @@ class BelohorizonteBernardaoCrawler(session: Session) : CrawlerRankingKeywords(s
             for (product in products) {
 
                 val internalPid = extractInternalPid(product)
-                val productUrl: String = CrawlerUtils.scrapUrl(product, ".cdz-product-top > a", "href", "https://", "www.bernardaoemcasa.com.br")
+                val productUrl = CrawlerUtils.scrapUrl(product, ".cdz-product-top > a", "href", "https://", "www.bernardaoemcasa.com.br")
                 saveDataProduct(null, internalPid, productUrl)
 
                 log("Position: $position - InternalId: null - InternalPid: $internalPid - Url: $productUrl")
@@ -45,8 +45,8 @@ class BelohorizonteBernardaoCrawler(session: Session) : CrawlerRankingKeywords(s
         log("Total da busca: $totalProducts")
     }
 
-    private fun extractInternalPid(product: Element): String {
-        val fullName: String = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".regular-price", "id")
-        return fullName.split("-").last()
+    private fun extractInternalPid(product: Element): String? {
+        val fullName = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".img-responsive[id*=\"product-collection-image\"]", "id")
+        return fullName?.split("-")?.last()
     }
 }
