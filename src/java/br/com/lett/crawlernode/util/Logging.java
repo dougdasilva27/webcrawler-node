@@ -107,6 +107,10 @@ public class Logging {
          metadata.put("market", session.getMarket().getName());
          metadata.put("market_id", session.getMarket().getNumber());
 
+         String internalId = session.getInternalId();
+         if (internalId != null) {
+            metadata.put("internalId", internalId);
+         }
 
          String originalUrl = session.getOriginalURL();
          if (originalUrl != null) {

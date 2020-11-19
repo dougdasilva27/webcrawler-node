@@ -99,7 +99,6 @@ public class B2WCrawler extends Crawler {
       Request request = RequestBuilder.create()
             .setUrl(url)
             .setCookies(cookies)
-            .setHeaders(headers)
             .mustSendContentEncoding(false)
             .setFetcheroptions(
                   FetcherOptionsBuilder.create()
