@@ -63,11 +63,12 @@ public class PaguemenosCrawler extends VTEXNewScraper {
       JSONObject element = null;
       Integer totalNumOfEvaluations = null;
       Double avgRating = null;
+      System.err.println(jsonRating);
 
       if(jsonRating != null){
-         JSONObject data = jsonRating.optJSONObject("data");
-         JSONObject productReviews = data.optJSONObject("productReviews");
-         element = productReviews.optJSONObject("Element");
+         JSONObject data = jsonRating.has("data")? jsonRating.optJSONObject("data"): new JSONObject();
+         JSONObject productReviews = data.has("productReviews")? data.optJSONObject("productReviews"): new JSONObject();
+         element = productReviews.has("Element")? productReviews.optJSONObject("Element") :new JSONObject();
       }
 
       if(element != null) {
@@ -87,7 +88,9 @@ public class PaguemenosCrawler extends VTEXNewScraper {
       AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
 
       if(reviews != null){
-         JSONArray ratingList = reviews.optJSONObject("RatingHistogram").optJSONArray("RatingList");
+
+         JSONObject ratingHistogram = reviews.has("RatingHistogram")? reviews.optJSONObject("RatingHistogram"): new JSONObject();
+         JSONArray ratingList =  ratingHistogram.has("RatingList")? ratingHistogram.optJSONArray("RatingList"): new JSONArray();
 
          if(ratingList !=null){
 
@@ -121,7 +124,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
       String jsonProductId = "{\"productId\":\"" + internalPid + "\",\"page\":1,\"count\":5,\"orderBy\":0,\"filters\":\"\"}";
       String encodedString = Base64.getEncoder().encodeToString(jsonProductId.getBytes());
 
-      String api = "https://www.paguemenos.com.br/_v/public/graphql/v1?workspace=master&maxAge=medium&appsEtag=remove&domain=store&locale=pt-BR&__bindingId=23424e23-86bb-4397-98b0-238d88d7f528&operationName=productReviews&extensions=";
+      String api = "https://www.paguemenos.com.br/_v/public/graphql/v1?workspace=master&maxAge=medium&appsEtag=remove&domain=store&locale=pt-BR&__bindingId=23424e23-86bb-4397-98b0-238d88d7f528&operationName=productReviews&variables=";
 
       String query = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + API_TOKEN +"\",\"sender\":\"yourviews.yourviewsreviews@0.x\",\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
          "\"variables\":\"" + encodedString + "\"}";
@@ -131,6 +134,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
       Request request = RequestBuilder.create().setUrl(api+encodedQuery)
             .build();
       String response = this.dataFetcher.get(session, request).getBody();
+
 
       return JSONUtils.stringToJson(response);
    }
