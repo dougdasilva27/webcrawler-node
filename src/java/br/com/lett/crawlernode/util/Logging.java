@@ -109,7 +109,7 @@ public class Logging {
 
          String internalId = session.getInternalId();
          if (internalId != null) {
-            metadata.put("internalId", internalId);
+            metadata.put("internal_id", internalId);
          }
 
          String originalUrl = session.getOriginalURL();
