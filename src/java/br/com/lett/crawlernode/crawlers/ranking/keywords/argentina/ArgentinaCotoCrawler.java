@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -9,7 +10,8 @@ import org.jsoup.select.Elements;
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords{
 
 	public ArgentinaCotoCrawler(Session session) {
-		super(session);
+	   super(session);
+	   fetchMode = FetchMode.FETCHER;
 	}
 
 	@Override
@@ -21,14 +23,14 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords{
 		
 		//monta a url com a keyword e a página
 		String url = "https://www.cotodigital3.com.ar/sitios/cdigi/browse?_dyncharset=utf-8"
-				+ "&Ntt="+ this.keywordEncoded +"+%7C1004&Ntk=All%7Cproduct.sDisp_091&No=" + this.arrayProducts.size(); 
-		
+				+ "&Ntt="+ this.keywordEncoded +"+%7C1004&Ntk=All%7Cproduct.sDisp_091&No=" + this.arrayProducts.size();
+
 		this.log("Link onde são feitos os crawlers: "+url);	
 		
 		//chama função de pegar a url
 		this.currentDoc = fetchDocument(url);
 		Elements products =  this.currentDoc.select("#products > li");
-		
+
 		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
 		if(products.size() >= 1) {			
 			//se o total de busca não foi setado ainda, chama a função para setar
