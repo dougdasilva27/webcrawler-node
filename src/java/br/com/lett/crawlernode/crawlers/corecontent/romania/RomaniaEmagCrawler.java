@@ -198,7 +198,7 @@ public class RomaniaEmagCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
-      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".mrg-btm-xxs .star-rating.star-rating-read", false, 0);
+      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(doc, ".small.semibold.font-size-sm.text-muted", false, 0);
       Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".review-rating-data", null, false, '.', session);
       AdvancedRatingReview adRating = scrapAdvancedRatingReview(doc);
 
