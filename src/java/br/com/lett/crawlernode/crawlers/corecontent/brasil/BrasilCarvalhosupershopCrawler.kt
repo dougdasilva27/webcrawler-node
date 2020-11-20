@@ -168,6 +168,6 @@ class BrasilCarvalhosupershopCrawler(session: Session) : Crawler(session) {
    }
 
    private fun isProductPage(doc: JSONObject): Boolean {
-      return doc.has("produto")
+      return doc.optJSONObject("produto")!=null
    }
 }
