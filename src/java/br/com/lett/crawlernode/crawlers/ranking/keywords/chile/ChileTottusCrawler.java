@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.TottusCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.TottusCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;

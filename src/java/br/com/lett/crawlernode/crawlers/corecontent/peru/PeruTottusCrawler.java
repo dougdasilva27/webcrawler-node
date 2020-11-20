@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.TottusCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.TottusCrawler;
 
 
 public class PeruTottusCrawler extends TottusCrawler {

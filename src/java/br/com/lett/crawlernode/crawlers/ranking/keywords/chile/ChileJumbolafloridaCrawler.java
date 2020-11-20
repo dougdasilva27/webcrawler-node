@@ -2,14 +2,14 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ChileJumboCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ChileJumboCrawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ChileJumbolafloridaCrawler extends ChileJumboCrawler {
 
   public ChileJumbolafloridaCrawler(Session session) {
     super(session);
-    super.storeCode = br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ChileJumboCrawler.JUMBO_LAFLORIDA_ID;
+    super.storeCode = br.com.lett.crawlernode.crawlers.extractionutils.core.ChileJumboCrawler.JUMBO_LAFLORIDA_ID;
   }
 
   @Override

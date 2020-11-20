@@ -1,9 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.*;
-
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,6 +12,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;

@@ -1,8 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.RappiCrawler;
-
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawler;
 import java.util.Arrays;
 
 public class RiodejaneiroRappidrogaraiagaveaCrawler extends RappiCrawler {

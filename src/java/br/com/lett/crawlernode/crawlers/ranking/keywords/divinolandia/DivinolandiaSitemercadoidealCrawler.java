@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.divinolandia;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BrasilSitemercadoCrawler;
 
 /**
  * @author gabriel date: 2019-09-24

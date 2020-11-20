@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ArgentinaCarrefoursuper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ArgentinaCarrefoursuper;
 
 /**
  * Date: 2019-07-12

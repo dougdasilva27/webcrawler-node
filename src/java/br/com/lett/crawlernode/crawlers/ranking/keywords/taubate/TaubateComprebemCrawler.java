@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.taubate;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ComprebemCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ComprebemCrawlerRanking;
 
 public class TaubateComprebemCrawler extends ComprebemCrawlerRanking {
 

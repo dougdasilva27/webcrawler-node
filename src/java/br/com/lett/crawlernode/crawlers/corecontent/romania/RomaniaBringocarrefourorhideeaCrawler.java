@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.romania;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.RomaniaBringoCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.RomaniaBringoCrawler;
 
 public class RomaniaBringocarrefourorhideeaCrawler extends RomaniaBringoCrawler {
 

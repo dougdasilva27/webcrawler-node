@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.NikeCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.NikeCrawler;
 import org.json.JSONObject;
 
 public class MexicoNikeCrawler extends NikeCrawler {

@@ -158,8 +158,10 @@ public class JavanetDataFetcher implements DataFetcher {
          attempt++;
       }
 
-      JSONObject apacheMetadata = new JSONObject().put("req_javanet_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_javanet_attempts_number", attempt);
+      JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_attempts_number", attempt)
+            .put("req_type", "url_request")
+            .put("req_lib", "javanet");
 
       Logging.logInfo(logger, session, apacheMetadata, "JAVANET REQUESTS INFO");
 

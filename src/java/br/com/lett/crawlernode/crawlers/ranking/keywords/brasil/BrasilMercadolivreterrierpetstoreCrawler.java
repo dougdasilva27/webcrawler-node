@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.MercadolivreCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MercadolivreCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilMercadolivreterrierpetstoreCrawler extends MercadolivreCrawler {

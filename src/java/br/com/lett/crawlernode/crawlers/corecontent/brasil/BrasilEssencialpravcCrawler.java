@@ -8,7 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 

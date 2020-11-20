@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ArgentinaCarrefoursuper;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ArgentinaCarrefoursuper;
 
 public class ArgentinaCarrefoursuperrincondemilbergCrawler extends ArgentinaCarrefoursuper {
 

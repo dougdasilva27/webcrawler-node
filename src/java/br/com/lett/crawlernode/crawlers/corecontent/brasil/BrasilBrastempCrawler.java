@@ -1,8 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.RatingsReviews;

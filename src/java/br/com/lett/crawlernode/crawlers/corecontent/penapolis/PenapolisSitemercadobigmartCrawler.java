@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.penapolis;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import org.json.JSONObject;
 

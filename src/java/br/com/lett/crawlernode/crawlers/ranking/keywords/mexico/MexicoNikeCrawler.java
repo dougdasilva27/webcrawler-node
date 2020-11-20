@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.NikeCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.NikeCrawler;
 
 public class MexicoNikeCrawler extends NikeCrawler {
 

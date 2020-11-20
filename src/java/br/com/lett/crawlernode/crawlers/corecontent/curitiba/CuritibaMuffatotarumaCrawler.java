@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermuffatodeliveryCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.SupermuffatodeliveryCrawler;
 import org.json.JSONObject;
 
 public class CuritibaMuffatotarumaCrawler extends SupermuffatodeliveryCrawler {

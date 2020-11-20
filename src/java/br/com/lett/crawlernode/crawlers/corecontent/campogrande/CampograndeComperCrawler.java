@@ -2,7 +2,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.campogrande;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ComperCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ComperCrawler;
 
 public class CampograndeComperCrawler extends ComperCrawler {
 

@@ -9,7 +9,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.LeroymerlinCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.LeroymerlinCrawler;
 
 /**
  * Date: 12/10/2018

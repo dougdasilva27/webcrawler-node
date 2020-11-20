@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CNOVANewCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.CNOVANewCrawler;
 
 public class SaopauloPontofrioCrawler extends CNOVANewCrawler {
 

@@ -1,8 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.B2WCrawler;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.B2WCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.B2WCrawlerRanking;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.Jsoup;

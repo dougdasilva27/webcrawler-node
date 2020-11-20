@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilSitemercadoCrawler;
 
 /**
  * @author gabriel date: 2019-09-24

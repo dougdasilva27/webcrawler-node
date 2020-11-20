@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.curitiba;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GPACrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.GPACrawler;
 
 public class CuritibaPaodeacucarCrawler extends GPACrawler {
 

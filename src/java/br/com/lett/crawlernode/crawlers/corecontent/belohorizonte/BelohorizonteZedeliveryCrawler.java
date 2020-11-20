@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ZedeliveryCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ZedeliveryCrawler;
 
 public class BelohorizonteZedeliveryCrawler extends ZedeliveryCrawler {
 

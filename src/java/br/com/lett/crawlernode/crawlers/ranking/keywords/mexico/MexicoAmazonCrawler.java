@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.AmazonScraperUtils;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 public class MexicoAmazonCrawler extends CrawlerRankingKeywords {

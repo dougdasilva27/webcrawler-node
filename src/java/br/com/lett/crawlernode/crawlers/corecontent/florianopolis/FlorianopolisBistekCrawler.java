@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BistekCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BistekCrawler;
 
 public class FlorianopolisBistekCrawler extends BistekCrawler {
 

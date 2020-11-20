@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.contagem;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.SupersjCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.SupersjCrawler;
 
 public class ContagemSupersjCrawler extends SupersjCrawler {
 

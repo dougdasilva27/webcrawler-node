@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.MercadolivreCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MercadolivreCrawler;
 
 public class ChileMercadolibrepgCrawler extends MercadolivreCrawler {
 

@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saojose;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BistekCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BistekCrawler;
 
 public class SaojoseBistekCrawler extends BistekCrawler {
 

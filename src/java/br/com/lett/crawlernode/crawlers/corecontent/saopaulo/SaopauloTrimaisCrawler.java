@@ -2,8 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXOldScraper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;

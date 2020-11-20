@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CornershopCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.CornershopCrawler;
 
 public class ChileCornershoplidernunoaCrawler extends CornershopCrawler {
 

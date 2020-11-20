@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
 
 public class BelohorizonteCarrefourCrawler extends CarrefourCrawler {
 

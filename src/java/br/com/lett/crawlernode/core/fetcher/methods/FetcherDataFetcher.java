@@ -186,14 +186,19 @@ public class FetcherDataFetcher implements DataFetcher {
             S3Service.saveResponseContent(session, requestHash, response.getBody());
          }
       } catch (Exception e) {
-         Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response: " + e.getMessage());
+         JSONObject fetcherErrorMetadata = new JSONObject()
+               .put("fetcher_msg", e.getMessage());
+
+         Logging.logWarn(logger, session, fetcherErrorMetadata, "Fetcher did not returned the expected response.");
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
       }
 
       sendRequestInfoLog(request, response, method, session, requestHash, requestId, System.currentTimeMillis() - requestsStartTime);
 
-      JSONObject apacheMetadata = new JSONObject().put("req_fetcher_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_fetcher_attempts_number", 1);
+      JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_attempts_number", 1)
+            .put("req_type", "url_request")
+            .put("req_lib", "fetcher");
 
       Logging.logInfo(logger, session, apacheMetadata, "FETCHER REQUESTS INFO");
 

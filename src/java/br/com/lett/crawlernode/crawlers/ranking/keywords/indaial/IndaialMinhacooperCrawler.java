@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.indaial;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilMinhacooper;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BrasilMinhacooper;
 
 public class IndaialMinhacooperCrawler extends BrasilMinhacooper {
 

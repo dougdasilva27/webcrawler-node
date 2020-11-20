@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.AdidasCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.AdidasCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class UnitedstatesAdidasCrawler extends AdidasCrawler {

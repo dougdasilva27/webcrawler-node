@@ -290,10 +290,10 @@ public class ApacheDataFetcher implements DataFetcher {
          attempt++;
       }
 
-
-      JSONObject apacheMetadata = new JSONObject().put("req_apache_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_apache_attempts_number", attempt)
-            .put("req_apache_type", "url_request");
+      JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_attempts_number", attempt)
+            .put("req_type", "url_request")
+            .put("req_lib", "apache");
 
       Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
@@ -430,9 +430,10 @@ public class ApacheDataFetcher implements DataFetcher {
          attempt++;
       }
 
-      JSONObject apacheMetadata = new JSONObject().put("req_apache_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_apache_attempts_number", attempt)
-            .put("req_apache_type", "images_download");
+      JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_attempts_number", attempt)
+            .put("req_type", "image_download")
+            .put("req_lib", "apache");
 
       Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 

@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.blumenal;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilMinhacooper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilMinhacooper;
 
 public class BlumenalMinhacooperCrawler extends BrasilMinhacooper {
 

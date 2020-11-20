@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 public class PresidenteprudenteSitemercadosupermercadoestrelaCrawler extends BrasilSitemercadoCrawler {

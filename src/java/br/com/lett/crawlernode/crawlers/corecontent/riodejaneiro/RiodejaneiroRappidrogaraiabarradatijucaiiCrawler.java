@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilRappiCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilRappiCrawler;
 
 public class RiodejaneiroRappidrogaraiabarradatijucaiiCrawler extends BrasilRappiCrawler {
 

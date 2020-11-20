@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.FalabellaCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.FalabellaCrawler;
 
 public class ArgentinaFalabellaCrawler extends FalabellaCrawler {
 

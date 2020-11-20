@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo
 
 import br.com.lett.crawlernode.core.session.Session
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.TrayCommerceCrawler
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.TrayCommerceCrawler
 
 
 class SaopauloParaisosaudavelCrawler(session: Session) : TrayCommerceCrawler(session) {

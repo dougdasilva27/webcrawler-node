@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saocaetanodosul;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.SupermercadonowCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.SupermercadonowCrawlerRanking;
 
 public class SaocaetanodosulSupermercadonowhirotasupermercadossaocaetanoCrawler extends SupermercadonowCrawlerRanking {
 

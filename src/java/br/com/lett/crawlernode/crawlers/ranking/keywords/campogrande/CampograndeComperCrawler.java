@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.campogrande;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ComperCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ComperCrawlerRanking;
 
 public class CampograndeComperCrawler extends ComperCrawlerRanking {
 

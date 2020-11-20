@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.bage;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.SupernicoliniCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.SupernicoliniCrawler;
 
 public class BageSupernicoliniCrawler extends SupernicoliniCrawler {
 

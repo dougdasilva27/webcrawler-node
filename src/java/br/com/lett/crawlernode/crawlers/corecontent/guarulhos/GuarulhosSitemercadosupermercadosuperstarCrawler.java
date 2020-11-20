@@ -1,8 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.guarulhos;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.BrasilSitemercadoCrawler;
-
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilSitemercadoCrawler;
 import java.util.HashMap;
 import java.util.Map;
 

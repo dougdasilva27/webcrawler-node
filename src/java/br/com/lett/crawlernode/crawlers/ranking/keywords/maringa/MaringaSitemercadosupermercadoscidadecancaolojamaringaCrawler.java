@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BrasilSitemercadoCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 
 /**

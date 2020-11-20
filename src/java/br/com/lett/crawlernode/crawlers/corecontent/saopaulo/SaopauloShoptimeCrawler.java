@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import java.util.ArrayList;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.B2WCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 
 public class SaopauloShoptimeCrawler extends B2WCrawler {
 

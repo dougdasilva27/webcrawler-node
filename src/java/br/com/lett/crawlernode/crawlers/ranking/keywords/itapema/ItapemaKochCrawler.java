@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.itapema;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.KochCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.KochCrawlerRanking;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 /**

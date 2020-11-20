@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import br.com.lett.crawlernode.core.session.Session;
 
-public class ChileJumboCrawler extends br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ChileJumboCrawler {
+public class ChileJumboCrawler extends br.com.lett.crawlernode.crawlers.extractionutils.core.ChileJumboCrawler {
 
    public ChileJumboCrawler(Session session) {
       super(session);

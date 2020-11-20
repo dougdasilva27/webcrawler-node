@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ChileJumboCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ChileJumboCrawler;
 import br.com.lett.crawlernode.util.Logging;
 
 public class ChileJumbodehesaCrawler extends ChileJumboCrawler {

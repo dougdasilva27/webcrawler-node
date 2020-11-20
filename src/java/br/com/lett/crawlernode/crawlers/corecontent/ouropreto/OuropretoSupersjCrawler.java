@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.ouropreto;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupersjCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.SupersjCrawler;
 
 public class OuropretoSupersjCrawler extends SupersjCrawler {
 

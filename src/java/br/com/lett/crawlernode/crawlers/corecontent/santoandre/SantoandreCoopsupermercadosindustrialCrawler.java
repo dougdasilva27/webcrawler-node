@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.santoandre;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.CooprsupermercadosCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.CooprsupermercadosCrawler;
 
 
 public class SantoandreCoopsupermercadosindustrialCrawler extends CooprsupermercadosCrawler {

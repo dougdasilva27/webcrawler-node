@@ -5,8 +5,8 @@ import java.util.List;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 

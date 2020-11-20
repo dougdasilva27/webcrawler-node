@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.ibipora;
 
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermuffatodeliveryCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.SupermuffatodeliveryCrawler;
 
 public class IbiporaMuffatoCrawler extends SupermuffatodeliveryCrawler {
 

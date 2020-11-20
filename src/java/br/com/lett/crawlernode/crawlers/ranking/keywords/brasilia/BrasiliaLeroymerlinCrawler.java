@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasilia;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.LeroymerlinCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.LeroymerlinCrawler;
 
 public class BrasiliaLeroymerlinCrawler extends LeroymerlinCrawler {
 

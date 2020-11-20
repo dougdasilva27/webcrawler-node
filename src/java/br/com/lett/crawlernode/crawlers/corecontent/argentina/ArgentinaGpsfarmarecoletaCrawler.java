@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.GpsfarmaCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.GpsfarmaCrawler;
 
 public class ArgentinaGpsfarmarecoletaCrawler extends GpsfarmaCrawler {
 

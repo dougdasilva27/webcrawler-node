@@ -161,8 +161,10 @@ public class JsoupDataFetcher implements DataFetcher {
          attempt++;
       }
 
-      JSONObject jsoupMetadata = new JSONObject().put("req_jsoup_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_jsoup_attempts_number", attempt);
+      JSONObject jsoupMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
+            .put("req_attempts_number", attempt)
+            .put("req_type", "url_request")
+            .put("req_lib", "jsoup");
 
       Logging.logInfo(logger, session, jsoupMetadata, "JSOUP REQUESTS INFO");
 

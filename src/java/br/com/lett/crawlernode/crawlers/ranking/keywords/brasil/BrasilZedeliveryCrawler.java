@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ZedeliveryCrawler.ZedeliveryInfo;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ZedeliveryCrawler.ZedeliveryInfoBuilder;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ZedeliveryCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ZedeliveryCrawler.ZedeliveryInfo;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ZedeliveryCrawler.ZedeliveryInfoBuilder;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ZedeliveryCrawlerRanking;
 
 public class BrasilZedeliveryCrawler extends ZedeliveryCrawlerRanking {
 

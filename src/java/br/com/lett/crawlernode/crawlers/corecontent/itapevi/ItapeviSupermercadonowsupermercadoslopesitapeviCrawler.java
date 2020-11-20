@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.itapevi;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.SupermercadonowCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.SupermercadonowCrawler;
 
 public class ItapeviSupermercadonowsupermercadoslopesitapeviCrawler extends SupermercadonowCrawler {
 

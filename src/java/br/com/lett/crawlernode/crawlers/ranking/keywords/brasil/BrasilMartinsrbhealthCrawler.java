@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.MartinsKeywords;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MartinsKeywords;
 
 public class BrasilMartinsrbhealthCrawler extends MartinsKeywords {
 

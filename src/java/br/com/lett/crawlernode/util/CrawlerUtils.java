@@ -11,7 +11,7 @@ import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.YourreviewsRatingCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import exceptions.MalformedPricingException;

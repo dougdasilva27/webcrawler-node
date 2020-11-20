@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.itajai;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.KochCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.KochCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 /**

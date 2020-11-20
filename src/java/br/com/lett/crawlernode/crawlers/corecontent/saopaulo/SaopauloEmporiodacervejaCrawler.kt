@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
 import br.com.lett.crawlernode.core.session.Session
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.VTEXNewScraper
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper
 import models.RatingsReviews
 import org.json.JSONObject
 import org.jsoup.nodes.Document

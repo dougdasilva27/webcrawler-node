@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.criciuma;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.BistekCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BistekCrawler;
 
 public class CriciumaBistekCrawler extends BistekCrawler {
 

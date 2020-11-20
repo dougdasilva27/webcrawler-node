@@ -2,7 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.romania;
 
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.RomaniaBringoCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RomaniaBringoCrawler;
 
 public class RomaniaBringocarrefourorhideeaCrawler extends RomaniaBringoCrawler {
 

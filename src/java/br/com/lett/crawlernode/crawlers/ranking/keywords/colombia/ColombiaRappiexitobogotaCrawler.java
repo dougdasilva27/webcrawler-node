@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils.ColombiaRappiCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ColombiaRappiCrawlerRanking;
 
 public class ColombiaRappiexitobogotaCrawler extends ColombiaRappiCrawlerRanking {
 

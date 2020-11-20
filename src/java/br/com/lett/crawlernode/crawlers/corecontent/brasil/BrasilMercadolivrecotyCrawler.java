@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.MercadolivreCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.MercadolivreCrawler;
 
 /**
  * Date: 09/05/2019

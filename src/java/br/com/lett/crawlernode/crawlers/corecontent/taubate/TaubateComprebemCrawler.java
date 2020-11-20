@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.taubate;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ComprebemCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ComprebemCrawler;
 
 public class TaubateComprebemCrawler extends ComprebemCrawler {
 

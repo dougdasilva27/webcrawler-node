@@ -10,7 +10,7 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptions
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.B2WCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;

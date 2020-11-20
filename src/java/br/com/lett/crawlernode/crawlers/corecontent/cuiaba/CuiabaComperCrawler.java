@@ -2,7 +2,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.cuiaba;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.corecontent.extractionutils.ComperCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ComperCrawler;
 
 public class CuiabaComperCrawler extends ComperCrawler {
 
