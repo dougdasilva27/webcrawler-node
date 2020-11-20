@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
@@ -201,10 +202,10 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       Request request = Request.RequestBuilder.create().setUrl(apiRating).build();
       JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      int totalNumberOfReviews = response.optInt("total");
-      JSONObject aggregateRating = response.optJSONObject("aggregateRating");
-      Double avgRating = aggregateRating.optDouble("ratingValue");
-      JSONObject stars = aggregateRating.optJSONObject("ratingComposition");
+      int totalNumberOfReviews = JSONUtils.getIntegerValueFromJSON(response, "total", 0);
+      JSONObject aggregateRating = JSONUtils.getJSONValue(response, "aggregateRating");
+      Double avgRating = JSONUtils.getDoubleValueFromJSON(aggregateRating, "ratingValue", false);
+      JSONObject stars = JSONUtils.getJSONValue(aggregateRating, "ratingComposition");
 
       advancedRatingReview.setTotalStar1(stars.optInt("1"));
       advancedRatingReview.setTotalStar2(stars.optInt("2"));
