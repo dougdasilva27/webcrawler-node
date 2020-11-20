@@ -41,11 +41,10 @@ public class BrasilGimbaCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      String html = "";
       Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
       Response response = dataFetcher.get(session, request);
       cookies.addAll(response.getCookies());
-      html = response.getBody();
+      String html = response.getBody();
       return Jsoup.parse(html);
    }
 
@@ -58,16 +57,15 @@ public class BrasilGimbaCrawler extends Crawler {
       if (doc.selectFirst("#produtoCadastro") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         Offers offers = new Offers();
          String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#codigoProduto p", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".produto-nome", false);
          boolean available = doc.selectFirst("#botao-comprar .btn-add-new") != null;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#breadCrumb div a");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".main-thumb a", Arrays.asList("href"), "https:", "www.gimba.com.br");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#thumb a", Arrays.asList("href"), "https:", "www.gimba.com.br", primaryImage);
-         if (available) {
-            offers = scrapOffer(doc);
-         }
+
+         Offers offers = available ? scrapOffer(doc) : new Offers();
+
          String description = scrapDescription(doc);
 
          // Creating the product
@@ -94,18 +92,21 @@ public class BrasilGimbaCrawler extends Crawler {
    }
 
    private String scrapDescription(Document doc) {
+      String description = "";
       String verificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=__RequestVerificationToken]", "value");
-      if (verificationToken!=null) {
-         String urlpid = session.getOriginalURL();
-         String pid = urlpid.substring(urlpid.indexOf("PID=") + 4);
+      String pid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"form#frm-produto  [id=hidProduto]","value");
+
+      if (verificationToken != null && pid != null) {
          String url = "https://www.gimba.com.br/produtos/JsonRetornaProdutoDetalhe?id=" + pid + "&kit=false";
          String payload = "__RequestVerificationToken=" + verificationToken;
-         String cookietoken = null;
+         String cookietoken = "";
+
          for (Cookie cookie : cookies) {
             if (cookie.getName().equals("__RequestVerificationToken")) {
                cookietoken = cookie.getValue();
             }
          }
+
          String requestCookieValue = "__RequestVerificationToken=" + cookietoken + ";";
          Map<String, String> headres = new HashMap<>();
          headres.put("cookie", requestCookieValue);
@@ -120,15 +121,14 @@ public class BrasilGimbaCrawler extends Crawler {
             .setPayload(payload)
             .build();
 
-         String responce = dataFetcher.post(session, request).getBody();
-         if (responce != null) {
-            Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(responce));
-            String description = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
-            return description;
+         String response = dataFetcher.post(session, request).getBody();
+         if (response != null) {
+            Document document = Jsoup.parse(StringEscapeUtils.unescapeJava(response));
+            description = CrawlerUtils.scrapStringSimpleInfo(document, ".fonte-descricao-prod dd", false);
          }
       }
-
-      return null;
+      
+      return description;
    }
 
 
