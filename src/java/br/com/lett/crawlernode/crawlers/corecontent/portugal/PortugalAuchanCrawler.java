@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
+import models.RatingsReviews;
 import org.jsoup.nodes.Document;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
@@ -62,6 +64,7 @@ public class PortugalAuchanCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#productDetail .row .col-md-12"));
          Offers offers = available ? scrapOffer(doc) : new Offers();
+         RatingsReviews reviews = scarpRatingsReviews(doc);
          // Creating the product
 
          Product product = ProductBuilder.create()
@@ -74,6 +77,7 @@ public class PortugalAuchanCrawler extends Crawler {
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setDescription(description)
+               .setRatingReviews(reviews)
                .setOffers(offers)
                .build();
          products.add(product);
@@ -89,6 +93,15 @@ public class PortugalAuchanCrawler extends Crawler {
 
    private boolean isProductPage(Document document) {
       return document.selectFirst("#conteudo .product-detail") != null;
+   }
+
+   private RatingsReviews scarpRatingsReviews(Document doc){
+      RatingsReviews reviews = new RatingsReviews();
+
+      int totalReviews = CrawlerUtils.scrapIntegerFromHtml(doc,"#numberOfVotes",false,0);
+      reviews.setTotalRating(totalReviews);//this only information can be scraper for now
+
+      return reviews;
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
