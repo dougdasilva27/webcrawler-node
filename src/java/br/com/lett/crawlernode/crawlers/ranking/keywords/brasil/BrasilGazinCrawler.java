@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilGazinCrawler extends CrawlerRankingKeywords {
 
+   private static final String API_KEY = "j33o%2BMRkwsxYR2XUKVQBQw%3D%3D";
   public BrasilGazinCrawler(Session session) {
     super(session);
   }
@@ -33,8 +34,8 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
 
     JSONObject searchJson = fetchJsonResponse();
 
-    this.totalProducts = searchJson.optInt("total");
-    JSONArray products = searchJson.optJSONArray("data");
+    this.totalProducts = searchJson.optInt("size");
+    JSONArray products = searchJson.optJSONArray("products");
 
     if (!products.isEmpty()) {
 
@@ -42,11 +43,11 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
 
          JSONObject product = (JSONObject) e;
 
-         String internalId = scrapInternalId(product);
+         String internalId = product.optString("selectedSku");
 
-         String internalPid = product.optString("id");
+         String internalPid = scrapInternalPid(product);
 
-         String productUrl = scrapProductUrl(product,internalId);
+         String productUrl =  CrawlerUtils.completeUrl(product.optString("url"), "https", "gazin.com.br");
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -63,76 +64,37 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  /**
-   * For this site you need to click on a button to follow search pages, even on the first page has a
-   * button to list products, if you click the page reload and appears the search page
-   * 
-   * For categories this site only redirect you to categories page
-   * 
-   * @return
-   */
   private JSONObject fetchJsonResponse(){
 
-     String originalKeyword = this.keywordEncoded.replace("+", "%20");
+     String resultsPerPage = "20";
 
      HashMap<String, String> headers = new HashMap<>();
      headers.put("canal", "gazin-ecommerce");
 
-     String api = "https://marketplace-api.gazin.com.br/v1/canais/produtos?page="
-        + this.currentPage + "&per_page=20&busca="
-        + originalKeyword + "&order=titulo&sort=asc&per_page=20";
+     String api = "https://api.linximpulse.com/engage/search/v3/search?apikey=gazin&secretkey="
+        + API_KEY + "&terms=" + this.keywordEncoded + "&page=" + this.currentPage + "&resultsPerPage="
+        + resultsPerPage + "&sortBy=relevance&productFormat=complete&showOnlyAvailable=false&deviceId=null";
 
      Request request = Request.RequestBuilder.create().setUrl(api).setHeaders(headers).build();
 
      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-
-
   }
 
-  private String scrapProductUrl(JSONObject product, String internalId){
+  private String scrapInternalPid(JSONObject product){
 
-     String slugName = "";
-     String combination = "sem-cor";
-     JSONObject variation = product.optJSONObject("variacao");
+     String idText = product.optString("id");
+     String internalPid = null;
 
-     if(variation != null){
-        JSONObject productObject = variation.optJSONObject("produto");
-        JSONArray combinationArray = variation.optJSONArray("combinacoes");
+     if(idText != null){
 
-        if(!combinationArray.isEmpty()){
-           combination = ((JSONObject) combinationArray.get(0)).optString("valor_slug");
-        }
+        internalPid = idText;
 
-        if(productObject != null){
-           slugName = productObject.optString("slug");
+        if(internalPid.contains("-")){
+
+           internalPid = idText.substring(0, idText.indexOf("-"));
         }
      }
-
-     StringBuilder url = new StringBuilder();
-     url.append("https://www.gazin.com.br/produto/")
-        .append(internalId + "/")
-        .append(slugName)
-        .append("?cor=" + combination);
-
-
-      return url.toString();
+     return  internalPid;
   }
-
-  private String scrapInternalId(JSONObject product){
-
-     String internalId = null;
-     JSONObject variation = product.optJSONObject("variacao");
-
-     if(variation != null){
-
-        JSONObject productJson = variation.optJSONObject("produto");
-
-        if(productJson != null){
-           internalId = productJson.optString("id");
-        }
-     }
-     return  internalId;
-  }
-
 }
