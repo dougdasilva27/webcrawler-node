@@ -454,7 +454,7 @@ public class Processor {
       // an instance of mongo panel must be passed, so we can schedule url to take screenshot
       newProcessedProduct.registerChanges(previousProcessedProduct);
 
-      if (session.getSupplierId() != null && session.getSupplierId() == 174l &&
+      if (session.getSupplierId() != null && session.getSupplierId() == 1471l &&
             newProcessedProduct.getPrice() != null &&
             previousProcessedProduct != null &&
             previousProcessedProduct.getPrice() != null &&
