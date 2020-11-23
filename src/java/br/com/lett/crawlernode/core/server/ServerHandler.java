@@ -110,8 +110,9 @@ public class ServerHandler implements HttpHandler {
       request.setInternalId(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_INTERNAL_ID));
 
       String supplierIdString = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SUPPLIER_ID);
+
       if (supplierIdString != null) {
-         request.setSupplierId(Long.parseLong(supplierIdString));
+         request.setSupplierId(Long.parseLong(supplierIdString.trim()));
       }
 
       String marketIdString = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_MARKET_ID);
