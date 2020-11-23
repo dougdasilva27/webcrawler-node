@@ -32,6 +32,7 @@ public class ServerHandler implements HttpHandler {
 
    private static final String MSG_ATTR_TASK_ID = "taskId";
    private static final String MSG_ATTR_MARKET_ID = "marketId";
+   private static final String MSG_ATTR_SUPPLIER_ID = "supplierId";
    private static final String MSG_ATTR_PROCESSED_ID = "processedId";
    private static final String MSG_ATTR_INTERNAL_ID = "internalId";
    private static final String MSG_ATTR_IMG_NUMBER = "number";
@@ -107,6 +108,12 @@ public class ServerHandler implements HttpHandler {
       request.setQueueName(headers.getFirst(SQS_NAME_HEADER));
       request.setMessageId(headers.getFirst(MSG_ID_HEADER));
       request.setInternalId(headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_INTERNAL_ID));
+
+      String supplierIdString = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SUPPLIER_ID);
+
+      if (supplierIdString != null) {
+         request.setSupplierId(Long.parseLong(supplierIdString.trim()));
+      }
 
       String marketIdString = headers.getFirst(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_MARKET_ID);
       if (marketIdString != null) {

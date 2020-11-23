@@ -454,25 +454,24 @@ public class Processor {
       // an instance of mongo panel must be passed, so we can schedule url to take screenshot
       newProcessedProduct.registerChanges(previousProcessedProduct);
 
-      if (newProcessedProduct.getPrice() != null &&
+      if (session.getSupplierId() != null && session.getSupplierId() == 1471l &&
+            newProcessedProduct.getPrice() != null &&
             previousProcessedProduct != null &&
             previousProcessedProduct.getPrice() != null &&
             newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
 
          Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
-         Boolean shouldSend = false;
+         boolean shouldSend = false;
          String quote = null;
          String author = null;
          String avatar = null;
 
-         if (discount > 60) {
+         if (discount > 30) {
             shouldSend = true;
             author = "Jacquin";
             avatar = "https://www.azulis.com.br/wp-content/uploads/2019/10/jac-1-770x471.jpg";
             String[] quotes = {
-                     "Desligan o freezer a notch!",
-                     "esse cheddár tem um gost esquisit",
                      "O que é isso?",
                      "Eu que deciso se isso é bom",
                      "Voce está brincando comig? é pegadinha?",
@@ -483,16 +482,14 @@ public class Processor {
                      "No quero mas ti ver hoj!",
                      "Voce vai precisar de uma consultoria, viu",
                      "Eu acho que está tudo muito ruim",
-                     "Me senti dentro do filme misson impossive",
                      "Quê?",
                      "Mes parabens gente está horrivell",
                      "Não da pra perdoar non",
                      "Está feliz mesmo?",
-                     "Ele aprendeu a economizar 50% na conta de luz",
-                     "Cala sua boca!"
+                     "Ele aprendeu a economizar 50% na conta de luz"
             };
             quote = quotes[new Random().nextInt(quotes.length)];
-         } else if (discount > 20 && newProcessedProduct.getPrice() > 50) {
+         } else if (discount > 15 && newProcessedProduct.getPrice() > 50) {
             shouldSend = true;
             author = "Julius";
             avatar = "https://i.imgur.com/T65AjlE.png";
