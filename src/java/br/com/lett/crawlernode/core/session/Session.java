@@ -18,261 +18,273 @@ import br.com.lett.crawlernode.util.DateUtils;
 
 public class Session {
 
-  protected static final Logger logger = LoggerFactory.getLogger(Session.class);
+   protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-  protected DateTime date = new DateTime(DateUtils.timeZone);
+   protected DateTime date = new DateTime(DateUtils.timeZone);
 
-  protected List<String> responseBodiesPath = new ArrayList<>();
+   protected List<String> responseBodiesPath = new ArrayList<>();
 
-  protected String taskStaus;
+   protected String taskStaus;
 
-  /** Id of current crawling session. It's the same id of the message from Amazon SQS */
-  protected String sessionId;
+   /** Id of current crawling session. It's the same id of the message from Amazon SQS */
+   protected String sessionId;
 
-  /** Name of the queue from which the message was retrieved */
-  protected String queueName;
+   /** Name of the queue from which the message was retrieved */
+   protected String queueName;
 
-  /** Original URL of the sku being crawled */
-  protected String originalURL;
+   /** Original URL of the sku being crawled */
+   protected String originalURL;
 
-  /** Association of URL and its final modified version, a redirection for instance */
-  Map<String, String> redirectionMap;
+   /** Association of URL and its final modified version, a redirection for instance */
+   Map<String, String> redirectionMap;
 
-  /** Association of URL and its proxy */
-  protected Map<String, LettProxy> requestProxyMap;
+   /** Association of URL and its proxy */
+   protected Map<String, LettProxy> requestProxyMap;
 
-  /** Market associated with this session */
-  protected Market market;
+   /** Market associated with this session */
+   protected Market market;
 
-  /** Errors occurred during crawling session */
-  protected List<SessionError> crawlerSessionErrors;
+   /** Supplier Id associated with this session */
+   protected Long supplierId;
 
-  /** The maximum number of connection attempts to be made when crawling normal information */
-  protected int maxConnectionAttemptsWebcrawler;
+   /** Errors occurred during crawling session */
+   protected List<SessionError> crawlerSessionErrors;
 
-  /** The maximum number of connection attempts to be made when downloading images */
-  protected int maxConnectionAttemptsImages;
+   /** The maximum number of connection attempts to be made when crawling normal information */
+   protected int maxConnectionAttemptsWebcrawler;
 
-  /** Response when request product page */
-  protected Object productPageResponse;
+   /** The maximum number of connection attempts to be made when downloading images */
+   protected int maxConnectionAttemptsImages;
 
-  protected long startTime;
+   /** Response when request product page */
+   protected Object productPageResponse;
 
-  /**
-   * Default empty constructor
-   */
-  public Session(Market market) {
+   protected long startTime;
 
-    this.startTime = System.currentTimeMillis();
+   /**
+    * Default empty constructor
+    */
+   public Session(Market market) {
 
-    this.market = market;
+      this.startTime = System.currentTimeMillis();
 
-    // creating the errors list
-    this.crawlerSessionErrors = new ArrayList<>();
+      this.market = market;
 
-    // creating the map of redirections
-    this.redirectionMap = new HashMap<>();
-    requestProxyMap = new HashMap<>();
-    maxConnectionAttemptsWebcrawler = 0;
+      // creating the errors list
+      this.crawlerSessionErrors = new ArrayList<>();
 
-    for (String proxy : market.getProxies()) {
-      maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
-    }
+      // creating the map of redirections
+      this.redirectionMap = new HashMap<>();
+      requestProxyMap = new HashMap<>();
+      maxConnectionAttemptsWebcrawler = 0;
 
-    maxConnectionAttemptsImages = 0;
-    for (String proxy : market.getImageProxies()) {
-      maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
-    }
-
-  }
-
-  public Session(Request request, String queueName, Markets markets) {
-    taskStaus = Task.STATUS_COMPLETED;
-
-    this.startTime = System.currentTimeMillis();
-
-    this.queueName = queueName;
-    crawlerSessionErrors = new ArrayList<>();
-    redirectionMap = new HashMap<>();
-    requestProxyMap = new HashMap<>();
-    sessionId = request.getMessageId();
-    market = markets.getMarket(request.getMarketId());
-
-    if (!(request instanceof CrawlerRankingKeywordsRequest)) {
-      originalURL = request.getMessageBody();
-    }
-
-    maxConnectionAttemptsWebcrawler = 0;
-
-    if (GlobalConfigurations.executionParameters.getUseFetcher()) {
-      // for (String proxy : market.getProxies()) {
-      // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
-      // }
-      // maxConnectionAttemptsWebcrawler++;
-      maxConnectionAttemptsWebcrawler = 2;
-    } else {
       for (String proxy : market.getProxies()) {
-        maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+         maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
       }
-    }
 
-    maxConnectionAttemptsImages = 0;
-    for (String proxy : market.getImageProxies()) {
-      maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
-    }
+      maxConnectionAttemptsImages = 0;
+      for (String proxy : market.getImageProxies()) {
+         maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+      }
 
-  }
+   }
 
-  public long getStartTime() {
-    return this.startTime;
-  }
+   public Session(Request request, String queueName, Markets markets) {
+      taskStaus = Task.STATUS_COMPLETED;
 
-  public DateTime getDate() {
-    return this.date;
-  }
+      this.startTime = System.currentTimeMillis();
 
-  public int getMaxConnectionAttemptsCrawler() {
-    return this.maxConnectionAttemptsWebcrawler;
-  }
+      this.queueName = queueName;
+      crawlerSessionErrors = new ArrayList<>();
+      redirectionMap = new HashMap<>();
+      requestProxyMap = new HashMap<>();
+      sessionId = request.getMessageId();
+      market = markets.getMarket(request.getMarketId());
+      supplierId = request.getSupplierId();
 
-  public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
-    this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
-  }
+      if (!(request instanceof CrawlerRankingKeywordsRequest)) {
+         originalURL = request.getMessageBody();
+      }
 
-  public int getMaxConnectionAttemptsImages() {
-    return this.maxConnectionAttemptsImages;
-  }
+      maxConnectionAttemptsWebcrawler = 0;
 
-  public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
-    this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
-  }
+      if (GlobalConfigurations.executionParameters.getUseFetcher()) {
+         // for (String proxy : market.getProxies()) {
+         // maxConnectionAttemptsWebcrawler += Main.proxies.getProxyMaxAttempts(proxy);
+         // }
+         // maxConnectionAttemptsWebcrawler++;
+         maxConnectionAttemptsWebcrawler = 2;
+      } else {
+         for (String proxy : market.getProxies()) {
+            maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+         }
+      }
 
-  public String getInternalId() {
-    /* by default returns an empty string */
-    return "";
-  }
+      maxConnectionAttemptsImages = 0;
+      for (String proxy : market.getImageProxies()) {
+         maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
+      }
 
-  public Long getProcessedId() {
-    /* by default returns a null object */
-    return null;
-  }
+   }
 
-  public List<String> getResponseBodiesPath() {
-    return responseBodiesPath;
-  }
+   public long getStartTime() {
+      return this.startTime;
+   }
 
-  public void setResponseBodiesPath(List<String> responseBodiesPath) {
-    this.responseBodiesPath = responseBodiesPath;
-  }
+   public DateTime getDate() {
+      return this.date;
+   }
 
-  public void addResponseBodyPath(String path) {
-    this.responseBodiesPath.add(path);
-  }
+   public int getMaxConnectionAttemptsCrawler() {
+      return this.maxConnectionAttemptsWebcrawler;
+   }
 
-  public String getOriginalURL() {
-    return originalURL;
-  }
+   public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
+      this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
+   }
 
-  public void setOriginalURL(String originalURL) {
-    this.originalURL = originalURL;
-  }
+   public int getMaxConnectionAttemptsImages() {
+      return this.maxConnectionAttemptsImages;
+   }
 
-  public void addRedirection(String originalURL, String redirectedURL) {
-    this.redirectionMap.put(originalURL, redirectedURL);
-  }
+   public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
+      this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
+   }
 
-  public String getRedirectedToURL(String originalURL) {
-    return this.redirectionMap.get(originalURL);
-  }
+   public String getInternalId() {
+      /* by default returns an empty string */
+      return "";
+   }
 
-  public String getSessionId() {
-    return sessionId;
-  }
+   public Long getProcessedId() {
+      /* by default returns a null object */
+      return null;
+   }
 
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
+   public List<String> getResponseBodiesPath() {
+      return responseBodiesPath;
+   }
 
-  public Market getMarket() {
-    return market;
-  }
+   public void setResponseBodiesPath(List<String> responseBodiesPath) {
+      this.responseBodiesPath = responseBodiesPath;
+   }
 
-  public void setMarket(Market market) {
-    this.market = market;
-  }
+   public void addResponseBodyPath(String path) {
+      this.responseBodiesPath.add(path);
+   }
 
-  public String getTaskStatus() {
-    return taskStaus;
-  }
+   public String getOriginalURL() {
+      return originalURL;
+   }
 
-  public void setTaskStatus(String taskStatus) {
-    this.taskStaus = taskStatus;
-  }
+   public void setOriginalURL(String originalURL) {
+      this.originalURL = originalURL;
+   }
 
-  public int getVoidAttempts() {
-    /* returns -1 by default */
-    return -1;
-  }
+   public void addRedirection(String originalURL, String redirectedURL) {
+      this.redirectionMap.put(originalURL, redirectedURL);
+   }
 
-  public int getTrucoAttempts() {
-    /* returns -1 by default */
-    return -1;
-  }
+   public String getRedirectedToURL(String originalURL) {
+      return this.redirectionMap.get(originalURL);
+   }
 
-  public Object getProductPageResponse() {
-    return productPageResponse;
-  }
+   public String getSessionId() {
+      return sessionId;
+   }
 
-  public void setProductPageResponse(Object productPageResponse) {
-    this.productPageResponse = productPageResponse;
-  }
+   public void setSessionId(String sessionId) {
+      this.sessionId = sessionId;
+   }
 
-  public void incrementVoidAttemptsCounter() {
-    /* do nothing by default */
-  }
+   public Market getMarket() {
+      return market;
+   }
 
-  public void incrementTrucoAttemptsCounter() {
-    /* do nothing by default */
-  }
+   public void setMarket(Market market) {
+      this.market = market;
+   }
 
-  public void clearSession() {
-    /* do nothing by default */
-  }
+   public Long getSupplierId() {
+      return supplierId;
+   }
 
-  public List<SessionError> getErrors() {
-    return crawlerSessionErrors;
-  }
+   public void setSupplierId(Long supplierId) {
+      this.supplierId = supplierId;
+   }
 
-  public void registerError(SessionError error) {
-    crawlerSessionErrors.add(error);
-  }
+   public String getTaskStatus() {
+      return taskStaus;
+   }
 
-  public String getQueueName() {
-    return queueName;
-  }
+   public void setTaskStatus(String taskStatus) {
+      this.taskStaus = taskStatus;
+   }
 
-  public void setQueueName(String queueName) {
-    this.queueName = queueName;
-  }
+   public int getVoidAttempts() {
+      /* returns -1 by default */
+      return -1;
+   }
 
-  public LettProxy getRequestProxy(String url) {
-    return requestProxyMap.get(url);
-  }
+   public int getTrucoAttempts() {
+      /* returns -1 by default */
+      return -1;
+   }
 
-  public void addRequestProxy(String url, LettProxy proxy) {
-    this.requestProxyMap.put(url, proxy);
-  }
+   public Object getProductPageResponse() {
+      return productPageResponse;
+   }
 
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
+   public void setProductPageResponse(Object productPageResponse) {
+      this.productPageResponse = productPageResponse;
+   }
 
-    sb.append("sessionId: " + sessionId + "\n");
-    sb.append("queueName: " + getQueueName() + "\n");
-    sb.append("url: " + originalURL + "\n");
-    sb.append("marketId: " + market.getNumber() + "\n");
+   public void incrementVoidAttemptsCounter() {
+      /* do nothing by default */
+   }
 
-    return sb.toString();
-  }
+   public void incrementTrucoAttemptsCounter() {
+      /* do nothing by default */
+   }
+
+   public void clearSession() {
+      /* do nothing by default */
+   }
+
+   public List<SessionError> getErrors() {
+      return crawlerSessionErrors;
+   }
+
+   public void registerError(SessionError error) {
+      crawlerSessionErrors.add(error);
+   }
+
+   public String getQueueName() {
+      return queueName;
+   }
+
+   public void setQueueName(String queueName) {
+      this.queueName = queueName;
+   }
+
+   public LettProxy getRequestProxy(String url) {
+      return requestProxyMap.get(url);
+   }
+
+   public void addRequestProxy(String url, LettProxy proxy) {
+      this.requestProxyMap.put(url, proxy);
+   }
+
+   @Override
+   public String toString() {
+      StringBuilder sb = new StringBuilder();
+
+      sb.append("sessionId: " + sessionId + "\n");
+      sb.append("queueName: " + getQueueName() + "\n");
+      sb.append("url: " + originalURL + "\n");
+      sb.append("marketId: " + market.getNumber() + "\n");
+
+      return sb.toString();
+   }
 
 }

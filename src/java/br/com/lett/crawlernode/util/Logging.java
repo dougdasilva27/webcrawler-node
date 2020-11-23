@@ -117,6 +117,11 @@ public class Logging {
             metadata.put("url", originalUrl);
          }
 
+         Long supplierId = session.getSupplierId();
+         if (supplierId != null) {
+            metadata.put("supplier_id", supplierId);
+         }
+
          metadata.put("session", session.getSessionId());
          metadata.put("session_type", session.getClass().getSimpleName());
          metadata.put("env", GlobalConfigurations.executionParameters.getEnvironment());
