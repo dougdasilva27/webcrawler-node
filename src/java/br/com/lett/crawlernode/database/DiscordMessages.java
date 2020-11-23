@@ -18,7 +18,7 @@ public class DiscordMessages {
 
    public static void reportPriceChanges(Session session, String msg, String author, String avatar) {
       try {
-         TemmieWebhook temmie = new TemmieWebhook("https://discordapp.com/api/webhooks/649664372368474125/lAkA0_qZAUux8FbDn20yKdMSX39egWDiwwhr12qj1SmAv1r-SAqVZuppBYSENNZZA_ES");
+         TemmieWebhook temmie = new TemmieWebhook("https://discord.com/api/webhooks/780417668830330922/U7ns_RyD1qhwpeysi46hNhbdLQP9fdB7aEftAkBZdrHxR4JIxsQoKfbO3tBI4LxU53RL");
          DiscordMessage dm = new DiscordMessage();
          dm.setUsername(author);
          dm.setAvatarUrl(avatar);
