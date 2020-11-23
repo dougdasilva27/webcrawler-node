@@ -158,7 +158,7 @@ abstract public class TrayCommerceCrawler extends Crawler {
             primaryImage);
   }
 
-  private String getImage(Document doc) {
+  protected String getImage(Document doc) {
     return CrawlerUtils
         .scrapSimplePrimaryImage(doc, IMAGES_SELECTOR, Collections.singletonList("href"),
             "https", IMAGES_HOST);
