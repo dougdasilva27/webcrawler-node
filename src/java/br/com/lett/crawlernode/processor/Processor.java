@@ -489,7 +489,7 @@ public class Processor {
                      "Ele aprendeu a economizar 50% na conta de luz"
             };
             quote = quotes[new Random().nextInt(quotes.length)];
-         } else if (discount > 15 && newProcessedProduct.getPrice() > 50) {
+         } else if (discount > 8 && newProcessedProduct.getPrice() > 30) {
             shouldSend = true;
             author = "Julius";
             avatar = "https://i.imgur.com/T65AjlE.png";
