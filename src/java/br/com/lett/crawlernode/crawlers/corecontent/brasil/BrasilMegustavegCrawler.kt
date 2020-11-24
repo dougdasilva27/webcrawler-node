@@ -34,8 +34,8 @@ class BrasilMegustavegCrawler(session: Session) : Crawler(session) {
             val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto", true)
             val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > ul > li", true)
             val description = CrawlerUtils.scrapElementsDescription(doc, listOf(".conteudo"))
-            val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumbs-vertical li > a", listOf("data-imagem-grande"), "http", "cdn.awsli.com.br")
-            val secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".thumbs-vertical li > a", listOf("data-imagem-grande"), "http", "cdn.awsli.com.br", primaryImage)
+            val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteiner-imagem a", listOf("href"), "http", "cdn.awsli.com.br")
+            val secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#carouselImagem ul.slides li a", listOf("data-imagem-grande"), "http", "cdn.awsli.com.br", primaryImage)
             val availability = doc.selectFirst(".disponivel") != null
             val stock = CrawlerUtils.scrapIntegerFromHtml(doc, ".qtde_estoque", true, null)
             val offers = if (availability) scrapOffers(doc) else Offers()
