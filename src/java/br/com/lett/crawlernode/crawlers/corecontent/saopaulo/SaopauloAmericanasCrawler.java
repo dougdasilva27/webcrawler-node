@@ -84,8 +84,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       }
       url.append(payload.toString());
 
-      Logging.printLogDebug(logger, session, "Link onde são feitos os crawlers:" + url);
-
       Request request = Request.RequestBuilder.create()
             .setUrl(url.toString())
             .build();

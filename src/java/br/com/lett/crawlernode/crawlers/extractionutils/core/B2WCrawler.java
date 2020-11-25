@@ -22,9 +22,11 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -100,6 +102,7 @@ public class B2WCrawler extends Crawler {
             .setUrl(url)
             .setCookies(cookies)
             .mustSendContentEncoding(false)
+            .setHeaders(headers)
             .setFetcheroptions(
                   FetcherOptionsBuilder.create()
                         .mustUseMovingAverage(false)
@@ -114,9 +117,20 @@ public class B2WCrawler extends Crawler {
                   )
             ).build();
 
-      String content = df.get(session, request).getBody();
 
-      if (content == null || content.isEmpty()) {
+      Response response = new JsoupDataFetcher().get(session, request);
+      String content = response.getBody();
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+            Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404)) {
+         request.setProxyServices(Arrays.asList(
+               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
+
          content = new ApacheDataFetcher().get(session, request).getBody();
       }
 

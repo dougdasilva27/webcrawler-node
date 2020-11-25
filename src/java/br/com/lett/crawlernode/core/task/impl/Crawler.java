@@ -21,6 +21,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -132,6 +133,8 @@ public class Crawler extends Task {
          dataFetcher = new JavanetDataFetcher();
       } else if (config.getFetcher() == FetchMode.FETCHER) {
          dataFetcher = new FetcherDataFetcher();
+      } else if (config.getFetcher() == FetchMode.JSOUP) {
+         dataFetcher = new JsoupDataFetcher();
       }
    }
 
