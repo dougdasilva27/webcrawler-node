@@ -35,7 +35,7 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
     JSONObject searchJson = fetchJsonResponse();
 
     this.totalProducts = searchJson.optInt("size");
-    JSONArray products = searchJson.optJSONArray("products");
+    JSONArray products = searchJson.getJSONArray("products");
 
     if (!products.isEmpty()) {
 
