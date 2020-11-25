@@ -2,7 +2,8 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
 
 public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
 
@@ -12,15 +13,13 @@ public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    pageSize = 30;
 
     currentDoc =
         fetchDocument(
             "https://perfumeriaspigmento.com.ar/catalogsearch/result/?p="
                 + currentPage
                 + "&q="
-                + keywordEncoded
-                + "&product_list_limit=30");
+                + keywordEncoded);
 
     if (this.totalProducts == 0) {
       setTotalProducts();
@@ -48,9 +47,18 @@ public class ArgentinaPigmentoCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts =
-        MathUtils.parseInt(
-            currentDoc.selectFirst("#toolbar-amount .toolbar-number:nth-child(3)").text());
+
+     Element element = this.currentDoc.select("#toolbar-amount .toolbar-number:nth-child(3)").first();
+
+     int totalProdutos = 0;
+
+     if (element != null) {
+        totalProdutos = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#toolbar-amount .toolbar-number:nth-child(3)", false, 0);
+     } else{
+        totalProdutos = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#toolbar-amount .toolbar-number", false, 0);
+     }
+
+     this.totalProducts = totalProdutos;
     this.log("Total da busca: " + this.totalProducts);
   }
 }
