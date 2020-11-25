@@ -57,8 +57,8 @@ public abstract class MartinsKeywords extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://busca.martinsatacado.com.br/search//warehouse/seller/warehouse/64?query="
-        + this.keywordWithoutAccents.replace(" ", "%20") + "&page=" + this.currentPage;
+    String url = "https://www.martinsatacado.com.br/biggysearch/?text=/search?query="
+        + this.keywordWithoutAccents.replace(" ", "%20") + "&operator=and&fuzzy=0&page=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocumentWithWebDriver(url);
@@ -94,7 +94,7 @@ public abstract class MartinsKeywords extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".biggy-search__count", null, null, true, true, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".fr.obs1.reslts", null, null, true, true, 0);
     this.log("Total da busca: " + this.totalProducts);
   }
 }
