@@ -431,6 +431,8 @@ public class B2WCrawler extends Crawler {
 
       JSONArray offersArray = offersJson.has(sku) ? offersJson.getJSONArray(sku) : skuJson.optJSONArray("offers");
 
+      boolean twoPositions = false;
+
       if (offersArray != null && !offersArray.isEmpty()) {
          Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
 
@@ -443,6 +445,11 @@ public class B2WCrawler extends Crawler {
 
             Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i == 0 ? 1 : null;
+
+            if (i > 0 && sellerName.equalsIgnoreCase("b2w")) {
+               sellersPagePosition = 2;
+               twoPositions = true;
+            }
 
             JSONObject pricesJson = info.has("defaultPrice") ? info : SaopauloB2WCrawlersUtils.extractPricesJson(info);
 
@@ -465,16 +472,15 @@ public class B2WCrawler extends Crawler {
             // Sellers page positios is order by price, in this map, price is the value
             Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
-            int position = 2;
+            int position = twoPositions ? 3 : 2;
 
             for (Entry<String, Double> entry : sortedMap.entrySet()) {
                for (Offer offer : offers.getOffersList()) {
-                  if (offer.getInternalSellerId().equals(entry.getKey())) {
+                  if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
                      offer.setSellersPagePosition(position);
+                     position++;
                   }
                }
-
-               position++;
             }
          }
       }
@@ -490,6 +496,8 @@ public class B2WCrawler extends Crawler {
 
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
 
+      boolean twoPositions = false;
+
       // Getting informations from sellers.
       if (offersJson.has(internalId)) {
          JSONArray sellerInfo = offersJson.getJSONArray(internalId);
@@ -503,8 +511,14 @@ public class B2WCrawler extends Crawler {
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
                String internalSellerId = info.get("id").toString();
-               Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
-               Integer sellersPagePosition = null;
+               Integer mainPagePosition = i == 0 ? 1 : null;
+               Integer sellersPagePosition = i == 0 ? 1 : null;
+
+               if (i > 0 && name.equalsIgnoreCase("b2w")) {
+                  sellersPagePosition = 2;
+                  twoPositions = true;
+               }
+
                Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice, false);
 
                Offer offer = OfferBuilder.create()
@@ -526,16 +540,15 @@ public class B2WCrawler extends Crawler {
          // Sellers page positios is order by price, in this map, price is the value
          Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
-         int position = 1;
+         int position = twoPositions ? 3 : 2;
 
          for (Entry<String, Double> entry : sortedMap.entrySet()) {
             for (Offer offer : offers.getOffersList()) {
-               if (offer.getInternalSellerId().equals(entry.getKey())) {
+               if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
                   offer.setSellersPagePosition(position);
+                  position++;
                }
             }
-
-            position++;
          }
       }
 
