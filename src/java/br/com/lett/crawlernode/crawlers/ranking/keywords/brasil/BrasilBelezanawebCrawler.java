@@ -1,10 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import java.util.Collections;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -36,10 +42,7 @@ public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
 
         JSONObject json = CrawlerUtils.stringToJson(e.attr("data-event"));
         String internalId = json.optString("sku", null);
-        Element urlElem = e.selectFirst(".showcase-item-buy [data-href]");
-        String productUrl = CrawlerUtils
-            .sanitizeUrl(urlElem, Collections.singletonList("data-href"), "https:",
-                "www.belezanaweb.com.br");
+        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.showcase-item-title", "href");
 
         saveDataProduct(internalId, null, productUrl);
 
@@ -72,5 +75,13 @@ public class BrasilBelezanawebCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Total da busca: " + this.totalProducts);
+  }
+
+  @Override
+   protected Document fetchDocument(String url){
+
+     Request request = Request.RequestBuilder.create().setUrl(url).build();
+
+     return Jsoup.parse(new JavanetDataFetcher().get(session, request).getBody());
   }
 }
