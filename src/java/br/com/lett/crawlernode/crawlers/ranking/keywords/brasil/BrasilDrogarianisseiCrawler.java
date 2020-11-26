@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Element;
@@ -32,7 +33,7 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
         this.totalProducts = productsJson.optInt("quantidade");
      }
 
-     JSONArray products = productsJson.optJSONArray("produtos");
+     JSONArray products = JSONUtils.getJSONArrayValue(productsJson,"produtos");
 
      if (!products.isEmpty()) {
 
@@ -42,7 +43,7 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
            String internalId = product.optString("_id");
 
-           String internalPid = product.optString("_id");
+           String internalPid = internalId;
 
            String productUrl = scrapProductUrl(product);
 
