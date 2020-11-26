@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,7 +36,7 @@ public class BrasilGazinCrawler extends CrawlerRankingKeywords {
     JSONObject searchJson = fetchJsonResponse();
 
     this.totalProducts = searchJson.optInt("size");
-    JSONArray products = searchJson.getJSONArray("products");
+    JSONArray products = JSONUtils.getJSONArrayValue(searchJson, "products");
 
     if (!products.isEmpty()) {
 
