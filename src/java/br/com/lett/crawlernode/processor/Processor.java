@@ -454,7 +454,9 @@ public class Processor {
       // an instance of mongo panel must be passed, so we can schedule url to take screenshot
       newProcessedProduct.registerChanges(previousProcessedProduct);
 
-      if (session.getSupplierId() != null && session.getSupplierId() == 1471l &&
+      List<Long> suppliers = Arrays.asList(1471l, 174l, 1470l, 21l, 143l, 1356l, 1078l);
+
+      if (session.getSupplierId() != null && suppliers.contains(session.getSupplierId()) &&
             newProcessedProduct.getPrice() != null &&
             previousProcessedProduct != null &&
             previousProcessedProduct.getPrice() != null &&
@@ -489,7 +491,7 @@ public class Processor {
                      "Ele aprendeu a economizar 50% na conta de luz"
             };
             quote = quotes[new Random().nextInt(quotes.length)];
-         } else if (discount > 5 && newProcessedProduct.getPrice() > 40) {
+         } else if (discount > 4 && newProcessedProduct.getPrice() > 25) {
             shouldSend = true;
             author = "Julius";
             avatar = "https://i.imgur.com/T65AjlE.png";
