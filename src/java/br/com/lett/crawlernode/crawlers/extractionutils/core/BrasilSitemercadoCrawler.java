@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -379,7 +381,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
 
       Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(loadPayload).build();
-      Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
+      Map<String, String> responseHeaders = new ApacheDataFetcher().post(session, request).getHeaders();
 
       JSONObject jsonObject = responseHeaders != null ? JSONUtils.stringToJson(responseHeaders.get("sm-token")) : new JSONObject();
       // jsonObject.remove("IdLoja");
