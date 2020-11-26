@@ -16,7 +16,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
@@ -107,7 +106,7 @@ public abstract class CNOVANewCrawler extends Crawler {
    protected Response fetchPage(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("accept-encoding", "gzip, deflate, br");
+      headers.put("accept-encoding", "");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
       headers.put("cache-control", "no-cache");
       headers.put("pragma", "no-cache");
@@ -129,7 +128,8 @@ public abstract class CNOVANewCrawler extends Crawler {
             .setProxyservice(
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+                        ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+                        ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
                   )
             ).build();
 
@@ -153,7 +153,7 @@ public abstract class CNOVANewCrawler extends Crawler {
                .setProxyservice(
                      Arrays.asList(
                            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                           ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+                           ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
                      )
                ).build();
 
@@ -519,11 +519,8 @@ public abstract class CNOVANewCrawler extends Crawler {
       Object id = productJson.optQuery("/sku/id");
       if (id != null) {
          String url = "https://www.pontofrio-imagens.com.br/html/conteudo-produto/73/" + id + "/" + id + ".html";
-         Request req = RequestBuilder.create()
-               .setUrl(url)
-               .build();
 
-         description.append(new ApacheDataFetcher().get(session, req).getBody());
+         description.append(fetchPage(url).getBody());
       }
 
       return Normalizer.normalize(description.toString(), Normalizer.Form.NFD).replaceAll("[^\n\t\r\\p{Print}]", "");
