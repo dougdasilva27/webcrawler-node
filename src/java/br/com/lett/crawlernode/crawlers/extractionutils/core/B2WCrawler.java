@@ -22,7 +22,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -112,13 +112,13 @@ public class B2WCrawler extends Crawler {
             ).setProxyservice(
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.BUY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR
+                        ProxyCollection.NETNUT_RESIDENTIAL_BR,
+                        ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
                   )
             ).build();
 
 
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = new ApacheDataFetcher().get(session, request);
       String content = response.getBody();
 
       int statusCode = response.getLastStatusCode();
@@ -127,11 +127,11 @@ public class B2WCrawler extends Crawler {
             Integer.toString(statusCode).charAt(0) != '3'
             && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
-               ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
+               ProxyCollection.BUY));
 
-         content = new ApacheDataFetcher().get(session, request).getBody();
+         content = new FetcherDataFetcher().get(session, request).getBody();
       }
 
       return content;
