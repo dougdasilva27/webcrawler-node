@@ -43,13 +43,11 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
            String internalId = product.optString("_id");
 
-           String internalPid = internalId;
-
            String productUrl = scrapProductUrl(product);
 
-           saveDataProduct(internalId, internalPid, productUrl);
+           saveDataProduct(internalId, internalId, productUrl);
 
-           this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+           this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
            if (this.arrayProducts.size() == productsLimit)
               break;
 
