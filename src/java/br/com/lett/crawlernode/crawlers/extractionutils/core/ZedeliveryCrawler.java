@@ -30,6 +30,7 @@ import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
+import org.jsoup.nodes.Element;
 
 public abstract class ZedeliveryCrawler extends Crawler {
 
@@ -112,28 +113,33 @@ public abstract class ZedeliveryCrawler extends Crawler {
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
+
       List<Product> products = new ArrayList<>();
 
-      JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
+      Element el = doc.selectFirst("#__NEXT_DATA__");
+
+      if (el == null) {
+         return products;
+      }
+
+      JSONObject jsonObject = JSONUtils.stringToJson(el.data());
       JSONObject props = JSONUtils.getJSONValue(jsonObject, "props");
       JSONObject pageProps = JSONUtils.getJSONValue(props, "pageProps");
       String productId = pageProps.optString("productId");
 
       JSONObject apiJson = fetchJson(productId);
 
-      JSONObject data = apiJson.optJSONObject("data");
-      if (data != null) {
-         JSONObject loadProduct = data.optJSONObject("loadProduct");
+      JSONObject loadProduct = JSONUtils.getValueRecursive(apiJson,"data.loadProduct", JSONObject.class);
+
+      if (loadProduct != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = loadProduct.optString("id");
-         String internalPId = internalId;
          String name = loadProduct.optString("displayName");
          String description = loadProduct.optString("description");
-         JSONArray imageArray = loadProduct.optJSONArray("images");
-         String primaryImage = imageArray.getString(0);
-         String secondaryImage = scrapSecondaryImages(imageArray, primaryImage);
+         JSONArray imageArray = JSONUtils.getJSONArrayValue(loadProduct, "images");
+         String primaryImage = imageArray.optString(0);
+         List<String> secondaryImage = scrapSecondaryImages(imageArray, primaryImage);
 
          JSONObject categories = loadProduct.optJSONObject("category");
          String category = categories.optString("displayName");
@@ -141,7 +147,7 @@ public abstract class ZedeliveryCrawler extends Crawler {
 
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
                .setInternalId(internalId)
-               .setInternalPid(internalPId)
+               .setInternalPid(internalId)
                .setName(name)
                .setCategory1(category)
                .setPrimaryImage(primaryImage)
@@ -171,10 +177,11 @@ public abstract class ZedeliveryCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
-      JSONObject discountPrice = product.optJSONObject("applicableDiscount");
-      JSONObject prices = product.optJSONObject("price");
 
-      Double spotlightPrice = discountPrice != null ? discountPrice.optDouble("finalValue") : prices.optDouble("min");
+      JSONObject discountPrice = product.optJSONObject("applicableDiscount");
+      JSONObject prices = JSONUtils.getJSONValue(product, "price");
+
+      double spotlightPrice = discountPrice != null ? discountPrice.optDouble("finalValue") : prices.optDouble("min");
       spotlightPrice = Math.round(spotlightPrice * 100) / 100.0;
 
       Double priceFrom = prices.optDouble("min") != spotlightPrice ? prices.optDouble("min") : null;
@@ -209,21 +216,16 @@ public abstract class ZedeliveryCrawler extends Crawler {
       return creditCards;
    }
 
-   private String scrapSecondaryImages(JSONArray imageArray, String primaryImage) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> scrapSecondaryImages(JSONArray imageArray, String primaryImage) {
+      List<String> secondaryImagesArray = new ArrayList<>();
 
       for (int i = 1; i < imageArray.length(); i++) {
-         String image = imageArray.getString(i);
+         String image = imageArray.optString(i);
          if (!image.equals(primaryImage)) {
-            secondaryImagesArray.put(image);
+            secondaryImagesArray.add(image);
          }
       }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-      return secondaryImages;
+      return secondaryImagesArray;
    }
 
    public static class ZedeliveryInfo {
