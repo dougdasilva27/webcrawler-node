@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -107,12 +108,13 @@ public class PortugalAuchanCrawler extends Crawler {
 
       List<DataNode> dataNodes = element != null ? element.dataNodes() : null;
       String scriptStar = dataNodes.isEmpty() ? "" : dataNodes.get(0).getWholeData();
+      String valueLocate = "var ratingStar =";
 
-      if (!scriptStar.isEmpty()) {
-         String valueLocate = "var ratingStar =";
+      if (scriptStar.contains(valueLocate)) {
          int indexStart = scriptStar.indexOf(valueLocate) + valueLocate.length();
          int indexEnd = scriptStar.indexOf(scriptStar.substring(indexStart,scriptStar.indexOf(";",indexStart))) + valueLocate.length();
-         averageRating = Double.parseDouble(scriptStar.substring(indexStart,indexEnd ).replaceAll("[^0-9]", ""));
+         String value = scriptStar.substring(indexStart,indexEnd ).replaceAll("[^0-9]", "");
+         averageRating = MathUtils.parseDoubleWithDot(value);
       }
       totalReviews = CrawlerUtils.scrapIntegerFromHtml(doc, "#numberOfVotes", false, 0);
 
