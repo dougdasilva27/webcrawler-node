@@ -454,7 +454,7 @@ public class Processor {
       // an instance of mongo panel must be passed, so we can schedule url to take screenshot
       newProcessedProduct.registerChanges(previousProcessedProduct);
 
-      List<Long> suppliers = Arrays.asList(1471l, 174l, 1470l, 21l, 1356l, 1078l);
+      List<Long> suppliers = Arrays.asList(1471l, 174l, 1470l, 21l, 153l, 1356l, 1078l);
 
       if (session.getSupplierId() != null && suppliers.contains(session.getSupplierId()) &&
             newProcessedProduct.getPrice() != null &&
