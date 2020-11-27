@@ -1,20 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.Arrays;
-import java.util.List;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -25,6 +15,15 @@ import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.pricing.BankSlip;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class CarrefourCrawler extends VTEXNewScraper {
 
@@ -32,8 +31,10 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    public CarrefourCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JAVANET);
    }
+
+   protected abstract String getLocationToken();
 
    @Override
    protected String scrapInternalpid(Document doc) {
@@ -50,54 +51,34 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       return internalPid;
    }
 
-   protected abstract String getLocation();
-
    protected String fetchPage(String url) {
 
+      Map<String, String> headers = new HashMap<>();
+
+      headers.put("authority", "mercado.carrefour.com.br");
+      headers.put("accept", "*/*");
+      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36");
+      headers.put("referer", session.getOriginalURL());
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("cookie", "vtex_segment="+getLocationToken());
+
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .setFetcheroptions(
-                  FetcherOptionsBuilder.create()
-                        .mustUseMovingAverage(false)
-                        .mustRetrieveStatistics(true)
-                        .build())
-            .setProxyservice(Arrays.asList(
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                  ProxyCollection.LUMINATI_SERVER_BR))
-            .build();
+         .setUrl(url)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .mustSendContentEncoding(false)
+         .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .build())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY)
+         )
+         .build();
 
-      int attempts = 0;
       Response response = this.dataFetcher.get(session, request);
-      String body = response.getBody();
 
-      Integer statusCode = 0;
-      List<RequestsStatistics> requestsStatistics = response.getRequests();
-      if (!requestsStatistics.isEmpty()) {
-         statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
-      }
-
-      boolean retry = statusCode == null ||
-            (Integer.toString(statusCode).charAt(0) != '2'
-                  && Integer.toString(statusCode).charAt(0) != '3'
-                  && statusCode != 404);
-
-      // If fetcher don't return the expected response we try with apache
-      // If apache do the same, we try with javanet
-      if (retry) {
-         do {
-            if (attempts == 0) {
-               body = new ApacheDataFetcher().get(session, request).getBody();
-            } else if (attempts == 1) {
-               body = new JavanetDataFetcher().get(session, request).getBody();
-            }
-
-            attempts++;
-         } while (attempts < 2 && (body == null || body.isEmpty()));
-      }
-
-      return body;
+      return response.getBody();
    }
 
    @Override
@@ -109,7 +90,9 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       JSONObject productApi = new JSONObject();
 
-      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
+      String path = session.getOriginalURL().replace("https://mercado.carrefour.com.br/", "");
+
+      String url = "https://mercado.carrefour.com.br/api/catalog_system/pub/products/search/" + path;
 
       String body = fetchPage(url);
       JSONArray array = CrawlerUtils.stringToJsonArray(body);
@@ -119,17 +102,6 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       return productApi;
-   }
-
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      super.handleCookiesBeforeFetch();
-
-      BasicClientCookie cookie = new BasicClientCookie("userLocationData", getLocation());
-      cookie.setDomain(getHomePage().replace("https://", "").replace("/", ""));
-      cookie.setPath("/");
-      this.cookies.add(cookie);
    }
 
    @Override
@@ -186,9 +158,9 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       return BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(bankSlipPrice)
-            .setOnPageDiscount(discount)
-            .build();
+         .setFinalPrice(bankSlipPrice)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    @Override
