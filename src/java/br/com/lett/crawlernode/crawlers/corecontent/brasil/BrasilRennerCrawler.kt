@@ -44,7 +44,6 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
             return unavailableProducts(doc)
          }
 
-
          return mutableListOf()
       }
 
@@ -68,7 +67,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
          val variants = mutableListOf<String>()
 
-         jsonProduct.getJSONArray("skuAttributes")
+         JSONUtils.getJSONArrayValue(jsonProduct,"skuAttributes")
             .filter {
                val i = it as JSONObject
                val c = i.optString("code")
@@ -129,10 +128,10 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
       return ids
    }
 
-   private fun scrapInstallments(doc: Element): Installments {
+   private fun scrapInstallments(doc: Element?): Installments {
       val installments = Installments()
 
-      doc.select("table tbody tr").map {
+      doc?.select("table tbody tr")?.map {
          val text = it.text().replace("/^(<strong>|</strong>)\$/", "")
          val pair = CrawlerUtils.crawlSimpleInstallmentFromString(text, "de", "s/ juros", true)
 
@@ -154,11 +153,11 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
       val dataOffers = getInstallmentsFromApi(productId, skuId)
 
-      val priceText = doc.getString("listPriceFormatted")
-      val spotlightText = doc.getString("salePriceFormatted")
+      val priceText = doc.optString("listPriceFormatted")
+      val spotlightText = doc.optString("salePriceFormatted")
 
       var priceFrom = MathUtils.parseDoubleWithComma(priceText)
-      val spotlightPrice = if (doc.getDouble("percentDiscount") > 0) {
+      val spotlightPrice = if (doc.optDouble("percentDiscount") > 0) {
          MathUtils.parseDoubleWithComma(spotlightText)
       } else {
          priceFrom
@@ -171,8 +170,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
          val sales = mutableListOf<String>()
 
-         sales addNonNull doc.getDouble("percentDiscount").toString()
-
+         sales addNonNull doc.optDouble("percentDiscount").toString()
 
          val rennerCard = CreditCardBuilder()
             .setBrand("Cartão Renner")
@@ -226,7 +224,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
    private fun scrapImages(doc: JSONObject): List<String> {
 
-      return doc.getJSONArray("mediaSets").map { "http:${(it as JSONObject).getString("mediumImageUrl")}" }
+      return JSONUtils.getJSONArrayValue(doc, "mediaSets").map { "http:${(it as JSONObject).optString("mediumImageUrl")}" }
    }
 
    private fun getProductFromApi(productId: String, skuId: String): JSONObject {
@@ -257,7 +255,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
    private fun unavailableProducts(doc: Document): MutableList<Product> {
 
-      val imageAtt = doc.selectFirst(".product .product_404 .image-product").attr("src")
+      val imageAtt = doc.selectFirst(".product .product_404 .image-product")?.attr("src") ?: ""
 
       if (imageAtt.isEmpty()) {
          return mutableListOf()
@@ -267,7 +265,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
       val internalId = internalPidFromImageLink(primaryImage)
 
-      val name = doc.selectFirst(".product .product_404 .content-wrapper h1").text()
+      val name = doc.selectFirst(".product .product_404 .content-wrapper h1")?.text()
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)
