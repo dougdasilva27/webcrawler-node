@@ -194,7 +194,7 @@ public abstract class CNOVANewCrawler extends Crawler {
             String internalId = internalPid + "-" + skuJson.optString("id");
             List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(skuJson.optJSONArray("zoomedImages"),
                   "url", null, "https", "www." + getStore() + "-imagens.com.br", session);
-            String primaryImage = images.remove(0);
+            String primaryImage = images.isEmpty() ? null : images.remove(0);
             String secondaryImages = CommonMethods.listToJSONArray(images).toString();
             Offers offers = scrapOffers(skuJson.optString("id"));
 
