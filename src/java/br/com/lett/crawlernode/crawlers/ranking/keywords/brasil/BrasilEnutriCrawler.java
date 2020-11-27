@@ -39,16 +39,16 @@ public class BrasilEnutriCrawler extends CrawlerRankingKeywords {
 
     this.currentDoc = fetchDocument(url, cookies);
 
-    Elements products = this.currentDoc.select(".category-products .item-area");
+    Elements products = this.currentDoc.select(".main .products ul li");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
-        setTotalProducts();
+        this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".amount .total", true, 0);
       }
 
       for (Element e : products) {
-        String internalId = crawlInternalId(e);
-        String productUrl = crawlProductUrl(e);
+        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image img", "product-id");
+        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".products__header a", "href");
 
         saveDataProduct(internalId, null, productUrl);
 
@@ -64,54 +64,5 @@ public class BrasilEnutriCrawler extends CrawlerRankingKeywords {
     }
 
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    JSONObject infoJson = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "script[type=\"text/javascript\"]", "vardigitalDataTemp=", ";", true);
-
-    if (infoJson.has("listing")) {
-      JSONObject listing = infoJson.getJSONObject("listing");
-
-      if (listing.has("resultCount")) {
-        String text = listing.get("resultCount").toString().replaceAll("[^0-9]", "").trim();
-
-        if (!text.isEmpty()) {
-          this.totalProducts = Integer.parseInt(text);
-          this.log("Total da busca: " + this.totalProducts);
-        }
-      }
-    }
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    return this.currentDoc.select(".i-next").first() != null;
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    Element idElement = e.select(".configurable-actions").first();
-    if (idElement != null) {
-      internalId = CommonMethods.getLast(idElement.attr("id").split("-"));
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.select(".product-name > a").first();
-    if (url != null) {
-      productUrl = url.attr("href");
-
-      if (!productUrl.contains("enutri.com")) {
-        productUrl = ("https://www.enutri.com.br/" + productUrl).replace(".br//", ".br/");
-      }
-    }
-
-    return productUrl;
   }
 }
