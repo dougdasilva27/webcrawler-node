@@ -54,22 +54,22 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       if (isProductPage(doc)) {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "data[data-product-id]", "value");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info__title", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image .product-featured-image",
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "ul.media-gallery__list li img",
              Collections.singletonList(
-                 "data-product-image-zoom"),
+                 "src"),
                "https",
                "images.madeiramadeira.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#product-images-desktop .product-slider-thumbs div[data-image-zoom]",
-             Collections.singletonList("data-image-zoom"), "https", "images.madeiramadeira.com.br",
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "ul.media-gallery__list li img",
+             Collections.singletonList("src"), "https", "images.madeiramadeira.com.br",
                primaryImage);
 
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
          String description = CrawlerUtils.scrapSimpleDescription(doc,
-             Collections.singletonList("#product-attributes-tab-information .product-description"));
+             Collections.singletonList(".tab__content"));
 
-         String availableEl = doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div") != null ? doc.selectFirst("[data-product-info] .section-buy .button-group.button-purchase div").toString() : "";
+         String availableEl = doc.selectFirst("#product-buy-button") != null ? doc.selectFirst("#product-buy-button").toString() : "";
          Offers offers = availableEl.contains("Comprar")? scrapOffers(doc) : new Offers();
 
          //identificamos uma mudança de internalId no mm e pedimos que reunifiquem essa loja
@@ -103,9 +103,16 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       Offers offers = new Offers();
 
       final String regex = "(?i)madeiramadeira\\s?|madeira?[-]?madeira";
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".txt-incash-value", null, false, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.section-price > p.text > del", null, false, ',', session);
-      Pair<Integer, Float> pairInst = CrawlerUtils.crawlSimpleInstallment(".installment-payment-info-installments", doc, false, "x");
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-prices__box .product-prices__big-price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-prices__box .helper--has-text-large", null, false, ',', session);
+      Pair<Integer, Float> pairInst = CrawlerUtils.crawlSimpleInstallment("span.helper--has-text-medium:nth-of-type(2)", doc, true, "x");
+      Double creditCardPrice;
+
+      if(doc.selectFirst(".product__buybox .helper--has-text-medium .helper--has-text-bold") != null){
+         creditCardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product__buybox  .helper--has-text-medium .helper--has-text-bold", null, false, ',', session);
+      } else {
+         creditCardPrice = price;
+      }
 
       Pricing pricing = PricingBuilder.create()
           .setSpotlightPrice(price)
@@ -113,14 +120,15 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
           .setBankSlip(BankSlipBuilder.create()
               .setFinalPrice(price)
               .build())
-          .setCreditCards(new CreditCards(scrapCards(pairInst, price)))
+          .setCreditCards(new CreditCards(scrapCards(pairInst, creditCardPrice)))
           .build();
 
+
       List<String> sales = new ArrayList<>();
-      Element saleElem = doc.selectFirst("product-image-seal-promo");
+      Element saleElem = doc.selectFirst(".product-flag,.blackfriday-flags");
       if (saleElem != null) sales.add(saleElem.wholeText().trim());
 
-      String sellerName = doc.selectFirst(".seller-name").text();
+      String sellerName = doc.selectFirst(".product-info__seller strong").text();
 
       String url = session.getOriginalURL().replace(HOME_PAGE, HOME_PAGE + "/parceiros/");
       Response response = dataFetcher.get(session, RequestBuilder.create().setCookies(cookies).setUrl(url).build());
