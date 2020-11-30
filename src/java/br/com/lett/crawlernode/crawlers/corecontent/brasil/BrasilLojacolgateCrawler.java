@@ -137,7 +137,7 @@ public class BrasilLojacolgateCrawler extends Crawler {
                Float price = CrawlerUtils.scrapFloatPriceFromHtml(sku, null, "data-formatted", false, ',', session);
                Prices prices = scrapVariationPrices(sku, price);
                Integer stock = CrawlerUtils.scrapIntegerFromHtmlAttr(sku, null, "data-maxqty", 0);
-               boolean available = sku.hasAttr("data-stock") && sku.attr("data-stock").equalsIgnoreCase("inStock");
+               boolean available = !sku.attr("data-stock").equalsIgnoreCase("outOfStock");
                List<String> eans = Arrays.asList(internalId);
 
                // Creating the product
