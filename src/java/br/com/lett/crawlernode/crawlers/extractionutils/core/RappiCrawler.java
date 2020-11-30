@@ -304,9 +304,13 @@ public abstract class RappiCrawler extends Crawler {
       JSONArray images = JSONUtils.getJSONArrayValue(json, "images");
 
       if (!images.isEmpty()) {
-         primaryImage = images.getString(0);
-      } else {
-         primaryImage = JSONUtils.getValueRecursive(json, "product.image", String.class);
+         if(images.length() > 1){
+            primaryImage = images.getString(1);
+         } else {
+            primaryImage = images.getString(0);
+         }
+      } else{
+         return null;
       }
 
       return CrawlerUtils.completeUrl(primaryImage, "https",  getImagePrefix());
