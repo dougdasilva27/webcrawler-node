@@ -1,22 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.RatingsReviews;
-import models.pricing.Pricing;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXScraper;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
+import models.RatingsReviews;
+import models.pricing.Pricing;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-public class BrasilBrastempCrawler extends VTEXNewScraper {
+public class BrasilBrastempCrawler extends VTEXScraper {
 
    private static final String HOME_PAGE = "https://loja.brastemp.com.br/";
    private static final List<String> SELLERS = Arrays.asList("Whirlpool", "Consul", "Brastemp");
@@ -34,6 +33,29 @@ public class BrasilBrastempCrawler extends VTEXNewScraper {
    protected List<String> getMainSellersNames() {
       return SELLERS;
    }
+
+   @Override
+   protected String scrapInternalpid(Document doc) {
+      String internalPid = null;
+
+      JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "__STATE__=", null, true, true);
+
+      for (String key : stateJson.keySet()) {
+         Object obj = stateJson.opt(key);
+
+         if (obj instanceof JSONObject) {
+            JSONObject productJson = (JSONObject) obj;
+
+            if (productJson.has("productId")) {
+               internalPid = productJson.optString("productId", null);
+               break;
+            }
+         }
+      }
+
+      return internalPid;
+   }
+
 
    @Override
    protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
