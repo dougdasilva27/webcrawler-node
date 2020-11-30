@@ -43,15 +43,15 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
          return Document(session.originalURL)
       }
 
-      webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session)
+      webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,false, session)
 
       log("waiting home page")
 
-      webdriver.waitForElement("button.login", 25)
+      webdriver.waitForElement("button.login", 40)
 
       webdriver.clickOnElementViaJavascript("button.login", 2000)
 
-      webdriver.waitForElement(".access-login input[name=email]", 25)
+      webdriver.waitForElement(".access-login input[name=email]", 40)
 
       webdriver.sendToInput(".access-login input[name=email]", login, 100)
 
