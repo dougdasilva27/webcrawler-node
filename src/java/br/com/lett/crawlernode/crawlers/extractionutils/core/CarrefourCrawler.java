@@ -67,10 +67,6 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
          .setHeaders(headers)
          .setSendUserAgent(false)
          .mustSendContentEncoding(false)
-         .setFetcheroptions(
-            FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .build())
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY)
          )
