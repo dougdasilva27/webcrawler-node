@@ -29,11 +29,11 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
          log("waiting home page")
 
-         webdriver.waitForElement("button.login", 25)
+         webdriver.waitForElement("button.login", 40)
 
          webdriver.clickOnElementViaJavascript("button.login", 2000)
 
-         webdriver.waitForElement(".access-login input[name=email]", 25)
+         webdriver.waitForElement(".access-login input[name=email]", 40)
 
          webdriver.sendToInput(".access-login input[name=email]", login, 100)
 
