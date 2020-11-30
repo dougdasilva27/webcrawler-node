@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -67,14 +69,42 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
          .setHeaders(headers)
          .setSendUserAgent(false)
          .mustSendContentEncoding(false)
+         .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .build())
          .setProxyservice(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY)
          )
          .build();
 
-      Response response = this.dataFetcher.get(session, request);
+      Response response = alternativeFetch(request);
 
       return response.getBody();
+   }
+
+   Response alternativeFetch(Request request) {
+      List<DataFetcher> dataFetchers = Arrays.asList(new FetcherDataFetcher(), new ApacheDataFetcher(), new JavanetDataFetcher());
+
+      Response response = null;
+
+      for (DataFetcher localDataFetcher: dataFetchers) {
+         response = localDataFetcher.get(session, request);
+         if (checkResponse(response)) {
+            return response;
+         }
+      }
+
+      return response;
+   }
+
+   boolean checkResponse(Response response) {
+      int statusCode = response.getLastStatusCode();
+
+      return  (Integer.toString(statusCode).charAt(0) == '2'
+            || Integer.toString(statusCode).charAt(0) == '3'
+            || statusCode == 404);
    }
 
    @Override
