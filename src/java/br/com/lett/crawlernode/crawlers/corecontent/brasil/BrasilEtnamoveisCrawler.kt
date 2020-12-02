@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card.*
 import br.com.lett.crawlernode.core.models.Product
@@ -18,14 +17,10 @@ import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
-import java.util.HashMap
+import java.util.*
 import kotlin.math.roundToInt
 
 class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
-
-   init {
-      config.fetcher = FetchMode.FETCHER
-   }
 
    private val homePage = "https://www.etna.com.br"
    override fun shouldVisit(): Boolean {
