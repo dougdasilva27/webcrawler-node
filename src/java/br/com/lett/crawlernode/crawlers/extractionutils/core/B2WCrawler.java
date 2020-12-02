@@ -20,9 +20,9 @@ import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -111,14 +111,15 @@ public class B2WCrawler extends Crawler {
                         .build()
             ).setProxyservice(
                   Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
                         ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                        ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+                        ProxyCollection.NETNUT_RESIDENTIAL_BR,
+                        ProxyCollection.NETNUT_RESIDENTIAL_ES,
+                        ProxyCollection.INFATICA_RESIDENTIAL_BR
                   )
             ).build();
 
 
-      Response response = new ApacheDataFetcher().get(session, request);
+      Response response = new JsoupDataFetcher().get(session, request);
       String content = response.getBody();
 
       int statusCode = response.getLastStatusCode();
