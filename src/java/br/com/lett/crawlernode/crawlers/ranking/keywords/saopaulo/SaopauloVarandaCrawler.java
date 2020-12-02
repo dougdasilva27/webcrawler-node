@@ -17,7 +17,7 @@ public class SaopauloVarandaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 30;
 
       this.log("Página " + this.currentPage);
-      String url = "https://www.varanda.com.br/resultado-busca/" + this.keywordWithoutAccents + ".html?p=" + this.currentPage;
+      String url = "https://www.varanda.com.br/catalogsearch/result/index/?p="+this.currentPage+"&q="+this.keywordWithoutAccents;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
