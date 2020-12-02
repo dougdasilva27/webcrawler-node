@@ -30,6 +30,7 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilEsalpetCrawler extends Crawler {
 
@@ -132,6 +133,8 @@ public class BrasilEsalpetCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-final span.total", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-discount.mr-4 span", null, true, ',', session);
+
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
             .setFinalPrice(spotlightPrice)
@@ -139,6 +142,7 @@ public class BrasilEsalpetCrawler extends Crawler {
 
       return PricingBuilder.create()
             .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
             .setCreditCards(creditCards)
             .setBankSlip(bankSlip)
             .build();
@@ -148,12 +152,11 @@ public class BrasilEsalpetCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
                .setInstallmentNumber(1)
                .setInstallmentPrice(spotlightPrice)
                .build());
-      }
+
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
