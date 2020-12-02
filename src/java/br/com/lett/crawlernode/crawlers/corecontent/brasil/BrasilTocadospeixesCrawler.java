@@ -123,8 +123,9 @@ public class BrasilTocadospeixesCrawler extends Crawler {
       if (elements != null) {
          for (Element element : elements) {
             Element parcelaElement = element.selectFirst("b");
-            Integer parcela = MathUtils.parseInt(parcelaElement.text());
-            Double valor = MathUtils.parseDoubleWithComma(element.text());
+
+            Integer parcela = parcelaElement != null ? MathUtils.parseInt(parcelaElement.text()) : null;
+            Double valor = parcelaElement != null ? MathUtils.parseDoubleWithComma(element.text()) : null;
 
             if (parcela != null && valor != null) {
                installments.add(Installment.InstallmentBuilder.create()
