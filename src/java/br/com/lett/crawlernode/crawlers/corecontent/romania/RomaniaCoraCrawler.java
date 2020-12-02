@@ -45,7 +45,7 @@ public class RomaniaCoraCrawler extends Crawler {
 
    public RomaniaCoraCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
