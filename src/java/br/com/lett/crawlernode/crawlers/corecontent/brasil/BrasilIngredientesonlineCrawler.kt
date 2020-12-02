@@ -61,7 +61,7 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
          it.attr("id") != "tabelanutricional"
       }?.html()
 
-      val offers = scrapOffers(doc)
+      var offers = scrapOffers(doc)
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)
@@ -80,71 +80,73 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
 
-      val installments = scrapInstallments(doc)
-
-      val priceText = doc.selectFirst(".old-price .price")?.text() ?: ""
-
-      var priceFrom = MathUtils.parseDoubleWithComma(priceText)
-
-      val spotlightText = if ((priceFrom ?: 0.0) > 0) {
-         doc.selectFirst(".special-price .price")?.text()
-      } else {
-         doc.selectFirst(".regular-price .price")?.text()
-      } ?: ""
-
-      val spotlightPrice = MathUtils.parseDoubleWithComma(spotlightText)
-
-      spotlightPrice?.let {
-         if (spotlightPrice == priceFrom) {
-            priceFrom = null
-         }
-         val creditCards = CreditCards(
-            listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
-               Card.HIPERCARD).map { card: Card ->
-               try {
-                  return@map CreditCardBuilder.create()
-                     .setBrand(card.toString())
-                     .setIsShopCard(false)
-                     .setInstallments(installments)
-                     .build()
-               } catch (e: MalformedPricingException) {
-                  throw RuntimeException(e)
-               }
-            })
-
-         val bankSlipPrice = doc.selectFirst(".preco-comprar .boletoBox .price")?.text().toDoubleComma()?.round()
-         val bankSlipDiscount = doc.selectFirst(".preco-comprar .boletoBox .descontoBoleto")?.text()?.toDouble()
-
-         var bankSlip: BankSlip? = BankSlip.BankSlipBuilder()
-            .setFinalPrice(bankSlipPrice)
-
-            // convert from int to decimal percent
-            .setOnPageDiscount(((bankSlipDiscount ?: 0.0) / 100).round())
-            .build()
-
-         if ((bankSlipPrice ?: 0.0) <= 0) {
-            bankSlip = null
-         }
-         offers.add(
-            Offer.OfferBuilder.create()
-               .setPricing(
-                  Pricing.PricingBuilder.create()
-                     .setCreditCards(creditCards)
-                     .setSpotlightPrice(spotlightPrice)
-                     .setBankSlip(bankSlip)
-                     .setPriceFrom(priceFrom)
-                     .build()
-               )
-               .setSales(listOf())
-               .setIsMainRetailer(true)
-               .setIsBuybox(false)
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(SELLER_NAME)
-               .build()
-         )
-      }
-
-      return offers
+	   if(doc.select(".alert-stock").isEmpty()) {
+        val installments = scrapInstallments(doc)
+  
+        val priceText = doc.selectFirst(".old-price .price")?.text() ?: ""
+  
+        var priceFrom = MathUtils.parseDoubleWithComma(priceText)
+  
+        val spotlightText = if ((priceFrom ?: 0.0) > 0) {
+           doc.selectFirst(".special-price .price")?.text()
+        } else {
+           doc.selectFirst(".regular-price .price")?.text()
+        } ?: ""
+  
+        val spotlightPrice = MathUtils.parseDoubleWithComma(spotlightText)
+  
+        spotlightPrice?.let {
+           if (spotlightPrice == priceFrom) {
+              priceFrom = null
+           }
+           val creditCards = CreditCards(
+              listOf(Card.MASTERCARD, Card.VISA, Card.AMEX, Card.DINERS, Card.ELO,
+                 Card.HIPERCARD).map { card: Card ->
+                 try {
+                    return@map CreditCardBuilder.create()
+                       .setBrand(card.toString())
+                       .setIsShopCard(false)
+                       .setInstallments(installments)
+                       .build()
+                 } catch (e: MalformedPricingException) {
+                    throw RuntimeException(e)
+                 }
+              })
+  
+           val bankSlipPrice = doc.selectFirst(".preco-comprar .boletoBox .price")?.text().toDoubleComma()?.round()
+           val bankSlipDiscount = doc.selectFirst(".preco-comprar .boletoBox .descontoBoleto")?.text()?.toDouble()
+  
+           var bankSlip: BankSlip? = BankSlip.BankSlipBuilder()
+              .setFinalPrice(bankSlipPrice)
+  
+              // convert from int to decimal percent
+              .setOnPageDiscount(((bankSlipDiscount ?: 0.0) / 100).round())
+              .build()
+  
+           if ((bankSlipPrice ?: 0.0) <= 0) {
+              bankSlip = null
+           }
+           offers.add(
+              Offer.OfferBuilder.create()
+                 .setPricing(
+                    Pricing.PricingBuilder.create()
+                       .setCreditCards(creditCards)
+                       .setSpotlightPrice(spotlightPrice)
+                       .setBankSlip(bankSlip)
+                       .setPriceFrom(priceFrom)
+                       .build()
+                 )
+                 .setSales(listOf())
+                 .setIsMainRetailer(true)
+                 .setIsBuybox(false)
+                 .setUseSlugNameAsInternalSellerId(true)
+                 .setSellerFullName(SELLER_NAME)
+                 .build()
+           )
+        }
+	   }
+     
+	   return offers
    }
 
    private fun scrapInstallments(doc: Document): Installments {

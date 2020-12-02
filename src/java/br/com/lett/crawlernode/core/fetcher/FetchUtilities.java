@@ -36,6 +36,7 @@ import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -364,21 +365,25 @@ public class FetchUtilities {
       List<Cookie> cookies = new ArrayList<>();
 
       for (Header header : headers) {
-         String cookieHeader = header.getValue();
-         String cookieName = cookieHeader.split("=")[0].trim();
+         try {
+            String cookieHeader = header.getValue();
+            String cookieName = cookieHeader.split("=")[0].trim();
 
-         int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
-         String cookieValue;
-         if (cookieHeader.contains(";")) {
-            int y = cookieHeader.indexOf(';', x);
-            cookieValue = cookieHeader.substring(x, y).trim();
-         } else {
-            cookieValue = cookieHeader.substring(x).trim();
+            int x = cookieHeader.indexOf(cookieName + "=") + cookieName.length() + 1;
+            String cookieValue;
+            if (cookieHeader.contains(";")) {
+               int y = cookieHeader.indexOf(';', x);
+               cookieValue = cookieHeader.substring(x, y).trim();
+            } else {
+               cookieValue = cookieHeader.substring(x).trim();
+            }
+
+            BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
+            cookie.setPath("/");
+            cookies.add(cookie);
+         } catch (Exception e) {
+            Logging.printLogWarn(logger, CommonMethods.getStackTrace(e));
          }
-
-         BasicClientCookie cookie = new BasicClientCookie(cookieName, cookieValue);
-         cookie.setPath("/");
-         cookies.add(cookie);
       }
 
       return cookies;

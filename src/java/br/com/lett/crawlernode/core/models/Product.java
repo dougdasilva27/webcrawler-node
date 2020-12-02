@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.MathUtils;
+import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.Offers;
 import models.RatingsReviews;
@@ -20,6 +21,11 @@ import models.prices.Prices;
 public class Product implements Serializable {
 
    private static final long serialVersionUID = 4971005612828002546L;
+
+   public static final String TOTAL_REVIEWS_FIELD = "total_reviews";
+   public static final String AVERAGE_OVERALL_RATING_FIELD = "average_overall_rating";
+   public static final String TOTAL_WRITTEN_REVIEWS_FIELD = "total_written_reviews";
+   public static final String RATING_STAR_FIELD = "rating_star";
 
    private String url;
    private String internalId;
@@ -52,7 +58,7 @@ public class Product implements Serializable {
    private String timestamp;
    private Integer marketId;
    private SkuStatus status;
-   private RatingsReviews ratingReviews;
+   private RatingsReviews ratingReviews = new RatingsReviews();
 
    public Product() {
       this.description = "";
@@ -353,7 +359,7 @@ public class Product implements Serializable {
          secondaryImagesArray = new JSONArray();
       }
 
-      return new JSONObject().put("url", (url != null ? url : JSONObject.NULL))
+      JSONObject kinesisJson = new JSONObject().put("url", (url != null ? url : JSONObject.NULL))
             .put("internalId", (internalId != null ? internalId : JSONObject.NULL))
             .put("internalPid", (internalPid != null ? internalPid : JSONObject.NULL))
             .put("marketId", marketId)
@@ -370,11 +376,14 @@ public class Product implements Serializable {
             .put("offers", (offers != null ? offers.toStringToKinseis() : new JSONArray().toString()))
             .put("stock", (stock != null ? stock : JSONObject.NULL))
             .put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
-            .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp)
-            // TODO quando rating no crawler (e samir devidamente avisado) estiver pronto, adicionar
-            // serializacao para kinesis
-            .toString();
+            .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp);
+
+      RatingsReviews rating = this.ratingReviews != null ? this.ratingReviews : new RatingsReviews();
+      kinesisJson.put(TOTAL_REVIEWS_FIELD, rating.getTotalReviews() != null ? rating.getTotalReviews() : JSONObject.NULL)
+            .put(TOTAL_WRITTEN_REVIEWS_FIELD, rating.getTotalWrittenReviews() != null ? rating.getTotalWrittenReviews() : JSONObject.NULL)
+            .put(AVERAGE_OVERALL_RATING_FIELD, rating.getAverageOverallRating() != null ? rating.getAverageOverallRating() : JSONObject.NULL)
+            .put(RATING_STAR_FIELD, rating.getAdvancedRatingReview() != null ? rating.getAdvancedRatingReview().toJson() : new AdvancedRatingReview().toJson());
+
+      return kinesisJson.toString();
    }
-
-
 }

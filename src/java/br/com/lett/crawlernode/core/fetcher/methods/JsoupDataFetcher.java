@@ -18,11 +18,13 @@ import javax.net.ssl.SSLSession;
 import org.json.JSONObject;
 import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
@@ -32,6 +34,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -75,6 +78,8 @@ public class JsoupDataFetcher implements DataFetcher {
                proxies.add(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
             } else if (proxy.toLowerCase().contains("infatica")) {
                proxies.add(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY);
+            } else if (proxy.toLowerCase().contains("luminati_server")) {
+               proxies.add(ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
             } else {
                proxies.add(proxy);
             }
@@ -89,15 +94,13 @@ public class JsoupDataFetcher implements DataFetcher {
 
       while (attempt <= attemptsNumber && (response.getBody() == null || response.getBody().isEmpty())) {
          long requestStartTime = System.currentTimeMillis();
+         String requestHash = FetchUtilities.generateRequestHash(session);
+         RequestsStatistics requestStats = new RequestsStatistics();
+         requestStats.setAttempt(attempt);
+         String proxyServiceName = proxies.isEmpty() ? ProxyCollection.LUMINATI_SERVER_BR_HAPROXY : proxies.get(attempt - 1);
+         List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(proxyServiceName);
+
          try {
-            String requestHash = FetchUtilities.generateRequestHash(session);
-
-            RequestsStatistics requestStats = new RequestsStatistics();
-            requestStats.setAttempt(attempt);
-
-            String proxyServiceName = proxies.isEmpty() ? ProxyCollection.LUMINATI_SERVER_BR_HAPROXY : proxies.get(attempt - 1);
-
-            List<LettProxy> proxySelected = GlobalConfigurations.proxies.getProxy(proxyServiceName);
 
             Logging.printLogDebug(logger, session, "Performing GET request with JSOUP with " + proxyServiceName + ": " + request.getUrl());
 
@@ -130,6 +133,23 @@ public class JsoupDataFetcher implements DataFetcher {
 
             String content = res.body();
 
+            if (!content.isEmpty()) {
+               FetcherOptions options = request.getFetcherOptions();
+               if (options != null) {
+                  String selector = options.getForbiddenCssSelector();
+
+                  if (selector != null) {
+                     Document doc = Jsoup.parse(content);
+
+                     if (!doc.select(selector).isEmpty()) {
+                        Logging.printLogWarn(logger, session, "[ATTEMPT " + attempt + "] Error performing " + (getMethod ? FetchUtilities.GET_REQUEST : FetchUtilities.POST_REQUEST) + " request. Error: Forbidden Selector detected.");
+                        throw new ResponseCodeException(403);
+                     }
+                  }
+               }
+
+            }
+
             requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             S3Service.saveResponseContent(session, requestHash, content);
 
@@ -148,10 +168,16 @@ public class JsoupDataFetcher implements DataFetcher {
             requests.add(requestStats);
             session.addRedirection(request.getUrl(), res.url().toString());
 
-            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, proxyServiceName, FetchUtilities.GET_REQUEST, randUserAgent, session,
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, proxyServiceName, getMethod ? FetchUtilities.GET_REQUEST : FetchUtilities.POST_REQUEST, randUserAgent, session,
                   res.statusCode(), requestHash);
          } catch (Exception e) {
             Logging.printLogDebug(logger, session, "Attempt " + attempt + " -> Error performing GET request. Error: " + e.getMessage());
+
+            int code = e instanceof ResponseCodeException ? ((ResponseCodeException) e).getCode() : 0;
+
+            FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, proxyServiceName, getMethod ? FetchUtilities.GET_REQUEST : FetchUtilities.POST_REQUEST, randUserAgent, session,
+                  code, requestHash);
+
             if (session instanceof TestCrawlerSession) {
                Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
             }

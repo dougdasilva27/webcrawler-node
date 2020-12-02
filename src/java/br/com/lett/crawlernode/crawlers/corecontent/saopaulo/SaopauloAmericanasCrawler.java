@@ -4,7 +4,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import org.json.JSONObject;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -24,6 +28,32 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs");
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.homePage = HOME_PAGE;
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Request request;
+
+      if (dataFetcher instanceof FetcherDataFetcher) {
+         request = RequestBuilder.create().setUrl(HOME_PAGE)
+               .setCookies(cookies)
+               .setProxyservice(
+                     Arrays.asList(
+                           ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                           ProxyCollection.NETNUT_RESIDENTIAL_BR,
+                           ProxyCollection.BUY
+                     )
+               ).mustSendContentEncoding(false)
+               .setFetcheroptions(FetcherOptionsBuilder.create()
+                     .setForbiddenCssSelector("#px-captcha")
+                     .mustUseMovingAverage(false)
+                     .mustRetrieveStatistics(true).build())
+               .build();
+      } else {
+         request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
+      }
+
+      this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.americanas.com.br", "/", null, session, dataFetcher);
    }
 
    @Override
@@ -83,8 +113,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
       url.append(payload.toString());
-
-      Logging.printLogDebug(logger, session, "Link onde são feitos os crawlers:" + url);
 
       Request request = Request.RequestBuilder.create()
             .setUrl(url.toString())

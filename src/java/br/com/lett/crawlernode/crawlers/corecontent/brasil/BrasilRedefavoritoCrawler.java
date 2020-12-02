@@ -92,13 +92,15 @@ public class BrasilRedefavoritoCrawler extends Crawler {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (isProductPage(doc)) {
+      String token = getToken();
+
+      JSONObject jsonData = crawlApi(token);
+      JSONObject productInfo = JSONUtils.getJSONValue(jsonData, "produto");
+
+      // Product page
+      if (!productInfo.isEmpty()) {
          Logging.printLogDebug(logger, "Product page identified: " + this.session.getOriginalURL());
 
-         String token = getToken();
-
-         JSONObject jsonData = crawlApi(token);
-         JSONObject productInfo = JSONUtils.getJSONValue(jsonData, "produto");
          JSONObject OffersInfo = JSONUtils.getJSONValue(productInfo, "oferta");
 
          String internalId = productInfo.optString("produto_id");
@@ -126,10 +128,6 @@ public class BrasilRedefavoritoCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page.");
       }
       return products;
-   }
-
-   private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".loader__container") != null;
    }
 
    private Offers scrapOffers(JSONObject OffersInfo, JSONObject productInfo) throws MalformedPricingException, OfferException {

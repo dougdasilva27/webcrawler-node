@@ -77,7 +77,7 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, this.cookies);
 
-    Elements products = this.currentDoc.select(".shelf-content-items > [data-ean]");
+    Elements products = this.currentDoc.select(".card-product");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -85,8 +85,8 @@ public class BrasilLojamondelezCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalId = e.attr("data-ean");
-        String productUrl = CrawlerUtils.scrapUrl(e, "a.container-information", "href", "https", "www.lojamondelez.com.br");
+        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".card-product button", "data-codigoproduto");
+        String productUrl = CrawlerUtils.scrapUrl(e, "> a", "href", "https", "www.lojamondelez.com.br");
 
         saveDataProduct(internalId, null, productUrl);
 

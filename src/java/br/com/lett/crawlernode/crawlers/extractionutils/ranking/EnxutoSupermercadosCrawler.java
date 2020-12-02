@@ -62,7 +62,7 @@ public abstract class EnxutoSupermercadosCrawler extends CrawlerRankingKeywords 
       String url = "https://drive.enxuto.com.br/shop/home.xhtml";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "JSESSIONID=bf241c106faa53bf138ab097594b");
+      headers.put("Cookie", "JSESSIONID=fa09b6760425579e0fe62ac2feaf");
       headers.put("Connection","keep-alive");
 
       StringBuilder payload = new StringBuilder();

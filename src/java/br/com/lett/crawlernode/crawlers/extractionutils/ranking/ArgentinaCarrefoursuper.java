@@ -22,7 +22,7 @@ public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    private static final String PRODUCTS_SELECTOR = ".home-product-cards .product-card .producto-info .open-modal[title]";
