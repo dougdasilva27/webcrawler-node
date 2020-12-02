@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,6 +120,8 @@ public class FetcherDataFetcher implements DataFetcher {
 
       String requestId = null;
 
+      boolean fetcherIsDown = false;
+
       try {
          Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 18;
 
@@ -189,6 +192,8 @@ public class FetcherDataFetcher implements DataFetcher {
          JSONObject fetcherErrorMetadata = new JSONObject()
                .put("fetcher_msg", e.getMessage());
 
+         fetcherIsDown = true;
+
          Logging.logWarn(logger, session, fetcherErrorMetadata, "Fetcher did not returned the expected response.");
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
       }
@@ -201,6 +206,18 @@ public class FetcherDataFetcher implements DataFetcher {
             .put("req_lib", "fetcher");
 
       Logging.logInfo(logger, session, apacheMetadata, "FETCHER REQUESTS INFO");
+
+
+      List<Integer> crawlersToNotTryAgain = Arrays.asList(59, 60, 61, 62, 63, 73, 235);
+
+      if (fetcherIsDown
+            && !crawlersToNotTryAgain.contains(session.getMarket().getNumber())
+            && !session.getMarket().getName().contains("carrefour")) {
+
+         Logging.printLogWarn(logger, session, "Trying to request with jsoup becaus fetcher is down!");
+
+         response = method.equalsIgnoreCase("GET") ? new JsoupDataFetcher().get(session, request) : new JsoupDataFetcher().post(session, request);
+      }
 
       return response;
    }
