@@ -20,8 +20,8 @@ import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -117,7 +117,12 @@ public class B2WCrawler extends Crawler {
       String content = df.get(session, request).getBody();
 
       if (content == null || content.isEmpty()) {
-         content = new ApacheDataFetcher().get(session, request).getBody();
+         request.setProxyServices(Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR
+         ));
+         content = new JsoupDataFetcher().get(session, request).getBody();
       }
 
       return content;
