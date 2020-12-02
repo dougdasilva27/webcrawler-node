@@ -16,11 +16,12 @@ public class UberlandiaCarrefourCrawler extends CarrefourCrawler {
    }
 
    public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
-   public static final String LOCATION = "38405-140";
+   public static final String LOCATION = "38405-140"; //TODO esse cep não está pegando
+   public static final String LOCATION_TOKEN = "123";
 
    @Override
-   protected String getLocation() {
-      return LOCATION;
+   protected String getLocationToken() {
+      return LOCATION_TOKEN;
    }
 
    @Override
