@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -12,12 +11,11 @@ public class BrasilEtnamoveisCrawler extends CrawlerRankingKeywords {
    public BrasilEtnamoveisCrawler(Session session) {
       super(session);
       this.pageSize = 12;
-      fetchMode = FetchMode.FETCHER;
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      String url = "https://www.etna.com.br/search/?text=" + keywordEncoded + "&page=" + currentPage;
+      String url = "https://www.etna.com.br/c/"+this.keywordEncoded+"/?page="+ this.currentPage;
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".element_item");
