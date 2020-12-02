@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
+import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -17,10 +18,19 @@ import org.jsoup.select.Elements
 
 class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(session) {
 
+   override fun fetch(): Document {
+      val request = Request.RequestBuilder.create()
+         .setUrl(session.originalURL)
+         .setFollowRedirects(false)
+         .build()
+
+      return dataFetcher.get(session, request).body.toDoc() ?: Document(session.originalURL)
+   }
+
    override fun extractInformation(document: Document): MutableList<Product> {
       val products = mutableListOf<Product>()
 
-      if ("/p" in session.originalURL) {
+      if (isProductPage(document)) {
 
          val name = document.selectFirst("h1")?.text()
          val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".bt-checkout", "data-sku")
@@ -42,6 +52,10 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       }
 
       return products
+   }
+
+   private fun isProductPage(doc: Document): Boolean {
+      return doc.selectFirst("#product") != null
    }
 
    private fun scrapOffers(doc: Document): Offers {
@@ -140,4 +154,5 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
 
       return advancedRatingReview.allStars(starsCount).build()
    }
+
 }
