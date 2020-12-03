@@ -9,7 +9,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.CarrefourCrawler;
  * @author gabriel
  *
  */
-public abstract class BrasilCarrefourCrawler extends CarrefourCrawler {
+public class BrasilCarrefourCrawler extends CarrefourCrawler {
 
    private static final String HOME_PAGE = "https://www.carrefour.com.br/";
 
@@ -20,6 +20,11 @@ public abstract class BrasilCarrefourCrawler extends CarrefourCrawler {
    @Override
    protected String getHomePage() {
       return HOME_PAGE;
+   }
+
+   @Override
+   protected String getLocationToken() {
+      return null;
    }
 
 }
