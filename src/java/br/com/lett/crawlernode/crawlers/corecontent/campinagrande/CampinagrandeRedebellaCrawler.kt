@@ -99,15 +99,16 @@ class CampinagrandeRedebellaCrawler(session: Session) : Crawler(session) {
       val json = fetchPrices(internalId)
       val prices = json.optJSONObject("new_price")
 
-      val spotlightPrice: Double?
-      val priceFrom: Double?
-
-      if (prices.optString("special") != "false") {
-         spotlightPrice = prices.optString("special").toDoubleComma()
-         priceFrom = prices.optString("price").toDoubleComma()
-      } else {
-         spotlightPrice = prices.optString("price").toDoubleComma()
-         priceFrom = null
+      var spotlightPrice: Double? = null;
+      var priceFrom: Double? = null;
+      if (prices != null) {
+         if (prices.optString("special") != "false") {
+            spotlightPrice = prices.optString("special").toDoubleComma()
+            prices.optString("price").toDoubleComma().also { priceFrom = it }
+         } else {
+            spotlightPrice = prices.optString("price").toDoubleComma()
+            priceFrom = null
+         }
       }
 
       spotlightPrice?.let {
