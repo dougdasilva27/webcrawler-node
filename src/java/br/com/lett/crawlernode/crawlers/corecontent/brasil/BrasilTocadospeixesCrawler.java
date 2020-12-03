@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -16,10 +16,8 @@ import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.postgresql.jdbc2.ArrayAssistant;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,26 +40,26 @@ public class BrasilTocadospeixesCrawler extends Crawler {
          Elements elements = doc.select(".principal .acoes-produto.disponivel, .principal .acoes-produto.indisponivel");
 
          for (Element element : elements) {
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".acoes-produto", "data-produto-id");
-               String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".codigo-produto span span", false);
-               String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto.titulo", false);
-               CategoryCollection category = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul");
-               String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("div #descricao"));
-               String primaryImage = scraplPrimaryImage(doc);
-               boolean available = crawlAvailability(element);
-               Offers offers = available ? scrapOffer(doc, internalId) : new Offers();
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".acoes-produto", "data-produto-id");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".codigo-produto span span", false);
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto.titulo", false);
+            CategoryCollection category = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul");
+            String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("div #descricao"));
+            String primaryImage = scraplPrimaryImage(doc);
+            boolean available = crawlAvailability(element);
+            Offers offers = available ? scrapOffer(doc, internalId) : new Offers();
 
 
-               products.add(ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategories(category)
-                  .setPrimaryImage(primaryImage)
-                  .setDescription(description)
-                  .setOffers(offers)
-                  .build());
+            products.add(ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(category)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setOffers(offers)
+               .build());
 
          }
       } else {
@@ -72,7 +70,7 @@ public class BrasilTocadospeixesCrawler extends Crawler {
 
    private String scraplPrimaryImage(Document doc) {
 
-      return CrawlerUtils.scrapSimplePrimaryImage(doc ,".conteiner-imagem a", Arrays.asList("href") ,"https","cdn.awsli.com.br");
+      return CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".conteiner-imagem a", "href");
 
    }
 
@@ -116,19 +114,16 @@ public class BrasilTocadospeixesCrawler extends Crawler {
       String attr = "[" + "data-produto-id=" + internalId + "]";
       elements = elements.select(attr);
       elements = elements.select(".accordion-inner .parcela");
-      if (elements != null) {
-         for (Element element : elements) {
-            Element parcelaElement = element.selectFirst("b");
 
-            Integer parcela = parcelaElement != null ? MathUtils.parseInt(parcelaElement.text()) : null;
-            Double valor = parcelaElement != null ? MathUtils.parseDoubleWithComma(element.text()) : null;
+      for (Element element : elements) {
+         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, element, false, "x", "", true, ',');
 
-            if (parcela != null && valor != null) {
-               installments.add(Installment.InstallmentBuilder.create()
-                  .setInstallmentNumber(parcela)
-                  .setInstallmentPrice(valor)
-                  .build());
-            }
+
+         if (!pair.isAnyValueNull()) {
+            installments.add(Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(pair.getSecond().doubleValue())
+               .build());
          }
       }
       return installments;
@@ -141,13 +136,11 @@ public class BrasilTocadospeixesCrawler extends Crawler {
          .setSpotlightPrice(price)
          .setCreditCards(cards)
          .build();
-
    }
 
    private boolean crawlAvailability(Element document) {
       Elements elements = document.select(".comprar");
       return !elements.isEmpty();
-
    }
 
    private boolean isProductPage(Document doc) {
