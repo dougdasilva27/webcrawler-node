@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import br.com.lett.crawlernode.test.Test2Kt;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -54,23 +56,22 @@ public class BrasilLojacolgateCrawler extends Crawler {
             this.webdriver.waitLoad(2000);
          }
 
-
          WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
          email.sendKeys(CNPJ);
-         this.webdriver.waitLoad(2000);
+         this.webdriver.waitLoad(500);
 
          WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#j_password"));
          pass.sendKeys(PASSWORD);
-         this.webdriver.waitLoad(2000);
+         this.webdriver.waitLoad(500);
 
          WebElement login = this.webdriver.driver.findElement(By.cssSelector("#loginForm .btn-primary"));
          this.webdriver.clickOnElementViaJavascript(login);
-         this.webdriver.waitLoad(2000);
+         this.webdriver.waitLoad(5000);
 
          this.webdriver.driver.manage().getCookies().forEach(this.webdriver.driver.manage()::addCookie);
 
          this.webdriver.loadUrl(session.getOriginalURL());
-         this.webdriver.waitLoad(10000);
+         this.webdriver.waitLoad(15000);
 
          return Jsoup.parse(this.webdriver.getCurrentPageSource());
       } catch (Exception e) {
@@ -87,14 +88,14 @@ public class BrasilLojacolgateCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         Elements variations = doc.select(".product-item-content .js-variant-select > option");
-
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details .name", true).replace("|", "");
          CategoryCollection categories = scrapCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-gallery__image .lazyOwl", Arrays.asList("data-zoom-image", "src"), "https", HOST);
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".image-gallery__image .lazyOwl", Arrays.asList("data-zoom-image", "src"), "https", HOST, primaryImage);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tabhead", ".tabbody .tab-details"));
          RatingsReviews ratingsReviews = new RatingsReviews();
+
+         Elements variations = doc.select(".product-item-content .js-variant-select > option");
 
          if (variations.isEmpty()) {
 
