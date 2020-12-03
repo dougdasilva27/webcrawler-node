@@ -1,12 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -16,6 +9,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -29,8 +23,14 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilEsalpetCrawler extends Crawler {
 
@@ -54,13 +54,14 @@ public class BrasilEsalpetCrawler extends Crawler {
          JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"text/javascript\"]", "window.dooca = " , ";", false, true);
          JSONObject data = json.optJSONObject("product");
 
-         String internalId = Integer.toString(data.optInt("id")).trim();
-         String internalPid = Integer.toString(data.optJSONObject("variation").optInt("sku")).trim();
+         String internalId = data != null ? data.optString("id") : null;
+         String internalPid = data != null ? data.optJSONObject("variation").optString("sku") : null;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.h1.m-0", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", true);
+         // Site has only one category
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div:not(:first-child) a.breadcrumb-link", true);
          String primaryImage =  crawlPrimaryImage(doc);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("div.cms.p-3.p-sm-0"));
-         Integer stock = data.optInt("balance");
+         Integer stock = data != null ? data.optInt("balance") : null;
          boolean available = !doc.select(".product-action-buy-loader .loader").isEmpty();
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -94,7 +95,7 @@ public class BrasilEsalpetCrawler extends Crawler {
 
    private String crawlPrimaryImage(Document doc) {
       String primaryImage = null;
-      Element primaryImageElement = doc.select(".thumbs .img-fluid").first();
+      Element primaryImageElement = doc.selectFirst(".thumbs .img-fluid");
 
       if (primaryImageElement != null) {
          primaryImage = primaryImageElement.attr("src").trim();
