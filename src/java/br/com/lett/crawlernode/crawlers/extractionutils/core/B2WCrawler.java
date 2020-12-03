@@ -33,6 +33,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.test.Test;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -111,15 +113,14 @@ public class B2WCrawler extends Crawler {
                         .build()
             ).setProxyservice(
                   Arrays.asList(
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                        ProxyCollection.NETNUT_RESIDENTIAL_ES,
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR
+                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                        ProxyCollection.BUY,
+                        ProxyCollection.NETNUT_RESIDENTIAL_BR
                   )
             ).build();
 
 
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = new FetcherDataFetcher().get(session, request);
       String content = response.getBody();
 
       int statusCode = response.getLastStatusCode();
@@ -129,10 +130,9 @@ public class B2WCrawler extends Crawler {
             && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.BUY));
+               ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
-         content = new FetcherDataFetcher().get(session, request).getBody();
+         content = new JsoupDataFetcher().get(session, request).getBody();
       }
 
       return content;
@@ -141,6 +141,8 @@ public class B2WCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
+
+      CommonMethods.saveDataToAFile(doc, Test.pathWrite + "SHOPTIMEHOME.html");
 
       // Json da pagina principal
       JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
