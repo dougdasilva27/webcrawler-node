@@ -53,14 +53,7 @@ public class BrasilTocadospeixesCrawler extends CrawlerRankingKeywords {
 
 
    private String crawlInternalId(Element e) {
-      Element inputElement = e.selectFirst("div[data-trustvox-product-code]");
-      String internalId = null;
-
-      if (inputElement != null) {
-         internalId = inputElement.attr("data-trustvox-product-code").trim();
-      }
-
-      return internalId;
+         return CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"div[data-trustvox-product-code]","data-trustvox-product-code");
    }
 
    private String crawlInternalPid(Element e) {

@@ -16,8 +16,10 @@ import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.postgresql.jdbc2.ArrayAssistant;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -37,10 +39,9 @@ public class BrasilTocadospeixesCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         Elements elements = doc.select(".acoes-produto");
+         Elements elements = doc.select(".principal .acoes-produto.disponivel, .principal .acoes-produto.indisponivel");
 
          for (Element element : elements) {
-            if (!element.attr("data-variacao-id").isEmpty()) {
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".acoes-produto", "data-produto-id");
                String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".codigo-produto span span", false);
                String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto.titulo", false);
@@ -61,7 +62,7 @@ public class BrasilTocadospeixesCrawler extends Crawler {
                   .setDescription(description)
                   .setOffers(offers)
                   .build());
-            }
+
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -70,14 +71,9 @@ public class BrasilTocadospeixesCrawler extends Crawler {
    }
 
    private String scraplPrimaryImage(Document doc) {
-      String primaryImage = null;
 
-      Element image = doc.selectFirst(".conteiner-imagem a");
+      return CrawlerUtils.scrapSimplePrimaryImage(doc ,".conteiner-imagem a", Arrays.asList("href") ,"https","cdn.awsli.com.br");
 
-      if (image != null) {
-         primaryImage = image.attr("href");
-      }
-      return primaryImage;
    }
 
 
