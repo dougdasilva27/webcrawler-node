@@ -87,6 +87,11 @@ public class JsoupDataFetcher implements DataFetcher {
       }
 
       Map<String, String> headers = request.getHeaders();
+
+      if (headers == null) {
+         headers = new HashMap<>();
+      }
+
       String randUserAgent =
             headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
 
