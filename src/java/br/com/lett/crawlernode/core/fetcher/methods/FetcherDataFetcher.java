@@ -38,6 +38,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -125,7 +126,7 @@ public class FetcherDataFetcher implements DataFetcher {
       try {
          Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 18;
 
-         URL url = new URL(FETCHER_HOST);
+         URL url = new URL(session instanceof RankingKeywordsSession ? "https://api-fetcher-eqi.lett.global/" : FETCHER_HOST);
          HttpURLConnection connection = (HttpURLConnection) url.openConnection();
          connection.setRequestMethod(FetchUtilities.POST_REQUEST);
          connection.setInstanceFollowRedirects(true);
@@ -134,6 +135,21 @@ public class FetcherDataFetcher implements DataFetcher {
          connection.setDoInput(true);
          connection.setDoOutput(true);
          connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, FETCHER_CONTENT_TYPE);
+
+         // test if ranking is the reaso of fetcher use 100%cpu
+         if (session instanceof RankingKeywordsSession) {
+            List<String> proxies = request.getProxyServices();
+            List<String> newProxiesList = new ArrayList<String>();
+
+            for (String proxyName : proxies) {
+               if (proxyName.contains("infatica")) {
+                  newProxiesList.add(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY);
+               } else {
+                  newProxiesList.add(proxyName);
+               }
+            }
+
+         }
 
          // Inserting payload
          OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8);
