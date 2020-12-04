@@ -57,25 +57,11 @@ public class BrasilTocadospeixesCrawler extends CrawlerRankingKeywords {
    }
 
    private String crawlInternalPid(Element e) {
-      Element inputElement = e.selectFirst(".produto-sku");
-      String internalPid = null;
-
-      if (inputElement != null) {
-         internalPid = inputElement.text().trim();
-      }
-
-      return internalPid;
+      return CrawlerUtils.scrapStringSimpleInfo(e,".produto-sku",false);
    }
 
    private String crawlProductUrl(Element e) {
-      Element ancorElement = e.selectFirst("a");
-      String url = null;
-
-      if (ancorElement != null) {
-         url = ancorElement.attr("href").trim();
-      }
-
-      return url;
+      return CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"a","href");
    }
 
 }
