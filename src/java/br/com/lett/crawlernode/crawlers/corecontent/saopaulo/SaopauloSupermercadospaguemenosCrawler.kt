@@ -91,7 +91,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
                .setPricing(
                   PricingBuilder.create()
                      .setCreditCards(creditCards)
-                     .setSpotlightPrice(scrapPrice(doc))
+                     .setSpotlightPrice(it)
                      .setPriceFrom(priceFrom)
                      .build()
                )
