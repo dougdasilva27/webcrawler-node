@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import org.json.JSONArray;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -17,6 +9,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -27,6 +20,14 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 07/12/2016
@@ -103,7 +104,7 @@ public class ArgentinaCotoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.select("#atg_store_content").first() != null;
+      return doc.selectFirst(".product_page") != null;
    }
 
    private String crawlInternalId(Document document) {
@@ -236,18 +237,38 @@ public class ArgentinaCotoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio,.atg_store_newPrice,.atg_store_oldPrice.price_regular", null, false, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+      Double priceFrom = scrapPriceFrom(doc);
+      Double price = scrapSpotligtPrice(doc);
+
+      CreditCards creditCards = scrapCreditCards(doc, internalId, price);
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
+            .setSpotlightPrice(price)
             .setCreditCards(creditCards)
             .build();
-
-
    }
+
+   private Double scrapPriceFrom(Document doc){
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, '.', session);
+      if (scrapSpotligtPrice(doc).equals(priceFrom)){
+         priceFrom = null;
+      }
+      return priceFrom;
+   }
+
+   private Double scrapSpotligtPrice(Document doc){
+      Double price = null;
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio,.atg_store_newPrice,.atg_store_oldPrice.price_regular", null, false, ',', session);
+      Double priceDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".first_price_discount_container .price_discount", null, false, '.', session);
+      if(priceDiscount != null) {
+        price = priceDiscount;
+      } else {
+            price = spotlightPrice;
+         }
+      return price;
+      }
+
 
    private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
@@ -295,7 +316,7 @@ public class ArgentinaCotoCrawler extends Crawler {
    }
 
    private boolean crawlAvailability(Document document) {
-      return !document.select(".add_products :not(.product_not_available)").isEmpty();
+      return !document.select(".add_products").isEmpty();
    }
 
 }
