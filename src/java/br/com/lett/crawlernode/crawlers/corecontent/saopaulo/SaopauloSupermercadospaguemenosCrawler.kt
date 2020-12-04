@@ -35,9 +35,12 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
          val name = document.selectFirst("h1")?.text()
          val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".bt-checkout", "data-sku")
          val categories = document.select("li a[itemprop='item'] span").eachText(ignoreIndexes = arrayOf(0))
-         val offers = scrapOffers(document)
+         val available = isAvailable(document)
+         val offers = if (available) scrapOffers(document) else Offers()
+
          val primaryImage = document.selectFirst(".cloud-zoom")?.attr("href")?.replaceFirst("//", "https://")
          val ratingReviews: RatingsReviews = scrapRating(document)
+
 
          // Creating the product
          products += ProductBuilder.create()
@@ -58,24 +61,37 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       return doc.selectFirst("#product") != null
    }
 
+   private fun isAvailable(doc: Document): Boolean{
+      return scrapPrice(doc) != null
+   }
+
+   private fun scrapPrice(doc: Document): Double? {
+     var price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale .sale_price", null, true, ',', session)
+      if ( price == 0.0) {
+         price = null
+      }
+      return price
+   }
+
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
-      val price = doc.selectFirst(".sale .sale_price")?.toDoubleComma()
+      val price = scrapPrice(doc)
+
       var priceFrom = doc.selectFirst(".box-pricing .price_off .unit_price")?.toDoubleComma()
 
       price?.let {
-         if (price == priceFrom) {
+         if (it == priceFrom) {
             priceFrom = null
          }
 
-         val creditCards = setOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(price)
+         val creditCards = setOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(it)
 
          offers.add(
             OfferBuilder.create()
                .setPricing(
                   PricingBuilder.create()
                      .setCreditCards(creditCards)
-                     .setSpotlightPrice(price)
+                     .setSpotlightPrice(it)
                      .setPriceFrom(priceFrom)
                      .build()
                )
