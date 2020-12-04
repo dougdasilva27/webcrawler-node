@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.portugal
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.session.Session
@@ -14,7 +13,6 @@ class PortugalContinenteCrawler(session: Session?) : CrawlerRankingKeywords(sess
 
    init {
       pageSize = 20
-      fetchMode = FetchMode.FETCHER;
    }
 
   override fun extractProductsFromCurrentPage() {
