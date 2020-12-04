@@ -29,9 +29,9 @@ public class BrasilTocadospeixesCrawler extends CrawlerRankingKeywords {
             this.totalProducts = products.size();
          }
          for (Element e : products) {
-            String internalId = crawlInternalId(e);
-            String internalPid = crawlInternalPid(e);
-            String productUrl = crawlProductUrl(e);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"div[data-trustvox-product-code]","data-trustvox-product-code");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfo(e,".produto-sku",false);
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"a","href");
 
             saveDataProduct(internalId, internalPid, productUrl);
 
@@ -50,18 +50,4 @@ public class BrasilTocadospeixesCrawler extends CrawlerRankingKeywords {
          + this.arrayProducts.size() + " produtos crawleados");
 
    }
-
-
-   private String crawlInternalId(Element e) {
-         return CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"div[data-trustvox-product-code]","data-trustvox-product-code");
-   }
-
-   private String crawlInternalPid(Element e) {
-      return CrawlerUtils.scrapStringSimpleInfo(e,".produto-sku",false);
-   }
-
-   private String crawlProductUrl(Element e) {
-      return CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"a","href");
-   }
-
 }
