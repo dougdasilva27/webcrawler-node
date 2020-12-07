@@ -9,6 +9,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -87,6 +88,11 @@ public class JsoupDataFetcher implements DataFetcher {
       }
 
       Map<String, String> headers = request.getHeaders();
+
+      if (headers == null) {
+         headers = new HashMap<>();
+      }
+
       String randUserAgent =
             headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
 

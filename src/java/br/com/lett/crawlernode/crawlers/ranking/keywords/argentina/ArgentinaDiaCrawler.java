@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -24,7 +25,7 @@ public class ArgentinaDiaCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    this.pageSize = 24;
+    this.pageSize = 26;
 
     String keyword = this.keywordWithoutAccents.replaceAll(" ", "%20");
     String url = "https://diaonline.supermercadosdia.com.ar/" + keyword + "?PageNumber=" + this.currentPage;
@@ -32,15 +33,15 @@ public class ArgentinaDiaCrawler extends CrawlerRankingKeywords {
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, cookies);
 
-    Elements products = this.currentDoc.select("li[layout] div[data-id]:first-child");
+    Elements products = this.currentDoc.select(".prateleira.vitrine ul .perfumeria .box-item");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0)
         setTotalProducts();
 
       for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
+        String internalPid = e.attr("id").contains("product-")? CommonMethods.getLast(e.attr("id").split("product-")): null;
+        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image", "href");
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -56,33 +57,8 @@ public class ArgentinaDiaCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".resultado-busca-numero");
-
-    if (totalElement != null) {
-      String text = totalElement.text().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlInternalPid(Element e) {
-    return e.attr("data-id");
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-    Element urlElement = e.selectFirst(".product__head a");
-
-    if (urlElement != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(urlElement, Arrays.asList("href"), "https:", "diaonline.supermercadosdia.com.ar");
-    }
-
-    return productUrl;
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return this.currentDoc.selectFirst(".viewMoreProds") != null;
+   }
 }
