@@ -7,5 +7,6 @@ public class BrasilPaodeacucarCrawler extends GPACrawler {
 
    public BrasilPaodeacucarCrawler(Session session) {
       super(session);
+      super.storeId = "501";
    }
 }
