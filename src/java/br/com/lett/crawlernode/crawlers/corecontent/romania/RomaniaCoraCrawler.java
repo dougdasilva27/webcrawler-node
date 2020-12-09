@@ -187,7 +187,7 @@ public class RomaniaCoraCrawler extends Crawler {
    private Double scrapAvgRating(Document doc) {
       Double avg = 0d;
 
-      Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".avg-rating .average", null, false, '.', session);
+      Double percentage = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".avg-rating .average", null, false, ',', session);
       if (percentage != null) {
          avg = percentage;
       }
