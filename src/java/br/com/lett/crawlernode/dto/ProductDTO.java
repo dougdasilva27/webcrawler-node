@@ -57,6 +57,7 @@ public class ProductDTO {
                r.setAverageOverallRating(p.getRatingReviews().getAverageOverallRating());
                r.setTotalRating(p.getRatingReviews().getTotalReviews());
                r.setTotalWrittenReviews(p.getRatingReviews().getTotalWrittenReviews());
+               r.setAdvancedRatingReview(p.getRatingReviews().getAdvancedRatingReview());
             }
          }
 
