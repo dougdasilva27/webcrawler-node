@@ -20,6 +20,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -64,14 +65,7 @@ public class AmazonScraperUtils {
    }
 
    public Document fetchProductPage(List<Cookie> cookies, DataFetcher dataFetcher) {
-      Document doc = Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher));
-
-      if (doc.selectFirst("#captchacharacters") != null) {
-         Logging.printLogWarn(logger, session, "Trying to fetch page again, because this site returned a captcha.");
-         doc = Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, (dataFetcher instanceof ApacheDataFetcher ? new FetcherDataFetcher() : dataFetcher)));
-      }
-
-      return doc;
+      return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher));
    }
 
    /**
@@ -105,20 +99,23 @@ public class AmazonScraperUtils {
                         ProxyCollection.INFATICA_RESIDENTIAL_BR,
                         ProxyCollection.NETNUT_RESIDENTIAL_BR))
             .mustSendContentEncoding(false)
-            // We send this selector fetcher try again when returns captcha
             .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
             .build();
 
-      if (dataFetcher instanceof FetcherDataFetcher) {
-         content = dataFetcher.get(session, requestFetcher).getBody();
+      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
 
-         if (content == null || content.isEmpty()) {
+      Response response = dataFetcher.get(session, request);
+      content = response.getBody();
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+            Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404)) {
+
+         if (dataFetcher instanceof FetcherDataFetcher) {
             content = new ApacheDataFetcher().get(session, requestApache).getBody();
-         }
-      } else {
-         content = dataFetcher.get(session, requestApache).getBody();
-
-         if (content == null || content.isEmpty()) {
+         } else {
             headers.put("Accept-Encoding", "no");
             content = new FetcherDataFetcher().get(session, requestFetcher).getBody();
          }

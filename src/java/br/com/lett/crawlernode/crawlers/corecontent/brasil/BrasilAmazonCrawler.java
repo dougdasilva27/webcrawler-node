@@ -107,7 +107,7 @@ public class BrasilAmazonCrawler extends Crawler {
          Integer stock = null;
 
          Offer mainPageOffer = scrapMainPageOffer(doc);
-         List<Document> docOffers = fetchDocumentsOffers(doc, internalId); // TODO: remove this
+         List<Document> docOffers = fetchDocumentsOffers(doc, internalId);
          Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
 
          String ean = crawlEan(doc);
@@ -204,7 +204,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
 
       if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_dealprice, #priceblock_saleprice", null, false, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_dealprice, #priceblock_saleprice, #unifiedPrice_feature_div #conditionalPrice .a-color-price", null, false, ',', session);
 
          if (spotlightPrice == null) {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#soldByThirdParty span", null, false, ',', session);
