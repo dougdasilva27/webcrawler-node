@@ -9,7 +9,7 @@ public class MexicoCornershoplacomersantafeCrawler extends CornershopCrawler {
       super(session);
    }
 
-    public static final String STORE_ID = "4450";
+    public static final String STORE_ID = "4417";
 
    @Override
    protected String getStoreId() {
