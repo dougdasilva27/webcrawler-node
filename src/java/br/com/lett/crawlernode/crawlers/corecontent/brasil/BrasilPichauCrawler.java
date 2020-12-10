@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -18,10 +8,25 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 15/10/2018
@@ -32,6 +37,9 @@ import models.prices.Prices;
 public class BrasilPichauCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.pichau.com.br/";
+   private static final String SELLER_FULL_NAME = "Pichau";
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.HIPERCARD.toString());
 
    public BrasilPichauCrawler(Session session) {
       super(session);
@@ -55,21 +63,31 @@ public class BrasilPichauCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku .value", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.title h1", true);
-         Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#product-price-" + internalId, false);
-         Prices prices = crawlPrices(doc, price);
          boolean available = !doc.select(".stock.available").isEmpty();
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .item:not(.home):not(.product) a");
+         //the product page has no categories
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs .item:not(.home):not(.product)");
          JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
          String primaryImage = crawlPrimaryImage(images, doc);
          String secondaryImages = crawlSecondaryImages(images);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".form-pichau-product .product.info")).replace("hidemobile", "");
          RatingsReviews ratingReviews = crawlRating(doc);
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setMarketplace(new Marketplace()).setRatingReviews(ratingReviews).build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setRatingReviews(ratingReviews)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -81,8 +99,27 @@ public class BrasilPichauCrawler extends Crawler {
 
    }
 
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = new ArrayList<>();
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+
+   }
+
    private boolean isProductPage(Document doc) {
-      return !doc.select("input[name=product]").isEmpty();
+      return !doc.select(".product-info-main").isEmpty();
    }
 
    private static String crawlInternalId(Document doc) {
@@ -181,10 +218,6 @@ public class BrasilPichauCrawler extends Crawler {
       return primaryImage;
    }
 
-   /**
-    * @param doc
-    * @return
-    */
    private String crawlSecondaryImages(JSONArray images) {
       String secondaryImages = null;
       JSONArray secondaryImagesArray = new JSONArray();
@@ -201,34 +234,44 @@ public class BrasilPichauCrawler extends Crawler {
       return secondaryImages;
    }
 
-   /**
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Document doc, Float price) {
-      Prices prices = new Prices();
 
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      if (price != null) {
-         installmentPriceMap.put(1, price);
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-wrapper .price", null, true, ',', session);
+      Double priceBoleto = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-boleto span", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(priceBoleto)
+         .build();
 
-         Float bankTicket = CrawlerUtils.scrapSimplePriceFloat(doc, ".price-boleto > span", true);
-         if (bankTicket != null) {
-            prices.setBankTicketPrice(bankTicket);
-         } else {
-            prices.setBankTicketPrice(price);
-         }
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+   }
 
-         Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".price-installments > span", doc, true, "x");
-         if (!pair.isAnyValueNull()) {
-            installmentPriceMap.put(pair.getFirst(), pair.getSecond());
-         }
+   private CreditCards scrapCreditCards(Element doc) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
 
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      Element e = doc.selectFirst(".price-installments");
+      Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, false, "x", "cartão", true, ',');
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+            .build());
       }
 
-      return prices;
+         for (String brand : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
+      }
+
+      return creditCards;
    }
 
 }
