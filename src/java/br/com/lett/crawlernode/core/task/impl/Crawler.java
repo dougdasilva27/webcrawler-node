@@ -339,19 +339,7 @@ public class Crawler extends Task {
 
       for (Product p : products) {
          if (Test.pathWrite != null) {
-            String status = "-";
-
-            Offers offers = p.getOffers();
-            if (offers != null && !offers.isEmpty()) {
-               status = "3P";
-
-               for (Offer offer : offers.getOffersList()) {
-                  if (offer.getSlugSellerName().matches(session.getMarket().getFirstPartyRegex())) {
-                     status = "1P";
-                     break;
-                  }
-               }
-            }
+            String status = getFirstPartyRegexStatus(p);
 
             TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
          }
@@ -576,21 +564,10 @@ public class Crawler extends Task {
    }
 
    private void printCrawledInformation(Product product) {
-      String status = "-";
-
-      Offers offers = product.getOffers();
-      if (offers != null && !offers.isEmpty()) {
-         status = "3P";
-
-         for (Offer offer : offers.getOffersList()) {
-            if (offer.getSlugSellerName().matches(session.getMarket().getFirstPartyRegex())) {
-               status = "1P";
-               break;
-            }
-         }
-      }
 
       try {
+         String status = getFirstPartyRegexStatus(product);
+
          if (product.getAvailable() && status.equalsIgnoreCase("3P")) {
             Logging.printLogWarn(logger, session, "REGEX PROBLEM!");
 
@@ -605,6 +582,24 @@ public class Crawler extends Task {
       } catch (MalformedProductException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
+   }
+
+   private String getFirstPartyRegexStatus(Product product) {
+      String status = "-";
+
+      Offers offers = product.getOffers();
+      if (offers != null && !offers.isEmpty()) {
+         status = "3P";
+
+         for (Offer offer : offers.getOffersList()) {
+            if (offer.getSlugSellerName().matches(session.getMarket().getFirstPartyRegex())) {
+               status = "1P";
+               break;
+            }
+         }
+      }
+
+      return status;
    }
 
    /**
