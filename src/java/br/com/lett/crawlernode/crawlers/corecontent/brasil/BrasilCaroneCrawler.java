@@ -46,7 +46,7 @@ public class BrasilCaroneCrawler extends Crawler {
 
          JSONObject data = getJson(doc);
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-essencial [name='product'][value]", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-essential [name='product'][value]", "value");
          String internalPid = data != null ? data.optString("sku") : null;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".i-breadcrumb li:not(.home):not(.product)");
@@ -98,6 +98,7 @@ public class BrasilCaroneCrawler extends Crawler {
 
    }
 
+
    private JSONObject getJson(Document doc) {
       JSONObject product = new JSONObject();
       Elements scripts = doc.select("script[type]");
@@ -105,12 +106,15 @@ public class BrasilCaroneCrawler extends Crawler {
          for (Element e : scripts) {
             String element = e.html().replace(" ", "");
             if (element.contains("vardataLayer=dataLayer") && element.contains("dataLayer.push(")) {
-               String fistIndex = element.split("dataLayer.push\\(")[1];
-               if (fistIndex.contains(");")) {
-                  String jsonString = fistIndex.split("\\);")[0];
-                  JSONObject json = CrawlerUtils.stringToJson(jsonString);
-                  JSONArray products = json.optJSONArray("products");
-                  product = products != null && !products.isEmpty() ? products.optJSONObject(0) : new JSONObject();
+               String[] vetor = element.split("dataLayer.push\\(");
+               if (vetor != null && vetor.length > 0) {
+                  String fistIndex = vetor[1];
+                  if (fistIndex.contains(");")) {
+                     String jsonString = fistIndex.split("\\);")[0];
+                     JSONObject json = CrawlerUtils.stringToJson(jsonString);
+                     JSONArray products = json.optJSONArray("products");
+                     product = products != null && !products.isEmpty() ? products.optJSONObject(0) : new JSONObject();
+                  }
                }
             }
          }
