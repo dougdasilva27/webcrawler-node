@@ -12,6 +12,7 @@ public class Market {
    private boolean crawlerWebdriver;
    private List<String> proxies;
    private List<String> imageProxies;
+   private String firstPartyRegex;
 
    /**
     * Default constructor used for testing.
@@ -28,7 +29,8 @@ public class Market {
                  String marketCode,
                  String marketFullName,
                  List<String> proxies,
-                 List<String> imageProxies) {
+                 List<String> imageProxies,
+                 String firstPartyRegex) {
 
       this.id = marketId;
       this.city = marketCity;
@@ -37,6 +39,7 @@ public class Market {
       this.fullName = marketFullName;
       this.proxies = proxies;
       this.imageProxies = imageProxies;
+      this.firstPartyRegex = firstPartyRegex;
    }
 
    public int getNumber() {
@@ -113,5 +116,13 @@ public class Market {
 
    public void setCode(String code) {
       this.code = code;
+   }
+
+   public String getFirstPartyRegex() {
+      return firstPartyRegex;
+   }
+
+   public void setFirstPartyRegex(String firstPartyRegex) {
+      this.firstPartyRegex = firstPartyRegex;
    }
 }

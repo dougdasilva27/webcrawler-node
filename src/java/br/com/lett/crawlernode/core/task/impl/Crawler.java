@@ -40,6 +40,7 @@ import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
@@ -48,6 +49,8 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import models.DateConstants;
+import models.Offer;
+import models.Offers;
 import models.Processed;
 import models.prices.Prices;
 
@@ -336,7 +339,21 @@ public class Crawler extends Task {
 
       for (Product p : products) {
          if (Test.pathWrite != null) {
-            TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, session);
+            String status = "-";
+
+            Offers offers = p.getOffers();
+            if (offers != null && !offers.isEmpty()) {
+               status = "3P";
+
+               for (Offer offer : offers.getOffersList()) {
+                  if (offer.getSlugSellerName().matches(session.getMarket().getFirstPartyRegex())) {
+                     status = "1P";
+                     break;
+                  }
+               }
+            }
+
+            TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
          }
 
          printCrawledInformation(p);
@@ -559,7 +576,35 @@ public class Crawler extends Task {
    }
 
    private void printCrawledInformation(Product product) {
-      Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString());
+      String status = "-";
+
+      Offers offers = product.getOffers();
+      if (offers != null && !offers.isEmpty()) {
+         status = "3P";
+
+         for (Offer offer : offers.getOffersList()) {
+            if (offer.getSlugSellerName().matches(session.getMarket().getFirstPartyRegex())) {
+               status = "1P";
+               break;
+            }
+         }
+      }
+
+      try {
+         if (product.getAvailable() && status.equalsIgnoreCase("3P")) {
+            Logging.printLogWarn(logger, session, "REGEX PROBLEM!");
+
+            if (session instanceof TestCrawlerSession) {
+               throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
+                     + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
+            }
+         }
+
+         Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
+               "\nregex_status: " + status);
+      } catch (MalformedProductException e) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
    }
 
    /**

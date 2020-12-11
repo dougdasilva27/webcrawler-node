@@ -41,6 +41,7 @@ public class Markets {
          fields.add(marketTable.PROXIES);
          fields.add(marketTable.PROXIES_IMAGES);
          fields.add(marketTable.CRAWLER_WEBDRIVER);
+         fields.add(marketTable.FIRST_PARTY_REGEX);
 
          conn = JdbcConnectionFactory.getInstance().getConnection();
          sta = conn.createStatement();
@@ -72,7 +73,8 @@ public class Markets {
                   r.get(marketTable.CODE),
                   r.get(marketTable.FULLNAME),
                   proxies,
-                  imageProxies);
+                  imageProxies,
+                  r.get(marketTable.FIRST_PARTY_REGEX));
 
             market.setMustUseCrawlerWebdriver(r.get(marketTable.CRAWLER_WEBDRIVER));
 
