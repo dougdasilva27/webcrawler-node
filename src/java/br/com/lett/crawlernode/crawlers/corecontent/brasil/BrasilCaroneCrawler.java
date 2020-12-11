@@ -46,10 +46,9 @@ public class BrasilCaroneCrawler extends Crawler {
 
          JSONObject data = getJson(doc);
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".hidden [name='product'][value]", "value");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-essencial [name='product'][value]", "value");
          String internalPid = data != null ? data.optString("sku") : null;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name", false);
-         // Site has only one category
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".i-breadcrumb li:not(.home):not(.product)");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image", Arrays.asList("src"), "https:",
             "www.carone.com.br/");
@@ -83,7 +82,7 @@ public class BrasilCaroneCrawler extends Crawler {
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = new ArrayList<>();
+      List<String> sales = scrapSales(doc);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -102,16 +101,16 @@ public class BrasilCaroneCrawler extends Crawler {
    private JSONObject getJson(Document doc) {
       JSONObject product = new JSONObject();
       Elements scripts = doc.select("script[type]");
-      if (scripts.size() > 0) {
+      if (!scripts.isEmpty()) {
          for (Element e : scripts) {
             String element = e.html().replace(" ", "");
-            if (element.contains("vardataLayer=dataLayer")) {
-               String fistIndex = element.contains("dataLayer.push(") ? element.split("dataLayer.push\\(")[1] : null;
-               String jsonString = fistIndex.contains(");") ? fistIndex.split("\\);")[0] : null;
-               JSONObject json = CrawlerUtils.stringToJson(jsonString);
-               JSONArray products = json.optJSONArray("products");
-               for (Object p : products) {
-                  product = (JSONObject) p;
+            if (element.contains("vardataLayer=dataLayer") && element.contains("dataLayer.push(")) {
+               String fistIndex = element.split("dataLayer.push\\(")[1];
+               if (fistIndex.contains(");")) {
+                  String jsonString = fistIndex.split("\\);")[0];
+                  JSONObject json = CrawlerUtils.stringToJson(jsonString);
+                  JSONArray products = json.optJSONArray("products");
+                  product = products != null && !products.isEmpty() ? products.optJSONObject(0) : new JSONObject();
                }
             }
          }
@@ -119,11 +118,23 @@ public class BrasilCaroneCrawler extends Crawler {
       return product;
    }
 
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst(".price-box .off .price");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".special-price .price", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "p.old-price", null, false, ',', session);
-
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
@@ -136,7 +147,7 @@ public class BrasilCaroneCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards (Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
