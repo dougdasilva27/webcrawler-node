@@ -12,6 +12,9 @@ import br.com.lett.crawlernode.util.toInt
 import br.com.lett.crawlernode.util.toJson
 import org.apache.http.HttpHeaders
 import org.jsoup.nodes.Element
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 
 class EspanaPrimenowCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
@@ -25,37 +28,45 @@ class EspanaPrimenowCrawler(session: Session) : CrawlerRankingKeywords(session) 
   }
 
   override fun processBeforeFetch() {
-    val headers = mutableMapOf(HttpHeaders.USER_AGENT to userAgent);
+   val headers = mutableMapOf(HttpHeaders.USER_AGENT to userAgent);
 
-    val requestOn: (String, Boolean) -> Response = { url, bodyIsrequired ->
-      val resp = dataFetcher.get(
-        session, Request.RequestBuilder.create()
-          .setUrl("https://primenow.amazon.es/$url")
-          .setCookies(cookies)
-          .setHeaders(headers)
-          .setBodyIsRequired(bodyIsrequired)
-          .setProxyservice(
-            listOf(
-              ProxyCollection.NETNUT_RESIDENTIAL_ES,
-              ProxyCollection.INFATICA_RESIDENTIAL_BR
+      val requestOn: (String, Boolean) -> Response = { url, bodyIsrequired ->
+         val request = RequestBuilder.create()
+            .setUrl("https://primenow.amazon.es/$url")
+            .setCookies(cookies)
+            .setHeaders(headers)
+            .setBodyIsRequired(bodyIsrequired)
+            .setFetcheroptions(FetcherOptionsBuilder.create().mustUseMovingAverage(false).build())
+            .setProxyservice(
+               listOf(
+                  ProxyCollection.NETNUT_RESIDENTIAL_ES,
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR
+               )
             )
-          )
-          .build()
-      )
-      if (resp.cookies.size > 0) {
-        cookies = resp.cookies
+            .build();
+
+         var resp = dataFetcher.get(
+            session, request
+         )
+
+         if (resp.body.isEmpty()) {
+            resp = ApacheDataFetcher().get(session, request);
+         }
+
+         if (resp.cookies.size > 0) {
+            cookies = resp.cookies
+         }
+
+         resp
       }
-      resp
-    }
 
-    val resp = requestOn("onboard", true)
-    val token = resp.body?.toDoc()?.selectFirst("span[data-location-select-form-submit]")
-      ?.attr("data-location-select-form-submit")?.toJson()?.optString("offerSwappingToken")!!
+      val resp = requestOn("onboard", true)
+      val token = resp.body?.toDoc()?.selectFirst("span[data-location-select-form-submit]")
+         ?.attr("data-location-select-form-submit")?.toJson()?.optString("offerSwappingToken")!!
 
-    requestOn("onboard/check?postalCode=$cep&offerSwappingToken=$token", false)
-    requestOn("cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome" +
-        "&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token", false)
-  }
+      requestOn("onboard/check?postalCode=$cep&offerSwappingToken=$token", false)
+      requestOn("cart/initiatePostalCodeUpdate?newPostalCode=$cep&allCartItemsSwappableUrl=%2Fhome&noCartUpdateRequiredUrl=%2Fhome&someCartItemsUnswappableUrl=%2Fhome&offer-swapping-token=$token", false)
+   }
 
 
   override fun extractProductsFromCurrentPage() {
