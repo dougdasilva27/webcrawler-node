@@ -1,30 +1,31 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 public abstract class RomaniaBringoCrawler extends CrawlerRankingKeywords {
 
-   private final String searchPage = "https://www.bringo.ro/ro/search/"+ formatSeller(getMainSeller()) + "?criteria%5Bsearch%5D%5Bvalue%5D=";
+   private final String searchPage = "https://www.bringo.ro/ro/search/" + formatSeller(getMainSeller()) + "?criteria%5Bsearch%5D%5Bvalue%5D=";
    int totalPages;
+
    public RomaniaBringoCrawler(Session session) {
       super(session);
    }
 
    protected abstract String getMainSeller();
 
-   private String formatSeller(String seller){
+   private String formatSeller(String seller) {
       return seller.toLowerCase().replace(" ", "_");
    }
 
-   private Document fetch(){
+   private Document fetch() {
 
       String url = searchPage + this.keywordEncoded + "&page=" + this.currentPage;
 
@@ -37,15 +38,16 @@ public abstract class RomaniaBringoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
+      this.pageSize = 20;
 
       this.log("Página " + this.currentPage);
       this.currentDoc = fetch();
 
       Elements products = this.currentDoc.select(".col-product-listing-box");
 
-      if(products.size() >= 1){
+      if (products.size() >= 1) {
 
-         if(this.totalPages == 0){
+         if (this.totalPages == 0) {
             setTotalPages();
          }
 
@@ -75,25 +77,25 @@ public abstract class RomaniaBringoCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected boolean hasNextPage(){
+   protected boolean hasNextPage() {
       return this.currentPage < this.totalPages;
    }
 
-   private void setTotalPages(){
+   private void setTotalPages() {
 
       Elements li = this.currentDoc.select("li.page-item:not(.next)");
-      if(!li.isEmpty()){
+      if (!li.isEmpty()) {
          this.totalPages = CrawlerUtils.scrapIntegerFromHtml(li.last(), "a", true, 1);
       }
    }
 
-   private String scrapInternalId(Element product){
+   private String scrapInternalId(Element product) {
 
       String infoProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".addToCartForm", "action");
 
       String internalId = null;
 
-      if(infoProduct != null){
+      if (infoProduct != null) {
 
          String[] arrayInfo = infoProduct.split("/");
 
