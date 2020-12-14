@@ -35,6 +35,7 @@ public class TestHtmlBuilder {
    private static final String PRICE = "price";
    private static final String STOCK = "stock";
    private static final String AVAILABLE = "available";
+   private static final String STATUS = "regexstatus";
    private static final String DESCRIPTION = "description";
    private static final String CAT1 = "category1";
    private static final String CAT2 = "category2";
@@ -58,7 +59,7 @@ public class TestHtmlBuilder {
    private static final String STAR4 = "star4";
    private static final String STAR5 = "star5";
 
-   public static String buildProductHtml(JSONObject productJson, String pathWrite, Session session) {
+   public static String buildProductHtml(JSONObject productJson, String pathWrite, String firstParty, Session session) {
       MustacheFactory mustacheFactory = new DefaultMustacheFactory();
       File file = new File(Resources.getResource("productTemplate.html").getFile());
 
@@ -93,6 +94,9 @@ public class TestHtmlBuilder {
 
          // Put name in map
          putAvailable(productJson, scopes);
+
+         // Put regex status in map
+         putStatus(firstParty, scopes);
 
          // Put name in map
          putStock(productJson, scopes);
@@ -183,6 +187,10 @@ public class TestHtmlBuilder {
       if (productJson.has(AVAILABLE) && !productJson.isNull(AVAILABLE)) {
          scopes.put(AVAILABLE, productJson.get(AVAILABLE));
       }
+   }
+
+   private static void putStatus(String firstPary, Map<String, Object> scopes) {
+      scopes.put(STATUS, firstPary);
    }
 
    private static void putStock(JSONObject productJson, Map<String, Object> scopes) {

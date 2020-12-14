@@ -92,6 +92,7 @@ public class DatabaseDataFetcher {
       fields.add(marketTable.NAME);
       fields.add(marketTable.FULLNAME);
       fields.add(marketTable.CODE);
+      fields.add(marketTable.FIRST_PARTY_REGEX);
       fields.add(marketTable.PROXIES);
       fields.add(marketTable.PROXIES_IMAGES);
 
@@ -126,12 +127,13 @@ public class DatabaseDataFetcher {
 
             // create market
             return new Market(r.getValue(marketTable.ID).intValue(),
-               r.getValue(marketTable.CITY),
-               r.getValue(marketTable.NAME),
-               r.getValue(marketTable.CODE),
-               r.getValue(marketTable.FULLNAME),
-               proxies,
-               imageProxies);
+                  r.getValue(marketTable.CITY),
+                  r.getValue(marketTable.NAME),
+                  r.getValue(marketTable.CODE),
+                  r.getValue(marketTable.FULLNAME),
+                  proxies,
+                  imageProxies,
+                  r.getValue(marketTable.FIRST_PARTY_REGEX));
          }
 
       } catch (Exception e) {
