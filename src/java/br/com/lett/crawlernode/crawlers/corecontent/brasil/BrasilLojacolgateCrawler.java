@@ -1,82 +1,51 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 import models.prices.Prices;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebElement;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class BrasilLojacolgateCrawler extends Crawler {
 
    private static final String HOST = "lojacolgate.com.br";
 
-   private static final String LOGIN_URL = "https://lojacolgate.com.br/pt/login";
-   private static final String CNPJ = "97.348.676/0001-02";
-   private static final String PASSWORD = "12345678";
-
    public BrasilLojacolgateCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
    protected Object fetch() {
-      try {
-         this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-         this.webdriver.waitLoad(10000);
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", "JSESSIONID=F1648205CBA7A84ED93C6D4802CA07E8;");
 
-         if (this.webdriver.driver instanceof JavascriptExecutor) {
-            JavascriptExecutor jsExecutor = (JavascriptExecutor) this.webdriver.driver;
+      Request request = RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setHeaders(headers)
+            .setProxyservice(Arrays.asList(
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR))
+            .build();
 
-            // Javascript code to delete loader that goes over the page and
-            // Show the main contents of the page by removing the hidden class from it
-            jsExecutor.executeScript("return document.getElementsByClassName('loader-contain')[0].remove();");
-            jsExecutor.executeScript("document.querySelector('.main__inner-wrapper').classList.remove('hidden')");
-            this.webdriver.waitLoad(2000);
-         }
-
-         WebElement email = this.webdriver.driver.findElement(By.cssSelector("#j_username"));
-         email.sendKeys(CNPJ);
-         this.webdriver.waitLoad(500);
-
-         WebElement pass = this.webdriver.driver.findElement(By.cssSelector("#j_password"));
-         pass.sendKeys(PASSWORD);
-         this.webdriver.waitLoad(500);
-
-         WebElement login = this.webdriver.driver.findElement(By.cssSelector("#loginForm .btn-primary"));
-         this.webdriver.clickOnElementViaJavascript(login);
-         this.webdriver.waitLoad(5000);
-
-         this.webdriver.driver.manage().getCookies().forEach(this.webdriver.driver.manage()::addCookie);
-
-         this.webdriver.loadUrl(session.getOriginalURL());
-         this.webdriver.waitLoad(15000);
-
-         return Jsoup.parse(this.webdriver.getCurrentPageSource());
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         return super.fetch();
-      }
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
 
    @Override
