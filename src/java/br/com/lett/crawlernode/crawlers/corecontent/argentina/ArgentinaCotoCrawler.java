@@ -31,22 +31,21 @@ import java.util.Set;
 
 /**
  * Date: 07/12/2016
- * 
+ * <p>
  * 1) Only one sku per page.
- * 
+ * <p>
  * Price crawling notes: 1) In the time this crawler was made, we doesn't found any unnavailable
  * product. 2) There is no bank slip (boleto bancario) payment option. 3) There is installments for
  * card payment, but was found only shopCard payment method.
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class ArgentinaCotoCrawler extends Crawler {
 
    private final String HOME_PAGE = "https://www.cotodigital3.com.ar/";
    private static final String SELLER_FULL_NAME = "Coto";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ArgentinaCotoCrawler(Session session) {
       super(session);
@@ -79,19 +78,19 @@ public class ArgentinaCotoCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -210,14 +209,14 @@ public class ArgentinaCotoCrawler extends Crawler {
       List<String> sales = scrapSales(doc);
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -236,38 +235,38 @@ public class ArgentinaCotoCrawler extends Crawler {
       return sales;
    }
 
-   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
-      Double priceFrom = scrapPriceFrom(doc);
-      Double price = scrapSpotligtPrice(doc);
-
-      CreditCards creditCards = scrapCreditCards(doc, internalId, price);
-
-      return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(price)
-            .setCreditCards(creditCards)
-            .build();
+   private Double scrapSpotlightPrice(Document doc) {
+      Double price = null;
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio,.atg_store_newPrice,.atg_store_oldPrice.price_regular", null, false, ',', session);
+      Double priceDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".first_price_discount_container .price_discount", null, false, '.', session);
+      if (priceDiscount != null) {
+         price = priceDiscount;
+      } else {
+         price = spotlightPrice;
+      }
+      return price;
    }
 
-   private Double scrapPriceFrom(Document doc){
+   private Double scrapPriceFrom(Document doc, Double spotlightPrice) {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio", null, false, '.', session);
-      if (scrapSpotligtPrice(doc).equals(priceFrom)){
+      if (spotlightPrice.equals(priceFrom)) {
          priceFrom = null;
       }
       return priceFrom;
    }
 
-   private Double scrapSpotligtPrice(Document doc){
-      Double price = null;
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_regular_precio,.atg_store_newPrice,.atg_store_oldPrice.price_regular", null, false, ',', session);
-      Double priceDiscount = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".first_price_discount_container .price_discount", null, false, '.', session);
-      if(priceDiscount != null) {
-        price = priceDiscount;
-      } else {
-            price = spotlightPrice;
-         }
-      return price;
-      }
+   private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
+      Double spotlightPrice = scrapSpotlightPrice(doc);
+      Double priceFrom = scrapPriceFrom(doc, spotlightPrice);
+
+      CreditCards creditCards = scrapCreditCards(doc, internalId, spotlightPrice);
+
+      return PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
 
 
    private CreditCards scrapCreditCards(Document doc, String internalId, Double spotlightPrice) throws MalformedPricingException {
@@ -276,17 +275,17 @@ public class ArgentinaCotoCrawler extends Crawler {
       Installments installments = scrapInstallments(doc);
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
@@ -306,9 +305,9 @@ public class ArgentinaCotoCrawler extends Crawler {
             Double value = MathUtils.parseDoubleWithComma(valueElement.text());
 
             installments.add(InstallmentBuilder.create()
-                  .setInstallmentNumber(installment)
-                  .setInstallmentPrice(value)
-                  .build());
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(value)
+               .build());
          }
       }
 
@@ -316,7 +315,7 @@ public class ArgentinaCotoCrawler extends Crawler {
    }
 
    private boolean crawlAvailability(Document document) {
-      return !document.select(".add_products").isEmpty();
+      return !document.select(".add_products :not(.product_not_available)").isEmpty();
    }
 
 }
