@@ -3,8 +3,10 @@ package br.com.lett.crawlernode.core.models;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.apache.commons.lang3.SerializationUtils;
+import org.bson.BsonNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.base.CharMatcher;
@@ -359,38 +361,35 @@ public class Product implements Serializable {
    }
 
    public String serializeToKinesis() {
-      JSONArray secondaryImagesArray = null;
-      if (this.secondaryImages != null && !this.secondaryImages.isEmpty()) {
-         secondaryImagesArray = CommonMethods.listToJSONArray(this.secondaryImages);
-      } else {
-         secondaryImagesArray = new JSONArray();
-      }
+      LinkedHashMap<String, Object> linkedMap = new LinkedHashMap<>();
 
-      JSONObject kinesisJson = new JSONObject().put("url", (url != null ? url : JSONObject.NULL))
-            .put("internal_id", (internalId != null ? internalId : JSONObject.NULL))
-            .put("internal_pid", (internalPid != null ? internalPid : JSONObject.NULL))
-            .put("market_id", marketId)
-            .put("name", (name != null ? name : JSONObject.NULL))
-            .put("prices", (prices != null ? prices.toString() : JSONObject.NULL))
-            .put("status", status.toString())
-            .put("available", available)
-            .put("category1", (category1 != null && !category1.isEmpty() ? category1 : JSONObject.NULL))
-            .put("category2", (category2 != null && !category2.isEmpty() ? category2 : JSONObject.NULL))
-            .put("category3", (category3 != null && !category3.isEmpty() ? category3 : JSONObject.NULL))
-            .put("primary_image", (primaryImage != null ? primaryImage : JSONObject.NULL))
-            .put("secondary_images", secondaryImagesArray)
-            .put("marketplace", (marketplace != null ? marketplace.toString() : new JSONArray().toString()))
-            .put("offers", (offers != null ? offers.toStringToKinseis() : new JSONArray().toString()))
-            .put("stock", (stock != null ? stock : JSONObject.NULL))
-            .put("description", ((description != null && !description.isEmpty()) ? description : JSONObject.NULL))
-            .put("eans", (eans != null ? eans : Collections.emptyList())).put("timestamp", timestamp);
+      linkedMap.put("url", (url != null ? url : BsonNull.VALUE));
+      linkedMap.put("internal_id", (internalId != null ? internalId : BsonNull.VALUE));
+      linkedMap.put("internal_pid", (internalPid != null ? internalPid : BsonNull.VALUE));
+      linkedMap.put("market_id", marketId);
+      linkedMap.put("name", (name != null ? name : BsonNull.VALUE));
+      linkedMap.put("prices", (prices != null ? prices.toString() : BsonNull.VALUE));
+      linkedMap.put("status", status.toString());
+      linkedMap.put("available", available);
+      linkedMap.put("category1", (category1 != null && !category1.isEmpty() ? category1 : BsonNull.VALUE));
+      linkedMap.put("category2", (category2 != null && !category2.isEmpty() ? category2 : BsonNull.VALUE));
+      linkedMap.put("category3", (category3 != null && !category3.isEmpty() ? category3 : BsonNull.VALUE));
+      linkedMap.put("primary_image", (primaryImage != null ? primaryImage : BsonNull.VALUE));
+      linkedMap.put("secondary_images", this.secondaryImages == null ? Collections.emptyList() : this.secondaryImages);
+      linkedMap.put("marketplace", (marketplace != null ? marketplace.toString() : Collections.emptyList().toString()));
+      linkedMap.put("offers", (offers != null ? offers.toStringToKinseis() : Collections.emptyList().toString()));
+      linkedMap.put("stock", (stock != null ? stock : BsonNull.VALUE));
+      linkedMap.put("description", ((description != null && !description.isEmpty()) ? description : BsonNull.VALUE));
+      linkedMap.put("eans", (eans != null ? eans : Collections.emptyList()));
+      linkedMap.put("timestamp", timestamp);
 
       RatingsReviews rating = this.ratingReviews != null ? this.ratingReviews : new RatingsReviews();
-      kinesisJson.put(TOTAL_REVIEWS_FIELD, rating.getTotalReviews() != null ? rating.getTotalReviews() : JSONObject.NULL)
-            .put(TOTAL_WRITTEN_REVIEWS_FIELD, rating.getTotalWrittenReviews() != null ? rating.getTotalWrittenReviews() : JSONObject.NULL)
-            .put(AVERAGE_OVERALL_RATING_FIELD, rating.getAverageOverallRating() != null ? rating.getAverageOverallRating() : JSONObject.NULL)
-            .put(RATING_STAR_FIELD, rating.getAdvancedRatingReview() != null ? rating.getAdvancedRatingReview().toJson() : new AdvancedRatingReview().toJson());
 
-      return kinesisJson.toString();
+      linkedMap.put(TOTAL_REVIEWS_FIELD, rating.getTotalReviews() != null ? rating.getTotalReviews() : JSONObject.NULL);
+      linkedMap.put(TOTAL_WRITTEN_REVIEWS_FIELD, rating.getTotalWrittenReviews() != null ? rating.getTotalWrittenReviews() : JSONObject.NULL);
+      linkedMap.put(AVERAGE_OVERALL_RATING_FIELD, rating.getAverageOverallRating() != null ? rating.getAverageOverallRating() : JSONObject.NULL);
+      linkedMap.put(RATING_STAR_FIELD, rating.getAdvancedRatingReview() != null ? rating.getAdvancedRatingReview().toDocument() : new AdvancedRatingReview().toDocument());
+
+      return new org.bson.Document(linkedMap).toJson();
    }
 }
