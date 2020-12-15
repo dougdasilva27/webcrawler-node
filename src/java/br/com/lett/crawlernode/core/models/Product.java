@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.SerializationUtils;
 import org.bson.BsonNull;
 import org.json.JSONArray;
@@ -361,7 +362,7 @@ public class Product implements Serializable {
    }
 
    public String serializeToKinesis() {
-      LinkedHashMap<String, Object> linkedMap = new LinkedHashMap<>();
+      Map<String, Object> linkedMap = new LinkedHashMap<>();
 
       linkedMap.put("url", (url != null ? url : BsonNull.VALUE));
       linkedMap.put("internal_id", (internalId != null ? internalId : BsonNull.VALUE));
