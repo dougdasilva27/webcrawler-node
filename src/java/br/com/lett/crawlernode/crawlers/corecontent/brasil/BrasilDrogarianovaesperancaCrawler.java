@@ -58,7 +58,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
             .setFetcheroptions(
                   FetcherOptionsBuilder.create()
                         .mustUseMovingAverage(false)
-                        .mustRetrieveStatistics(false)
+                        .mustRetrieveStatistics(true)
                         .build())
             .setProxyservice(Arrays.asList(
                   ProxyCollection.INFATICA_RESIDENTIAL_BR,
