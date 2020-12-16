@@ -1,14 +1,17 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.Vipcommerce;
+import br.com.lett.crawlernode.core.session.Session;
 
-public class RexdeliveryCrawler extends Vipcommerce {
-   private static final String SELLER_FULL_NAME = "Rex Delivery";
-   private static final String HOME_PAGE = "https://www.rexdelivery.com.br/";
-   private static final String DOMAIN = "rexdelivery.com.br";
+public class BrasilRedefavoritoCrawler extends Vipcommerce {
 
-   public RexdeliveryCrawler(Session session){
+
+
+   private static final String HOME_PAGE = "https://www.favoritosupermercados.com.br";
+   private static final String SELLER_FULL_NAME = "rede favorito";
+   private static final String DOMAIN = "favoritosupermercados.com.br";
+
+   public BrasilRedefavoritoCrawler(Session session) {
       super(session);
    }
 

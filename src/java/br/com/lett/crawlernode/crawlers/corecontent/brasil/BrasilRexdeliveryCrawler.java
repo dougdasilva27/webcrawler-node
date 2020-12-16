@@ -3,12 +3,12 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.Vipcommerce;
 
-public class CarvalhosupershopCrawler extends Vipcommerce {
-   private final String HOME_PAGE = "https://www.carvalhosupershop.com.br/";
-   private final String SELLER_FULL_NAME = "carvalhosupershop";
-   private final String DOMAIN = "carvalhosupershop.com.br";
+public class BrasilRexdeliveryCrawler extends Vipcommerce {
+   private static final String SELLER_FULL_NAME = "Rex Delivery";
+   private static final String HOME_PAGE = "https://www.rexdelivery.com.br/";
+   private static final String DOMAIN = "rexdelivery.com.br";
 
-   public CarvalhosupershopCrawler(Session session){
+   public BrasilRexdeliveryCrawler(Session session){
       super(session);
    }
 
