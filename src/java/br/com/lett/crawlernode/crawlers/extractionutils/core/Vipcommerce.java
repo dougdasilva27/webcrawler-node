@@ -1,15 +1,6 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -18,29 +9,40 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Offer.OfferBuilder;
+import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.CreditCards;
-import models.pricing.Installment.InstallmentBuilder;
-import models.pricing.Installments;
-import models.pricing.Pricing;
-import models.pricing.Pricing.PricingBuilder;
+import models.pricing.*;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
-public class BrasilDeliverycidadeCrawler extends Crawler {
+import java.util.*;
+
+/**
+ * Date: 15/12/20
+ *
+ * @author Matheus Bussolotti
+ */
+
+public abstract class Vipcommerce extends Crawler {
 
 
-   private static final String HOME_PAGE = "https://www.deliverycidade.com.br/";
-   private static final String SELLER_FULL_NAME = "Delivery Cidade";
+   private final String HOME_PAGE = getHomePage();
+   private final String SELLER_FULL_NAME = getSellerFullName();
+   private final String DOMAIN = getDomain();
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-   public BrasilDeliverycidadeCrawler(Session session) {
+   public Vipcommerce(Session session) {
       super(session);
    }
+
+   protected abstract String getHomePage();
+   protected abstract String getSellerFullName();
+   protected abstract String getDomain();
+
 
 
    @Override
@@ -52,18 +54,18 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
    public String getToken() {
       String token = null;
 
-      String url = "https://api.deliverycidade.com.br/v1/auth/loja/login";
+      String url = "https://api."+ DOMAIN +"/v1/auth/loja/login";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("content-type", "application/json");
-      headers.put("origin", "https://www.deliverycidade.com.br");
+      headers.put("origin", "https://www."+ DOMAIN +"");
 
       JSONObject payload = new JSONObject()
-            .put("domain", "deliverycidade.com.br")
-            .put("username", "loja")
-            .put("key", "df072f85df9bf7dd71b6811c34bdbaa4f219d98775b56cff9dfa5f8ca1bf8469");
+         .put("domain", DOMAIN)
+         .put("username", "loja")
+         .put("key", "df072f85df9bf7dd71b6811c34bdbaa4f219d98775b56cff9dfa5f8ca1bf8469");
 
-      Request request = RequestBuilder.create().setUrl(url).setHeaders(headers).setPayload(payload.toString()).setCookies(cookies).build();
+      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).setPayload(payload.toString()).setCookies(cookies).build();
       JSONObject tokenJson = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
       token = JSONUtils.getStringValue(tokenJson, "data");
 
@@ -73,14 +75,14 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
    public JSONObject crawlApi(String token) {
 
       // there is no info about internalId on product page HTML so capture this info from URL
-      Integer indexOf = session.getOriginalURL().indexOf("detalhe/");
-      String internalIdFromURL = indexOf != null ? session.getOriginalURL().substring(indexOf).split("/")[1] : null;
-      String url = "https://api.deliverycidade.com.br/v1/loja/produtos/" + internalIdFromURL + "/filial/1/centro_distribuicao/1/detalhes";
+      Integer x = session.getOriginalURL().indexOf("detalhe/");
+      String internalIdFromURL = x != null ? session.getOriginalURL().substring(x).split("/")[1] : null;
+      String url = "https://api."+ DOMAIN +"/v1/loja/produtos/" + internalIdFromURL + "/filial/1/centro_distribuicao/1/detalhes";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authorization", token);
 
-      Request request = RequestBuilder.create().setHeaders(headers).setUrl(url).build();
+      Request request = Request.RequestBuilder.create().setHeaders(headers).setUrl(url).build();
       JSONObject jsonObject = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
       JSONObject produtoInfo = JSONUtils.getJSONValue(jsonObject, "data");
 
@@ -104,19 +106,19 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
          String internalPid = JSONUtils.getStringValue(productInfo, "id");
          String name = JSONUtils.getStringValue(productInfo, "descricao");
          String primaryImage = CrawlerUtils.completeUrl(JSONUtils.getStringValue(productInfo, "imagem"), " https://", "s3.amazonaws.com/produtos.vipcommerce.com.br/250x250");
-         boolean available = productInfo.optBoolean("disponivel");
+         boolean availeble = productInfo.optBoolean("disponivel");
          Integer stock = JSONUtils.getIntegerValueFromJSON(productInfo, "quantidade_maxima", null);
-         Offers offers = available ? scrapOffers(OffersInfo, productInfo) : new Offers();
+         Offers offers = availeble ? scrapOffers(OffersInfo, productInfo) : new Offers();
 
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrimaryImage(primaryImage)
-               .setStock(stock)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setStock(stock)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -136,15 +138,15 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
       Pricing pricing = scrapPricing(OffersInfo, productInfo);
       List<String> sales = new ArrayList<>();
 
-      offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
    }
@@ -164,12 +166,12 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
-      return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setBankSlip(bankSlip)
-            .setCreditCards(creditCards)
-            .build();
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -177,22 +179,21 @@ public class BrasilDeliverycidadeCrawler extends Crawler {
 
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
-         creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
    }
-
 
 }
