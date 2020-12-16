@@ -386,9 +386,9 @@ public class Product implements Serializable {
 
       RatingsReviews rating = this.ratingReviews != null ? this.ratingReviews : new RatingsReviews();
 
-      linkedMap.put(TOTAL_REVIEWS_FIELD, rating.getTotalReviews() != null ? rating.getTotalReviews() : JSONObject.NULL);
-      linkedMap.put(TOTAL_WRITTEN_REVIEWS_FIELD, rating.getTotalWrittenReviews() != null ? rating.getTotalWrittenReviews() : JSONObject.NULL);
-      linkedMap.put(AVERAGE_OVERALL_RATING_FIELD, rating.getAverageOverallRating() != null ? rating.getAverageOverallRating() : JSONObject.NULL);
+      linkedMap.put(TOTAL_REVIEWS_FIELD, rating.getTotalReviews() != null ? rating.getTotalReviews() : BsonNull.VALUE);
+      linkedMap.put(TOTAL_WRITTEN_REVIEWS_FIELD, rating.getTotalWrittenReviews() != null ? rating.getTotalWrittenReviews() : BsonNull.VALUE);
+      linkedMap.put(AVERAGE_OVERALL_RATING_FIELD, rating.getAverageOverallRating() != null ? rating.getAverageOverallRating() : BsonNull.VALUE);
       linkedMap.put(RATING_STAR_FIELD, rating.getAdvancedRatingReview() != null ? rating.getAdvancedRatingReview().toDocument() : new AdvancedRatingReview().toDocument());
 
       return new org.bson.Document(linkedMap).toJson();
