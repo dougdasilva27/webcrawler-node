@@ -9,12 +9,12 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
-import exceptions.OfferException;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -67,7 +67,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
                "extension_attributes.stock_item.is_in_stock",
                Boolean.class);
             RatingsReviews ratingsReviews = crawlRating(internalPid);
-            Offers offers = available ? scrapOffers(doc, data) : new Offers();
+            Offers offers = available ? scrapOffers(data) : new Offers();
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -97,26 +97,30 @@ public class SaopauloDrogasilCrawler extends Crawler {
    }
 
 
-   private Offers scrapOffers(Document doc, JSONObject data) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject data) {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc, data);
-      List<String> sales = new ArrayList<>();
+      try {
+         Pricing pricing = scrapPricing(data);
+         List<String> sales = new ArrayList<>();
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+      }
       return offers;
 
    }
 
-   private Pricing scrapPricing(Document doc, JSONObject data) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getValueRecursive(data, "price_aux.value_to", Double.class);
       Double priceFrom = JSONUtils.getValueRecursive(data, "price_aux.value_from", Double.class);
 
@@ -189,18 +193,22 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
    private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject rating) {
       JSONObject stars = JSONUtils.getValueRecursive(rating, "rate.histogram", JSONObject.class);
-      Integer star1 = JSONUtils.getValueRecursive(stars, "1", Integer.class);
-      Integer star2 = JSONUtils.getValueRecursive(stars, "2", Integer.class);
-      Integer star3 = JSONUtils.getValueRecursive(stars, "3", Integer.class);
-      Integer star4 = JSONUtils.getValueRecursive(stars, "4", Integer.class);
-      Integer star5 = JSONUtils.getValueRecursive(stars, "5", Integer.class);
+      if (stars != null) {
+         Integer star1 = stars.optInt("1");
+         Integer star2 = stars.optInt("2");
+         Integer star3 = stars.optInt("3");
+         Integer star4 = stars.optInt("4");
+         Integer star5 = stars.optInt("5");
 
-      return new AdvancedRatingReview.Builder()
-         .totalStar1(star1)
-         .totalStar2(star2)
-         .totalStar3(star3)
-         .totalStar4(star4)
-         .totalStar5(star5)
-         .build();
+         return new AdvancedRatingReview.Builder()
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
+      } else {
+         return new AdvancedRatingReview();
+      }
    }
 }
