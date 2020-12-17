@@ -1,15 +1,14 @@
-package br.com.lett.crawlernode.crawlers.corecontent.natal;
+package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.Vipcommerce;
 
-public class NatalNordestaoCrawler extends Vipcommerce {
+public class BrasilRexdeliveryCrawler extends Vipcommerce {
+   private static final String SELLER_FULL_NAME = "Rex Delivery";
+   private static final String HOME_PAGE = "https://www.rexdelivery.com.br/";
+   private static final String DOMAIN = "rexdelivery.com.br";
 
-   private static final String SELLER_FULL_NAME = "Nordestao";
-   private static final String HOME_PAGE = "https://www.cliqueretire.nordestao.com.br/";
-   private static final String DOMAIN = "cliqueretire.nordestao.com.br";
-
-   public NatalNordestaoCrawler (Session session){
+   public BrasilRexdeliveryCrawler(Session session){
       super(session);
    }
 

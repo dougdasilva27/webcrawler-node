@@ -3,11 +3,10 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.VipcommerceRanking;
 
+public class BrasilCarvalhosupershopCrawler extends VipcommerceRanking{
+   private static final String DOMAIN = "carvalhosupershop.com.br";
 
-public class BrasilRossisupermercadosCrawler extends VipcommerceRanking {
-   private static final String DOMAIN = "rossidelivery.com.br";
-
-   public BrasilRossisupermercadosCrawler(Session session) {
+   public BrasilCarvalhosupershopCrawler(Session session) {
       super(session);
    }
 
