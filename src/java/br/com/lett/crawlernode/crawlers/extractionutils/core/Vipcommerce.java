@@ -76,7 +76,7 @@ public abstract class Vipcommerce extends Crawler {
 
       // there is no info about internalId on product page HTML so capture this info from URL
       Integer x = session.getOriginalURL().indexOf("detalhe/");
-      String[] vetURL = x != null ? session.getOriginalURL().substring(x).split("/") : null;
+      String[] vetURL = x != null ? session.getOriginalURL().substring(x).split("/") : new String[0];
       String internalIdFromURL = vetURL.length >2 ? vetURL[1] :null;
       String url = "https://api."+ DOMAIN +"/v1/loja/produtos/" + internalIdFromURL + "/filial/1/centro_distribuicao/1/detalhes";
 
