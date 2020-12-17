@@ -34,7 +34,6 @@ public class SaopauloDrogasilCrawler extends Crawler {
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
-      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -54,8 +53,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
          JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, " ", false, false);
          JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.pageData.productBySku", JSONObject.class);
          if (data != null) {
-            String internalId = String.valueOf(JSONUtils.getValue(data, "id"));
-            String internalPid = JSONUtils.getStringValue(data, "sku");
+            String internalId = JSONUtils.getStringValue(data, "sku");
+            String internalPid = String.valueOf(JSONUtils.getValue(data, "id"));
             String name = JSONUtils.getStringValue(data, "name");
             // Site hasn't category
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div.sc-pANHa.iGPRRc img", Arrays.asList("src"), "https", "img.drogasil.com.br");
@@ -66,7 +65,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
             Boolean available = JSONUtils.getValueRecursive(data,
                "extension_attributes.stock_item.is_in_stock",
                Boolean.class);
-            RatingsReviews ratingsReviews = crawlRating(internalPid);
+            RatingsReviews ratingsReviews = crawlRating(internalId);
             Offers offers = available ? scrapOffers(data) : new Offers();
 
             // Creating the product
@@ -157,9 +156,9 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return creditCards;
    }
 
-   private String alternativeRatingFetch(String internalPid) {
+   private String alternativeRatingFetch(String internalId) {
 
-      String url = "https://trustvox.com.br/widget/root?&code=" + internalPid + "&store_id=71447&product_extra_attributes[group]=P";
+      String url = "https://trustvox.com.br/widget/root?&code=" + internalId + "&store_id=71447&product_extra_attributes[group]=P";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
@@ -173,9 +172,9 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return new FetcherDataFetcher().get(session, request).getBody();
    }
 
-   private RatingsReviews crawlRating(String internalPid) {
+   private RatingsReviews crawlRating(String internalId) {
       RatingsReviews ratingsReviews = new RatingsReviews();
-      String ratingResponse = alternativeRatingFetch(internalPid);
+      String ratingResponse = alternativeRatingFetch(internalId);
 
       JSONObject rating = CrawlerUtils.stringToJson(ratingResponse);
 
