@@ -118,7 +118,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
    }
 
    private fun scrapTotalRating(doc: Document): Int {
-      val ratingReviewsElements: Elements = doc.select("div#ratings .ratings-item")
+      val ratingReviewsElements: Elements = doc.select("#ratings:not(:has(.rating-empty))")
       return ratingReviewsElements.size
    }
 
