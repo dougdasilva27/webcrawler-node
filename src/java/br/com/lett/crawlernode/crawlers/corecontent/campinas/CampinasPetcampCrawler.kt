@@ -34,26 +34,19 @@ class CampinasPetcampCrawler(session: Session) : Crawler(session) {
         super.extractInformation(doc)
         val products = mutableListOf<Product>()
 
-        val json = CrawlerUtils
-                .selectJsonFromHtml(doc, "script", "dataLayer[0]['product'] =", ";", false, true)
 
-        if (json != null && json.has("id")) {
+        if (!doc.select("#___rc-p-id").isEmpty()) {
+
             Logging.printLogDebug(logger, session, "Product page identified: ${session.originalURL}")
-            val internalId = json.optString("id")
-            val internalPid = internalId
-            val name = CrawlerUtils.scrapStringSimpleInfo(doc, "#lblNome", true)
+            val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"#___rc-p-id","value")
+            val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"#___rc-p-sku-ids","value")
+            val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productName", true)
 
-            val categories = CrawlerUtils.crawlCategories(doc, ".migalha > :not(div)")
-            val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".descricao_texto_conteudo"))
-            val primaryImage = crawlPrimaryImage(doc)
-            val secondaryImages = crawlSecondaryImages(doc)
+            val categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb")
+            val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".productDescription"))
+            val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,"#image a", Arrays.asList("href"),"https","petcamp.vteximg.com.br")
 
-            val jsonArraySku: JSONArray = if (json.optJSONArray("variants") != null) json.optJSONArray("variants") else JSONArray()
-            val jsonSku = jsonArraySku.optJSONObject(0)
-            val ean = json.optString("ean")
-            val eans = if (ean != null && ean.isNotEmpty()) listOf(ean) else null
-            val offers = if (jsonSku.optBoolean("available")) scrapOffers(jsonSku, doc) else Offers()
-            val ratingsReviews = scrapRatingReviews(doc)
+            val offers =  scrapOffers(doc)
 
             val product = ProductBuilder.create()
                     .setUrl(session.originalURL)
@@ -65,10 +58,7 @@ class CampinasPetcampCrawler(session: Session) : Crawler(session) {
                     .setCategory2(categories.getCategory(1))
                     .setCategory3(categories.getCategory(2))
                     .setPrimaryImage(primaryImage)
-                    .setSecondaryImages(secondaryImages)
                     .setDescription(description)
-                    .setRatingReviews(ratingsReviews)
-                    .setEans(eans)
                     .build()
             products.add(product)
 
@@ -79,38 +69,13 @@ class CampinasPetcampCrawler(session: Session) : Crawler(session) {
         return products
     }
 
-    private fun crawlPrimaryImage(doc: Document): String? {
-        val images = doc.selectFirst("#thumblist li > a")
-        val rel = CrawlerUtils.stringToJson(images.attr("rel"))
 
-        return if (rel.optString("largeimage") != null) {
-            rel.optString("largeimage")
-        } else if (rel.optString("smallimage") != null) {
-            rel.optString("smallimage")
-        } else null
-    }
 
-    private fun crawlSecondaryImages(doc: Document): String? {
-        var secondaryImages: String? = null
-        val secondaryImagesArray = JSONArray()
-        val images = doc.select("#thumblist li:not(:first-child) > a")
-        for (e in images) {
-            val rel = CrawlerUtils.stringToJson(e.attr("rel"))
-            secondaryImagesArray.put(if (rel.optString("largeimage") != null) {
-                rel.optString("largeimage")
-            } else if (rel.optString("smallimage") != null) {
-                rel.optString("smallimage")
-            } else null)
-        }
-        if (secondaryImagesArray.length() > 0) {
-            secondaryImages = secondaryImagesArray.toString()
-        }
-        return secondaryImages
-    }
 
-    private fun scrapOffers(json: JSONObject, doc: Document): Offers {
+
+    private fun scrapOffers(doc: Document): Offers {
         val offers = Offers()
-        val pricing: Pricing = scrapPricing(json, doc)
+        val pricing: Pricing = scrapPricing(doc)
         val sales: List<String> = ArrayList()
 
         offers.add(OfferBuilder.create()
@@ -125,16 +90,16 @@ class CampinasPetcampCrawler(session: Session) : Crawler(session) {
         return offers
     }
 
-    private fun scrapPricing(json: JSONObject, doc: Document): Pricing {
-        val isOnSale = json.optBoolean("isOnSale")
+    private fun scrapPricing(doc: Document): Pricing {
+        val isOnSale = if(CrawlerUtils.scrapDoublePriceFromHtml(doc,".valor-de strong",null,false,',',session)!=null) true else false
         val spotlightPrice: Double?
         val priceFrom: Double?
 
         if (isOnSale) {
-            spotlightPrice = json.optDouble("salePrice")
-            priceFrom = json.optDouble("price")
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".valor-por strong",null,false,',',session)
+            priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc,".valor-de strong",null,false,',',session)
         } else {
-            spotlightPrice = json.optDouble("price")
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".valor-por strong",null,false,',',session)
             priceFrom = null
         }
 
@@ -144,85 +109,7 @@ class CampinasPetcampCrawler(session: Session) : Crawler(session) {
                 .setBankSlip(BankSlipBuilder.create()
                         .setFinalPrice(spotlightPrice)
                         .build())
-                .setCreditCards(scrapCreditCards(doc, spotlightPrice))
                 .build()
     }
 
-    private fun scrapCreditCards(doc: Document, spotlightPrice: Double): CreditCards {
-        val creditCards = CreditCards()
-        val installments = scrapInstallments(doc)
-
-        if (installments.installments.isEmpty()) {
-            installments.add(InstallmentBuilder.create()
-                    .setInstallmentNumber(1)
-                    .setInstallmentPrice(spotlightPrice)
-                    .build())
-        }
-
-        for (brand in cards) {
-            creditCards.add(CreditCardBuilder.create()
-                    .setBrand(brand)
-                    .setIsShopCard(false)
-                    .setInstallments(installments)
-                    .build())
-        }
-
-        return creditCards
-    }
-
-    private fun scrapInstallments(doc: Document): Installments {
-        val installments = Installments()
-
-        val banks = doc.selectFirst(".conteudo ul li")
-        for (row in banks.select(".formas_parc tbody > tr")) {
-            val number = CrawlerUtils.scrapIntegerFromHtml(row, "td:first-child", true, null)
-            val price = CrawlerUtils.scrapDoublePriceFromHtml(row, "td:last-child", null, true, ',', session)
-
-            installments.add(InstallmentBuilder.create()
-                    .setInstallmentNumber(number)
-                    .setInstallmentPrice(price)
-                    .build())
-        }
-        return installments
-    }
-
-    private fun scrapRatingReviews(doc: Document): RatingsReviews? {
-        val ratingReviews = RatingsReviews()
-        ratingReviews.date = session.date
-        val totalNumOfEvaluations = doc.select(".comentarios .comentarios_realizados > li").size
-        val advancedRatingReview: AdvancedRatingReview = scrapAdvancedRatingReview(doc)
-        val avgRating = CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview)
-
-        ratingReviews.setTotalRating(totalNumOfEvaluations)
-        ratingReviews.averageOverallRating = avgRating
-        ratingReviews.totalWrittenReviews = totalNumOfEvaluations
-        ratingReviews.advancedRatingReview = advancedRatingReview
-        return ratingReviews
-    }
-
-    private fun scrapAdvancedRatingReview(doc: Document): AdvancedRatingReview {
-        var star1 = 0
-        var star2 = 0
-        var star3 = 0
-        var star4 = 0
-        var star5 = 0
-
-        val reviews = doc.select(".comentarios .comentarios_realizados > li")
-        for (review in reviews) {
-            when (review.select("div >  img[src*=\"estrela_on\"]").size) {
-                1 -> star1 += 1
-                2 -> star2 += 1
-                3 -> star3 += 1
-                4 -> star4 += 1
-                5 -> star5 += 1
-            }
-        }
-        return AdvancedRatingReview.Builder()
-                .totalStar1(star1)
-                .totalStar2(star2)
-                .totalStar3(star3)
-                .totalStar4(star4)
-                .totalStar5(star5)
-                .build()
-    }
 }
