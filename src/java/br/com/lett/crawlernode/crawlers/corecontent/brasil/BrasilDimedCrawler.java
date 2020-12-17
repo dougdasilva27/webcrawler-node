@@ -7,10 +7,7 @@ import java.util.Set;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -61,19 +58,19 @@ public class BrasilDimedCrawler extends Crawler {
          webdriver.clickOnElementViaJavascript(check);
 
          webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#username");
+         webdriver.waitForElement("#username", 20);
          WebElement email = webdriver.driver.findElement(By.cssSelector("#username"));
          email.sendKeys(USER);
 
          webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "input[name=j_password]");
+         webdriver.waitForElement("input[name=j_password]", 20);
          WebElement pass = webdriver.driver.findElement(By.cssSelector("input[name=j_password]"));
          pass.sendKeys(PASSWORD);
 
          Logging.printLogDebug(logger, session, "awaiting login button");
          webdriver.waitLoad(2000);
 
-         waitForElement(webdriver.driver, "input[value=Entrar]");
+         webdriver.waitForElement("input[value=Entrar]", 20);
          WebElement login = webdriver.driver.findElement(By.cssSelector("input[value=Entrar]"));
          webdriver.clickOnElementViaJavascript(login);
 
@@ -93,11 +90,6 @@ public class BrasilDimedCrawler extends Crawler {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
          return super.fetch();
       }
-   }
-
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    @Override
