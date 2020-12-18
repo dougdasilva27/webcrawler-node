@@ -24,7 +24,7 @@ public class ProxyCollection {
    public static final String BUY = "buy";
    public static final String BONANZA = "bonanza";
    public static final String BONANZA_BELGIUM = "bonanza_server_be";
-   public static final String BONANZA_BELGIUM_HAPROXY = "bonanza_server_be_haproxy";
+   public static final String BONANZA_BELGIUM_HAPROXY = "bonanza_be_haproxy";
    public static final String LUMINATI_SERVER_BR = "luminati_server_br";
    public static final String LUMINATI_SERVER_BR_HAPROXY = "luminati_server_haproxy_br";
    public static final String LUMINATI_RESIDENTIAL_BR = "luminati_residential_br";

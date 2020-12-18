@@ -15,6 +15,8 @@ import java.util.*
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
 import br.com.lett.crawlernode.test.Test
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Dynamic
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher
 
 abstract class ColruytCrawler(session: Session) : Crawler(session) {
 
@@ -30,28 +32,46 @@ abstract class ColruytCrawler(session: Session) : Crawler(session) {
    * */
    abstract fun getPlaceId(): String
 
-     override fun fetch(): JSONObject? {
-	   
-	    val productId = CommonMethods.getLast(session.getOriginalURL().split("pid="));
-	   
-      val headers: MutableMap<String, String> = HashMap()
-      headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.80 Safari/537.36"
-      headers["Origin"] = "https://www.colruyt.be"
+   override fun fetch(): JSONObject? {
+    val productId = CommonMethods.getLast(session.getOriginalURL().split("pid="));
+   
+    val headers: MutableMap<String, String> = HashMap()
+    headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.80 Safari/537.36"
+    headers["Origin"] = "https://www.colruyt.be"
+	  headers["Cookie"] = "rxVisitor=1608312692395CFPOBA48207MG1EH5RHBSEB1UBCOII1V; _ga=GA1.2.734203397.1608313962;" +
+	    "_gid=GA1.2.2037973239.1608313962; AMCVS_FA4C56F358B81A660A495DE5%40AdobeOrg=1; DG_ZID=977435AD-6ADB-3FBE-890F-8AC717022504;" +
+			" DG_ZUID=2DB92570-3C1D-33CF-9288-9F1ACFDD44E1; DG_HID=8BF72FF8-C828-3B9F-A8A0-BECFAF388B55;" +
+			" DG_SID=194.71.227.125:CgpMyhxmbfP5K6h7cVTMw4pRG95s43AI2oIchd+GPHA; " +
+			"TS0113bcfc=016303f955bc7067f591743a1dcf2ced11032b264a91277c1d29b01e603edac6104978d4ee64fcbf9fd58c377baab703d8c591e032; " +
+			"s_ecid=MCMID%7C65043871162792934330879339047415423361; " +
+			"AMCV_FA4C56F358B81A660A495DE5%40AdobeOrg=1406116232%7CMCIDTS%7C18615%7CMCMID%7C65043871162792934330879339047415423361%7CMCAAMLH" +
+			"-1608918761%7C6%7CMCAAMB-1608918761%7CRKhpRz8krg2tLO6pguXWp5olkAcUniQYPHaMWWgdJ3xzPWQmdj0y%7CMCOPTOUT-1608321161s%7CNONE%7CMCAID%7CNONE%7" +
+	    "CvVersion%7C2.5.0; s_cc=true; DG_IID=9C0777D2-9F9C-30AE-96D4-ACFFF5642237; DG_UID=00EFF1A0-FC94-37F7-BEC3-A14C52125972; " +
+			"s_fid=2CC14288DAC7A67D-12BF35782CE0F12A; s_vi=[CS]v1|2FEE76368515DC3E-40000673243D929B[CE]; dtSa=-; " +
+			"OptanonAlertBoxClosed=2020-12-18T17:52:52.646Z; OptanonConsent=isIABGlobal=false&datestamp=Fri+Dec+18+2020+14%3A52%3A52" +
+			"+GMT-0300+(Brasilia+Standard+Time)&version=6.6.0&hosts=&landingPath=NotLandingPage&AwaitingReconsent=false&groups=" +
+			"C0001%3A1%2CC0003%3A1%2CC0002%3A1%2CC0004%3A1; s_sq=%5B%5BB%5D%5D; _uetsid=e163dbf0415611ebbfbaf3993f8b40b2; " +
+			"_uetvid=c5f799c0358d11eb9e03fd0ec3ce7fbd; _hjTLDTest=1; _hjid=892fefc8-960d-45fc-8a9b-14051445d50d; _hjAbsoluteSessionInProgress=0;" +
+			" _pin_unauth=dWlkPU5qTmtPVFE0TnpBdE5XSXlOUzAwTkRNekxUbGhNR1V0Wm1ZM05EaG1ZV00xTVRBNQ;" +
+			"dtCookie=8$795A23D5556E8A717DE8E1688B019AED|b84fed97a8123cd5|0; dtLatC=721; at_check=true; mbox=session#c1b30a24f85b462bae0a033de8c6665d#1608316161;" +
+			" tms_storevisit=eyJ1c2VyX3Zpc2l0X2lkIjoiNTE0NjcyLjE2MDgzMTM5NjA5NDUiLCJsYXN0X2xvZ2luX3N0YXRlIjoibm8iLCJwYWdlX2FkYmxvY2siOiJub3RhY3RpdmUifQ%3D%3D; " +
+			"utag_main=v_id:017676fb79f900085cd7561bfefc03068001906000bd0\$_sn:1\$_se:18\$_ss:0\$_st:1608316101735\$ses_id:1608313960957%3Bexp-session\$_pn:4%3" +
+			"Bexp-session\$vapi_domain:colruyt.be; rxvt=1608316102382|1608312692397; dtPC=8$314299635_283h1vWPMJPIEPWHKUASPNGIBKRHCUFAPGNHMM-0"
 
-      val url = "https://ecgproductmw.colruyt.be/ecgproductmw/v2/fr/products/${productId}?clientCode=clp&placeId=${getPlaceId()}&dataGroup=ALL"
+    val url = "https://ecgproductmw.colruyt.be/ecgproductmw/v2/fr/products/${productId}?clientCode=clp&placeId=${getPlaceId()}&dataGroup=ALL"
 
-      val result = dataFetcher.get(
-         session, RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setProxyservice(listOf(
-            ProxyCollection.LUMINATI_SERVER_BR,
-            ProxyCollection.BONANZA_BELGIUM,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES))
-         .build()
-      )?.body
-	   
-      return result?.toJson()
+    val result = dataFetcher.get(
+       session, RequestBuilder.create()
+       .setUrl(url)
+       .setHeaders(headers)
+       .setProxyservice(listOf(
+          ProxyCollection.LUMINATI_SERVER_BR,
+          ProxyCollection.BONANZA_BELGIUM,
+          ProxyCollection.NETNUT_RESIDENTIAL_ES))
+       .build()
+    )?.body
+   
+    return result?.toJson()
    }
 	
 	
