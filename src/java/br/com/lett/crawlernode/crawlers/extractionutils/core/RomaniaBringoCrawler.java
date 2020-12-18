@@ -1,23 +1,32 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import org.jsoup.nodes.Document;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.*;
-import org.jsoup.nodes.Document;
-
-import java.util.*;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 
 public abstract class RomaniaBringoCrawler extends Crawler {
 
@@ -35,7 +44,7 @@ public abstract class RomaniaBringoCrawler extends Crawler {
 
       List<Product> products = new ArrayList<>();
 
-      if(isProductPage(doc)){
+      if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#sylius-product-name", true);
@@ -48,27 +57,32 @@ public abstract class RomaniaBringoCrawler extends Crawler {
          boolean available = !doc.select(".bringo-product-details > .row:nth-of-type(1) .add-to-cart-btn").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
+         // This site only have the internalId on url when product is unnavailable =/
+         if (internalId == null && !available) {
+            internalId = CommonMethods.getLast(CommonMethods.getLast(session.getOriginalURL().split("\\?")).split("/"));
+         }
+
          Product product = ProductBuilder.create()
-            .setName(name)
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setPrimaryImage(primaryImage)
-            .setDescription(description)
-            .setCategories(categories)
-            .setRatingReviews(ratingsReviews)
-            .setOffers(offers)
-            .setUrl(session.getOriginalURL())
-            .build();
+               .setName(name)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setCategories(categories)
+               .setRatingReviews(ratingsReviews)
+               .setOffers(offers)
+               .setUrl(session.getOriginalURL())
+               .build();
 
          products.add(product);
-      } else{
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
    }
 
-   private boolean isProductPage(Document doc){
+   private boolean isProductPage(Document doc) {
       return !doc.select(".bringo-product-details").isEmpty();
    }
 
@@ -79,14 +93,14 @@ public abstract class RomaniaBringoCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(getMainSeller())
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setSales(sales)
-         .setPricing(pricing)
-         .build());
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(getMainSeller())
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setSales(sales)
+            .setPricing(pricing)
+            .build());
 
       return offers;
    }
@@ -96,17 +110,17 @@ public abstract class RomaniaBringoCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-discount", null, true, ',', session);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(spotlightPrice)
-         .build();
+            .setFinalPrice(spotlightPrice)
+            .build();
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setBankSlip(bankSlip)
-         .setCreditCards(creditCards)
-         .build();
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setBankSlip(bankSlip)
+            .setCreditCards(creditCards)
+            .build();
 
    }
 
@@ -117,22 +131,22 @@ public abstract class RomaniaBringoCrawler extends Crawler {
       Installments installments = new Installments();
 
       installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
       }
 
       return creditCards;
    }
 
-   private RatingsReviews scrapRatingReviews(Document doc){
+   private RatingsReviews scrapRatingReviews(Document doc) {
 
       RatingsReviews ratingsReviews = new RatingsReviews();
 
