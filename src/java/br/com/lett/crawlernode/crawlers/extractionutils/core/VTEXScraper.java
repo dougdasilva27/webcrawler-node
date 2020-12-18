@@ -42,10 +42,10 @@ public abstract class VTEXScraper extends Crawler {
       super(session);
    }
 
-   // private static final String CARD_REGEX = "(?i)^[a-zÀ-ú]+[ ]?(?!a )(?!á )(?!à )[a-zÀ-ú]+";
 
+   protected String storeCard = null;
    protected final String homePage = getHomePage();
-   private final List<String> mainSellersNames = getMainSellersNames();
+   protected final List<String> mainSellersNames = getMainSellersNames();
 
    protected abstract String getHomePage();
 
@@ -96,7 +96,7 @@ public abstract class VTEXScraper extends Crawler {
       String name = scrapName(doc, productJson, jsonSku);
       List<String> images = scrapImages(doc, jsonSku, internalPid, internalId);
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
-      String secondaryImages = scrapSecondaryImages(images);
+      scrapSecondaryImages(images); // remove first position
       Offers offers = scrapOffer(doc, jsonSku, internalId, internalPid);
       RatingsReviews rating = scrapRating(internalId, internalPid, doc, jsonSku);
       List<String> eans = jsonSku.has("ean") ? Arrays.asList(jsonSku.get("ean").toString()) : null;
@@ -111,7 +111,7 @@ public abstract class VTEXScraper extends Crawler {
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(images)
             .setOffers(offers)
             .setDescription(description)
             .setEans(eans)
@@ -148,6 +148,31 @@ public abstract class VTEXScraper extends Crawler {
       return Jsoup.parse(obj.toString().replace("[\"", "").replace("\"]", "").replace("\\r\\n\\r\\n\\r\\n", "").replace("\\", ""));
    }
 
+   protected String scrapSpecsDescriptions(JSONObject productJson) {
+      StringBuilder description = new StringBuilder();
+
+      List<String> specs = new ArrayList<>();
+
+      if (productJson.has("allSpecifications")) {
+         JSONArray keys = productJson.getJSONArray("allSpecifications");
+         for (Object o : keys) {
+            if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
+               specs.add(o.toString());
+            }
+         }
+      }
+
+      for (String spec : specs) {
+
+         description.append("<div>");
+         description.append("<h4>").append(spec).append("</h4>");
+         description.append(sanitizeDescription(productJson.get(spec)));
+         description.append("</div>");
+      }
+
+      return description.toString();
+   }
+
    protected List<String> scrapImages(Document doc, JSONObject skuJson, String internalPid, String internalId) {
       List<String> images = new ArrayList<>();
 
@@ -170,23 +195,10 @@ public abstract class VTEXScraper extends Crawler {
       return images;
    }
 
-   private String scrapSecondaryImages(List<String> images) {
-      String secondaryImages = null;
-      JSONArray imagesArray = new JSONArray();
-
+   private void scrapSecondaryImages(List<String> images) {
       if (!images.isEmpty()) {
          images.remove(0);
-
-         for (String image : images) {
-            imagesArray.put(image);
-         }
       }
-
-      if (imagesArray.length() > 0) {
-         secondaryImages = imagesArray.toString();
-      }
-
-      return secondaryImages;
    }
 
    protected Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
@@ -432,7 +444,8 @@ public abstract class VTEXScraper extends Crawler {
                   boolean isShopCard = false;
                   if (cardBrand == null) {
                      for (String sellerName : mainSellersNames) {
-                        if (paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
+                        if ((storeCard != null && paymentName.equalsIgnoreCase(storeCard)) ||
+                              paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
                            isShopCard = true;
                            cardBrand = paymentName;
                            break;
