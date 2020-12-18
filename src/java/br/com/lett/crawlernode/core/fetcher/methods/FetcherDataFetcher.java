@@ -205,12 +205,10 @@ public class FetcherDataFetcher implements DataFetcher {
             S3Service.saveResponseContent(session, requestHash, response.getBody());
          }
       } catch (Exception e) {
-         JSONObject fetcherErrorMetadata = new JSONObject()
-               .put("fetcher_msg", e.getMessage());
-
          fetcherIsDown = true;
 
-         Logging.logWarn(logger, session, fetcherErrorMetadata, "Fetcher did not returned the expected response.");
+         Logging.printLogWarn(logger, session, "Fetcher did not returned the expected response.");
+         Logging.printLogWarn(logger, session, "Fetcher message: " + e.getMessage());
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
       }
 
