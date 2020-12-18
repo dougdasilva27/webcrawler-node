@@ -72,7 +72,7 @@ public class RomaniaEmagCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#main-container input[name=\"product[]\"]", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-header.has-subtitle-info h1", false);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".mrg-sep-sm", ".container.pad-btm-lg"));
-         boolean available = doc.selectFirst(".label.label-in_stock") != null;
+         boolean available = doc.selectFirst(".label.label-out_of_stock") == null;
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumbnail-wrapper .product-gallery-image", Arrays.asList("href"), "https:", "www.emag.ro/");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".thumbnail-wrapper .product-gallery-image", Arrays.asList("href"), "https:", "www.emag.ro/", primaryImage);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a");
