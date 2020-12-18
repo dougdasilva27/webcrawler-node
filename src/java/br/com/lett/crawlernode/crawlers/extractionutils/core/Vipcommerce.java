@@ -32,6 +32,7 @@ public abstract class Vipcommerce extends Crawler {
    private final String HOME_PAGE = getHomePage();
    private final String SELLER_FULL_NAME = getSellerFullName();
    private final String DOMAIN = getDomain();
+   private final String LOCATE_CODE = getLocateCode();
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -42,6 +43,9 @@ public abstract class Vipcommerce extends Crawler {
    protected abstract String getHomePage();
    protected abstract String getSellerFullName();
    protected abstract String getDomain();
+   protected String getLocateCode(){
+      return "1";
+   }
 
 
 
@@ -78,7 +82,7 @@ public abstract class Vipcommerce extends Crawler {
       Integer x = session.getOriginalURL().indexOf("detalhe/");
       String[] vetURL = x != null ? session.getOriginalURL().substring(x).split("/") : new String[0];
       String internalIdFromURL = vetURL.length >2 ? vetURL[1] :null;
-      String url = "https://api."+ DOMAIN +"/v1/loja/produtos/" + internalIdFromURL + "/filial/1/centro_distribuicao/1/detalhes";
+      String url = "https://api."+ DOMAIN +"/v1/loja/produtos/" + internalIdFromURL + "/filial/1/centro_distribuicao/"+LOCATE_CODE+"/detalhes";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authorization", token);
