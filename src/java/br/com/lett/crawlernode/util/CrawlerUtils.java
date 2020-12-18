@@ -1,25 +1,15 @@
 package br.com.lett.crawlernode.util;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import exceptions.MalformedPricingException;
-import models.*;
-import models.prices.Prices;
-import models.pricing.BankSlip;
-import models.pricing.BankSlip.BankSlipBuilder;
-import models.pricing.Pricing;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -32,14 +22,30 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.sql.SQLOutput;
-import java.text.Normalizer;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
+import exceptions.MalformedPricingException;
+import models.AdvancedRatingReview;
+import models.Marketplace;
+import models.RatingsReviews;
+import models.Seller;
+import models.Util;
+import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.BankSlip.BankSlipBuilder;
+import models.pricing.Pricing;
 
 
 public class CrawlerUtils {
@@ -451,19 +457,35 @@ public class CrawlerUtils {
     * @param primaryImage - if null, all images will be in secondary images
     * @return
     */
-   public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
+   public static List<String> scrapSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
          String primaryImage) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+      List<String> secondaryImages = new ArrayList<>();
 
       Elements images = doc.select(cssSelector);
       for (Element e : images) {
          String image = sanitizeUrl(e, attributes, protocol, host);
 
          if ((primaryImage == null || !primaryImage.equals(image)) && image != null) {
-            secondaryImagesArray.put(image);
+            secondaryImages.add(image);
          }
       }
+
+      return secondaryImages;
+   }
+
+   /**
+    * @param doc
+    * @param cssSelector
+    * @param attributes - attributes list for get image
+    * @param protocol - https: or https:// or http: or http://
+    * @param host - www.hostname.com.br
+    * @param primaryImage - if null, all images will be in secondary images
+    * @return
+    */
+   public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
+         String primaryImage) {
+      String secondaryImages = null;
+      JSONArray secondaryImagesArray = CommonMethods.listToJSONArray(scrapSecondaryImages(doc, cssSelector, attributes, protocol, host, primaryImage));
 
       if (secondaryImagesArray.length() > 0) {
          secondaryImages = secondaryImagesArray.toString();
@@ -1143,7 +1165,7 @@ public class CrawlerUtils {
       }
    }
 
-   public static AdvancedRatingReview advancedRatingEmpty(){
+   public static AdvancedRatingReview advancedRatingEmpty() {
       AdvancedRatingReview advancedRating = new AdvancedRatingReview();
       advancedRating.setTotalStar1(0);
       advancedRating.setTotalStar2(0);
@@ -2059,49 +2081,43 @@ public class CrawlerUtils {
     * @param avgRatingSelector -> Average ratings selector
     * @param numberOfPagesSelector -> Number of evaluation pages selector
     *
-    *                              Ex:1,2,3
-    * @param starsConteinerSelector -> Selector that contains the number of stars per comment
-    *                              Ex:  .starsConteinerSelector
+    *        Ex:1,2,3
+    * @param starsConteinerSelector -> Selector that contains the number of stars per comment Ex:
+    *        .starsConteinerSelector
     *
-    *                               <div class="starsConteinerSelector">
+    *        <div class="starsConteinerSelector">
     *
-    *                                   <span class="star1">1</span>
-    *                                   <span class="star1">2</span>
-    *                                   <span class="star1">3</span>
-    *                                   <span class="star1">4</span>
-    *                                   <span class="star1">5</span>
+    *        <span class="star1">1</span> <span class="star1">2</span> <span class="star1">3</span>
+    *        <span class="star1">4</span> <span class="star1">5</span>
     *
-    *                               </div>
+    *        </div>
     *
-    * @param starsSelector -> Star number selector
-    *                            Ex:   .starsSelector
+    * @param starsSelector -> Star number selector Ex: .starsSelector
     *
-    *                                    <span class="starsSelector">1</span>
-    *                                    <span class="starsSelector">2</span>
-    *                                    <span class="starsSelector">3</span>
-    *                                    <span class="starsSelector">4</span>
-    *                                    <span class="starsSelector">5</span>
+    *        <span class="starsSelector">1</span> <span class="starsSelector">2</span>
+    *        <span class="starsSelector">3</span> <span class="starsSelector">4</span>
+    *        <span class="starsSelector">5</span>
     * @param dataFetcher
     * @param session
     * @param logger
     * @param cookies
     */
 
-   public static RatingsReviews scrapRatingReviewsFromYourViews(String internalPid, String storekey,String totalNumOfEvaluationsSelector, String avgRatingSelector,String
-      numberOfPagesSelector,String starsConteinerSelector, String starsSelector, DataFetcher dataFetcher, Session session,Logger logger,List<Cookie> cookies) {
+   public static RatingsReviews scrapRatingReviewsFromYourViews(String internalPid, String storekey, String totalNumOfEvaluationsSelector, String avgRatingSelector, String numberOfPagesSelector, String starsConteinerSelector, String starsSelector,
+         DataFetcher dataFetcher, Session session, Logger logger, List<Cookie> cookies) {
 
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
       String storeKey = storekey;
 
       YourreviewsRatingCrawler yourReviews =
-         new YourreviewsRatingCrawler(session, cookies, logger, storeKey, dataFetcher);
+            new YourreviewsRatingCrawler(session, cookies, logger, storeKey, dataFetcher);
 
       Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, storeKey, dataFetcher);
 
-      Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating,totalNumOfEvaluationsSelector);
+      Integer totalNumOfEvaluations = getTotalNumOfRatingsFromYourViews(docRating, totalNumOfEvaluationsSelector);
       Double avgRating = getTotalAvgRatingFromYourViews(docRating, avgRatingSelector);
-      AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(internalPid, storeKey, docRating, numberOfPagesSelector,starsConteinerSelector,starsSelector, dataFetcher,cookies, session);
+      AdvancedRatingReview advancedRatingReview = getTotalStarsFromEachValue(internalPid, storeKey, docRating, numberOfPagesSelector, starsConteinerSelector, starsSelector, dataFetcher, cookies, session);
 
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(avgRating);
@@ -2138,7 +2154,8 @@ public class CrawlerUtils {
       return avgRating;
    }
 
-   private static AdvancedRatingReview getTotalStarsFromEachValue(String internalPid, String storeKey, Document docRating, String numberOfPagesSelector, String starsConteinerSelector,String starsSelector,DataFetcher dataFetcher,List<Cookie> cookies, Session session){
+   private static AdvancedRatingReview getTotalStarsFromEachValue(String internalPid, String storeKey, Document docRating, String numberOfPagesSelector, String starsConteinerSelector, String starsSelector, DataFetcher dataFetcher,
+         List<Cookie> cookies, Session session) {
       Document allPagesDocRating;
       int pages;
       boolean pagination = false;
@@ -2151,16 +2168,16 @@ public class CrawlerUtils {
 
       Elements qtdPages = docRating.select(numberOfPagesSelector);
 
-      if(qtdPages.size() == 0){
+      if (qtdPages.size() == 0) {
          pages = 1;
-      } else{
+      } else {
          pages = qtdPages.size();
          pagination = true;
       }
 
-      for (int currentPage = 1; currentPage <= pages; currentPage++){
+      for (int currentPage = 1; currentPage <= pages; currentPage++) {
 
-         allPagesDocRating = crawlAllPagesRatingsFromYourViews(internalPid, storeKey, dataFetcher,currentPage, pagination, cookies, session);
+         allPagesDocRating = crawlAllPagesRatingsFromYourViews(internalPid, storeKey, dataFetcher, currentPage, pagination, cookies, session);
 
          Elements reviews = allPagesDocRating.select(starsConteinerSelector);
          for (Element element : reviews) {
@@ -2192,14 +2209,14 @@ public class CrawlerUtils {
       return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
    }
 
-   private static Document crawlAllPagesRatingsFromYourViews(String internalPid, String storeKey, DataFetcher dataFetcher, Integer currentPage, boolean pagination,List<Cookie> cookies, Session session) {
+   private static Document crawlAllPagesRatingsFromYourViews(String internalPid, String storeKey, DataFetcher dataFetcher, Integer currentPage, boolean pagination, List<Cookie> cookies, Session session) {
       Document doc = new Document("");
       String url = "";
 
-      if (pagination){
-         url = "https://service.yourviews.com.br/review/getreview?page="+currentPage+"&storeKey="+storeKey+"&productStoreId="+internalPid+"&orderby=4&yv__rpl=";
+      if (pagination) {
+         url = "https://service.yourviews.com.br/review/getreview?page=" + currentPage + "&storeKey=" + storeKey + "&productStoreId=" + internalPid + "&orderby=4&yv__rpl=";
       } else {
-         url = "https://service.yourviews.com.br/review/GetReview?storeKey="+storeKey+"&productStoreId="+internalPid+"&extFilters=&yv__rpl=";
+         url = "https://service.yourviews.com.br/review/GetReview?storeKey=" + storeKey + "&productStoreId=" + internalPid + "&extFilters=&yv__rpl=";
       }
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
