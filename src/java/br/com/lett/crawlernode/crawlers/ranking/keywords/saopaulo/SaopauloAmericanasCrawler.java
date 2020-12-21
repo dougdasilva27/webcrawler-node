@@ -1,19 +1,21 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.B2WCrawlerRanking;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 public class SaopauloAmericanasCrawler extends B2WCrawlerRanking {
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
    }
+
+   private static final String selector = "div[class*=ColGridItem-] a";
 
    @Override
    protected String getStoreName() {
@@ -26,13 +28,13 @@ public class SaopauloAmericanasCrawler extends B2WCrawlerRanking {
 
       this.log("Página " + this.currentPage);
       String url = "https://www." + getStoreName() + ".com.br/busca/" + this.keywordWithoutAccents.replace(" ", "%20")
-         + "?limit=24&offset=" + (this.currentPage -1) * pageSize ;
+            + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = Jsoup.parse(B2WCrawler.fetchPage(url, this.dataFetcher, cookies, headers, session));
 
-      Elements products = this.currentDoc.select(".grid__StyledGrid-sc-1man2hx-0 .col__StyledCol-sc-1snw5v3-0 .src__Wrapper-sc-1di8q3f-2");
+      Elements products = this.currentDoc.select(selector);
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -41,6 +43,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawlerRanking {
 
          for (Element e : products) {
             String productUrl = CrawlerUtils.scrapUrl(e, "a", "href", "https", "www." + getStoreName() + ".com.br");
+
+            if (productUrl.contains("?")) {
+               productUrl = productUrl.split("\\?")[0];
+            }
+
             String internalPid = scrapInternalPid(productUrl);
 
             saveDataProduct(null, internalPid, productUrl);
@@ -56,28 +63,12 @@ public class SaopauloAmericanasCrawler extends B2WCrawlerRanking {
    }
 
    private String scrapInternalPid(String url) {
-
-      String[] productPidSplit = null;
-
-      String productSplit = CommonMethods.getLast(url.split("produto/"));
-      if(!productSplit.isEmpty()){
-         String[] secondSplit = productSplit.split("/");
-
-         if(secondSplit.length > 0){
-            productPidSplit = secondSplit[0].split("\\?");
-         }
-      }
-
-      if(productPidSplit != null){
-         return productPidSplit[0];
-      }
-      return null;
-
+      return CommonMethods.getLast(url.split("produto/")).split("/")[0];
    }
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".full-grid__TotalText-n1a9ou-2", true, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "span[class*=TotalText]", true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 
