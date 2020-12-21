@@ -234,6 +234,19 @@ public class ProductBuilder {
             throw new MalformedProductException("Secondary images cannot have any value null");
          }
       }
+
+      if (this.ratingReviews != null) {
+         Integer totalRating = this.ratingReviews.getTotalReviews();
+         Double averageRating = this.ratingReviews.getAverageOverallRating();
+
+         if (totalRating != null && totalRating > 0 && (averageRating == null || averageRating <= 0d)) {
+            throw new MalformedProductException("Average Rating cannot have value " + averageRating + " when evaluations number is greater then 0.");
+         }
+
+         if (averageRating != null && averageRating > 5d) {
+            throw new MalformedProductException("Average Rating cannot have value " + averageRating + ", the max number is 5.");
+         }
+      }
    }
 
 }

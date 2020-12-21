@@ -406,6 +406,7 @@ public class Persistence {
       updateSets.put(processedTable.MARKETPLACE, null);
       updateSets.put(processedTable.OFFERS, null);
       updateSets.put(processedTable.PRICE, null);
+      updateSets.put(processedTable.RATING, null);
       updateSets.put(processedTable.PRICES, CONVERT_STRING_GSON.converter().from(new Prices().toJSON()));
 
       List<Condition> conditions = new ArrayList<>();
