@@ -14,12 +14,16 @@ import java.util.Map;
 public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
 
    private final String DOMAIN = getDomain();
+   private final String LOCADE_CODE = getLocateCode();
 
    public VipcommerceRanking(Session session) {
       super(session);
    }
 
    protected abstract String getDomain();
+   protected String getLocateCode(){
+    return "1";
+   }
 
    public String getToken() {
       String token = null;
@@ -44,7 +48,7 @@ public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
 
    public JSONObject crawlApi(String token) {
 
-      String url = "https://api."+ DOMAIN +"/v1/loja/buscas/produtos/filial/1/centro_distribuicao/1/termo/" + this.keywordEncoded + "?page=" + this.currentPage;
+      String url = "https://api."+ DOMAIN +"/v1/loja/buscas/produtos/filial/1/centro_distribuicao/"+LOCADE_CODE+"/termo/" + this.keywordEncoded + "?page=" + this.currentPage;
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authorization", token);
