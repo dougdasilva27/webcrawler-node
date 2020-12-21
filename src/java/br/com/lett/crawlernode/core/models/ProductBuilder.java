@@ -243,7 +243,7 @@ public class ProductBuilder {
             throw new MalformedProductException("Average Rating cannot have value " + averageRating + " when evaluations number is greater then 0.");
          }
 
-         if (averageRating != null && averageRating > 5d) {
+         if (averageRating != null && (averageRating > 5d || averageRating < 0d)) {
             throw new MalformedProductException("Average Rating cannot have value " + averageRating + ", the max number is 5.");
          }
       }
