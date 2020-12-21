@@ -1,6 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -13,27 +21,30 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
+import br.com.lett.crawlernode.util.Pair;
 import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.*;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-
-import java.util.*;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 
 public class SaopauloDrogasilCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "Drogasil (São Paulo)";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.ELO.toString(), Card.HIPERCARD.toString(), Card.HIPER.toString(),
-      Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AURA.toString());
+         Card.DINERS.toString(), Card.DISCOVER.toString(), Card.AURA.toString());
+
+   // I could'nt find another selector for this description
+   private static final String SMALL_DESCRIPTION_SELECTOR = ".sc-fzqNJr.hXQgjp";
 
    public SaopauloDrogasilCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -55,32 +66,41 @@ public class SaopauloDrogasilCrawler extends Crawler {
          if (data != null) {
             String internalId = JSONUtils.getStringValue(data, "sku");
             String internalPid = String.valueOf(JSONUtils.getValue(data, "id"));
-            String name = JSONUtils.getStringValue(data, "name");
+            String name = scrapName(data, doc);
+
+            Pair<String, Object> validationImages = new Pair<>();
+            validationImages.set("disabled", false);
+
+            List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(JSONUtils.getJSONArrayValue(data, "media_gallery_entries"),
+                  "file", validationImages, "https", "img.drogasil.com.br/catalog/product", session);
             // Site hasn't category
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div.sc-pANHa.iGPRRc img", Arrays.asList("src"), "https", "img.drogasil.com.br");
-            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#ancorDescription div > p:nth-child(1)"));
+
+            String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+
+            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(SMALL_DESCRIPTION_SELECTOR, "#ancorDescription"));
             Integer stock = null;
             List<String> ean = new ArrayList<>();
             ean.add(CrawlerUtils.scrapStringSimpleInfo(doc, "tr:nth-child(2) > td", false));
             Boolean available = JSONUtils.getValueRecursive(data,
-               "extension_attributes.stock_item.is_in_stock",
-               Boolean.class);
+                  "extension_attributes.stock_item.is_in_stock",
+                  Boolean.class);
             RatingsReviews ratingsReviews = crawlRating(internalId);
-            Offers offers = available ? scrapOffers(data) : new Offers();
+            Offers offers = available != null && available ? scrapOffers(data) : new Offers();
 
             // Creating the product
             Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrimaryImage(primaryImage)
-               .setDescription(description)
-               .setStock(stock)
-               .setEans(ean)
-               .setRatingReviews(ratingsReviews)
-               .setOffers(offers)
-               .build();
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(images)
+                  .setDescription(description)
+                  .setStock(stock)
+                  .setEans(ean)
+                  .setRatingReviews(ratingsReviews)
+                  .setOffers(offers)
+                  .build();
 
             products.add(product);
          }
@@ -95,6 +115,29 @@ public class SaopauloDrogasilCrawler extends Crawler {
       return doc.selectFirst("#ancorDescription div > p:nth-child(1)") != null;
    }
 
+   private String scrapName(JSONObject data, Document doc) {
+      StringBuilder name = new StringBuilder();
+
+      String mainName = data.optString("name");
+
+      if (!mainName.isEmpty()) {
+         name.append(mainName);
+
+         String brand = CrawlerUtils.scrapStringSimpleInfo(doc, "div.rd-container li.brand", true);
+
+         if (brand != null) {
+            name.append(" ").append(brand);
+         }
+
+         String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, "div.rd-container li.quantity", true);
+
+         if (quantity != null) {
+            name.append(" ").append(quantity);
+         }
+      }
+
+      return name.toString();
+   }
 
    private Offers scrapOffers(JSONObject data) {
       Offers offers = new Offers();
@@ -103,14 +146,14 @@ public class SaopauloDrogasilCrawler extends Crawler {
          List<String> sales = new ArrayList<>();
 
          offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(SELLER_FULL_NAME)
+               .setMainPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(true)
+               .setPricing(pricing)
+               .setSales(sales)
+               .build());
 
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
@@ -125,15 +168,15 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(spotlightPrice)
-         .build();
+            .setFinalPrice(spotlightPrice)
+            .build();
 
       return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -141,16 +184,16 @@ public class SaopauloDrogasilCrawler extends Crawler {
 
       Installments installments = new Installments();
       installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
       }
 
       return creditCards;
@@ -166,9 +209,9 @@ public class SaopauloDrogasilCrawler extends Crawler {
       headers.put("Referer", "https://www.drogasil.com.br/");
 
       Request request = RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .build();
+            .setUrl(url)
+            .setHeaders(headers)
+            .build();
       return new FetcherDataFetcher().get(session, request).getBody();
    }
 
@@ -200,12 +243,12 @@ public class SaopauloDrogasilCrawler extends Crawler {
          Integer star5 = stars.optInt("5");
 
          return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+               .totalStar1(star1)
+               .totalStar2(star2)
+               .totalStar3(star3)
+               .totalStar4(star4)
+               .totalStar5(star5)
+               .build();
       } else {
          return new AdvancedRatingReview();
       }
