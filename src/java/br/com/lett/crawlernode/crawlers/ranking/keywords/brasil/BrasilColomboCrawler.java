@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilColomboCrawler extends CrawlerRankingKeywords {
 
@@ -20,7 +20,7 @@ public class BrasilColomboCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       // monta a url com a keyword e a página
-      String url = "https://pesquisa.colombo.com.br/busca?q=" + this.keywordEncoded + "&televendas=&page=" + this.currentPage;
+      String url = "https://pesquisa.colombo.com.br/busca?q=" + this.keywordWithoutAccents.replace(" ", "%20") + "&televendas=&page=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
