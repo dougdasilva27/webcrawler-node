@@ -1,22 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.List;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
 
    public BrasilCasadoprodutorCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
    }
 
    @Override
@@ -26,29 +19,20 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
 
       String keyword = this.keywordWithoutAccents.replace(" ", "");
 
-      String url = "https://www.casadoprodutor.com.br/resultadopesquisa?pag=" + this.currentPage + "&departamento=&buscarpor=" + keyword;
+      String url = "https://www.casadoprodutor.com.br/catalogsearch/result/index/?cat=0&p=" + this.currentPage + "&q=" + keyword;
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      
-      JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "script", "dataLayer.push(", ");", false, true); 
-      JSONObject ecommerceProducts = jsonObject.getJSONObject("ecommerce");
-      Object object = ecommerceProducts != null ? ecommerceProducts.get("impressions") : new Object();
-      JSONArray productsArray = object instanceof JSONArray ? (JSONArray) object: new JSONArray();
 
-      Elements products = this.currentDoc.select(".loadProducts ul > li");
 
-      if (!products.isEmpty() && products.size() == productsArray.length()) {
-         for (int index = 0; index < products.size(); index++) {
-            Object obj = productsArray.get(index);
-            JSONObject productJSON = obj instanceof JSONObject ? (JSONObject) obj : new JSONObject();
-            String internalPid = scrapInternalPid(productJSON);
-            String productUrl = scrapUrl(products.get(index), ".foto a", "href");
-            saveDataProduct(null, internalPid, productUrl);
+      Elements products = this.currentDoc.select(".category-products .products-grid li");
 
-            this.log("Position: " + this.position + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit)
-               break;
+      if (!products.isEmpty()) {
+         for (Element element : products) {
+            String internalId = scrapInternalId(element);
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "a", "href");
+            saveDataProduct(internalId, null, productUrl);
 
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);
          }
       } else {
          this.result = false;
@@ -59,50 +43,21 @@ public class BrasilCasadoprodutorCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-	   boolean hasNext = false;
-	   Elements nextPage = this.currentDoc.select(".paginacao a");
-	   
-	   for(Element e : nextPage){
-		   if(e.text() == ">") {
-			   hasNext = true;
-		   }
-	   }
-	   return hasNext;
+      boolean hasNext = false;
+      hasNext = !this.currentDoc.select(".next").isEmpty();
+
+
+      return hasNext;
    }
-   
-  private String scrapUrl(Element doc, String cssSelector,String attributes) {
-	  String url = null;
-	  
-      Element urlElement = cssSelector != null ? doc.selectFirst(cssSelector) : doc;
-      url = urlElement.attr("href").trim();
-      if (urlElement != null) {
-    
-    	  int indexBegin = url.indexOf("window.location='")+ 17;
-    	  int indexFinal = url.length()-2;
-    	  url = url.substring(indexBegin, indexFinal);
-      }
-      return url;
-  }
 
-   private String scrapInternalId(JSONObject productJSON) {
+
+   private String scrapInternalId(Element element) {
       String internalId = null;
-
-      if (productJSON.has("sku") && !productJSON.isNull("sku")) {
-         internalId = productJSON.get("sku").toString();
+      String attribute = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, ".regular-price", "id");
+      if (attribute != null && attribute.contains("product-price")) {
+         internalId = attribute.replace("product-price-", "");
       }
       return internalId;
    }
 
-   private String scrapInternalPid(JSONObject productJSON) {
-      String internalPid = null;
-
-      if (productJSON.has("id") && !productJSON.isNull("id")) {
-         internalPid = productJSON.get("id").toString();
-         if(internalPid.contains("-")) {
-       	  	 int index = internalPid.indexOf("-");
-        	 internalPid = internalPid.substring(0, index);
-         }
-      }
-      return internalPid;
-   }
 }
