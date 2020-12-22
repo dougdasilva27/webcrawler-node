@@ -12,9 +12,8 @@ class CampinasPetcampCrawler(session: Session) : VTEXOldScraper(session) {
 
    companion object {
       val HOME_PAGE = "https://www.petcamp.com.br/";
-      val SELLER_FULL_NAME = Arrays.asList("petcamp");
+      val SELLER_FULL_NAME = Arrays.asList("pc paulinia comercio de produtos agropecuarios ltda.");
    }
-
 
    override fun getHomePage(): String {
       return HOME_PAGE;
