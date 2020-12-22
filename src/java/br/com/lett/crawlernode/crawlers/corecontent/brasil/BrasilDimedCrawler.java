@@ -1,9 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import org.apache.http.Header;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.By;
@@ -48,48 +51,38 @@ public class BrasilDimedCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://www.dimed.com.br/", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
-         webdriver.waitLoad(5000);
+      String payload = "j_username="+USER+"&j_password="+PASSWORD+"";
+      HashMap<String, String> headers = new HashMap<>();
+      headers.put("Content-Type","application/x-www-form-urlencoded");
 
-         Logging.printLogDebug(logger, session, "Trying to input login ...");
-         WebElement check = webdriver.driver.findElement(By.cssSelector("input[name=naoExibirNovamente]"));
-         webdriver.clickOnElementViaJavascript(check);
+      Request requestValidate = Request.RequestBuilder.create()
+         .setUrl("https://dimed.com.br/clientes/j_spring_security_check")
+         .setHeaders(headers)
+         .setPayload(payload)
+         .build();
 
-         webdriver.waitLoad(2000);
-         webdriver.waitForElement("#username", 20);
-         WebElement email = webdriver.driver.findElement(By.cssSelector("#username"));
-         email.sendKeys(USER);
+      String urltoken = dataFetcher.post(session,requestValidate).getRedirectUrl();
 
-         webdriver.waitLoad(2000);
-         webdriver.waitForElement("input[name=j_password]", 20);
-         WebElement pass = webdriver.driver.findElement(By.cssSelector("input[name=j_password]"));
-         pass.sendKeys(PASSWORD);
+      String cookieName = "jsessionid=";
+      int index = urltoken.indexOf(cookieName)+cookieName.length();
+      String token = urltoken.substring(index);
 
-         Logging.printLogDebug(logger, session, "awaiting login button");
-         webdriver.waitLoad(2000);
+      List<Cookie> cookies = new ArrayList<>();
+      cookies.add(new BasicClientCookie("JSESSIONID",token));
 
-         webdriver.waitForElement("input[value=Entrar]", 20);
-         WebElement login = webdriver.driver.findElement(By.cssSelector("input[value=Entrar]"));
-         webdriver.clickOnElementViaJavascript(login);
+      String cookie = "JSESSIONID=\""+token+"\";";
 
-         Logging.printLogDebug(logger, session, "awaiting product page");
-         webdriver.waitLoad(6000);
+      headers.put("Cookie",cookie);
 
-         webdriver.loadUrl(session.getOriginalURL());
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .build();
 
-         Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
+      Response response = dataFetcher.get(session,request);
 
-         if (doc.select("input[name=codigoProduto]").isEmpty()) {
-            doc = (Document) super.fetch();
-         }
-
-         return doc;
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         return super.fetch();
-      }
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
