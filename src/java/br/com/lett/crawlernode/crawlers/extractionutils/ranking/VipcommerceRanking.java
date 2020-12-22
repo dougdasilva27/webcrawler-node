@@ -14,12 +14,16 @@ import java.util.Map;
 public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
 
    private final String DOMAIN = getDomain();
+   private final String LOCADE_CODE = getLocateCode();
 
    public VipcommerceRanking(Session session) {
       super(session);
    }
 
    protected abstract String getDomain();
+   protected String getLocateCode(){
+    return "1";
+   }
 
    public String getToken() {
       String token = null;
@@ -44,22 +48,21 @@ public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
 
    public JSONObject crawlApi(String token) {
 
-      String url = "https://api."+ DOMAIN +"/v1/loja/buscas/produtos/filial/1/centro_distribuicao/1/termo/" + this.keywordEncoded;
+      String url = "https://api."+ DOMAIN +"/v1/loja/buscas/produtos/filial/1/centro_distribuicao/"+LOCADE_CODE+"/termo/" + this.keywordEncoded + "?page=" + this.currentPage;
 
       Map<String, String> headers = new HashMap<>();
       headers.put("authorization", token);
 
       Request request = Request.RequestBuilder.create().setHeaders(headers).setUrl(url).build();
       JSONObject jsonObject = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
-      JSONObject produtoInfo = JSONUtils.getJSONValue(jsonObject, "data");
 
-      return produtoInfo;
+      return jsonObject;
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
 
-      this.pageSize = 47;
+      this.pageSize = 52;
 
       this.log("Página " + this.currentPage);
 
@@ -72,7 +75,9 @@ public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
 
       String token = getToken();
       JSONObject json = crawlApi(token);
-      JSONArray produtosArray = JSONUtils.getJSONArrayValue(json, "produtos");
+
+      JSONObject produtoInfo = JSONUtils.getJSONValue(json, "data");
+      JSONArray produtosArray = JSONUtils.getJSONArrayValue(produtoInfo, "produtos");
 
       if (produtosArray.length() >= 1) {
 
@@ -85,9 +90,13 @@ public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
             String internalId = product.optString("produto_id");
 
             String urlProductIncomplete = product.optString("link");
-            String urlHost = "www."+ DOMAIN +"/produtos/detalhe/" + internalId;
+            String urlHost = "www."+ DOMAIN +"/produtos/detalhe/" + internalId + "/";
 
-            String urlProduct = CrawlerUtils.completeUrl(urlProductIncomplete, "http://", urlHost);
+            String urlProduct = "";
+
+            if (urlProductIncomplete != null && urlHost != null) {
+                urlProduct = "https://" + urlHost + urlProductIncomplete;
+            }
 
             saveDataProduct(internalId, internalPid, urlProduct);
 
@@ -101,5 +110,14 @@ public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      String token = getToken();
+      JSONObject json = crawlApi(token);
+      JSONObject paginator = JSONUtils.getJSONValue(json, "paginator");
+
+      return this.currentPage < paginator.optInt("total_pages");
    }
 }
