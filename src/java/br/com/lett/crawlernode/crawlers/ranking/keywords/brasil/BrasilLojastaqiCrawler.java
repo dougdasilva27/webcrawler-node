@@ -32,13 +32,9 @@ public class BrasilLojastaqiCrawler extends CrawlerRankingKeywords {
          .setUrl(apiUrl)
          .setHeaders(headers)
          .build();
-      String content = new FetcherDataFetcher()
+      String content = this.dataFetcher
          .get(session, request)
          .getBody();
-
-      if (content == null || content.isEmpty()) {
-         content = this.dataFetcher.get(session, request).getBody();
-      }
 
       return CrawlerUtils.stringToJson(content);
 
@@ -54,7 +50,7 @@ public class BrasilLojastaqiCrawler extends CrawlerRankingKeywords {
 
       JSONArray productsArray = JSONUtils.getValueRecursive(resultsList, "records", JSONArray.class);
 
-      if (productsArray != null && productsArray.length() >= 1) {
+      if (productsArray != null && !productsArray.isEmpty()) {
 
          for (Object e : productsArray) {
 

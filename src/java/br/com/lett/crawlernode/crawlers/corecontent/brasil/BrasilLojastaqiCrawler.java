@@ -44,13 +44,10 @@ public class BrasilLojastaqiCrawler extends Crawler {
          .setUrl(API)
          .setHeaders(headers)
          .build();
-      String content = new FetcherDataFetcher()
+      String content = this.dataFetcher
          .get(session, request)
          .getBody();
 
-      if (content == null || content.isEmpty()) {
-         content = this.dataFetcher.get(session, request).getBody();
-      }
 
       return CrawlerUtils.stringToJson(content);
    }
@@ -64,13 +61,9 @@ public class BrasilLojastaqiCrawler extends Crawler {
          .setUrl(apiUrl)
          .setHeaders(headers)
          .build();
-      String content = new FetcherDataFetcher()
+      String content = this.dataFetcher
          .get(session, request)
          .getBody();
-
-      if (content == null || content.isEmpty()) {
-         content = this.dataFetcher.get(session, request).getBody();
-      }
 
       return CrawlerUtils.stringToJson(content);
 
@@ -172,10 +165,6 @@ public class BrasilLojastaqiCrawler extends Crawler {
       String content = new JsoupDataFetcher()
          .post(session, request)
          .getBody();
-
-      if (content == null || content.isEmpty()) {
-         content = this.dataFetcher.get(session, request).getBody();
-      }
 
       return CrawlerUtils.stringToJson(content);
 
