@@ -64,6 +64,9 @@ public class SaopauloDrogasilCrawler extends Crawler {
          JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, " ", false, false);
          JSONObject data = JSONUtils.getValueRecursive(json, "props.pageProps.pageData.productBySku", JSONObject.class);
          if (data != null) {
+
+            System.err.println(data);
+
             String internalId = JSONUtils.getStringValue(data, "sku");
             String internalPid = String.valueOf(JSONUtils.getValue(data, "id"));
             String name = scrapName(data, doc);
@@ -75,7 +78,13 @@ public class SaopauloDrogasilCrawler extends Crawler {
                   "file", validationImages, "https", "img.drogasil.com.br/catalog/product", session);
             // Site hasn't category
 
-            String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-container a img", Arrays.asList("src"), "https", "img.drogasil.com.br");
+
+            if (primaryImage != null) {
+               primaryImage = primaryImage.split("\\?")[0]; // we need to remove parameters because this site resize img on html
+            } else if (!images.isEmpty()) {
+               primaryImage = images.get(0);
+            }
 
             String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(SMALL_DESCRIPTION_SELECTOR, "#ancorDescription"));
             Integer stock = null;
