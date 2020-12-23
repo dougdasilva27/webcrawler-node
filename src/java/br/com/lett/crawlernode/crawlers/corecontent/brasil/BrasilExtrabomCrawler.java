@@ -43,33 +43,36 @@ public class BrasilExtrabomCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".dados-produto .cod", true).split(":")[1].replace(" ", "");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".dados-produto .cod", true).split(":")[1].replace(" ", "");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto", true);
+         String[] internalIdArray = CrawlerUtils.scrapStringSimpleInfo(doc, ".dados-produto .cod", true).split(":");
+         if (internalIdArray.length > 0) {
+            String internalId = internalIdArray[1].replace(" ", "");
+            String internalPid = internalId;
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto", true);
 
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb.breadcrumb-section a");
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".descricao"));
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".detalhe-produto__img", Arrays.asList("src"), "https:",
-            "www.extrabom.com.br/");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".detalhe-produto__thumbs-table tbody tr td a", Arrays.asList("data-img"), "https", "www.extrabom.com.br/", primaryImage);
-         boolean available = !doc.select(".dados-produto .cod").isEmpty();
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb.breadcrumb-section a");
+            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".descricao"));
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".detalhe-produto__img", Arrays.asList("src"), "https:",
+               "www.extrabom.com.br/");
+            List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".detalhe-produto__thumbs-table tbody tr td a", Arrays.asList("data-img"), "https", "www.extrabom.com.br/", primaryImage);
+            boolean available = !doc.select(".dados-produto .cod").isEmpty();
+            Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         // Creating the product
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategories(categories)
-            .setDescription(description)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setOffers(offers)
-            .build();
+            // Creating the product
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategories(categories)
+               .setDescription(description)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setOffers(offers)
+               .build();
 
-         products.add(product);
+            products.add(product);
 
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -123,8 +126,8 @@ public class BrasilExtrabomCrawler extends Crawler {
       String cents = CrawlerUtils.scrapStringSimpleInfo(doc, ".valor .cent", true);
       Double spotlightPrice = interger != null && cents != null ? MathUtils.parseDoubleWithComma(interger + cents) : null;
       String priceFromStr = CrawlerUtils.scrapStringSimpleInfo(doc, ".item-de__line", false);
-      String priceFromSplit = priceFromStr != null ? priceFromStr.split("\\$")[1] : null;
-      Double priceFrom = priceFromSplit != null ? MathUtils.parseDoubleWithComma(priceFromSplit) : null;
+      String[] priceFromSplit = priceFromStr != null ? priceFromStr.split("\\$") : null;
+      Double priceFrom = priceFromSplit != null && priceFromSplit.length > 0 ? MathUtils.parseDoubleWithDot(priceFromSplit[1]) : null;
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
@@ -136,7 +139,9 @@ public class BrasilExtrabomCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
+
    }
+
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();

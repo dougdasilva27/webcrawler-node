@@ -34,7 +34,10 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
 
             if (data != null) {
                urlProduct = "https://www.taqi.com.br" + data;
-               internalId = data.split("/")[2];
+               String[] internalIdSplit = data.split("/");
+               if (internalIdSplit != null && internalIdSplit.length > 0) {
+                  internalId = internalIdSplit[2];
+               }
             }
 
             saveDataProduct(internalId, null, urlProduct);
@@ -63,7 +66,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
       Element pagination = this.currentDoc.selectFirst(".pagination-box a:nth-last-child(2) > span");
-      String selector = pagination.text();
+      String selector = pagination != null ? pagination.text() : null;
       return selector != null && selector.contains("»");
    }
 }
