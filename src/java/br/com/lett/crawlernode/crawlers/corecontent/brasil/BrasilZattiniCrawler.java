@@ -3,22 +3,14 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
-import com.google.common.collect.Sets;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import models.Offer;
-import models.Offers;
-import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -28,11 +20,17 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 
 /**
  * date: 27/09/2018
@@ -47,7 +45,7 @@ public class BrasilZattiniCrawler extends Crawler {
    private final String HOME_PAGE = "https://www.zattini.com.br/";
    private static final String SELLER_FULL_NAME = "zattini";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilZattiniCrawler(Session session) {
       super(session);
@@ -87,7 +85,7 @@ public class BrasilZattiniCrawler extends Crawler {
 
             if (notAvailable != null) {
                availableToBuy =
-                  jsonSku.has("status") && jsonSku.get("status").toString().equalsIgnoreCase("available") && !notAvailable.hasClass("text-not-avaliable");
+                     jsonSku.has("status") && jsonSku.get("status").toString().equalsIgnoreCase("available") && !notAvailable.hasClass("text-not-avaliable");
             } else {
                availableToBuy = jsonSku.has("status") && jsonSku.get("status").toString().equalsIgnoreCase("available");
             }
@@ -96,25 +94,25 @@ public class BrasilZattiniCrawler extends Crawler {
             boolean available = availableToBuy;
             String primaryImage = crawlPrimaryImage(doc);
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".swiper-slide:not(.active) img",
-               Arrays.asList("data-src-large", "src"), PROTOCOL, "static.zattini.com.br", primaryImage);
+                  Arrays.asList("data-src-large", "src"), PROTOCOL, "static.zattini.com.br", primaryImage);
             RatingsReviews ratingsReviews = scrapRatingsReviews(doc);
             Offers offers = available ? scrapOffer(chaordicJson) : new Offers();
 
             // Creating the product
             Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setRatingReviews(ratingsReviews)
-               .setOffers(offers)
-               .build();
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setRatingReviews(ratingsReviews)
+                  .setOffers(offers)
+                  .build();
 
             products.add(product);
          }
@@ -128,10 +126,10 @@ public class BrasilZattiniCrawler extends Crawler {
 
    private String crawlPrimaryImage(Document doc) {
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".photo-figure > img", Arrays.asList("data-large-img-url", "src"), PROTOCOL,
-         "static.zattini.com.br");
+            "static.zattini.com.br");
       if (primaryImage == null) {
          primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "div[class=\"text-not-avaliable\"] figure img", Arrays.asList("src"), PROTOCOL,
-            "static.zattini.com.br");
+               "static.zattini.com.br");
 
       }
 
@@ -224,7 +222,7 @@ public class BrasilZattiniCrawler extends Crawler {
 
    private Double getTotalAvgRating(Document docRating) {
       Double avgRating = 0d;
-      Element rating = docRating.selectFirst(".reviews__customerFeedback  [itemprop=\"ratingValue\"]");
+      Element rating = docRating.selectFirst(".rating-box__value");
 
       if (rating != null) {
          String text = rating.text().replaceAll("[^0-9.]", "").trim();
@@ -280,14 +278,14 @@ public class BrasilZattiniCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
 
       offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
       return offers;
 
@@ -301,11 +299,11 @@ public class BrasilZattiniCrawler extends Crawler {
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
+            .setPriceFrom(priceFrom)
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
 
 
    }
@@ -316,17 +314,17 @@ public class BrasilZattiniCrawler extends Crawler {
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
       }
 
       return creditCards;
