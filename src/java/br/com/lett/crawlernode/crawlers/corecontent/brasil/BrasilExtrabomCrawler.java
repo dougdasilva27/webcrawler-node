@@ -44,7 +44,7 @@ public class BrasilExtrabomCrawler extends Crawler {
 
 
          String[] internalIdArray = CrawlerUtils.scrapStringSimpleInfo(doc, ".dados-produto .cod", true).split(":");
-         if (internalIdArray.length > 0) {
+         if (internalIdArray.length > 1) {
             String internalId = internalIdArray[1].replace(" ", "");
             String internalPid = internalId;
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".nome-produto", true);
@@ -127,7 +127,7 @@ public class BrasilExtrabomCrawler extends Crawler {
       Double spotlightPrice = interger != null && cents != null ? MathUtils.parseDoubleWithComma(interger + cents) : null;
       String priceFromStr = CrawlerUtils.scrapStringSimpleInfo(doc, ".item-de__line", false);
       String[] priceFromSplit = priceFromStr != null ? priceFromStr.split("\\$") : null;
-      Double priceFrom = priceFromSplit != null && priceFromSplit.length > 0 ? MathUtils.parseDoubleWithDot(priceFromSplit[1]) : null;
+      Double priceFrom = priceFromSplit != null && priceFromSplit.length > 1 ? MathUtils.parseDoubleWithDot(priceFromSplit[1]) : null;
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)

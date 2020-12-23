@@ -35,7 +35,7 @@ public class BrasilExtrabomCrawler extends CrawlerRankingKeywords {
             if (data != null) {
                urlProduct = "https://www.taqi.com.br" + data;
                String[] internalIdSplit = data.split("/");
-               if (internalIdSplit != null && internalIdSplit.length > 0) {
+               if (internalIdSplit.length > 2) {
                   internalId = internalIdSplit[2];
                }
             }
