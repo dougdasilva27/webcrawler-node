@@ -118,7 +118,7 @@ class BrasilSuperbomemcasaCrawler (session: Session) : Crawler(session){
          Card.AMEX,
          Card.SOROCRED,
          Card.CABAL,
-         Card.JCB,
+         Card.JCB
       ).toCreditCards(price)
 
       offers.add(
