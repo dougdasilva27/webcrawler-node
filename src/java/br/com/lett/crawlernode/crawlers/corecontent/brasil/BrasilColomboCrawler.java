@@ -1,5 +1,15 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -8,7 +18,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -22,11 +31,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.util.*;
 
 public class BrasilColomboCrawler extends Crawler {
 
@@ -59,7 +63,7 @@ public class BrasilColomboCrawler extends Crawler {
 
          for (Element sku : variations) {
             String internalId = sku.attr("data-item");
-            String internalPid = scrapInternalPid(doc);
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#codigo-produto-async", "value");
             String name = scrapVariationName(doc, "h1.nome-produto", sku);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb a", true);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
@@ -239,9 +243,10 @@ public class BrasilColomboCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".dados-preco-de .dados-preco-de--label", null, false, ',', session);
-      //This was necessary because on this site when the product does not have PriceFrom in HTML it is represented as "0.0"
+      // This was necessary because on this site when the product does not have PriceFrom in HTML it is
+      // represented as "0.0"
       if (priceFrom != null && priceFrom == 0.0) {
-          priceFrom = null;
+         priceFrom = null;
       }
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".dados-preco-valor .dados-preco-valor--label", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
