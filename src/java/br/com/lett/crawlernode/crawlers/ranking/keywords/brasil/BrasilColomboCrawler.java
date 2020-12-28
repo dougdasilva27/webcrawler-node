@@ -35,7 +35,7 @@ public class BrasilColomboCrawler extends CrawlerRankingKeywords {
             String internalPid = e.attr("id").split("-")[2];
 
             // Url do produto
-            String urlProduct = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".nm-product-info", "href"), "http:", "www.colombo.com");
+            String urlProduct = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".nm-product-info", "href"), "https", "www.colombo.com");
 
             saveDataProduct(null, internalPid, urlProduct);
 

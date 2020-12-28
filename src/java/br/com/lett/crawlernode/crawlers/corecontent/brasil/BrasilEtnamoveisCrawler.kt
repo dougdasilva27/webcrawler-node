@@ -28,6 +28,10 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
       return !FILTERS.matcher(href).matches() && href.startsWith(homePage)
    }
 
+   companion object {
+      const val SELLER_NAME: String = "Etna Brasil"
+   }
+
    val scrapedVariations = mutableListOf<String>()
    var productsLength = 0
 
@@ -67,17 +71,18 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
 
    private fun scrapOffers(doc: Document): Offers {
       val offers = Offers()
-      val price = doc.selectFirst(".etn-price__list")?.toDoubleComma()
-      var priceFrom: Double? = null
+      val price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".etn-price__list", null, false, ',', session)
+      val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".etn-price__old .price", null, true, ',', session)
+
       var installments = Installments()
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(price)
-         .build())
-      if(doc.selectFirst("etn-price__old") != null){
-         priceFrom = doc.selectFirst("etn-price__old")?.toDoubleComma()
-      }
-      if(doc.selectFirst(".easy-installment") != null){
+      installments.add(
+         Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(price)
+            .build()
+      )
+
+      if (doc.selectFirst(".easy-installment") != null) {
          installments = Installments(setOf(doc.installment(".easy-installment")))
       }
       val pricing = Pricing.PricingBuilder
@@ -86,28 +91,27 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
          .setCreditCards(listOf(MASTERCARD, VISA, AMEX, ELO, HIPERCARD, DINERS).toCreditCards(installments))
          .setBankSlip(price?.toBankSlip())
          .setPriceFrom(priceFrom).build()
-      val sellerName = doc.selectFirst(".etn-product__delivery strong")?.text()
       offers.add(
          Offer.OfferBuilder
             .create()
             .setPricing(pricing)
-            .setSellerFullName(sellerName)
+            .setSellerFullName(SELLER_NAME)
             .setUseSlugNameAsInternalSellerId(true)
             .setIsBuybox(false)
-            .setIsMainRetailer(sellerName?.matches("Etna".toRegex()) ?: true)
+            .setIsMainRetailer(true)
             .build()
       )
       return offers
    }
 
-   private fun fetchRatings(): Document{
+   private fun fetchRatings(): Document {
 
       val headers = HashMap<String, String>()
       headers["Content-Type"] = "text/html;charset=UTF-8"
       var url = session.originalURL
 
-      if(session.originalURL.contains("?")){
-         url = url.substring(0,session.originalURL.indexOf("?prod_list"))
+      if (session.originalURL.contains("?")) {
+         url = url.substring(0, session.originalURL.indexOf("?prod_list"))
       }
 
       val request = Request.RequestBuilder.create().setUrl(url + "/reviewhtml/3").setHeaders(headers).build()
@@ -115,7 +119,7 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
       return Jsoup.parse(dataFetcher[session, request].body)
    }
 
-   private fun scrapRatingReviews(): RatingsReviews{
+   private fun scrapRatingReviews(): RatingsReviews {
       val ratingReviews = RatingsReviews()
       val page = fetchRatings()
 
@@ -123,7 +127,7 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
       val reviews = page.select(".rating-stars")
       var totalValueReviews = 0.0
       var avgRatingReviews = 0.0
-      for(review in reviews){
+      for (review in reviews) {
 
          val ratingInfo: JSONObject = CrawlerUtils.stringToJSONObject(review.attr("data-rating"))
 
@@ -131,8 +135,8 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
 
          totalValueReviews += ratingValue
       }
-      if(numberOfRatingsReviews != 0){
-         avgRatingReviews  = totalValueReviews / numberOfRatingsReviews
+      if (numberOfRatingsReviews != 0) {
+         avgRatingReviews = totalValueReviews / numberOfRatingsReviews
       }
 
       ratingReviews.setTotalRating(numberOfRatingsReviews)
@@ -144,7 +148,7 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
 
    }
 
-   private fun scrapAdvancedRating(reviews: Elements): AdvancedRatingReview{
+   private fun scrapAdvancedRating(reviews: Elements): AdvancedRatingReview {
       val advancedRatingReview = AdvancedRatingReview()
       var stars1 = 0
       var stars2 = 0
@@ -152,12 +156,12 @@ class BrasilEtnamoveisCrawler(session: Session?) : Crawler(session) {
       var stars4 = 0
       var stars5 = 0
 
-      for(e in reviews){
+      for (e in reviews) {
 
          val ratingInfo: JSONObject = CrawlerUtils.stringToJSONObject(e.attr("data-rating"))
 
          val ratingValue = ratingInfo.optString("rating").toDouble().roundToInt()
-         when(ratingValue){
+         when (ratingValue) {
             1 -> {
                stars1++
                advancedRatingReview.totalStar1 = stars1
