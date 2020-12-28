@@ -2245,4 +2245,20 @@ public class CrawlerUtils {
       return doc;
    }
 
+   /**
+    * scrap simple script from html
+    * @param doc html
+    * @param cssSelector selector for script
+    * @return String
+    */
+
+   public static String scrapScriptFromHtml(Element doc,String cssSelector){
+      String value = null;
+      Element element = doc.selectFirst(cssSelector);
+      if (element!=null) {
+         value = element.dataNodes().toString().trim();
+      }
+      return value;
+   }
+
 }
