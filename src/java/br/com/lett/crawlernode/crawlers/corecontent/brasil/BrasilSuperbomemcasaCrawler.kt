@@ -76,7 +76,7 @@ class BrasilSuperbomemcasaCrawler (session: Session) : Crawler(session){
          primaryImage = "https://superbom.s3-sa-east-1.amazonaws.com/catalog/product${primaryImage}"
       }
 
-      val offers = scrapOffers(json)
+      val offers = scrapOffers(json, jsonAtt)
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)
@@ -91,7 +91,7 @@ class BrasilSuperbomemcasaCrawler (session: Session) : Crawler(session){
       return mutableListOf(product)
    }
 
-   private fun scrapOffers(json: JSONObject): Offers {
+   private fun scrapOffers(json: JSONObject, jsonAtt: JSONArray): Offers {
 
       val offers = Offers()
 
@@ -101,7 +101,13 @@ class BrasilSuperbomemcasaCrawler (session: Session) : Crawler(session){
 
       val price = json.optDouble("price")
 
-      val bankSlip = price.toBankSlip()
+      val specialPrice = scrapAttributes(jsonAtt, "special_price")?.toDouble()
+
+      val spotlightPrice = specialPrice ?: price
+
+      val priceFrom = if (specialPrice == null) null else price
+
+      val bankSlip = spotlightPrice.toBankSlip()
 
       val creditCards = listOf(
          Card.MASTERCARD,
@@ -119,7 +125,8 @@ class BrasilSuperbomemcasaCrawler (session: Session) : Crawler(session){
          Offer.OfferBuilder.create()
             .setPricing(
                Pricing.PricingBuilder.create()
-                  .setSpotlightPrice(price)
+                  .setSpotlightPrice(spotlightPrice)
+                  .setPriceFrom(priceFrom)
                   .setCreditCards(creditCards)
                   .setBankSlip(bankSlip)
                   .build()
