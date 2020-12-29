@@ -12,8 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-
-
 public class RiodejaneiroComprezippCrawler extends CrawlerRankingKeywords {
 
 
@@ -55,22 +53,22 @@ public class RiodejaneiroComprezippCrawler extends CrawlerRankingKeywords {
          for (Object e : productsArray) {
 
             JSONObject product = (JSONObject) e;
-//https://www.comprezipp.com/produto/frango-assado-sadia-batata-arroz-350g
-               String internalId = JSONUtils.getIntegerValueFromJSON(product, "id", 0).toString();
-               String slug = JSONUtils.getStringValue(product, "slug");
 
-               String urlProduct = "";
+            String internalId = JSONUtils.getIntegerValueFromJSON(product, "id", 0).toString();
+            String slug = JSONUtils.getStringValue(product, "slug");
 
-               if (slug != null) {
-                  urlProduct = "https://www.comprezipp.com/produto/" + slug;
-               }
+            String urlProduct = "";
 
-               saveDataProduct(internalId, null, urlProduct);
+            if (slug != null) {
+               urlProduct = "https://www.comprezipp.com/produto/" + slug;
+            }
 
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
-               if (this.arrayProducts.size() == productsLimit) {
-                  break;
-               }
+            saveDataProduct(internalId, null, urlProduct);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
 
          }
       } else {
@@ -81,12 +79,6 @@ public class RiodejaneiroComprezippCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   @Override
-   protected boolean hasNextPage() {
-
-      return true;
-   }
-
    protected void setTotalProducts(JSONObject json) {
       String totalProduct = "total";
       if (json.has(totalProduct) && json.get(totalProduct) instanceof Integer) {
@@ -94,6 +86,6 @@ public class RiodejaneiroComprezippCrawler extends CrawlerRankingKeywords {
          this.log("Total da busca: " + this.totalProducts);
       }
 
-
-}}
+   }
+}
 
