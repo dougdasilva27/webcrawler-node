@@ -75,7 +75,7 @@ public class JSONUtils {
    public static String getStringValue(JSONObject json, String key) {
       String value = null;
 
-      if (json.has(key) && json.get(key) instanceof String) {
+      if (json!=null && json.has(key) && json.get(key) instanceof String) {
          value = json.getString(key);
       }
 
