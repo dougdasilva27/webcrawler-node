@@ -24,6 +24,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -41,12 +42,12 @@ public class BrasilBifarmaCrawler extends Crawler {
       Document doc = new Document("");
       this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
-      if(this.webdriver != null){
+      if (this.webdriver != null) {
          doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
          this.webdriver.waitLoad(20000);
       }
 
-      return  doc;
+      return doc;
    }
 
    @Override
@@ -65,13 +66,13 @@ public class BrasilBifarmaCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#produto_id", "value");
          String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc , ".product_content h1", false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_content h1", false);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = crawlSecondaryImages(doc, primaryImage);
+         List<String> secondaryImages = crawlSecondaryImages(doc, primaryImage);
          String description = crawlDescription(doc, internalId);
          boolean available = doc.selectFirst(".btn.click.product_btn") != null;
-         Offers offers = available? scrapOffer(doc): new Offers();
+         Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -113,8 +114,8 @@ public class BrasilBifarmaCrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(Document document, String primaryImage) {
-      String secondaryImages = null;
+   private List<String> crawlSecondaryImages(Document document, String primaryImage) {
+      List<String> secondaryImages = null;
       JSONArray secondaryImagesArray = new JSONArray();
 
       List<String> images = new ArrayList<>();
@@ -132,7 +133,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       }
 
       if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
+         secondaryImages = Collections.singletonList(secondaryImagesArray.toString());
       }
 
       return secondaryImages;
@@ -180,7 +181,7 @@ public class BrasilBifarmaCrawler extends Crawler {
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("Bifarma")
+         .setSellerFullName("Bifarma Brasil")
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
