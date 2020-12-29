@@ -56,7 +56,8 @@ public class BrasilAgroverdesrCrawler extends Crawler {
             String description = JSONUtils.getStringValue(json, "description");
             String primaryImage = JSONUtils.getValueRecursive(json, "image." + i, String.class);
             String ean = JSONUtils.getValueRecursive(json, "offers." + i + ".gtin14", String.class);
-            Offers offers = ScrapOffers(json,i);
+            boolean available = JSONUtils.getValueRecursive(json, "offers." + i + ".gtin14", String.class).contains("InStock");
+            Offers offers = available? ScrapOffers(json,i) : new Offers() ;
 
 
             products.add(ProductBuilder.create()
