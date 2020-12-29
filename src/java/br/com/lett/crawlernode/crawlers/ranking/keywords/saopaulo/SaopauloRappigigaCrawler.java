@@ -1,10 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawlerOld;
 import java.util.Collections;
 
-public class SaopauloRappigigaCrawler extends RappiCrawler {
+public class SaopauloRappigigaCrawler extends RappiCrawlerOld {
 
    public SaopauloRappigigaCrawler(Session session) {
       super(session, Collections.singletonList("900022260"));

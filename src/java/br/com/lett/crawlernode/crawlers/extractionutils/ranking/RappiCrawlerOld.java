@@ -11,13 +11,13 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public class RappiCrawler extends CrawlerRankingKeywords {
+public class RappiCrawlerOld extends CrawlerRankingKeywords {
 
   private static final String STORES_API_URL = "https://services.rappi.com.br/api/search-client/search/v2/products?page=";
   public static final String PRODUCTS_API_URL = "https://services.rappi.com.br/chewbacca/search/v2/products?page=1";
   private List<String> markets;
 
-  public RappiCrawler(Session session, List<String> markets) {
+  public RappiCrawlerOld(Session session, List<String> markets) {
     super(session);
     this.markets = markets;
   }

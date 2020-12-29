@@ -1,5 +1,14 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
@@ -12,9 +21,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
-import exceptions.OfferException;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
@@ -24,11 +31,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.math.BigDecimal;
-import java.util.*;
 
 public abstract class RappiCrawler extends Crawler {
 
@@ -64,7 +66,7 @@ public abstract class RappiCrawler extends Crawler {
          JSONArray components = JSONUtils.getValueRecursive(data, "data.components", JSONArray.class);
 
          if (components != null) {
-            for (Object json: components) {
+            for (Object json : components) {
                if (json instanceof JSONObject) {
                   String nameComponents = ((JSONObject) json).optString("name");
                   if (nameComponents.equals("product_information")) {
@@ -79,7 +81,7 @@ public abstract class RappiCrawler extends Crawler {
 
    private String fetchProduct(String productId, String storeId, String token) {
 
-      String url = "https://services."+getHomeDomain()+"/api/dynamic/context/content";
+      String url = "https://services." + getHomeDomain() + "/api/dynamic/context/content";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
@@ -88,19 +90,19 @@ public abstract class RappiCrawler extends Crawler {
       headers.put("content-type", "application/json");
       headers.put("authorization", token);
 
-      String payload = "{\"state\":{\"product_id\":\""+productId+"\"},\"limit\":100,\"offset\":0,\"context\":\"product_detail\",\"stores\":["+storeId+"]}";
+      String payload = "{\"state\":{\"product_id\":\"" + productId + "\"},\"limit\":100,\"offset\":0,\"context\":\"product_detail\",\"stores\":[" + storeId + "]}";
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .build();
+            .setUrl(url)
+            .setHeaders(headers)
+            .setPayload(payload)
+            .build();
 
       return this.dataFetcher.post(session, request).getBody();
    }
 
    private String fetchToken() {
-      String url = "https://services."+getHomeDomain()+"/api/auth/guest_access_token";
+      String url = "https://services." + getHomeDomain() + "/api/auth/guest_access_token";
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
@@ -109,11 +111,11 @@ public abstract class RappiCrawler extends Crawler {
       String payload = "{\"headers\":{\"normalizedNames\":{},\"lazyUpdate\":null},\"grant_type\":\"guest\"}";
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setPayload(payload)
-         .mustSendContentEncoding(false)
-         .build();
+            .setUrl(url)
+            .setHeaders(headers)
+            .setPayload(payload)
+            .mustSendContentEncoding(false)
+            .build();
 
       JSONObject json = JSONUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
@@ -150,17 +152,17 @@ public abstract class RappiCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setCategories(categories)
-            .setDescription(description)
-            .setEans(eans)
-            .setOffers(offers)
-            .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setCategories(categories)
+               .setDescription(description)
+               .setEans(eans)
+               .setOffers(offers)
+               .build();
 
          products.add(product);
       } else {
@@ -170,7 +172,7 @@ public abstract class RappiCrawler extends Crawler {
       return products;
    }
 
-   public Offers scrapOffers(JSONObject jsonSku){
+   public Offers scrapOffers(JSONObject jsonSku) {
       Offers offers = new Offers();
 
       try {
@@ -178,13 +180,13 @@ public abstract class RappiCrawler extends Crawler {
          List<String> sales = scrapSales(pricing);
 
          Offer offer = new OfferBuilder().setSellerFullName("Rappi")
-            .setInternalSellerId(jsonSku.optString("store_id", null))
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setPricing(pricing)
-            .setIsMainRetailer(true)
-            .setSales(sales)
-            .build();
+               .setInternalSellerId(jsonSku.optString("store_id", null))
+               .setMainPagePosition(1)
+               .setIsBuybox(false)
+               .setPricing(pricing)
+               .setIsMainRetailer(true)
+               .setSales(sales)
+               .build();
 
          offers.add(offer);
       } catch (Exception e) {
@@ -204,10 +206,10 @@ public abstract class RappiCrawler extends Crawler {
       CreditCards creditCards = scrapCreditCards(price);
 
       return PricingBuilder.create()
-         .setSpotlightPrice(price)
-         .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
-         .build();
+            .setSpotlightPrice(price)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .build();
    }
 
    public static CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -215,25 +217,25 @@ public abstract class RappiCrawler extends Crawler {
       Installments installments = new Installments();
 
       installments.add(InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
       Set<Card> cards = Sets.newHashSet(
-         Card.VISA,
-         Card.MASTERCARD,
-         Card.DINERS,
-         Card.AMEX,
-         Card.ELO,
-         Card.SHOP_CARD
+            Card.VISA,
+            Card.MASTERCARD,
+            Card.DINERS,
+            Card.AMEX,
+            Card.ELO,
+            Card.SHOP_CARD
       );
 
       for (Card card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card.toString())
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
+               .setBrand(card.toString())
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
       }
 
       return creditCards;
@@ -304,16 +306,16 @@ public abstract class RappiCrawler extends Crawler {
       JSONArray images = JSONUtils.getJSONArrayValue(json, "images");
 
       if (!images.isEmpty()) {
-         if(images.length() > 1){
+         if (images.length() > 1) {
             primaryImage = images.getString(1);
          } else {
             primaryImage = images.getString(0);
          }
-      } else{
+      } else {
          return null;
       }
 
-      return CrawlerUtils.completeUrl(primaryImage, "https",  getImagePrefix());
+      return CrawlerUtils.completeUrl(primaryImage, "https", getImagePrefix());
    }
 
    protected List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
@@ -323,7 +325,7 @@ public abstract class RappiCrawler extends Crawler {
       if (imagesArray.length() > 1) {
          for (int i = 1; i < imagesArray.length(); i++) {
 
-            String imagePath = CrawlerUtils.completeUrl(imagesArray.optString(i), "https",  getImagePrefix());
+            String imagePath = CrawlerUtils.completeUrl(imagesArray.optString(i), "https", getImagePrefix());
 
             if (imagePath != null && !imagePath.equals(primaryImage)) {
                resultImages.add(imagePath);

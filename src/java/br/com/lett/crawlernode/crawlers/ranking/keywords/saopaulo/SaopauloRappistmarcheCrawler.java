@@ -2,9 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import java.util.Arrays;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawlerOld;
 
-public class SaopauloRappistmarcheCrawler extends RappiCrawler {
+public class SaopauloRappistmarcheCrawler extends RappiCrawlerOld {
 
    public SaopauloRappistmarcheCrawler(Session session) {
       super(session, Arrays.asList("900020365"));

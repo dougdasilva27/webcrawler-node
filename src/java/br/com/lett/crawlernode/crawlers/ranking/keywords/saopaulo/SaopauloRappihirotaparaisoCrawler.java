@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawlerOld;
 import java.util.Arrays;
 
 /**
@@ -9,7 +9,7 @@ import java.util.Arrays;
  *
  * @author Fellype Layunne
  */
-public class SaopauloRappihirotaparaisoCrawler extends RappiCrawler {
+public class SaopauloRappihirotaparaisoCrawler extends RappiCrawlerOld {
 
    public SaopauloRappihirotaparaisoCrawler(Session session) {
       super(session, Arrays.asList("900021834"));
