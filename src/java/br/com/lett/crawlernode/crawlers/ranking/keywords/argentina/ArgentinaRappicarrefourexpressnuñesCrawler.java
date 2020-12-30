@@ -5,7 +5,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ArgentinaRappiCr
 
 public class ArgentinaRappicarrefourexpressnuñesCrawler extends ArgentinaRappiCrawler {
 
-   public static final String STORE_ID = "130396";
+   public static final String STORE_ID = "130394";
    public static final String STORE_TYPE = "carrefour_express";
 
    public ArgentinaRappicarrefourexpressnuñesCrawler(Session session) {
