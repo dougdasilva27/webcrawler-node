@@ -49,6 +49,8 @@ public class RiodejaneiroComprezippCrawler extends CrawlerRankingKeywords {
       JSONArray productsArray = JSONUtils.getValueRecursive(json, "data", JSONArray.class);
 
       if (productsArray != null && !productsArray.isEmpty()) {
+         if(totalProducts == 0)
+            setTotalProducts(json);
 
          for (Object e : productsArray) {
 
