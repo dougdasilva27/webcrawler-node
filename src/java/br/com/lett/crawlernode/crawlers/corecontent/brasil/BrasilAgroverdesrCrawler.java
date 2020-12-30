@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -10,11 +11,13 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,14 +25,14 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.json.Json;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class BrasilAgroverdesrCrawler extends Crawler {
 
+
+   private static final String HOME_PAGE = "www.agroverdesr.com.br";
    private static final String SELLER_FULL_NAME = "Agroverde sr brasil";
    private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPER.toString(), Card.HIPERCARD.toString(),
       Card.JCB.toString(), Card.ELO.toString());
@@ -38,42 +41,118 @@ public class BrasilAgroverdesrCrawler extends Crawler {
       super(session);
    }
 
-   @Override
-   public List<Product> extractInformation(Document document) throws Exception {
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".content.produto  #hdnProdutoId", "value");
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      if (internalId != null) {
-         String jsonString = CrawlerUtils.scrapScriptFromHtml(document, ".content.produto script[type=\"application/ld+json\"]");
-         JSONObject json = JSONUtils.stringToJsonArray(jsonString).optJSONObject(0);
-         JSONArray variation = ScrapVariantes(document);
-         CategoryCollection category = ScrapCategory(document);
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
+         JSONArray skus = json.has("offers") && json.get("offers") instanceof JSONArray ? json.getJSONArray("offers") : new JSONArray();
 
-         for (int i = 0; i < variation.length(); i++) {
-            String internalPid = JSONUtils.getValueRecursive(json, "offers." + i + ".mpn", String.class);
-            String name = ScrapName( json, variation.optJSONObject(i));
-            String description = JSONUtils.getStringValue(json, "description");
-            String primaryImage = JSONUtils.getValueRecursive(json, "image." + i, String.class);
-            String ean = JSONUtils.getValueRecursive(json, "offers." + i + ".gtin14", String.class);
-            boolean available = JSONUtils.getValueRecursive(json, "offers." + i + ".availability", String.class).contains("InStock");
-            Offers offers = available? ScrapOffers(json,i) : new Offers() ;
+         if (skus.length() > 1) {
+
+            String productId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
+
+            JSONArray variations = ScrapVariantes(doc);
+            for (int i =0;i<variations.length();i++) {
+               String scrapKG = variations.getJSONObject(i).optString("Característica");
+
+               Map<String, String> headers = new HashMap<>();
+               headers.put("Content-type", "application/x-www-form-urlencoded");
+
+               Request req = Request.RequestBuilder.create()
+                  .setUrl("https://www.agroverdesr.com.br/Produto/AtualizarProduto")
+                  .setPayload(
+                     "atributoProduto=" + scrapKG + ";178"
+                        + "&atributoSelecionado=" + scrapKG + ";178"
+                        + "&produtoId=" + productId
+                        + "&comboIdSelecionado=0"
+                        + "&opcaoParalelaSelecionada=0"
+                        + "&optionString=Selecione"
+                        + "&isThumb=false"
+                        + "&produtoVarianteIdAdicional=0"
+                        + "&assinaturaSelecionada=false"
+                        + "&isPagProduto=true"
+                        + "&quantidade=1"
+                        + "&sellerId=0").mustSendContentEncoding(true)
+
+                  .setHeaders(headers).build();
+               String res = this.dataFetcher.post(session, req).getBody();
 
 
-            products.add(ProductBuilder.create()
-               .setInternalId(internalPid)
-               .setInternalPid(internalId)
+               JSONObject apiJSON = JSONUtils.stringToJson(res);
+
+               Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(apiJSON, "produtoVarianteId", 0);
+
+               String internalId = internalIdInt != null ? internalIdInt.toString() : null;
+               String internalPid = internalId;
+               String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
+               CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
+                  Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
+               String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
+                  Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
+               String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
+               RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+               Offers offers = scrapOffersForProductsWithVariation(doc, apiJSON);
+
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setRatingReviews(ratingReviews)
+                  .setOffers(offers)
+                  .build();
+
+               products.add(product);
+            }
+
+
+         } else {
+
+            JSONObject jsonInfo = jsonInfo(doc);
+
+            String internalId = JSONUtils.getStringValue(jsonInfo, "sku");
+            String internalPid = JSONUtils.getStringValue(jsonInfo, "mpn");
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".item-name h1", true);
+            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
+               Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
+            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
+               Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
+            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
+            RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+            boolean available = JSONUtils.getStringValue(jsonInfo, "availability") != null && JSONUtils.getStringValue(jsonInfo, "availability").toLowerCase().contains("instock");
+            Offers offers = available ? scrapOffers(doc) : new Offers();
+            // Creating the product
+            Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
+
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
-               .setDescription(description)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
-               .setCategories(category)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setRatingReviews(ratingReviews)
                .setOffers(offers)
-               .setEans(Collections.singletonList(ean))
-               .build());
+               .build();
 
+            products.add(product);
          }
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -81,54 +160,9 @@ public class BrasilAgroverdesrCrawler extends Crawler {
       return products;
    }
 
-   private Offers ScrapOffers(JSONObject json, int index) throws OfferException, MalformedPricingException {
-      Offers offers = new Offers();
-      Pricing pricing = ScrapPricing(json,index);
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setIsBuybox(false)
-         .build());
-
-      return offers;
-
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst("#bodyProduto") != null;
    }
-
-   private Pricing ScrapPricing( JSONObject json, int index) throws MalformedPricingException {
-      Double price = Double.parseDouble(JSONUtils.getValueRecursive(json,"offers."+index+".price",String.class));
-      CreditCards creditCards = ScrapCredtCard(price);
-
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(price)
-         .setBankSlip(BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(price)
-            .build())
-         .setCreditCards(creditCards)
-         .build();
-   }
-
-   private CreditCards ScrapCredtCard(Double price) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-      Installments installments = new Installments();
-      installments.add(Installment.InstallmentBuilder.create()
-         .setFinalPrice(price)
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(price)
-         .build());
-
-
-      for (String card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-      }
-      return creditCards;
-   }
-
 
    private JSONArray ScrapVariantes(Document document) {
       JSONArray array = new JSONArray();
@@ -148,17 +182,227 @@ public class BrasilAgroverdesrCrawler extends Crawler {
       return array;
    }
 
+   private RatingsReviews scrapRatingsReviews(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+      ratingReviews.setDate(session.getDate());
 
-   private CategoryCollection ScrapCategory(Document document) {
-      return CrawlerUtils.crawlCategories(document, "#fbits-breadcrumb");
+      Integer totalNumOfEvaluations = 0;
+      Integer totalWrittenReviews = 0;
+      Double avgRating = 0.0d;
+
+      Element ratingElement = doc.selectFirst("[itemprop=\"aggregateRating\"]");
+      if (ratingElement != null) {
+
+         totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtmlAttr(ratingElement, "[itemprop=\"ratingCount\"]", "content", 0);
+         totalWrittenReviews = CrawlerUtils.scrapIntegerFromHtmlAttr(ratingElement, "[itemprop=\"reviewCount\"]", "content", 0);
+         avgRating = CrawlerUtils.scrapDoublePriceFromHtml(ratingElement, "[itemprop=\"ratingValue\"]", "content", false, '.', session);
+
+         ratingReviews.setTotalRating(totalNumOfEvaluations);
+         ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0.0d);
+         ratingReviews.setTotalWrittenReviews(totalWrittenReviews);
+      }
+
+      return ratingReviews;
    }
 
-   private String ScrapName( JSONObject json, JSONObject variation) {
-      StringBuilder name = new StringBuilder();
-      name.append(JSONUtils.getStringValue(json, "name"));
-      name.append("-");
-      name.append(JSONUtils.getStringValue(variation, "Característica"));
-      return name.toString();
+   private JSONObject jsonInfo(Document doc) {
+      JSONObject jsonOffers = new JSONObject();
+
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
+      JSONArray skus = json.has("offers") && json.get("offers") instanceof JSONArray ? json.getJSONArray("offers") : new JSONArray();
+
+      for (Object obj : skus) {
+         if (obj instanceof JSONObject) {
+            jsonOffers = (JSONObject) obj;
+
+         }
+      }
+      return jsonOffers;
+   }
+
+
+   /* Start capturing offers for products without variation */
+
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(doc);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst("#fbits-div-preco-off .fbits-preco-off");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-parcelamento-ultima-parcela.precoParcela .fbits-parcela", null, false, ',', session))
+         .build();
+
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(doc);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Integer installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".fbits-componente-parcelamento .precoParcela .numeroparcelas", false, null);
+      Double value = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-componente-parcelamento .precoParcela .parcelavalor", null, false, ',', session);
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(installment)
+         .setInstallmentPrice(value)
+         .build());
+
+      return installments;
+   }
+
+   /* End of capture of offers for products without variation */
+
+
+   /* Start capturing offers for products with variation */
+
+
+   private Offers scrapOffersForProductsWithVariation(Document doc, JSONObject apiURL) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricingForProductsWithVariation(apiURL);
+      List<String> sales = scrapSalesForProductsWithVariation(doc);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private List<String> scrapSalesForProductsWithVariation(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst("#fbits-div-preco-off .fbits-preco-off");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
+
+   private Pricing scrapPricingForProductsWithVariation(JSONObject apiURL) throws MalformedPricingException {
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(apiURL, "precoProduto", false);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(apiURL, "precoProduto", false);
+      CreditCards creditCards = scrapCreditCardsForProductsWithVariation(apiURL, spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(JSONUtils.getDoubleValueFromJSON(apiURL, "precoProduto", false))
+         .build();
+
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private CreditCards scrapCreditCardsForProductsWithVariation(JSONObject apiURL, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallmentsForProductsWithVariation(apiURL);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallmentsForProductsWithVariation(JSONObject apiURL) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      if(apiURL!= null && !apiURL.isEmpty()) {
+         String installmentString = JSONUtils.getStringValue(apiURL, "precoProdutoParcelado").split("x")[0];
+         Integer installment = Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
+
+         String valueString = JSONUtils.getStringValue(apiURL, "precoProdutoParcelado");
+         int RS = valueString.indexOf("R$");
+         Double value = !valueString.isEmpty() && valueString.contains("R$") ? MathUtils.parseDoubleWithComma(valueString.substring(RS)) : null;
+
+
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installment)
+            .setInstallmentPrice(value)
+            .build());
+      }
+      return installments;
    }
 
 }
