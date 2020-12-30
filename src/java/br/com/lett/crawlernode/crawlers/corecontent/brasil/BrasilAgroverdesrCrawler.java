@@ -84,7 +84,7 @@ public class BrasilAgroverdesrCrawler extends Crawler {
 
                JSONObject apiJSON = JSONUtils.stringToJson(res);
 
-               String internalIdInt = JSONUtils.getStringValue(apiJSON, "produtoVarianteId");
+               Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(apiJSON, "produtoVarianteId",null);
 
                String internalId = internalIdInt != null ? internalIdInt.toString() : null;
                String internalPid = internalId;
