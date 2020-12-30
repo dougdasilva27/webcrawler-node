@@ -25,7 +25,6 @@ import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.json.Json;
 
 import java.util.*;
 
@@ -34,30 +33,32 @@ public class BrasilAgroverdesrCrawler extends Crawler {
 
    private static final String HOME_PAGE = "www.agroverdesr.com.br";
    private static final String SELLER_FULL_NAME = "Agroverde sr brasil";
-   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPER.toString(), Card.HIPERCARD.toString(),
+   private final Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPER.toString(), Card.HIPERCARD.toString(),
       Card.JCB.toString(), Card.ELO.toString());
 
    public BrasilAgroverdesrCrawler(Session session) {
       super(session);
    }
 
+   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+
          JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
          JSONArray skus = json.has("offers") && json.get("offers") instanceof JSONArray ? json.getJSONArray("offers") : new JSONArray();
 
-         if (skus.length() > 1) {
+         if (!skus.isEmpty()) {
 
             String productId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#hdnProdutoId", "value");
 
             JSONArray variations = ScrapVariantes(doc);
-            for (int i =0;i<variations.length();i++) {
-               String scrapKG = variations.getJSONObject(i).optString("Característica");
+            for (Object o : variations) {
+
+               String scrapKG = o instanceof JSONObject ? ((JSONObject) o).optString("Característica") : null;
 
                Map<String, String> headers = new HashMap<>();
                headers.put("Content-type", "application/x-www-form-urlencoded");
@@ -77,30 +78,28 @@ public class BrasilAgroverdesrCrawler extends Crawler {
                         + "&isPagProduto=true"
                         + "&quantidade=1"
                         + "&sellerId=0").mustSendContentEncoding(true)
-
                   .setHeaders(headers).build();
                String res = this.dataFetcher.post(session, req).getBody();
 
 
                JSONObject apiJSON = JSONUtils.stringToJson(res);
 
-               Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(apiJSON, "produtoVarianteId", 0);
+               String internalIdInt = JSONUtils.getStringValue(apiJSON, "produtoVarianteId");
 
                String internalId = internalIdInt != null ? internalIdInt.toString() : null;
                String internalPid = internalId;
                String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
                CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
                String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
-                  Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
+                  Arrays.asList("data-zoom-image", "data-image"), "https", HOME_PAGE);
                String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
-                  Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
+                  Arrays.asList("data-zoom-image", "data-image"), "https", HOME_PAGE, primaryImage);
                String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
                RatingsReviews ratingReviews = scrapRatingsReviews(doc);
                Offers offers = scrapOffersForProductsWithVariation(doc, apiJSON);
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
-
                   .setInternalId(internalId)
                   .setInternalPid(internalPid)
                   .setName(name)
@@ -116,44 +115,9 @@ public class BrasilAgroverdesrCrawler extends Crawler {
 
                products.add(product);
             }
-
-
-         } else {
-
-            JSONObject jsonInfo = jsonInfo(doc);
-
-            String internalId = JSONUtils.getStringValue(jsonInfo, "sku");
-            String internalPid = JSONUtils.getStringValue(jsonInfo, "mpn");
-            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".item-name h1", true);
-            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
-               Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
-            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
-               Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
-            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
-            RatingsReviews ratingReviews = scrapRatingsReviews(doc);
-            boolean available = JSONUtils.getStringValue(jsonInfo, "availability") != null && JSONUtils.getStringValue(jsonInfo, "availability").toLowerCase().contains("instock");
-            Offers offers = available ? scrapOffers(doc) : new Offers();
-            // Creating the product
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setRatingReviews(ratingReviews)
-               .setOffers(offers)
-               .build();
-
-            products.add(product);
          }
-      } else {
+      }
+      else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
@@ -168,8 +132,10 @@ public class BrasilAgroverdesrCrawler extends Crawler {
       JSONArray array = new JSONArray();
       String tag = "Fbits.Produto.AtributosProduto = ";
       Elements elements = document.select("#bodyProduto  script");
+
       for (Element element : elements) {
          for (DataNode dataNode : element.dataNodes()) {
+
             if (dataNode.getWholeData().contains(tag)) {
                String script = dataNode.getWholeData();
                int inicialIndex = script.indexOf(tag) + tag.length();
@@ -177,7 +143,6 @@ public class BrasilAgroverdesrCrawler extends Crawler {
                array = JSONUtils.stringToJsonArray(script.substring(inicialIndex, finalIndex));
             }
          }
-
       }
       return array;
    }
@@ -205,7 +170,7 @@ public class BrasilAgroverdesrCrawler extends Crawler {
       return ratingReviews;
    }
 
-   private JSONObject jsonInfo(Document doc) {
+   private JSONObject jsonInfoFromHtml(Document doc) {
       JSONObject jsonOffers = new JSONObject();
 
       JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, ".content.produto script[type=\"application/ld+json\"]", "", "", false, true);
@@ -214,7 +179,7 @@ public class BrasilAgroverdesrCrawler extends Crawler {
       for (Object obj : skus) {
          if (obj instanceof JSONObject) {
             jsonOffers = (JSONObject) obj;
-
+            break;
          }
       }
       return jsonOffers;
@@ -388,9 +353,9 @@ public class BrasilAgroverdesrCrawler extends Crawler {
    public Installments scrapInstallmentsForProductsWithVariation(JSONObject apiURL) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      if(apiURL!= null && !apiURL.isEmpty()) {
+      if (apiURL != null && !apiURL.isEmpty()) {
          String installmentString = JSONUtils.getStringValue(apiURL, "precoProdutoParcelado").split("x")[0];
-         Integer installment = Integer.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
+         Integer installment = MathUtils.parseInt(installmentString.replaceAll("[^0-9]", "").trim());
 
          String valueString = JSONUtils.getStringValue(apiURL, "precoProdutoParcelado");
          int RS = valueString.indexOf("R$");
