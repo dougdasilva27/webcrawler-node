@@ -58,62 +58,101 @@ public class BrasilAgroverdesrCrawler extends Crawler {
             JSONArray variations = ScrapVariantes(doc);
             for (Object o : variations) {
 
-               String scrapKG = o instanceof JSONObject ? ((JSONObject) o).optString("Característica") : null;
+               if (o instanceof JSONObject && !((JSONObject) o).isEmpty()) {
+                  String scrapKG =  ((JSONObject) o).optString("Característica");
 
-               Map<String, String> headers = new HashMap<>();
-               headers.put("Content-type", "application/x-www-form-urlencoded");
+                  Map<String, String> headers = new HashMap<>();
+                  headers.put("Content-type", "application/x-www-form-urlencoded");
 
-               Request req = Request.RequestBuilder.create()
-                  .setUrl("https://www.agroverdesr.com.br/Produto/AtualizarProduto")
-                  .setPayload(
-                     "atributoProduto=" + scrapKG + ";178"
-                        + "&atributoSelecionado=" + scrapKG + ";178"
-                        + "&produtoId=" + productId
-                        + "&comboIdSelecionado=0"
-                        + "&opcaoParalelaSelecionada=0"
-                        + "&optionString=Selecione"
-                        + "&isThumb=false"
-                        + "&produtoVarianteIdAdicional=0"
-                        + "&assinaturaSelecionada=false"
-                        + "&isPagProduto=true"
-                        + "&quantidade=1"
-                        + "&sellerId=0").mustSendContentEncoding(true)
-                  .setHeaders(headers).build();
-               String res = this.dataFetcher.post(session, req).getBody();
+                  Request req = Request.RequestBuilder.create()
+                     .setUrl("https://www.agroverdesr.com.br/Produto/AtualizarProduto")
+                     .setPayload(
+                        "atributoProduto=" + scrapKG + ";178"
+                           + "&atributoSelecionado=" + scrapKG + ";178"
+                           + "&produtoId=" + productId
+                           + "&comboIdSelecionado=0"
+                           + "&opcaoParalelaSelecionada=0"
+                           + "&optionString=Selecione"
+                           + "&isThumb=false"
+                           + "&produtoVarianteIdAdicional=0"
+                           + "&assinaturaSelecionada=false"
+                           + "&isPagProduto=true"
+                           + "&quantidade=1"
+                           + "&sellerId=0").mustSendContentEncoding(true)
+                     .setHeaders(headers).build();
+                  String res = this.dataFetcher.post(session, req).getBody();
 
 
-               JSONObject apiJSON = JSONUtils.stringToJson(res);
+                  JSONObject apiJSON = JSONUtils.stringToJson(res);
 
-               Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(apiJSON, "produtoVarianteId",null);
+                  if(apiJSON.has("produtoVarianteId")) {
 
-               String internalId = internalIdInt != null ? internalIdInt.toString() : null;
-               String internalPid = internalId;
-               String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
-               CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
-               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
-                  Arrays.asList("data-zoom-image", "data-image"), "https", HOME_PAGE);
-               String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
-                  Arrays.asList("data-zoom-image", "data-image"), "https", HOME_PAGE, primaryImage);
-               String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
-               RatingsReviews ratingReviews = scrapRatingsReviews(doc);
-               Offers offers = scrapOffersForProductsWithVariation(doc, apiJSON);
+                     Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(apiJSON, "produtoVarianteId", null);
+                     String internalId = internalIdInt != null ? internalIdInt.toString() : null;
+                     String internalPid = internalId;
+                     String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
+                     CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
+                     String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
+                        Arrays.asList("data-zoom-image", "data-image"), "https", HOME_PAGE);
+                     String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
+                        Arrays.asList("data-zoom-image", "data-image"), "https", HOME_PAGE, primaryImage);
+                     String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
+                     RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+                     boolean avaliable = apiJSON.optBoolean("disponivel");
+                     Offers offers = avaliable ? scrapOffersForProductsWithVariation(doc, apiJSON) : new Offers();
 
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setRatingReviews(ratingReviews)
-                  .setOffers(offers)
-                  .build();
+                     Product product = ProductBuilder.create()
+                        .setUrl(session.getOriginalURL())
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(name)
+                        .setCategory1(categories.getCategory(0))
+                        .setCategory2(categories.getCategory(1))
+                        .setCategory3(categories.getCategory(2))
+                        .setPrimaryImage(primaryImage)
+                        .setSecondaryImages(secondaryImages)
+                        .setDescription(description)
+                        .setRatingReviews(ratingReviews)
+                        .setOffers(offers)
+                        .build();
 
-               products.add(product);
+                     products.add(product);
+                  }
+                  else {
+                     JSONObject jsonInfo = jsonInfoFromHtml(doc);
+
+                     String internalId = JSONUtils.getStringValue(jsonInfo, "mpn");
+                     String internalPid = JSONUtils.getStringValue(jsonInfo, "sku");
+                     String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.prodTitle", true);
+                     CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
+                     String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
+                        Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE);
+                     String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".fbits-produto-imagens ul > li > a",
+                        Arrays.asList("data-zoom-image", "data-image"), "http", HOME_PAGE, primaryImage);
+                     String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
+                     RatingsReviews ratingReviews = scrapRatingsReviews(doc);
+                     boolean available = JSONUtils.getStringValue(jsonInfo, "availability") != null && JSONUtils.getStringValue(jsonInfo, "availability").toLowerCase().contains("instock");
+                     Offers offers = available ? scrapOffers(doc) : new Offers();
+                     // Creating the product
+                     Product product = ProductBuilder.create()
+                        .setUrl(session.getOriginalURL())
+
+                        .setInternalId(internalId)
+                        .setInternalPid(internalPid)
+                        .setName(name)
+                        .setCategory1(categories.getCategory(0))
+                        .setCategory2(categories.getCategory(1))
+                        .setCategory3(categories.getCategory(2))
+                        .setPrimaryImage(primaryImage)
+                        .setSecondaryImages(secondaryImages)
+                        .setDescription(description)
+                        .setRatingReviews(ratingReviews)
+                        .setOffers(offers)
+                        .build();
+
+                     products.add(product);
+                  }
+               }
             }
          }
       }
