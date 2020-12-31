@@ -96,7 +96,8 @@ public class BrasilAgroverdesrCrawler extends Crawler {
                   Arrays.asList("data-zoom-image", "data-image"), "https", HOME_PAGE, primaryImage);
                String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".informacao-abas"));
                RatingsReviews ratingReviews = scrapRatingsReviews(doc);
-               Offers offers = scrapOffersForProductsWithVariation(doc, apiJSON);
+               boolean avaliable = apiJSON.optBoolean("disponivel");
+               Offers offers = avaliable? scrapOffersForProductsWithVariation(doc, apiJSON) : new Offers();
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
