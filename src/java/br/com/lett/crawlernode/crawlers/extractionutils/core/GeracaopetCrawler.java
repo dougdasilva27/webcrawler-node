@@ -1,15 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -17,7 +7,6 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -32,6 +21,17 @@ import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GeracaopetCrawler extends Crawler {
 
@@ -62,7 +62,7 @@ public class GeracaopetCrawler extends Crawler {
       if (doc.selectFirst("#__NEXT_DATA__") != null) {
          JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
          Logging
-               .printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
+            .printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
          JSONObject props = JSONUtils.getJSONValue(jsonObject, "props");
          JSONObject pageProps = JSONUtils.getJSONValue(props, "pageProps");
          JSONObject content = JSONUtils.getJSONValue(pageProps, "content");
@@ -72,7 +72,9 @@ public class GeracaopetCrawler extends Crawler {
          String description = data.optString("description");
          List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(data.optJSONArray("imageGallery"), "file", null, "https", "products-info-public.s3-sa-east-1.amazonaws.com/images/1000", session);
          String primaryImage = images.isEmpty() ? null : images.remove(0);
-         String secondaryImages = images.isEmpty() ? null : CommonMethods.listToJSONArray(images).toString();
+         String productStoreId = CrawlerUtils.scrapStringSimpleInfo(doc, ".yv-id", true);
+         RatingsReviews ratingReviews = productStoreId != null ? CrawlerUtils.scrapRatingReviewsFromYourViews(productStoreId, "86ceddc8-6468-456a-a862-aad27453c9ae", ".yv-average-line-qtd span strong", ".yv-average-line-grade", ".yv-pagging", ".yv-reviews-component ", ".yv-icon-star.yv-star-color", this.dataFetcher, session, logger, cookies) : null;
+
 
          JSONArray children = JSONUtils.getJSONArrayValue(data, "children");
          JSONObject pricesJson = fetchPrices(internalPid);
@@ -89,20 +91,21 @@ public class GeracaopetCrawler extends Crawler {
                Offers offers = available ? scrapOffers(pricesJson, internalId) : new Offers();
 
                Product product = ProductBuilder.create()
-                     .setUrl(session.getOriginalURL())
-                     .setInternalId(internalId)
-                     .setInternalPid(internalPid)
-                     .setOffers(offers)
-                     .setName(name)
-                     .setCategory1(null)
-                     .setCategory2(null)
-                     .setCategory3(null)
-                     .setPrimaryImage(primaryImage)
-                     .setSecondaryImages(secondaryImages)
-                     .setDescription(description)
-                     .setEans(eans)
-                     .setRatingReviews(new RatingsReviews())
-                     .build();
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setOffers(offers)
+                  .setName(name)
+                  .setCategory1(null)
+                  .setCategory2(null)
+                  .setCategory3(null)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(images)
+                  .setDescription(description)
+                  .setEans(eans)
+                  .setRatingReviews(ratingReviews)
+
+                  .build();
 
                products.add(product);
             } catch (Exception ex) {
@@ -118,20 +121,20 @@ public class GeracaopetCrawler extends Crawler {
 
    private JSONObject fetchPrices(String sku) {
       Request req = RequestBuilder.create()
-            .setUrl("https://api.geracaopet.com.br/api/V2/catalogs/products/prices?"
-                  + "storeId=" + storeId + "&sku=" + sku)
-            .setCookies(cookies)
-            .build();
+         .setUrl("https://api.geracaopet.com.br/api/V2/catalogs/products/prices?"
+            + "storeId=" + storeId + "&sku=" + sku)
+         .setCookies(cookies)
+         .build();
 
       return JSONUtils.stringToJson(this.dataFetcher.get(session, req).getBody());
    }
 
    private boolean fetchAvaiability(String sku) {
       Request req = RequestBuilder.create()
-            .setUrl("https://api.geracaopet.com.br/api/V2/catalogs/products/delivery-stocks"
-                  + "?postalCode=" + this.cep + "&storeId=" + storeId + "&sku=" + sku)
-            .setCookies(cookies)
-            .build();
+         .setUrl("https://api.geracaopet.com.br/api/V2/catalogs/products/delivery-stocks"
+            + "?postalCode=" + this.cep + "&storeId=" + storeId + "&sku=" + sku)
+         .setCookies(cookies)
+         .build();
 
       JSONObject avJson = JSONUtils.stringToJson(this.dataFetcher.get(session, req).getBody());
 
@@ -158,20 +161,20 @@ public class GeracaopetCrawler extends Crawler {
             Double price = skuJson.optDouble("price", 0d);
 
             offers.add(OfferBuilder.create()
-                  .setPricing(PricingBuilder.create()
-                        .setPriceFrom(specialPrice > 0d ? price : null)
-                        .setSpotlightPrice(specialPrice > 0d ? specialPrice : price)
-                        .setBankSlip(BankSlipBuilder
-                              .create()
-                              .setFinalPrice(specialPrice > 0d ? specialPrice : price)
-                              .build())
-                        .setCreditCards(new CreditCards(extCreditCards(specialPrice > 0d ? specialPrice : price)))
-                        .build())
-                  .setIsMainRetailer(true)
-                  .setSellerFullName(SELLER_NAME)
-                  .setIsBuybox(false)
-                  .setUseSlugNameAsInternalSellerId(true)
-                  .build());
+               .setPricing(PricingBuilder.create()
+                  .setPriceFrom(specialPrice > 0d ? price : null)
+                  .setSpotlightPrice(specialPrice > 0d ? specialPrice : price)
+                  .setBankSlip(BankSlipBuilder
+                     .create()
+                     .setFinalPrice(specialPrice > 0d ? specialPrice : price)
+                     .build())
+                  .setCreditCards(new CreditCards(extCreditCards(specialPrice > 0d ? specialPrice : price)))
+                  .build())
+               .setIsMainRetailer(true)
+               .setSellerFullName(SELLER_NAME)
+               .setIsBuybox(false)
+               .setUseSlugNameAsInternalSellerId(true)
+               .build());
          }
       }
 
@@ -180,24 +183,24 @@ public class GeracaopetCrawler extends Crawler {
 
    private List<CreditCard> extCreditCards(Double price) {
       return Stream.of(Card.VISA, Card.MASTERCARD, Card.ELO)
-            .map(card -> {
-               try {
-                  return CreditCard.CreditCardBuilder.create()
-                        .setIsShopCard(false)
-                        .setBrand(card.toString())
-                        .setInstallments(new Installments(
-                              Collections.singleton(InstallmentBuilder
-                                    .create()
-                                    .setInstallmentNumber(1)
-                                    .setInstallmentPrice(price)
-                                    .setFinalPrice(price)
-                                    .build())
-                        ))
-                        .build();
-               } catch (MalformedPricingException e) {
-                  throw new RuntimeException(e);
-               }
-            })
-            .collect(Collectors.toList());
+         .map(card -> {
+            try {
+               return CreditCard.CreditCardBuilder.create()
+                  .setIsShopCard(false)
+                  .setBrand(card.toString())
+                  .setInstallments(new Installments(
+                     Collections.singleton(InstallmentBuilder
+                        .create()
+                        .setInstallmentNumber(1)
+                        .setInstallmentPrice(price)
+                        .setFinalPrice(price)
+                        .build())
+                  ))
+                  .build();
+            } catch (MalformedPricingException e) {
+               throw new RuntimeException(e);
+            }
+         })
+         .collect(Collectors.toList());
    }
 }
