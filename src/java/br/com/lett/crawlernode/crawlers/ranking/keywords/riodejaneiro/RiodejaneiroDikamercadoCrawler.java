@@ -34,7 +34,7 @@ public class RiodejaneiroDikamercadoCrawler extends CrawlerRankingKeywords {
 
             if (infoProduct != null) {
                String internalId = getProductId(infoProduct);
-               String productUrl = "https://dikamercado.com.br" + infoProduct;
+               String productUrl = CrawlerUtils.completeUrl(infoProduct, "https", "dikamercado.com.br");
 
                saveDataProduct(internalId, null, productUrl);
 

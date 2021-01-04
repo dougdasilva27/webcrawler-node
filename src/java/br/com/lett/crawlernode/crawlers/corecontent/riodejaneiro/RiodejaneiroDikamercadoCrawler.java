@@ -40,7 +40,7 @@ public class RiodejaneiroDikamercadoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = getProductId();
+         String internalId = getProductId(doc);
          String internalPid = getProductPid(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.mb-3", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs > li:not(:first-child):not(:last-child) > a");
@@ -75,9 +75,10 @@ public class RiodejaneiroDikamercadoCrawler extends Crawler {
       return doc.selectFirst(".pt-1.mb-4 > span:nth-child(1)") != null;
    }
 
-   private String getProductId() {
-      String[] url = session.getOriginalURL().split("-");
-      return url[url.length - 1].split("/")[0];
+   private String getProductId(Document doc) {
+      String extractId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".col-md-6 .altera-quantidade .product-cart form", "action");
+      String[] id = extractId != null ? extractId.split("-") : null;
+      return id != null ? id[id.length - 1].split("/")[0] : null;
    }
 
    private String getProductPid(Document doc) {
