@@ -1,49 +1,37 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import models.Offer;
-import models.Offers;
-import models.pricing.BankSlip.BankSlipBuilder;
-import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.CreditCards;
-import models.pricing.Installment.InstallmentBuilder;
-import models.pricing.Installments;
-import models.pricing.Pricing;
-import models.pricing.Pricing.PricingBuilder;
+import models.RatingsReviews;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 
 /**
- * Date: 20/08/2018
+ * Date: 04/01/2021
  *
- * @author victor
+ * @author Marcos Moura
  */
-public class RiodejaneiroZonasulCrawler extends Crawler {
+public class RiodejaneiroZonasulCrawler extends VTEXNewScraper {
 
-   public static final String HOME_PAGE = "https://www.zonasul.com.br/";
-   private static final String SELLER_FULL_NAME = "Zona Sul";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.HIPER.toString(), Card.AMEX.toString());
-
-   // Site não possui rating
+  private static final String HOME_PAGE = "https://www.zonasul.com.br/";
+  private static final String SELLER_NAME = "Super Mercado Zona Sul S/A";
+  private static final String COOKIES = "azion_balancer=B; vtex_session=eyJhbGciOiJFUzI1NiIsImtpZCI6IjA5RDFDRDUwRDM5RjVFREVCQzU0ODc0RUEyQkQ3RkZEQzIxNzVEQUQiLCJ0eXAiOiJqd3QifQ.eyJhY2NvdW50LmlkIjoiMmIyYjYxMTktNjM0Zi00ZjRiLWJmYzQtMmE0Y2Y5YzdiNTEzIiwiaWQiOiIyNWNmYTIwZS1mNjQ1LTQ5NGEtYTgyMC1iZTdmMzBhM2Q3ZDMiLCJ2ZXJzaW9uIjoyLCJzdWIiOiJzZXNzaW9uIiwiYWNjb3VudCI6InNlc3Npb24iLCJleHAiOjE2MTA0NzUwNjMsImlhdCI6MTYwOTc4Mzg2MywiaXNzIjoidG9rZW4tZW1pdHRlciIsImp0aSI6IjQyOWQzNGViLTg0YTUtNGQyZC1iZWFiLTNmMWRmNTYyY2ZmZSJ9.tAaLBagIcJP7FTQZc6QnYSIo60jgRpiVjPtobRYgxiZrNWtJ2kJn3mily06ZGxEhUFsI0uPv2993eoAA3ehD2A";
+  //This is not the best way to set cookies but it was the only way found when this crawler was created
 
    public RiodejaneiroZonasulCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -53,111 +41,53 @@ public class RiodejaneiroZonasulCrawler extends Crawler {
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
+   public void handleCookiesBeforeFetch() {
+      super.handleCookiesBeforeFetch();
+   }
 
-      List<Product> products = new ArrayList<>();
+   @Override
+   protected Object fetch() {
 
-      if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
+      Map<String,String> headers = new HashMap<>();
+      headers.put("cookie", COOKIES);
 
-         String internalId = crawlInternalId(doc);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h2.hide_mobile", true);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb .hide_mobile a");
-         String primaryImage = null;
-         List<String> images = doc.select(".bg_branco div.fotorama img").eachAttr("src");
-         if (!images.isEmpty()) {
-            primaryImage = images.remove(0);
-         }
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".div_line:nth-last-child(2)", ".div_line:nth-last-child(1)"));
-         boolean available = doc.select(".miolo_info .content-produto-indisponivel").isEmpty();
-         Offers offers = available ? scrapOffers(doc) : new Offers();
+      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).build();
+      Document doc = Jsoup.parse(dataFetcher.get(session,request).getBody());
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setName(name)
-            .setOffers(offers)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setDescription(description)
-            .build();
-         products.add(product);
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page: " + session.getOriginalURL());
+      return doc;
+   }
+
+   @Override
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+      JSONObject productApi = new JSONObject();
+
+      String url = homePage + "api/catalog_system/pub/products/search?fq=productId:" + internalPid + (parameters == null ? "" : parameters);
+
+      Map<String,String> headers = new HashMap<>();
+      headers.put("cookie", COOKIES);
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
+      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+
+      if (!array.isEmpty()) {
+         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
       }
 
-      return products;
+      return productApi;
    }
 
-   private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#produto") != null;
+   @Override
+   protected String getHomePage() {
+      return HOME_PAGE;
    }
 
-   private String crawlInternalId(Document doc) {
-      String idText = CrawlerUtils.scrapStringSimpleInfo(doc, ".header_info .code", true);
-      return idText != null ? idText.replaceAll("^.*?(?<=:\\s)", "") : null;
+   @Override
+   protected List<String> getMainSellersNames() {
+      return Arrays.asList(SELLER_NAME);
    }
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
-      Offers offers = new Offers();
-      Pricing pricing = scrapPricing(doc);
-
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .build());
-
-      return offers;
-
+   @Override
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
+      return null;
    }
-
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".div_line_priceInfo .price_desconto",
-         null, false, ',', session);
-      Double priceFrom = null;
-
-      if (spotlightPrice == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".div_line_priceInfo .price",
-            null, false, ',', session);
-      } else {
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".div_line_priceInfo .price",
-            null, false, ',', session);
-      }
-
-      return PricingBuilder.create()
-         .setPriceFrom(priceFrom)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(scrapCreditCards(spotlightPrice))
-         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).build())
-         .build();
-
-   }
-
-   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-      Installments installments = new Installments();
-
-      installments.add(InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
-
-      for (String card : cards) {
-         creditCards.add(CreditCardBuilder.create()
-            .setBrand(card)
-            .setInstallments(installments)
-            .setIsShopCard(false).build());
-      }
-
-      return creditCards;
-   }
-
 }
