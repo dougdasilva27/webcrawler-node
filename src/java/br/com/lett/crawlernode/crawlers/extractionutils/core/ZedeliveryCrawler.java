@@ -129,7 +129,8 @@ public abstract class ZedeliveryCrawler extends Crawler {
 
       JSONObject apiJson = fetchJson(productId);
 
-      JSONObject loadProduct = JSONUtils.getValueRecursive(apiJson,"data.loadProduct", JSONObject.class);
+      JSONObject data = JSONUtils.getJSONValue(apiJson, "data");
+      JSONObject loadProduct = JSONUtils.getJSONValue(data , "loadProduct");
 
       if (loadProduct != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
