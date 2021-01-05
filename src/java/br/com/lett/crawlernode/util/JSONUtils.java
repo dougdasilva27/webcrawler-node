@@ -46,7 +46,7 @@ public class JSONUtils {
    public static <T> T getValueRecursive(Object json, String path, String separator, Class<T> clazz, T defaultValue) {
 
       try {
-         String[] keys = path.split(separator);
+         String[] keys = path.split("["+separator+"]");
 
          Object currentObject = json;
 
