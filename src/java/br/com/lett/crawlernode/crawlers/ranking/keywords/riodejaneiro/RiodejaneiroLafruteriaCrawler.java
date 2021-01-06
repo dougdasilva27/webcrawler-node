@@ -1,152 +1,114 @@
-package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import com.google.common.collect.Sets;
-import exceptions.MalformedPricingException;
-import exceptions.OfferException;
-import models.Offer;
-import models.Offers;
-import models.pricing.*;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class RiodejaneiroLafruteriaCrawler  extends Crawler {
+public class RiodejaneiroLafruteriaCrawler extends CrawlerRankingKeywords {
 
    private static final String ASPX_ID = "lzgyggrjkwxl42howk045y1c";
-   private static final String HOME_PAGE = "lojaonline.lafruteria.com.br";
-   private static final String SELLER_FULL_NAME = "La Fruteria";
-   protected Set<Card> cards = Sets.newHashSet(Card.VISA,Card.VISA.MASTERCARD,Card.ELO,Card.AMEX,Card.HIPERCARD,Card.JCB);
 
    public RiodejaneiroLafruteriaCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
+   }
+
+
+
+   @Override
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+
+
+
+      String url = "https://lojaonline.lafruteria.com.br/busca?q=" + this.keywordEncoded;
+      this.log("Link onde são feitos os crawlers: " + url);
+
+      this.currentDoc = fetchDocument(url,cookies);
+
+      Elements elements = this.currentDoc.select(".area-produtos .produto");
+
+      if (!elements.isEmpty()) {
+         //se o total de busca não foi setado ainda, chama a função para setar
+         if (this.totalProducts == 0) this.totalProducts = elements.size();
+
+         for (Element element : elements) {
+
+            String internalId = "";
+
+            String productUrl = "";
+
+            saveDataProduct(internalId, null, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+
+         }
+      }
+      else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
-      if(ValidateCookie()) {
-         this.cookies = Arrays.asList(new BasicClientCookie("ASP.NET_SessionId", ASPX_ID));
-         Logging.printLogDebug(logger, session, "Cookie is validate");
-      }
-      else {
-         Logging.printLogDebug(logger, session, "Not validate cookie");
-      }
-   }
+   protected Document fetchDocument(String url) {
+      this.currentDoc = new Document(url);
+      ValidateCookie();
 
-   @Override
-   public List<Product> extractInformation(Document document) throws Exception {
-      List<Product> products = new ArrayList<>();
-      String internalId = ScrapInternalId(document);
-
-      if(internalId!=null && !internalId.isEmpty()){
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-         String internalPid = CrawlerUtils.scrapStringSimpleInfo(document,"#ctl00_ContentPlaceHolder1_lblRef",true);
-         String name = CrawlerUtils.scrapStringSimpleInfo(document,".nome",true);
-         CategoryCollection category = ScrapCategory(document);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document,"#ctl00_ContentPlaceHolder1_imgProdutoExposicao",Arrays.asList("src"),"https:",HOME_PAGE);
-         String description = CrawlerUtils.scrapStringSimpleInfo(document,"#ctl00_ContentPlaceHolder1_lblDescricaoProduto",true);
-         Offers offers = ScrapOffers(document);
-
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategories(category)
-            .setPrimaryImage(primaryImage)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
-         products.add(product);
-      }
-      else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
       }
 
+      Map<String,String> headers = new HashMap<>();
+      headers.put("Cookie","ASP.NET_SessionId="+ASPX_ID);
 
-
-
-      return products;
-   }
-
-   private String ScrapInternalId(Document document) {
-      String attrValue = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,"#aspnetForm","action");
-
-      String key = "codigo=";
-      int initialIndex = attrValue.indexOf(key);
-      String internalId = attrValue.substring(initialIndex+key.length());
-      return internalId;
-   }
-
-   private Offers ScrapOffers(Document document) throws OfferException, MalformedPricingException {
-      Offers offers = new Offers();
-
-      //no unavailable product was found.Solution that possibly works
-      boolean available = document.selectFirst(".btn-comprar") != null;
-
-      if(available){
-         Pricing pricing = ScrapPricing(document);
-         
-         offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .build());
-      }
-      return offers;
-   }
-
-   private Pricing ScrapPricing(Document document) throws MalformedPricingException {
-
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(document,"#ctl00_ContentPlaceHolder1_lblValorProduto",null,true,',',session);
-      CreditCards creditCards = ScrapCreditCards(document,price);
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(price)
-         .setCreditCards(creditCards)
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
          .build();
+
+//      Response responsebfor = dataFetcher.get(session, requestbefor);
+
+//      Request request = Request.RequestBuilder.create()
+//         .setUrl(url)
+//         .setCookies(responsebfor.getCookies())
+//         .build();
+
+      Response response = new JavanetDataFetcher().get(session, request);
+
+      Request aa = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(response.getCookies())
+         .build();
+
+      Response responseaa= new JavanetDataFetcher().get(session, aa);
+
+      Document doc = Jsoup.parse(responseaa.getBody());
+
+
+      // Screenshot
+      takeAScreenshot(url, cookies);
+
+      return doc;
+
+
    }
 
-   private CreditCards ScrapCreditCards(Document document, Double price) throws MalformedPricingException {
-      CreditCards creditCards = new CreditCards();
-      Installments installments = new Installments();
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentPrice(price)
-         .setInstallmentNumber(1)
-         .build());
-      for (Card card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card.toString())
-            .setInstallments(installments)
-            .setIsShopCard(false)
-            .build());
-
-      }
-
-      return creditCards;
-   }
-
-   private CategoryCollection ScrapCategory(Document document) {
-      CategoryCollection category = new CategoryCollection();
-      category.add(CrawlerUtils.scrapStringSimpleInfo(document,"#ctl00_ContentPlaceHolder1_lblSecao",true));
-      category.add(CrawlerUtils.scrapStringSimpleInfo(document,"#ctl00_ContentPlaceHolder1_lblSubsecao",true));
-      return category;
-   }
 
    private boolean ValidateCookie(){
       Map<String,String> headers = new HashMap<>();
@@ -162,6 +124,7 @@ public class RiodejaneiroLafruteriaCrawler  extends Crawler {
          .build();
 
       Response response = dataFetcher.post(session,request);
+      this.cookies = response.getCookies();
 
       return response.getLastStatusCode()==200;
    }
