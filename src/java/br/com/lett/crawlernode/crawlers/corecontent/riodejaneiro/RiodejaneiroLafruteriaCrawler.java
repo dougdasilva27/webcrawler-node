@@ -25,6 +25,7 @@ import java.util.*;
 public class RiodejaneiroLafruteriaCrawler  extends Crawler {
 
    private static final String ASPX_ID = "lzgyggrjkwxl42howk045y1c";
+//   private static final String ASPX_ID = "ggsp5fktgwu2cr4i1wnhodep";
    private static final String HOME_PAGE = "lojaonline.lafruteria.com.br";
    private static final String SELLER_FULL_NAME = "La Fruteria";
    protected Set<Card> cards = Sets.newHashSet(Card.VISA,Card.VISA.MASTERCARD,Card.ELO,Card.AMEX,Card.HIPERCARD,Card.JCB);

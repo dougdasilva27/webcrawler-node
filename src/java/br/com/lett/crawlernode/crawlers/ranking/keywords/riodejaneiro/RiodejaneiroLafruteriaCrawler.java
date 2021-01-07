@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -23,10 +24,12 @@ import java.util.Map;
 
 public class RiodejaneiroLafruteriaCrawler extends CrawlerRankingKeywords {
 
+
    private static final String ASPX_ID = "lzgyggrjkwxl42howk045y1c";
 
    public RiodejaneiroLafruteriaCrawler(Session session) {
       super(session);
+      fetchMode= FetchMode.FETCHER;
    }
 
 
@@ -39,7 +42,7 @@ public class RiodejaneiroLafruteriaCrawler extends CrawlerRankingKeywords {
       String url = "https://lojaonline.lafruteria.com.br/busca?q=" + this.keywordEncoded;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = fetchDocument(url,cookies);
+      this.currentDoc = fetchDocument(url);
 
       Elements elements = this.currentDoc.select(".area-produtos .produto");
 
@@ -49,9 +52,11 @@ public class RiodejaneiroLafruteriaCrawler extends CrawlerRankingKeywords {
 
          for (Element element : elements) {
 
-            String internalId = "";
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc,"#ctl00_ContentPlaceHolder1_UCPrateleira1_lstVwPrateleira_ctrl0_lstVwProduto_ctrl1_hdfCodLinkProduto","value");
 
-            String productUrl = "";
+            //ctl00_ContentPlaceHolder1_UCPrateleira1_lstVwPrateleira_ctrl0_lstVwProduto_ctrl1_btnVisualizarProduto
+            String incompleteUrl= CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc,"#ctl00_ContentPlaceHolder1_UCPrateleira1_lstVwPrateleira_ctrl0_lstVwProduto_ctrl1_btnVisualizarProduto","href");
+            String productUrl = CrawlerUtils.completeUrl(incompleteUrl,"https:","lojaonline.lafruteria.com.br");
 
             saveDataProduct(internalId, null, productUrl);
 
@@ -75,31 +80,16 @@ public class RiodejaneiroLafruteriaCrawler extends CrawlerRankingKeywords {
       }
 
       Map<String,String> headers = new HashMap<>();
-      headers.put("Cookie","ASP.NET_SessionId="+ASPX_ID);
+      headers.put("cookie","ASP.NET_SessionId="+ASPX_ID);
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .build();
 
-//      Response responsebfor = dataFetcher.get(session, requestbefor);
+      Response response = dataFetcher.get(session, request);
 
-//      Request request = Request.RequestBuilder.create()
-//         .setUrl(url)
-//         .setCookies(responsebfor.getCookies())
-//         .build();
-
-      Response response = new JavanetDataFetcher().get(session, request);
-
-      Request aa = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setCookies(response.getCookies())
-         .build();
-
-      Response responseaa= new JavanetDataFetcher().get(session, aa);
-
-      Document doc = Jsoup.parse(responseaa.getBody());
-
+      Document doc = Jsoup.parse(response.getBody());
 
       // Screenshot
       takeAScreenshot(url, cookies);
