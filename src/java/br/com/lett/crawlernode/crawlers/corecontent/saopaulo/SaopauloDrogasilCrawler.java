@@ -121,7 +121,7 @@ public class SaopauloDrogasilCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("#ancorDescription div > p:nth-child(1)") != null;
+      return doc.selectFirst("#ancorDescription div > h2:nth-child(1)") != null;
    }
 
    private String scrapName(JSONObject data, Document doc) {
