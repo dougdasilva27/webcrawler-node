@@ -6,7 +6,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.ArgentinaRappiCrawl
 public class ArgentinaRappidiavicentelopezCrawler extends ArgentinaRappiCrawler {
 
    public static final String CEP = "Av.   Bartolomé Mitre 4211 -  B1605 Munro -  Provincia de Buenos Aires -  Argentina";
-   public static final String STORE_ID = "135511";
+   public static final String STORE_ID = "135501";
 
    public ArgentinaRappidiavicentelopezCrawler(Session session) {
       super(session);
