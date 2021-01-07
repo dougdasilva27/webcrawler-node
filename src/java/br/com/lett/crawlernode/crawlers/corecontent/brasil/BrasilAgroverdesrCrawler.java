@@ -89,7 +89,7 @@ public class BrasilAgroverdesrCrawler extends Crawler {
 
                      Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(apiJSON, "produtoVarianteId", null);
                      String internalId = internalIdInt != null ? internalIdInt.toString() : null;
-                     String internalPid = internalId;
+                     String internalPid = productId;
                      String name = JSONUtils.getStringValue(apiJSON, "nomeProdutoVariante");
                      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".fbits-breadcrumb li", true);
                      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fbits-produto-imagens ul > li > a",
