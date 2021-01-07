@@ -25,7 +25,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.paguemenos.com.br/";
    private static final String API_TOKEN = "c5c833774d6feccd351ce70d3b8353c0d99ae61432ec46a2c648f430936ff8e5";
-   private static final List<String> MAIN_SELLERS = Arrays.asList("Drogaria Pague Menos Brasil");
+   private static final List<String> MAIN_SELLERS = Arrays.asList("Farmácias Pague Menos");
    private RatingsReviews rating = new RatingsReviews();
 
    @Override
