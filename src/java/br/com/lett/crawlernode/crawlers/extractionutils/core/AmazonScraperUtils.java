@@ -96,8 +96,9 @@ public class AmazonScraperUtils {
             .setHeaders(headers)
             .setProxyservice(
                   Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR))
+                     ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                     ProxyCollection.BUY,
+                     ProxyCollection.NETNUT_RESIDENTIAL_BR))
             .mustSendContentEncoding(false)
             .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
             .build();
