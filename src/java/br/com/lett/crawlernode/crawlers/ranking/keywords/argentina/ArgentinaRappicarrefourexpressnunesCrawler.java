@@ -3,12 +3,12 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ArgentinaRappiCrawler;
 
-public class ArgentinaRappicarrefourexpressnuñesCrawler extends ArgentinaRappiCrawler {
+public class ArgentinaRappicarrefourexpressnunesCrawler extends ArgentinaRappiCrawler {
 
    public static final String STORE_ID = "130396";
    public static final String STORE_TYPE = "carrefour_express";
 
-   public ArgentinaRappicarrefourexpressnuñesCrawler(Session session) {
+   public ArgentinaRappicarrefourexpressnunesCrawler(Session session) {
       super(session);
    }
 
