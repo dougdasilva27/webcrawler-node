@@ -4,7 +4,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.ArgentinaRappiCrawler;
 
 public class ArgentinaRappicarrefourexpressnunesCrawler extends ArgentinaRappiCrawler {
-                   //   rappicarrefourexpressnunes
+
    public static final String CEP = "Av.   Olazábal 1898 -  C1428 CABA -  Argentina";
    public static final String STORE_ID = "130396";
 
