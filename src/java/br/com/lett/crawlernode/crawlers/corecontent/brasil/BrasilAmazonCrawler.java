@@ -44,7 +44,7 @@ import models.pricing.Pricing.PricingBuilder;
 
 /**
  * Date: 15/11/2017
- * 
+ *
  * @author Gabriel Dornelas
  *
  */
@@ -147,7 +147,7 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
-      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info #sellerProfileTriggerId", false);
+      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text", false);
       String sellerUrl = CrawlerUtils.scrapUrl(doc, "#merchant-info #sellerProfileTriggerId a", "href", "https", HOST);
       String sellerId = scrapSellerIdByUrl(sellerUrl);
 
@@ -202,7 +202,6 @@ public class BrasilAmazonCrawler extends Crawler {
    private Pricing scrapMainPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_ourprice", null, true, ',', session);
 
-
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#priceblock_dealprice, #priceblock_saleprice, #unifiedPrice_feature_div #conditionalPrice .a-color-price", null, false, ',', session);
 
@@ -234,10 +233,10 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
-            Elements ofertas = offerPage.select("#olpOfferList .olpOffer");
+            Elements ofertas = offerPage.select("#aod-offer");
 
             for (Element oferta : ofertas) {
-               String name = CrawlerUtils.scrapStringSimpleInfo(oferta, "h3.olpSellerName", false);
+               String name = CrawlerUtils.scrapStringSimpleInfo(oferta, ".a-fixed-left-grid-col .a-size-small.a-link-normal:first-child", false);
                Pricing pricing = scrapSellersPagePricing(oferta);
 
                if (name.isEmpty()) {
@@ -284,7 +283,7 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private Pricing scrapSellersPagePricing(Element doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".olpOfferPrice", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price span", null, false, ',', session);
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
 
       return PricingBuilder.create()
@@ -439,47 +438,43 @@ public class BrasilAmazonCrawler extends Crawler {
       return name;
    }
 
+   private Document fetchDocumentsOffersRequest(int page, String internalId){
+      String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pageno=" + page;
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("referer", session.getOriginalURL());
+
+      Document doc = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher));
+      headers.put("referer", urlMarketPlace);
+      return doc;
+   }
+
    /**
     * Fetch pages when have marketplace info
-    * 
+    *
     * @param id
     * @return documents
     */
    private List<Document> fetchDocumentsOffers(Document doc, String internalId) {
       List<Document> docs = new ArrayList<>();
 
-      Element marketplaceUrl = doc.selectFirst("#moreBuyingChoices_feature_div");
+      Element marketplaceUrl = doc.selectFirst("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
+      int page = 1;
 
       if (marketplaceUrl != null) {
-         String urlMarketPlace = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=0";
 
-         if (!urlMarketPlace.contains("amazon.com")) {
-            urlMarketPlace = HOME_PAGE + urlMarketPlace;
-         }
-
-         Map<String, String> headers = new HashMap<>();
-         headers.put("upgrade-insecure-requests", "1");
-         headers.put("referer", session.getOriginalURL());
-
-         Document docMarketplace = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher));
+         Document docMarketplace = fetchDocumentsOffersRequest(page,internalId);
          docs.add(docMarketplace);
 
-         headers.put("referer", urlMarketPlace);
+         int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace,"#aod-filter-offer-count-string" ,false);
+         Elements offers = docMarketplace.select(".a-fixed-left-grid-col .a-size-small.a-link-normal:first-child");
 
-         Element nextPage = docMarketplace.select(".a-last:not(.a-disabled)").first();
-         int page = 1;
-
-         while (nextPage != null) {
-            String nextUrl = HOME_PAGE + "/gp/offer-listing/" + internalId + "/ref=olp_page_next?ie=UTF8&f_all=true&f_new=true&startIndex=" + page * 10;
-
-            Document nextDocMarketPlace = Jsoup.parse(amazonScraperUtils.fetchPage(nextUrl, headers, cookies, this.dataFetcher));
-            docs.add(nextDocMarketPlace);
-            nextPage = nextDocMarketPlace.select(".a-last:not(.a-disabled)").first();
-            headers.put("referer", nextUrl);
-
+         if(totalOffers != offers.size()) {
             page++;
+            docMarketplace = fetchDocumentsOffersRequest(page,internalId);
+            docs.add(docMarketplace);
          }
-
       }
 
       return docs;
