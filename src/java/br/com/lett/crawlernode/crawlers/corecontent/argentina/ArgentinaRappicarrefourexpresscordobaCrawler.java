@@ -6,7 +6,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.ArgentinaRappiCrawl
 public class ArgentinaRappicarrefourexpresscordobaCrawler extends ArgentinaRappiCrawler {
 
    public static final String CEP = "Independencia   855 -  X5000 IUQ -  Córdoba -  Argentina";
-   public static final String STORE_ID = "12692";
+   public static final String STORE_ID = "126292";
 
    public ArgentinaRappicarrefourexpresscordobaCrawler(Session session) {
       super(session);
