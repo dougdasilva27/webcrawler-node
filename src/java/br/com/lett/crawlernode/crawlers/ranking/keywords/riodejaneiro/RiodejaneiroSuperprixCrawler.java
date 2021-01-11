@@ -20,7 +20,7 @@ public class RiodejaneiroSuperprixCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     this.pageSize = 15;
-    String url = "https://www.superprix.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20");
+    String url = "https://www.ipanema.superprix.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20");
 
     if (this.currentPage > 1 && this.categoryUrl != null) {
       url = this.categoryUrl + "?PageNumber=" + this.currentPage;

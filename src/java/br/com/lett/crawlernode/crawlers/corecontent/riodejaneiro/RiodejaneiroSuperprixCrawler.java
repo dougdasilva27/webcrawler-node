@@ -37,7 +37,7 @@ import models.prices.Prices;
  */
 public class RiodejaneiroSuperprixCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "http://www.superprix.com.br/";
+   private static final String HOME_PAGE = "http://www.ipanema.superprix.com.br/";
    private static final String CEP = "22041080";
    private static final String CITY = "RIO DE JANEIRO";
    private static final String VTEXSC = "sc=1";
@@ -69,7 +69,7 @@ public class RiodejaneiroSuperprixCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.REFERER, "https://www.superprix.com.br/?redirect&cep=22041080");
+      headers.put(HttpHeaders.REFERER, "https://www.ipanema.superprix.com.br/?redirect&cep=22041080");
 
       Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(cookies).setHeaders(headers).build();
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
