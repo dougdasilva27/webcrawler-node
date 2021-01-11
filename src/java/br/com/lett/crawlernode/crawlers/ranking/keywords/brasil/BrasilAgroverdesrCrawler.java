@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -55,7 +56,7 @@ public class BrasilAgroverdesrCrawler extends CrawlerRankingKeywords {
 
    private String ScrapProductPid(Element e) {
      String idAttr = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".spot","id");
-     return idAttr.substring(idAttr.lastIndexOf("-"));
+     return CommonMethods.getLast(idAttr.split("-"));
    }
 
    private Document fetchPage() {
