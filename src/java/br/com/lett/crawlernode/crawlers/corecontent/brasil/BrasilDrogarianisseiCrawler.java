@@ -51,30 +51,32 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".row .mt-3 .small", false).split("produto: ")[1];
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
-         String primaryImage = fixUrlImage(doc, internalId);
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
+         String[] internalIdArray = CrawlerUtils.scrapStringSimpleInfo(doc, ".row .mt-3 .small", false).split("produto: ");
+         if (internalIdArray.length > 1) {
+            String internalId = internalIdArray[1];
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
+            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
+            String primaryImage = fixUrlImage(doc, internalId);
+            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
 
-         JSONObject json = accesAPIOffers(internalId);
-         Offers offers = scrapOffers(json);
+            JSONObject json = accesAPIOffers(internalId);
+            Offers offers = scrapOffers(json);
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalId)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setOffers(offers)
+               .build();
 
-         products.add(product);
-
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
