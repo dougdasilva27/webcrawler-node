@@ -10,7 +10,14 @@ import br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloTendadriveC
  */
 public class SaopauloavmorumbiTendadriveCrawler extends SaopauloTendadriveCrawler {
 
+   private final String SELLER_NAME = "Tenda Atacado Morumbi";
+
   public SaopauloavmorumbiTendadriveCrawler(Session session) {
     super(session);
   }
+
+   @Override
+   protected String getSellerName() {
+      return SELLER_NAME;
+   }
 }

@@ -3,7 +3,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.CarrefourCrawler;
 
-public class BrasilCarrefourmercadojardimsaoluizCrawler extends CarrefourCrawler {
+
+public class
+BrasilCarrefourmercadojardimsaoluizCrawler extends CarrefourCrawler {
 
    public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
    public static final String LOCATION = "05724-030";

@@ -33,6 +33,11 @@ import models.pricing.Pricing;
 public class SaopauloTendadriveCrawler extends Crawler {
 
    private static final String HOME_PAGE = "http://www.tendaatacado.com.br/";
+   private final String SELLER_NAME = getSellerName();
+
+   protected String getSellerName() {
+      return "Tenda Atacado Guarapiranga";
+   }
 
    public SaopauloTendadriveCrawler(Session session) {
       super(session);
@@ -131,10 +136,10 @@ public class SaopauloTendadriveCrawler extends Crawler {
             .setInstallments(installments)
             .build());
 
-
+//tenda-atacado-sao-paulo---av-guarapiranga
       offers.add(
             OfferBuilder.create()
-                  .setSellerFullName("Tenda Drive")
+                  .setSellerFullName(SELLER_NAME)
                   .setIsBuybox(false)
                   .setPricing(
                         Pricing.PricingBuilder.create()
