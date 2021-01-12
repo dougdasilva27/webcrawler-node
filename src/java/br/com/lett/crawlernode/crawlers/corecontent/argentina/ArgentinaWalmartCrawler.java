@@ -1,25 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -31,6 +11,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -43,24 +24,39 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Date: 07/12/2016
- * 
+ * <p>
  * 1) Only one sku per page. 2) Is required put parameter sc with value 15 to access product url 3)
  * There is no informations of installments in this market 4) In time this crawler was made, it was
  * not foundo unnavailable products
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class ArgentinaWalmartCrawler extends Crawler {
 
    private final String HOME_PAGE = "http://www.walmart.com.ar/";
 
-   private static final String SELLER_FULL_NAME = "Walmart";
+   private static final String SELLER_FULL_NAME = "Walmart Argentina";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ArgentinaWalmartCrawler(Session session) {
       super(session);
@@ -132,9 +128,11 @@ public class ArgentinaWalmartCrawler extends Crawler {
             JSONObject jsonSku = arraySkus.getJSONObject(i);
 
             String internalId = crawlInternalId(jsonSku);
-            String primaryImage = crawlPrimaryImage(doc);
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#botaoZoom", Arrays.asList("zoom"), "https:",
+               "www.walmartar.vteximg.com.br");
             String name = crawlName(doc, jsonSku);
-            String secondaryImages = crawlSecondaryImages(doc);
+            List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".thumbs li a", Arrays.asList("zoom"), "https", "www.walmartar.vteximg.com.br", primaryImage);
+
             String ean = i < eanArray.length() ? eanArray.getString(i) : null;
             List<String> eans = new ArrayList<>();
             eans.add(ean);
@@ -143,21 +141,21 @@ public class ArgentinaWalmartCrawler extends Crawler {
             Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
 
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setEans(eans)
-                  .setRatingReviews(ratingReviews)
-                  .setOffers(offers)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setEans(eans)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
 
             products.add(product);
          }
@@ -179,14 +177,14 @@ public class ArgentinaWalmartCrawler extends Crawler {
       List<String> sales = scrapSales(pricing);
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
    }
@@ -196,12 +194,12 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
       Double priceFrom = pricing.getPriceFrom();
       Double spotlightPrice = pricing.getSpotlightPrice();
-     
+
       if (priceFrom != null && spotlightPrice != null) {
          if (priceFrom > spotlightPrice) {
             Double discount = MathUtils.normalizeTwoDecimalPlaces((spotlightPrice / priceFrom) - 1) * 100;
-               sales.add(Integer.toString(discount.intValue()).replace("-", "- ".replace(".0", "")) + "%");
-            
+            sales.add(Integer.toString(discount.intValue()).replace("-", "- ".replace(".0", "")) + "%");
+
          }
       }
       return sales;
@@ -209,16 +207,16 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
    private Pricing scrapPricing(String internalId, Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuListPrice", null, false, ',', session);
-      Double priceFromcheck = priceFrom > 0.0 ? priceFrom : null; // this was necessary becouse the website have some products who doesn't have priceFrom and field
-                                                                  // price_from cannot have this value -> 0.0
+      Double priceFromcheck = priceFrom > 0.0 ? priceFrom : null; // this was necessary because the website have some products who doesn't have priceFrom and field
+      // price_from cannot have this value -> 0.0
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".plugin-preco .skuBestPrice", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(internalId, spotlightPrice);
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFromcheck)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .build();
+         .setPriceFrom(priceFromcheck)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
    }
 
    private CreditCards scrapCreditCards(String internalId, Double spotlightPrice) throws MalformedPricingException {
@@ -253,25 +251,25 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
             if (card != null) {
                creditCards.add(CreditCardBuilder.create()
-                     .setBrand(card)
-                     .setInstallments(installments)
-                     .setIsShopCard(false)
-                     .build());
+                  .setBrand(card)
+                  .setInstallments(installments)
+                  .setIsShopCard(false)
+                  .build());
             }
          }
       } else {
          Installments installments = new Installments();
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
          for (String card : cards) {
             creditCards.add(CreditCardBuilder.create()
-                  .setBrand(card)
-                  .setInstallments(installments)
-                  .setIsShopCard(false)
-                  .build());
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
          }
       }
 
@@ -305,18 +303,18 @@ public class ArgentinaWalmartCrawler extends Crawler {
                Double value = MathUtils.parseDoubleWithComma(valueElement.text());
 
                installments.add(InstallmentBuilder.create()
-                     .setInstallmentNumber(installment)
-                     .setInstallmentPrice(value)
-                     .build());
+                  .setInstallmentNumber(installment)
+                  .setInstallmentPrice(value)
+                  .build());
             }
          }
       }
 
       if (installments.getInstallment(1) == null) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       return installments;
@@ -378,30 +376,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(Document doc) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      Elements imageThumbs = doc.select("#botaoZoom");
-
-      for (int i = 1; i < imageThumbs.size(); i++) { // starts with index 1, because the first image is the primary image
-         String url = imageThumbs.get(i).attr("zoom");
-
-         if (url == null || url.isEmpty()) {
-            url = imageThumbs.get(i).attr("rel");
-         }
-
-         if (url != null && !url.isEmpty()) {
-            secondaryImagesArray.put(url);
-         }
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
-   }
 
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
@@ -434,7 +408,7 @@ public class ArgentinaWalmartCrawler extends Crawler {
          for (DataNode node : tag.dataNodes()) {
             if (tag.html().trim().startsWith("var skuJson_0 = ")) {
                skuJson = new JSONObject(node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1]
-                     + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
+                  + node.getWholeData().split(Pattern.quote("var skuJson_0 = "))[1].split(Pattern.quote("}]};"))[0]);
             }
          }
       }
@@ -484,14 +458,14 @@ public class ArgentinaWalmartCrawler extends Crawler {
       headers.put("Content-Type", "application/x-www-form-urlencoded");
       headers.put("Accept-Language", "pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4");
       Request request =
-            RequestBuilder.create().setUrl("https://www.walmart.com.ar/userreview").setCookies(cookies).setHeaders(headers).setPayload(payload).build();
+         RequestBuilder.create().setUrl("https://www.walmart.com.ar/userreview").setCookies(cookies).setHeaders(headers).setPayload(payload).build();
       return Jsoup.parse(this.dataFetcher.post(session, request).getBody());
    }
 
    private Double getTotalAvgRating(Document docRating, Integer totalRating) {
 
       Double avgRating = 0.0;
-      Elements rating = docRating.select("ul.rating");
+      Elements rating = docRating.select("ul.rating li");
 
       if (totalRating != null) {
          Double total = 0.0;
@@ -576,12 +550,12 @@ public class ArgentinaWalmartCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
    private Integer getTotalNumOfRatings(Document docRating) {
@@ -598,7 +572,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
       return totalRating;
    }
-
 
 
 }
