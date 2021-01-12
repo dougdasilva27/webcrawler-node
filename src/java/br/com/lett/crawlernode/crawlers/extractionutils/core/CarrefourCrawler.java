@@ -205,7 +205,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       String apiRating = "https://carrefourbrasil.mais.social/reviews/transit/get/products/crf/" + internalId + "/reviews/offuser/first";
 
       Request request = Request.RequestBuilder.create().setUrl(apiRating).build();
-      JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      JSONObject response = CrawlerUtils.stringToJson(new ApacheDataFetcher().get(session, request).getBody());
 
       int totalNumberOfReviews = JSONUtils.getIntegerValueFromJSON(response, "total", 0);
       JSONObject aggregateRating = JSONUtils.getJSONValue(response, "aggregateRating");
