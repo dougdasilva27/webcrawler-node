@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -16,25 +8,26 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
+import models.pricing.*;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
 import models.pricing.Installment.InstallmentBuilder;
-import models.pricing.Installments;
-import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class VTEXScraper extends Crawler {
 
@@ -69,14 +62,15 @@ public abstract class VTEXScraper extends Crawler {
          CategoryCollection categories = scrapCategories(productJson);
          String description = scrapDescription(doc, productJson);
          processBeforeScrapVariations(doc, productJson, internalPid);
+         if (productJson != null) {
+            JSONArray items = productJson.has("items") && !productJson.isNull("items") ? productJson.getJSONArray("items") : new JSONArray();
 
-         JSONArray items = productJson.has("items") && !productJson.isNull("items") ? productJson.getJSONArray("items") : new JSONArray();
+            for (int i = 0; i < items.length(); i++) {
+               JSONObject jsonSku = items.getJSONObject(i);
 
-         for (int i = 0; i < items.length(); i++) {
-            JSONObject jsonSku = items.getJSONObject(i);
-
-            Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
-            products.add(product);
+               Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
+               products.add(product);
+            }
          }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
@@ -85,7 +79,8 @@ public abstract class VTEXScraper extends Crawler {
       return products;
    }
 
-   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) throws UnsupportedEncodingException {}
+   protected void processBeforeScrapVariations(Document doc, JSONObject productJson, String internalPid) throws UnsupportedEncodingException {
+   }
 
    protected boolean isProductPage(Document doc) {
       return true;
@@ -103,26 +98,32 @@ public abstract class VTEXScraper extends Crawler {
 
       // Creating the product
       return ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setOffers(offers)
-            .setDescription(description)
-            .setEans(eans)
-            .setRatingReviews(rating)
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setCategory1(categories.getCategory(0))
+         .setCategory2(categories.getCategory(1))
+         .setCategory3(categories.getCategory(2))
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(images)
+         .setOffers(offers)
+         .setDescription(description)
+         .setEans(eans)
+         .setRatingReviews(rating)
+         .build();
    }
 
    protected abstract String scrapInternalpid(Document doc);
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
-      return jsonSku.has("nameComplete") ? jsonSku.get("nameComplete").toString() : null;
+      if (jsonSku.has("nameComplete")) {
+         return jsonSku.get("nameComplete").toString();
+      } else if (jsonSku.has("name")) {
+         return jsonSku.get("name").toString();
+      } else {
+         return null;
+      }
    }
 
    private CategoryCollection scrapCategories(JSONObject product) {
@@ -209,7 +210,7 @@ public abstract class VTEXScraper extends Crawler {
          int position = 1;
          for (Object o : sellers) {
             JSONObject offerJson = o instanceof JSONObject ? (JSONObject) o
-                  : new JSONObject();
+               : new JSONObject();
             JSONObject commertialOffer = offerJson.optJSONObject("commertialOffer");
             String sellerFullName = offerJson.optString("sellerName", null);
             boolean isDefaultSeller = offerJson.optBoolean("sellerDefault", true);
@@ -228,14 +229,14 @@ public abstract class VTEXScraper extends Crawler {
                   List<String> sales = isDefaultSeller ? scrapSales(doc, offerJson, internalId, internalPid, pricing) : new ArrayList<>();
 
                   offers.add(OfferBuilder.create()
-                        .setInternalSellerId(sellerId)
-                        .setSellerFullName(sellerFullName)
-                        .setMainPagePosition(position)
-                        .setIsBuybox(isBuyBox)
-                        .setIsMainRetailer(isMainRetailer)
-                        .setPricing(pricing)
-                        .setSales(sales)
-                        .build());
+                     .setInternalSellerId(sellerId)
+                     .setSellerFullName(sellerFullName)
+                     .setMainPagePosition(position)
+                     .setIsBuybox(isBuyBox)
+                     .setIsMainRetailer(isMainRetailer)
+                     .setPricing(pricing)
+                     .setSales(sales)
+                     .build());
 
                   position++;
                }
@@ -276,11 +277,11 @@ public abstract class VTEXScraper extends Crawler {
       }
 
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setPriceFrom(priceFrom)
-            .setBankSlip(bankSlip)
-            .setCreditCards(creditCards)
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
    }
 
    protected Double scrapSpotlightPrice(Document doc, String internalId, Double principalPrice, JSONObject comertial, JSONObject discountsJson) {
@@ -355,9 +356,9 @@ public abstract class VTEXScraper extends Crawler {
                }
 
                JSONObject value = new JSONObject()
-                     .put("minInstallment", minInstallment)
-                     .put("maxInstallment", maxInstallment)
-                     .put("discount", discount);
+                  .put("minInstallment", minInstallment)
+                  .put("maxInstallment", maxInstallment)
+                  .put("discount", discount);
 
                for (String paymentMethodId : paymentMethodsWithConditions) {
                   discountsJSON.put(paymentMethodId, value);
@@ -445,7 +446,7 @@ public abstract class VTEXScraper extends Crawler {
                   if (cardBrand == null) {
                      for (String sellerName : mainSellersNames) {
                         if ((storeCard != null && paymentName.equalsIgnoreCase(storeCard)) ||
-                              paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
+                           paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
                            isShopCard = true;
                            cardBrand = paymentName;
                            break;
@@ -455,10 +456,10 @@ public abstract class VTEXScraper extends Crawler {
 
                   if (cardBrand != null) {
                      creditCards.add(CreditCardBuilder.create()
-                           .setBrand(cardBrand)
-                           .setInstallments(installments)
-                           .setIsShopCard(isShopCard)
-                           .build());
+                        .setBrand(cardBrand)
+                        .setInstallments(installments)
+                        .setIsShopCard(isShopCard)
+                        .build());
                   }
                }
             }
@@ -474,12 +475,12 @@ public abstract class VTEXScraper extends Crawler {
       }
 
       return InstallmentBuilder.create()
-            .setInstallmentNumber(installmentNumber)
-            .setInstallmentPrice(value)
-            .setAmOnPageInterests(interests)
-            .setFinalPrice(totalValue)
-            .setOnPageDiscount(discount)
-            .build();
+         .setInstallmentNumber(installmentNumber)
+         .setInstallmentPrice(value)
+         .setAmOnPageInterests(interests)
+         .setFinalPrice(totalValue)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    protected BankSlip scrapBankSlip(Double spotlightPrice, JSONObject comertial, JSONObject discounts, boolean mustSetDiscount) throws MalformedPricingException {
@@ -515,9 +516,9 @@ public abstract class VTEXScraper extends Crawler {
       }
 
       return BankSlipBuilder.create()
-            .setFinalPrice(bankSlipPrice)
-            .setOnPageDiscount(discount)
-            .build();
+         .setFinalPrice(bankSlipPrice)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    protected abstract RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku);

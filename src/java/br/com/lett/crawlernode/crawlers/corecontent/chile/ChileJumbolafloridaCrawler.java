@@ -11,19 +11,10 @@ public class ChileJumbolafloridaCrawler extends ChileJumboCrawler {
     super(session);
   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(ChileJumboCrawler.HOME_PAGE));
-  }
+   public static final String CODE_LOCATE = "18";
 
-  @Override
-  public void handleCookiesBeforeFetch() {
-    Logging.printLogDebug(logger, session, "Adding cookie...");
-
-    BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + ChileJumboCrawler.JUMBO_LAFLORIDA_ID);
-    cookie.setDomain("." + ChileJumboCrawler.HOST);
-    cookie.setPath("/");
-    this.cookies.add(cookie);
-  }
+   @Override
+   protected String getCodeLocate() {
+      return CODE_LOCATE;
+   }
 }

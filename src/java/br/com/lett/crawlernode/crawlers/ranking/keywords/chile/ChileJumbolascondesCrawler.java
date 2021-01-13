@@ -1,26 +1,19 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
-import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ChileJumboCrawler;
-import br.com.lett.crawlernode.util.Logging;
 
 public class ChileJumbolascondesCrawler extends ChileJumboCrawler {
 
-  public ChileJumbolascondesCrawler(Session session) {
-    super(session);
-    super.storeCode = br.com.lett.crawlernode.crawlers.extractionutils.core.ChileJumboCrawler.JUMBO_LASCONDES_ID;
-  }
+   public ChileJumbolascondesCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void processBeforeFetch() {
-    super.processBeforeFetch();
+   public static final String CODE_LOCATE = br.com.lett.crawlernode.crawlers.corecontent.chile.ChileJumbolascondesCrawler.CODE_LOCATE;
 
-    Logging.printLogDebug(logger, session, "Adding cookie...");
+   @Override
+   protected String getStoreCode() {
+      return CODE_LOCATE;
+   }
 
-    BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + storeCode);
-    cookie.setDomain("." + ChileJumboCrawler.HOST);
-    cookie.setPath("/");
-    this.cookies.add(cookie);
-  }
 }

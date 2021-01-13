@@ -1,29 +1,19 @@
 package br.com.lett.crawlernode.crawlers.corecontent.chile;
 
-import org.apache.http.impl.cookie.BasicClientCookie;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.ChileJumboCrawler;
-import br.com.lett.crawlernode.util.Logging;
 
 public class ChileJumbodehesaCrawler extends ChileJumboCrawler {
 
-  public ChileJumbodehesaCrawler(Session session) {
-    super(session);
-  }
+   public ChileJumbodehesaCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = this.session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(ChileJumboCrawler.HOME_PAGE));
-  }
+   public static final String CODE_LOCATE = "13";
 
-  @Override
-  public void handleCookiesBeforeFetch() {
-    Logging.printLogDebug(logger, session, "Adding cookie...");
+   @Override
+   protected String getCodeLocate() {
+      return CODE_LOCATE;
+   }
 
-    BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + ChileJumboCrawler.JUMBO_DEHESA_ID);
-    cookie.setDomain("." + ChileJumboCrawler.HOST);
-    cookie.setPath("/");
-    this.cookies.add(cookie);
-  }
 }
