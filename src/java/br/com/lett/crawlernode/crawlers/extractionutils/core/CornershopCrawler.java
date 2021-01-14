@@ -1,12 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -20,6 +14,13 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class CornershopCrawler extends Crawler {
 
@@ -53,7 +54,7 @@ public abstract class CornershopCrawler extends Crawler {
             Request request = RequestBuilder.create().setUrl(urlApi).setCookies(cookies).build();
 
             // fetcher is the best option because another services have problem with accents
-            JSONArray array = CrawlerUtils.stringToJsonArray(new JsoupDataFetcher().get(session, request).getBody());
+            JSONArray array = CrawlerUtils.stringToJsonArray(new ApacheDataFetcher().get(session, request).getBody());
 
             if (array.length() > 0) {
                return array.getJSONObject(0);
@@ -83,9 +84,9 @@ public abstract class CornershopCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-               .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setMarketplace(new Marketplace())
-               .build();
+            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setMarketplace(new Marketplace())
+            .build();
 
          products.add(product);
 
