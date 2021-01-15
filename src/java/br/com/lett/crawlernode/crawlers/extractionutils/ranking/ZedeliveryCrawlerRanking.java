@@ -38,25 +38,25 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       ZedeliveryInfo zeDeliveryInfo = getZedeliveryInfo();
 
       String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":{\"address\":{\"latitude\":" + zeDeliveryInfo.getLatitude()
-            + ",\"longitude\":" + zeDeliveryInfo.getLongitude() + ",\"zipcode\":null,\"street\":\"" + zeDeliveryInfo.getStreet() + "\""
-            + ",\"neighborhood\":\"" + zeDeliveryInfo.getNeighborhood() + "\",\"city\":\"" + zeDeliveryInfo.getCity() + "\","
-            + "\"province\":\"" + zeDeliveryInfo.getProvince() + "\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\","
-            + "\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},"
-            + "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption:"
-            + " $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n"
-            + "      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n"
-            + "          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n"
-            + "          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n"
-            + "          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n"
-            + "            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n"
-            + "        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+         + ",\"longitude\":" + zeDeliveryInfo.getLongitude() + ",\"zipcode\":null,\"street\":\"" + zeDeliveryInfo.getStreet() + "\""
+         + ",\"neighborhood\":\"" + zeDeliveryInfo.getNeighborhood() + "\",\"city\":\"" + zeDeliveryInfo.getCity() + "\","
+         + "\"province\":\"" + zeDeliveryInfo.getProvince() + "\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\","
+         + "\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},"
+         + "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption:"
+         + " $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n"
+         + "      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n"
+         + "          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n"
+         + "          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n"
+         + "          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n"
+         + "            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n"
+         + "        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
-            .setPayload(initPayload)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .mustSendContentEncoding(false)
-            .build();
+         .setPayload(initPayload)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .mustSendContentEncoding(false)
+         .build();
       this.dataFetcher.post(session, request);
    }
 
@@ -69,18 +69,18 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
       headers.put("content-type:", "application/json");
 
       String payload =
-            "{\"variables\":{\"searchTerm\":\"" + this.keywordEncoded
-                  + "\",\"limit\":\"20\"},\"query\":\"query search($searchTerm: String!, $limit: Int) {  search(searchTerm: $searchTerm) {    items(limit: $limit) "
-                  + "{      id      type      displayName      images      applicableDiscount {        presentedDiscountValue        discountType        finalValue      }"
-                  + "      category {        id        displayName      }      brand {        id        displayName      }      price {        min        max      }    }"
-                  + "  }}\",\"operationName\":\"search\"}";
+         "{\"variables\":{\"searchTerm\":\"" + this.keywordEncoded
+            + "\",\"limit\":\"20\"},\"query\":\"query search($searchTerm: String!, $limit: Int) {  search(searchTerm: $searchTerm) {    items(limit: $limit) "
+            + "{      id      type      displayName      images      applicableDiscount {        presentedDiscountValue        discountType        finalValue      }"
+            + "      category {        id        displayName      }      brand {        id        displayName      }      price {        min        max      }    }"
+            + "  }}\",\"operationName\":\"search\"}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
-            .setPayload(payload)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .mustSendContentEncoding(false)
-            .build();
+         .setPayload(payload)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .mustSendContentEncoding(false)
+         .build();
       Response response = this.dataFetcher.post(session, request);
       return CrawlerUtils.stringToJson(response.getBody());
    }
@@ -94,34 +94,34 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
       JSONObject json = fetch();
       JSONObject data = json.optJSONObject("data");
-
       if (data != null) {
          JSONObject search = data.optJSONObject("search");
          JSONArray items = search.optJSONArray("items");
+         if(!items.isEmpty()){
+            for (Object item : items) {
+               JSONObject product = (JSONObject) item;
 
-         for (Object item : items) {
-            JSONObject product = (JSONObject) item;
+               if (product.optString("type").equals("PRODUCT")) {
+                  String internalId = product.optString("id");
+                  String internalPId = internalId;
+                  String productUrl = scrapUrl(product, internalId);
+                  saveDataProduct(internalId, internalPId, productUrl);
 
-            if (product.optString("type").equals("PRODUCT")) {
-               String internalId = product.optString("id");
-               String internalPId = internalId;
-               String productUrl = scrapUrl(product, internalId);
-               saveDataProduct(internalId, internalPId, productUrl);
-
-               this.log(
+                  this.log(
                      "Position: " + this.position +
-                           " - InternalId: " + internalId +
-                           " - InternalPid: " + internalPId +
-                           " - Url: " + productUrl
-               );
+                        " - InternalId: " + internalId +
+                        " - InternalPid: " + internalPId +
+                        " - Url: " + productUrl
+                  );
 
-               if (this.arrayProducts.size() == productsLimit) {
-                  break;
+                  if (this.arrayProducts.size() == productsLimit) {
+                     break;
+                  }
                }
-            } else {
-               this.result = false;
-               this.log("Keyword sem resultado!");
             }
+         } else {
+            this.result = false;
+            this.log("Keyword sem resultado!");
          }
          this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
       }
