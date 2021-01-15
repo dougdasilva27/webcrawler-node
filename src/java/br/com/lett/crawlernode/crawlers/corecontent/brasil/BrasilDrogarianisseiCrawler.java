@@ -171,15 +171,15 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    private JSONObject accesAPIOffers(String internalId) {
 
-      String url = "https://farmaciasnissei.com.br/pegar/preco";
+      String url = "https://www.farmaciasnissei.com.br/pegar/preco";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", "csrftoken=4ZfApcfcNgqlhsExAB2h5xkCfe4nsQH0Q0DHja4oHF9iuZxeeDPpf5yb72PMhYkh; _fbp=fb.2.1610386362281.901362755; _ga=GA1.3.1690412403.1610386362; _gid=GA1.3.145967739.1610386362; _gat_gtag_UA_81392705_6=1");
+      headers.put("cookie", "_fbp=fb.2.1610386362281.901362755; csrftoken=22ZymWOcthE3uvJFSmQczCX6SlVVLARapcJJMC0xICmQFGz57aoh9taSte4SpZBh; _gid=GA1.3.703743027.1610735130; _ga=GA1.1.1690412403.1610386362; _ga_G8H8ZH3E1D=GS1.1.1610735129.1.0.1610735233.60");
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("referer", session.getOriginalURL());
 
 
-      String payload = "csrfmiddlewaretoken=SOat3XiN6pCXPjFVDa9efuZv6CaahHsbEPyAXV7Z0OlU2QyChcWmp2d4YqVz6P5s&produtos_ids%5B%5D=" + internalId;
+      String payload = "csrfmiddlewaretoken=uMF8GPQqCsHHumoU7dBguT5cRR252DRbRWpj6v2LRNpuFxekm19l4KiYsKb2G2Bi&produtos_ids%5B%5D=" + internalId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
