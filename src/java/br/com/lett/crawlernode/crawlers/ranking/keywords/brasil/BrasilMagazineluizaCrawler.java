@@ -33,7 +33,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
         JSONObject product = new JSONObject(e.attr("data-product"));
 
-        String internalId = product.has("product") ? product.get("product").toString() : null;
+        String internalId = product.has("basketId") ? product.get("basketId").toString() : null;
         String urlProduct = CrawlerUtils.scrapUrl(e, null, "href", "https", "www.magazineluiza.com.br");
 
         saveDataProduct(internalId, null, urlProduct);
