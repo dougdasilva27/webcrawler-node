@@ -126,7 +126,7 @@ public abstract class VTEXScraper extends Crawler {
       }
    }
 
-   private CategoryCollection scrapCategories(JSONObject product) {
+   protected CategoryCollection scrapCategories(JSONObject product) {
       CategoryCollection categories = new CategoryCollection();
 
       JSONArray categoriesArray = JSONUtils.getJSONArrayValue(product, "categories");
@@ -537,4 +537,6 @@ public abstract class VTEXScraper extends Crawler {
 
       return productApi;
    }
+
+
 }

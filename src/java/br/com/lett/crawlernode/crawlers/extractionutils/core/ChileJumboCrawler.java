@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
+import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -10,10 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ChileJumboCrawler extends VTEXNewScraper {
 
@@ -28,6 +27,7 @@ public class ChileJumboCrawler extends VTEXNewScraper {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
    }
+
    @Override
    public void handleCookiesBeforeFetch() {
       Logging.printLogDebug(logger, session, "Adding cookie...");
@@ -38,7 +38,7 @@ public class ChileJumboCrawler extends VTEXNewScraper {
       this.cookies.add(cookie);
    }
 
-   protected String getCodeLocate(){
+   protected String getCodeLocate() {
       return CODE_LOCATE;
    }
 
@@ -47,7 +47,8 @@ public class ChileJumboCrawler extends VTEXNewScraper {
       return url[url.length - 1].split("\\?")[0];
    }
 
-   protected String getHomePage(){
+   @Override
+   protected String getHomePage() {
       return homePage;
    }
 
@@ -62,7 +63,33 @@ public class ChileJumboCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+   public List<Product> extractInformation(Document doc) throws Exception {
+      List<Product> products = new ArrayList<>();
+
+      if (isProductPage(doc)) {
+         JSONObject productJson = crawlProductApi();
+
+         CategoryCollection categories = scrapCategories(productJson);
+         String description = scrapDescription(doc, productJson);
+
+         if (productJson != null) {
+            JSONArray items = productJson.has("items") && !productJson.isNull("items") ? productJson.getJSONArray("items") : new JSONArray();
+            String internalPid = productJson.has("productReference") ? productJson.get("productReference").toString() : null;
+            for (int i = 0; i < items.length(); i++) {
+               JSONObject jsonSku = items.getJSONObject(i);
+
+               Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
+               products.add(product);
+            }
+         }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + session.getOriginalURL());
+      }
+
+      return products;
+   }
+
+   protected JSONObject crawlProductApi() {
       String product = getUrl();
       Map<String, String> headers = new HashMap<>();
       headers.put("x-api-key", "IuimuMneIKJd3tapno2Ag1c1WcAES97j");
@@ -78,12 +105,6 @@ public class ChileJumboCrawler extends VTEXNewScraper {
 
       JSONArray json = CrawlerUtils.stringToJsonArray(content);
       return json.optJSONObject(0);
-   }
-
-   @Override
-   protected String scrapInternalpid(Document doc) {
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-code", false).replaceAll("[^0-9]", "");
-
    }
 
 }
