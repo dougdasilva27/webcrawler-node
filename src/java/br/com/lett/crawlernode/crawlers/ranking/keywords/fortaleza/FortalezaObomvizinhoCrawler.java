@@ -13,101 +13,78 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 
 public class FortalezaObomvizinhoCrawler extends CrawlerRankingKeywords {
+
    public FortalezaObomvizinhoCrawler(Session session) {
       super(session);
    }
 
-
-   private static final String URL_PRODUCT_PAGE = "https://loja.obomvizinho.com.br?id=";
-   private static final String CEP = "60840-285";
-
-
-   protected JSONObject fetch() {
-      JSONObject api = new JSONObject();
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Auth-Token", "RUsycjRnU1BLTndkblIyTnF1T3FvMGlnUDJKVWx4Nk95eC9IL0RaMU80dz0tLVl3dlBqUjJnK1p2amdheW9WRVlWM0E9PQ");
-      headers.put("Connection", "keep-alive");
-
-      String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&market_codename=pinheiro";
-
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      api = CrawlerUtils.stringToJson(content);
-
-      return api;
+   String getStoreId() {
+      return br.com.lett.crawlernode.crawlers.corecontent.fortaleza.FortalezaObomvizinhoCrawler.getStoreId();
    }
 
-   private String getMarketID(JSONObject apiResponse) {
+   public Map<String, String> getHeaders() {
 
-      String marketId = null;
-
-      JSONArray markets = JSONUtils.getJSONArrayValue(apiResponse, "markets");
-
-      if (markets != null) {
-         for (Object arr : markets) {
-
-            JSONObject jsonM = (JSONObject) arr;
-
-            marketId = jsonM.optString("id");
-
-         }
-      }
-
-      return marketId;
+      return br.com.lett.crawlernode.crawlers.corecontent.fortaleza.FortalezaObomvizinhoCrawler.getHeaders();
    }
-
-
 
    @Override
    public void extractProductsFromCurrentPage() {
       // número de produtos por página do market
-      this.pageSize = 0;
+      this.pageSize = 25;
 
-      JSONObject fetch = (JSONObject) fetch();
-      String marketId = getMarketID(fetch);
-
-      String url = "https://www.merconnect.com.br/api/v2/markets/" + marketId + "/items/search?query=" + this.keywordEncoded;
-
-      this.log("Link onde são feitos os crawlers: " + url);
-
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      JSONObject json = CrawlerUtils.stringToJson(content);
+      JSONObject json = fetch();
 
       JSONArray mixes = JSONUtils.getJSONArrayValue(json, "mixes");
 
       for (Object arrayOfArrays : mixes) {
 
-         if (arrayOfArrays != null) {
-            JSONArray array = (JSONArray) arrayOfArrays;
+         JSONArray items = JSONUtils.getJSONArrayValue((JSONObject) arrayOfArrays, "items");
 
-            for (Object productJsonInfo : array) {
+         for (Object productJsonInfo : items) {
 
-               JSONObject jsonInfo = (JSONObject) productJsonInfo;
+            JSONObject jsonInfo = (JSONObject) productJsonInfo;
 
-               if (jsonInfo != null) {
+            if (jsonInfo != null) {
 
-                  String internalId = jsonInfo.optString("id");
+               String internalId = jsonInfo.optString("id");
 
-                  String internalPid = jsonInfo.optString("mix_id");
+               String internalPid = jsonInfo.optString("mix_id");
 
-                  String productUrl = URL_PRODUCT_PAGE + jsonInfo.optString("bar_code");
+               String category = jsonInfo.optString("section_id");
 
-                  saveDataProduct(internalId, internalPid, productUrl);
+               String productUrl = "https://loja.obomvizinho.com.br" +
+                  "/loja/" + getStoreId() +
+                  "/categoria/" + category +
+                  "/produto/" + internalId;
 
-                  this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " +
-                     internalPid + " - Url: " + productUrl);
-               }
+               saveDataProduct(internalId, internalPid, productUrl);
+
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - name: " + jsonInfo.optString("short_description") + " - InternalPid: " +
+                  internalPid + " - Url: " + productUrl);
             }
-
-         } else {
-            this.result = false;
-            this.log("Keyword sem resultado!");
          }
       }
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return true;
+   }
+
+   protected JSONObject fetch() {
+
+      String url = "https://www.merconnect.com.br/mapp/v1/markets/" + getStoreId() + "/items/search" +
+         "?query=" + this.keywordEncoded+
+         "&page="  + this.currentPage;
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(getHeaders())
+         .build();
+
+      String content = this.dataFetcher.get(session, request).getBody();
+
+      return CrawlerUtils.stringToJson(content);
    }
 }
