@@ -107,4 +107,15 @@ public class ChileJumboCrawler extends VTEXNewScraper {
       return json.optJSONObject(0);
    }
 
+   @Override
+   protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
+      String name = super.scrapName(doc, productJson, jsonSku);
+      String brand = productJson.has("brand") ? productJson.get("brand").toString() : null;
+      String nameWithBrand = null;
+      if (name != null && brand != null) {
+         nameWithBrand = name + " - " + brand;
+      }
+      return nameWithBrand;
+   }
+
 }
