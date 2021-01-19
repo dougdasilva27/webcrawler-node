@@ -5,8 +5,8 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.ArgentinaRappiCrawl
 
 public class ArgentinaRappidiaavellanedaCrawler extends ArgentinaRappiCrawler {
 
-   public static final String CEP = "Calle   32 1300 25 -  25 de Mayo -  B1870 Avellaneda -  Buenos Aires -  Argentina";
-   public static final String STORE_ID = "-";
+   public static final String CEP = "California 2098, C1276 CABA, Argentina";
+   public static final String STORE_ID = "135504";
 
    public ArgentinaRappidiaavellanedaCrawler(Session session) {
       super(session);
