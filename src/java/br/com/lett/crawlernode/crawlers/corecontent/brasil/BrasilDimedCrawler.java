@@ -1,28 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.*;
-
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import org.apache.http.Header;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import com.google.common.collect.Sets;
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer.OfferBuilder;
@@ -33,6 +21,12 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class BrasilDimedCrawler extends Crawler {
 
@@ -43,18 +37,18 @@ public class BrasilDimedCrawler extends Crawler {
 
    public BrasilDimedCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.ELO.toString(), Card.DINERS.toString(), Card.AMEX.toString());
+      Card.ELO.toString(), Card.DINERS.toString(), Card.AMEX.toString());
 
    @Override
    protected Object fetch() {
 
-      String payload = "j_username="+USER+"&j_password="+PASSWORD+"";
+      String payload = "j_username=" + USER + "&j_password=" + PASSWORD + "";
       HashMap<String, String> headers = new HashMap<>();
-      headers.put("Content-Type","application/x-www-form-urlencoded");
+      headers.put("Content-Type", "application/x-www-form-urlencoded");
 
       Request requestValidate = Request.RequestBuilder.create()
          .setUrl("https://dimed.com.br/clientes/j_spring_security_check")
@@ -62,25 +56,25 @@ public class BrasilDimedCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      String urltoken = dataFetcher.post(session,requestValidate).getRedirectUrl();
+      String urltoken = dataFetcher.post(session, requestValidate).getRedirectUrl();
 
       String cookieName = "jsessionid=";
-      int index = urltoken.indexOf(cookieName)+cookieName.length();
-      String token = urltoken.substring(index);
+      Integer index = urltoken != null ? urltoken.indexOf(cookieName) + cookieName.length() : null;
+      String token = urltoken != null ? urltoken.substring(index) : null;
 
       List<Cookie> cookies = new ArrayList<>();
-      cookies.add(new BasicClientCookie("JSESSIONID",token));
+      cookies.add(new BasicClientCookie("JSESSIONID", token));
 
-      String cookie = "JSESSIONID=\""+token+"\";";
+      String cookie = "JSESSIONID=\"" + token + "\";";
 
-      headers.put("Cookie",cookie);
+      headers.put("Cookie", cookie);
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
          .setHeaders(headers)
          .build();
 
-      Response response = dataFetcher.get(session,request);
+      Response response = dataFetcher.get(session, request);
 
       return Jsoup.parse(response.getBody());
    }
@@ -96,7 +90,7 @@ public class BrasilDimedCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".detalhes .descricaoproduto", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagem-principal imgl", Arrays.asList("src"), "https", HOST);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagem-principal img", Arrays.asList("src"), "https", HOST);
 
          if (primaryImage != null) {
             primaryImage = primaryImage.replace("235x", "500x");
@@ -110,16 +104,16 @@ public class BrasilDimedCrawler extends Crawler {
          List<String> eans = Arrays.asList(internalPid);
 
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setOffers(offers)
-               .setDescription(description)
-               .setEans(eans)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setOffers(offers)
+            .setDescription(description)
+            .setEans(eans)
+            .build();
 
          products.add(product);
 
@@ -136,13 +130,13 @@ public class BrasilDimedCrawler extends Crawler {
 
       if (pricing != null) {
          offers.add(OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName("Dimed")
-               .setSellersPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(true)
-               .setPricing(pricing)
-               .build());
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName("Dimed")
+            .setSellersPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
       }
 
       return offers;
@@ -156,10 +150,10 @@ public class BrasilDimedCrawler extends Crawler {
          CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
          return PricingBuilder.create()
-               .setSpotlightPrice(spotlightPrice)
-               .setPriceFrom(priceFrom)
-               .setCreditCards(creditCards)
-               .build();
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .build();
       }
 
       return null;
@@ -170,16 +164,16 @@ public class BrasilDimedCrawler extends Crawler {
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(brand)
-               .setIsShopCard(false)
-               .setInstallments(installments)
-               .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
       }
 
       return creditCards;

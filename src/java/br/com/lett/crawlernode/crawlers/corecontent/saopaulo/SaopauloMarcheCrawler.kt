@@ -1,77 +1,21 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
-import br.com.lett.crawlernode.core.models.Card
-import br.com.lett.crawlernode.core.models.Product
-import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
-import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.JSONUtils
-import br.com.lett.crawlernode.util.Logging
-import models.prices.Prices
-import org.jsoup.nodes.Document
-import java.math.RoundingMode
+import br.com.lett.crawlernode.crawlers.extractionutils.core.MarcheCrawler
+import br.com.lett.crawlernode.util.*
 
-class SaopauloMarcheCrawler(session: Session?) : Crawler(session) {
+class SaopauloMarcheCrawler(session: Session) : MarcheCrawler(session) {
 
-   private val home = "https://www.marche.com.br/"
-
-   override fun shouldVisit(): Boolean {
-      val href = session.originalURL.toLowerCase()
-      return !FILTERS.matcher(href).matches() && href.startsWith(home)
+   companion object {
+      const val CEP = "05303000"
+      const val SELLER_NAME = "marche sao paulo"
    }
 
-   override fun extractInformation(document: Document?): MutableList<Product> {
-      val products = mutableListOf<Product>()
-      val json = JSONUtils.stringToJson(CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "div[data-json]",
-         "data-json"))
-
-      json ?: Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
-      val price = json?.optFloat("price")
-      if (price == null || price.isNaN()) {
-         return products
-      }
-      json.let {
-
-         val prices = scrapPrices(document, price)
-         val categories = mutableListOf<String>()
-
-         if (it.optString("parent_category") is String) {
-            categories.add(it.optString("parent_category"))
-         }
-         if (it.optString("category") is String) {
-            categories.add(it.optString("category"))
-         }
-
-         val eans = mutableListOf<String>()
-         if (it.optString("ean") is String) {
-            categories.add(it.optString("ean"))
-         }
-         val primaryImage = document?.selectFirst(".product-image img")?.attr("src")
-
-         products.add(ProductBuilder.create()
-            .setUrl(session.originalURL)
-            .setInternalId(it.optString("product_id"))
-            .setInternalPid(it.optString("id"))
-            .setName(it.optString("full_name"))
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(document?.selectFirst(".btn.btn-block.btn-lg.center-y") != null)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setEans(eans)
-            .build())
-      }
-      return products
+   override fun getCEP(): String {
+      return CEP
    }
 
-   private fun scrapPrices(doc: Document?, price: Float) = Prices().apply {
-      this.priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price> span", null, false, ',', session)
-      this.bankTicketPrice = price.toBigDecimal().setScale(2, RoundingMode.HALF_EVEN).toDouble()
-      val installments: MutableMap<Int, Float> = HashMap()
-      installments[1] = price
-      this.insertCardInstallment(Card.VISA.toString(), installments)
-      this.insertCardInstallment(Card.MASTERCARD.toString(), installments)
-      this.insertCardInstallment(Card.ELO.toString(), installments)
+   override fun getSellerName(): String {
+      return SELLER_NAME
    }
 }

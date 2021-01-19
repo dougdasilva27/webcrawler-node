@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -21,7 +22,7 @@ public class BrasilAgroverdesrCrawler extends CrawlerRankingKeywords {
     this.log("Página " + this.currentPage);
 
     this.currentDoc = fetchPage();
-    Elements products = this.currentDoc.select(".ad-showcase li div[data-id]");
+    Elements products = this.currentDoc.select("div.fbits-item-lista-spot ");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -30,9 +31,8 @@ public class BrasilAgroverdesrCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
 
-        String productPid = e.attr("data-id");
-        String productUrl = CrawlerUtils.scrapUrl(e, ".product-image a", "href", "https",
-            "www.agroverdesr.com.br");
+        String productPid = ScrapProductPid(e);
+        String productUrl = ScraoUrl(e);
 
         saveDataProduct(null, productPid, productUrl);
 
@@ -49,29 +49,27 @@ public class BrasilAgroverdesrCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  private Document fetchPage() {
+   private String ScraoUrl(Element e) {
+     String urlfinal = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".spot-parte-um","href");
+     return CrawlerUtils.completeUrl(urlfinal,"https:","www.agroverdesr.com.br");
+   }
+
+   private String ScrapProductPid(Element e) {
+     String idAttr = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".spot","id");
+     return CommonMethods.getLast(idAttr.split("-"));
+   }
+
+   private Document fetchPage() {
     Document doc = new Document("");
 
     if (this.currentPage == 1) {
-      String url = "https://www.agroverdesr.com.br/" + this.keywordEncoded;
+      String url = "https://www.agroverdesr.com.br/busca?busca=" + this.keywordEncoded;
       this.log("Link onde são feitos os crawlers: " + url);
       doc = fetchDocument(url);
 
-      Elements scripts = doc.select("script[type=text/javascript]");
-      String token = "/busca?fq=";
-
-      for (Element e : scripts) {
-        String html = e.html();
-
-        if (html.contains(token)) {
-          this.keywordKey = CrawlerUtils.extractSpecificStringFromScript(html, "fq=", "&", false);
-          break;
-
-        }
-      }
-    } else if (this.keywordKey != null) {
-      String url = "https://www.agroverdesr.com.br/buscapagina?fq=" + this.keywordKey
-          + "&PS=24&sl=ddf33672-d1a8-4f74-b1d9-57fb92b7ce81&cc=24&sm=0&PageNumber=" + this.currentPage;
+    } else {
+      String url = "https://www.agroverdesr.com.br/busca?busca=" + this.keywordEncoded
+          + "&pagina=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       doc = fetchDocument(url);
@@ -82,7 +80,7 @@ public class BrasilAgroverdesrCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void setTotalProducts() {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", null, null, false, false, 0);
+    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".fbits-qtd-produtos-pagina", null, null, false, false, 0);
     this.log("Total: " + this.totalProducts);
 
   }

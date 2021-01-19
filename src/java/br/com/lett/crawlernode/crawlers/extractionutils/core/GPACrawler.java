@@ -6,6 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import models.pricing.BankSlip;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -13,7 +16,6 @@ import org.jsoup.nodes.Document;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -39,6 +41,8 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class GPACrawler extends Crawler {
 
@@ -58,6 +62,7 @@ public class GPACrawler extends Crawler {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
       inferFields();
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -76,19 +81,17 @@ public class GPACrawler extends Crawler {
     * Given a CEP it send a request to an API then returns the id used by GPA.
     */
    private void fetchStoreId() {
+
+      String url = END_POINT_REQUEST + this.store + "/delivery/options?zipCode=" + this.cep.replace("-", "");
+
       Request request =
             RequestBuilder.create()
-                  .setUrl(
-                        END_POINT_REQUEST
-                              + this.store
-                              + "/delivery/options?zipCode="
-                              + this.cep.replace("-", ""))
+                  .setUrl(url)
                   .setCookies(cookies)
                   .build();
 
-      Response response = this.dataFetcher.get(session, request);
-
-      JSONObject jsonObjectGPA = JSONUtils.stringToJson(response.getBody());
+      String response = this.dataFetcher.get(session, request).getBody();
+      JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
       if (jsonObjectGPA.optJSONObject("content") instanceof JSONObject) {
          JSONObject jsonObject = jsonObjectGPA.optJSONObject("content");
          if (jsonObject.optJSONArray("deliveryTypes") instanceof JSONArray) {
@@ -141,7 +144,12 @@ public class GPACrawler extends Crawler {
          CategoryCollection categories = crawlCategories(jsonSku);
          String description = crawlDescription(jsonSku, internalId);
          boolean available = crawlAvailability(jsonSku);
-         Offers offers = available ? scrapOffers(jsonSku) : new Offers();
+         boolean hasMarketPlace = hasMarketPlace(doc);
+         Offers offers = new Offers();
+
+         if(available){
+             offers = hasMarketPlace ? offersFromMarketPlace(doc) : scrapOffers(jsonSku);
+         }
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          RatingsReviews ratingsReviews = extractRatingAndReviews(internalId);
@@ -741,5 +749,47 @@ public class GPACrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private boolean hasMarketPlace (Document doc){
+      return doc.select(".buy-box-tabstyles__Tab-sc-1j5ta4y-0").size() > 1;
+   }
+
+   private Offers offersFromMarketPlace (Document doc)  throws OfferException, MalformedPricingException  {
+      Offers offers = new Offers();
+      int pos = 1;
+
+      Elements ofertas = doc.select(".buy-box-tabstyles__Tab-sc-1j5ta4y-0");
+
+      if(ofertas != null){
+         for(Element oferta : ofertas) {
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(oferta, "p:first-child", false);
+            Pricing pricing = scrapSellersPricing(oferta);
+            boolean isMainRetailer = sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
+
+            offers.add(Offer.OfferBuilder.create()
+               .setInternalSellerId(CommonMethods.toSlug(MAIN_SELLER_NAME))
+               .setSellerFullName(sellerName)
+               .setSellersPagePosition(pos)
+               .setIsBuybox(false)
+               .setIsMainRetailer(isMainRetailer)
+               .setPricing(pricing)
+               .build());
+
+            pos ++;
+         }
+      }
+      return offers;
+   }
+
+   private Pricing scrapSellersPricing (Element e) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, "p:last-child", null, false,',',session);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      return PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 }

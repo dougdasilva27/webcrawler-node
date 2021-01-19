@@ -113,7 +113,8 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".regular-price .price", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[itemprop=\"offers\"] .price", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, false, ',', session);
 
       CreditCards creditCards = new CreditCards();
       Installments installments = scrapInstallments(doc);
@@ -127,9 +128,10 @@ public class BrasilCasadoprodutorCrawler extends Crawler {
       }
 
       return PricingBuilder.create()
-         .setSpotlightPrice(price)
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setBankSlip(BankSlipBuilder.create()
-            .setFinalPrice(price)
+            .setFinalPrice(spotlightPrice)
             .build())
          .setCreditCards(creditCards)
          .build();

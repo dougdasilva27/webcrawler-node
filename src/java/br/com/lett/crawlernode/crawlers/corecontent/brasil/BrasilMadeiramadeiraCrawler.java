@@ -169,11 +169,12 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    private CreditCards scrapCreditCards(JSONObject priceInfo, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments installments = scrapInstallments(priceInfo);
+      Installments installments = scrapInstallments(priceInfo , spotlightPrice);
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
             .setInstallmentPrice(spotlightPrice)
+            .setFinalPrice(spotlightPrice)
             .build());
       }
 
@@ -188,7 +189,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallments(JSONObject installmentsInfo) throws MalformedPricingException {
+   private Installments scrapInstallments(JSONObject installmentsInfo, Double spotlightPrice) throws MalformedPricingException {
       Installments installments = new Installments();
 
       Double value;
@@ -198,12 +199,12 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
          value = installmentsInfo.optDouble("value");
          installmentsNumbers = installmentsInfo.optInt("number");
 
-         for(int i = 1; i <= installmentsNumbers; i++){
             installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(i)
+               .setInstallmentNumber(installmentsNumbers)
                .setInstallmentPrice(value)
+               .setFinalPrice(spotlightPrice)
                .build());
-         }
+
       }
       return installments;
    }

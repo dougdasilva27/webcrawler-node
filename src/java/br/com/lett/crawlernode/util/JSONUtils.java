@@ -1,11 +1,11 @@
 package br.com.lett.crawlernode.util;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 public class JSONUtils {
 
@@ -31,35 +31,55 @@ public class JSONUtils {
       return value;
    }
 
-   // access internal field in json
-   // ex1: {"key1":{"key2": "value"}} -> String value = getValueRecursive(json, "key1.key2", String.class)
-   // ex2: {"key1":[{"key2":2}]}      -> Integer value = getValueRecursive(json, "key1.0.key2", Integer.class)
-   public static <T> T getValueRecursive(Object json, String path, Class<T> clazz) {
+   /**
+    * access internal field in json
+    * ex1: {"key1":{"key2": "value"}} -> String value = getValueRecursive(json, ".", "key1.key2", String.class, "")
+    * ex2: {"key1":[{"key2":2}]}      -> Integer value = getValueRecursive(json, ".", "key1.0.key2", Integer.class, 0)
+    *
+    * @param json         -> JSONObject ou JSONArray
+    * @param path         -> field path in JSON;
+    * @param separator    -> string regex for split path;
+    * @param clazz        ->
+    * @param defaultValue -> if null, return defaultValue
+    * @return T
+    */
+   public static <T> T getValueRecursive(Object json, String path, String separator, Class<T> clazz, T defaultValue) {
 
-      String[] keys = path.split("\\.");
+      try {
+         String[] keys = path.split("["+separator+"]");
 
-      Object currentObject = json;
+         Object currentObject = json;
 
-      for (String key : keys) {
-         if (currentObject instanceof JSONObject) {
-            currentObject = ((JSONObject) currentObject).opt(key);
-         } else if (currentObject instanceof JSONArray) {
-            int keyInt = Integer.parseInt(key);
-            if (keyInt >= 0 && keyInt < ((JSONArray) currentObject).length()) {
-               currentObject = ((JSONArray) currentObject).opt(keyInt);
+         for (String key : keys) {
+            if (currentObject instanceof JSONObject) {
+               currentObject = ((JSONObject) currentObject).opt(key);
+            } else if (currentObject instanceof JSONArray) {
+               int keyInt = Integer.parseInt(key);
+               if (keyInt >= 0 && keyInt < ((JSONArray) currentObject).length()) {
+                  currentObject = ((JSONArray) currentObject).opt(keyInt);
+               }
+            }
+
+            if (currentObject == null) {
+               return defaultValue;
             }
          }
 
-         if (currentObject == null) {
-            return null;
-         }
-      }
 
-      try {
          return clazz.cast(currentObject);
       } catch (Exception e) {
-         return null;
+         return defaultValue;
       }
+   }
+
+   public static <T> T getValueRecursive(Object json, String path, Class<T> clazz) {
+
+      return getValueRecursive(json, path, clazz, null);
+   }
+
+   public static <T> T getValueRecursive(Object json, String path, Class<T> clazz, T defaultValue) {
+
+      return getValueRecursive(json, path, ".", clazz, defaultValue);
    }
 
    public static JSONArray getJSONArrayValue(JSONObject json, String key) {

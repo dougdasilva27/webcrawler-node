@@ -38,7 +38,11 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
          val available = isAvailable(document)
          val offers = if (available) scrapOffers(document) else Offers()
 
-         val primaryImage = document.selectFirst(".cloud-zoom")?.attr("href")?.replaceFirst("//", "https://")
+         val primaryImage = document.selectFirst(".clearfix li a")?.attr("big_img")?.replaceFirst("//", "https://")
+
+         val secondaryImages : MutableList<String> = mutableListOf();
+         document.select(".clearfix li:not(:first-child) a")?.forEach { element -> secondaryImages.add(element.attr("big_img").replaceFirst("//", "https://"))  }
+
          val ratingReviews: RatingsReviews = scrapRating(document)
 
 
@@ -48,6 +52,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
+            .setSecondaryImages(secondaryImages)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setRatingReviews(ratingReviews)
