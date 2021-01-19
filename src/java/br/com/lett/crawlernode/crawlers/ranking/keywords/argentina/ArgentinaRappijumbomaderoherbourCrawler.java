@@ -5,7 +5,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ArgentinaRappiCr
 
 public class ArgentinaRappijumbomaderoherbourCrawler extends ArgentinaRappiCrawler {
 
-   public static final String STORE_ID = "-";
+   public static final String STORE_ID = "113536";
    public static final String STORE_TYPE = "jumbo";
 
    public ArgentinaRappijumbomaderoherbourCrawler(Session session) {
