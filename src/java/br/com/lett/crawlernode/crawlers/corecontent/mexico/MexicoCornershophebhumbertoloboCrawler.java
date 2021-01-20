@@ -10,10 +10,19 @@ public class MexicoCornershophebhumbertoloboCrawler extends CornershopCrawler {
    }
 
    public static final String STORE_ID = "199";
+   public static final String SELLER_FULL_NAME = "Cornershop Humberto Lobo Heb";
+
 
    @Override
    protected String getStoreId() {
       return STORE_ID;
    }
+
+
+   @Override
+   protected String getSellerName() {
+      return SELLER_FULL_NAME;
+   }
+
 
 }

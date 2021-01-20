@@ -10,9 +10,16 @@ public class MexicoCornershopchedrauisateliteCrawler extends CornershopCrawler {
    }
 
     public static final String STORE_ID = "359";
+   public static final String SELLER_FULL_NAME = "Cornershop Chedraui Satelite";
+
 
    @Override
    protected String getStoreId() {
       return STORE_ID;
+   }
+
+   @Override
+   protected String getSellerName() {
+      return SELLER_FULL_NAME;
    }
 }

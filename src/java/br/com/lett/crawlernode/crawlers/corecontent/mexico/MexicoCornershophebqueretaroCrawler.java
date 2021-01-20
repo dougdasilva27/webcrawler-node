@@ -10,9 +10,19 @@ public class MexicoCornershophebqueretaroCrawler extends CornershopCrawler {
    }
 
     public static final String STORE_ID = "3219";
+   public static final String SELLER_FULL_NAME = "Cornershop Heb Queretaro";
+
 
    @Override
    protected String getStoreId() {
       return STORE_ID;
    }
+
+
+   @Override
+   protected String getSellerName() {
+      return SELLER_FULL_NAME;
+   }
+
+
 }
