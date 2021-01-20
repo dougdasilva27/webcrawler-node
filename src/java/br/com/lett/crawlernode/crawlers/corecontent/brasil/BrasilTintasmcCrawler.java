@@ -34,7 +34,7 @@ public class BrasilTintasmcCrawler extends Crawler {
    public BrasilTintasmcCrawler(final Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    private String buildURLToRequest() {
