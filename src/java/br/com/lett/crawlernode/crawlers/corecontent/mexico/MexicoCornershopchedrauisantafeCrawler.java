@@ -9,10 +9,17 @@ public class MexicoCornershopchedrauisantafeCrawler extends CornershopCrawler {
       super(session);
    }
 
-    public static final String STORE_ID = "137";
+   public static final String STORE_ID = "137";
+   public static final String SELLER_FULL_NAME = "Cornershop Chedraui Santa Fe";
+
 
    @Override
    protected String getStoreId() {
       return STORE_ID;
+   }
+
+   @Override
+   protected String getSellerName() {
+      return SELLER_FULL_NAME;
    }
 }

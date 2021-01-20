@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -12,22 +12,27 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 public abstract class CornershopCrawler extends Crawler {
 
    public CornershopCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.FETCHER);
+
    }
 
    private String storeId = getStoreId();
@@ -36,11 +41,18 @@ public abstract class CornershopCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://web.cornershopapp.com";
    private static final String PRODUCTS_API_URL = "https://cornershopapp.com/api/v1/branches/";
+   private final String SELLER_FULL_NAME = getSellerName();
+   protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
+      Card.DINERS.toString(), Card.SHOP_CARD.toString());
 
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
+
+   protected String getSellerName() {
+      return SELLER_FULL_NAME;
    }
 
    @Override
@@ -56,7 +68,7 @@ public abstract class CornershopCrawler extends Crawler {
             Request request = RequestBuilder.create().setUrl(urlApi).setCookies(cookies).build();
 
             // fetcher is the best option because another services have problem with accents
-            JSONArray array = CrawlerUtils.stringToJsonArray(new ApacheDataFetcher().get(session, request).getBody());
+            JSONArray array = CrawlerUtils.stringToJsonArray(new JsoupDataFetcher().get(session, request).getBody());
 
             if (array.length() > 0) {
                return array.getJSONObject(0);
@@ -74,22 +86,28 @@ public abstract class CornershopCrawler extends Crawler {
       if (jsonSku.length() > 0) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(jsonSku);
+         Integer internalIdInt = JSONUtils.getIntegerValueFromJSON(jsonSku, "id", 0);
+         String internalId = internalIdInt != null ? internalIdInt.toString() : null;
+         String internalPid = internalId;
          CategoryCollection categories = new CategoryCollection();
          String description = crawlDescription(jsonSku);
          boolean available = crawlAvailability(jsonSku);
-         Float price = CrawlerUtils.getFloatValueFromJSON(jsonSku, "price");
-         Double priceFrom = CrawlerUtils.getDoubleValueFromJSON(jsonSku, "original_price");
-         String primaryImage = crawlPrimaryImage(jsonSku);
+         String primaryImage = JSONUtils.getStringValue(jsonSku, "img_url");
          String name = crawlName(jsonSku);
-         Prices prices = crawlPrices(price, priceFrom);
+         Offers offers = available ? scrapOffers(jsonSku) : new Offers();
+
 
          // Creating the product
-         Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-            .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description).setMarketplace(new Marketplace())
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setDescription(description)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setOffers(offers)
             .build();
-
          products.add(product);
 
 
@@ -100,99 +118,83 @@ public abstract class CornershopCrawler extends Crawler {
       return products;
    }
 
-   /*******************
-    * General methods *
-    *******************/
 
-   private String crawlInternalId(JSONObject json) {
-      String internalId = null;
+   private Offers scrapOffers(JSONObject jsonSku) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(jsonSku);
+      List<String> sales = new ArrayList<>();
 
-      if (json.has("id")) {
-         internalId = json.get("id").toString();
-      }
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-      return internalId;
+      return offers;
+
    }
 
+   private Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "price", false);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonSku, "original_price", false);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private String crawlDescription(JSONObject json) {
+      StringBuilder description = new StringBuilder();
+      if (json.has("package") && json.get("package") instanceof String) {
+         description.append(json.getString("package"));
+         description.append("</br>");
+      }
+      if (json.has("description") && json.get("description") instanceof String) {
+         description.append(json.getString("description"));
+      }
+      return description.toString();
+   }
 
    private String crawlName(JSONObject json) {
-      String name = null;
+      String name = JSONUtils.getStringValue(json, "name");
+      String brand = JSONUtils.getValueRecursive(json, "brand.name", String.class);
 
-      if (json.has("name") && !json.isNull("name")) {
-         name = json.getString("name");
-
-         if (json.has("package") && json.get("package") instanceof String) {
-            name = name.concat(" ").concat(json.getString("package"));
-         }
-
-         if (json.has("brand") && !json.isNull("brand")) {
-            JSONObject brand = json.getJSONObject("brand");
-
-            if (brand.has("name") && !brand.isNull("name")) {
-               String brandName = brand.get("name").toString().trim();
-
-               if (!brandName.isEmpty()) {
-                  name = brandName + " · " + name;
-               }
-
-
-            }
-         }
-      }
-
-      return name;
+      return brand != null && name != null ? brand + " . " + name : null;
    }
 
    private boolean crawlAvailability(JSONObject json) {
       return json.has("availability_status") && json.get("availability_status").toString().equalsIgnoreCase("available");
    }
 
-   private String crawlPrimaryImage(JSONObject json) {
-      String primaryImage = null;
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
 
-      if (json.has("img_url")) {
-         primaryImage = json.get("img_url").toString();
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
-      return primaryImage;
+      return creditCards;
    }
 
-
-   private String crawlDescription(JSONObject json) {
-      StringBuilder description = new StringBuilder();
-
-      if (json.has("package") && json.get("package") instanceof String) {
-         description.append(json.getString("package"));
-         description.append("</br>");
-      }
-
-
-      if (json.has("description") && json.get("description") instanceof String) {
-         description.append(json.getString("description"));
-      }
-
-      return description.toString();
-   }
-
-   private Prices crawlPrices(Float price, Double priceFrom) {
-      Prices p = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-
-         p.setPriceFrom(priceFrom);
-         p.setBankTicketPrice(price);
-
-         p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-
-      }
-
-      return p;
-   }
 }
