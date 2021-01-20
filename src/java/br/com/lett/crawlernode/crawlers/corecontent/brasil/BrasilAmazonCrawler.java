@@ -107,6 +107,7 @@ public class BrasilAmazonCrawler extends Crawler {
          Integer stock = null;
 
          Offer mainPageOffer = scrapMainPageOffer(doc);
+
          List<Document> docOffers = fetchDocumentsOffers(doc, internalId);
          Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
 
@@ -150,7 +151,7 @@ public class BrasilAmazonCrawler extends Crawler {
       String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text", false);
       String sellerUrl = CrawlerUtils.scrapUrl(doc, "#merchant-info #sellerProfileTriggerId a", "href", "https", HOST);
       String sellerId = scrapSellerIdByUrl(sellerUrl);
-
+      System.err.println(seller);
       if (seller == null) {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info", false);
 
@@ -166,7 +167,7 @@ public class BrasilAmazonCrawler extends Crawler {
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3);
          Pricing pricing = scrapMainPagePricing(doc);
-
+         System.err.println(pricing.getSpotlightPrice());
          if (sellerId == null) {
             sellerId = CommonMethods.toSlug(SELLER_NAME);
          }
@@ -230,6 +231,10 @@ public class BrasilAmazonCrawler extends Crawler {
    private Offers scrapOffers(Document doc, List<Document> offersPages, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
+
+      if (mainPageOffer != null) {
+         offers.add(mainPageOffer);
+      }
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
@@ -476,7 +481,6 @@ public class BrasilAmazonCrawler extends Crawler {
             docs.add(docMarketplace);
          }
       }
-
       return docs;
    }
 
