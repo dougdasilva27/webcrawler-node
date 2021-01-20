@@ -1,10 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.fortaleza;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -38,139 +34,123 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
       super(session);
    }
 
-   private static final String HOME_PAGE = "https://loja.obomvizinho.com.br/loja/121";
-   private static final String CEP = "60840-285";
+   private static final String HOME_PAGE = "https://loja.obomvizinho.com.br/loja/";
+
    private static final String SELLER_FULL_NAME = "obomvizinho";
-   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
+   // 121 -> CEP = 60840285
+   private static final String storeId = "121";
 
-
-   @Override
-   protected Object fetch() {
-      JSONObject api = new JSONObject();
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Auth-Token", "RUsycjRnU1BLTndkblIyTnF1T3FvMGlnUDJKVWx4Nk95eC9IL0RaMU80dz0tLVl3dlBqUjJnK1p2amdheW9WRVlWM0E9PQ");
-      headers.put("Connection", "keep-alive");
-
-      String url = "https://www.merconnect.com.br/api/v4/markets?cep=" + CEP + "&market_codename=pinheiro";
-
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
-      String content = this.dataFetcher.get(session, request).getBody();
-
-      api = CrawlerUtils.stringToJson(content);
-
-      return api;
+   static public String getStoreId() {
+      return storeId;
    }
 
-
-   private String getMarketID(JSONObject apiResponse) {
-
-      String marketId = null;
-
-      JSONArray markets = JSONUtils.getJSONArrayValue(apiResponse, "markets");
-
-      if (markets != null) {
-         for (Object arr : markets) {
-
-            JSONObject jsonM = (JSONObject) arr;
-
-            marketId = jsonM.optString("id");
-
-         }
-      }
-
-      return marketId;
-   }
-
+   protected Set<Card> cards = Sets.newHashSet(Card.VISA, Card.MASTERCARD, Card.AURA, Card.DINERS, Card.HIPER, Card.AMEX);
 
    @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE + getStoreId()));
+   }
+
+   String getProductIdFromUrl() {
+      String url = session.getOriginalURL();
+      int lastIndex = url.lastIndexOf("/") + 1;
+
+      return url.substring(lastIndex);
+   }
+
+   String getStoreIdFromUrl() {
+      String url = session.getOriginalURL();
+
+      int firstIndex = url.lastIndexOf("loja/")+5;
+      int lastIndex = url.lastIndexOf("/categoria");
+
+      if (firstIndex < lastIndex) {
+         return url.substring(firstIndex, lastIndex);
+      } else {
+         return "";
+      }
+   }
+
+   public static Map<String, String> getHeaders() {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Auth-Token", "RUsycjRnU1BLTndkblIyTnF1T3FvMGlnUDJKVWx4Nk95eC9IL0RaMU80dz0tLVl3dlBqUjJnK1p2amdheW9WRVlWM0E9PQ");
+      headers.put("Connection", "keep-alive");
+      headers.put("Accept", "*/*");
+      headers.put("Origin", "https://loja.obomvizinho.com.br");
+      headers.put("Referer", "https://loja.obomvizinho.com.br/");
+      headers.put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36");
+
+      return headers;
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject api) throws Exception {
-      super.extractInformation(api);
+   protected JSONObject fetch() {
+
+      if (!getStoreIdFromUrl().equals(getStoreId())) {
+         return new JSONObject();
+      }
+
+      String url = "https://www.merconnect.com.br/mapp/v1/markets/" + getStoreId() + "/items/" + getProductIdFromUrl();
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(getHeaders())
+         .build();
+
+      String content = this.dataFetcher.get(session, request).getBody();
+
+      return CrawlerUtils.stringToJson(content);
+   }
+
+   @Override
+   public List<Product> extractInformation(JSONObject json) throws Exception {
+
       List<Product> products = new ArrayList<>();
 
-      if (session.getOriginalURL().contains("id=")) {
+      JSONObject productJson = JSONUtils.getValueRecursive(json, "item", JSONObject.class);
+      if (productJson != null) {
+
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String marketId = getMarketID(api);
+         String internalId = productJson.optString("id");
+         String internalPid = productJson.optString("mix_id");
+         String name = productJson.optString("description");
+         String primaryImage = productJson.optString("image");
+         String description = productJson.optString("short_description");
 
-         // Build the URL
-         String[] tokens = session.getOriginalURL().split("id=");
-         String url = "https://www.merconnect.com.br/api/v2/markets/" + marketId + "/items/search?query=" + tokens[tokens.length - 1];
-         // make a request in a new URL
-         Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-         String content = this.dataFetcher.get(session, request).getBody();
-         // Get a JSONArray
-         JSONObject rawJsonWithAllContent = CrawlerUtils.stringToJson(content);
-         JSONArray arr = JSONUtils.getJSONArrayValue(rawJsonWithAllContent, "mixes");
+         int stock = productJson.optInt("stock");
 
-         for (Object arrayOfArrays : arr) {
+         boolean available = stock > 0;
 
-            if (arrayOfArrays != null) {
+         Offers offers = available ? scrapOffers(productJson) : new Offers();
 
-               JSONArray array = (JSONArray) arrayOfArrays;
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setStock(stock)
+            .setOffers(offers)
+            .build();
 
-               for (Object productJsonInfo : array) {
-
-                  JSONObject jsonInfo = (JSONObject) productJsonInfo;
-
-                  /*
-                   * Now, we have to compare the product's bar_code with the bar_code that is passed as a parameter in
-                   * the URL. The reason for this is that in some cases, JSONArray can return an array of arrays
-                   * (here's an example:https://www.merconnect.com.br/api/v2/markets/58/items/search?query=10381) and
-                   * all products have a bar_code, we have to make sure that we are getting the right product.
-                   */
-
-                  if (jsonInfo != null && jsonInfo.opt("bar_code").equals(tokens[tokens.length - 1])) {
-
-                     String internalId = jsonInfo.optString("id");
-                     String internalPid = jsonInfo.optString("mix_id");
-                     String name = jsonInfo.optString("description");
-                     Integer stock = jsonInfo.optInt("stock");
-                     boolean available = stock != null && stock > 0;
-                     String primaryImage = jsonInfo.optString("image");
-                     String description = jsonInfo.optString("short_description");
-                     Offers offers = available ? scrapOffers(jsonInfo) : new Offers();
-
-                     // Creating the product
-                     Product product = ProductBuilder.create()
-                        .setUrl(session.getOriginalURL())
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setPrimaryImage(primaryImage)
-                        .setDescription(description)
-                        .setStock(stock)
-                        .setOffers(offers)
-                        .build();
-
-                     products.add(product);
-
-
-                  }
-               }
-            }
-         }
+         products.add(product);
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
-
    }
 
 
    private Offers scrapOffers(JSONObject jsonInfo) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
+
       Pricing pricing = scrapPricing(jsonInfo);
-      List<String> sales = new ArrayList<>();
 
       offers.add(OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -179,8 +159,9 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(true)
          .setPricing(pricing)
-         .setSales(sales)
+         .setSales(Collections.emptyList())
          .build());
+
       return offers;
    }
 
@@ -201,16 +182,14 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
-      if (installments.getInstallments().isEmpty()) {
-         installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
-      }
+      installments.add(InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
-      for (String card : cards) {
+      for (Card card : cards) {
          creditCards.add(CreditCardBuilder.create()
-            .setBrand(card)
+            .setBrand(card.toString())
             .setInstallments(installments)
             .setIsShopCard(false)
             .build());
