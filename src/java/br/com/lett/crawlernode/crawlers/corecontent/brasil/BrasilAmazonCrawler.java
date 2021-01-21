@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -107,6 +109,7 @@ public class BrasilAmazonCrawler extends Crawler {
          Integer stock = null;
 
          Offer mainPageOffer = scrapMainPageOffer(doc);
+
          List<Document> docOffers = fetchDocumentsOffers(doc, internalId);
          Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
 
@@ -166,7 +169,6 @@ public class BrasilAmazonCrawler extends Crawler {
       if (seller != null && !seller.isEmpty()) {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3);
          Pricing pricing = scrapMainPagePricing(doc);
-
          if (sellerId == null) {
             sellerId = CommonMethods.toSlug(SELLER_NAME);
          }
@@ -227,42 +229,54 @@ public class BrasilAmazonCrawler extends Crawler {
             .build();
    }
 
+private String scrapSellerName(Element oferta){
+      String name = "";
+      if(oferta != null){
+         String rawSallerName = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, ".a-button-inner input", "aria-label");
+         String split = rawSallerName != null?rawSallerName.split("do vendedor ")[1]: null;
+         name = split != null? split.split("e preço")[0]: null;
+      }
+      return name;
+}
+
    private Offers scrapOffers(Document doc, List<Document> offersPages, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
 
+      if(mainPageOffer != null){
+         String mainPageSellerName = mainPageOffer.getSellerFullName();
+            offers.add(mainPageOffer);
+
+      }
+
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
             Elements ofertas = offerPage.select("#aod-offer");
-
             for (Element oferta : ofertas) {
-               String name = CrawlerUtils.scrapStringSimpleInfo(oferta, ".a-fixed-left-grid-col .a-size-small.a-link-normal:first-child", false);
+               String name = scrapSellerName(oferta);
                Pricing pricing = scrapSellersPagePricing(oferta);
 
-               if (name.isEmpty()) {
-                  name = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, "h3.olpSellerName img", "alt");
-               }
+               if(name != null) {
+                  if (mainPageOffer != null && name.equals(mainPageOffer.getSellerFullName())) {
+                     mainPageOffer.setSellersPagePosition(pos);
 
-               if (mainPageOffer != null && name.equals(mainPageOffer.getSellerFullName())) {
-                  mainPageOffer.setSellersPagePosition(pos);
+                     // Caso tenha mais de uma oferta na pagina, ou a oferta da pagina principal
+                     // nao seja a primeira e um indicativo de multiplas ofertas
+                     if (ofertas.size() > 1 || pos > 1) {
+                        mainPageOffer.setIsBuybox(true);
+                     }
 
-                  // Caso tenha mais de uma oferta na pagina, ou a oferta da pagina principal
-                  // nao seja a primeira e um indicativo de multiplas ofertas
-                  if (ofertas.size() > 1 || pos > 1) {
-                     mainPageOffer.setIsBuybox(true);
-                  }
+                     offers.add(mainPageOffer);
+                  } else {
+                     String sellerUrl = CrawlerUtils.scrapUrl(oferta, "h3.olpSellerName a[href]", "href", "https", HOST);
+                     String sellerId = scrapSellerIdByUrl(sellerUrl);
+                     boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
 
-                  offers.add(mainPageOffer);
-               } else {
-                  String sellerUrl = CrawlerUtils.scrapUrl(oferta, "h3.olpSellerName a[href]", "href", "https", HOST);
-                  String sellerId = scrapSellerIdByUrl(sellerUrl);
-                  boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
+                     if (sellerId == null) {
+                        sellerId = CommonMethods.toSlug(SELLER_NAME);
+                     }
 
-                  if (sellerId == null) {
-                     sellerId = CommonMethods.toSlug(SELLER_NAME);
-                  }
-
-                  offers.add(OfferBuilder.create()
+                     offers.add(OfferBuilder.create()
                         .setInternalSellerId(sellerId)
                         .setSellerFullName(name)
                         .setSellersPagePosition(pos)
@@ -270,8 +284,8 @@ public class BrasilAmazonCrawler extends Crawler {
                         .setIsMainRetailer(isMainRetailer)
                         .setPricing(pricing)
                         .build());
+                  }
                }
-
                pos++;
             }
          }
@@ -439,14 +453,17 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private Document fetchDocumentsOffersRequest(int page, String internalId){
+
       String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pageno=" + page;
 
       Map<String, String> headers = new HashMap<>();
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      Document doc = Jsoup.parse(amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher));
+      String response =  amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher);
+      Document doc = Jsoup.parse(response);
       headers.put("referer", urlMarketPlace);
+
       return doc;
    }
 
@@ -462,13 +479,17 @@ public class BrasilAmazonCrawler extends Crawler {
       Element marketplaceUrl = doc.selectFirst("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
       int page = 1;
 
+      if(marketplaceUrl == null){
+         marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
+      }
+
       if (marketplaceUrl != null) {
 
          Document docMarketplace = fetchDocumentsOffersRequest(page,internalId);
          docs.add(docMarketplace);
 
          int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace,"#aod-filter-offer-count-string" ,false);
-         Elements offers = docMarketplace.select(".a-fixed-left-grid-col .a-size-small.a-link-normal:first-child");
+         Elements offers = docMarketplace.select("#aod-offer");
 
          if(totalOffers != offers.size()) {
             page++;
@@ -476,7 +497,6 @@ public class BrasilAmazonCrawler extends Crawler {
             docs.add(docMarketplace);
          }
       }
-
       return docs;
    }
 
