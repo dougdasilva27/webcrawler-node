@@ -10,3 +10,4 @@
 .sonar/
 .vscode
 *.iml
+src/resources/null.tar.gz
