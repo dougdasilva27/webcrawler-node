@@ -22,6 +22,7 @@ public class ProxyCollection {
 
    // CORE PROXIES
    public static final String BUY = "buy";
+   public static final String BUY_HAPROXY = "buy_haproxy";
    public static final String BONANZA = "bonanza";
    public static final String BONANZA_BELGIUM = "bonanza_server_be";
    public static final String BONANZA_BELGIUM_HAPROXY = "bonanza_be_haproxy";
