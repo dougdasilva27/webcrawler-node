@@ -39,7 +39,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
          String internalPid= internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(document,".product-name h1",true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document,"#product-zoom", Arrays.asList("src"),"https:","www.elabastecedor.com.ar");
-         Boolean available = true;
+         Boolean available = true; //nao foi encontrado produto indisponivel
          Offers offers = available? ScrapOffers(document):new Offers();
 
          Product product = ProductBuilder.create()
