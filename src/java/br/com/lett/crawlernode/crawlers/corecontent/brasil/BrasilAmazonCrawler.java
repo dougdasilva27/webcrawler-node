@@ -63,7 +63,7 @@ public class BrasilAmazonCrawler extends Crawler {
    private static final String IMAGES_PROTOCOL = "https";
 
    protected Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
-         Card.MASTERCARD.toString(), Card.ELO.toString());
+      Card.MASTERCARD.toString(), Card.ELO.toString());
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
@@ -109,9 +109,8 @@ public class BrasilAmazonCrawler extends Crawler {
          Integer stock = null;
 
          Offer mainPageOffer = scrapMainPageOffer(doc);
-
          List<Document> docOffers = fetchDocumentsOffers(doc, internalId);
-         Offers offers = scrapOffers(doc, docOffers, mainPageOffer);
+         Offers offers = scrapOffers(docOffers, mainPageOffer);
 
          String ean = crawlEan(doc);
 
@@ -124,21 +123,21 @@ public class BrasilAmazonCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setEans(eans)
-               .setRatingReviews(ratingReviews)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setEans(eans)
+            .setRatingReviews(ratingReviews)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -150,8 +149,8 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
-      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text", false);
-      String sellerUrl = CrawlerUtils.scrapUrl(doc, "#merchant-info #sellerProfileTriggerId a", "href", "https", HOST);
+      String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", false);
+      String sellerUrl = CrawlerUtils.scrapUrl(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", "href", "https", HOST);
       String sellerId = scrapSellerIdByUrl(sellerUrl);
 
       if (seller == null) {
@@ -170,17 +169,17 @@ public class BrasilAmazonCrawler extends Crawler {
          boolean isMainRetailer = seller.equalsIgnoreCase(SELLER_NAME) || seller.equalsIgnoreCase(SELLER_NAME_2) || seller.equalsIgnoreCase(SELLER_NAME_3);
          Pricing pricing = scrapMainPagePricing(doc);
          if (sellerId == null) {
-            sellerId = CommonMethods.toSlug(SELLER_NAME);
+            sellerId = CommonMethods.toSlug(seller);
          }
 
          return OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(seller)
-               .setMainPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(isMainRetailer)
-               .setPricing(pricing)
-               .build();
+            .setInternalSellerId(sellerId)
+            .setSellerFullName(seller)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(isMainRetailer)
+            .setPricing(pricing)
+            .build();
       }
 
       return null;
@@ -214,7 +213,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
       Double savings = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#dealprice_savings .priceBlockSavingsString",
-            null, false, ',', session);
+         null, false, ',', session);
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#buyBoxInner .a-list-item span:nth-child(2n)", null, false, ',', session);
       if (savings != null) {
@@ -222,74 +221,69 @@ public class BrasilAmazonCrawler extends Crawler {
       }
 
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setPriceFrom(priceFrom)
-            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+         .build();
    }
 
-private String scrapSellerName(Element oferta){
+   private String scrapSellerName(Element oferta){
       String name = "";
       if(oferta != null){
          String rawSallerName = CrawlerUtils.scrapStringSimpleInfoByAttribute(oferta, ".a-button-inner input", "aria-label");
+
+         if(rawSallerName == null){
+            rawSallerName = CrawlerUtils.scrapStringSimpleInfo(oferta, ".a-button-inner span .a-offscreen", false);
+         }
+
          String split = rawSallerName != null?rawSallerName.split("do vendedor ")[1]: null;
          name = split != null? split.split("e preço")[0]: null;
       }
       return name;
-}
+   }
 
-   private Offers scrapOffers(Document doc, List<Document> offersPages, Offer mainPageOffer) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(List<Document> offersPages, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
 
-      if(mainPageOffer != null){
-         String mainPageSellerName = mainPageOffer.getSellerFullName();
-            offers.add(mainPageOffer);
 
+      if(mainPageOffer != null){
+         mainPageOffer.setSellersPagePosition(pos);
+         offers.add(mainPageOffer);
+         pos = 2;
       }
 
       if (!offersPages.isEmpty()) {
          for (Document offerPage : offersPages) {
             Elements ofertas = offerPage.select("#aod-offer");
             for (Element oferta : ofertas) {
+
                String name = scrapSellerName(oferta);
+
                Pricing pricing = scrapSellersPagePricing(oferta);
+               String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
+               System.err.println(sellerUrl);
+               String sellerId = scrapSellerIdByUrl(sellerUrl);
+               boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
 
-               if(name != null) {
-                  if (mainPageOffer != null && name.equals(mainPageOffer.getSellerFullName())) {
-                     mainPageOffer.setSellersPagePosition(pos);
-
-                     // Caso tenha mais de uma oferta na pagina, ou a oferta da pagina principal
-                     // nao seja a primeira e um indicativo de multiplas ofertas
-                     if (ofertas.size() > 1 || pos > 1) {
-                        mainPageOffer.setIsBuybox(true);
-                     }
-
-                     offers.add(mainPageOffer);
-                  } else {
-                     String sellerUrl = CrawlerUtils.scrapUrl(oferta, "h3.olpSellerName a[href]", "href", "https", HOST);
-                     String sellerId = scrapSellerIdByUrl(sellerUrl);
-                     boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
-
-                     if (sellerId == null) {
-                        sellerId = CommonMethods.toSlug(SELLER_NAME);
-                     }
-
-                     offers.add(OfferBuilder.create()
-                        .setInternalSellerId(sellerId)
-                        .setSellerFullName(name)
-                        .setSellersPagePosition(pos)
-                        .setIsBuybox(false)
-                        .setIsMainRetailer(isMainRetailer)
-                        .setPricing(pricing)
-                        .build());
-                  }
+               if (sellerId == null) {
+                  sellerId = CommonMethods.toSlug(SELLER_NAME);
                }
+
+               offers.add(OfferBuilder.create()
+                  .setInternalSellerId(sellerId)
+                  .setSellerFullName(name)
+                  .setSellersPagePosition(pos)
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(isMainRetailer)
+                  .setPricing(pricing)
+                  .build());
+
                pos++;
             }
          }
-      } else if (mainPageOffer != null) {
+      } else {
          offers.add(mainPageOffer);
       }
 
@@ -298,13 +292,16 @@ private String scrapSellerName(Element oferta){
 
    private Pricing scrapSellersPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price span", null, false, ',', session);
+      if(spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price .a-offscreen", null, false, ',', session);
+      }
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
 
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+         .build();
    }
 
    private CreditCards scrapCreditCardsFromSellersPage(Element doc, Double spotlightPrice) throws MalformedPricingException {
@@ -312,26 +309,26 @@ private String scrapSellerName(Element oferta){
 
       Installments regularCard = new Installments();
       regularCard.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(
-            "#installmentCalculator_feature_div", doc, false, "x", "juro", false, ',');
+         "#installmentCalculator_feature_div", doc, false, "x", "juro", false, ',');
 
       if (!installment.isAnyValueNull()) {
          regularCard.add(InstallmentBuilder.create()
-               .setInstallmentNumber(installment.getFirst())
-               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installment.getSecond().doubleValue()))
-               .build());
+            .setInstallmentNumber(installment.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installment.getSecond().doubleValue()))
+            .build());
       }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(brand)
-               .setIsShopCard(false)
-               .setInstallments(regularCard)
-               .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(regularCard)
+            .build());
       }
 
       return creditCards;
@@ -347,7 +344,7 @@ private String scrapSellerName(Element oferta){
 
          if (internalId != null) {
             Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
-                  "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
+               "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
             Double avgRating = getTotalAvgRating(document);
 
             ratingReviews.setInternalId(internalId);
@@ -395,8 +392,8 @@ private String scrapSellerName(Element oferta){
    private Double getTotalAvgRating(Document doc) {
       Double avgRating = 0d;
       Element reviews =
-            doc.select("#reviewsMedley [data-hook=rating-out-of-text], #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt")
-                  .first();
+         doc.select("#reviewsMedley [data-hook=rating-out-of-text], #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt")
+            .first();
 
       String text;
 
@@ -463,7 +460,7 @@ private String scrapSellerName(Element oferta){
       String response =  amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher);
       Document doc = Jsoup.parse(response);
       headers.put("referer", urlMarketPlace);
-
+      System.err.println(doc);
       return doc;
    }
 
@@ -524,7 +521,7 @@ private String scrapSellerName(Element oferta){
       Element prodInfoElement = doc.selectFirst("#prodDetails");
 
       Elements elementsDescription =
-            doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
+         doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
 
       for (Element e : elementsDescription) {
          description.append(e.html().replace("noscript", "div"));
