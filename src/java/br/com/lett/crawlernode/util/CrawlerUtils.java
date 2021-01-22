@@ -374,7 +374,7 @@ public class CrawlerUtils {
     * @param document
     * @param cssSelector
     * @param ownText
-    * @return Float
+    * @return Integer
     */
    public static Integer scrapSimpleInteger(Element document, String cssSelector, boolean ownText) {
       Integer number = null;
