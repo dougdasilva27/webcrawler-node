@@ -374,31 +374,19 @@ public class CrawlerUtils {
     * @param document
     * @param cssSelector
     * @param ownText
-    * @param defaultValue
     * @return Integer
     */
-   public static Integer scrapSimpleInteger(Element document, String cssSelector, boolean ownText, Integer defaultValue) {
-      Integer number = defaultValue;
+   public static Integer scrapSimpleInteger(Element document, String cssSelector, boolean ownText) {
+      Integer number = null;
 
-      try {
-         Element priceElement = document.selectFirst(cssSelector);
-         if (priceElement != null) {
-            Integer parsedInt = MathUtils.parseInt(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
-
-            if (parsedInt != null) {
-               number = parsedInt;
-            }
-         }
-      } catch (Exception e) {
-         Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e));
+      Element priceElement = document.selectFirst(cssSelector);
+      if (priceElement != null) {
+         number = MathUtils.parseInt(ownText ? priceElement.ownText().trim() : priceElement.text().trim());
       }
 
       return number;
    }
 
-   public static Integer scrapSimpleInteger(Element document, String cssSelector, boolean ownText) {
-      return scrapSimpleInteger(document, cssSelector, ownText, null);
-   }
    /**
     * Scrap simple description from html for the first result based on selectors
     *

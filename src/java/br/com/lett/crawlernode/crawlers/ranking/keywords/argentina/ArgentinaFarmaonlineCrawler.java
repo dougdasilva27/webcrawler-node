@@ -73,6 +73,6 @@ public class ArgentinaFarmaonlineCrawler  extends CrawlerRankingKeywords  {
       String url = getHomePage() + keywordWithoutAccents.replace(" ", "%20");
       Document doc = fetchDocument(url);
 
-      totalProducts =  CrawlerUtils.scrapSimpleInteger(doc, ".resultado-busca-numero .value", false, 0);
+      totalProducts =  CrawlerUtils.scrapIntegerFromHtml(doc, ".resultado-busca-numero .value", false, 0);
    }
 }
