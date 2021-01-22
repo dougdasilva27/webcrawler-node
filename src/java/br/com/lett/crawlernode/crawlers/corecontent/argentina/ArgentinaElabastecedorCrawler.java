@@ -40,7 +40,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(document,".product-name h1",true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document,"#product-zoom", Arrays.asList("src"),"https:","www.elabastecedor.com.ar");
          Boolean available = true; //nao foi encontrado produto indisponivel
-         Offers offers = available? ScrapOffers(document):new Offers();
+         Offers offers = available? scrapOffers(document):new Offers();
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -58,11 +58,11 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
       return  products;
    }
 
-   private Offers ScrapOffers(Document document) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document document) throws OfferException, MalformedPricingException {
 
       Offers offers = new Offers();
 
-      Pricing pricing = ScrapPricing(document);
+      Pricing pricing = scrapPricing(document);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -76,7 +76,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing ScrapPricing(Document document) throws MalformedPricingException {
+   private Pricing scrapPricing(Document document) throws MalformedPricingException {
       Double priceFrom;
       Double price;
 
@@ -88,7 +88,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
          price = CrawlerUtils.scrapDoublePriceFromHtml(document,"#product-price-48",null,true,'.',session);
       }
 
-      CreditCards creditCards = ScrapCreditcard(price);
+      CreditCards creditCards = scrapCreditcard(price);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -97,7 +97,7 @@ public class ArgentinaElabastecedorCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards ScrapCreditcard(Double price) throws MalformedPricingException {
+   private CreditCards scrapCreditcard(Double price) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
