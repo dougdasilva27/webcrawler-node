@@ -1,34 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import org.json.JSONArray;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -43,6 +20,15 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.*;
 
 /**
  * Date: 15/11/2017
@@ -110,7 +96,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
          Offer mainPageOffer = scrapMainPageOffer(doc);
          List<Document> docOffers = fetchDocumentsOffers(doc, internalId);
-         Offers offers = scrapOffers(docOffers, mainPageOffer);
+         Offers offers = scrapOffers(doc ,docOffers, mainPageOffer);
 
          String ean = crawlEan(doc);
 
@@ -150,6 +136,9 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private Offer scrapMainPageOffer(Document doc) throws OfferException, MalformedPricingException {
       String seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", false);
+      if (seller == null){
+         seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text", false);
+      }
       String sellerUrl = CrawlerUtils.scrapUrl(doc, "#tabular-buybox-truncate-1 .a-truncate-full .tabular-buybox-text a", "href", "https", HOST);
       String sellerId = scrapSellerIdByUrl(sellerUrl);
 
@@ -243,7 +232,7 @@ public class BrasilAmazonCrawler extends Crawler {
       return name;
    }
 
-   private Offers scrapOffers(List<Document> offersPages, Offer mainPageOffer) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc, List<Document> offersPages, Offer mainPageOffer) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
 
@@ -283,8 +272,6 @@ public class BrasilAmazonCrawler extends Crawler {
                pos++;
             }
          }
-      } else {
-         offers.add(mainPageOffer);
       }
 
       return offers;
