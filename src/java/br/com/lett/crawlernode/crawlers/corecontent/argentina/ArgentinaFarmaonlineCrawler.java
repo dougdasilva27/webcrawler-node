@@ -18,8 +18,8 @@ import java.util.List;
  */
 public class ArgentinaFarmaonlineCrawler extends VTEXScraper {
 
-   private static final String HOME_PAGE = "https://www.farmaonline.com/";
-   private static final String SELLER_NAME = "FarmaOnline";
+   public static final String HOME_PAGE = "https://www.farmaonline.com/"; // this variable is also used in the ranking. Be careful when modifying
+   public static final String SELLER_NAME = "FarmaOnline";
 
    public ArgentinaFarmaonlineCrawler(Session session) {
       super(session);
