@@ -252,7 +252,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
                Pricing pricing = scrapSellersPagePricing(oferta);
                String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
-               System.err.println(sellerUrl);
+
                String sellerId = scrapSellerIdByUrl(sellerUrl);
                boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
 
@@ -447,7 +447,7 @@ public class BrasilAmazonCrawler extends Crawler {
       String response =  amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher);
       Document doc = Jsoup.parse(response);
       headers.put("referer", urlMarketPlace);
-      System.err.println(doc);
+
       return doc;
    }
 
