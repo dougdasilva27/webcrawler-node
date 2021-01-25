@@ -248,7 +248,7 @@ public class BrasilAmazonCrawler extends Crawler {
             Elements ofertas = offerPage.select("#aod-offer");
             for (Element oferta : ofertas) {
 
-               String name = scrapSellerName(oferta);
+               String name = scrapSellerName(oferta).trim();
 
                Pricing pricing = scrapSellersPagePricing(oferta);
                String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
