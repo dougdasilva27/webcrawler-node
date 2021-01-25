@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -156,7 +157,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       }
 
       JSONObject searchApi = fetchSearchApi();
-      JSONArray products = searchApi.has("products") ? searchApi.getJSONArray("products") : new JSONArray();
+      JSONArray products = JSONUtils.getJSONArrayValue(searchApi,"products");
 
       if (products.length() > 0) {
 
@@ -239,13 +240,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
 
       JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      if (response.has("data") && !response.isNull("data")) {
-         JSONObject data = response.getJSONObject("data");
-
-         if (data.has("productSearch") && !data.isNull("productSearch")) {
-            searchApi = data.getJSONObject("productSearch");
-         }
-      }
+      searchApi = JSONUtils.getValueRecursive(response, "data.productSearch", JSONObject.class, new JSONObject());
 
       return searchApi;
    }
