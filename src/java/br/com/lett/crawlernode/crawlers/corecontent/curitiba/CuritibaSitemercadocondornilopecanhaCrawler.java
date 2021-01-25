@@ -57,10 +57,10 @@ public class CuritibaSitemercadocondornilopecanhaCrawler extends BrasilSitemerca
          String internalPid = internalPidInt != null ? internalPidInt.toString() : null;
          CategoryCollection categories = crawlCategories(jsonSku);
          String description = JSONUtils.getStringValue(jsonSku, "description");
-         Integer stock = jsonSku.has("quantityStock") && jsonSku.get("quantityStock") instanceof Integer ? jsonSku.getInt("quantityStock") : null;
+         Integer stock = jsonSku.optInt("quantityStock", 0);
          boolean available = stock != null && stock > 0;
          Offers offers = available ? scrapOffers(jsonSku) : new Offers();
-         JSONArray imagensFromArray = JSONUtils.getValueRecursive(jsonSku, "images", JSONArray.class);
+         JSONArray imagensFromArray = JSONUtils.getJSONArrayValue(jsonSku, "images");
          List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(imagensFromArray, "img", null, "https", "img.sitemercado.com.br", session);
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
          String name = JSONUtils.getStringValue(jsonSku, "excerpt");
