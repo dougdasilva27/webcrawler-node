@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -116,10 +117,10 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    private void scrapHashCode(){
       JSONObject runtimeJson = new JSONObject();
 
-      String nonFormattedJson = this.currentDoc.select("template[data-varname=__STATE__] script").first().html();
+      Element nonFormattedJson = this.currentDoc.selectFirst("template[data-varname=__STATE__] script");
 
       if(nonFormattedJson != null){
-         runtimeJson = CrawlerUtils.stringToJson(nonFormattedJson);
+         runtimeJson = CrawlerUtils.stringToJson(nonFormattedJson.html());
       }
 
       if(runtimeJson != null){
@@ -158,7 +159,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       }
 
       JSONObject searchApi = fetchSearchApi();
-      JSONArray products = searchApi.has("products") ? searchApi.getJSONArray("products") : new JSONArray();
+      JSONArray products = JSONUtils.getJSONArrayValue(searchApi, "products");
 
       if (products.length() > 0) {
 
@@ -202,7 +203,6 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
     * @return
     */
    private JSONObject fetchSearchApi() {
-      JSONObject searchApi = new JSONObject();
       StringBuilder url = new StringBuilder();
       url.append(getHomePage() + "_v/segment/graphql/v1?");
 
@@ -242,15 +242,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
       JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      if (response.has("data") && !response.isNull("data")) {
-         JSONObject data = response.getJSONObject("data");
-
-         if (data.has("productSearch") && !data.isNull("productSearch")) {
-            searchApi = data.getJSONObject("productSearch");
-         }
-      }
-
-      return searchApi;
+      return JSONUtils.getValueRecursive(response, "data.productSearch", JSONObject.class, new JSONObject());
    }
 
    private String createVariablesBase64() {
