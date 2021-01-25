@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -115,10 +116,10 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    private void scrapHashCode(){
       JSONObject runtimeJson = new JSONObject();
 
-      String nonFormattedJson = this.currentDoc.select("template[data-varname=__STATE__] script").first().html();
+      Element nonFormattedJson = this.currentDoc.selectFirst("template[data-varname=__STATE__] script");
 
       if(nonFormattedJson != null){
-         runtimeJson = CrawlerUtils.stringToJson(nonFormattedJson);
+         runtimeJson = CrawlerUtils.stringToJson(nonFormattedJson.html());
       }
 
       if(runtimeJson != null){
