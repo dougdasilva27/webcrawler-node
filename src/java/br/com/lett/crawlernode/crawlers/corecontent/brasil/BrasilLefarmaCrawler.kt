@@ -12,6 +12,7 @@ import models.pricing.Installment.InstallmentBuilder
 import models.pricing.Installments
 import models.pricing.Pricing.PricingBuilder
 import org.jsoup.nodes.Document
+import java.util.*
 
 class BrasilLefarmaCrawler(session: Session?) : Crawler(session) {
 
@@ -19,11 +20,11 @@ class BrasilLefarmaCrawler(session: Session?) : Crawler(session) {
       val products = mutableListOf<Product>()
       if (document.selectFirst(".nome-produto.titulo.cor-secundaria") != null) {
 
-         val description = document.selectFirst("#descricao").html()
-         val name = document.selectFirst(".nome-produto.titulo")?.text()
-         val internalId = document.selectFirst("div[data-trustvox-product-code-js]")?.attr("data-trustvox-product-code-js")
-         val primaryImage = document.selectFirst("#imagemProduto")?.attr("src")
-         var available = document.selectFirst(".comprar a.botao.botao-comprar") != null
+         val description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList("#descricao"))
+         val name = CrawlerUtils.scrapStringSimpleInfo(document,".nome-produto.titulo",true)
+         val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,"div[data-trustvox-product-code-js]","data-trustvox-product-code-js")
+         val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document,"#imagemProduto",Arrays.asList("src"),"https:","cdn.awsli.com.br")
+         val available = document.selectFirst(".comprar a.botao.botao-comprar") != null
          val offers = if (available) scrapOffers(document) else Offers()
          val categories = document.select(".info-principal-produto ul a")?.eachText(ignoreIndexes = arrayOf(0))
          val secondaryImages = document.select(".miniaturas.slides a")?.toSecondaryImagesBy(attr = "data-imagem-grande", ignoreIndexes = arrayOf(0))
