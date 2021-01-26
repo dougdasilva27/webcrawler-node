@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -461,10 +463,15 @@ public class BrasilAmazonCrawler extends Crawler {
       List<Document> docs = new ArrayList<>();
 
       Element marketplaceUrl = doc.selectFirst("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
+
       int page = 1;
 
       if(marketplaceUrl == null){
          marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
+      }
+
+      if(marketplaceUrl == null){
+         marketplaceUrl = doc.selectFirst(".a-box-inner .olp-text-box");
       }
 
       if (marketplaceUrl != null) {
