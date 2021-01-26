@@ -33,9 +33,9 @@ public class ArgentinaComodincoronelariasCrawler extends CrawlerRankingKeywords 
       return dataFetcher.get(session, request);
    }
 
-   private int getTotalProducts(String keywordEncoded) {
+   private int getTotalProducts() {
       String url = "https://tienda.comodinencasa.com.ar/api/catalog_system/pub/facets/search/" +
-         keywordEncoded +
+         getKeywordEncoded() +
          "?map=ft&sc=1";
 
       Response response = fetch(url);
@@ -56,6 +56,10 @@ public class ArgentinaComodincoronelariasCrawler extends CrawlerRankingKeywords 
       return totalProducts;
    }
 
+   String getKeywordEncoded(){
+      return keywordWithoutAccents.replace(" ", "%20");
+   }
+
    private JSONArray getProducts() {
       int start = (currentPage -1)*pageSize;
 
@@ -68,7 +72,7 @@ public class ArgentinaComodincoronelariasCrawler extends CrawlerRankingKeywords 
       String url = "https://tienda.comodinencasa.com.ar/api/catalog_system/pub/products/search/busca?O=OrderByTopSaleDESC&sc=1" +
          "&_from=" + start +
          "&_to=" + end +
-         "&ft=" + keywordEncoded;
+         "&ft=" + getKeywordEncoded();
 
       Response response = fetch(url);
 
@@ -78,7 +82,7 @@ public class ArgentinaComodincoronelariasCrawler extends CrawlerRankingKeywords 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
       if (currentPage == 1) {
-         this.totalProducts = getTotalProducts(keywordEncoded);
+         this.totalProducts = getTotalProducts();
       }
 
       JSONArray products = getProducts();
