@@ -296,27 +296,18 @@ public class BrasilAmazonCrawler extends Crawler {
    private CreditCards scrapCreditCardsFromSellersPage(Element doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      Installments regularCard = new Installments();
-      regularCard.add(InstallmentBuilder.create()
+
+      Installments installments = new Installments();
+      installments.add(InstallmentBuilder.create()
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
          .build());
-
-      Pair<Integer, Float> installment = CrawlerUtils.crawlSimpleInstallment(
-         "#installmentCalculator_feature_div", doc, false, "x", "juro", false, ',');
-
-      if (!installment.isAnyValueNull()) {
-         regularCard.add(InstallmentBuilder.create()
-            .setInstallmentNumber(installment.getFirst())
-            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(installment.getSecond().doubleValue()))
-            .build());
-      }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
             .setBrand(brand)
             .setIsShopCard(false)
-            .setInstallments(regularCard)
+            .setInstallments(installments)
             .build());
       }
 
