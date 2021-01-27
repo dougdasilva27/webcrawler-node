@@ -49,7 +49,7 @@ class BrasilRennerCrawler(session: Session) : Crawler(session) {
 
       val products = mutableListOf<Product>()
 
-      val baseName = CrawlerUtils.scrapStringSimpleInfo(doc, ".main_product .product_name span", true)
+      val baseName = CrawlerUtils.scrapStringSimpleInfo(doc, ".main_product .product_name span", true) ?: ""
       val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb ul li:not(:first-child):not(:last-child) a")
       val internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value")
 

@@ -23,10 +23,14 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import okhttp3.HttpUrl;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.slf4j.Logger;
@@ -365,6 +369,17 @@ public class CommonMethods {
       return queryMap;
    }
 
+   //get query parameter from url
+   public static String getQueryParamFromUrl(String url, String queryParam) {
+      HttpUrl httpUrl = HttpUrl.parse(url);
+
+      if (httpUrl != null) {
+         return httpUrl.queryParameter(queryParam);
+      }
+
+      return null;
+   }
+
    /**
     * Check if the url contains a valid start with a valid protocol. A valid start could be http:// or
     * https:// If the url contains anything like http:/// for example, it won't be a valid url string.
@@ -515,6 +530,12 @@ public class CommonMethods {
       }
 
       return array;
+   }
+
+   public static String cookiesToString(List<Cookie> cookies) {
+      return cookies.stream()
+         .map(c -> c.getName() + "=" + c.getValue() + ";")
+         .collect(Collectors.joining(" "));
    }
 
 }
