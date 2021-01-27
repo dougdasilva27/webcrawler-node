@@ -22,7 +22,7 @@ class ArgentinaLareinaCrawler(session: Session) : CrawlerRankingKeywords(session
 
    init {
       fetchMode = FetchMode.FETCHER
-      pageSize = 10
+      pageSize = 50
    }
 
    private fun getCookies(): List<Cookie> {
