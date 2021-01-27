@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
+
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
@@ -46,6 +47,8 @@ import models.prices.Prices;
 import models.pricing.BankSlip;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.Pricing;
+
+import javax.annotation.Nullable;
 
 
 public class CrawlerUtils {
@@ -127,6 +130,7 @@ public class CrawlerUtils {
     * @param ownText - if must use element.ownText(), if false will be used element.text()
     * @return
     */
+   @Nullable
    public static String scrapStringSimpleInfo(Element doc, String cssSelector, boolean ownText) {
       String info = null;
 
