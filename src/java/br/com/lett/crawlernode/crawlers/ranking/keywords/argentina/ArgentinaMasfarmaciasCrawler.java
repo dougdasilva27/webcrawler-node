@@ -94,7 +94,7 @@ public class ArgentinaMasfarmaciasCrawler extends CrawlerRankingKeywords {
    private String split(String internalIdAttribute) {
       String[] internalIdArray = internalIdAttribute.split("-");
 
-      return internalIdArray.length > 1 ? internalIdArray[2] : null;
+      return internalIdArray.length > 2 ? internalIdArray[2] : null;
    }
 
    private void setTotalProducts(Document doc) {
