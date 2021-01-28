@@ -71,7 +71,7 @@ class ArgentinaLagallegaCrawler(session: Session) : CrawlerRankingKeywords(sessi
 
    private fun scrapInternalId(doc: Element): String? {
 
-      val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".InfoProd > div[id]", "id")
+      val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".InfoProd > div[id*=P]", "id")
 
       if (internalId != null && internalId.isNotEmpty()) {
          return internalId.substring(1)
