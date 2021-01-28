@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -14,8 +15,7 @@ import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.CreditCards;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -112,6 +112,20 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
 
       CreditCards creditCards = new CreditCards();
+      Installments  installments = new Installments();
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentPrice(spotlightPrice)
+         .setInstallmentNumber(1)
+         .build());
+
+
+      creditCards.add(CreditCard.CreditCardBuilder.create()
+         .setBrand(Card.MASTERCARD.toString())
+         .setInstallments(installments)
+         .setIsShopCard(false)
+         .build());
+
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
