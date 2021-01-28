@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -20,30 +18,28 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.sql.SQLOutput;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Date: 28/11/2016
- *
+ * <p>
  * 1) Only one sku per page.
- *
+ * <p>
  * Price crawling notes: 1) We couldn't find any sku with status available when writing this
  * crawler. 2) There is no bank slip (boleto bancario) payment option. 3) There is no installments
  * for card payment. So we only have 1x payment, and for this value we use the cash price crawled
  * from the sku page. (nao existe divisao no cartao de credito). 4) In this market has two others
  * possibles markets, City Market = 305 and Fresko = 14 5) In page of product, has all physicals
  * stores when it is available.
- *
+ * <p>
  * Url example:
  * http://www.lacomer.com.mx/lacomer/doHome.action?succId=14&pasId=63&artEan=7501055901401&ver=detallearticulo&opcion=detarticulo
- *
+ * <p>
  * pasId -> Lacomer succId -> Tienda Lomas Anahuac (Mondelez choose)
  *
  * @author Gabriel Dornelas
- *
  */
 public class MexicoLacomerCrawler extends Crawler {
 
@@ -51,7 +47,7 @@ public class MexicoLacomerCrawler extends Crawler {
 
    public MexicoLacomerCrawler(Session session) {
       super(session);
-
+      config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -259,7 +255,7 @@ public class MexicoLacomerCrawler extends Crawler {
 
    /**
     * There is no bankSlip price.
-    *
+    * <p>
     * There is no card payment options, other than cash price. So for installments, we will have only
     * one installment for each card brand, and it will be equals to the price crawled on the sku main
     * page.
