@@ -37,70 +37,9 @@ fun main() {
 
    val currentTest = TestType.INSIGHTS
 
-   // path to html output
-   pathWrite = ""
+   TestUtils.initialize()
 
-   initialize2()
-   taskProcess(city, marketName, marketId, urls, keywords, currentTest)
+   val parameters = if (currentTest == TestType.KEYWORDS) keywords else urls
 
-}
-
-internal fun taskProcess(city: String, marketName: String, marketId: Long, urls: List<String>, keywords: List<String>, currentTest: TestType) {
-
-   val market: Market? = fetchMarket(city, marketName, marketId)
-
-   if (market != null) {
-
-      if (currentTest == TestType.KEYWORDS) {
-         testType = "keywords"
-         taskProcess(market, keywords, SessionFactory::createTestRankingKeywordsSession)
-      } else {
-         testType = "insights"
-         taskProcess(market, urls, ::createTestSession)
-      }
-
-   } else {
-      println("Market não encontrado no banco!")
-   }
-}
-
-internal fun taskProcess(market: Market, parameters: List<String>, sessionFunc: (String, Market) -> Session) {
-
-   for (parameter: String in parameters) {
-      val session = sessionFunc(parameter, market)
-
-      val task = TaskFactory.createTask(session)
-
-      task?.process() ?: println("Create Task Error")
-
-   }
-}
-
-// fetch market
-// if city is empty, fetch by marketId
-private fun fetchMarket(city: String, marketName: String, marketId: Long): Market? {
-   val fetcherDAO = DatabaseDataFetcher(GlobalConfigurations.dbManager)
-
-   return if (city.isNotEmpty()) {
-      fetcherDAO.fetchMarket(city, marketName)
-   } else {
-      fetcherDAO.fetchMarket(marketId)
-   }
-
-}
-
-private fun initialize2() {
-
-   GlobalConfigurations.executionParameters = ExecutionParameters()
-   GlobalConfigurations.executionParameters.setUpExecutionParameters()
-
-   val dbCredentials = DatabaseCredentialsSetter.setCredentials()
-
-   GlobalConfigurations.dbManager = DatabaseManager(dbCredentials)
-
-   GlobalConfigurations.markets = Markets(GlobalConfigurations.dbManager)
-
-   GlobalConfigurations.processorResultManager = ResultManager(GlobalConfigurations.dbManager)
-
-   GlobalConfigurations.proxies = ProxyCollection(GlobalConfigurations.markets, GlobalConfigurations.dbManager)
+   TestUtils.taskProcess(city = city, marketName = marketName, marketId = marketId, parameters = parameters, currentTest = currentTest)
 }

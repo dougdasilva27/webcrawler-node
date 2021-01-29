@@ -107,7 +107,7 @@ public class TaskFactory {
     * @param name The name of the market
     * @return The name of the task class
     */
-   private static String assembleCrawlerClassName(Market market) {
+   public static String assembleCrawlerClassName(Market market) {
       String city = market.getCity();
       String name = market.getName();
 
