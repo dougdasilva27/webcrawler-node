@@ -188,6 +188,10 @@ public class BrasilRedecomprasCrawler extends Crawler {
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
+      if(!(priceFrom >spotlightPrice)){
+         priceFrom = null;
+      }
+
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)
             .setSpotlightPrice(spotlightPrice)
