@@ -1,35 +1,12 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -45,6 +22,16 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.*;
 
 /**
  * Date: 08/10/2018
@@ -88,8 +75,7 @@ public class Mercadolivre3pCrawler {
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
                "http2.mlstatic.com");
-            String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
-               "http2.mlstatic.com", primaryImage);
+            List<String> secondaryImages = crawlImages(primaryImage, doc);
             String description =
                CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
 
@@ -108,7 +94,7 @@ public class Mercadolivre3pCrawler {
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
-               .setSecondaryImages(secondaryImages != null ? secondaryImages.replace(".webp", ".jpg") : null)
+               .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setRatingReviews(ratingReviews)
                .setOffers(offers)
@@ -127,6 +113,17 @@ public class Mercadolivre3pCrawler {
 
    private boolean isProductPage(Document doc) {
       return !doc.select("h1.ui-pdp-title").isEmpty();
+   }
+
+   private List<String> crawlImages(String primaryImage, Document doc) {
+      List<String> images = CrawlerUtils.scrapSecondaryImages(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "htps", "http2.mlstatic.com", primaryImage);
+      List<String> secondaryImages = new ArrayList<>();
+      if (!images.isEmpty()) {
+         for (String secondaryImage : images) {
+            secondaryImages.add(secondaryImage.replace(".webp", ".jpg"));
+         }
+      }
+      return secondaryImages;
    }
 
    private boolean checkIfMustScrapProduct(Offers offers) {
