@@ -63,9 +63,10 @@ public class Mercadolivre3pCrawler {
 
          boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
-         boolean mustAddProduct = checkIfMustScrapProduct(offers);
+         boolean mustAddProductUnavailable = !availableToBuy && checkIfMustScrapProductUnavailable(doc);
+         boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
 
-         if (mustAddProduct) {
+         if (mustAddProduct || mustAddProductUnavailable) {
             JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
             String internalPid = jsonInfo.optString("productID");
             String internalId = jsonInfo.optString("sku");
@@ -129,7 +130,6 @@ public class Mercadolivre3pCrawler {
       boolean mustAddProduct = this.allow3PSellers;
       if (!allow3PSellers) {
          List<Offer> offersList = offers.getOffersList();
-
          for (Offer offer : offersList) {
             if (offer.getIsMainRetailer()) {
                mustAddProduct = true;
@@ -138,7 +138,16 @@ public class Mercadolivre3pCrawler {
          }
       }
 
-      return offers.isEmpty() || mustAddProduct;
+      return mustAddProduct;
+   }
+
+   private boolean checkIfMustScrapProductUnavailable(Document doc) {
+      boolean mustAddProductUnavailable = this.allow3PSellers;
+      if (!allow3PSellers) {
+         mustAddProductUnavailable = scrapSeller(doc) != null ? scrapSeller(doc).equalsIgnoreCase(mainSellerNameLower) : false;
+      }
+
+      return mustAddProductUnavailable;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
@@ -236,8 +245,7 @@ public class Mercadolivre3pCrawler {
 
    }
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
-      Offers offers = new Offers();
+   private String scrapSeller(Document doc) {
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title a", false);
 
       if (sellerFullName == null) {
@@ -255,6 +263,12 @@ public class Mercadolivre3pCrawler {
             }
          }
       }
+      return sellerFullName;
+   }
+
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      String sellerFullName = scrapSeller(doc);
 
       boolean hasMainOffer = false;
 

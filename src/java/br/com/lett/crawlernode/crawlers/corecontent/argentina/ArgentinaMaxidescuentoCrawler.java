@@ -42,7 +42,7 @@ public class ArgentinaMaxidescuentoCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".an_stickyAddToCart", "data-id-product");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".col-md-7 h1", false);
-         boolean available = doc.selectFirst(".add .btn.btn-primary.add-to-cart") != null;
+         boolean available = doc.selectFirst(".product-prices .current-price span[itemprop=\"price\"]") != null;
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li a span");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".images-container .product-cover img", Arrays.asList("src"),
             "https:", "www.maxidescuento.com.br");
@@ -125,6 +125,7 @@ public class ArgentinaMaxidescuentoCrawler extends Crawler {
 
       Installments installments = new Installments();
 
+      if(spotlightPrice != null){
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
          .setInstallmentPrice(spotlightPrice)
@@ -138,7 +139,7 @@ public class ArgentinaMaxidescuentoCrawler extends Crawler {
             .setIsShopCard(false)
             .build());
       }
-
+}
       return creditCards;
    }
 
