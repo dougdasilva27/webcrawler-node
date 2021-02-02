@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -47,9 +48,8 @@ import models.pricing.Pricing.PricingBuilder;
 
 /**
  * Date: 08/10/2018
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class Mercadolivre3pCrawler {
 
@@ -76,9 +76,10 @@ public class Mercadolivre3pCrawler {
 
          boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
          Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
-         boolean mustAddProduct = checkIfMustScrapProduct(offers);
+         boolean mustAddProductUnavailable = !availableToBuy && checkIfMustScrapProductUnavailable(doc);
+         boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
 
-         if (mustAddProduct) {
+         if (mustAddProduct || mustAddProductUnavailable) {
             JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
             String internalPid = jsonInfo.optString("productID");
             String internalId = jsonInfo.optString("sku");
@@ -86,11 +87,11 @@ public class Mercadolivre3pCrawler {
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
-                  "http2.mlstatic.com");
+               "http2.mlstatic.com");
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
-                  "http2.mlstatic.com", primaryImage);
+               "http2.mlstatic.com", primaryImage);
             String description =
-                  CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
+               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
 
             RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
             ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
@@ -99,19 +100,19 @@ public class Mercadolivre3pCrawler {
 
             // Creating the product
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
-                  .setSecondaryImages(secondaryImages != null ? secondaryImages.replace(".webp", ".jpg") : null)
-                  .setDescription(description)
-                  .setRatingReviews(ratingReviews)
-                  .setOffers(offers)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
+               .setSecondaryImages(secondaryImages != null ? secondaryImages.replace(".webp", ".jpg") : null)
+               .setDescription(description)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
 
             products.add(product);
          }
@@ -132,7 +133,6 @@ public class Mercadolivre3pCrawler {
       boolean mustAddProduct = this.allow3PSellers;
       if (!allow3PSellers) {
          List<Offer> offersList = offers.getOffersList();
-
          for (Offer offer : offersList) {
             if (offer.getIsMainRetailer()) {
                mustAddProduct = true;
@@ -141,7 +141,16 @@ public class Mercadolivre3pCrawler {
          }
       }
 
-      return offers.isEmpty() || mustAddProduct;
+      return mustAddProduct;
+   }
+
+   private boolean checkIfMustScrapProductUnavailable(Document doc) {
+      boolean mustAddProductUnavailable = this.allow3PSellers;
+      if (!allow3PSellers) {
+         mustAddProductUnavailable = scrapSeller(doc) != null ? scrapSeller(doc).equalsIgnoreCase(mainSellerNameLower) : false;
+      }
+
+      return mustAddProductUnavailable;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
@@ -211,22 +220,22 @@ public class Mercadolivre3pCrawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
    private Document acessHtmlWithAdvanedRating(String internalId) {
       StringBuilder url = new StringBuilder();
       url.append("https://produto.mercadolivre.com.br/noindex/catalog/reviews/")
-            .append(internalId)
-            .append("?noIndex=true")
-            .append("&contextual=true")
-            .append("&access=view_all")
-            .append("&quantity=1");
+         .append(internalId)
+         .append("?noIndex=true")
+         .append("&contextual=true")
+         .append("&access=view_all")
+         .append("&quantity=1");
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
@@ -239,8 +248,7 @@ public class Mercadolivre3pCrawler {
 
    }
 
-   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
-      Offers offers = new Offers();
+   private String scrapSeller(Document doc) {
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title a", false);
 
       if (sellerFullName == null) {
@@ -258,6 +266,12 @@ public class Mercadolivre3pCrawler {
             }
          }
       }
+      return sellerFullName;
+   }
+
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      String sellerFullName = scrapSeller(doc);
 
       boolean hasMainOffer = false;
 
@@ -266,14 +280,14 @@ public class Mercadolivre3pCrawler {
          List<String> sales = scrapSales(doc);
 
          offers.add(OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(sellerFullName)
-               .setMainPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
-               .setPricing(pricing)
-               .setSales(sales)
-               .build());
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(sellerFullName)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
 
          hasMainOffer = true;
       }
@@ -293,8 +307,8 @@ public class Mercadolivre3pCrawler {
 
          do {
             Request request = RequestBuilder.create()
-                  .setUrl(nextUrl)
-                  .build();
+               .setUrl(nextUrl)
+               .build();
 
             Document sellersHtml = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
             nextUrl = CrawlerUtils.scrapUrl(sellersHtml, ".andes-pagination__button--next:not(.andes-pagination__button--disabled) a", "href", "https", "www.mercadolivre.com.br");
@@ -314,14 +328,14 @@ public class Mercadolivre3pCrawler {
                      List<String> sales = scrapSales(e);
 
                      offers.add(OfferBuilder.create()
-                           .setUseSlugNameAsInternalSellerId(true)
-                           .setSellerFullName(sellerName)
-                           .setSellersPagePosition(sellersPagePosition)
-                           .setIsBuybox(true)
-                           .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerName))
-                           .setPricing(pricing)
-                           .setSales(sales)
-                           .build());
+                        .setUseSlugNameAsInternalSellerId(true)
+                        .setSellerFullName(sellerName)
+                        .setSellersPagePosition(sellersPagePosition)
+                        .setIsBuybox(true)
+                        .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerName))
+                        .setPricing(pricing)
+                        .setSales(sales)
+                        .build());
                   }
 
                   sellersPagePosition++;
@@ -336,13 +350,13 @@ public class Mercadolivre3pCrawler {
             Pricing pricing = scrapPricing(doc);
             List<String> sales = scrapSales(doc);
             offers.add(OfferBuilder.create()
-                  .setUseSlugNameAsInternalSellerId(true)
-                  .setSellerFullName(mainSellerNameLower)
-                  .setIsMainRetailer(true)
-                  .setIsBuybox(true)
-                  .setPricing(pricing)
-                  .setSales(sales)
-                  .build());
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(mainSellerNameLower)
+               .setIsMainRetailer(true)
+               .setIsBuybox(true)
+               .setPricing(pricing)
+               .setSales(sales)
+               .build());
          }
       }
    }
@@ -365,15 +379,15 @@ public class Mercadolivre3pCrawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-tag", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankTicket = BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
+         .setFinalPrice(spotlightPrice)
+         .build();
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankTicket)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankTicket)
+         .build();
    }
 
 
@@ -382,16 +396,16 @@ public class Mercadolivre3pCrawler {
 
       Installments installments = scrapInstallments(doc);
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
@@ -403,9 +417,9 @@ public class Mercadolivre3pCrawler {
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(selector, doc, false);
       if (!pair.isAnyValueNull()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(pair.getFirst())
-               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
-               .build());
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
+            .build());
       }
 
       return installments;
