@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -56,6 +58,7 @@ public class BrasilAmazonCrawler extends Crawler {
    public BrasilAmazonCrawler(Session session) {
       super(session);
       super.config.setMustSendRatingToKinesis(true);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -366,6 +369,7 @@ public class BrasilAmazonCrawler extends Crawler {
       }
 
 
+
       return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
    }
 
@@ -430,16 +434,21 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private Document fetchDocumentsOffersRequest(int page, String internalId){
-
+      Document doc;
       String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pageno=" + page;
 
       Map<String, String> headers = new HashMap<>();
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
-      String response =  amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, this.dataFetcher);
-      Document doc = Jsoup.parse(response);
-      headers.put("referer", urlMarketPlace);
+      int maxAttempt = 3;
+      int attempt =  1;
+
+      do {
+         String response =  amazonScraperUtils.fetchPage(urlMarketPlace, headers, cookies, dataFetcher);
+         doc = Jsoup.parse(response);
+         attempt ++;
+      } while(doc.selectFirst("#aod-offer") == null || attempt <= maxAttempt);
 
       return doc;
    }
