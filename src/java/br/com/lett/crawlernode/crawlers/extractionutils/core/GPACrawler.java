@@ -378,7 +378,7 @@ public class GPACrawler extends Crawler {
       return categories;
    }
 
-   public String crawlDescription(JSONObject json, String internalId) {
+   private String crawlDescription(JSONObject json, String internalId) {
       StringBuilder description = new StringBuilder();
       String attributesDescription = JSONUtils.getValueRecursive(json, "attributes.Descricao", String.class);
 
