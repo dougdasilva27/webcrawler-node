@@ -92,7 +92,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
    }
 
    Response alternativeFetch(Request request) {
-      List<DataFetcher> dataFetchers = Arrays.asList(new FetcherDataFetcher(), new ApacheDataFetcher(), new JsoupDataFetcher());
+      List<DataFetcher> dataFetchers = Arrays.asList(new ApacheDataFetcher(), new JsoupDataFetcher(), new FetcherDataFetcher());
 
       Response response = null;
 
