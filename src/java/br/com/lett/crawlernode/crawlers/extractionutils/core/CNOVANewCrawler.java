@@ -16,7 +16,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -136,29 +135,29 @@ public abstract class CNOVANewCrawler extends Crawler {
 
       Response response = new JsoupDataFetcher().get(session, request);
 
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-            Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404)) {
-
-         Request requestNew = RequestBuilder.create()
-               .setUrl(url)
-               .setCookies(cookies)
-               .setFetcheroptions(FetcherOptionsBuilder.create()
-                     .mustUseMovingAverage(false)
-                     .mustRetrieveStatistics(true)
-                     .build())
-               .setHeaders(headers)
-               .setProxyservice(
-                     Arrays.asList(
-                           ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                           ProxyCollection.NETNUT_RESIDENTIAL_BR
-                     )
-               ).build();
-
-         response = new FetcherDataFetcher().get(session, requestNew);
-      }
+      // int statusCode = response.getLastStatusCode();
+      //
+      // if ((Integer.toString(statusCode).charAt(0) != '2' &&
+      // Integer.toString(statusCode).charAt(0) != '3'
+      // && statusCode != 404)) {
+      //
+      // Request requestNew = RequestBuilder.create()
+      // .setUrl(url)
+      // .setCookies(cookies)
+      // .setFetcheroptions(FetcherOptionsBuilder.create()
+      // .mustUseMovingAverage(false)
+      // .mustRetrieveStatistics(true)
+      // .build())
+      // .setHeaders(headers)
+      // .setProxyservice(
+      // Arrays.asList(
+      // ProxyCollection.INFATICA_RESIDENTIAL_BR,
+      // ProxyCollection.NETNUT_RESIDENTIAL_BR
+      // )
+      // ).build();
+      //
+      // response = new FetcherDataFetcher().get(session, requestNew);
+      // }
 
       return response;
    }
