@@ -129,7 +129,7 @@ public abstract class CNOVANewCrawler extends Crawler {
                   Arrays.asList(
                         ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                         ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-                        ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+                        ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
                   )
             ).build();
 
@@ -153,7 +153,7 @@ public abstract class CNOVANewCrawler extends Crawler {
                .setProxyservice(
                      Arrays.asList(
                            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                           ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+                           ProxyCollection.NETNUT_RESIDENTIAL_BR
                      )
                ).build();
 
