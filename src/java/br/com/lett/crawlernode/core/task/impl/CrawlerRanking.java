@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.session.ranking.*;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -40,10 +41,6 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
@@ -94,6 +91,10 @@ public abstract class CrawlerRanking extends Task {
    // variável que identifica se há resultados na página
    protected boolean result;
 
+   public List<RankingProducts> getArrayProducts() {
+      return arrayProducts;
+   }
+
    public CrawlerRanking(Session session, String rankType, Logger logger) {
       this.session = session;
 
@@ -137,7 +138,9 @@ public abstract class CrawlerRanking extends Task {
       // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
       // }
 
-      S3Service.uploadCrawlerSessionContentToAmazon(session);
+      if(!(session instanceof TestRankingKeywordsSession)) {
+         S3Service.uploadCrawlerSessionContentToAmazon(session);
+      }
 
       // close the webdriver
       if (webdriver != null) {
@@ -190,7 +193,7 @@ public abstract class CrawlerRanking extends Task {
 
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
             if (session instanceof RankingSession || session instanceof RankingDiscoverSession || session instanceof EqiRankingDiscoverKeywordsSession
-                  && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+                  && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
 
                sendMessagesToAmazonAndMongo();
             }
@@ -240,6 +243,10 @@ public abstract class CrawlerRanking extends Task {
       } else if (this.fetchMode == FetchMode.FETCHER) {
          dataFetcher = new FetcherDataFetcher();
       }
+   }
+
+   public void setProductsLimit(int productsLimit) {
+      this.productsLimit = productsLimit;
    }
 
    /**

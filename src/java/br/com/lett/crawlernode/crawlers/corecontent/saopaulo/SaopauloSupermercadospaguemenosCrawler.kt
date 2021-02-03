@@ -15,6 +15,7 @@ import models.pricing.Pricing.PricingBuilder
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
+import java.util.*
 
 class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(session) {
 
@@ -34,14 +35,15 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
 
          val name = document.selectFirst("h1")?.text()
          val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".bt-checkout", "data-sku")
+         val description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".infos [itemprop='description'] p"))
          val categories = document.select("li a[itemprop='item'] span").eachText(ignoreIndexes = arrayOf(0))
          val available = isAvailable(document)
          val offers = if (available) scrapOffers(document) else Offers()
 
          val primaryImage = document.selectFirst(".clearfix li a")?.attr("big_img")?.replaceFirst("//", "https://")
 
-         val secondaryImages : MutableList<String> = mutableListOf();
-         document.select(".clearfix li:not(:first-child) a")?.forEach { element -> secondaryImages.add(element.attr("big_img").replaceFirst("//", "https://"))  }
+         val secondaryImages: MutableList<String> = mutableListOf();
+         document.select(".clearfix li:not(:first-child) a")?.forEach { element -> secondaryImages.add(element.attr("big_img").replaceFirst("//", "https://")) }
 
          val ratingReviews: RatingsReviews = scrapRating(document)
 
@@ -52,6 +54,7 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
+            .setDescription(description)
             .setSecondaryImages(secondaryImages)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
@@ -66,13 +69,13 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
       return doc.selectFirst("#product") != null
    }
 
-   private fun isAvailable(doc: Document): Boolean{
+   private fun isAvailable(doc: Document): Boolean {
       return scrapPrice(doc) != null
    }
 
    private fun scrapPrice(doc: Document): Double? {
-     var price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale .sale_price", null, true, ',', session)
-      if ( price == 0.0) {
+      var price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale .sale_price", null, true, ',', session)
+      if (price == 0.0) {
          price = null
       }
       return price

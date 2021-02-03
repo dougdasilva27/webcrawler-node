@@ -6,6 +6,11 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import exceptions.MalformedRatingModel;
+import exceptions.OfferException;
 import org.apache.commons.lang3.SerializationUtils;
 import org.bson.BsonNull;
 import org.json.JSONArray;
@@ -392,5 +397,48 @@ public class Product implements Serializable {
       linkedMap.put(RATING_STAR_FIELD, rating.getAdvancedRatingReview() != null ? rating.getAdvancedRatingReview().toDocument() : new AdvancedRatingReview().toDocument());
 
       return new org.bson.Document(linkedMap).toJson();
+   }
+
+   public static Product fromJSON(JSONObject json) throws MalformedProductException, OfferException, MalformedRatingModel {
+
+      String url = json.optString("url", null);
+      String internalId = json.optString("internal_id", null);
+      String internalPid = json.optString("internal_pid", null);
+      String description = json.optString("original_description", null);
+      String primaryImage = json.optString("pic", null);
+      String secondaryImages = json.optString("secondary_pics", null);
+
+      CategoryCollection categories = new CategoryCollection();
+      categories.add(json.optString("cat1", null));
+      categories.add(json.optString("cat2", null));
+      categories.add(json.optString("cat3", null));
+
+      String name = json.optString("original_name", null);
+
+      List<String> eans = json.optJSONArray("eans").toList().stream().map(Object::toString).collect(Collectors.toList());
+
+      boolean available = json.optBoolean("available", false);
+
+      String offersStr = JSONUtils.getValueRecursive(json, "offers.value", String.class);
+
+      Offers offers = available ? new Offers(JSONUtils.stringToJsonArray(offersStr)) : new Offers();
+
+      String ratingStr = JSONUtils.getValueRecursive(json, "rating.value", String.class);
+
+      RatingsReviews ratingsReviews = new RatingsReviews(JSONUtils.stringToJson(ratingStr));
+
+      return ProductBuilder.create()
+         .setUrl(url)
+         .setInternalId(internalId)
+         .setInternalPid(internalPid)
+         .setName(name)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(secondaryImages)
+         .setCategories(categories)
+         .setDescription(description)
+         .setEans(eans)
+         .setOffers(offers)
+         .setRatingReviews(ratingsReviews)
+         .build();
    }
 }

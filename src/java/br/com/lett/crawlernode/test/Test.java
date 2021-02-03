@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.test;
 
+import br.com.lett.crawlernode.core.models.Product;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -16,6 +17,10 @@ import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.Logging;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 
@@ -39,6 +44,8 @@ public class Test {
    public static String phantomjsPath;
 
    private static final Logger LOGGER = LoggerFactory.getLogger(Test.class);
+
+   public static Map<String, List<Product>> products = new HashMap<>();
 
    public static void main(String args[]) {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");

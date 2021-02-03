@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.apache.http.cookie.Cookie;
@@ -342,6 +343,14 @@ public class Crawler extends Task {
             String status = getFirstPartyRegexStatus(p);
 
             TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
+         }
+
+         List<Product> productsMap = Test.products.get(p.getUrl());
+
+         if (productsMap == null) {
+            Test.products.put(p.getUrl(), Collections.singletonList(p));
+         } else {
+            productsMap.add(p);
          }
 
          printCrawledInformation(p);
