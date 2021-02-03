@@ -1,35 +1,34 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
 
-public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
-
-   public CarrefourCrawler(Session session) {
+   public VTEXRankingKeywords(Session session) {
       super(session);
    }
 
@@ -159,7 +158,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       }
 
       JSONObject searchApi = fetchSearchApi();
-      JSONArray products = JSONUtils.getJSONArrayValue(searchApi, "products");
+      JSONArray products = JSONUtils.getJSONArrayValue(searchApi,"products");
 
       if (products.length() > 0) {
 
@@ -170,7 +169,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
          for (Object object : products) {
             JSONObject product = (JSONObject) object;
             String productUrl = CrawlerUtils.completeUrl(product.optString("linkText") + "/p", "https",
-                  getHomePage().replace("https://", "").replace("/", ""));
+               getHomePage().replace("https://", "").replace("/", ""));
             String internalPid = product.optString("productId");
 
             saveDataProduct(null, internalPid, productUrl);
@@ -198,11 +197,11 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    /**
     * This function request a api with a JSON encoded on BASE64
     *
-    * This json has informations like: pageSize, keyword and substantive {@link fetchSubstantive}
     *
     * @return
     */
    private JSONObject fetchSearchApi() {
+      JSONObject searchApi = new JSONObject();
       StringBuilder url = new StringBuilder();
       url.append(getHomePage() + "_v/segment/graphql/v1?");
 
@@ -235,14 +234,16 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       log("Link onde são feitos os crawlers:" + url);
 
       Request request = Request.RequestBuilder.create()
-            .setUrl(url.toString())
-            .setCookies(cookies)
-            .setPayload(payload.toString())
-            .build();
+         .setUrl(url.toString())
+         .setCookies(cookies)
+         .setPayload(payload.toString())
+         .build();
 
       JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
-      return JSONUtils.getValueRecursive(response, "data.productSearch", JSONObject.class, new JSONObject());
+      searchApi = JSONUtils.getValueRecursive(response, "data.productSearch", JSONObject.class, new JSONObject());
+
+      return searchApi;
    }
 
    private String createVariablesBase64() {
@@ -269,7 +270,6 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       search.put("fullText", this.location);
       search.put("operator", JSONObject.NULL);
       search.put("fuzzy", JSONObject.NULL);
-      search.put("excludedPaymentSystems", new JSONArray().put("Cartão Carrefour"));
       search.put("facetsBehavior", "dynamic");
       search.put("withFacets", false);
 

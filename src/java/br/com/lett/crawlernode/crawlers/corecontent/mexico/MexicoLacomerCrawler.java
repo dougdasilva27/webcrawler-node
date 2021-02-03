@@ -2,8 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -26,23 +24,22 @@ import java.util.regex.Pattern;
 
 /**
  * Date: 28/11/2016
- * 
+ * <p>
  * 1) Only one sku per page.
- * 
+ * <p>
  * Price crawling notes: 1) We couldn't find any sku with status available when writing this
  * crawler. 2) There is no bank slip (boleto bancario) payment option. 3) There is no installments
  * for card payment. So we only have 1x payment, and for this value we use the cash price crawled
  * from the sku page. (nao existe divisao no cartao de credito). 4) In this market has two others
  * possibles markets, City Market = 305 and Fresko = 14 5) In page of product, has all physicals
  * stores when it is available.
- * 
+ * <p>
  * Url example:
  * http://www.lacomer.com.mx/lacomer/doHome.action?succId=14&pasId=63&artEan=7501055901401&ver=detallearticulo&opcion=detarticulo
- * 
+ * <p>
  * pasId -> Lacomer succId -> Tienda Lomas Anahuac (Mondelez choose)
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class MexicoLacomerCrawler extends Crawler {
 
@@ -62,13 +59,14 @@ public class MexicoLacomerCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Request request = Request.RequestBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setCookies(cookies)
-              .setProxyservice(
-                      Arrays.asList(
-                              ProxyCollection.NETNUT_RESIDENTIAL_MX
-                      )
-              ).build();
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX
+            )
+         ).build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -98,9 +96,9 @@ public class MexicoLacomerCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
          products.add(product);
 
@@ -257,12 +255,11 @@ public class MexicoLacomerCrawler extends Crawler {
 
    /**
     * There is no bankSlip price.
-    * 
+    * <p>
     * There is no card payment options, other than cash price. So for installments, we will have only
     * one installment for each card brand, and it will be equals to the price crawled on the sku main
     * page.
-    * 
-    * @param doc
+    *
     * @param price
     * @return
     */

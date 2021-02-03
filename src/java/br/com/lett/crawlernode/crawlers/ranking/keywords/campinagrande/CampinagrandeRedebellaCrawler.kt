@@ -44,7 +44,7 @@ class CampinagrandeRedebellaCrawler(session: Session) : CrawlerRankingKeywords(s
     }
 
     override fun setTotalProducts() {
-        val fullText = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".row .text-left", true)
+        val fullText = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".row .text-left", true) ?: ""
         val split: List<String?> = fullText.split("de", "(")
         totalProducts = split.getOrNull(split.lastIndex - 1)?.trim()?.toInt() ?: 0
         log("Total da busca: $totalProducts")

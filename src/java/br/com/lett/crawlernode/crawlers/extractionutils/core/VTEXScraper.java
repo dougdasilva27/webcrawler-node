@@ -63,11 +63,13 @@ public abstract class VTEXScraper extends Crawler {
          String description = scrapDescription(doc, productJson);
          processBeforeScrapVariations(doc, productJson, internalPid);
          if (productJson != null) {
-            JSONArray items = productJson.has("items") && !productJson.isNull("items") ? productJson.getJSONArray("items") : new JSONArray();
+            JSONArray items = JSONUtils.getJSONArrayValue(productJson, "items");
 
             for (int i = 0; i < items.length(); i++) {
-               JSONObject jsonSku = items.getJSONObject(i);
-
+               JSONObject jsonSku = items.optJSONObject(i);
+               if (jsonSku == null) {
+                  jsonSku = new JSONObject();
+               }
                Product product = extractProduct(doc, internalPid, categories, description, jsonSku, productJson);
                products.add(product);
             }
@@ -87,7 +89,7 @@ public abstract class VTEXScraper extends Crawler {
    }
 
    protected Product extractProduct(Document doc, String internalPid, CategoryCollection categories, String description, JSONObject jsonSku, JSONObject productJson) throws Exception {
-      String internalId = jsonSku.has("itemId") ? jsonSku.get("itemId").toString() : null;
+      String internalId = jsonSku.optString("itemId", null);
       String name = scrapName(doc, productJson, jsonSku);
       List<String> images = scrapImages(doc, jsonSku, internalPid, internalId);
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
@@ -102,9 +104,7 @@ public abstract class VTEXScraper extends Crawler {
          .setInternalId(internalId)
          .setInternalPid(internalPid)
          .setName(name)
-         .setCategory1(categories.getCategory(0))
-         .setCategory2(categories.getCategory(1))
-         .setCategory3(categories.getCategory(2))
+         .setCategories(categories)
          .setPrimaryImage(primaryImage)
          .setSecondaryImages(images)
          .setOffers(offers)
@@ -205,7 +205,7 @@ public abstract class VTEXScraper extends Crawler {
    protected Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      JSONArray sellers = jsonSku.getJSONArray("sellers");
+      JSONArray sellers = jsonSku.optJSONArray("sellers");
       if (sellers != null) {
          int position = 1;
          for (Object o : sellers) {

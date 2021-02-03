@@ -101,7 +101,7 @@ abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
          .build()
    }
 
-   private fun scrapNameAndBrand(doc: Document): String {
+   private fun scrapNameAndBrand(doc: Document): String? {
 
       var brandWithName = "";
 
