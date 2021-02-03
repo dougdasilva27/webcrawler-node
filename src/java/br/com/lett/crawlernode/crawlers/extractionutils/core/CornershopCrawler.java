@@ -169,8 +169,15 @@ public abstract class CornershopCrawler extends Crawler {
    private String crawlName(JSONObject json) {
       String name = JSONUtils.getStringValue(json, "name");
       String brand = JSONUtils.getValueRecursive(json, "brand.name", String.class);
-
-      return brand != null && name != null ? brand + " . " + name : null;
+      String quantity = JSONUtils.getStringValue(json, "package");
+      String nameComplete = null;
+      if (brand != null && name != null) {
+         nameComplete = brand + " . " + name;
+         if (quantity != null) {
+            return nameComplete + " " + quantity;
+         }
+      }
+      return nameComplete;
    }
 
    private boolean crawlAvailability(JSONObject json) {
