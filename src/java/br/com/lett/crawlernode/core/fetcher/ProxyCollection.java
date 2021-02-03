@@ -34,7 +34,7 @@ public class ProxyCollection {
    public static final String NETNUT_RESIDENTIAL_BR = "netnut_residential_br";
    public static final String NETNUT_RESIDENTIAL_BR_HAPROXY = "netnut_residential_br_haproxy";
    public static final String NETNUT_RESIDENTIAL_ES = "netnut_residential_es";
-   public static final String NETNUT_RESIDENTIAL_ES_HAPROXY = "netnut_residential_ES_haproxy";
+   public static final String NETNUT_RESIDENTIAL_ES_HAPROXY = "netnut_residential_es_haproxy";
    public static final String NETNUT_RESIDENTIAL_MX = "netnut_residential_mx";
    public static final String INFATICA_RESIDENTIAL_BR_HAPROXY = "infatica_residential_br_haproxy";
    public static final String BR_OXYLABS = "br-oxylabs";
