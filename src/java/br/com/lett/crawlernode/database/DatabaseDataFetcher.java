@@ -3,17 +3,23 @@ package br.com.lett.crawlernode.database;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import dbmodels.tables.SupplierTrackedLett;
+import exceptions.MalformedRatingModel;
+import exceptions.OfferException;
 import org.bson.Document;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.conf.ParamType;
+import org.jooq.impl.DSL;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.FindIterable;
@@ -227,5 +233,147 @@ public class DatabaseDataFetcher {
       }
 
       return proxiesMap;
+   }
+
+   public List<Product> fetchInsightsProductsFromMarket(Long marketId, List<Long> suppliersId, boolean isWebdriver) {
+
+      Set<Long> lettIds = fetchLettIdsFromSuppliers(suppliersId);
+
+      return fetchProductsFromLettIds(marketId, lettIds, isWebdriver);
+   }
+
+   public Set<Long> fetchLettIdsFromSuppliers(List<Long> suppliersId) {
+      Set<Long> trackedLettIds = new HashSet<>();
+
+      for (Long supplierId : suppliersId) {
+         Set<Long> result = fetchLettIdsFromSupplierId(supplierId);
+
+         trackedLettIds.addAll(result);
+      }
+      return trackedLettIds;
+   }
+
+   Set<Long> fetchLettIdsFromSupplierId(Long supplierId) {
+      Set<Long> lettIds = new HashSet<>();
+
+      SupplierTrackedLett supplierTrackedLett = Tables.SUPPLIER_TRACKED_LETT;
+
+      String query = "SELECT DISTINCT lett_id, (tracked_full.tracked_by_supplier <> tracked_full.lett_supplier_id) AS competitor " +
+         "FROM (SELECT lett_id, tracked_by_supplier, supplier.id AS lett_supplier_id " +
+         "FROM (SELECT lett_id, supplier_id AS tracked_by_supplier " +
+         "FROM supplier_tracked_lett " +
+         "JOIN supplier_tracked_markets " +
+         "USING (supplier_id) " +
+         "WHERE supplier_id = " + supplierId + ") AS tracked " +
+         "LEFT JOIN lett ON " +
+         "tracked.lett_id = lett.id " +
+         "LEFT JOIN brand ON " +
+         "lett.brand_id = brand.id " +
+         "LEFT JOIN supplier ON " +
+         "brand.supplier_id = supplier.id) AS tracked_full " +
+         "WHERE tracked_by_supplier = " + supplierId;
+
+      Result<Record> result = fetchQuery(query);
+
+      if (result != null) {
+         lettIds = result
+            .stream()
+            .filter(record -> (!(Boolean) record.get("competitor")))
+            .map(record -> (record.get(supplierTrackedLett.LETT_ID)))
+            .collect(Collectors.toSet());
+      }
+
+      return lettIds;
+   }
+
+   Set<String> fetchKeywordsFromSupplierId(Long supplierId) {
+      Set<String> keywords = new HashSet<>();
+
+
+
+      return keywords;
+   }
+
+   List<Product> fetchProductsFromLettIds(Long marketId, Set<Long> lettIds, boolean isWebdriver) {
+
+      List<Product> products = new ArrayList<>();
+
+      dbmodels.tables.Processed processed = Tables.PROCESSED;
+      dbmodels.tables.Unification unification = Tables.UNIFICATION;
+      dbmodels.tables.Market marketTable = Tables.MARKET;
+
+      Condition condition = isWebdriver ? marketTable.CRAWLER_WEBDRIVER.isTrue() : marketTable.CRAWLER_WEBDRIVER.isFalse();
+
+      String query = DSL.select(
+         processed.ID.as("processed_id"),
+         processed.INTERNAL_ID,
+         processed.ORIGINAL_NAME,
+         processed.URL,
+         processed.MARKET,
+         processed.INTERNAL_PID,
+         processed.AVAILABLE,
+         processed.VOID,
+         processed.PIC,
+         processed.SECONDARY_PICS,
+         processed.CAT1,
+         processed.CAT2,
+         processed.CAT3,
+         processed.ORIGINAL_DESCRIPTION,
+         processed.RATING,
+         processed.EANS
+      )
+         .from(processed)
+         .rightJoin(unification).on(processed.INTERNAL_ID.eq(unification.INTERNAL_ID)
+            .and(processed.MARKET.eq(unification.MARKET_ID.cast(Integer.class))))
+         .join(marketTable).on(marketTable.ID.eq(unification.MARKET_ID))
+         .where(unification.MARKET_ID.eq(marketId))
+         .and(unification.LETT_ID.in(lettIds))
+         .and(condition)
+         .toString();
+
+      try {
+         Result<Record> result = fetchQuery(query);
+
+         for (Record record : result) {
+            Product product = recordToProduct(record);
+            products.add(product);
+         }
+      } catch (Exception e) {
+         Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      }
+
+      return products;
+   }
+
+   private Product recordToProduct(Record record) throws MalformedProductException, OfferException, MalformedRatingModel {
+      Map<String, Object> m = record.intoMap();
+
+      JSONObject json = new JSONObject(m);
+
+      return Product.fromJSON(json);
+   }
+
+   Result<Record> fetchQuery(String query) {
+      Connection conn = null;
+      Statement sta = null;
+      ResultSet rs = null;
+
+      Result<Record> result = null;
+
+      try {
+         conn = JdbcConnectionFactory.getInstance().getConnection();
+         sta = conn.createStatement();
+         rs = sta.executeQuery(query);
+
+         result = this.databaseManager.jooqPostgres.fetch(rs);
+
+      } catch (Exception e) {
+         Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      } finally {
+         JdbcConnectionFactory.closeResource(rs);
+         JdbcConnectionFactory.closeResource(sta);
+         JdbcConnectionFactory.closeResource(conn);
+      }
+      return result;
    }
 }
