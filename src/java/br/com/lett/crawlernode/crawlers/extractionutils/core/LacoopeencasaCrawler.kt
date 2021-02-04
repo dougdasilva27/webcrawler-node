@@ -52,9 +52,7 @@ abstract class LacoopeencasaCrawler (session: Session) : Crawler(session){
 
          val response = dataFetcher.get(session, request)
 
-         return response.cookies.filter {
-            it.name == "_lcec_linf" && it.value.contains("id_provincia")
-         }
+         return response.cookies
       }
    }
 
@@ -80,7 +78,7 @@ abstract class LacoopeencasaCrawler (session: Session) : Crawler(session){
 
       val headers = getHeaders(session.originalURL)
 
-      headers["Cookie"] += this.cookies.firstOrNull { it.name == "_lcec_linf" }?.let { "${it.name}=${it.value};" } ?: ""
+      headers["Cookie"] += CommonMethods.cookiesToString(this.cookies)
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -93,8 +91,10 @@ abstract class LacoopeencasaCrawler (session: Session) : Crawler(session){
    override fun extractInformation(json: JSONObject): MutableList<Product> {
 
       if (!isProductPage(json)) {
+         Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
          return mutableListOf()
       }
+      Logging.printLogDebug(logger, session, "Product page identified: " + session.originalURL)
 
       val productData = JSONUtils.getJSONValue(json, "datos")
 
