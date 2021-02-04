@@ -51,13 +51,18 @@ public class AmazonScraperUtils {
                            ProxyCollection.INFATICA_RESIDENTIAL_BR,
                            ProxyCollection.NETNUT_RESIDENTIAL_BR))
                .mustSendContentEncoding(false)
-               .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
+               .setFetcheroptions(FetcherOptionsBuilder.create()
+                     .mustRetrieveStatistics(true)
+                     .setForbiddenCssSelector("#captchacharacters")
+                     .build())
                .build();
       } else {
          request = RequestBuilder.create()
                .setUrl(url)
                .setCookies(cookies)
-               .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
+               .setFetcheroptions(FetcherOptionsBuilder.create()
+                     .mustRetrieveStatistics(true)
+                     .setForbiddenCssSelector("#captchacharacters").build())
                .build();
       }
 
@@ -96,11 +101,12 @@ public class AmazonScraperUtils {
             .setHeaders(headers)
             .setProxyservice(
                   Arrays.asList(
-                     ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                     ProxyCollection.BUY,
-                     ProxyCollection.NETNUT_RESIDENTIAL_BR))
-            .mustSendContentEncoding(false)
-            .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
+                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                        ProxyCollection.BUY,
+                        ProxyCollection.NETNUT_RESIDENTIAL_BR))
+            .setFetcheroptions(FetcherOptionsBuilder.create()
+                  .mustRetrieveStatistics(true)
+                  .setForbiddenCssSelector("#captchacharacters").build())
             .build();
 
       Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
