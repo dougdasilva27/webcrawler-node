@@ -1,24 +1,39 @@
 package br.com.lett.crawlernode.test
 
-fun main() {
-   TestUtils.initialize()
-   Test.pathWrite = ""
+import br.com.lett.crawlernode.util.CommonMethods
+import org.json.JSONArray
 
-//   discovery()
-   coreRanking()
+
+val saveLog = true;
+lateinit var logJson : JSONArray
+
+
+fun main() {
+   logJson = JSONArray()
+   TestUtils.initialize()
+   Test.pathWrite = "/home/bussolotti/crawler/htmls-crawler/"
+
+
+   discovery()
+
+//   coreRanking()
+
+
+
+   CommonMethods.saveDataToAFile(logJson,Test.pathWrite+"/log.json")
 }
 
 
 
 private fun discovery() {
 
-   val marketId: Long = 0
+   val marketId: Long = 113
 
    val keywords = listOf(
-      "carne"
+      "celular"
    )
 
-   LocalDiscovery().discovery(marketId, keywords, 10, 5)
+   LocalDiscovery().discovery(marketId, keywords, 2, 5)
 }
 
 

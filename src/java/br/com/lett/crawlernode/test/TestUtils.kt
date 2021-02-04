@@ -16,6 +16,10 @@ import br.com.lett.crawlernode.main.GlobalConfigurations
 import br.com.lett.crawlernode.processor.ResultManager
 import br.com.lett.crawlernode.core.task.base.Task
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
+import com.google.gson.JsonObject
+import org.json.JSONArray
+import org.json.JSONObject
+import java.lang.Exception
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
@@ -115,5 +119,13 @@ class TestUtils {
          while (!executor.isTerminated) {
          }
       }
+
+      @JvmStatic
+      fun addExeptionToJsonArray(e: Exception, url: String?) {
+         val erro: JSONObject = JSONObject()
+         erro.put(url, e.stackTraceToString())
+         logJson.put(erro)
+      }
+
    }
 }

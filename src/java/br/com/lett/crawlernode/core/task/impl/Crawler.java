@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import br.com.lett.crawlernode.test.GeneralTestKt;
+import br.com.lett.crawlernode.test.TestUtils;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -500,6 +503,9 @@ public class Crawler extends Task {
             products = extractInformation((JSONArray) obj);
          }
       } catch (Exception e) {
+         if(session instanceof TestCrawlerSession){
+            TestUtils.addExeptionToJsonArray(e,session.getOriginalURL());
+         }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
