@@ -1,13 +1,24 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import java.util.Arrays;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.RappiCrawlerOld;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BrasilRappiCrawlerRanking;
 
-public class SaopauloRappidrogaraiaCrawler extends RappiCrawlerOld {
+public class SaopauloRappidrogaraiaCrawler extends BrasilRappiCrawlerRanking {
 
    public SaopauloRappidrogaraiaCrawler(Session session) {
-      super(session, Arrays.asList("900004148"));
+      super(session);
    }
 
+   public static final String STORE_ID = "900004148";
+   public static final String STORE_TYPE = "hiper";
+
+   @Override
+   protected String getStoreId() {
+      return STORE_ID;
+   }
+
+   @Override
+   protected String getStoreType() {
+      return STORE_TYPE;
+   }
 }
