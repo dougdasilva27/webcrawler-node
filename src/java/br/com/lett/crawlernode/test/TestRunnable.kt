@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.test
 
+import br.com.lett.crawlernode.core.task.base.Task
+
 class TestRunnable(
    val city: String = "",
    val marketName: String = "",
@@ -9,7 +11,9 @@ class TestRunnable(
    val productsLimit: Int = 0
 ) : Runnable {
 
+   var tasks: List<Task> = listOf()
+
    override fun run() {
-      TestUtils.taskProcess(city, marketName, marketId, parameters, currentTest, productsLimit)
+      tasks = TestUtils.taskProcess(city, marketName, marketId, parameters, currentTest, productsLimit)
    }
 }
