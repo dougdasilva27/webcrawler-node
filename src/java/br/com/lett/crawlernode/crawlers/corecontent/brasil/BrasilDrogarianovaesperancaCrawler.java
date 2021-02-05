@@ -41,7 +41,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
    public BrasilDrogarianovaesperancaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
