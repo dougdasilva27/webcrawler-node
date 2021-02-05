@@ -33,3 +33,4 @@ public class ArgentinaCordiezCrawler extends VTEXOldScraper {
       return null;
    }
 }
+

@@ -39,6 +39,7 @@ public class ArgentinaCordiezCrawler  extends CrawlerRankingKeywords {
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) break;
          }
+
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
