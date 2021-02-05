@@ -335,6 +335,11 @@ public class Crawler extends Task {
       try {
          products = extract();
       } catch (Exception e) {
+
+         if(session instanceof TestCrawlerSession){
+            ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
+         }
+
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          products = new ArrayList<>();
       }
@@ -342,23 +347,32 @@ public class Crawler extends Task {
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
       for (Product p : products) {
+
+
+
          if (Test.pathWrite != null) {
             String status = getFirstPartyRegexStatus(p);
 
             TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
          }
-
-         List<Product> productsMap = Test.products.get(p.getUrl());
-
-         if (productsMap == null) {
-            Test.products.put(p.getUrl(), Collections.singletonList(p));
-         } else {
-            productsMap.add(p);
-         }
-
+         addProductsTest(p);
          printCrawledInformation(p);
       }
    }
+
+   private static void addProductsTest(Product product){
+
+      List<Product> productsMap = Test.products.get(product.getUrl());
+
+      if (productsMap == null) {
+         Test.products.put(product.getUrl(), Collections.singletonList(product));
+      } else {
+         productsMap.add(product);
+      }
+
+   }
+
+
 
    /**
     * This method is responsible for the main post processing stages of a crawled product. It takes
@@ -491,6 +505,7 @@ public class Crawler extends Task {
       session.setOriginalURL(url);
 
       Object obj = fetch();
+
       session.setProductPageResponse(obj);
       List<Product> products = new ArrayList<>();
 
@@ -504,7 +519,7 @@ public class Crawler extends Task {
          }
       } catch (Exception e) {
          if(session instanceof TestCrawlerSession){
-            TestUtils.addExeptionToJsonArray(e,session.getOriginalURL());
+            ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }

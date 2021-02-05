@@ -1,9 +1,15 @@
 package br.com.lett.crawlernode.test
 
 import br.com.lett.crawlernode.core.models.RankingProducts
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
+import br.com.lett.crawlernode.util.CommonMethods
+import org.json.JSONArray
+import org.json.JSONObject
 
 class LocalDiscovery {
+
+   val errors = JSONArray()
 
    fun discovery(marketId: Long, supplierId: Long, maxProducts: Int) {
 
@@ -41,7 +47,19 @@ class LocalDiscovery {
 
       val urls = products.map { it.url }
 
-      TestUtils.poolTaskProcess(marketId = marketId, parameters = urls, currentTest = TestType.INSIGHTS, corePoolSize = corePoolSize)
+      val tests = TestUtils.poolTaskProcess(marketId = marketId, parameters = urls, currentTest = TestType.INSIGHTS, corePoolSize = corePoolSize)
+
+      for (test in tests){
+         for (task in test.tasks){
+            if(task is TestCrawlerSession){
+               val error = JSONObject()
+               error.put(task.originalURL, task.lastError)
+               errors.put(error)
+            }
+         }
+      }
+
+      CommonMethods.saveDataToAFile(errors,Test.pathWrite+"/log.json")
 
       val productsScraped = Test.products
 

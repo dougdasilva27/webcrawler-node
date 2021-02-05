@@ -108,16 +108,19 @@ class TestUtils {
       }
 
 
-      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1) {
+      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1) : List<TestRunnable> {
+         val tests : MutableList<TestRunnable> = mutableListOf()
 
          val executor = PoolExecutor(corePoolSize, corePoolSize, 0L, TimeUnit.SECONDS, LinkedBlockingQueue(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE), RejectedTaskHandler())
          for (param in parameters) {
             val t = TestRunnable(city, marketName, marketId, listOf(param), currentTest, productsLimit)
             executor.execute(t)
+            tests.add(t)
          }
          executor.shutdown()
          while (!executor.isTerminated) {
          }
+         return tests
       }
 
       @JvmStatic

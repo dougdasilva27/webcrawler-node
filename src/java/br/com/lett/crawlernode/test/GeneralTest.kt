@@ -4,12 +4,8 @@ import br.com.lett.crawlernode.util.CommonMethods
 import org.json.JSONArray
 
 
-val saveLog = true;
-lateinit var logJson : JSONArray
-
-
 fun main() {
-   logJson = JSONArray()
+
    TestUtils.initialize()
    Test.pathWrite = "/home/bussolotti/crawler/htmls-crawler/"
 
@@ -20,20 +16,20 @@ fun main() {
 
 
 
-   CommonMethods.saveDataToAFile(logJson,Test.pathWrite+"/log.json")
+
 }
 
 
 
 private fun discovery() {
 
-   val marketId: Long = 113
+   val marketId: Long = 363
 
    val keywords = listOf(
-      "celular"
+      "cafetera"
    )
 
-   LocalDiscovery().discovery(marketId, keywords, 2, 5)
+   LocalDiscovery().discovery(marketId, keywords, 10, 50)
 }
 
 
