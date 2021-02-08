@@ -1,88 +1,79 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import java.util.Arrays;
-import org.json.JSONObject;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.MathUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-public class FalabellaCrawler extends CrawlerRankingKeywords {
+import java.util.Arrays;
 
-  private String HOME_PAGE = "https://www.falabella.com/falabella-cl/";
+public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
 
-  public FalabellaCrawler(Session session) {
-    super(session);
-  }
+   private final String HOME_PAGE = getHomePage();
 
-  protected void setHomePage(String homePage) {
-    this.HOME_PAGE = homePage;
-  }
+   protected FalabellaCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 32;
+   protected abstract String getHomePage();
 
-    this.log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 48;
 
-    String url = HOME_PAGE + "search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
-    this.log("Link onde são feitos os crawlers: " + url);
+      this.log("Página " + this.currentPage);
 
-    this.currentDoc = fetchDocument(url);
+      String url = HOME_PAGE + "search/?Ntt=" + this.keywordEncoded + "&page=" + this.currentPage;
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    Elements products = this.currentDoc.select(".fb-pod-group__item--product > [data-sku-id]");
+      this.currentDoc = fetchDocument(url);
 
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
+      Elements products = this.currentDoc.select(".search-results--products > div");
+
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
+         for (Element e : products) {
+
+            String internalId = scarpInternalId(e);
+            String internalPId = internalId;
+            String productUrl = crawlProductUrl(e);
+
+            saveDataProduct(internalId, internalPId, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPId + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-      for (Element e : products) {
-        String internalId = e.attr("data-sku-id");
-        String productUrl = crawlProductUrl(e);
 
-        saveDataProduct(internalId, null, productUrl);
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+   protected String scarpInternalId(Element e){
+      String value = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,"div[id*=testId-pod-]","id");
+      return CommonMethods .getLast(value.split("-"));
+   }
 
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+   @Override
+   protected void setTotalProducts() {
+      String reslt = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".total-results span", true);
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.totalProducts = MathUtils.parseInt(reslt);
+      this.log("Total da busca: " + this.totalProducts);
+   }
 
-  @Override
-  protected void setTotalProducts() {
-    JSONObject json = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "script", "var fbra_browseProductListConfig =", ";", false, false);
-    if (json.has("state")) {
-      JSONObject state = json.getJSONObject("state");
-
-      if (state.has("searchItemList")) {
-        JSONObject searchItemList = state.getJSONObject("searchItemList");
-
-        if (searchItemList.has("resultsTotal") && searchItemList.get("resultsTotal") instanceof Integer) {
-          this.totalProducts = searchItemList.getInt("resultsTotal");
-        }
-      }
-    }
-
-    this.log("Total da busca: " + this.totalProducts);
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.selectFirst(".fb-pod__header-link");
-    if (url != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(url, Arrays.asList("href"), "https:", "www.falabella.com");
-    }
-    return productUrl;
-  }
+   private String crawlProductUrl(Element e) {
+      return  CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".pod-head a","href");
+   }
 
 }
