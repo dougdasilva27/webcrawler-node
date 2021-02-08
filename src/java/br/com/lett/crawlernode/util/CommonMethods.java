@@ -1,30 +1,6 @@
 package br.com.lett.crawlernode.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
+import br.com.lett.crawlernode.core.session.Session;
 import okhttp3.HttpUrl;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.NameValuePair;
@@ -35,14 +11,22 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.session.Session;
+
+import java.awt.*;
+import java.io.*;
+import java.net.*;
+import java.text.Normalizer;
+import java.util.*;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
  * This class contains common methods that can be used in any class within crawler-node project.
- * 
- * @author Samir Leao
  *
+ * @author Samir Leao
  */
 public class CommonMethods {
 
@@ -56,7 +40,7 @@ public class CommonMethods {
 
    /**
     * Get last position of array
-    * 
+    *
     * @param array
     * @return
     */
@@ -66,9 +50,8 @@ public class CommonMethods {
 
    /**
     * Get last position of array
-    * 
+    *
     * @param <E>
-    * 
     * @param array
     * @return
     */
@@ -82,8 +65,8 @@ public class CommonMethods {
 
    /**
     * Strip string if cross the limit and append '...'
-    * 
-    * @param value - string
+    *
+    * @param value  - string
     * @param length - limit
     * @return
     */
@@ -102,7 +85,6 @@ public class CommonMethods {
    }
 
    /**
-    * 
     * @param delay
     */
    public static void delay(int delay) {
@@ -116,7 +98,6 @@ public class CommonMethods {
    }
 
    /**
-    * 
     * @return
     * @throws NullPointerException
     * @throws IOException
@@ -134,7 +115,7 @@ public class CommonMethods {
    /**
     * Check wether the string contentType contains identifiers of binary content. This method is mainly
     * used by the Parser, when fetching web pages content.
-    * 
+    *
     * @param contentType
     * @return
     */
@@ -148,7 +129,7 @@ public class CommonMethods {
     * Check wether the string contentType contains identifiers of text content. This method is mainly
     * used by the Parser, when fetching web pages content. Can be used to parse only the text of a web
     * page, for example.
-    * 
+    *
     * @param contentType
     * @return
     */
@@ -160,10 +141,10 @@ public class CommonMethods {
 
    /**
     * Modify an URL parameter with a new value.
-    * 
-    * @param url the URL to be modified
+    *
+    * @param url       the URL to be modified
     * @param parameter the name of the parameter to have it's value modified
-    * @param value the new value of the parameter
+    * @param value     the new value of the parameter
     * @return an URL with the new value in the specified parameter
     */
    public static String modifyParameter(String url, String parameter, String value) {
@@ -172,9 +153,7 @@ public class CommonMethods {
 
          if (paramsOriginal.size() == 0) {
             return url;
-         }
-
-         else {
+         } else {
 
             List<NameValuePair> paramsNew = new ArrayList<NameValuePair>();
 
@@ -210,7 +189,7 @@ public class CommonMethods {
 
    /**
     * Print the stack trace of an exception on a String
-    * 
+    *
     * @param e the exception we want the stack trace from
     * @return the string containing the stack trace
     */
@@ -232,7 +211,7 @@ public class CommonMethods {
 
    /**
     * Fetch the current package version
-    * 
+    *
     * @return the string containing the version
     */
    public static String getVersion() {
@@ -252,7 +231,6 @@ public class CommonMethods {
    }
 
    /**
-    * 
     * @param str
     * @return
     */
@@ -264,7 +242,7 @@ public class CommonMethods {
 
    /**
     * Generates a random integer in the interval between min and max
-    * 
+    *
     * @param min
     * @param max
     * @return
@@ -283,11 +261,11 @@ public class CommonMethods {
 
    /**
     * Rebuild a string as an URI and remove all illegal characters.
-    * 
+    *
     * @param url the url string
     * @return <br>
-    *         the rebuilded URL as a string <br>
-    *         the original string if any problem occurred during rebuild
+    * the rebuilded URL as a string <br>
+    * the original string if any problem occurred during rebuild
     */
    public static String sanitizeUrl(String url) {
       if (url != null) {
@@ -295,7 +273,7 @@ public class CommonMethods {
             URL urlObject = new URL(url.replaceAll("\\u00e2\\u0080\\u0093", "–"));
 
             URIBuilder uriBuilder = new URIBuilder().setHost(urlObject.getHost()).setPath(urlObject.getPath()).setScheme(urlObject.getProtocol())
-                  .setPort(urlObject.getPort());
+               .setPort(urlObject.getPort());
 
             List<NameValuePair> params = getQueryMap(urlObject);
 
@@ -317,7 +295,7 @@ public class CommonMethods {
     * In some cases, url has this character – So then when we encode this url, this character become
     * like this %C3%A2%C2%80%C2%93 or this %25E2%2580%2593, for resolve this problem, we replace this
     * encode for %E2%80%93
-    * 
+    *
     * @param str
     * @return
     */
@@ -341,11 +319,11 @@ public class CommonMethods {
 
    /**
     * Parse all the parameters inside the url.
-    * 
+    *
     * @param url a java.net.URL instance
     * @return <br>
-    *         an array list with NameValuePairs <br>
-    *         an empty array list if the url doesn't have any parameter
+    * an array list with NameValuePairs <br>
+    * an empty array list if the url doesn't have any parameter
     */
    public static List<NameValuePair> getQueryMap(URL url) {
       List<NameValuePair> queryMap = new ArrayList<>();
@@ -383,10 +361,10 @@ public class CommonMethods {
    /**
     * Check if the url contains a valid start with a valid protocol. A valid start could be http:// or
     * https:// If the url contains anything like http:/// for example, it won't be a valid url string.
-    * 
+    *
     * @param urlString
     * @return true if it's a valid url string <br>
-    *         false otherwise
+    * false otherwise
     */
    public static boolean checkUrlStart(String urlString) {
       String protocolRegex = "(^https?://[^/])"; // -> the '?' tells we want s to be optional
@@ -399,7 +377,7 @@ public class CommonMethods {
 
    /**
     * Remove illegal characters that do not belong to an xml or html
-    * 
+    *
     * @param s - string that contains part of an xml or html
     * @return
     */
@@ -418,7 +396,7 @@ public class CommonMethods {
          current = charArray[i]; // NOTE: No IndexOutOfBoundsException caught here; it should not happen.
 
          if ((current == 0x9) || (current == 0xA) || (current == 0xD) || ((current >= 0x20) && (current <= 0xD7FF))
-               || ((current >= 0xE000) && (current <= 0xFFFD)) || ((current >= 0x10000) && (current <= 0x10FFFF)))
+            || ((current >= 0xE000) && (current <= 0xFFFD)) || ((current >= 0x10000) && (current <= 0x10FFFF)))
 
             validXML.append(current);
       }
@@ -427,7 +405,6 @@ public class CommonMethods {
    }
 
    /**
-    *
     * @param body
     * @param path
     */
@@ -443,7 +420,6 @@ public class CommonMethods {
    }
 
    /**
-    * 
     * @param path
     * @return
     */
@@ -471,7 +447,7 @@ public class CommonMethods {
 
    /**
     * Str must not be null and empty, if thath happens this function return ""
-    * 
+    *
     * @param str
     * @return
     */
@@ -488,7 +464,7 @@ public class CommonMethods {
 
    /**
     * Encode url for ISO-8859-1
-    * 
+    *
     * @param str
     * @param logger
     * @param session
@@ -508,7 +484,7 @@ public class CommonMethods {
 
    /**
     * Transform simple string to slug string
-    * 
+    *
     * @param input
     * @return
     */
@@ -537,5 +513,22 @@ public class CommonMethods {
          .map(c -> c.getName() + "=" + c.getValue() + ";")
          .collect(Collectors.joining(" "));
    }
+
+   public static String substring(String str, String start, String end) {
+      str = str == null ? "" : str;
+      start = start == null ? "" : start;
+      end = end == null ? "" : end;
+
+      String result = "";
+      int s = str.indexOf(start) + start.length();
+      int e = str.indexOf(end) + end.length();
+
+      if (s >= 0 && s < e && e <= str.length()) {
+         result = str.substring(s, e);
+      }
+      return result;
+   }
+
+
 
 }

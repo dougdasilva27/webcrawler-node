@@ -1,15 +1,31 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.FalabellaCrawlerUtils;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.FalabellaCrawler;
 
-public class ColombiaFalabellaCrawler extends FalabellaCrawlerUtils {
-  public ColombiaFalabellaCrawler(Session session) {
-    super(session);
+public class ColombiaFalabellaCrawler extends FalabellaCrawler {
 
-    super.setHomePage("https://www.falabella.com.co/");
-    super.setImageUrl("FalabellaCO/");
-    super.setCurrencyHasCents(false);
-    super.setApiKey("oub11ocqqjr1ukjf43c9dukc9");
-  }
+   private static final String HOME_PAGE = "www.falabella.com.co";
+   private static final String API_CODE = "FalabellaCO";
+   private static final String SELLER_NAME = "Falabella Colombia";
+
+
+   public ColombiaFalabellaCrawler(Session session) {
+      super(session);
+   }
+
+   @Override
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
+
+   @Override
+   protected String getApiCode() {
+      return API_CODE;
+   }
+
+   @Override
+   protected String getSellerName() {
+      return SELLER_NAME;
+   }
 }

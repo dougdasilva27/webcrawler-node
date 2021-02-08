@@ -5,9 +5,14 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.FalabellaCrawler
 
 public class PeruFalabellaCrawler extends FalabellaCrawler {
 
-  public PeruFalabellaCrawler(Session session) {
-    super(session);
+   private static final String HOME_PAGE = "https://www.falabella.com.pe/falabella-pe/";
 
-    this.setHomePage("https://www.falabella.com.pe/falabella-pe/");
-  }
+   public PeruFalabellaCrawler(Session session) {
+      super(session);
+   }
+
+   @Override
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
 }
