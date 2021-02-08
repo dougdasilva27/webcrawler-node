@@ -1,20 +1,31 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.FalabellaCrawlerUtils;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.FalabellaCrawler;
 
-public class PeruFalabellaCrawler extends FalabellaCrawlerUtils {
+public class PeruFalabellaCrawler extends FalabellaCrawler {
 
-  private static final String HOME_PAGE = "https://www.falabella.com.pe/";
-  private static final String IMAGE_URL_CITY = "FalabellaPE/";
+   private static final String HOME_PAGE = "www.falabella.com.pe";
+   private static final String API_CODE = "FalabellaPE";
+   private static final String SELLER_NAME = "Falabella peru";
 
-  public PeruFalabellaCrawler(Session session) {
-    super(session);
 
-    super.setHomePage(HOME_PAGE);
-    super.setImageUrl(IMAGE_URL_CITY);
-    super.setCurrencyHasCents(true);
-    super.setApiKey("t6cq31k112riuu8rgp51fq5al");
+   public PeruFalabellaCrawler(Session session) {
+      super(session);
+   }
 
-  }
+   @Override
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
+
+   @Override
+   protected String getApiCode() {
+      return API_CODE;
+   }
+
+   @Override
+   protected String getSellerName() {
+      return SELLER_NAME;
+   }
 }
