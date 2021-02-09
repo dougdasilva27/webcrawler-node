@@ -18,7 +18,7 @@ public class BrasilEtnamoveisCrawler extends CrawlerRankingKeywords {
       String url = "https://www.etna.com.br/c/"+this.keywordEncoded+"/?page="+ this.currentPage;
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".element_item");
+      Elements products = this.currentDoc.select(".product__item--spot .thumb-img.js-gtm-clickProduct");
 
       if (products.size() >= 1) {
          if (this.totalProducts == 0) setTotalProducts();
