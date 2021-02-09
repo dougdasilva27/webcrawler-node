@@ -150,11 +150,17 @@ public abstract class FalabellaCrawler extends Crawler {
 
       JSONArray imgCodes = JSONUtils.getValueRecursive(jsonObject, "set.item", JSONArray.class);
 
-      for (Object obj : imgCodes) {
-         String value = JSONUtils.getValueRecursive(obj, "s.n", String.class);
-         String size = JSONUtils.getValueRecursive(obj, "dx", String.class);
-         String url = "https://falabella.scene7.com/is/image/" + value + "?wid=" + size;
-         images.add(url);
+      if (imgCodes == null) {
+         imgCodes = new JSONArray();
+         imgCodes.put(JSONUtils.getValueRecursive(jsonObject, "set.item", JSONObject.class));
+      }
+      if (imgCodes != null) {
+         for (Object obj : imgCodes) {
+            String value = JSONUtils.getValueRecursive(obj, "s.n", String.class);
+            String size = JSONUtils.getValueRecursive(obj, "dx", String.class);
+            String url = "https://falabella.scene7.com/is/image/" + value + "?wid=" + size;
+            images.add(url);
+         }
       }
 
       return images;
