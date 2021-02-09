@@ -151,6 +151,7 @@ public abstract class FalabellaCrawler extends Crawler {
       JSONArray imgCodes = JSONUtils.getValueRecursive(jsonObject, "set.item", JSONArray.class);
 
       if (imgCodes == null) {
+      if (imgCodes == null) {
          imgCodes = new JSONArray();
          imgCodes.put(JSONUtils.getValueRecursive(jsonObject, "set.item", JSONObject.class));
       }
