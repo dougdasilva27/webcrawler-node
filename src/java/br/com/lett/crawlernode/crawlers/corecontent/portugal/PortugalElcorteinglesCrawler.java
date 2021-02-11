@@ -46,7 +46,7 @@ public class PortugalElcorteinglesCrawler extends Crawler {
 
    public PortugalElcorteinglesCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -61,11 +61,11 @@ public class PortugalElcorteinglesCrawler extends Crawler {
          .setUrl(session.getOriginalURL())
          .setCookies(this.cookies)
          .mustSendContentEncoding(false)
+         .setTimeout(20000)
          .setFetcheroptions(
             FetcherOptionsBuilder.create()
                .mustUseMovingAverage(false)
                .mustRetrieveStatistics(true)
-
                .build())
          .setProxyservice(
             Arrays.asList(
@@ -78,9 +78,6 @@ public class PortugalElcorteinglesCrawler extends Crawler {
 
       String content = this.dataFetcher.get(session, request).getBody();
 
-      if (content == null || content.isEmpty()) {
-         content = new ApacheDataFetcher().get(session, request).getBody();
-      }
 
       return Jsoup.parse(content);
    }
