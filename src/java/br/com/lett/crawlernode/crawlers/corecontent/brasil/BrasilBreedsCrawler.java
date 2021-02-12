@@ -54,7 +54,7 @@ public class BrasilBreedsCrawler extends Crawler {
             Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
             String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "tr .data", false);
-            String internalPid = internalId;
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,".installment-options.modal.fade", "data-id");
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li a", true);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".easyzoom a img", Arrays.asList("src"), "https:", HOME_PAGE);
