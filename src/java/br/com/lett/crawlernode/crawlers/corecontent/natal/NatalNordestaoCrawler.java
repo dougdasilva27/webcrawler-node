@@ -8,6 +8,8 @@ public class NatalNordestaoCrawler extends Vipcommerce {
    private static final String SELLER_FULL_NAME = "Nordestao";
    private static final String HOME_PAGE = "https://www.cliqueretire.nordestao.com.br/";
    private static final String DOMAIN = "cliqueretire.nordestao.com.br";
+   private static final String LOCALE_CODE = "2";
+
 
    public NatalNordestaoCrawler (Session session){
       super(session);
@@ -26,5 +28,10 @@ public class NatalNordestaoCrawler extends Vipcommerce {
    @Override
    protected String getDomain() {
       return DOMAIN;
+   }
+
+   @Override
+   protected String getLocateCode() {
+      return LOCALE_CODE;
    }
 }
