@@ -169,7 +169,7 @@ public abstract class FalabellaCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return true;
+      return doc.selectFirst("div[data-id]")!= null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
