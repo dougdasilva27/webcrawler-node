@@ -130,16 +130,18 @@ public class GPACrawler extends Crawler {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + this.session.getOriginalURL());
 
+         JSONObject data = JSONUtils.getValueRecursive(jsonSku, "sellInfos.0", JSONObject.class);
+
          String internalId = crawlInternalId(jsonSku);
          String internalPid = crawlInternalPid(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
          String description = crawlDescription(jsonSku, internalId);
-         boolean available = crawlAvailability(jsonSku);
+         boolean available = data != null && crawlAvailability(data);
          boolean hasMarketPlace = hasMarketPlace(doc);
          Offers offers = new Offers();
 
          if (available) {
-            offers = hasMarketPlace ? offersFromMarketPlace(doc) : scrapOffers(jsonSku);
+            offers = hasMarketPlace ? offersFromMarketPlace(doc) : scrapOffers(data);
          }
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
@@ -248,8 +250,8 @@ public class GPACrawler extends Crawler {
       return price;
    }
 
-   private boolean crawlAvailability(JSONObject json) {
-      return json.has("stock") && json.getBoolean("stock");
+   private boolean crawlAvailability(JSONObject data) {
+      return data.has("stock") && data.getBoolean("stock");
    }
 
    private String crawlPrimaryImage(JSONObject json) {
@@ -380,7 +382,7 @@ public class GPACrawler extends Crawler {
 
    private String crawlDescription(JSONObject json, String internalId) {
       StringBuilder description = new StringBuilder();
-      String attributesDescription = JSONUtils.getValueRecursive(json, "attributes.Descricao", String.class);
+      String attributesDescription = JSONUtils.getStringValue(json, "description");
 
       if (attributesDescription != null) {
          description.append(attributesDescription);
@@ -477,9 +479,9 @@ public class GPACrawler extends Crawler {
 
       for (String attribute : attributesList) {
          if (!(nutritionalMap.get(attribute) instanceof String)) {
-            JSONObject attributeJson = nutritionalMap.getJSONObject(attribute);
+            JSONObject attributeJson = JSONUtils.getValueRecursive(nutritionalMap, "attributes.0", JSONObject.class);
 
-            if (attributeJson.has("value") && attributeJson.has("label")) {
+            if (attributeJson != null && attributeJson.has("value") && attributeJson.has("label")) {
                str.append(
                   putAttribute(attributeJson.getString("value"), attributeJson.getString("label")));
             }
@@ -571,8 +573,9 @@ public class GPACrawler extends Crawler {
       String url =
          END_POINT_REQUEST
             + this.store
-            + "/products/"
+            + "/v4/products/ecom/"
             + id
+            + "/bestPrices"
             + "?isClienteMais=false";
 
       if (this.storeId != null) {
@@ -690,29 +693,30 @@ public class GPACrawler extends Crawler {
          .split("/")[0];
    }
 
-   private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(json);
+      if (data != null) {
+         Pricing pricing = scrapPricing(data);
 
-      if (pricing != null) {
-         offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(MAIN_SELLER_NAME)
-            .setSellersPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .build());
+         if (pricing != null) {
+            offers.add(Offer.OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(MAIN_SELLER_NAME)
+               .setSellersPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(true)
+               .setPricing(pricing)
+               .build());
+         }
       }
-
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      Double spotlightPrice = json.optDouble("currentPrice");
+   private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
+      Double spotlightPrice = data.optDouble("currentPrice");
       Double priceFrom = null;
-      if (json.has("priceFrom")) {
-         priceFrom = json.optDouble("priceFrom");
+      if (data.has("priceFrom")) {
+         priceFrom = data.optDouble("priceFrom");
       }
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
