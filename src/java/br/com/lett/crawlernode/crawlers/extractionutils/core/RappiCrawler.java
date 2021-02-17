@@ -69,7 +69,7 @@ public abstract class RappiCrawler extends Crawler {
             for (Object json : components) {
                if (json instanceof JSONObject) {
                   String nameComponents = ((JSONObject) json).optString("name");
-                  if (nameComponents.equals("product_information")) {
+                  if (nameComponents.equals("product_information") || nameComponents.equals("product_information_freshness")) {
                      productsInfo = JSONUtils.getJSONValue((JSONObject) json, "resource");
                   }
                }
