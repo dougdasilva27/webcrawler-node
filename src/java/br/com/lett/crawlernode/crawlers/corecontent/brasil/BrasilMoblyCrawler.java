@@ -1,13 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -24,6 +16,11 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.*;
 
 public class BrasilMoblyCrawler extends Crawler {
 
@@ -55,9 +52,9 @@ public class BrasilMoblyCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.prd-title", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb ul li a");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-thumbs .images img", Arrays.asList("data-image-big",
-               "data-image-product", "data-image-src"), "https", "staticmobly.akamaized.net");
+            "data-image-product", "data-image-src"), "https", "staticmobly.akamaized.net");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-thumbs .images img", Arrays.asList("data-image-big",
-               "data-image-product", "data-image-src"), "https", "staticmobly.akamaized.net", primaryImage);
+            "data-image-product", "data-image-src"), "https", "staticmobly.akamaized.net", primaryImage);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".content-tab-detail .clearfix.dimensions", "#product-attributes", ".tab-box.description-text article"));
          RatingsReviews ratingReviews = scrapRating(doc);
 
@@ -71,22 +68,22 @@ public class BrasilMoblyCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(marketplace)
-               .setRatingReviews(ratingReviews)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setMarketplace(marketplace)
+            .setRatingReviews(ratingReviews)
+            .build();
 
          products.add(product);
 
@@ -114,8 +111,8 @@ public class BrasilMoblyCrawler extends Crawler {
       }
 
       boolean availableToBuy = jsonPrices.has("stock_available")
-            && jsonPrices.get("stock_available") instanceof Boolean
-            && jsonPrices.getBoolean("stock_available");
+         && jsonPrices.get("stock_available") instanceof Boolean
+         && jsonPrices.getBoolean("stock_available");
 
       if (availableToBuy) {
          marketplaces.put(seller, crawlPrices(jsonPrices));
@@ -148,27 +145,24 @@ public class BrasilMoblyCrawler extends Crawler {
    }
 
    private RatingsReviews scrapRating(Document doc) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
-
-      String yotpoId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-reviews .yotpo", "data-product-id");
 
       YotpoRatingReviewCrawler yotpo = new YotpoRatingReviewCrawler(session, cookies, logger);
-      Document apiDoc = yotpo.extractRatingsFromYotpo(this.session.getOriginalURL(), yotpoId, fetchAppKey(dataFetcher), dataFetcher);
+      Document apiDoc = yotpo.extractRatingsFromYotpo(fetchAppKey(dataFetcher), dataFetcher, getPayload(doc), "https://staticw2.yotpo.com/batch");
 
-      Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(apiDoc, "a.text-m", true, 0);
-      Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(apiDoc, ".yotpo-bottomline .sr-only", null, true, '.', session);
-
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-
-      return ratingReviews;
+      return yotpo.scrapRatingYotpo(apiDoc);
    }
+
+   private String getPayload(Document doc) {
+      String yotpoId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-reviews .yotpo", "data-product-id");
+
+      return "[{\"method\":\"bottomline\",\"params\":{\"pid\":\"" + yotpoId + "\",\"link\":\""
+         + this.session.getOriginalURL() + "\",\"skip_average_score\":false,\"main_widget_pid\":\"" + yotpoId + "\"}}]";
+   }
+
 
    /**
     * Method to fetch App Key of Yotpo API.
-    * 
+    *
     * @param dataFetcher {@link DataFetcher} object to fetch page.
     * @return
     */
