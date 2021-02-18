@@ -57,21 +57,21 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(new Marketplace())
-               .setStock(stock)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setMarketplace(new Marketplace())
+            .setStock(stock)
+            .build();
 
          products.add(product);
 
@@ -209,20 +209,21 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    private JSONObject scrapApiJson(String originalURL) {
       List<String> slugs = scrapSlugs(originalURL);
+      String apiUrl = "";
+      if(slugs.size() >= 4) {
+         apiUrl =
+            "https://merqueo.com/api/2.0/stores/63/find?department_slug=" + slugs.get(2)
 
-      String apiUrl =
-         "https://merqueo.com/api/2.0/stores/63/find?department_slug=" + slugs.get(2)
+               + "&shelf_slug=" + slugs.get(2)
+               + "&product_slug=" + slugs.get(4)
+               + "&limit=7&zoneId=40&adq=1";
 
-            + "&shelf_slug=" + slugs.get(2)
-            + "&product_slug=" + slugs.get(3)
-            + "&limit=7&zoneId=40&adq=1";
-
-
+      }
       Request request = RequestBuilder
-            .create()
-            .setUrl(apiUrl)
-            .mustSendContentEncoding(false)
-            .build();
+         .create()
+         .setUrl(apiUrl)
+         .mustSendContentEncoding(false)
+         .build();
 
       return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
    }
@@ -259,7 +260,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    /**
     * In the time when this crawler was made, this market hasn't installments informations
-    * 
+    *
     * @param price
     * @return
     */
