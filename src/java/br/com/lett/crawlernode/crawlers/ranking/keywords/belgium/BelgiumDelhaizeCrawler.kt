@@ -38,7 +38,7 @@ class BelgiumDelhaizeCrawler(session: Session) : CrawlerRankingKeywords(session)
          val productUrl = "https://www.delhaize.be${product.optString("url")}"
 
          saveDataProduct(internalId, internalId, productUrl)
-         log(">>> ✅ productId: $internalId name: ${product.optString("name")}")
+         log("Position: " + position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl)
       }
    }
 
