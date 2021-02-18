@@ -9,8 +9,11 @@ import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
+import com.google.gson.JsonObject
 import models.Offer
 import models.Offers
+import models.pricing.BankSlip
+import models.pricing.CreditCards
 import models.pricing.Pricing
 import org.json.JSONObject
 import java.lang.Double
@@ -18,9 +21,9 @@ import java.util.*
 
 
 /**
- * Date: 30/07/20
+ * Date: 18/02/21
  *
- * @author Fellype Layunne
+ * @author BuSSoLoTTi
  *
  */
 
@@ -65,8 +68,8 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
          val jsonsku = JSONUtils.getValueRecursive(json, "data.productDetails", JSONObject::class.java)
 
-         val internalId = JSONUtils.getStringValue(jsonsku, "code")
-         val name = JSONUtils.getStringValue(jsonsku, "name")
+         val internalId = jsonsku.optString( "code")
+         val name = jsonsku.optString( "name")
          val categories = scrapCategories(jsonsku)
 
          val images = scrapImages(jsonsku)
@@ -100,9 +103,9 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
    private fun scrapAvailable(jsonsku: JSONObject?): Boolean {
       var available = false
-      if(jsonsku?.has("stock") == true){
-         val stock = JSONUtils.getJSONValue(jsonsku,"stock")
-         if (stock.has("inStock")){
+      if (jsonsku?.has("stock") == true) {
+         val stock = JSONUtils.getJSONValue(jsonsku, "stock")
+         if (stock.has("inStock")) {
             available = stock.getBoolean("inStock")
          }
       }
@@ -112,15 +115,15 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    private fun scrapDescription(json: JSONObject?): String {
       val description: StringBuilder = StringBuilder()
       val nutriFactData = JSONUtils.getJSONValue(json, "wsNutriFactData")
-      if (nutriFactData != null) {
-         description.append(JSONUtils.getStringValue(nutriFactData, "ingredients"))
-         val array = JSONUtils.getJSONArrayValue(json, "otherInfo")
-         for (obj in array) {
-            description.append(JSONUtils.getStringValue(obj as JSONObject,"key"))
-            description.append(JSONUtils.getStringValue(obj,"value"))
-
+      description.append(nutriFactData.optString("ingredients"))
+      val array = JSONUtils.getJSONArrayValue(json, "otherInfo")
+      for (obj in array) {
+         if (obj is JSONObject) {
+            description.append(obj.optString( "key"))
+            description.append(obj.optString("value"))
          }
       }
+
       return description.toString()
    }
 
@@ -129,10 +132,11 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       val images = mutableListOf<String>()
       val arrayImages = JSONUtils.getJSONArrayValue(json, "galleryImages")
       for (img in arrayImages) {
-         if (JSONUtils.getStringValue(img as JSONObject?, "format").equals("zoom")) {
-            val url = JSONUtils.getStringValue(img, "url")
-            images.add(CrawlerUtils.completeUrl(url, "https:", "dhf6qt42idbhy.cloudfront.net"))
-         }
+         if (img is JSONObject)
+            if (img.optString("format")?.equals("zoom") == true) {
+               val url = img.optString("url")
+               images.add(CrawlerUtils.completeUrl(url, "https:", "dhf6qt42idbhy.cloudfront.net"))
+            }
       }
       return images
    }
@@ -150,60 +154,40 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(json: JSONObject): Offers {
       val offers = Offers()
 
-      val spotPriceText = JSONUtils.getValueRecursive(json,"price.discountedPriceFormatted", String::class.java)
+      val spotPriceText = JSONUtils.getValueRecursive(json, "price.discountedPriceFormatted", String::class.java)
       val spotPrice = MathUtils.parseDoubleWithComma(spotPriceText)
 
-      val price =  JSONUtils.getValueRecursive(json,"price.value",java.lang.Double::class.java).toDouble()
+      val price = JSONUtils.getValueRecursive(json, "price.value", java.lang.Double::class.java).toDouble()
 
-      if (spotPrice>=price){
+      val bankSlip : BankSlip
 
-         val bankSlip = spotPrice.toBankSlip()
+      val creditCards : CreditCards
 
-         val creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(price)
-
-
-         offers.add(
-            Offer.OfferBuilder.create()
-               .setPricing(
-                  Pricing.PricingBuilder.create()
-                     .setSpotlightPrice(price)
-                     .setCreditCards(creditCards)
-                     .setBankSlip(bankSlip)
-                     .build())
-               .setSales(listOf())
-               .setIsMainRetailer(true)
-               .setIsBuybox(false)
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(SELLER_NAME)
-               .build()
-         )
+      if (spotPrice >= price) {
+         bankSlip = spotPrice.toBankSlip()
+         creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(price)
       }
-      else{
-
-         val bankSlip = price.toBankSlip()
-
-         val creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(price)
-
-
-         offers.add(
-            Offer.OfferBuilder.create()
-               .setPricing(
-                  Pricing.PricingBuilder.create()
-                     .setSpotlightPrice(price)
-                     .setCreditCards(creditCards)
-                     .setBankSlip(bankSlip)
-                     .build()
-               )
-               .setSales(listOf())
-               .setIsMainRetailer(true)
-               .setIsBuybox(false)
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(SELLER_NAME)
-               .build()
-         )
+      else {
+         bankSlip = price.toBankSlip()
+         creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(price)
       }
 
-
+      offers.add(
+         Offer.OfferBuilder.create()
+            .setPricing(
+               Pricing.PricingBuilder.create()
+                  .setSpotlightPrice(spotPrice)
+                  .setSpotlightPrice(price)
+                  .setCreditCards(creditCards)
+                  .setBankSlip(bankSlip)
+                  .build())
+            .setSales(listOf())
+            .setIsMainRetailer(true)
+            .setIsBuybox(false)
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_NAME)
+            .build()
+      )
       return offers
    }
 
