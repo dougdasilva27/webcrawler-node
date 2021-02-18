@@ -38,7 +38,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
    class BelgiumDelhaizeCrawler(session: Session?) : Crawler(session) {
       override fun handleCookiesBeforeFetch() {
          val request = RequestBuilder.create().setUrl("https://www.delhaize.be/").build()
-         cookies = dataFetcher.get(session, request).cookies
+         cookies = dataFetcher[session, request].cookies
       }
    }
 
