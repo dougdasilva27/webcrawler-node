@@ -214,7 +214,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
          "https://merqueo.com/api/2.0/stores/63/find?department_slug=" + slugs.get(2)
 
             + "&shelf_slug=" + slugs.get(2)
-            + "&product_slug=" + slugs.get(4)
+            + "&product_slug=" + slugs.get(3)
             + "&limit=7&zoneId=40&adq=1";
 
 
