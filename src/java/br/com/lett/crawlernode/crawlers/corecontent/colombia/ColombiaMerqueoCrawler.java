@@ -1,9 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import br.com.lett.crawlernode.util.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -16,12 +15,10 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+
+import javax.swing.plaf.synth.SynthOptionPaneUI;
 
 public class ColombiaMerqueoCrawler extends Crawler {
 
@@ -209,19 +206,25 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    private JSONObject scrapApiJson(String originalURL) {
       List<String> slugs = scrapSlugs(originalURL);
-      String apiUrl = "";
-      if(slugs.size() >= 4) {
-         apiUrl =
-            "https://merqueo.com/api/2.0/stores/63/find?department_slug=" + slugs.get(2)
 
-               + "&shelf_slug=" + slugs.get(2)
-               + "&product_slug=" + slugs.get(4)
-               + "&limit=7&zoneId=40&adq=1";
+      StringBuilder apiUrl = new StringBuilder();
+      apiUrl.append("https://merqueo.com/api/2.0/stores/63/find?");
 
+      if(slugs.size() == 3) {
+         apiUrl.append("department_slug=").append(slugs.get(0));
+         apiUrl.append("&shelf_slug=").append(slugs.get(1));
+         apiUrl.append("&product_slug=").append(slugs.get(2));
+      } else {
+         apiUrl.append("department_slug=").append(slugs.get(1));
+         apiUrl.append("&shelf_slug=").append(slugs.get(2));
+         apiUrl.append("&product_slug=").append(slugs.get(3));
       }
+
+      apiUrl.append("&limit=7&zoneId=40&adq=1");
+
       Request request = RequestBuilder
          .create()
-         .setUrl(apiUrl)
+         .setUrl(apiUrl.toString())
          .mustSendContentEncoding(false)
          .build();
 
@@ -235,12 +238,12 @@ public class ColombiaMerqueoCrawler extends Crawler {
     */
    private List<String> scrapSlugs(String originalURL) {
       List<String> slugs = new ArrayList<>();
-      String[] slug = originalURL.split("/");
+      String slugString = CommonMethods.getLast(originalURL.split("bogota/"));
+      String[] slug = slugString.contains("/")?slugString.split("/"):null;
 
-      for (int i = 3; i < slug.length; i++) {
-         slugs.add(slug[i]);
+      if(slug != null) {
+         Collections.addAll(slugs, slug);
       }
-
       return slugs;
    }
 
