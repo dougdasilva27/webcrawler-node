@@ -62,29 +62,31 @@ public class ArgentinaOpenfarmaCrawler extends Crawler {
          if(checkIfHasVariation(doc)) {
             Elements variatons = doc.select(".product-variations-container .btn-group.mg-lg-b");
 
-            for (Element e : variatons) {
+            if(variatons.size() > 0) {
+               for (Element e : variatons) {
 
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "data-variant-id");
-               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoom .item img",
-                  Arrays.asList("src"), "https://", HOME_PAGE);
-               String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#zoom .slider-for .item:not(.default-image) img",
-                  Arrays.asList("src"), "https://", HOME_PAGE, primaryImage);
-               boolean availableToBuy = doc.selectFirst(".row .btn-submit") != null;
-               Offers offers = availableToBuy ? offers(doc, e) : new Offers();
+                  String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "data-variant-id");
+                  String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoom .item img",
+                     Arrays.asList("src"), "https://", HOME_PAGE);
+                  String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#zoom .slider-for .item:not(.default-image) img",
+                     Arrays.asList("src"), "https://", HOME_PAGE, primaryImage);
+                  boolean availableToBuy = doc.selectFirst(".row .btn-submit") != null;
+                  Offers offers = availableToBuy ? offers(doc, e) : new Offers();
 
-               // Creating the product
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setOffers(offers)
-                  .build();
+                  // Creating the product
+                  Product product = ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setOffers(offers)
+                     .build();
 
-               products.add(product);
+                  products.add(product);
+               }
             }
          } else {
 
