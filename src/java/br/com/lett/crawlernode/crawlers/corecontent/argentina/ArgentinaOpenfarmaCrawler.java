@@ -65,6 +65,7 @@ public class ArgentinaOpenfarmaCrawler extends Crawler {
             if(variatons.size() > 0) {
                for (Element e : variatons) {
 
+                  String grammage = CrawlerUtils.scrapStringSimpleInfo(e, "a", false);
                   String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "data-variant-id");
                   String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoom .item img",
                      Arrays.asList("src"), "https://", HOME_PAGE);
@@ -78,7 +79,7 @@ public class ArgentinaOpenfarmaCrawler extends Crawler {
                      .setUrl(session.getOriginalURL())
                      .setInternalId(internalId)
                      .setInternalPid(internalPid)
-                     .setName(name)
+                     .setName(name + " " + grammage)
                      .setPrimaryImage(primaryImage)
                      .setSecondaryImages(secondaryImages)
                      .setDescription(description)
