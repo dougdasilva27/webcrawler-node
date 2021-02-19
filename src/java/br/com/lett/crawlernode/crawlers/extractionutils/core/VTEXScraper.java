@@ -117,8 +117,8 @@ public abstract class VTEXScraper extends Crawler {
    protected abstract String scrapInternalpid(Document doc);
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
-      if (jsonSku.has("productName")) {
-         return jsonSku.get("productName").toString();
+      if (jsonSku.has("nameComplete")) {
+         return jsonSku.get("nameComplete").toString();
       } else if (jsonSku.has("name")) {
          return jsonSku.get("name").toString();
       } else {
