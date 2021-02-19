@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
@@ -17,12 +19,10 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
    public BrasilSitemercadoCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
    }
 
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
-   private String apiSearchUrl = getApiSearchUrl();
 
    protected abstract String getHomePage();
 
@@ -37,7 +37,10 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
    protected String getApiSearchUrl() {
-      return "https://sitemercado-b2c-sm-www-api-production2.azurewebsites.net/api/v1/b2c/product/loadSearch";
+      return "https://b2c-sm-www-api-production4.sitemercado.com.br/api/v1/b2c/380/product/load_search/";
+   }
+   private String ApiSearchUrl(String lojaId) {
+      return "https://b2c-sm-www-api-production4.sitemercado.com.br/api/v1/b2c/"+lojaId+"/product/load_search/";
    }
 
    @Override
@@ -111,49 +114,34 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject crawlProductInfo() {
-      String loadUrl = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/page/load";
+      String loadUrl = "https://b2c-sm-www-api-production.sitemercado.com.br/api/v1/b2c/page/load";
+      String lojaId = "";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("referer", this.homePage);
-      headers.put("sm-mmc", fetchApiVersion(session, this.homePage));
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("content-type", "application/json");
 
       Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers)
             .setPayload(loadPayload).build();
-      Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
+      Map<String, String> responseHeaders = this.dataFetcher.post(session, request).getHeaders();
 
       if (responseHeaders.containsKey("sm-token")) {
-         headers.put("sm-token", responseHeaders.get("sm-token"));
+         String header = responseHeaders.get("sm-token");
+         headers.put("sm-token",header);
+         JSONObject token = new JSONObject(header);
+         lojaId=  Integer.toString(JSONUtils.getIntegerValueFromJSON(token,"IdLoja",0));
       }
 
-      String payloadSearch = "{phrase: \"" + this.keywordWithoutAccents + "\"}";
+
+      String apiUrl = ApiSearchUrl(lojaId)+this.keywordEncoded;
       Request requestApi = RequestBuilder.create()
-            .setUrl(apiSearchUrl)
+            .setUrl(apiUrl)
             .setCookies(cookies)
             .setHeaders(headers)
-            .setPayload(payloadSearch)
             .build();
 
-      return CrawlerUtils.stringToJson(this.dataFetcher.post(session, requestApi).getBody());
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
    }
-
-   private String fetchApiVersion(Session session, String url) {
-      String version = null;
-
-      String loadUrl = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/page/load";
-      Map<String, String> headers = new HashMap<>();
-      headers.put("referer", url);
-      headers.put("accept", "application/json, text/plain, */*");
-      headers.put("content-type", "application/json");
-
-      Request request = RequestBuilder.create().setUrl(loadUrl).setHeaders(headers).setPayload(loadPayload).setIgnoreStatusCode(false).build();
-      Map<String, String> responseHeaders = new FetcherDataFetcher().post(session, request).getHeaders();
-
-      if (responseHeaders.containsKey("sm-mmc")) {
-         version = responseHeaders.get("sm-mmc");
-      }
-
-      return version;
-   }
+   
 }

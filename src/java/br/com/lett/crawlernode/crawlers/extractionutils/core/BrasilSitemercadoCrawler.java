@@ -309,8 +309,8 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
     * @return
     */
    private JSONObject crawlProductInformatioFromApi(String productUrl) {
-      String loadUrl = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/page/LoadSchedulesUnavailable";
-      String url = "https://sitemercado-b2c-sm-www-api-production.azurewebsites.net/api/v1/b2c/product/load?url=" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
+      String loadUrl = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/page/load";
+      String url = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/"+getLojaInfo().get("IdLoja")+"/product/" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.REFERER, productUrl);
