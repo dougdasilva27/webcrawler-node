@@ -186,13 +186,21 @@ public class ColombiaAlkostoCrawler extends Crawler {
     */
    private String fetchAppKey(Document doc) {
       String key = null;
-      String[] script = doc.selectFirst("head script[type='text/javascript']:nth-child(76)").toString().split("staticw2.yotpo.com/");
-      if (script.length > 0) {
-         String[] fistIndex = script[1].split("/widget.js");
-         key = fistIndex[0];
+      Elements scripts = doc.select("head script[type='text/javascript']");
+      for (Element e : scripts) {
+         String script = e.toString();
+         if (script.contains("https://staticw2.yotpo.com") && script.contains("/widget.js")) {
+            String[] split = script.split("staticw2.yotpo.com");
+            if (split.length > 0) {
+               String[] fistIndex = split[1].split("/widget.js");
+               key = fistIndex[0];
+            }
+
+            return key;
+         }
       }
 
-      return key;
-   }
 
+      return null;
+   }
 }
