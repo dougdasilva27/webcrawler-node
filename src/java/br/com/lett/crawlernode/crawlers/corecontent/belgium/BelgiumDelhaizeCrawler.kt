@@ -104,7 +104,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       if (jsonsku.has("stock")) {
          val stock = JSONUtils.getJSONValue(jsonsku, "stock")
          if (stock.has("inStock")) {
-            available = stock.getBoolean("inStock")
+            available = stock.optBoolean("inStock")
          }
       }
       return available
