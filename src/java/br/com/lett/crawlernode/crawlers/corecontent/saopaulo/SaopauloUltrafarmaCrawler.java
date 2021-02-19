@@ -182,8 +182,6 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
          }
       }
 
-      System.out.println(description);
-
       return description.toString();
    }
 
