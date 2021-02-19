@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
@@ -46,7 +47,8 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
    @Override
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
-      return (productJson.optString("brand") + " " + super.scrapName(doc, productJson, jsonSku)).trim();
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1 .vtex-store-components-3-x-productBrand", false);
+      return name != null ? (productJson.optString("brand") + " " + name) : null;
    }
 
    @Override
