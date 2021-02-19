@@ -71,9 +71,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
                Document docVariation = !internalId.equalsIgnoreCase(mainId) ? scrapVariationHTML(url) : doc;
 
                String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
-                       "https", "www.imgeletro.com.br");
+                  "https", "www.imgeletro.com.br");
                String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, ".product-info-images .swiper-slide img", Arrays.asList("src"),
-                       "https", "www.imgeletro.com.br", primaryImage);
+                  "https", "www.imgeletro.com.br", primaryImage);
                CategoryCollection categories = CrawlerUtils.crawlCategories(docVariation, "#Breadcrumbs a");
                String description = scrapDescription(docVariation);
 
@@ -83,21 +83,21 @@ public class BrasilRicardoeletroCrawler extends Crawler {
                RatingsReviews rating = scrapRating(doc);
 
                Product product = ProductBuilder.create()
-                       .setUrl(url)
-                       .setInternalId(internalId)
-                       .setInternalPid(internalPid)
-                       .setName(name)
-                       .setCategory1(categories.getCategory(0))
-                       .setCategory2(categories.getCategory(1))
-                       .setCategory3(categories.getCategory(2))
-                       .setPrimaryImage(primaryImage)
-                       .setSecondaryImages(secondaryImages)
-                       .setDescription(description)
-                       .setStock(stock)
-                       .setEans(eans)
-                       .setOffers(offers)
-                       .setRatingReviews(rating)
-                       .build();
+                  .setUrl(url)
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setStock(stock)
+                  .setEans(eans)
+                  .setOffers(offers)
+                  .setRatingReviews(rating)
+                  .build();
 
                products.add(product);
             }
@@ -132,9 +132,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
 
    private Document scrapVariationHTML(String url) {
       Request request = RequestBuilder.create()
-              .setUrl(url)
-              .setCookies(cookies)
-              .build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -215,17 +215,17 @@ public class BrasilRicardoeletroCrawler extends Crawler {
          Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-price-details .product-price-details-old-price", null, false, ',', session);
          if (price != null) {
             Pricing pricing = PricingBuilder.create().setSpotlightPrice(price).setCreditCards(scrapCreditCards(doc))
-                    .setPriceFrom(priceFrom)
-                    .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
-                    .build();
+               .setPriceFrom(priceFrom)
+               .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
+               .build();
             offers.add(new OfferBuilder()
-                    .setSellerFullName(sellerName)
-                    .setInternalSellerId(sellerId)
-                    .setIsMainRetailer(Pattern.matches("(?i)ricardoeletro\\s?|ricardo?[\\s]?eletro\\s?", sellerName))
-                    .setMainPagePosition(position)
-                    .setPricing(pricing)
-                    .setIsBuybox(htmls.size() > 1)
-                    .build());
+               .setSellerFullName(sellerName)
+               .setInternalSellerId(sellerId)
+               .setIsMainRetailer(Pattern.matches("(?i)ricardoeletro\\s?|ricardo?[\\s]?eletro\\s?", sellerName))
+               .setMainPagePosition(position)
+               .setPricing(pricing)
+               .setIsBuybox(htmls.size() > 1)
+               .build());
          }
          position++;
       }
@@ -243,10 +243,10 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       }
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-                 .setBrand(card)
-                 .setInstallments(installments)
-                 .setIsShopCard(true)
-                 .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(true)
+            .build());
       }
 
       return creditCards;
@@ -260,9 +260,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
          Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, e, true);
          if (!pair.isAnyValueNull()) {
             installments.add(InstallmentBuilder.create()
-                    .setInstallmentNumber(pair.getFirst())
-                    .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
-                    .build());
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+               .build());
          }
       }
       return installments;
@@ -272,7 +272,7 @@ public class BrasilRicardoeletroCrawler extends Crawler {
     * Crawl rating and reviews stats using the bazaar voice endpoint. To get only the stats summary we
     * need at first, we only have to do one request. If we want to get detailed information about each
     * review, we must perform pagination.
-    * 
+    *
     * The RatingReviews crawled in this method, is the same across all skus variations in a page.
     *
     * @param document
@@ -312,9 +312,9 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       Integer star4 = 0;
       Integer star5 = 0;
 
-      Elements reviews = doc.select(".product-comments-body-comment-stars");
+      Elements reviews = doc.select(".col-12 .row .product-comments-body-comment-stars");
       for (Element e : reviews) {
-         int numberOfStars = e.select("img[src=/public/img/star-full.svg]").size();
+         int numberOfStars = CrawlerUtils.scrapIntegerFromHtmlAttr(e,".rating-stars","style",0);
 
          if (numberOfStars == 1) {
             star1++;
@@ -330,11 +330,11 @@ public class BrasilRicardoeletroCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-              .totalStar1(star1)
-              .totalStar2(star2)
-              .totalStar3(star3)
-              .totalStar4(star4)
-              .totalStar5(star5)
-              .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 }
