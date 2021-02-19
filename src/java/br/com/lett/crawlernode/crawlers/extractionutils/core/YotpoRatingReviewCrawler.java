@@ -96,7 +96,7 @@ public class YotpoRatingReviewCrawler {
       Integer star5 = 0;
 
       Elements reviews = apiDoc.select(".yotpo-distibutions-sum-reviews > span");
-      if (reviews != null) {
+      if (!reviews.isEmpty()) {
          for (Element review : reviews) {
 
             String stringStarNumber = CrawlerUtils.scrapStringSimpleInfoByAttribute(review, null, "data-score-distribution");
