@@ -48,7 +48,7 @@ public abstract class BrasilIfood extends Crawler {
 
    public BrasilIfood(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
 
