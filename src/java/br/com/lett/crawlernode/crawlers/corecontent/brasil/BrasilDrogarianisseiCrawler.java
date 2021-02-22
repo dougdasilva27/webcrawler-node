@@ -53,7 +53,8 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
          String[] internalIdArray = CrawlerUtils.scrapStringSimpleInfo(doc, ".row .mt-3 .small", false).split("produto: ");
          if (internalIdArray.length > 1) {
-            String internalId = internalIdArray[1];
+
+            String internalId = internalIdArray[1].contains("|")? internalIdArray[1].split("[|]")[0].trim():internalIdArray[1];
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
             String primaryImage = fixUrlImage(doc, internalId);
@@ -174,12 +175,12 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       String url = "https://www.farmaciasnissei.com.br/pegar/preco";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", "_fbp=fb.2.1610386362281.901362755; csrftoken=22ZymWOcthE3uvJFSmQczCX6SlVVLARapcJJMC0xICmQFGz57aoh9taSte4SpZBh; _gid=GA1.3.703743027.1610735130; _ga=GA1.1.1690412403.1610386362; _ga_G8H8ZH3E1D=GS1.1.1610735129.1.0.1610735233.60");
+      headers.put("cookie", "_fbp=fb.2.1613999711463.629554792; csrftoken=k9LjOTr9abMqhIlWx9l2speAaikyPsFoZ08YEOTbKtvbPvQlZyO6SptAbezMyJjm; _gid=GA1.3.703743027.1610735130; _ga=GA1.3.1790562605.1613999712; _ga_G8H8ZH3E1D=GS1.1.1613999711.1.1.1613999906.60");
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("referer", session.getOriginalURL());
 
 
-      String payload = "csrfmiddlewaretoken=uMF8GPQqCsHHumoU7dBguT5cRR252DRbRWpj6v2LRNpuFxekm19l4KiYsKb2G2Bi&produtos_ids%5B%5D=" + internalId;
+      String payload = "csrfmiddlewaretoken=i97HTxjApMpOxZEqyR0guVk9TwE4cmOQX0umJsLCZ48z5M9P0gtkUVz9UsTiVDsO&produtos_ids%5B%5D=" + internalId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
