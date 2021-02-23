@@ -23,9 +23,8 @@ import models.prices.Prices;
 
 /**
  * Date: 11/08/2017
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class BrasilNutriiCrawler extends Crawler {
 
@@ -48,36 +47,36 @@ public class BrasilNutriiCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, null, false, false);
-         JSONObject jsonOffers = JSONUtils.getJSONValue(jsonInfo, "offers");
+         if (jsonInfo != null && !jsonInfo.isEmpty()) {
+            JSONObject jsonOffers = JSONUtils.getJSONValue(jsonInfo, "offers");
 
 
+            String internalId = jsonInfo.optString("sku");
+            String name = jsonInfo.optString("name");
+            CategoryCollection categories = crawlCategories(name);
+            String primaryImage = jsonInfo.optString("image");
+            String description = jsonInfo.optString("description");
 
-         String internalId = jsonInfo.optString("sku");
-         String name = jsonInfo.optString("name");
-         CategoryCollection categories = crawlCategories(name);
-         String primaryImage = jsonInfo.optString("image");
-         String description = jsonInfo.optString("description");
+            String availability = jsonOffers.optString("availability");
+            boolean available = availability.equals("http://schema.org/InStock");
+            Offers offers = available ? scrapOffer(jsonOffers) : new Offers();
+            RatingsReviews ratingReviews = scrapRatingReviews(jsonInfo);
 
-         String availability = jsonOffers.optString("availability");
-         boolean available = availability.equals("http://schema.org/InStock");
-         Offers offers = available ? scrapOffer(jsonOffers) : new Offers();
-         RatingsReviews ratingReviews = scrapRatingReviews(jsonInfo);
+            // Creating the product
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setName(name)
+               .setCategories(categories)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setOffers(offers)
+               .setRatingReviews(ratingReviews)
+               .build();
 
-         // Creating the product
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalId)
-            .setName(name)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setDescription(description)
-            .setOffers(offers)
-            .setRatingReviews(ratingReviews)
-            .build();
-
-         products.add(product);
-
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -114,7 +113,7 @@ public class BrasilNutriiCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(JSONObject jsonOffers ) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject jsonOffers) throws MalformedPricingException {
       Double spotlightPrice = jsonOffers.optDouble("price");
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
@@ -149,7 +148,6 @@ public class BrasilNutriiCrawler extends Crawler {
 
       return creditCards;
    }
-
 
 
    private RatingsReviews scrapRatingReviews(JSONObject jsonInfo) {
