@@ -94,7 +94,6 @@ class TestUtils {
       }
 
 
-
       // fetch market
       // if city is empty, fetch by marketId
       fun fetchMarket(city: String = "", marketName: String = "", marketId: Long = 0): Market? {
@@ -108,8 +107,8 @@ class TestUtils {
       }
 
 
-      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1) : List<TestRunnable> {
-         val tests : MutableList<TestRunnable> = mutableListOf()
+      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1): List<TestRunnable> {
+         val tests: MutableList<TestRunnable> = mutableListOf()
 
          val executor = PoolExecutor(corePoolSize, corePoolSize, 0L, TimeUnit.SECONDS, LinkedBlockingQueue(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE), RejectedTaskHandler())
          for (param in parameters) {
@@ -122,13 +121,6 @@ class TestUtils {
          }
          return tests
       }
-
-      @JvmStatic
-      fun addExeptionToJsonArray(e: Exception, url: String?) {
-         val erro: JSONObject = JSONObject()
-         erro.put(url, e.stackTraceToString())
-         logJson.put(erro)
-      }
-
    }
 }
+
