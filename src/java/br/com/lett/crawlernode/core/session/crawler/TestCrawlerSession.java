@@ -18,6 +18,8 @@ public class TestCrawlerSession extends Session {
 
   private TestType type;
 
+  private String lastError;
+
   public TestCrawlerSession(String url, Market market) {
     super(market);
 
@@ -101,4 +103,11 @@ public class TestCrawlerSession extends Session {
     this.voidAttemptsCounter++;
   }
 
+   public String getLastError() {
+      return lastError;
+   }
+
+   public void setLastError(String lastError) {
+      this.lastError = lastError;
+   }
 }

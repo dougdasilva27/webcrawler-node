@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import br.com.lett.crawlernode.test.GeneralTestKt;
+import br.com.lett.crawlernode.test.TestUtils;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -332,6 +335,11 @@ public class Crawler extends Task {
       try {
          products = extract();
       } catch (Exception e) {
+
+         if(session instanceof TestCrawlerSession){
+            ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
+         }
+
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          products = new ArrayList<>();
       }
@@ -339,23 +347,32 @@ public class Crawler extends Task {
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
       for (Product p : products) {
+
+
+
          if (Test.pathWrite != null) {
             String status = getFirstPartyRegexStatus(p);
 
             TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
          }
-
-         List<Product> productsMap = Test.products.get(p.getUrl());
-
-         if (productsMap == null) {
-            Test.products.put(p.getUrl(), Collections.singletonList(p));
-         } else {
-            productsMap.add(p);
-         }
-
+         addProductsTest(p);
          printCrawledInformation(p);
       }
    }
+
+   private static void addProductsTest(Product product){
+
+      List<Product> productsMap = Test.products.get(product.getUrl());
+
+      if (productsMap == null) {
+         Test.products.put(product.getUrl(), Collections.singletonList(product));
+      } else {
+         productsMap.add(product);
+      }
+
+   }
+
+
 
    /**
     * This method is responsible for the main post processing stages of a crawled product. It takes
@@ -488,6 +505,7 @@ public class Crawler extends Task {
       session.setOriginalURL(url);
 
       Object obj = fetch();
+
       session.setProductPageResponse(obj);
       List<Product> products = new ArrayList<>();
 
@@ -500,6 +518,9 @@ public class Crawler extends Task {
             products = extractInformation((JSONArray) obj);
          }
       } catch (Exception e) {
+         if(session instanceof TestCrawlerSession){
+            ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
+         }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 

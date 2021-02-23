@@ -16,6 +16,10 @@ import br.com.lett.crawlernode.main.GlobalConfigurations
 import br.com.lett.crawlernode.processor.ResultManager
 import br.com.lett.crawlernode.core.task.base.Task
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
+import com.google.gson.JsonObject
+import org.json.JSONArray
+import org.json.JSONObject
+import java.lang.Exception
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
@@ -104,16 +108,27 @@ class TestUtils {
       }
 
 
-      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1) {
+      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1) : List<TestRunnable> {
+         val tests : MutableList<TestRunnable> = mutableListOf()
 
          val executor = PoolExecutor(corePoolSize, corePoolSize, 0L, TimeUnit.SECONDS, LinkedBlockingQueue(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE), RejectedTaskHandler())
          for (param in parameters) {
             val t = TestRunnable(city, marketName, marketId, listOf(param), currentTest, productsLimit)
             executor.execute(t)
+            tests.add(t)
          }
          executor.shutdown()
          while (!executor.isTerminated) {
          }
+         return tests
       }
+
+      @JvmStatic
+      fun addExeptionToJsonArray(e: Exception, url: String?) {
+         val erro: JSONObject = JSONObject()
+         erro.put(url, e.stackTraceToString())
+         logJson.put(erro)
+      }
+
    }
 }
