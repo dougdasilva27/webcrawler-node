@@ -107,15 +107,17 @@ public class MexicoJustoCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = scrapSales(pricing);
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
+      if(pricing != null){
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+      }
 
       return offers;
    }
@@ -125,17 +127,21 @@ public class MexicoJustoCrawler extends Crawler {
       Double priceFrom = prices[0];
       Double spotlightPrice = prices[1];
 
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
-      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(spotlightPrice)
-         .build();
+      if(spotlightPrice != null){
+         CreditCards creditCards = scrapCreditCards(spotlightPrice);
+         BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build();
 
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
+         return Pricing.PricingBuilder.create()
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
+      }else{
+         return null;
+      }
    }
 
    private Double[] scrapPrices(Document doc){
