@@ -60,8 +60,8 @@ public class MexicoJustoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId();
-         String name = crawlName(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".shopping-list__content", "data-id");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc,".product-info__name", false);;
          boolean isAvailable = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
          List<String> images = crawlImages(doc);
@@ -89,17 +89,8 @@ public class MexicoJustoCrawler extends Crawler {
       return products;
    }
 
-   private String crawlInternalId(){
-      String[] arrUrl = session.getOriginalURL().split("-");
-      return arrUrl[arrUrl.length - 1];
-   }
-
    private boolean isProductPage(Document doc) {
       return !doc.select(".product-details").isEmpty();
-   }
-
-   private String crawlName(Document doc){
-      return CrawlerUtils.scrapStringSimpleInfo(doc,".product-info__name", false);
    }
 
    private Offers crawlOffers(Document doc) throws OfferException, MalformedPricingException {
