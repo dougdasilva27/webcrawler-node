@@ -40,7 +40,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return "https://b2c-sm-www-api-production4.sitemercado.com.br/api/v1/b2c/380/product/load_search/";
    }
    private String ApiSearchUrl(String lojaId) {
-      return "https://b2c-sm-www-api-production4.sitemercado.com.br/api/v1/b2c/"+lojaId+"/product/load_search/";
+      return "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/"+lojaId+"/product/load_search/";
    }
 
    @Override
@@ -114,7 +114,8 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject crawlProductInfo() {
-      String loadUrl = "https://b2c-sm-www-api-production.sitemercado.com.br/api/v1/b2c/page/load";
+      String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
+      String loadUrl = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/page/store"+lojaUrl;
       String lojaId = "";
 
       Map<String, String> headers = new HashMap<>();
@@ -124,7 +125,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
       Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers)
             .setPayload(loadPayload).build();
-      Map<String, String> responseHeaders = this.dataFetcher.post(session, request).getHeaders();
+      Map<String, String> responseHeaders = this.dataFetcher.get(session, request).getHeaders();
 
       if (responseHeaders.containsKey("sm-token")) {
          String header = responseHeaders.get("sm-token");

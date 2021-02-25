@@ -309,7 +309,8 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
     * @return
     */
    private JSONObject crawlProductInformatioFromApi(String productUrl) {
-      String loadUrl = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/page/load";
+      String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
+      String loadUrl = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/page/store"+lojaUrl;
       String url = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/"+getLojaInfo().get("IdLoja")+"/product/" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
 
       Map<String, String> headers = new HashMap<>();
@@ -319,7 +320,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
 
       Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(loadPayload).build();
-      Map<String, String> responseHeaders = new ApacheDataFetcher().post(session, request).getHeaders();
+      Map<String, String> responseHeaders = new ApacheDataFetcher().get(session, request).getHeaders();
 
       JSONObject jsonObject = responseHeaders != null ? JSONUtils.stringToJson(responseHeaders.get("sm-token")) : new JSONObject();
       // jsonObject.remove("IdLoja");
