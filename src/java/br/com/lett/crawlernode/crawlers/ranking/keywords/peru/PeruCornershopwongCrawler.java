@@ -11,7 +11,7 @@ public class PeruCornershopwongCrawler extends MexicoCornershopCrawlerRanking {
 
    @Override
    protected String getStoreId() {
-      return "2913";
+      return "2917";
    }
 
    @Override
