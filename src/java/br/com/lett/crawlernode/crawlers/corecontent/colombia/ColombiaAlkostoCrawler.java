@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.YotpoRatingReviewCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -12,6 +13,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -28,6 +30,8 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
    public ColombiaAlkostoCrawler(Session session) {
       super(session);
+      super.config.setMustSendRatingToKinesis(true);
+
    }
 
    @Override
@@ -49,6 +53,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
          String description = crawlDescription(doc);
          boolean available = !doc.select(".availability.in-stock").isEmpty(); //I didn't find any product unavailable to test
          Offers offers = available ? scrapOffers(doc) : new Offers();
+         RatingsReviews ratingReviews = scrapRating(doc, internalPid);
 
 
          // Creating the product
@@ -61,6 +66,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
+            .setRatingReviews(ratingReviews)
             .build();
 
          products.add(product);
@@ -157,5 +163,44 @@ public class ColombiaAlkostoCrawler extends Crawler {
       }
 
       return creditCards;
+   }
+
+   private RatingsReviews scrapRating(Document doc, String internalPid) {
+      String url = "https://staticw2.yotpo.com/batch/" + fetchAppKey(doc) + "/" + internalPid;
+
+      YotpoRatingReviewCrawler yotpo = new YotpoRatingReviewCrawler(session, cookies, logger);
+      Document apiDoc = yotpo.extractRatingsFromYotpo(fetchAppKey(doc), dataFetcher, getPayload(internalPid), url);
+
+      return yotpo.scrapRatingYotpo(apiDoc);
+   }
+
+
+   private String getPayload(String internalPid) {
+      return "[{\"method\":\"main_widget\",\"params\":{\"pid\":\"" + internalPid + "\",\"order_metadata_fields\":{},\"index\":0,\"element_id\":\"1\"}}," +
+         "{\"method\":\"bottomline\",\"params\":{\"pid\":\"" + internalPid + "\",\"link\":\""
+         + this.session.getOriginalURL() + "\",\"skip_average_score\":false,\"main_widget_pid\":\"" + internalPid + "\",\"index\":1,\"element_id\":2}}]";
+   }
+
+   /**
+    * Method to fetch App Key of Yotpo API.
+    */
+   private String fetchAppKey(Document doc) {
+      String key = null;
+      Elements scripts = doc.select("head script[type='text/javascript']");
+      for (Element e : scripts) {
+         String script = e.toString();
+         if (script.contains("https://staticw2.yotpo.com") && script.contains("/widget.js")) {
+            String[] split = script.split("staticw2.yotpo.com");
+            if (split.length > 0) {
+               String[] fistIndex = split[1].split("/widget.js");
+               key = fistIndex[0];
+            }
+
+            return key;
+         }
+      }
+
+
+      return null;
    }
 }
