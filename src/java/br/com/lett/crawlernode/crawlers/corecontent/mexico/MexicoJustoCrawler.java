@@ -66,7 +66,7 @@ public class MexicoJustoCrawler extends Crawler {
          CategoryCollection categories = crawlCategories(doc);
          List<String> images = crawlImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-         String description = crawlDescription(doc);
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__info-description-text", false);
          Offers offers = isAvailable ? crawlOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
@@ -198,15 +198,13 @@ public class MexicoJustoCrawler extends Crawler {
       Elements imageElements = doc.select(".product-image img");
       List<String> imageList = new ArrayList<>();
 
-      for (Element element: imageElements) {
-         imageList.add(element.attr("data-src"));
+      if(!imageElements.isEmpty()){
+         for (Element element: imageElements) {
+            imageList.add(element.attr("data-src"));
+         }
       }
 
       return imageList;
-   }
-
-   private String crawlDescription(Document doc){
-      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product__info-description-text", false);
    }
 
 }
