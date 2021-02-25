@@ -521,7 +521,7 @@ public class CommonMethods {
 
       String result = "";
       int s = str.indexOf(start) + start.length();
-      int e = str.indexOf(end) + end.length();
+      int e = str.indexOf(end,s) + end.length();
 
       if (s >= 0 && s < e && e <= str.length()) {
          result = str.substring(s, e);
