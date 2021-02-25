@@ -2,12 +2,14 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -18,6 +20,7 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.*;
@@ -35,6 +38,16 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(HOME_PAGE)
+         .build();
+
+      Response response =dataFetcher.get(session,request);
+      this.cookies = response.getCookies();
    }
 
    @Override
@@ -103,19 +116,20 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    private Offers scrapOffers(JSONObject jsonInfo) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(jsonInfo);
-      List<String> sales = scrapSales(jsonInfo);
+      if(jsonInfo!=null && !jsonInfo.isEmpty()) {
+         Pricing pricing = scrapPricing(jsonInfo);
+         List<String> sales = scrapSales(jsonInfo);
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("Drogaria Nissei")
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
-
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName("Drogaria Nissei")
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+      }
       return offers;
 
    }
@@ -174,8 +188,9 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       String url = "https://www.farmaciasnissei.com.br/pegar/preco";
 
+      String cookies = CommonMethods.cookiesToString(this.cookies);
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", "_fbp=fb.2.1613999711463.629554792; csrftoken=k9LjOTr9abMqhIlWx9l2speAaikyPsFoZ08YEOTbKtvbPvQlZyO6SptAbezMyJjm; _gid=GA1.3.703743027.1610735130; _ga=GA1.3.1790562605.1613999712; _ga_G8H8ZH3E1D=GS1.1.1613999711.1.1.1613999906.60");
+      headers.put("cookie", cookies);
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("referer", session.getOriginalURL());
 
@@ -186,7 +201,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
-         .setCookies(cookies)
          .build();
 
       String content = this.dataFetcher
