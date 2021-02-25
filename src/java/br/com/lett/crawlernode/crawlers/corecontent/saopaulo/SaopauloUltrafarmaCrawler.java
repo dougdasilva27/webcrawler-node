@@ -245,7 +245,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
          secondaryImages = secondaryImagesArray.toString();
       }
 
-      return Collections.singletonList(secondaryImages);
+      return secondaryImages != null ? Collections.singletonList(secondaryImages) : null;
    }
 
    private List<String> scrapSales(Pricing pricing) {
