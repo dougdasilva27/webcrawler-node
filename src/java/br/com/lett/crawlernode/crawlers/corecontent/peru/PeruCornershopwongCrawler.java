@@ -9,7 +9,7 @@ public class PeruCornershopwongCrawler extends CornershopCrawler {
       super(session);
    }
 
-   public static final String STORE_ID = "2913";
+   public static final String STORE_ID = "2917";
    public static final String SELLER_FULL_NAME = "Cornershop Wong";
 
 
