@@ -1,21 +1,23 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.Arrays;
-import java.util.List;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class SaopauloB2WCrawlersUtils {
 
    /**
     * B2W has two types of crawler
-    * 
+    *
     * Old Way: Shoptime New Way: Americanas and Submarino
-    * 
+    *
     * this happen because americanas and submarino have changed their sites, but shoptime no
     */
 
@@ -28,7 +30,7 @@ public class SaopauloB2WCrawlersUtils {
     */
 
    /**
-    * 
+    *
     * @param doc
     * @return
     */
@@ -58,12 +60,12 @@ public class SaopauloB2WCrawlersUtils {
     * Nesse novo site da americanas todas as principais informações dos skus estão em um json no html,
     * esse json é muito grande, por isso pego somente o que preciso e coloco em outro json para
     * facilitar a captura de informações
-    * 
+    *
     * { internalPid = '51612', skus:[ { internal_id: '546', variationName: '110v' } ], images:{
     * primaryImage: '123.jpg'. secondaryImages: [ '1.jpg', '2.jpg' ] }, categories:[ { id: '123', name:
     * 'cafeteira' } ], prices:{ 546:{ stock: 1706 bankTicket: 59.86 installments: [ { quantity: 1,
     * value: 54.20 } ] } }
-    * 
+    *
     * }
     */
 
@@ -293,6 +295,11 @@ public class SaopauloB2WCrawlersUtils {
             offersJsonArray = offerJson.optJSONArray("result");
          }
 
+      } else if (initialJson.has("products") && initialJson.get("products") instanceof  JSONObject){
+         JSONObject products = initialJson.optJSONObject("products");
+         String jsonPath = internalPid + ".offers.result";
+
+         offersJsonArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
       }
 
       if (offersJsonArray != null && offersJsonArray.length() > 0) {
@@ -357,6 +364,7 @@ public class SaopauloB2WCrawlersUtils {
    }
 
    private static void manageEmbedded(JSONObject jsonOffer, JSONObject jsonSeller) {
+
       if (jsonOffer.has("_embedded")) {
          JSONObject embedded = jsonOffer.optJSONObject("_embedded");
 
@@ -372,6 +380,19 @@ public class SaopauloB2WCrawlersUtils {
             if (seller.has("id")) {
                jsonSeller.put("id", seller.get("id"));
             }
+         }
+      } else if (!jsonOffer.isEmpty()){
+         if (jsonOffer.has("seller")) {
+            JSONObject seller = jsonOffer.optJSONObject("seller");
+
+            if(seller.has("name")){
+               jsonSeller.put("sellerName", seller.get("name").toString().toLowerCase().trim());
+            }
+
+            if (seller.has("id")) {
+               jsonSeller.put("id", seller.get("id"));
+            }
+
          }
       }
    }
@@ -533,25 +554,22 @@ public class SaopauloB2WCrawlersUtils {
 
    public static JSONObject extractApolloOffersJson(JSONObject apoloJson) {
       JSONObject offersJson = new JSONObject();
-
       JSONObject rootQuery = apoloJson.optJSONObject("ROOT_QUERY");
       if (rootQuery != null) {
          for (String key : rootQuery.keySet()) {
             if (key.startsWith("product(")) {
                JSONObject productJSON = rootQuery.optJSONObject(key);
-
                Object obj = productJSON.optQuery("/offers/result");
-               if (obj instanceof JSONArray) {
-                  JSONArray offerResult = (JSONArray) obj;
 
-                  for (Object o : offerResult) {
-                     JSONObject offerObj = (JSONObject) o;
+                  if (obj instanceof JSONArray) {
+                     JSONArray offerResult = (JSONArray) obj;
 
-                     extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
+                     for (Object o : offerResult) {
+                        JSONObject offerObj = (JSONObject) o;
+
+                        extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
+                     }
                   }
-               }
-
-               break;
             }
          }
       }

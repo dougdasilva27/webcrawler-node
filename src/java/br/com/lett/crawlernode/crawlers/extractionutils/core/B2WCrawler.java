@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import java.sql.SQLOutput;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -144,12 +145,10 @@ public class B2WCrawler extends Crawler {
       // Json da pagina principal
       JSONObject frontPageJson = SaopauloB2WCrawlersUtils.getDataLayer(doc);
       JSONObject apolloJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__APOLLO_STATE__ =", null, false, true);
-
       // Pega só o que interessa do json da api
       JSONObject infoProductJson = SaopauloB2WCrawlersUtils.assembleJsonProductWithNewWay(frontPageJson, apolloJson);
 
       JSONObject offersJSON = apolloJson != null && !apolloJson.isEmpty() ? SaopauloB2WCrawlersUtils.extractApolloOffersJson(apolloJson) : new JSONObject();
-
       // verifying if url starts with home page because on crawler seed,
       // some seeds can be of another store
       if (infoProductJson.has("skus") && session.getOriginalURL().startsWith(this.homePage)) {
@@ -493,16 +492,19 @@ public class B2WCrawler extends Crawler {
       Offers offers = new Offers();
 
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
-      JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
+      if(jsonSeller.isEmpty()){
+         jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+      }
 
+      JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
+
 
       boolean twoPositions = false;
 
       // Getting informations from sellers.
       if (offersJson.has(internalId)) {
          JSONArray sellerInfo = offersJson.getJSONArray(internalId);
-
          // The Business logic is: if we have more than 1 seller is buy box
          boolean isBuyBox = sellerInfo.length() > 1;
 
@@ -775,6 +777,22 @@ public class B2WCrawler extends Crawler {
                   .setIsShopCard(false)
                   .setInstallments(installments)
                   .build());
+         }
+      }
+
+      if (creditCards.getCreditCards().isEmpty()) {
+         Installments installments = new Installments();
+         installments.add(InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(seller.optDouble("priceFrom"))
+            .build());
+
+         for (String flag : cards) {
+            creditCards.add(CreditCardBuilder.create()
+               .setBrand(flag)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
          }
       }
 
