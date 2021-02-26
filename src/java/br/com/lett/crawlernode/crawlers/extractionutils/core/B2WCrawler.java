@@ -1,24 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.sql.SQLOutput;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.apache.http.cookie.Cookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import com.google.common.collect.Sets;
-import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
@@ -38,6 +19,8 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
+import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -45,15 +28,22 @@ import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
+import models.pricing.*;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
 import models.pricing.Installment.InstallmentBuilder;
-import models.pricing.Installments;
-import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.cookie.Cookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.text.Normalizer;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class B2WCrawler extends Crawler {
    protected Map<String, String> headers = new HashMap<>();
@@ -175,6 +165,7 @@ public class B2WCrawler extends Crawler {
                offers = scrapOffersnewWay(skuJson, offersJSON, internalId);
             } else {
                offers = scrapOffers(doc, internalId, internalPid);
+
             }
 
             setMainRetailer(offers);
@@ -510,7 +501,6 @@ public class B2WCrawler extends Crawler {
 
          for (int i = 0; i < sellerInfo.length(); i++) {
             JSONObject info = (JSONObject) sellerInfo.get(i);
-
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
                String internalSellerId = info.get("id").toString();
