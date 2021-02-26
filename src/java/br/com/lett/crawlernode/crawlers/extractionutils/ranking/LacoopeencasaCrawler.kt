@@ -63,7 +63,7 @@ abstract class LacoopeencasaCrawler (session: Session) : CrawlerRankingKeywords(
 
    override fun processBeforeFetch() {
       val referer = "https://www.lacoopeencasa.coop/listado/busqueda-avanzada/${getKeyword()}"
-      cookies = br.com.lett.crawlernode.crawlers.extractionutils.core.LacoopeencasaCrawler.getCookies(dataFetcher, session, getLocalId(), referer)
+      cookies = br.com.lett.crawlernode.crawlers.extractionutils.core.LacoopeencasaCrawler.getCookies(session, referer)
    }
 
    private fun fetchProductsFromAPI(): JSONObject {
@@ -73,7 +73,7 @@ abstract class LacoopeencasaCrawler (session: Session) : CrawlerRankingKeywords(
 
       val headers = getHeaders(referer)
       headers["Content-Type"] = "application/json"
-      headers["Cookie"] += this.cookies.firstOrNull { it.name == "_lcec_linf" }?.let { "${it.name}=${it.value};" } ?: ""
+      headers["Cookie"] = "_lcec_sid_inv=${this.cookies.toString().substringAfter("[value: ").substringBefore("]")}; "
 
       val payload = "{\"pagina\":0,\"filtros\":{\"preciomenor\":-1,\"preciomayor\":-1,\"categoria\":[],\"marca\":[],\"tipo_seleccion\":\"busqueda\",\"tipo_relacion\":\"busqueda\",\"filtros_gramaje\":[]," +
          "\"termino\":\"${getKeyword()}\"," +
