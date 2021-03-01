@@ -20,45 +20,45 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
    private static final String API_COOKIE = "csrftoken=vQ4QPYu1Y9rq1irLMF2jjjvJ5eWGV8V0Bv1C2coeA0ujHYh0MuQjEQH9wDMNNSvr;";
 
-  public BrasilDrogarianisseiCrawler(Session session) {
-    super(session);
-  }
+   public BrasilDrogarianisseiCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
+   @Override
+   protected void extractProductsFromCurrentPage() {
 
-     JSONObject productsJson = fetchJSONObject(API);
+      JSONObject productsJson = fetchJSONObject(API);
 
-     if (this.totalProducts == 0) {
-        this.totalProducts = productsJson.optInt("quantidade");
-     }
+      if (this.totalProducts == 0) {
+         this.totalProducts = productsJson.optInt("quantidade");
+      }
 
-     JSONArray products = JSONUtils.getJSONArrayValue(productsJson,"produtos");
+      JSONArray products = JSONUtils.getJSONArrayValue(productsJson,"produtos");
 
-     if (!products.isEmpty()) {
+      if (!products.isEmpty()) {
 
-        for (Object e: products) {
+         for (Object e: products) {
 
-           JSONObject product = (JSONObject) e;
+            JSONObject product = (JSONObject) e;
 
-           String internalId = product.optString("_id");
+            String internalId = product.optString("_id");
 
-           String productUrl = scrapProductUrl(product);
+            String productUrl = scrapProductUrl(product);
 
-           saveDataProduct(internalId, internalId, productUrl);
+            saveDataProduct(internalId, internalId, productUrl);
 
-           this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
-           if (this.arrayProducts.size() == productsLimit)
-              break;
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
 
-        }
-     } else {
-        this.result = false;
-        this.log("Keyword sem resultado!");
-     }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
 
-     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
    protected JSONObject fetchJSONObject(String url){
 
@@ -77,19 +77,19 @@ public class BrasilDrogarianisseiCrawler extends CrawlerRankingKeywords {
 
    private String scrapProductUrl(JSONObject product){
 
-     String url = null;
-     JSONObject source = product.optJSONObject("_source");
+      String url = null;
+      JSONObject source = product.optJSONObject("_source");
 
-     if(source != null){
+      if(source != null){
 
-        String urlPart = source.optString("url_produto");
+         String urlPart = source.optString("url_produto");
 
-        if(urlPart != null){
-           url = CrawlerUtils.completeUrl(urlPart, "https", "www.farmaciasnissei.com.br");
-        }
-     }
+         if(urlPart != null){
+            url = CrawlerUtils.completeUrl(urlPart, "https", "www.farmaciasnissei.com.br");
+         }
+      }
 
-     return url;
+      return url;
    }
 
 }
