@@ -1,20 +1,19 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core
 
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.crawlers.corecontent.belgium.BelgiumDelhaizeCrawler
 import br.com.lett.crawlernode.util.*
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
 import org.apache.http.cookie.Cookie
-import org.json.JSONArray
 import org.json.JSONObject
+import kotlin.collections.HashMap
 
 /**
  * Date: 25/01/21
@@ -31,26 +30,24 @@ abstract class LacoopeencasaCrawler (session: Session) : Crawler(session){
          val headers = HashMap<String, String>()
          headers["Accept"] = "*/*"
          headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
-         headers["Cookie"] = "_lcec_sid_inv=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZF9jYXJyaXRvIjowLCJmZWNoYSI6IjIwMjEtMDEtMjUgMTU6MjU6NDEiLCJ2ZW5jaW1pZW50byI6NDMyMDB9.KetXlwmZ7hMbEd2B13oY5B8C8yxd3e8rItIua7IbgHg; "
          headers["Referer"] = referer
+         headers["Host"] = "www.lacoopeencasa.coop"
          return headers
       }
 
-      fun getCookies(dataFetcher: DataFetcher, session: Session, localId: String, referer: String): List<Cookie> {
-         val url = "https://www.lacoopeencasa.coop/ws/index.php/comun/datosController/datos" +
-            "?local=$localId" +
-            "&modo_entrega_seleccionado=null"
+      fun getCookies(session: Session, referer: String): List<Cookie> {
+
+         val url = "https://www.lacoopeencasa.coop/ws/index.php/comun/autentificacionController/autentificar_invitado"
 
          val headers = getHeaders(referer)
-
-         headers.remove("Cookie")
 
          val request = Request.RequestBuilder.create()
             .setUrl(url)
             .setHeaders(headers)
+            .setPayload("{}")
             .build()
 
-         val response = dataFetcher.get(session, request)
+         val response = JsoupDataFetcher().post(session, request)
 
          return response.cookies
       }
@@ -65,8 +62,7 @@ abstract class LacoopeencasaCrawler (session: Session) : Crawler(session){
    }
 
    override fun handleCookiesBeforeFetch() {
-
-      this.cookies = getCookies(dataFetcher, session, getLocalId(), session.originalURL)
+      this.cookies = getCookies(session, session.originalURL)
    }
 
    override fun fetch(): JSONObject {
@@ -77,8 +73,7 @@ abstract class LacoopeencasaCrawler (session: Session) : Crawler(session){
          "&local=${getLocalId()}"
 
       val headers = getHeaders(session.originalURL)
-
-      headers["Cookie"] += CommonMethods.cookiesToString(this.cookies)
+      headers["Cookie"] = "_lcec_sid_inv=${this.cookies.toString().substringAfter("[value: ").substringBefore("]")}; "
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
