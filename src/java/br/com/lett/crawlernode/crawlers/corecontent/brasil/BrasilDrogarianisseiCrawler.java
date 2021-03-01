@@ -48,7 +48,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .build();
 
 
-      Response response =dataFetcher.get(session,request);
+      Response response = dataFetcher.get(session, request);
       this.cookies = response.getCookies();
    }
 
@@ -66,35 +66,32 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String array = CrawlerUtils.scrapStringSimpleInfo(doc, ".row .mt-3 .small", false);
-         String[] internalIdArray = array!=null? array.split("produto: "): null;
-         if (internalIdArray != null && internalIdArray.length > 1) {
 
-            String internalId = internalIdArray[1].contains("|") ? internalIdArray[1].split("[|]")[0].trim() : internalIdArray[1];
-            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
-            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
-            String primaryImage = fixUrlImage(doc, internalId);
-            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-produto_id]", "data-produto_id");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
+         String primaryImage = fixUrlImage(doc, internalId);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
 
-            String token = scarpToken(doc);
-            JSONObject json = accesAPIOffers(internalId, token);
-            Offers offers = scrapOffers(json);
+         String token = scarpToken(doc);
+         JSONObject json = accesAPIOffers(internalId, token);
+         Offers offers = scrapOffers(json);
 
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalId)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setDescription(description)
-               .setOffers(offers)
-               .build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
-            products.add(product);
-         }
+         products.add(product);
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -108,8 +105,8 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       Elements elements = doc.select("script[type=\"application/javascript\"]");
       for (Element element : elements) {
          String data = element.data();
-         if(data.contains("atualizarResizeCarrinho")&&data.contains("csrfmiddlewaretoken")){
-            token = CommonMethods.substring(data,"csrfmiddlewaretoken': '","'");
+         if (data.contains("atualizarResizeCarrinho") && data.contains("csrfmiddlewaretoken")) {
+            token = CommonMethods.substring(data, "csrfmiddlewaretoken': '", "'");
          }
       }
 
@@ -117,7 +114,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".row[data-target=\"produto_view\"]").isEmpty();
+      return !doc.select("div[data-produto_id]").isEmpty();
    }
 
    private String fixUrlImage(Document doc, String internalId) {
@@ -133,7 +130,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    private Offers scrapOffers(JSONObject jsonInfo) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      if(jsonInfo!=null && !jsonInfo.isEmpty()) {
+      if (jsonInfo != null && !jsonInfo.isEmpty()) {
          Pricing pricing = scrapPricing(jsonInfo);
          List<String> sales = scrapSales(jsonInfo);
 
@@ -201,7 +198,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    }
 
 
-   private JSONObject accesAPIOffers(String internalId,String token) {
+   private JSONObject accesAPIOffers(String internalId, String token) {
 
       String url = "https://www.farmaciasnissei.com.br/pegar/preco";
 
@@ -212,7 +209,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       headers.put("referer", session.getOriginalURL());
 
 
-      String payload = "csrfmiddlewaretoken="+token+"&produtos_ids%5B%5D=" + internalId;
+      String payload = "csrfmiddlewaretoken=" + token + "&produtos_ids%5B%5D=" + internalId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
