@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -29,7 +30,7 @@ import java.util.Map.Entry;
 
 /**
  * date: 05/09/2018
- * 
+ *
  * @author gabriel
  *
  */
@@ -82,7 +83,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
             Offers offers = scrapOffers(jsonPrice);
 
-            RatingsReviews ratingReviews = crawRating(doc);
+            RatingsReviews ratingReviews = crawRating(doc, internalPid);
 
             // Creating the product
             Product product = ProductBuilder.create()
@@ -219,36 +220,6 @@ public class BrasilSephoraCrawler extends Crawler {
    private Element crawlVariationElement(Document doc, String internalId) {
 
       return doc.selectFirst(".col-bundle li[data-productid=\" " + internalId + "\"]");
-   }
-
-   private JSONObject scrapJsonSku(JSONObject chaordicJson, String sku) {
-      JSONArray offers = JSONUtils.getJSONArrayValue(chaordicJson, "offers");
-
-      for (Object obj: offers) {
-         if (obj instanceof JSONObject) {
-            JSONObject offer = (JSONObject) obj;
-            if (sku.equals(JSONUtils.getStringValue(offer, "sku"))) {
-               return offer;
-            }
-         }
-      }
-      return new JSONObject();
-   }
-
-   private String crawlName(JSONObject chaordicJson, Element variantElement) {
-      StringBuilder name = new StringBuilder();
-
-      if (chaordicJson.has("name")) {
-         name.append(chaordicJson.getString("name"));
-
-         Element nameV = variantElement.selectFirst("label p.reference.info");
-         if (nameV != null) {
-            name.append(" " + nameV.ownText());
-         }
-
-      }
-
-      return name.toString();
    }
 
    private Float crawlPrice(Prices prices) {
@@ -404,44 +375,8 @@ public class BrasilSephoraCrawler extends Crawler {
       return installmentsRulesMap;
    }
 
-   private JSONObject crawlChaordicJson(Document doc) {
-      JSONObject skuJson = new JSONObject();
 
-      Elements scripts = doc.select("script[type=\"application/ld+json\"]");
-
-      for (Element e : scripts) {
-         String script = e.html().trim();
-
-         if (script.contains("sku") && script.startsWith("[") && script.endsWith("]")) {
-            try {
-               JSONArray array = new JSONArray(script);
-
-               if (array.length() > 0) {
-                  skuJson = array.getJSONObject(0);
-               }
-            } catch (Exception e1) {
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
-            }
-
-            break;
-         }
-      }
-
-      return skuJson;
-   }
-
-   private List<String> crawlEan(JSONObject json) {
-      String ean = json.optString("gtin13");
-
-      List<String> eans = new ArrayList<>();
-
-      if (!ean.isEmpty()) {
-         eans.add(ean);
-      }
-      return eans;
-   }
-
-   private RatingsReviews crawRating(Document doc) {
+   private RatingsReviews crawRating(Document doc, String internalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
@@ -450,6 +385,8 @@ public class BrasilSephoraCrawler extends Crawler {
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
       ratingReviews.setAverageOverallRating(getTotalAvgRating(doc));
+      ratingReviews.setAdvancedRatingReview(scrapTotalOfRewviesPerEachStar(doc, internalPid));
+
 
       return ratingReviews;
    }
@@ -493,5 +430,53 @@ public class BrasilSephoraCrawler extends Crawler {
 
       return JSONUtils.stringToJson(response);
    }
+
+
+   private JSONArray fetchRatingApi(String internalPid){
+      String url = "https://www.sephora.com.br/ajaxreview/list?product_id="+internalPid+"&cur_page=1";
+
+      Request request =  Request.RequestBuilder.create().setUrl(url).build();
+      String response = this.dataFetcher.get(session,request).getBody();
+
+      return JSONUtils.stringToJsonArray(response);
+
+   }
+
+   private AdvancedRatingReview scrapTotalOfRewviesPerEachStar(Document doc,String internalPid) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+      JSONArray ratingInfoArr = fetchRatingApi(internalPid);
+
+      if(ratingInfoArr != null) {
+         for (Object e : ratingInfoArr) {
+            JSONObject ratingInfo = (JSONObject) e;
+            int numberOfStars = ratingInfo.optInt("votes_percent");
+
+            if (numberOfStars == 20) {
+               star1++;
+            } else if (numberOfStars == 40) {
+               star2++;
+            } else if (numberOfStars == 60) {
+               star3++;
+            } else if (numberOfStars == 80) {
+               star4++;
+            } else if (numberOfStars == 100) {
+               star5++;
+            }
+         }
+      }
+      return new AdvancedRatingReview.Builder()
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
+   }
+
 
 }
