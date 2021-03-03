@@ -139,7 +139,7 @@ Here below you see how to config in Intellij IDEA, but is very similar in others
 
 3 - Define program arguments:
 ```bash
--city {{MARKET CITY}} -market {{MARKET NAME}} -testType [keyword|insights] -pathwrite $HOME/htmls-crawler/
+-city {{MARKET CITY}} -market {{MARKET NAME}} -testType [keyword|insights]
 ```
 > NOTE: The test type can be 'keywords' for ranking crawler or 'insights' for crawler core
 
@@ -186,6 +186,7 @@ LETT_POSTGRES_PORT=5432;
 LETT_POSTGRES_USERNAME={{USERNAME}};
 LOGS_BUCKET_NAME=lett-webscraper-htmls-dev;
 TMP_IMG_FOLDER=$HOME/lett/images;
+HTML_PATH=$HOME/htmls-crawler/;
 USE_FETCHER=false;
 S3_BATCH_USER={{USERNAME}};
 S3_BATCH_HOST=s3-batch.lett.global;
