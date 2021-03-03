@@ -275,7 +275,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
    private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(json);
-      // List<String> sales = scrapSales(doc);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -284,25 +283,12 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(true)
          .setPricing(pricing)
-         // .setSales(sales)
          .build());
 
       return offers;
 
    }
 
-   private List<String> scrapSales(Document doc) {
-      List<String> sales = new ArrayList<>();
-
-      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
-      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
-
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
-      }
-
-      return sales;
-   }
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
 
