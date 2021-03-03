@@ -22,6 +22,7 @@ import java.util.*;
 public class BrasilLojasmmCrawler extends Crawler {
 
    private static final String MAINSELLER = "LojasMM";
+   private static final String HOME_PAGE = "https://www.lojasmm.com/";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.HIPERCARD.toString(), Card.ELO.toString(),
       Card.SOROCRED.toString(), Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -33,7 +34,6 @@ public class BrasilLojasmmCrawler extends Crawler {
    @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
-      String HOME_PAGE = "https://www.lojasmm.com/";
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
@@ -154,17 +154,6 @@ public class BrasilLojasmmCrawler extends Crawler {
 
    }
 
-   private String scrapSellerId(JSONObject scrapSeller) {
-
-      return Integer.toString(scrapSeller.optInt("idSeller"));
-   }
-
-   private String scrapSellerName(JSONObject scrapSeller) {
-
-      return scrapSeller.optString("sellerName");
-
-   }
-
    private Offers scrapOffer(JSONObject variation, JSONObject scrapSeller) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(variation);
@@ -172,11 +161,11 @@ public class BrasilLojasmmCrawler extends Crawler {
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(false)
-         .setInternalSellerId(scrapSellerId(scrapSeller))
+         .setInternalSellerId(Integer.toString(scrapSeller.optInt("idSeller")))
          .setMainPagePosition(1)
-         .setSellerFullName(scrapSellerName(scrapSeller))
+         .setSellerFullName(scrapSeller.optString("sellerName"))
          .setIsBuybox(true)
-         .setIsMainRetailer(scrapSellerName(scrapSeller).equalsIgnoreCase(MAINSELLER))
+         .setIsMainRetailer(scrapSeller.optString("sellerName").equalsIgnoreCase(MAINSELLER))
          .setSales(sales)
          .setPricing(pricing)
          .build());
@@ -213,7 +202,7 @@ public class BrasilLojasmmCrawler extends Crawler {
    private BankSlip scrapBankSlip(JSONObject offer) throws MalformedPricingException {
 
       return BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(offer.getDouble("boletoValor"))
+         .setFinalPrice(offer.optDouble("boletoValor"))
          .build();
    }
 
