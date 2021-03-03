@@ -9,9 +9,9 @@ import org.json.JSONObject
 class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) {
 
     companion object {
-        private const val HOME_PAGE = "https://www.nagumo.com.br/guarulhos-loja-guarulhos-aruja-jardim-cumbica-caminho-do-campo-do-rincao"
+        private const val HOME_PAGE = "https://www.sitemercado.com.br/nagumo/lorena-lj48-lorena-vila-hepacare-avenida-coronel-jose-vicente"
 
-        private const val IDLOJA = 4951
+        private const val IDLOJA = 2700
         private const val IDREDE = 884
     }
 
