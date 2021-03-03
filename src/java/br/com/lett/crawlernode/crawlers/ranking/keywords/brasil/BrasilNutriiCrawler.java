@@ -1,89 +1,57 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class BrasilNutriiCrawler extends CrawlerRankingKeywords {
 
-  public BrasilNutriiCrawler(Session session) {
-    super(session);
-  }
+   public BrasilNutriiCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 24;
+   @Override
+   protected void extractProductsFromCurrentPage() {
 
-    this.log("Página " + this.currentPage);
+      this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String url = "https://www.nutrii.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
-    this.log("Link onde são feitos os crawlers: " + url);
+      //site hasn't pagination
+      String url = "https://www.nutrii.com.br/busca?q=" + this.keywordEncoded;
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    // chama função de pegar o html
-    this.currentDoc = fetchDocument(url);
+      this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".nova-h");
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(this.currentDoc, "#__NEXT_DATA__", null, null, false, false);
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (!products.isEmpty()) {
-      for (Element e : products) {
-        // InternalPid
-        String internalPid = null;
+      JSONArray products = json != null ? JSONUtils.getValueRecursive(json, "props.pageProps.data", JSONArray.class) : null;
 
-        // InternalId
-        String internalId = crawlInternalId(e);
+      if (products != null) {
+         for (Object obj : products) {
+            if (obj instanceof JSONObject) {
+               JSONObject product = (JSONObject) obj;
 
-        // Url do produto
-        String productUrl = crawlProductUrl(e);
+               String internalId = JSONUtils.getStringValue(product, "sku");
 
-        saveDataProduct(internalId, internalPid, productUrl);
+               String productUrl = "https://www.nutrii.com.br" + JSONUtils.getStringValue(product, "url");
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+               saveDataProduct(internalId, internalId, productUrl);
 
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
+
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-  @Override
-  protected boolean hasNextPage() {
-    return this.currentDoc.select(".i-next").first() != null;
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-    Element idElement = e.select("form[id^=product_addtocart_form_]").first();
-
-    if (idElement != null) {
-      String[] tokens = idElement.attr("id").split("_");
-      internalId = tokens[tokens.length - 1];
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-    Element url = e.select("#info-prod > a").first();
-
-    if (url != null) {
-      productUrl = url.attr("href");
-
-      if (!productUrl.startsWith("http")) {
-        productUrl = "https://www.nutrii.com.br/" + productUrl;
-      }
-    }
-
-    return productUrl;
-  }
 }
