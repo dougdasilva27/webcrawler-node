@@ -1,16 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -23,15 +13,33 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
-import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilDrogariapachecoCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.drogariaspacheco.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "drogarias pacheco";
+   private static final String SELLER_FULL_NAME = "drogaria-pacheco-brasil";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
    public BrasilDrogariapachecoCrawler(Session session) {
@@ -52,10 +60,9 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc, session.getOriginalURL())) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
+         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, SELLER_FULL_NAME, HOME_PAGE, cookies, dataFetcher);
 
          JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
          String description = crawlDescription(doc, internalPid);
@@ -73,41 +80,33 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             String internalId = vtexUtil.crawlInternalId(jsonSku);
             JSONObject apiJSON = vtexUtil.crawlApi(internalId);
             String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-            List<String> sellersPacheco = CrawlerUtils.getMainSellers(marketplaceMap, Arrays.asList(MAIN_SELLER_NAME_LOWER));
-            Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, sellersPacheco, Arrays.asList(Card.VISA), session);
-            boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, sellersPacheco);
+            boolean available = jsonSku.optBoolean("available");
             String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
             String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Prices prices = CrawlerUtils.getPrices(marketplaceMap, sellersPacheco);
-            Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.VISA);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
+            Integer stock = jsonSku.optInt("availablequantity");
             String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-
+            Offers offer = available? scrapOffers(jsonSku): new Offers();
 
             List<String> eans = new ArrayList<>();
             eans.add(ean);
 
             // Creating the product
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setMarketplace(marketplace)
-                  .setEans(eans)
-                  .setRatingReviews(ratingReviews)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setEans(eans)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offer)
+               .build();
 
             products.add(product);
          }
@@ -123,7 +122,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
 
       YourreviewsRatingCrawler yr =
-            new YourreviewsRatingCrawler(session, cookies, logger, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", this.dataFetcher);
+         new YourreviewsRatingCrawler(session, cookies, logger, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", this.dataFetcher);
 
       Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", this.dataFetcher);
 
@@ -141,7 +140,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
    /**
     * Average is calculate
-    * 
+    *
     * @param document
     * @return
     */
@@ -158,7 +157,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
    /**
     * Number of ratings appear in rating page
-    * 
+    *
     * @param docRating
     * @return
     */
@@ -177,24 +176,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       return totalRating;
    }
 
-
-   private List<String> crawlIdList(JSONObject skuJson) {
-      List<String> idList = new ArrayList<>();
-
-      if (skuJson.has("skus")) {
-         JSONArray skus = skuJson.getJSONArray("skus");
-
-         for (int i = 0; i < skus.length(); i++) {
-            JSONObject sku = skus.getJSONObject(i);
-
-            if (sku.has("sku")) {
-               idList.add(Integer.toString(sku.getInt("sku")));
-            }
-         }
-      }
-
-      return idList;
-   }
 
 
    private boolean isProductPage(Document document, String url) {
@@ -223,8 +204,8 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
          if (text.equalsIgnoreCase("medicamentos")) {
             description.append("<div class=\"container medicamento-information-component\"><h2>Advertência do Ministério da Saúde</h2><p>" +
-                  CrawlerUtils.scrapStringSimpleInfo(doc, ".fn.productName", true)
-                  + " É UM MEDICAMENTO. SEU USO PODE TRAZER RISCOS. PROCURE UM MÉDICO OU UM FARMACÊUTICO. LEIA A BULA.</p></div>");
+               CrawlerUtils.scrapStringSimpleInfo(doc, ".fn.productName", true)
+               + " É UM MEDICAMENTO. SEU USO PODE TRAZER RISCOS. PROCURE UM MÉDICO OU UM FARMACÊUTICO. LEIA A BULA.</p></div>");
             break;
          }
       }
@@ -288,8 +269,75 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             }
          }
       }
-
       return description.toString();
    }
 
+   private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(json);
+      // List<String> sales = scrapSales(doc);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         // .setSales(sales)
+         .build());
+
+      return offers;
+
+   }
+
+   private List<String> scrapSales(Document doc) {
+      List<String> sales = new ArrayList<>();
+
+      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
+      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+
+      if (firstSales != null && !firstSales.isEmpty()) {
+         sales.add(firstSales);
+      }
+
+      return sales;
+   }
+
+   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
+
+      Double spotlightPrice = !json.optString("bestPriceFormated").isEmpty()? MathUtils.parseDoubleWithComma(json.optString("bestPriceFormated")): null;
+      Double priceFrom      = !json.optString("listPriceFormated").isEmpty()? MathUtils.parseDoubleWithDot(json.optString("listPriceFormated")): null;
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom != 0D? priceFrom : null)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
 }
