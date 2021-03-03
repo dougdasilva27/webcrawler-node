@@ -142,7 +142,7 @@ public abstract class FalabellaCrawler extends Crawler {
          .setUrl("https://falabella.scene7.com/is/image/" + API_CODE + "/" + internalId + "?req=set,json")
          .build();
       String response = dataFetcher.get(session, request).getBody();
-      String json = CommonMethods.substring(response, "(", ")");
+      String json = CommonMethods.substring(response, "(", ")",true);
       int index = json.lastIndexOf(",");
       json = json.substring(0, index);
 
