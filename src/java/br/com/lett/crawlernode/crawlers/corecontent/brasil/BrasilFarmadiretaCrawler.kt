@@ -42,7 +42,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
 
       val response = dataFetcher.get(session, request)
 
-      return response.body.toDoc() ?: Document(url)
+      return response.body?.toDoc() ?: Document(url)
    }
 
    //the product has no description

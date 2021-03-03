@@ -44,7 +44,6 @@ class BrasilFarmadiretaCrawler (session: Session) : CrawlerRankingKeywords(sessi
             }
          }
       } else {
-         result = false
          log("Keyword returned no results!")
       }
 
