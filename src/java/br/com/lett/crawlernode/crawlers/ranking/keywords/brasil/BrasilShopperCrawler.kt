@@ -25,7 +25,7 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    override fun processBeforeFetch() {
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session)
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
 
          log("waiting home page")
 
