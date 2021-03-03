@@ -20,7 +20,8 @@ Testes
 * O que foi testado? 
   - <!-- coloque o teste aqui-->
   - <!-- coloque o teste aqui-->
-
+    
+<!--   Checklist comentado 
 Checklist:
 ================================================================================
 - [ ] Minha mudança requer uma mudança na documentação.
@@ -28,10 +29,10 @@ Checklist:
   - [ ] Já procurei e atualizei documentações externas.
 - [ ] Este PR requer tradução.
   - [ ] Tradução está completa.
-
+-->
 
 --------------------------------------------------------------------------------
 > **Revisor**
-> - Não entendeu algo? Pergunte!
+> - Não entendeu? Pergunte!
 > - Enxergou uma solução alternativa, comente! (_Pode ser uma boa oportunidade de compartilhar aprendizados_)
 > - Encontrou problemas de código? Tente usar a sugestão via github.
