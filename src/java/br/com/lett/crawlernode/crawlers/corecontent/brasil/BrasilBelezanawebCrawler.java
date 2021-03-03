@@ -128,18 +128,11 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
    private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
-
-      if (scrapSaleDiscount(pricing) != null) {
-         sales.add(scrapSaleDiscount(pricing));
-      }
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       return sales;
    }
 
-   private String scrapSaleDiscount(Pricing pricing) {
-
-      return CrawlerUtils.calculateSales(pricing);
-   }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".nproduct-price-value", null, true, ',', session);
@@ -195,7 +188,6 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
    private Double getTotalAvgRating(Document doc) {
       double avgRating = 0d;
-
       Element avg = doc.selectFirst(".rating-value-container");
 
       if (avg != null) {
@@ -300,9 +292,7 @@ public class BrasilBelezanawebCrawler extends Crawler {
                   break;
             }
 
-
          }
-
 
       }
 
@@ -315,6 +305,5 @@ public class BrasilBelezanawebCrawler extends Crawler {
          .build();
 
    }
-
 
 }
