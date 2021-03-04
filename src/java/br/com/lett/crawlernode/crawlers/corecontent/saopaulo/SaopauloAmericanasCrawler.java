@@ -136,7 +136,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0.hqboso a[to]","href");
 
       String offersPageUrl = CrawlerUtils.completeUrl(scrapUrl,"https://", "americanas.com.br");
-      System.err.println(offersPageUrl);
       Request request = Request.RequestBuilder.create().setUrl(offersPageUrl).build();
       String response = this.dataFetcher.get(session,request).getBody();
 
