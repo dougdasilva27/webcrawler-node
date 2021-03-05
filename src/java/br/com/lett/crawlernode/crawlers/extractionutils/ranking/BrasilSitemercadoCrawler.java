@@ -22,11 +22,15 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private static final String API_URL = "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+   private final String API_URL = getApiUrl();
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
 
    protected abstract String getHomePage();
+
+   protected String getApiUrl(){
+      return "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+   }
 
    protected String getLoadPayload() {
       JSONObject payload = new JSONObject();
@@ -39,7 +43,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
 
-   private String ApiSearchUrl(String lojaId) {
+   protected String ApiSearchUrl(String lojaId) {
       return API_URL + lojaId + "/product/load_search/";
    }
 
@@ -113,7 +117,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return productUrl;
    }
 
-   private JSONObject crawlProductInfo() {
+   protected JSONObject crawlProductInfo() {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
       String loadUrl = API_URL+"page/store" + lojaUrl;
       String lojaId = "";
