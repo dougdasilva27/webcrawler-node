@@ -40,13 +40,16 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
 
-   private static final String API_URL = "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+   private final String API_URL = getApiUrl();
    private static final String MAIN_SELLER_NAME = "Sitemercado";
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
    private Map<String, Integer> lojaInfo = getLojaInfo();
 
    protected abstract String getHomePage();
+   protected String getApiUrl(){
+      return "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+   }
 
    protected abstract Map<String, Integer> getLojaInfo();
 
@@ -310,7 +313,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
     *
     * @return
     */
-   private JSONObject crawlProductInformatioFromApi(String productUrl) {
+   protected JSONObject crawlProductInformatioFromApi(String productUrl) {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
       String loadUrl = API_URL+"page/store"+lojaUrl;
       String url = API_URL+getLojaInfo().get("IdLoja")+"/product/" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
