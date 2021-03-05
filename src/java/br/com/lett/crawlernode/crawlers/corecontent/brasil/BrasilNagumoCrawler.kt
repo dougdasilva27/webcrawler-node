@@ -24,15 +24,7 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
     override fun getHomePage(): String {
         return HOME_PAGE
     }
-
-//    override fun getLoadPayload(): String {
-//        val payload = JSONObject()
-//        val split = AraraquaraSitemercadosupermercados14Crawler.HOME_PAGE.split("/".toRegex()).toTypedArray()
-//        payload.put("lojaUrl", CommonMethods.getLast(split))
-//        payload.put("redeUrl", split[split.size - 2])
-//        return payload.toString()
-//    }
-
+   
     override fun getLojaInfo(): Map<String, Int>? {
         val lojaInfo: MutableMap<String, Int> = HashMap()
         lojaInfo["IdLoja"] = IDLOJA

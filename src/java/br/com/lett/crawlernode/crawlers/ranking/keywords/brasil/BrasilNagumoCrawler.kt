@@ -18,15 +18,6 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
       return HOME_PAGE
    }
 
-//    override fun getLoadPayload(): String {
-//        val payload = JSONObject()
-//        val split = HOME_PAGE.split("/".toRegex()).toTypedArray()
-//        payload.put("lojaUrl", CommonMethods.getLast(split))
-//        payload.put("redeUrl", split[split.size - 2])
-//        return payload.toString()
-//    }
-
-
    override fun crawlProductInfo(): JSONObject? {
       val lojaUrl = CommonMethods.getLast(homePage.split("www.nagumo.com.br").toTypedArray())
       val loadUrl = API_URL + "page/store" + lojaUrl
