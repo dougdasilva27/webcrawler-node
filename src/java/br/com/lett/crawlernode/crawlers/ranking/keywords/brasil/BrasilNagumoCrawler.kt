@@ -23,7 +23,4 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
         return payload.toString()
     }
 
-    override fun getApiSearchUrl(): String {
-        return API_URL
-    }
 }
