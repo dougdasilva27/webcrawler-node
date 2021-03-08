@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class VotuporangaSitemercadoservetodossantacruzCrawler extends BrasilSitemercadoCrawler {
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/santacruz/votuporanga-loja-tocantins-vila-muniz-rua-amazonas";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/santacruz/votuporanga-loja-patrimonio-velho-vila-muniz-r-amazonas";
    public static final int IDLOJA = 4673;
    public static final int IDREDE = 2;
    public VotuporangaSitemercadoservetodossantacruzCrawler(Session session) {
