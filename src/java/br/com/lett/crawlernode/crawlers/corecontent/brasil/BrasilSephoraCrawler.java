@@ -65,7 +65,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
             Document variantProductPage = fetchVariantProductPage(internalId);
             List<String> secondaryImages = crawlImages(variantProductPage);
-            String primaryImage = secondaryImages.remove(0);
+            String primaryImage = secondaryImages.isEmpty() ? null : secondaryImages.remove(0);
 
             boolean isAvailable = variantProductPage.select(".not-available-msg").isEmpty();
             Offers offers = isAvailable ? scrapOffers(variantProductPage) : new Offers();
