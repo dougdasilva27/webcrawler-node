@@ -45,6 +45,8 @@ public abstract class RappiCrawler extends Crawler {
 
    abstract protected String getImagePrefix();
 
+   protected boolean newUnification = false;
+
    @Override
    protected JSONObject fetch() {
       JSONObject productsInfo = new JSONObject();
@@ -139,8 +141,9 @@ public abstract class RappiCrawler extends Crawler {
       if (isProductPage(productJson)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(productJson);
+
          String internalPid = crawlInternalPid(productJson);
+         String internalId = newUnification? internalPid : crawlInternalId(productJson);
          String description = crawlDescription(productJson);
          String primaryImage = crawlPrimaryImage(jsonSku);
          List<String> secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
@@ -258,7 +261,12 @@ public abstract class RappiCrawler extends Crawler {
     *******************************/
 
    protected boolean isProductPage(JSONObject jsonSku) {
-      return jsonSku.length() > 0;
+      if(newUnification){
+         return jsonSku.length() > 0 && session.getOriginalURL().contains(getStoreId());
+      }
+      else {
+         return jsonSku.length() > 0;
+      }
    }
 
    /*******************

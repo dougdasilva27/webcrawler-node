@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import java.util.HashMap;
 import java.util.Map;
 
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -21,10 +22,15 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+   private final String API_URL = getApiUrl();
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
 
    protected abstract String getHomePage();
+
+   protected String getApiUrl(){
+      return "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+   }
 
    protected String getLoadPayload() {
       JSONObject payload = new JSONObject();
@@ -36,11 +42,9 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return payload.toString();
    }
 
-   protected String getApiSearchUrl() {
-      return "https://b2c-sm-www-api-production4.sitemercado.com.br/api/v1/b2c/380/product/load_search/";
-   }
-   private String ApiSearchUrl(String lojaId) {
-      return "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/"+lojaId+"/product/load_search/";
+
+   protected String ApiSearchUrl(String lojaId) {
+      return API_URL + lojaId + "/product/load_search/";
    }
 
    @Override
@@ -113,36 +117,53 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       return productUrl;
    }
 
-   private JSONObject crawlProductInfo() {
+   protected JSONObject crawlProductInfo() {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
-      String loadUrl = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/page/store"+lojaUrl;
+      String loadUrl = API_URL+"page/store" + lojaUrl;
       String lojaId = "";
+      String lojaRede = "";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("referer", this.homePage);
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("content-type", "application/json");
 
-      Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers)
-            .setPayload(loadPayload).build();
-      Map<String, String> responseHeaders = this.dataFetcher.get(session, request).getHeaders();
+      Request request = RequestBuilder.create()
+         .setUrl(loadUrl).setCookies(cookies)
+         .setHeaders(headers)
+         .setPayload(loadPayload)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+
+      Map<String, String> responseHeaders = response.getHeaders();
 
       if (responseHeaders.containsKey("sm-token")) {
          String header = responseHeaders.get("sm-token");
-         headers.put("sm-token",header);
          JSONObject token = new JSONObject(header);
-         lojaId=  Integer.toString(JSONUtils.getIntegerValueFromJSON(token,"IdLoja",0));
+         lojaId = Integer.toString(JSONUtils.getIntegerValueFromJSON(token, "IdLoja", 0));
+
+         if(lojaId.equals("0")){
+            JSONObject body = new JSONObject(response.getBody());
+            lojaId =Integer.toString(JSONUtils.getValueRecursive(body,"sale.id",Integer.class));
+            lojaRede = Integer.toString(JSONUtils.getValueRecursive(body,"sale.idRede",Integer.class));
+
+            token.put("IdLoja",lojaId);
+            token.put("IdRede",lojaRede);
+         }
+
+         headers.put("sm-token", token.toString());
+
       }
 
 
-      String apiUrl = ApiSearchUrl(lojaId)+this.keywordEncoded;
+      String apiUrl = ApiSearchUrl(lojaId) + this.keywordEncoded;
       Request requestApi = RequestBuilder.create()
-            .setUrl(apiUrl)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .build();
+         .setUrl(apiUrl)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .build();
 
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
    }
-   
+
 }

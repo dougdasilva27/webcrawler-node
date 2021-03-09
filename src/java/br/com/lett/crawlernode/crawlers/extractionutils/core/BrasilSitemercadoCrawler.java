@@ -39,12 +39,17 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
+
+   private final String API_URL = getApiUrl();
    private static final String MAIN_SELLER_NAME = "Sitemercado";
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
    private Map<String, Integer> lojaInfo = getLojaInfo();
 
    protected abstract String getHomePage();
+   protected String getApiUrl(){
+      return "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+   }
 
    protected abstract Map<String, Integer> getLojaInfo();
 
@@ -308,10 +313,10 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
     *
     * @return
     */
-   private JSONObject crawlProductInformatioFromApi(String productUrl) {
+   protected JSONObject crawlProductInformatioFromApi(String productUrl) {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
-      String loadUrl = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/page/store"+lojaUrl;
-      String url = "https://b2c-sm-www-api.sitemercado.com.br/api/v1/b2c/"+getLojaInfo().get("IdLoja")+"/product/" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
+      String loadUrl = API_URL+"page/store"+lojaUrl;
+      String url = API_URL+getLojaInfo().get("IdLoja")+"/product/" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.REFERER, productUrl);

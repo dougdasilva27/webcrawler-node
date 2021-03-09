@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
@@ -24,6 +25,8 @@ import java.util.*;
 
 /**
  * date: 05/09/2018
+ *
+ * @author gabriel
  *
  * @author gabriel
  */

@@ -16,7 +16,7 @@ public class AtibaiaSitemercadobigsupermercadosCrawler extends BrasilSitemercado
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/bigsupermercados/atibaia-loja-jardim-brasil-jardim-brasil-avenida-alfredo-andre";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/bigsupermercados/atibaia-loja-jardim-brasil-atibaia-jardim-rua-adolfo-andre";
 
    public static final int IDLOJA = 715;
    public static final int IDREDE = 643;

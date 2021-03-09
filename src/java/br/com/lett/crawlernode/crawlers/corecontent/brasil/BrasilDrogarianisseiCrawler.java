@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -73,8 +74,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          String primaryImage = fixUrlImage(doc, internalId);
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
 
-         String token = scarpToken(doc);
-         JSONObject json = accesAPIOffers(internalId, token);
+         JSONObject json = accesAPIOffers(internalId);
          Offers offers = scrapOffers(json);
 
          Product product = ProductBuilder.create()
@@ -98,19 +98,6 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       return products;
 
-   }
-
-   private String scarpToken(Document doc) {
-      String token = null;
-      Elements elements = doc.select("script[type=\"application/javascript\"]");
-      for (Element element : elements) {
-         String data = element.data();
-         if (data.contains("atualizarResizeCarrinho") && data.contains("csrfmiddlewaretoken")) {
-            token = CommonMethods.substring(data, "csrfmiddlewaretoken': '", "'");
-         }
-      }
-
-      return token;
    }
 
    private boolean isProductPage(Document doc) {
@@ -198,11 +185,15 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    }
 
 
-   private JSONObject accesAPIOffers(String internalId, String token) {
-
+   private JSONObject accesAPIOffers(String internalId) {
+      String token = "";
       String url = "https://www.farmaciasnissei.com.br/pegar/preco";
 
+
       String cookies = CommonMethods.cookiesToString(this.cookies);
+
+      token = CommonMethods.substring(cookies,"=",";",true);
+
       Map<String, String> headers = new HashMap<>();
       headers.put("cookie", cookies);
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -214,6 +205,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setCookies(this.cookies)
          .setPayload(payload)
          .build();
 

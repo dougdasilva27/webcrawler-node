@@ -479,13 +479,11 @@ public class B2WCrawler extends Crawler {
       return offers;
    }
 
-   private Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
+   protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
-      if(jsonSeller.isEmpty()){
-         jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
-      }
+
 
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
@@ -548,7 +546,7 @@ public class B2WCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
+   protected Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
          throws MalformedPricingException {
 
       Double priceFrom = scrapPriceFrom(info);
@@ -624,7 +622,7 @@ public class B2WCrawler extends Crawler {
     * @param map
     * @return
     */
-   private Map<String, Double> sortMapByValue(final Map<String, Double> map) {
+   protected Map<String, Double> sortMapByValue(final Map<String, Double> map) {
       return map.entrySet()
             .stream()
             .sorted(Map.Entry.comparingByValue())

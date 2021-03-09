@@ -215,8 +215,14 @@ public class BrasilFastshopCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject jsonPrices, JSONObject apiSku) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(apiSku, "priceOffer", true);
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(apiSku, "priceTag", true);
+
+      if(spotlightPrice == null){
+         spotlightPrice = MathUtils.parseDoubleWithDot(JSONUtils.getValueRecursive(jsonPrices,"priceData.offerPriceValue",String.class));
+      }
+
       CreditCards creditCards = scrapCreditCards(jsonPrices, spotlightPrice);
       BankSlip bankSlip = scrapBankslip(jsonPrices, spotlightPrice);
+
 
       return PricingBuilder.create()
             .setPriceFrom(priceFrom)

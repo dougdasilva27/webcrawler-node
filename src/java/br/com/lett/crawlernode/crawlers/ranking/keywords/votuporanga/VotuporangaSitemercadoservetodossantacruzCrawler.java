@@ -16,7 +16,7 @@ public class VotuporangaSitemercadoservetodossantacruzCrawler extends BrasilSite
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/santacruz/votuporanga-loja-tocantins-vila-muniz-rua-amazonas";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/santacruz/votuporanga-loja-patrimonio-velho-vila-muniz-r-amazonas";
 
    @Override
    protected String getHomePage() {
