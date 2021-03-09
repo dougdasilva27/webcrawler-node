@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.Arrays;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -17,23 +16,23 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    this.pageSize = 16;
+    this.pageSize = 40;
 
-    String url = "https://pesquisa.sephora.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+    String url = "https://www.sephora.com.br/search/?q=" + this.keywordEncoded.toLowerCase() + "&page=" + this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url, cookies);
 
-    Elements products = this.currentDoc.select(".neemu-products-container .nm-product-item");
-    boolean emptySearch = this.currentDoc.selectFirst(".neemu-approximated-search") != null;
+    Elements products = this.currentDoc.select("ul.search-result-items>li");
+    boolean emptySearch = this.currentDoc.selectFirst(".results-hits") == null;
 
     if (!products.isEmpty() && !emptySearch) {
       if (this.totalProducts == 0)
-        setTotalProducts();
+         this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "div.results-hits", false, 0);
 
       for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
+        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.product-tile", "data-variant-id");
+        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.product-image>a", "href");
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -49,40 +48,4 @@ public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".neemu-total-products-container");
-
-    if (totalElement != null) {
-      String text = totalElement.text().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlInternalPid(Element e) {
-    String internalPid = null;
-
-    Element pid = e.selectFirst("[entity-id]");
-    if (pid != null) {
-      internalPid = pid.attr("entity-id");
-    }
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-    Element urlElement = e.selectFirst(".nm-product-name a");
-
-    if (urlElement != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(urlElement, Arrays.asList("href"), "https:", "www.sephora.com.br");
-    }
-
-    return productUrl;
-  }
 }
