@@ -1,17 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
 
@@ -28,7 +29,7 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
    @Override
    protected void processBeforeFetch() {
       try {
-         this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, session);
+         this.webdriver = DynamicDataFetcher.fetchPageWebdriver(LOGIN_URL, ProxyCollection.BUY_HAPROXY, session);
          this.webdriver.waitLoad(10000);
 
          if (this.webdriver.driver instanceof JavascriptExecutor) {
@@ -71,7 +72,7 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String url = "https://lojacolgate.com.br/pt/search?q="
-            + this.keywordEncoded + "%3Arelevance&view=Grid&page=" + (this.currentPage - 1);
+         + this.keywordEncoded + "%3Arelevance&view=Grid&page=" + (this.currentPage - 1);
 
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -97,10 +98,10 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
                saveDataProduct(internalId, null, productUrl);
 
                this.log(
-                     "Position: " + this.position +
-                           " - InternalId: " + internalId +
-                           " - InternalPid: " + null +
-                           " - Url: " + productUrl);
+                  "Position: " + this.position +
+                     " - InternalId: " + internalId +
+                     " - InternalPid: " + null +
+                     " - Url: " + productUrl);
 
                if (this.arrayProducts.size() == productsLimit)
                   break;
@@ -112,10 +113,10 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
                   saveDataProduct(internalId, null, productUrl, this.position);
 
                   this.log(
-                        "Position: " + this.position +
-                              " - InternalId: " + internalId +
-                              " - InternalPid: " + null +
-                              " - Url: " + productUrl);
+                     "Position: " + this.position +
+                        " - InternalId: " + internalId +
+                        " - InternalPid: " + null +
+                        " - Url: " + productUrl);
 
                   if (this.arrayProducts.size() == productsLimit)
                      break;
@@ -130,7 +131,7 @@ public class BrasilLojacolgateCrawler extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-            + this.arrayProducts.size() + " produtos crawleados");
+         + this.arrayProducts.size() + " produtos crawleados");
    }
 
    private String scrapInternalId(Element e) {
