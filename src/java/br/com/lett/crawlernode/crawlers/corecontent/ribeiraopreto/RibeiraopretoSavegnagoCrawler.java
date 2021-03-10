@@ -32,6 +32,7 @@ public class RibeiraopretoSavegnagoCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE  = "https://www.savegnago.com.br/";
    private static final String SELLER_NAME  = "savegnago";
+   private static final String CITY_CODE = "18";
 
    public RibeiraopretoSavegnagoCrawler(Session session) {
       super(session);
@@ -47,10 +48,18 @@ public class RibeiraopretoSavegnagoCrawler extends VTEXOldScraper {
       return Arrays.asList(SELLER_NAME);
    }
 
-
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       return null;
+   }
+
+   @Override
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+      return super.crawlProductApi(internalPid, "&sc=" + CITY_CODE);
+   }
+
+   public String handleURLBeforeFetch(String url) {
+      return super.handleURLBeforeFetch(url.split("\\?")[0] + "?sc=" + CITY_CODE);
    }
 
 }
