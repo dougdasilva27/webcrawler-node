@@ -28,38 +28,21 @@ import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 
-public class RibeiraopretoSavegnagoCrawler extends VTEXOldScraper {
-
-   private static final String HOME_PAGE  = "https://www.savegnago.com.br/";
-   private static final String SELLER_NAME  = "savegnago";
-   private static final String CITY_CODE = "18";
+public class RibeiraopretoSavegnagoCrawler extends SavegnagoCrawler {
 
    public RibeiraopretoSavegnagoCrawler(Session session) {
       super(session);
    }
 
    @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
+   protected String getCEP() {
+      return "14090200";
    }
 
    @Override
-   protected List<String> getMainSellersNames() {
-      return Arrays.asList(SELLER_NAME);
+   protected String getCityCode() {
+      return "5";
    }
 
-   @Override
-   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      return null;
-   }
-
-   @Override
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      return super.crawlProductApi(internalPid, "&sc=" + CITY_CODE);
-   }
-
-   public String handleURLBeforeFetch(String url) {
-      return super.handleURLBeforeFetch(url.split("\\?")[0] + "?sc=" + CITY_CODE);
-   }
 
 }
