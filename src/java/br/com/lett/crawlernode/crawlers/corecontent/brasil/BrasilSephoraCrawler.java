@@ -56,11 +56,11 @@ public class BrasilSephoraCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-number.show-for-medium>span", "data-masterid");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false);
 
          Elements variants = doc.select(".display-name.display-name-shade.no-bullet>li");
 
          for (Element variant : variants) {
-            String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=name]", "content");
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
 
             Document variantProductPage = fetchVariantProductPage(internalId);
@@ -127,7 +127,7 @@ public class BrasilSephoraCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-sales>span", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-standard", null, false, ',', session);
 
-      CreditCards creditCards = scrapCreditCards(doc);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
@@ -153,7 +153,7 @@ public class BrasilSephoraCrawler extends Crawler {
    }
 
 
-   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Set<Card> cards = Sets.newHashSet(
@@ -165,7 +165,7 @@ public class BrasilSephoraCrawler extends Crawler {
          Card.AMEX
       );
 
-      Installments installments = scrapInstallments(doc);
+      Installments installments = scrapInstallments(doc, spotlightPrice);
 
       for (Card card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -178,18 +178,24 @@ public class BrasilSephoraCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallments(Document doc) throws MalformedPricingException {
+   private Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      String installmentPrice = doc.selectFirst(".installments.installments-pdp").text();
+      Element installmentPrice = doc.selectFirst(".installments.installments-pdp");
 
       if (installmentPrice != null) {
          installments.add(
             Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(Integer.parseInt(installmentPrice.substring(0, 1)))
-               .setInstallmentPrice(Double.parseDouble(installmentPrice.substring(5)))
+               .setInstallmentNumber(Integer.parseInt(installmentPrice.text().substring(0, 1)))
+               .setInstallmentPrice(Double.parseDouble(installmentPrice.text().substring(5)))
                .build()
          );
+      }else{
+         installments.add(
+            Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
       return installments;
