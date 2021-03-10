@@ -62,7 +62,7 @@ public class BrasilPetzCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Document doc = new Document("");
-      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
       if (this.webdriver != null) {
          doc = Jsoup.parse(this.webdriver.getCurrentPageSource());

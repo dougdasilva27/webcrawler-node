@@ -253,7 +253,7 @@ public abstract class CNOVANewCrawler extends Crawler {
       JSONObject offersJson = JSONUtils.stringToJson(fetchPage(url).getBody());
       JSONArray sellerInfo = offersJson.optJSONArray("sellers");
 
-      if (sellerInfo != null) {
+      if (sellerInfo != null && offersJson.optBoolean("buyButtonEnabled", false)) {
          // The Business logic is: if we have more than 1 seller is buy box
          boolean isBuyBox = sellerInfo.length() > 1;
 

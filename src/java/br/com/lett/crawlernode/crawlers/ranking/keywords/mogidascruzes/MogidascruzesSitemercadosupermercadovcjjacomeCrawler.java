@@ -16,7 +16,7 @@ public class MogidascruzesSitemercadosupermercadovcjjacomeCrawler extends Brasil
       super(session);
    }
 
-   public static final String HOME_PAGE = "http://www.sitemercado.com.br/supermercadovcjjacome";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadovcjjacome/mogi-das-cruzes-loja-vila-natal-vila-natal-rua-claudio-manoel-da-costa";
 
    @Override
    protected String getHomePage() {
