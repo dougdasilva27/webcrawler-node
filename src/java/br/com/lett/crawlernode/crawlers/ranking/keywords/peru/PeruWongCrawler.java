@@ -8,11 +8,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class PeruWongCrawler extends CrawlerRankingKeywords {
+
    public PeruWongCrawler(Session session) {
       super(session);
-      //super.fetchMode = FetchMode.FETCHER;
-
-
    }
 
    @Override
