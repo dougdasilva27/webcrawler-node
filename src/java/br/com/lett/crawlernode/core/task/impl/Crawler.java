@@ -86,7 +86,7 @@ public class Crawler extends Task {
 
    protected CrawlerWebdriver webdriver;
 
-   protected static final RedisClient redisClient = RedisClient.INSTANCE;
+   private static final RedisClient redisClient = RedisClient.INSTANCE;
 
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
@@ -548,10 +548,10 @@ public class Crawler extends Task {
       return new ArrayList<>();
    }
 
-   protected String setCache(String key, int seconds, String value) {
+   protected void setCache(String key, int seconds, String value) {
       String simpleName = getClass().getSimpleName();
       String component = simpleName.substring(simpleName.indexOf("Crawler"));
-      return redisClient.setExKey(component + ":" + key, value, seconds);
+      redisClient.setExKey(component + ":" + key, value, seconds);
    }
 
    protected String getCache(String key) {
@@ -560,7 +560,7 @@ public class Crawler extends Task {
       return redisClient.getKey(component + ":" + key);
    }
 
-   protected String setGetCache(String key, int timeoutSeconds, RequestMethod requestMethod, Request request, Function<Response, String> function) {
+   protected String getSetCache(String key, int timeoutSeconds, RequestMethod requestMethod, Request request, Function<Response, String> function) {
       String value = getCache(key);
       if (value == null) {
          switch (requestMethod) {
@@ -578,8 +578,8 @@ public class Crawler extends Task {
       return value;
    }
 
-   protected String setGetCache(String key, RequestMethod requestMethod, Request request, Function<Response, String> function) {
-      return setGetCache(key, 3600, requestMethod, request, function);
+   protected String getSetCache(String key, RequestMethod requestMethod, Request request, Function<Response, String> function) {
+      return getSetCache(key, 7200, requestMethod, request, function);
    }
 
    /**
