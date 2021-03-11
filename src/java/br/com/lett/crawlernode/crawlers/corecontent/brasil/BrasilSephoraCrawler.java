@@ -12,7 +12,6 @@ import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
@@ -59,7 +58,7 @@ public class BrasilSephoraCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-number.show-for-medium>span", "data-masterid");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false);
+
 
          Elements variants = doc.select(".display-name.display-name-shade.no-bullet>li");
 
@@ -67,6 +66,7 @@ public class BrasilSephoraCrawler extends Crawler {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
 
             Document variantProductPage = fetchVariantProductPage(internalId);
+            String name = scrapName(variantProductPage);
             List<String> secondaryImages = crawlImages(variantProductPage);
             String primaryImage = secondaryImages.isEmpty() ? null : secondaryImages.remove(0);
 
@@ -107,6 +107,12 @@ public class BrasilSephoraCrawler extends Crawler {
    /*******************
     * General methods *
     *******************/
+
+   private String scrapName(Document doc){
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false)
+         + " - "
+         + CrawlerUtils.scrapStringSimpleInfo(doc, "span.selected-value-name", false);
+   }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
