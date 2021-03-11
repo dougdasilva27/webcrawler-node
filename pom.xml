@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>webcrawler-node</groupId>
     <artifactId>webcrawler-node</artifactId>
@@ -31,6 +31,7 @@
         <surefire-plugin-version>2.22.0</surefire-plugin-version>
         <temmie-webhook.version>-SNAPSHOT</temmie-webhook.version>
         <kotlin.version>1.4.0</kotlin.version>
+        <jedis.version>3.5.1</jedis.version>
     </properties>
 
     <build>
@@ -135,6 +136,13 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${jedis.version}</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
 
         <dependency>
             <groupId>com.sun.net.httpserver</groupId>

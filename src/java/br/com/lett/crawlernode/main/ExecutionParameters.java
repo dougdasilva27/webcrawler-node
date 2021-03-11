@@ -12,8 +12,7 @@ public class ExecutionParameters {
    public static final String DEFAULT_CRAWLER_VERSION = "-1";
    private static final Logger logger = LoggerFactory.getLogger(ExecutionParameters.class);
    /**
-    * In case we want to force image update on Amazon bucket, when downloading images In some cases the
-    * crawler must update the redimensioned versions of images, and we must use this option in case we
+    * In case we want to force image update on Amazon bucket, when downloading images In some cases the crawler must update the redimensioned versions of images, and we must use this option in case we
     * want to force this, even if the image on market didn't changed.
     */
    private boolean forceImageUpdate;
@@ -47,6 +46,9 @@ public class ExecutionParameters {
    private String s3BatchUser;
    private String s3BatchPass;
 
+   private String redisHost;
+   private Integer redisPort;
+
    public ExecutionParameters() {
       debug = null;
    }
@@ -78,6 +80,8 @@ public class ExecutionParameters {
       setUseFetcher(getEnvUseFetcher());
       setReplicatorUrl(getEnvReplicatorUrl());
       setChromePath();
+      redisHost = System.getenv(EnvironmentVariables.REDIS_HOST);
+      redisPort = Integer.parseInt(System.getenv(EnvironmentVariables.REDIS_PORT));
       version = DEFAULT_CRAWLER_VERSION;
 
       Logging.printLogDebug(logger, this.toString());
@@ -88,7 +92,9 @@ public class ExecutionParameters {
       if (chromePath == null) {
          Logging.logWarn(logger, null, null, EnvironmentVariables.CHROME_PATH + " not set");
          System.setProperty("webdriver.chrome.driver", "/home/chrome/chromedriver");
-      } else System.setProperty("webdriver.chrome.driver", chromePath);
+      } else {
+         System.setProperty("webdriver.chrome.driver", chromePath);
+      }
    }
 
    public boolean mustSendToKinesis() {
@@ -371,5 +377,13 @@ public class ExecutionParameters {
 
    public String getS3BatchPass() {
       return s3BatchPass;
+   }
+
+   public String getRedisHost() {
+      return redisHost;
+   }
+
+   public Integer getRedisPort() {
+      return redisPort;
    }
 }

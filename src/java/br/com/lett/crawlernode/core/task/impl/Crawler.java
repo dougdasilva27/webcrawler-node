@@ -1,12 +1,14 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import br.com.lett.crawlernode.core.models.RequestMethod;
+import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException;
+import br.com.lett.crawlernode.integration.redis.RedisClient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import br.com.lett.crawlernode.test.GeneralTestKt;
-import br.com.lett.crawlernode.test.TestUtils;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -59,8 +61,7 @@ import models.Processed;
 import models.prices.Prices;
 
 /**
- * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit
- * and extract methods.
+ * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit and extract methods.
  *
  * @author Samir Leao
  */
@@ -70,11 +71,10 @@ public class Crawler extends Task {
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
-         + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+      + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
    /**
-    * Maximum attempts during active void analysis It's essentially the number of times that we will
-    * rerun the extract method to crawl a product from a page
+    * Maximum attempts during active void analysis It's essentially the number of times that we will rerun the extract method to crawl a product from a page
     */
    protected static final int MAX_VOID_ATTEMPTS = 3;
 
@@ -86,9 +86,10 @@ public class Crawler extends Task {
 
    protected CrawlerWebdriver webdriver;
 
+   protected static final RedisClient redisClient = RedisClient.INSTANCE;
+
    /**
-    * Cookies that must be used to fetch the sku page this attribute is set by the
-    * handleCookiesBeforeFetch method.
+    * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */
    protected List<Cookie> cookies;
 
@@ -113,8 +114,7 @@ public class Crawler extends Task {
    }
 
    /**
-    * Overrides the run method that will perform a task within a thread. The actual thread performs
-    * it's computation controlled by an Executor, from Java's Executors Framework.
+    * Overrides the run method that will perform a task within a thread. The actual thread performs it's computation controlled by an Executor, from Java's Executors Framework.
     */
    @Override
    public void processTask() {
@@ -146,8 +146,7 @@ public class Crawler extends Task {
    }
 
    /**
-    * This method serializes the crawled sku instance and put its raw bytes on a kinesis stream. The
-    * instance passed as parameter is not altered. Instead we perform a clone to securely alter the
+    * This method serializes the crawled sku instance and put its raw bytes on a kinesis stream. The instance passed as parameter is not altered. Instead we perform a clone to securely alter the
     * attributes.
     *
     * @param product
@@ -163,8 +162,8 @@ public class Crawler extends Task {
          KPLProducer.getInstance().put(p, session);
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "product");
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
@@ -173,8 +172,8 @@ public class Crawler extends Task {
             KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
 
             JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-                  .put("aws_type", "kinesis")
-                  .put("kinesis_flow_type", "rating");
+               .put("aws_type", "kinesis")
+               .put("kinesis_flow_type", "rating");
 
             Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
          }
@@ -336,7 +335,7 @@ public class Crawler extends Task {
          products = extract();
       } catch (Exception e) {
 
-         if(session instanceof TestCrawlerSession){
+         if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
 
@@ -348,8 +347,6 @@ public class Crawler extends Task {
 
       for (Product p : products) {
 
-
-
          if (Test.pathWrite != null) {
             String status = getFirstPartyRegexStatus(p);
 
@@ -360,7 +357,7 @@ public class Crawler extends Task {
       }
    }
 
-   private static void addProductsTest(Product product){
+   private static void addProductsTest(Product product) {
 
       List<Product> productsMap = Test.products.get(product.getUrl());
 
@@ -373,30 +370,19 @@ public class Crawler extends Task {
    }
 
 
-
    /**
-    * This method is responsible for the main post processing stages of a crawled product. It takes
-    * care of the following tasks <br>
-    * 1. Print the crawled information; <br>
-    * 2. Persist the product; <br>
-    * 3. Fetch the previous processed product. Which is a product with the same processed id as the
-    * current crawled product;</li> <br>
-    * 4. Create a new ProcessedModel; <br>
-    * 5. Persist the new ProcessedModel;
+    * This method is responsible for the main post processing stages of a crawled product. It takes care of the following tasks <br> 1. Print the crawled information; <br> 2. Persist the product; <br>
+    * 3. Fetch the previous processed product. Which is a product with the same processed id as the current crawled product;</li> <br> 4. Create a new ProcessedModel; <br> 5. Persist the new
+    * ProcessedModel;
     * <p>
-    * In this method we also have the so called 'truco' stage. In cases that we already have the
-    * ProcessedModel, we will only update the informations of the previous ProcessedModel with the new
-    * information crawled. But we don't update the information in the first try. When we detect some
-    * important change, such as in sku availability or price, we run the process all over again. The
-    * crawler runs again and all the above enumerated stages are repeated, just to be shure that the
-    * information really changed or if it isn't a crawling bug or an URL blocking, by the ecommerce
+    * In this method we also have the so called 'truco' stage. In cases that we already have the ProcessedModel, we will only update the informations of the previous ProcessedModel with the new
+    * information crawled. But we don't update the information in the first try. When we detect some important change, such as in sku availability or price, we run the process all over again. The
+    * crawler runs again and all the above enumerated stages are repeated, just to be shure that the information really changed or if it isn't a crawling bug or an URL blocking, by the ecommerce
     * website.
     * </p>
     * <p>
-    * This process of rerun the crawler and so on, is repeated, until a maximum number of tries, or
-    * until we find two consecutive equals sets of crawled informations. If this occurs, then we
-    * persist the new ProcessedModel. If the we run all the truco checks, and don't find consistent
-    * information, the crawler doesn't persist the new ProcessedModel.
+    * This process of rerun the crawler and so on, is repeated, until a maximum number of tries, or until we find two consecutive equals sets of crawled informations. If this occurs, then we persist
+    * the new ProcessedModel. If the we run all the truco checks, and don't find consistent information, the crawler doesn't persist the new ProcessedModel.
     * </p>
     *
     * @param product
@@ -407,7 +393,7 @@ public class Crawler extends Task {
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             scheduleImages(persistenceResult, newProcessedProduct);
@@ -425,11 +411,11 @@ public class Crawler extends Task {
             }
          } else if (previousProcessedProduct == null) {
             Logging.printLogDebug(logger, session,
-                  "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                     "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
             }
          }
       }
@@ -485,8 +471,7 @@ public class Crawler extends Task {
     * <li>Extraction: Crawl all skus in the URL on the crawling session.</li>
     * </ul>
     *
-    * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an
-    *         empty array list if no product was found.
+    * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an empty array list if no product was found.
     */
    public List<Product> extract() throws Exception {
 
@@ -518,7 +503,7 @@ public class Crawler extends Task {
             products = extractInformation((JSONArray) obj);
          }
       } catch (Exception e) {
-         if(session instanceof TestCrawlerSession){
+         if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -563,13 +548,45 @@ public class Crawler extends Task {
       return new ArrayList<>();
    }
 
+   protected String setCache(String key, int seconds, String value) {
+      String simpleName = getClass().getSimpleName();
+      String component = simpleName.substring(simpleName.indexOf("Crawler"));
+      return redisClient.setExKey(component + ":" + key, value, seconds);
+   }
+
+   protected String getCache(String key) {
+      String simpleName = getClass().getSimpleName();
+      String component = simpleName.substring(simpleName.indexOf("Crawler"));
+      return redisClient.getKey(component + ":" + key);
+   }
+
+   protected String setGetCache(String key, int timeoutSeconds, RequestMethod requestMethod, Request request, Function<Response, String> function) {
+      String value = getCache(key);
+      if (value == null) {
+         switch (requestMethod) {
+            case GET:
+               value = function.apply(dataFetcher.get(session, request));
+               break;
+            case POST:
+               value = function.apply(dataFetcher.post(session, request));
+               break;
+            default:
+               throw new RequestMethodNotFoundException(requestMethod.name());
+         }
+         setCache(key, timeoutSeconds, value);
+      }
+      return value;
+   }
+
+   protected String setGetCache(String key, RequestMethod requestMethod, Request request, Function<Response, String> function) {
+      return setGetCache(key, 3600, requestMethod, request, function);
+   }
+
    /**
-    * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according
-    * to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
+    * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
     * otherwise we use the DynamicDataFetcher.
     * <p>
-    * Subclasses can override this method for crawl another apis and pages. In Princesadonorte the
-    * product page has nothing, but we need the url for crawl this market api.
+    * Subclasses can override this method for crawl another apis and pages. In Princesadonorte the product page has nothing, but we need the url for crawl this market api.
     * <p>
     * Return only {@link Document}
     *
@@ -603,12 +620,12 @@ public class Crawler extends Task {
 
             if (session instanceof TestCrawlerSession) {
                throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
-                     + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
+                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
             }
          }
 
          Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
-               "\nregex_status: " + status);
+            "\nregex_status: " + status);
       } catch (MalformedProductException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
