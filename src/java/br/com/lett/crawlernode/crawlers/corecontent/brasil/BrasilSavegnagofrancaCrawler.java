@@ -3,9 +3,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SavegnagoCrawler;
 
-public class BrasilSavegnagoFrancaCrawler extends SavegnagoCrawler {
+public class BrasilSavegnagofrancaCrawler extends SavegnagoCrawler {
 
-   public BrasilSavegnagoFrancaCrawler(Session session) {
+   public BrasilSavegnagofrancaCrawler(Session session) {
       super(session);
    }
 
