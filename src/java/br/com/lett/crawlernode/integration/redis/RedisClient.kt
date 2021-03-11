@@ -6,7 +6,11 @@ import redis.clients.jedis.JedisPoolConfig
 
 object RedisClient {
    private val pool: JedisPool by lazy {
-      JedisPool(JedisPoolConfig(), executionParameters.redisHost, executionParameters.redisPort)
+      val poolConfig = JedisPoolConfig().apply {
+         maxIdle = executionParameters.coreThreads
+         maxTotal = executionParameters.coreThreads
+      }
+      JedisPool(poolConfig, executionParameters.redisHost, executionParameters.redisPort)
    }
 
    fun getKey(key: String): String? = pool.resource.get(key)
