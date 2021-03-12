@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -65,45 +66,47 @@ public class BrasilColomboCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#codigo-produto-async", "value");
          String sellerCode = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[id=seller]", "value");
          JSONObject jsonProduct = fetchProductJson(internalPid, sellerCode);
-         JSONArray variations = jsonProduct.getJSONArray("itens");
+         JSONArray variations = jsonProduct.optJSONArray("itens");
 
-         for (int i = 0; i < variations.length(); i++) {
-            JSONObject sku = (JSONObject) variations.get(i);
+         for (Object e : variations) {
+            if (e instanceof JSONObject) {
+               JSONObject sku = (JSONObject) e;
 
-            String internalId = sku.get("codigo").toString();
-            String name = scrapVariationName(jsonProduct, sku);
-            CategoryCollection categories = scrapCategories(jsonProduct);
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
-            List<String> secondaryImages = scrapSecondaryImages(doc,  primaryImage);
-            String description = jsonProduct.getString("breveDescricao");
+               String internalId = sku.optString("codigo");
+               String name = scrapVariationName(jsonProduct, sku);
+               CategoryCollection categories = scrapCategories(jsonProduct);
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
+               List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
+               String description = jsonProduct.optString("breveDescricao");
 
-            boolean availableToBuy = sku.getString("descricaoTipoEstoque").equalsIgnoreCase("Em estoque");
-            Offers offers = availableToBuy ? scrapOffers(jsonProduct, sku) : new Offers();
-            RatingsReviews ratingsReviews = scrapRatingReviews(doc);
+               boolean availableToBuy = sku.optString("descricaoTipoEstoque").equalsIgnoreCase("Em estoque");
+               Offers offers = availableToBuy ? scrapOffers(jsonProduct, sku) : new Offers();
+               RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
-            // Stuff that were not on site when crawler was made
-            Integer stock = null;
-            List<String> eans = null;
+               // Stuff that were not on site when crawler was made
+               Integer stock = null;
+               List<String> eans = null;
 
-            // Creating the product
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setRatingReviews(ratingsReviews)
-               .setOffers(offers)
-               .setEans(eans)
-               .build();
+               // Creating the product
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategory1(categories.getCategory(0))
+                  .setCategory2(categories.getCategory(1))
+                  .setCategory3(categories.getCategory(2))
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setStock(stock)
+                  .setRatingReviews(ratingsReviews)
+                  .setOffers(offers)
+                  .setEans(eans)
+                  .build();
 
-            products.add(product);
+               products.add(product);
+            }
          }
 
       } else {
@@ -130,15 +133,15 @@ public class BrasilColomboCrawler extends Crawler {
    }
 
    private String scrapVariationName(JSONObject product, JSONObject sku) {
-      return product.getString("descricao")
+      return product.optString("descricao")
          + " - "
-         + sku.getString("descricao");
+         + sku.optString("descricao");
    }
 
    private CategoryCollection scrapCategories(JSONObject product) {
       CategoryCollection categories = new CategoryCollection();
 
-      String categoriesKey = product.getString("categoria");
+      String categoriesKey = product.optString("categoria");
 
       if (!categoriesKey.isEmpty()) {
          String[] splittedCategories = categoriesKey.split(";");
@@ -148,11 +151,11 @@ public class BrasilColomboCrawler extends Crawler {
       return categories;
    }
 
-   private List<String> scrapSecondaryImages(Document doc, String primaryImage){
+   private List<String> scrapSecondaryImages(Document doc, String primaryImage) {
       List<String> secondaryImagesList = new ArrayList<>();
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "li.js_slide picture img", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST, primaryImage);
 
-      if(!secondaryImages.isEmpty()){
+      if (!secondaryImages.isEmpty()) {
          String[] splittedArray = secondaryImages
             .replace("\"", "")
             .replace("[", "")
@@ -248,8 +251,8 @@ public class BrasilColomboCrawler extends Crawler {
       Pricing pricing = scrapPricing(product, sku);
       List<String> sales = new ArrayList<>(); // When this new offer model was implemented, no sales was found
 
-      String sellerName = sku.getString("nomeSeller").toLowerCase();
-      Boolean isMainSeller = !sellerName.equals(SELLER_NAME_LOWER);
+      String sellerName = sku.optString("nomeSeller").toLowerCase();
+      Boolean isMainSeller = sellerName.equals(SELLER_NAME_LOWER);
 
       offers.add(OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -268,8 +271,8 @@ public class BrasilColomboCrawler extends Crawler {
    private Pricing scrapPricing(JSONObject product, JSONObject sku) throws MalformedPricingException {
       BankSlip bankSlip;
       CreditCards creditCards;
-      Double priceFrom = product.getDouble("precoDe");
-      Double spotlightPrice = Double.parseDouble(sku.getString("precoFormatado").replace(',', '.'));
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "precoDe", false);
+      Double spotlightPrice = Double.parseDouble(sku.optString("precoFormatado").replace(',', '.'));
 
       //this was necessary because the priceFrom is not from a especific offer. So, if the priceFrom is lower than spotlightPrice
       //this offer does not have priceFrom. The same goes to bankSlip and creditCard offers.
@@ -278,7 +281,7 @@ public class BrasilColomboCrawler extends Crawler {
          bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
          creditCards = scrapCreditcards(product, spotlightPrice);
       } else {
-         bankSlip = CrawlerUtils.setBankSlipOffers(product.getDouble("precoBoleto"), null);
+         bankSlip = CrawlerUtils.setBankSlipOffers(JSONUtils.getDoubleValueFromJSON(product,"precoBoleto",false), null);
          creditCards = scrapCreditcards(product, null);
       }
 
@@ -311,18 +314,20 @@ public class BrasilColomboCrawler extends Crawler {
       Installments installments = new Installments();
 
       if (installmentPrice == null) {
-         JSONArray installmentsJson = product.getJSONArray("parcelasSemJuros");
+         JSONArray installmentsJson = product.optJSONArray("parcelasSemJuros");
 
-         for (int i = 0; i < installmentsJson.length(); i++) {
-            JSONObject installment = (JSONObject) installmentsJson.get(i);
+         for (Object e : installmentsJson) {
+            if (e instanceof JSONObject) {
+               JSONObject installment = (JSONObject) e;
 
-            Integer installmentNumber = installment.getInt("parcela");
-            Double installmentPriceJson = installment.getDouble("valor");
+               Integer installmentNumber = JSONUtils.getIntegerValueFromJSON(installment,"parcela", 1);
+               Double installmentPriceJson = JSONUtils.getDoubleValueFromJSON(installment,"valor", false);
 
-            installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(installmentNumber)
-               .setInstallmentPrice(installmentPriceJson)
-               .build());
+               installments.add(InstallmentBuilder.create()
+                  .setInstallmentNumber(installmentNumber)
+                  .setInstallmentPrice(installmentPriceJson)
+                  .build());
+            }
          }
       } else {
          installments.add(InstallmentBuilder.create()
