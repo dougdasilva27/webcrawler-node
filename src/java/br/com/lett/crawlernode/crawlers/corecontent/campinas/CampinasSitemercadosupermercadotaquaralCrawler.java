@@ -16,7 +16,7 @@ public class CampinasSitemercadosupermercadotaquaralCrawler extends BrasilSiteme
       super(session);
    }
 
-   public static final String HOME_PAGE = "http://www.sitemercado.com.br/supermercadotaquaral";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadotaquaral/campinas-loja-1-taquaral-avenida-nossa-senhora-de-fatima";
 
    public static final int IDLOJA = 628;
    public static final int IDREDE = 556;

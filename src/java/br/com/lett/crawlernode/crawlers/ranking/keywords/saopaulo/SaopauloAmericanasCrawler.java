@@ -1,60 +1,64 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.B2WCrawlerRanking;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-public class SaopauloAmericanasCrawler extends B2WCrawlerRanking {
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
+public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
    }
 
-   private static final String selector = "div[class*=ColGridItem-] a";
+   private JSONObject jsonObject() throws UnsupportedEncodingException {
 
-   @Override
-   protected String getStoreName() {
-      return "americanas";
-   }
-
-   @Override
-   protected void extractProductsFromCurrentPage() {
-      this.pageSize = 24;
-
-      this.log("Página " + this.currentPage);
-      String url = "https://www." + getStoreName() + ".com.br/busca/" + this.keywordWithoutAccents.replace(" ", "%20")
-            + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
+      String url = getUrl();
 
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = Jsoup.parse(B2WCrawler.fetchPage(url, this.dataFetcher, cookies, headers, session));
+      Request request = Request.RequestBuilder.create().setUrl(url)
+         .build();
+      String response = this.dataFetcher.get(session, request).getBody();
 
-      Elements products = this.currentDoc.select(selector);
+      return JSONUtils.stringToJson(response);
+   }
 
-      if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
-         }
+   @Override
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+      this.pageSize = 24;
 
-         for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e, "a", "href", "https", "www." + getStoreName() + ".com.br");
+      this.log("Página " + this.currentPage);
 
-            if (productUrl.contains("?")) {
-               productUrl = productUrl.split("\\?")[0];
+      JSONObject json = jsonObject();
+
+      JSONArray products = JSONUtils.getValueRecursive(json, "data.search.products", JSONArray.class);
+
+      if (products != null && !products.isEmpty()) {
+         if (totalProducts == 0)
+            setTotalProducts(json);
+
+         for (Object e : products) {
+            if (e instanceof JSONObject) {
+               JSONObject product = (JSONObject) e;
+
+               JSONObject data = product.optJSONObject("product");
+
+               String internalPid = JSONUtils.getStringValue(data, "id");
+
+               String productUrl = "https://www.americanas.com.br/produto/" + internalPid;
+
+               saveDataProduct(null, internalPid, productUrl);
+
+               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               if (this.arrayProducts.size() == productsLimit)
+                  break;
             }
-
-            String internalPid = scrapInternalPid(productUrl);
-
-            saveDataProduct(null, internalPid, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit)
-               break;
          }
       } else {
          this.result = false;
@@ -62,14 +66,21 @@ public class SaopauloAmericanasCrawler extends B2WCrawlerRanking {
       }
    }
 
-   private String scrapInternalPid(String url) {
-      return CommonMethods.getLast(url.split("produto/")).split("/")[0];
+   private String getUrl() throws UnsupportedEncodingException {
+      String variables = "{\"path\":\"/busca/desifetante?limit=24&offset=," + (this.currentPage - 1) * pageSize + "\",\"content\":\"desifetante\",\"offset\":0,\"limit\":24,\"segmented\":false,\"filters\":[],\"oneDayDelivery\":true}\"";
+      String extensions = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"dc1d06c9124fb3b8d1332cfae79f587926aef50f9322e50f0136780b2b94ed5a\"}}";
+
+      return "https://catalogo-bff-v2-americanas.b2w.io/graphql?operationName=pageSearch&variables=" + URLEncoder.encode(variables, "UTF-8") + "&extensions=" + URLEncoder.encode(extensions, "UTF-8");
+
    }
 
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "span[class*=TotalText]", true, 0);
-      this.log("Total da busca: " + this.totalProducts);
+   protected void setTotalProducts(JSONObject json) {
+      JSONObject data = JSONUtils.getValueRecursive(json, "data.search", JSONObject.class);
+      Integer total = data != null && !data.isEmpty() ? JSONUtils.getIntegerValueFromJSON(data, "total", 0) : null;
+      if (total != null) {
+         this.totalProducts = total;
+         this.log("Total da busca: " + this.totalProducts);
+      }
    }
 
 }

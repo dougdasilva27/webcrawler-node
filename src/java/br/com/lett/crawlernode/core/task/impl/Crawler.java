@@ -132,16 +132,22 @@ public class Crawler extends Task {
    }
 
    private void setDataFetcher() {
-      if (config.getFetcher() == FetchMode.STATIC) {
-         dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
-      } else if (config.getFetcher() == FetchMode.APACHE) {
-         dataFetcher = new ApacheDataFetcher();
-      } else if (config.getFetcher() == FetchMode.JAVANET) {
-         dataFetcher = new JavanetDataFetcher();
-      } else if (config.getFetcher() == FetchMode.FETCHER) {
-         dataFetcher = new FetcherDataFetcher();
-      } else if (config.getFetcher() == FetchMode.JSOUP) {
-         dataFetcher = new JsoupDataFetcher();
+      switch (config.getFetcher()){
+         case APACHE:
+            dataFetcher = new ApacheDataFetcher();
+            break;
+         case JAVANET:
+            dataFetcher = new JavanetDataFetcher();
+            break;
+         case FETCHER:
+            dataFetcher = new FetcherDataFetcher();
+            break;
+         case JSOUP:
+            dataFetcher = new JsoupDataFetcher();
+            break;
+         default:
+            dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+            break;
       }
    }
 

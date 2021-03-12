@@ -7,7 +7,6 @@ import org.json.JSONArray
 fun main() {
 
    TestUtils.initialize()
-   Test.pathWrite = ""
 
 
    discovery()
