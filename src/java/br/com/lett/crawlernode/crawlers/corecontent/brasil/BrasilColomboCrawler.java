@@ -68,47 +68,48 @@ public class BrasilColomboCrawler extends Crawler {
          JSONObject jsonProduct = fetchProductJson(internalPid, sellerCode);
          JSONArray variations = jsonProduct.optJSONArray("itens");
 
-         for (Object e : variations) {
-            if (e instanceof JSONObject) {
-               JSONObject sku = (JSONObject) e;
+         if (variations != null && !variations.isEmpty()) {
+            for (Object e : variations) {
+               if (e instanceof JSONObject) {
+                  JSONObject sku = (JSONObject) e;
 
-               String internalId = sku.optString("codigo");
-               String name = scrapVariationName(jsonProduct, sku);
-               CategoryCollection categories = scrapCategories(jsonProduct);
-               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
-               List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
-               String description = jsonProduct.optString("breveDescricao");
+                  String internalId = sku.optString("codigo");
+                  String name = scrapVariationName(jsonProduct, sku);
+                  CategoryCollection categories = scrapCategories(jsonProduct);
+                  String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "li.js_slide picture img[data-slide-position=0]", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST);
+                  List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
+                  String description = jsonProduct.optString("breveDescricao");
 
-               boolean availableToBuy = sku.optString("descricaoTipoEstoque").equalsIgnoreCase("Em estoque");
-               Offers offers = availableToBuy ? scrapOffers(jsonProduct, sku) : new Offers();
-               RatingsReviews ratingsReviews = scrapRatingReviews(doc);
+                  boolean availableToBuy = sku.optString("descricaoTipoEstoque").equalsIgnoreCase("Em estoque");
+                  Offers offers = availableToBuy ? scrapOffers(jsonProduct, sku) : new Offers();
+                  RatingsReviews ratingsReviews = scrapRatingReviews(doc);
 
-               // Stuff that were not on site when crawler was made
-               Integer stock = null;
-               List<String> eans = null;
+                  // Stuff that were not on site when crawler was made
+                  Integer stock = null;
+                  List<String> eans = null;
 
-               // Creating the product
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setRatingReviews(ratingsReviews)
-                  .setOffers(offers)
-                  .setEans(eans)
-                  .build();
+                  // Creating the product
+                  Product product = ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setStock(stock)
+                     .setRatingReviews(ratingsReviews)
+                     .setOffers(offers)
+                     .setEans(eans)
+                     .build();
 
-               products.add(product);
+                  products.add(product);
+               }
             }
          }
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -155,7 +156,7 @@ public class BrasilColomboCrawler extends Crawler {
       List<String> secondaryImagesList = new ArrayList<>();
       String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "li.js_slide picture img", Arrays.asList("src", "srcset"), "https:", IMAGE_HOST, primaryImage);
 
-      if (!secondaryImages.isEmpty()) {
+      if (secondaryImages != null) {
          String[] splittedArray = secondaryImages
             .replace("\"", "")
             .replace("[", "")
@@ -281,7 +282,7 @@ public class BrasilColomboCrawler extends Crawler {
          bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
          creditCards = scrapCreditcards(product, spotlightPrice);
       } else {
-         bankSlip = CrawlerUtils.setBankSlipOffers(JSONUtils.getDoubleValueFromJSON(product,"precoBoleto",false), null);
+         bankSlip = CrawlerUtils.setBankSlipOffers(JSONUtils.getDoubleValueFromJSON(product, "precoBoleto", false), null);
          creditCards = scrapCreditcards(product, null);
       }
 
@@ -320,8 +321,8 @@ public class BrasilColomboCrawler extends Crawler {
             if (e instanceof JSONObject) {
                JSONObject installment = (JSONObject) e;
 
-               Integer installmentNumber = JSONUtils.getIntegerValueFromJSON(installment,"parcela", 1);
-               Double installmentPriceJson = JSONUtils.getDoubleValueFromJSON(installment,"valor", false);
+               Integer installmentNumber = JSONUtils.getIntegerValueFromJSON(installment, "parcela", 1);
+               Double installmentPriceJson = JSONUtils.getDoubleValueFromJSON(installment, "valor", false);
 
                installments.add(InstallmentBuilder.create()
                   .setInstallmentNumber(installmentNumber)
