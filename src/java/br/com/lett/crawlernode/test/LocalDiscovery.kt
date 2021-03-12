@@ -1,7 +1,9 @@
 package br.com.lett.crawlernode.test
 
 import br.com.lett.crawlernode.core.models.RankingProducts
+import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession
+import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
 import br.com.lett.crawlernode.util.CommonMethods
 import org.json.JSONArray
@@ -49,32 +51,28 @@ class LocalDiscovery {
 
       val tests = TestUtils.poolTaskProcess(marketId = marketId, parameters = urls, currentTest = TestType.INSIGHTS, corePoolSize = corePoolSize)
 
-      for (test in tests){
-         for (task in test.tasks){
-            if(task is TestCrawlerSession){
-               val error = JSONObject()
-               error.put(task.originalURL, task.lastError)
-               errors.put(error)
+      var count = 0
+      for (test in tests) {
+         for (task in test.tasks) {
+            val session = task.session
+            if (session is TestCrawlerSession) {
+               if (session.lastError != null) {
+                  val error = JSONObject()
+                  error.put(session.originalURL, session.lastError)
+                  errors.put(error)
+               }
+               count++
+               println("$count|| url: ${session.originalURL}")
+               for (product in session.products) {
+                  println("\t internalId: ${product.internalId} || isVoid: ${product.name == null} || name: ${product.name}")
+               }
             }
          }
       }
-
-      CommonMethods.saveDataToAFile(errors,Test.pathWrite+"/log.json")
-
-      val productsScraped = Test.products
-
-      var productsFound = 0
-      productsScraped.forEach { (_, u) ->  productsFound += u.size }
+      CommonMethods.saveDataToAFile(errors, Test.pathWrite + "/log.json")
 
       println("Products ranking found: ${products.size}")
-      println("Products core found: $productsFound")
+      println("Products core found: $count")
 
-      var count = 0
-      for ((_, productList) in productsScraped) {
-         for (product in productList) {
-            count++
-            println("$count || internalId: ${product.internalId} || isVoid: ${product.isVoid} || name: ${product.name} || url: ${product.url}")
-         }
-      }
    }
 }

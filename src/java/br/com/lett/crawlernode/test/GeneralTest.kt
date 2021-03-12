@@ -1,34 +1,23 @@
 package br.com.lett.crawlernode.test
 
-import br.com.lett.crawlernode.util.CommonMethods
-import org.json.JSONArray
-
-
 fun main() {
 
    TestUtils.initialize()
 
-
    discovery()
-
 //   coreRanking()
-
-
-
 
 }
 
-
-
 private fun discovery() {
 
-   val marketId: Long = 363
+   val marketId: Long = 1087
 
    val keywords = listOf(
-      "cafetera"
+      "Chocolate"
    )
 
-   LocalDiscovery().discovery(marketId, keywords, 10, 50)
+   LocalDiscovery().discovery(marketId, keywords, 100, 5)
 }
 
 
@@ -39,10 +28,10 @@ private fun coreRanking() {
    val city = ""
    val marketName = ""
 
-   val marketId: Long = 440 //martins
+   val marketId: Long = 1087 //martins
 
    val urls = listOf(
-      ""
+      "",
    )
    val keywords = listOf(
       ""

@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.core.session.crawler;
 
 import java.util.ArrayList;
+import java.util.List;
+
 import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -19,6 +22,8 @@ public class TestCrawlerSession extends Session {
   private TestType type;
 
   private String lastError;
+
+   private List<Product> products;
 
   public TestCrawlerSession(String url, Market market) {
     super(market);
@@ -110,4 +115,13 @@ public class TestCrawlerSession extends Session {
    public void setLastError(String lastError) {
       this.lastError = lastError;
    }
+
+   public List<Product> getProducts() {
+      return products;
+   }
+
+   public void setProducts(List<Product> products) {
+      this.products = products;
+   }
+
 }
