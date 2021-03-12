@@ -352,9 +352,12 @@ public class Crawler extends Task {
 
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
+      if(session instanceof TestCrawlerSession){
+         ((TestCrawlerSession) session).setProducts(products);
+      }
+
+
       for (Product p : products) {
-
-
 
          if (Test.pathWrite != null) {
             String status = getFirstPartyRegexStatus(p);
