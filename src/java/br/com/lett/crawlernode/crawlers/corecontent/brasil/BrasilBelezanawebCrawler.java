@@ -131,7 +131,7 @@ public class BrasilBelezanawebCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
       String sale = CrawlerUtils.calculateSales(pricing);
 
-      if(sale != null) {
+      if (sale != null) {
          sales.add(sale);
       }
       return sales;
