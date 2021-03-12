@@ -63,8 +63,10 @@ class LocalDiscovery {
                }
                count++
                println("$count|| url: ${session.originalURL}")
-               for (product in session.products) {
-                  println("\t internalId: ${product.internalId} || isVoid: ${product.name == null} || name: ${product.name}")
+               if(session.products != null) {
+                  for (product in session.products) {
+                     println("\t internalId: ${product.internalId} || isVoid: ${product.name == null} || name: ${product.name}")
+                  }
                }
             }
          }
