@@ -127,9 +127,13 @@ public class BrasilBelezanawebCrawler extends Crawler {
    }
 
    private List<String> scrapSales(Pricing pricing) {
-      List<String> sales = new ArrayList<>();
-      sales.add(CrawlerUtils.calculateSales(pricing));
 
+      List<String> sales = new ArrayList<>();
+      String sale = CrawlerUtils.calculateSales(pricing);
+
+      if (sale != null) {
+         sales.add(sale);
+      }
       return sales;
    }
 
