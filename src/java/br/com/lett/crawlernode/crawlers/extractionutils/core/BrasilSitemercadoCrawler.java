@@ -316,7 +316,8 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
    protected JSONObject crawlProductInformatioFromApi(String productUrl) {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
       String loadUrl = API_URL+"page/store"+lojaUrl;
-      String url = API_URL+getLojaInfo().get("IdLoja")+"/product/" + CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
+      String productName = CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
+      String url = API_URL+getLojaInfo().get("IdLoja")+"/product/" + productName;
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.REFERER, productUrl);
@@ -340,10 +341,10 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
       //Some products have not yet migrated to the new API and it is necessary to use the old API
       if(jsonApi.isEmpty()){
-         requestApi.setUrl("https://www.sitemercado.com.br/api/b2c/product/"+productUrl+"?id_loja="+lojaInfo.get("IdLoja"));
+         requestApi.setUrl("https://www.sitemercado.com.br/api/b2c/product/"+productName+"?id_loja="+lojaInfo.get("IdLoja"));
          jsonApi = CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
       }
-      
+
       return jsonApi;
    }
 
