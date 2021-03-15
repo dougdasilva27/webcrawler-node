@@ -11,10 +11,10 @@ fun main() {
 
 private fun discovery() {
 
-   val marketId: Long = 1087
+   val marketId: Long = 440
 
    val keywords = listOf(
-      "Chocolate"
+      ""
    )
 
    LocalDiscovery().discovery(marketId, keywords, 100, 5)
@@ -28,7 +28,7 @@ private fun coreRanking() {
    val city = ""
    val marketName = ""
 
-   val marketId: Long = 1087 //martins
+   val marketId: Long = 440 //martins
 
    val urls = listOf(
       "",
