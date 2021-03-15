@@ -1,24 +1,5 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException;
-import br.com.lett.crawlernode.integration.redis.CrawlerCache;
-import br.com.lett.crawlernode.integration.redis.RedisClient;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -33,6 +14,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
@@ -48,6 +30,7 @@ import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
@@ -55,11 +38,25 @@ import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 import models.DateConstants;
 import models.Offer;
 import models.Offers;
 import models.Processed;
 import models.prices.Prices;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit and extract methods.
@@ -547,6 +544,28 @@ public class Crawler extends Task {
     */
    public List<Product> extractInformation(JSONArray array) throws Exception {
       return new ArrayList<>();
+   }
+
+   protected <T> void setCache(String key, int ttl, T value) {
+      cache.setKey(getClass().getSimpleName() + ":" + key, value, ttl);
+   }
+
+   protected <T> void setCache(String key, T value) {
+      cache.setKey(getClass().getSimpleName() + ":" + key, value);
+   }
+
+   protected <T> T getCache(String key) {
+      return cache.get(getClass().getSimpleName() + ":" + key);
+   }
+
+   protected <T> T getPutCache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+      String component = getClass().getSimpleName() + ":" + key;
+      return cache.getPutCache(component, ttl, requestMethod, request, function, dataFetcher, session);
+   }
+
+   protected <T> T getPutCache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+      String component = getClass().getSimpleName() + ":" + key;
+      return cache.getPutCache(component, requestMethod, request, function, dataFetcher, session);
    }
 
    /**

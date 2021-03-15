@@ -250,16 +250,16 @@ public abstract class CrawlerRanking extends Task {
       }
    }
 
-   protected void setCache(String key, int seconds, Object value) {
-      cache.setExKey(getClass().getSimpleName() + ":" + key, value, seconds);
+   protected <T> void setCache(String key, int ttl, T value) {
+      cache.setKey(getClass().getSimpleName() + ":" + key, value, ttl);
    }
 
-   protected <T> T getCache(String key, Class<T> type) {
-      return cache.get(getClass().getSimpleName() + ":" + key, type);
+   protected <T> void setCache(String key, T value) {
+      cache.setKey(getClass().getSimpleName() + ":" + key, value);
    }
 
-   protected String getCache(String key) {
-      return cache.get(key, String.class);
+   protected <T> T getCache(String key) {
+      return cache.get(getClass().getSimpleName() + ":" + key);
    }
 
    protected <T> T getPutCache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {

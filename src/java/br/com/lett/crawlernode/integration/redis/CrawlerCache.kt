@@ -26,22 +26,20 @@ object CrawlerCache {
 
    private const val defaultTtl = 7200
 
-   fun <T> get(key: String, type: Class<T>): T? {
+   fun <T> get(key: String): T? {
       val timedValue: TimedValue<Any?> = measureTimedValue { mapCache[key] }
       logger.debug("$logPrefix [Get] ${timedValue.duration.inMilliseconds} ms")
       val value = timedValue.value
-      return if (value != null && type.isAssignableFrom(value::class.java)) {
-         type.cast(value)
-      } else null
+      return if (value != null) value as T? else null
    }
 
-   fun <T> setExKey(key: String, value: T, seconds: Int) {
+   fun <T> setKey(key: String, value: T, seconds: Int) {
       val duration: Duration = measureTime { mapCache.put(key, value, seconds.toLong(), TimeUnit.SECONDS) }
       logger.debug("$logPrefix [Set] ${duration.inMilliseconds} ms")
    }
 
    fun <T> setKey(key: String, value: T) {
-      setExKey(key, value, defaultTtl)
+      setKey(key, value, defaultTtl)
    }
 
    fun <T> getPutCache(
@@ -53,14 +51,14 @@ object CrawlerCache {
       dataFetcher: DataFetcher,
       session: Session
    ): T? {
-      var value: Any? = get(key, Any::class.java)
+      var value: Any? = get(key)
       if (value == null) {
          value = when (requestMethod) {
             RequestMethod.GET -> function.apply(dataFetcher.get(session, request))
             RequestMethod.POST -> function.apply(dataFetcher.post(session, request))
             else -> throw RequestMethodNotFoundException(requestMethod.name)
          }
-         setExKey(key, value as Any, ttl)
+         setKey(key, value as Any, ttl)
       }
       return value as T?
    }
