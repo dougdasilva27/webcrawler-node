@@ -1,13 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -19,6 +22,8 @@ import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -38,6 +43,17 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    }
 
    @Override
+   public void handleCookiesBeforeFetch() {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(HOME_PAGE)
+         .build();
+
+
+      Response response = dataFetcher.get(session, request);
+      this.cookies = response.getCookies();
+   }
+
+   @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
@@ -51,32 +67,31 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String[] internalIdArray = CrawlerUtils.scrapStringSimpleInfo(doc, ".row .mt-3 .small", false).split("produto: ");
-         if (internalIdArray.length > 1) {
-            String internalId = internalIdArray[1];
-            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
-            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
-            String primaryImage = fixUrlImage(doc, internalId);
-            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
 
-            JSONObject json = accesAPIOffers(internalId);
-            Offers offers = scrapOffers(json);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-produto_id]", "data-produto_id");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".mt-3 h4", false);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".small a", true);
+         String primaryImage = fixUrlImage(doc, internalId);
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(" .d-flex.mt-4 .text-border-bottom-amarelo", "div .row div .mt-1"));
 
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalId)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setDescription(description)
-               .setOffers(offers)
-               .build();
+         JSONObject json = accesAPIOffers(internalId);
+         Offers offers = scrapOffers(json);
 
-            products.add(product);
-         }
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
+
+         products.add(product);
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -86,11 +101,11 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".row[data-target=\"produto_view\"]").isEmpty();
+      return !doc.select("div[data-produto_id]").isEmpty();
    }
 
    private String fixUrlImage(Document doc, String internalId) {
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-slide img", Arrays.asList("src"), "https:", "www.farmaciasnissei.com.br");
+      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-slide img", Collections.singletonList("src"), "https:", "www.farmaciasnissei.com.br");
 
       if (primaryImage.contains("caixa-nissei")) {
          return primaryImage.replace("caixa-nissei", internalId);
@@ -102,19 +117,20 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
    private Offers scrapOffers(JSONObject jsonInfo) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(jsonInfo);
-      List<String> sales = scrapSales(jsonInfo);
+      if (jsonInfo != null && !jsonInfo.isEmpty()) {
+         Pricing pricing = scrapPricing(jsonInfo);
+         List<String> sales = scrapSales(jsonInfo);
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("Drogaria Nissei")
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
-
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName("Drogaria Nissei")
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setSales(sales)
+            .build());
+      }
       return offers;
 
    }
@@ -170,22 +186,27 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
 
    private JSONObject accesAPIOffers(String internalId) {
-
+      String token = "";
       String url = "https://www.farmaciasnissei.com.br/pegar/preco";
 
+
+      String cookies = CommonMethods.cookiesToString(this.cookies);
+
+      token = CommonMethods.substring(cookies,"=",";",true);
+
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", "_fbp=fb.2.1610386362281.901362755; csrftoken=22ZymWOcthE3uvJFSmQczCX6SlVVLARapcJJMC0xICmQFGz57aoh9taSte4SpZBh; _gid=GA1.3.703743027.1610735130; _ga=GA1.1.1690412403.1610386362; _ga_G8H8ZH3E1D=GS1.1.1610735129.1.0.1610735233.60");
+      headers.put("cookie", cookies);
       headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put("referer", session.getOriginalURL());
 
 
-      String payload = "csrfmiddlewaretoken=uMF8GPQqCsHHumoU7dBguT5cRR252DRbRWpj6v2LRNpuFxekm19l4KiYsKb2G2Bi&produtos_ids%5B%5D=" + internalId;
+      String payload = "csrfmiddlewaretoken=" + token + "&produtos_ids%5B%5D=" + internalId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
+         .setCookies(this.cookies)
          .setPayload(payload)
-         .setCookies(cookies)
          .build();
 
       String content = this.dataFetcher

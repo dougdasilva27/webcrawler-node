@@ -47,7 +47,6 @@ private fun fetchMarket(city: String, market: String): Market? {
 }
 
 fun initialize() {
-   pathWrite = ""
    phantomjsPath = ""
    GlobalConfigurations.executionParameters = ExecutionParameters()
    GlobalConfigurations.executionParameters.setUpExecutionParameters()

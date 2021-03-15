@@ -24,4 +24,9 @@ public abstract class Task {
 	protected void onFinish() {
 		// subclasses will override if they need to
 	}
+
+	public Session getSession(){
+	   return this.session;
+   }
+
 }

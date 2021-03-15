@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.test;
 
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.main.EnvironmentVariables;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -39,15 +40,14 @@ public class Test {
 
    private static String market;
    private static String city;
-   public static String pathWrite;
+   public static String pathWrite = System.getenv(EnvironmentVariables.HTML_PATH);
    public static String testType;
    public static String phantomjsPath;
 
    private static final Logger LOGGER = LoggerFactory.getLogger(Test.class);
 
-   public static Map<String, List<Product>> products = new HashMap<>();
 
-   public static void main(String args[]) {
+   public static void main(String[] args) {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
       // setting global configuraions
@@ -83,11 +83,6 @@ public class Test {
          help();
       }
 
-      if (cmd.hasOption("pathwrite"))
-         pathWrite = cmd.getOptionValue("pathwrite");
-      else {
-         pathWrite = null;
-      }
 
       if (cmd.hasOption("testType"))
          testType = cmd.getOptionValue("testType");

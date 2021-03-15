@@ -272,6 +272,8 @@ public class BrasilDafitiCrawler extends Crawler {
          int a = total.indexOf("com") + 4;
          int b = total.indexOf("avaliações") - 1;
          if (a < b) totalComments = MathUtils.parseInt(total.substring(a, b));
+      }else{
+         totalComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".ratings-reviews-component.hide-mobile.clearflix h2", true, 0);
       }
 
 

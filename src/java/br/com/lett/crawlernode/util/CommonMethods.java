@@ -514,21 +514,20 @@ public class CommonMethods {
          .collect(Collectors.joining(" "));
    }
 
-   public static String substring(String str, String start, String end) {
+   public static String substring(String str, String start, String end, Boolean between) {
       str = str == null ? "" : str;
       start = start == null ? "" : start;
       end = end == null ? "" : end;
 
       String result = "";
-      int s = str.indexOf(start) + start.length();
-      int e = str.indexOf(end) + end.length();
+      int s = between ? str.indexOf(start) + start.length() : str.indexOf(start);
+      int e = between ? str.indexOf(end, s) : str.indexOf(end, s)+end.length();
 
       if (s >= 0 && s < e && e <= str.length()) {
          result = str.substring(s, e);
       }
       return result;
    }
-
 
 
 }

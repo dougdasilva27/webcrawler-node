@@ -216,8 +216,7 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
    }
 
    private List<String> scrapSecondaryImages(JSONArray images) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+      List<String> secondaryImages = new ArrayList<>();
 
       for (Object o : images) {
          JSONObject json = (JSONObject) o;
@@ -236,16 +235,13 @@ public class SaopauloUltrafarmaCrawler extends Crawler {
             }
 
             if (key != null) {
-               secondaryImagesArray.put(CrawlerUtils.completeUrl(json.get(key).toString(), "https", "ultrafarma-storage.azureedge.net"));
+               secondaryImages.add(CrawlerUtils.completeUrl(json.get(key).toString(), "https", "ultrafarma-storage.azureedge.net"));
             }
          }
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
 
-      return secondaryImages != null ? Collections.singletonList(secondaryImages) : null;
+      return secondaryImages;
    }
 
    private List<String> scrapSales(Pricing pricing) {
