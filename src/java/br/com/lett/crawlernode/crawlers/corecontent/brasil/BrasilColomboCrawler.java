@@ -273,7 +273,7 @@ public class BrasilColomboCrawler extends Crawler {
       BankSlip bankSlip;
       CreditCards creditCards;
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "precoDe", false);
-      Double spotlightPrice = Double.parseDouble(sku.optString("precoFormatado").replace(',', '.'));
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(sku,"precoFormatado",true);
 
       //this was necessary because the priceFrom is not from a especific offer. So, if the priceFrom is lower than spotlightPrice
       //this offer does not have priceFrom. The same goes to bankSlip and creditCard offers.
