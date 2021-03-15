@@ -336,7 +336,15 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       headers.put("sm-mmc", responseHeaders.get("sm-mmc"));
       headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
       Request requestApi = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
+      JSONObject jsonApi = CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
+
+      //Some products have not yet migrated to the new API and it is necessary to use the old API
+      if(jsonApi.isEmpty()){
+         requestApi.setUrl("https://www.sitemercado.com.br/api/b2c/product/"+productUrl+"?id_loja="+lojaInfo.get("IdLoja"));
+         jsonApi = CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
+      }
+      
+      return jsonApi;
    }
 
 }
