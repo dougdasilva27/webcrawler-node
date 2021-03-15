@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.core.task.impl;
 
 import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException;
+import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.integration.redis.RedisClient;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,7 +87,7 @@ public class Crawler extends Task {
 
    protected CrawlerWebdriver webdriver;
 
-   private static final RedisClient redisClient = RedisClient.INSTANCE;
+   private static final CrawlerCache cache = CrawlerCache.INSTANCE;
 
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
@@ -546,40 +547,6 @@ public class Crawler extends Task {
     */
    public List<Product> extractInformation(JSONArray array) throws Exception {
       return new ArrayList<>();
-   }
-
-   protected void setCache(String key, int seconds, String value) {
-      String simpleName = getClass().getSimpleName();
-      String component = simpleName.substring(simpleName.indexOf("Crawler"));
-      redisClient.setExKey(component + ":" + key, value, seconds);
-   }
-
-   protected String getCache(String key) {
-      String simpleName = getClass().getSimpleName();
-      String component = simpleName.substring(simpleName.indexOf("Crawler"));
-      return redisClient.getKey(component + ":" + key);
-   }
-
-   protected String getSetCache(String key, int timeoutSeconds, RequestMethod requestMethod, Request request, Function<Response, String> function) {
-      String value = getCache(key);
-      if (value == null) {
-         switch (requestMethod) {
-            case GET:
-               value = function.apply(dataFetcher.get(session, request));
-               break;
-            case POST:
-               value = function.apply(dataFetcher.post(session, request));
-               break;
-            default:
-               throw new RequestMethodNotFoundException(requestMethod.name());
-         }
-         setCache(key, timeoutSeconds, value);
-      }
-      return value;
-   }
-
-   protected String getSetCache(String key, RequestMethod requestMethod, Request request, Function<Response, String> function) {
-      return getSetCache(key, 7200, requestMethod, request, function);
    }
 
    /**

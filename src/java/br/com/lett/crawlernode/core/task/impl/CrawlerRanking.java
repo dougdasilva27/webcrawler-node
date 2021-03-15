@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import br.com.lett.crawlernode.core.models.RequestMethod;
+import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException;
+import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -10,6 +13,8 @@ import java.util.Map.Entry;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.ranking.*;
+import java.util.Objects;
+import java.util.function.Function;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -88,6 +93,8 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
+   private static final CrawlerCache cache = CrawlerCache.INSTANCE;
+
    // variável que identifica se há resultados na página
    protected boolean result;
 
@@ -115,8 +122,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    /**
-    * Overrides the run method that will perform a task within a thread. The actual thread performs
-    * it's computation controlled by an Executor, from Java's Executors Framework.
+    * Overrides the run method that will perform a task within a thread. The actual thread performs it's computation controlled by an Executor, from Java's Executors Framework.
     */
    @Override
    public void processTask() {
@@ -138,7 +144,7 @@ public abstract class CrawlerRanking extends Task {
       // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
       // }
 
-      if(!(session instanceof TestRankingKeywordsSession)) {
+      if (!(session instanceof TestRankingKeywordsSession)) {
          S3Service.uploadCrawlerSessionContentToAmazon(session);
       }
 
@@ -162,7 +168,6 @@ public abstract class CrawlerRanking extends Task {
 
          session.setTaskStatus(Task.STATUS_FAILED);
       }
-
 
       // and if we are not testing, because when testing there is no message processing
       else if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
@@ -193,7 +198,7 @@ public abstract class CrawlerRanking extends Task {
 
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
             if (session instanceof RankingSession || session instanceof RankingDiscoverSession || session instanceof EqiRankingDiscoverKeywordsSession
-                  && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
+               && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
 
                sendMessagesToAmazonAndMongo();
             }
@@ -245,19 +250,39 @@ public abstract class CrawlerRanking extends Task {
       }
    }
 
+   protected void setCache(String key, int seconds, Object value) {
+      cache.setExKey(getClass().getSimpleName() + ":" + key, value, seconds);
+   }
+
+   protected <T> T getCache(String key, Class<T> type) {
+      return cache.get(getClass().getSimpleName() + ":" + key, type);
+   }
+
+   protected String getCache(String key) {
+      return cache.get(key, String.class);
+   }
+
+   protected <T> T getPutCache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+      String component = getClass().getSimpleName() + ":" + key;
+      return cache.getPutCache(component, ttl, requestMethod, request, function, dataFetcher, session);
+   }
+
+   protected <T> T getPutCache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+      String component = getClass().getSimpleName() + ":" + key;
+      return cache.getPutCache(component, requestMethod, request, function, dataFetcher, session);
+   }
+
    public void setProductsLimit(int productsLimit) {
       this.productsLimit = productsLimit;
    }
 
    /**
     * Função checa de 4 formas se existe proxima pagina
-    * 
-    * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit) 2 - Se
-    * naquele market foi identificado se há proxima pagina (hasNextPage()) 3 - Se naquele market obteve
-    * resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos os
-    * produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é
-    * identificado que não há próxima página devido algum erro naquele market.
-    * 
+    * <p>
+    * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit) 2 - Se naquele market foi identificado se há proxima pagina (hasNextPage()) 3 - Se naquele market obteve
+    * resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos os produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é identificado
+    * que não há próxima página devido algum erro naquele market.
+    *
     * @return
     */
    protected boolean checkIfHasNextPage() {
@@ -275,15 +300,15 @@ public abstract class CrawlerRanking extends Task {
    }
 
    // função para setar cookies
-   protected void processBeforeFetch() {}
+   protected void processBeforeFetch() {
+   }
 
    // função que extrai os produtos da página atual
    protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException;
 
    /**
-    * função que retorna se há ou não uma próxima página default: total de produtos maior que os
-    * produtos pegos até agora
-    * 
+    * função que retorna se há ou não uma próxima página default: total de produtos maior que os produtos pegos até agora
+    *
     * @return
     */
    protected boolean hasNextPage() {
@@ -301,7 +326,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
-    * 
+    *
     * @param internalId
     * @param pid
     * @param url
@@ -313,7 +338,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
-    * 
+    *
     * @param internalId
     * @param pid
     * @param url
@@ -357,7 +382,6 @@ public abstract class CrawlerRanking extends Task {
             processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
          }
 
-
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
@@ -385,18 +409,17 @@ public abstract class CrawlerRanking extends Task {
 
 
    /**
-    *
     * @param url
     */
    protected void saveProductUrlToQueue(String url) {
       Map<String, MessageAttributeValue> attr = new HashMap<>();
       attr.put(QueueService.MARKET_ID_MESSAGE_ATTR,
-            new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
+         new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
 
       String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
 
       attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-            .withStringValue(String.valueOf(scraperType)));
+         .withStringValue(String.valueOf(scraperType)));
 
       this.messages.put(url.trim(), attr);
    }
@@ -464,8 +487,8 @@ public abstract class CrawlerRanking extends Task {
             entries.clear();
 
             JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
-                  .put("aws_type", "sqs")
-                  .put("sqs_queue", "ws-discoverer");
+               .put("aws_type", "sqs")
+               .put("sqs_queue", "ws-discoverer");
 
             Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
          }
@@ -475,7 +498,6 @@ public abstract class CrawlerRanking extends Task {
    }
 
    /**
-    *
     * @param entries
     */
    private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
@@ -495,7 +517,7 @@ public abstract class CrawlerRanking extends Task {
       if (!successResultEntryList.isEmpty()) {
          int count = 0;
          for (SendMessageBatchResultEntry resultEntry : successResultEntryList) { // the successfully
-                                                                                  // sent messages
+            // sent messages
 
             // the _id field in the document will be the message id, which is the session id in the
             // crawler
@@ -511,7 +533,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Document
-    * 
+    *
     * @param url
     * @return
     */
@@ -521,7 +543,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Document eith cookies
-    * 
+    *
     * @param url
     * @param cookies
     * @return
@@ -546,7 +568,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Map of Cookies
-    * 
+    *
     * @param url
     * @return
     */
@@ -556,7 +578,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Map of Cookies
-    * 
+    *
     * @param url
     * @param cookies
     * @return
@@ -573,7 +595,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch jsonObject(deprecated) Use fetchJSONObject(String url, List<Cookie> cookies)
-    * 
+    *
     * @param url
     * @return
     */
@@ -587,7 +609,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Get Request
-    * 
+    *
     * @param url
     * @param cookies
     * @return
@@ -601,7 +623,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch jsonObject
-    * 
+    *
     * @param url
     * @return
     */
@@ -620,7 +642,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch google Json
-    * 
+    *
     * @param url
     * @return
     */
@@ -647,7 +669,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -667,7 +689,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request in FETCHER
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -683,7 +705,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request in FETCHER
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -699,7 +721,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Cookies with Post Request
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -715,7 +737,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Inicia o webdriver
-    * 
+    *
     * @param url
     */
    protected CrawlerWebdriver startWebDriver(String url) {
@@ -723,7 +745,7 @@ public abstract class CrawlerRanking extends Task {
          this.session.setOriginalURL(url);
       }
 
-      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,false, session);
+      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY, false, session);
    }
 
    /**
@@ -732,7 +754,7 @@ public abstract class CrawlerRanking extends Task {
     * @param url
     * @param proxy
     */
-   protected CrawlerWebdriver startWebDriver(String url,String proxy) {
+   protected CrawlerWebdriver startWebDriver(String url, String proxy) {
       if (this.currentPage == 1) {
          this.session.setOriginalURL(url);
       }
@@ -742,7 +764,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Conecta url com webdriver
-    * 
+    *
     * @param url
     * @return
     */
@@ -752,12 +774,12 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Conecta url com webdriver
-    * 
+    *
     * @param url
     * @param timeout
     * @return
     */
-   protected Document fetchDocumentWithWebDriver(String url, Integer timeout,String proxy) {
+   protected Document fetchDocumentWithWebDriver(String url, Integer timeout, String proxy) {
       if (this.currentPage == 1) {
          this.session.setOriginalURL(url);
       }
@@ -765,7 +787,7 @@ public abstract class CrawlerRanking extends Task {
       // se o webdriver não estiver iniciado, inicio ele
       if (this.webdriver == null) {
          Document doc = new Document(url);
-         this.webdriver = startWebDriver(url,proxy);
+         this.webdriver = startWebDriver(url, proxy);
 
          if (this.webdriver != null) {
             if (timeout != null) {
@@ -787,7 +809,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    protected Document fetchDocumentWithWebDriver(String url, Integer timeout) {
-      return fetchDocumentWithWebDriver(url,timeout,ProxyCollection.BUY_HAPROXY);
+      return fetchDocumentWithWebDriver(url, timeout, ProxyCollection.BUY_HAPROXY);
    }
 
    protected void takeAScreenshot(String url) {
@@ -800,7 +822,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Take a screenshot for audit only the first 2 pages
-    * 
+    *
     * @param url
     */
    protected void takeAScreenshot(String url, int page, List<Cookie> cookies) {
