@@ -31,7 +31,7 @@
         <surefire-plugin-version>2.22.0</surefire-plugin-version>
         <temmie-webhook.version>-SNAPSHOT</temmie-webhook.version>
         <kotlin.version>1.4.0</kotlin.version>
-        <jedis.version>3.5.1</jedis.version>
+        <redisson.version>3.15.1</redisson.version>
     </properties>
 
     <build>
@@ -139,7 +139,7 @@
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
-            <version>3.15.1</version>
+            <version>${redisson.version}</version>
         </dependency>
 
         <dependency>
