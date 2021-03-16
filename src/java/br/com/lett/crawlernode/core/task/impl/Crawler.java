@@ -1,5 +1,21 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
+
+
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -130,16 +146,22 @@ public class Crawler extends Task {
    }
 
    private void setDataFetcher() {
-      if (config.getFetcher() == FetchMode.STATIC) {
-         dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
-      } else if (config.getFetcher() == FetchMode.APACHE) {
-         dataFetcher = new ApacheDataFetcher();
-      } else if (config.getFetcher() == FetchMode.JAVANET) {
-         dataFetcher = new JavanetDataFetcher();
-      } else if (config.getFetcher() == FetchMode.FETCHER) {
-         dataFetcher = new FetcherDataFetcher();
-      } else if (config.getFetcher() == FetchMode.JSOUP) {
-         dataFetcher = new JsoupDataFetcher();
+      switch (config.getFetcher()){
+         case APACHE:
+            dataFetcher = new ApacheDataFetcher();
+            break;
+         case JAVANET:
+            dataFetcher = new JavanetDataFetcher();
+            break;
+         case FETCHER:
+            dataFetcher = new FetcherDataFetcher();
+            break;
+         case JSOUP:
+            dataFetcher = new JsoupDataFetcher();
+            break;
+         default:
+            dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+            break;
       }
    }
 
@@ -343,6 +365,11 @@ public class Crawler extends Task {
 
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
+      if(session instanceof TestCrawlerSession){
+         ((TestCrawlerSession) session).setProducts(products);
+      }
+
+
       for (Product p : products) {
 
          if (Test.pathWrite != null) {
@@ -350,10 +377,10 @@ public class Crawler extends Task {
 
             TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
          }
-         addProductsTest(p);
          printCrawledInformation(p);
       }
    }
+
 
    private static void addProductsTest(Product product) {
 
@@ -519,7 +546,7 @@ public class Crawler extends Task {
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
     *
-    * @param Document
+    * @param document
     * @return A product with all it's crawled informations
     */
    public List<Product> extractInformation(Document document) throws Exception {
@@ -529,7 +556,7 @@ public class Crawler extends Task {
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
     *
-    * @param JSONObject
+    * @param json
     * @return A product with all it's crawled informations
     */
    public List<Product> extractInformation(JSONObject json) throws Exception {
@@ -539,7 +566,7 @@ public class Crawler extends Task {
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
     *
-    * @param JSONArray
+    * @param array
     * @return A product with all it's crawled informations
     */
    public List<Product> extractInformation(JSONArray array) throws Exception {
@@ -639,7 +666,7 @@ public class Crawler extends Task {
     * Get only the product with the desired internalId.
     *
     * @param products
-    * @param internalId
+    * @param desiredInternalId
     * @return The product with the desired internal id, or an empty product if it was not found.
     */
    private Product filter(List<Product> products, String desiredInternalId) {

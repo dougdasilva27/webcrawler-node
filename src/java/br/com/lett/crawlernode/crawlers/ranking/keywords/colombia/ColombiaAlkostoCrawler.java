@@ -30,12 +30,12 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.yotpo.bottomLine", "data-product-id");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.yotpo.bottomLine", "data-product-id");
             String productUrl = CrawlerUtils.scrapUrl(e, ".amlabel-div a", Arrays.asList("href"), "https", HOME_PAGE);
 
-            saveDataProduct(internalId, null, productUrl);
+            saveDataProduct(null, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid
                + " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit) {
