@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import br.com.lett.crawlernode.test.GeneralTestKt;
-import br.com.lett.crawlernode.test.TestUtils;
+
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -352,32 +352,21 @@ public class Crawler extends Task {
 
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
+      if(session instanceof TestCrawlerSession){
+         ((TestCrawlerSession) session).setProducts(products);
+      }
+
+
       for (Product p : products) {
-
-
 
          if (Test.pathWrite != null) {
             String status = getFirstPartyRegexStatus(p);
 
             TestHtmlBuilder.buildProductHtml(new JSONObject(p.toJson()), Test.pathWrite, status, session);
          }
-         addProductsTest(p);
          printCrawledInformation(p);
       }
    }
-
-   private static void addProductsTest(Product product){
-
-      List<Product> productsMap = Test.products.get(product.getUrl());
-
-      if (productsMap == null) {
-         Test.products.put(product.getUrl(), Collections.singletonList(product));
-      } else {
-         productsMap.add(product);
-      }
-
-   }
-
 
 
    /**
@@ -542,7 +531,7 @@ public class Crawler extends Task {
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
     *
-    * @param Document
+    * @param document
     * @return A product with all it's crawled informations
     */
    public List<Product> extractInformation(Document document) throws Exception {
@@ -552,7 +541,7 @@ public class Crawler extends Task {
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
     *
-    * @param JSONObject
+    * @param json
     * @return A product with all it's crawled informations
     */
    public List<Product> extractInformation(JSONObject json) throws Exception {
@@ -562,7 +551,7 @@ public class Crawler extends Task {
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
     *
-    * @param JSONArray
+    * @param array
     * @return A product with all it's crawled informations
     */
    public List<Product> extractInformation(JSONArray array) throws Exception {
@@ -642,7 +631,7 @@ public class Crawler extends Task {
     * Get only the product with the desired internalId.
     *
     * @param products
-    * @param internalId
+    * @param desiredInternalId
     * @return The product with the desired internal id, or an empty product if it was not found.
     */
    private Product filter(List<Product> products, String desiredInternalId) {

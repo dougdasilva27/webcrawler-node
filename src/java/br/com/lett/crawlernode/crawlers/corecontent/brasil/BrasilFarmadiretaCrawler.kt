@@ -12,7 +12,7 @@ import models.Offers
 import models.pricing.Pricing
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import java.util.ArrayList
+import java.util.*
 
 class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
 
@@ -58,6 +58,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
       val primaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#CategoriaProduto", "value")
       val secondaryCategory = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#SubCategoriaProduto", "value")
       val primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".card .product-image-box > img[src]", "src")
+      val description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ficha-produto"))
       val offers = scrapOffers(doc)
 
       val product = ProductBuilder()
@@ -68,6 +69,7 @@ class BrasilFarmadiretaCrawler(session: Session) : Crawler(session) {
          .setPrimaryImage(primaryImage)
          .setCategories(mutableListOf(primaryCategory, secondaryCategory))
          .setOffers(offers)
+         .setDescription(description)
          .build()
 
       return mutableListOf(product)

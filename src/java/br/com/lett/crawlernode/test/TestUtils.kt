@@ -3,10 +3,8 @@ package br.com.lett.crawlernode.test
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.models.Market
 import br.com.lett.crawlernode.core.models.Markets
-import br.com.lett.crawlernode.core.server.PoolExecutor
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.session.SessionFactory
-import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler
 import br.com.lett.crawlernode.core.task.base.TaskFactory
 import br.com.lett.crawlernode.database.DatabaseCredentialsSetter
 import br.com.lett.crawlernode.database.DatabaseDataFetcher
@@ -16,12 +14,7 @@ import br.com.lett.crawlernode.main.GlobalConfigurations
 import br.com.lett.crawlernode.processor.ResultManager
 import br.com.lett.crawlernode.core.task.base.Task
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
-import com.google.gson.JsonObject
-import org.json.JSONArray
-import org.json.JSONObject
-import java.lang.Exception
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 class TestUtils {
    companion object {
@@ -110,15 +103,16 @@ class TestUtils {
       fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1): List<TestRunnable> {
          val tests: MutableList<TestRunnable> = mutableListOf()
 
-         val executor = PoolExecutor(corePoolSize, corePoolSize, 0L, TimeUnit.SECONDS, LinkedBlockingQueue(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE), RejectedTaskHandler())
+         val executor = Executors.newFixedThreadPool(corePoolSize)
+
          for (param in parameters) {
             val t = TestRunnable(city, marketName, marketId, listOf(param), currentTest, productsLimit)
-            executor.execute(t)
+            executor.submit(t)
             tests.add(t)
          }
+
          executor.shutdown()
-         while (!executor.isTerminated) {
-         }
+         executor.awaitTermination(24L, TimeUnit.HOURS)
          return tests
       }
    }
