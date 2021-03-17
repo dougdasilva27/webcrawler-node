@@ -29,8 +29,9 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    protected abstract String getHomePage();
 
    protected String getApiUrl(){
-      return "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+      return "https://www.sitemercado.com.br/api/v1/b2c/";
    }
+
 
    protected String getLoadPayload() {
       JSONObject payload = new JSONObject();
