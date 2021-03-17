@@ -148,7 +148,7 @@ import models.prices.Prices;
             dataFetcher = new JsoupDataFetcher();
             break;
          default:
-            dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+            dataFetcher = Boolean.TRUE.equals(GlobalConfigurations.executionParameters.getUseFetcher()) ? new FetcherDataFetcher() : new ApacheDataFetcher();
             break;
       }
    }
@@ -242,7 +242,7 @@ import models.prices.Prices;
       }
 
       // crawl informations and create a list of products
-      List<Product> products = null;
+      List<Product> products;
       try {
          products = extract();
 
@@ -339,7 +339,7 @@ import models.prices.Prices;
    private void testRun() {
 
       // crawl informations and create a list of products
-      List<Product> products = null;
+      List<Product> products;
       try {
          products = extract();
       } catch (Exception e) {
