@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,7 +44,7 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
             for (Element product : products) {
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-card", "item");
                String internalPid = internalId;
-               String productUrl = CrawlerUtils.scrapUrl(product, ".prod-acc > a", "href", "http", BASE_URL);
+               String productUrl = CrawlerUtils.scrapUrl(product, ".prod-acc > a", "href", "https", BASE_URL);
                saveDataProduct(internalId, internalPid, productUrl);
 
                log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
@@ -68,7 +69,8 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
                JSONObject product = (JSONObject) productObj;
                String internalId = product.optString("id");
                String internalPid = internalId;
-               String productUrl = product.optString("url").replace("//", "");
+               String productAPIUrl = product.optString("url").replace("//", "");
+               String productUrl = CrawlerUtils.completeUrl(productAPIUrl,"https",BASE_URL);
                saveDataProduct(internalId, internalPid, productUrl);
 
                log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
