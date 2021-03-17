@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -106,7 +104,7 @@ public class Crawler extends Task {
    private void createDefaultConfig() {
       this.config = new CrawlerConfig();
       this.config.setFetcher(FetchMode.STATIC);
-      this.config.setProxyList(new ArrayList<String>());
+      this.config.setProxyList(new ArrayList<>());
       this.config.setConnectionAttempts(0);
       // It will be false until exists rating out of core.
       this.config.setMustSendRatingToKinesis(false);
@@ -146,7 +144,7 @@ public class Crawler extends Task {
             dataFetcher = new JsoupDataFetcher();
             break;
          default:
-            dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+            dataFetcher = Boolean.TRUE.equals(GlobalConfigurations.executionParameters.getUseFetcher()) ? new FetcherDataFetcher() : new ApacheDataFetcher();
             break;
       }
    }
@@ -240,7 +238,7 @@ public class Crawler extends Task {
       }
 
       // crawl informations and create a list of products
-      List<Product> products = null;
+      List<Product> products;
       try {
          products = extract();
 
@@ -337,7 +335,7 @@ public class Crawler extends Task {
    private void testRun() {
 
       // crawl informations and create a list of products
-      List<Product> products = null;
+      List<Product> products;
       try {
          products = extract();
       } catch (Exception e) {
