@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -48,7 +49,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
    protected abstract String getHomePage();
    protected String getApiUrl(){
-      return "https://sitemercado-b2c-api-whitelabel.azurefd.net/api/v1/b2c/";
+      return "https://www.sitemercado.com.br/api/v1/b2c/";
    }
 
    protected abstract Map<String, Integer> getLojaInfo();
@@ -325,12 +326,16 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
 
-      Request request = RequestBuilder.create().setUrl(loadUrl).setCookies(cookies).setHeaders(headers).setPayload(loadPayload).build();
-      Map<String, String> responseHeaders = new ApacheDataFetcher().get(session, request).getHeaders();
+      Request request = RequestBuilder.create()
+         .setUrl(loadUrl)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setPayload(loadPayload)
+         .build();
+
+      Map<String, String> responseHeaders = dataFetcher.get(session, request).getHeaders();
 
       JSONObject jsonObject = responseHeaders != null ? JSONUtils.stringToJson(responseHeaders.get("sm-token")) : new JSONObject();
-      // jsonObject.remove("IdLoja");
-      // jsonObject.remove("IdRede");
       jsonObject.put("IdLoja", lojaInfo.get("IdLoja"));
       jsonObject.put("IdRede", lojaInfo.get("IdRede"));
       headers.put("sm-token", jsonObject.toString());
@@ -338,12 +343,6 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
       Request requestApi = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
       JSONObject jsonApi = CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
-
-      //Some products have not yet migrated to the new API and it is necessary to use the old API
-      if(jsonApi.isEmpty()){
-         requestApi.setUrl("https://www.sitemercado.com.br/api/b2c/product/"+productName+"?id_loja="+lojaInfo.get("IdLoja"));
-         jsonApi = CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
-      }
 
       return jsonApi;
    }
