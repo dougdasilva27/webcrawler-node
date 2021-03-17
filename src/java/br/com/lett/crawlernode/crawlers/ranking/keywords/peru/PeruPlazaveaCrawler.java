@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
+
   public PeruPlazaveaCrawler(Session session) {
     super(session);
   }
@@ -17,8 +18,7 @@ public class PeruPlazaveaCrawler extends CrawlerRankingKeywords {
     this.pageSize = 20;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.plazavea.com.pe/Busca/?PageNumber=" + this.currentPage + "&ft="
-        + CommonMethods.encondeStringURLToISO8859(this.location, logger, session) + "&sc=1";
+    String url = "https://www.plazavea.com.pe/Busca/?PS=20&cc=24&sm=0&PageNumber=" +this.currentPage +"&O=OrderByScoreDESC&ft=" + this.keywordEncoded;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
