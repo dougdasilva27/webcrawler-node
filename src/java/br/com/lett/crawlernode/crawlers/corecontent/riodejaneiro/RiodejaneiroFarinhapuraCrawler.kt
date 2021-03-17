@@ -20,23 +20,29 @@ class RiodejaneiroFarinhapuraCrawler(session: Session?) : Crawler(session) {
    private val sellerName = "Farinha Pura"
 
    override fun extractInformation(doc: Document): MutableList<Product> {
-      val name = doc.select("font-weight-bold").text()
+      val name = doc.select(".font-weight-bold").text()
       val prodOption = doc.selectFirst(".flex-wrap.ml-0 .product-options")
+
       val categories = doc.select(".breadcrumb a")
          .eachText(ignoreIndexes = arrayOf(0), ignoreTokens = arrayOf(name, sellerName))
-      val desc = doc.selectFirst(".information-body.p-0.py-3").wholeText()
+
+      val desc = doc.selectFirst(".information-body.p-0.py-3").html()
+
       val images = mutableListOf<String>()
       images addNonNull doc.select(".sp-wrap a")?.attr("href")
 
+      val offers = if (doc.selectFirst(".display-5.mb-1")?.text() == "Produto Esgotado") Offers() else scrapOffers(doc)
+
       return mutableListOf(
          ProductBuilder.create()
+            .setUrl(session.originalURL)
             .setName(name)
             .setDescription(desc)
             .setPrimaryImage(images.removeFirstOrNull())
             .setSecondaryImages(images)
-            .setOffers(scrapOffers(doc))
-            .setInternalId(prodOption.selectFirst("input[name='sku']").`val`())
-            .setInternalPid(prodOption.selectFirst("input[name='id']").`val`())
+            .setOffers(offers)
+            .setInternalId(doc.selectFirst(".size-2.ref")?.text()?.substringAfter(": "))
+            .setInternalPid(prodOption.selectFirst("input[name='id']")?.`val`())
             .setCategories(categories)
             .build()
       )
