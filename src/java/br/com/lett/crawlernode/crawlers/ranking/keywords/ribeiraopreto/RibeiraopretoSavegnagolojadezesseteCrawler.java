@@ -14,9 +14,9 @@ import org.jsoup.select.Elements;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RibeiraopretoSavegnagoCrawler extends SavegnagoRanking {
+public class RibeiraopretoSavegnagolojadezesseteCrawler extends SavegnagoRanking {
 
-    public RibeiraopretoSavegnagoCrawler(Session session) {
+    public RibeiraopretoSavegnagolojadezesseteCrawler(Session session) {
         super(session);
     }
 

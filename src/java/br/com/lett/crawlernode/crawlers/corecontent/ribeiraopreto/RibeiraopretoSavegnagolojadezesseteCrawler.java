@@ -28,9 +28,9 @@ import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 
-public class RibeiraopretoSavegnagoCrawler extends SavegnagoCrawler {
+public class RibeiraopretoSavegnagolojadezesseteCrawler extends SavegnagoCrawler {
 
-   public RibeiraopretoSavegnagoCrawler(Session session) {
+   public RibeiraopretoSavegnagolojadezesseteCrawler(Session session) {
       super(session);
    }
 
