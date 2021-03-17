@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -65,7 +63,11 @@ import models.prices.Prices;
  * @author Samir Leao
  */
 
-public class Crawler extends Task {
+
+
+
+
+ public abstract class Crawler extends Task {
 
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
@@ -93,7 +95,7 @@ public class Crawler extends Task {
    protected List<Cookie> cookies;
 
 
-   public Crawler(Session session) {
+   protected Crawler(Session session) {
       this.session = session;
       this.cookies = new ArrayList<>();
 
@@ -106,7 +108,7 @@ public class Crawler extends Task {
    private void createDefaultConfig() {
       this.config = new CrawlerConfig();
       this.config.setFetcher(FetchMode.STATIC);
-      this.config.setProxyList(new ArrayList<String>());
+      this.config.setProxyList(new ArrayList<>());
       this.config.setConnectionAttempts(0);
       // It will be false until exists rating out of core.
       this.config.setMustSendRatingToKinesis(false);
@@ -396,7 +398,7 @@ public class Crawler extends Task {
     *
     * @param product
     */
-   private void processProduct(Product product) throws Exception {
+   private void processProduct(Product product){
       Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
 
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
@@ -534,9 +536,7 @@ public class Crawler extends Task {
     * @param document
     * @return A product with all it's crawled informations
     */
-   public List<Product> extractInformation(Document document) throws Exception {
-      return new ArrayList<>();
-   }
+   public abstract List<Product> extractInformation(Document document) throws Exception ;
 
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
@@ -544,9 +544,7 @@ public class Crawler extends Task {
     * @param json
     * @return A product with all it's crawled informations
     */
-   public List<Product> extractInformation(JSONObject json) throws Exception {
-      return new ArrayList<>();
-   }
+   public abstract List<Product> extractInformation(JSONObject json) throws Exception;
 
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
@@ -554,9 +552,7 @@ public class Crawler extends Task {
     * @param array
     * @return A product with all it's crawled informations
     */
-   public List<Product> extractInformation(JSONArray array) throws Exception {
-      return new ArrayList<>();
-   }
+   public abstract List<Product> extractInformation(JSONArray array) throws Exception;
 
    /**
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according
