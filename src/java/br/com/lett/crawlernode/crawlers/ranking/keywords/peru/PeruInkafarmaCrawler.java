@@ -40,6 +40,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       Response response = this.dataFetcher.post(session, requestToken);
       JSONObject apiTokenJson = JSONUtils.stringToJson(response.getBody());
 
+
       if (apiTokenJson.has("idToken") && !apiTokenJson.isNull("idToken")) {
          this.accessToken = apiTokenJson.get("idToken").toString();
       }
@@ -121,6 +122,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
                  .build();
 
          searchApi = JSONUtils.stringToJson(new JavanetDataFetcher().post(session, request).getBody());
+
       }
 
       return searchApi;
@@ -131,10 +133,9 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/search-filters";
 
       JSONObject payload = new JSONObject();
-      payload.put("query", this.keywordEncoded);
-
+      payload.put("query", this.keywordWithoutAccents);
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json;charset=UTF-8");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("x-access-token", this.accessToken);
       headers.put("AndroidVersion", "100000");
 
