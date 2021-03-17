@@ -132,13 +132,11 @@ public class ArgentinaClubdebeneficiosCrawler extends Crawler {
 
    private Offers scrapOffers(Document doc, String internalId) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
+      List<String> sales = new ArrayList<>();
+
       Pricing pricing = scrapPricing(doc, internalId);
 
-      List<String> sales = new ArrayList<>();
-      if (pricing.getPriceFrom() != null) {
-         Double percentage = MathUtils.normalizeNoDecimalPlaces((pricing.getSpotlightPrice() / pricing.getPriceFrom()) * 100d);
-         sales.add(percentage.intValue() + "% OFF");
-      }
+      sales.add(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
