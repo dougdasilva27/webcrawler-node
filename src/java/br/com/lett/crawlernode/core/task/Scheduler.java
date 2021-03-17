@@ -55,7 +55,7 @@ public class Scheduler {
 
         // send the batch
         SendMessageBatchResult result;
-        result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES_DOWNLOAD.toString(), entries);
+        result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
 
         // get send request results
         result.getSuccessful();
@@ -111,7 +111,7 @@ public class Scheduler {
       Logging.printLogDebug(LOGGER, session, "Sending remaining batch of " + entries.size() + " messages...");
 
       SendMessageBatchResult result = null;
-      result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES_DOWNLOAD.toString(), entries);
+      result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
 
       result.getSuccessful();
 
