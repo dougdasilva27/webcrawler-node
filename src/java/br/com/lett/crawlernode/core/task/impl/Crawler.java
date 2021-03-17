@@ -536,7 +536,9 @@ import models.prices.Prices;
     * @param document
     * @return A product with all it's crawled informations
     */
-   public abstract List<Product> extractInformation(Document document) throws Exception ;
+   public  List<Product> extractInformation(Document document) throws Exception {
+      return new ArrayList<>();
+   }
 
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
@@ -544,7 +546,9 @@ import models.prices.Prices;
     * @param json
     * @return A product with all it's crawled informations
     */
-   public abstract List<Product> extractInformation(JSONObject json) throws Exception;
+   public  List<Product> extractInformation(JSONObject json) throws Exception{
+      return new ArrayList<>();
+   }
 
    /**
     * Contains all the logic to sku information extraction. Must be implemented on subclasses.
@@ -552,7 +556,9 @@ import models.prices.Prices;
     * @param array
     * @return A product with all it's crawled informations
     */
-   public abstract List<Product> extractInformation(JSONArray array) throws Exception;
+   public List<Product> extractInformation(JSONArray array) throws Exception{
+      return new ArrayList<>();
+   }
 
    /**
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according
