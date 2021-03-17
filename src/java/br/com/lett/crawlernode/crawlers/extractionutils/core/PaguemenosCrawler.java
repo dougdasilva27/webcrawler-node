@@ -13,9 +13,7 @@ import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 
 public class PaguemenosCrawler extends VTEXNewScraper {
 
@@ -122,21 +120,37 @@ public class PaguemenosCrawler extends VTEXNewScraper {
       return advancedRatingReview;
    }
 
-   private JSONObject crawlPageRatings(String internalPid) throws UnsupportedEncodingException {
-      String jsonProductId = "{\"productId\":\"" + internalPid + "\",\"page\":1,\"count\":5,\"orderBy\":0,\"filters\":\"\"}";
-      String encodedString = Base64.getEncoder().encodeToString(jsonProductId.getBytes());
+   private String createVariablesBase64(String internalId) {
+      JSONObject variables = new JSONObject();
+      variables.put("productId",internalId);
+      variables.put("page", 1);
+      variables.put("count", 5);
+      variables.put("orderBy", 0);
+      variables.put("filters", "");
 
-      String api = "https://www.paguemenos.com.br/_v/public/graphql/v1?extensions=";
+      return Base64.getEncoder().encodeToString(variables.toString().getBytes());
+   }
 
-      String query = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + API_TOKEN + "\",\"sender\":\"yourviews.yourviewsreviews@0.x\",\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
-         "\"variables\":\"" + encodedString + "\"}";
+   private JSONObject crawlPageRatings(String internalId) throws UnsupportedEncodingException {
+
+      String query = "{\"persistedQuery\":" +
+                     "{\"version\":1," +
+                     "\"sha256Hash\":\"9b88e6124d7df2ce8c432100a71691e9f4be53fb9dff342c8daba6be7022ba37\"," +
+                     "\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
+                     "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
+                     "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
 
       String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
-      Request request = RequestBuilder.create().setUrl(api + encodedQuery)
-         .build();
-      String response = this.dataFetcher.get(session, request).getBody();
+      StringBuilder url = new StringBuilder();
+      url.append("https://www.paguemenos.com.br/_v/public/graphql/v1?extensions=");
+      url.append(encodedQuery);
 
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/json");
+
+      Request request = RequestBuilder.create().setUrl(url.toString()).setHeaders(headers).build();
+      String response = this.dataFetcher.get(session, request).getBody();
 
       return JSONUtils.stringToJson(response);
    }

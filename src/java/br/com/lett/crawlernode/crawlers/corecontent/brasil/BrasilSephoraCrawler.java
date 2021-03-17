@@ -12,28 +12,25 @@ import br.com.lett.crawlernode.util.*;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
-import models.prices.Prices;
 import models.pricing.*;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * date: 05/09/2018
  *
  * @author gabriel
  *
+ * @author gabriel
  */
+
+//this website does not have more ratings.
 
 public class BrasilSephoraCrawler extends Crawler {
 
@@ -58,34 +55,24 @@ public class BrasilSephoraCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-number.show-for-medium>span", "data-masterid");
+         String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
 
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".no-display input[name=product]", "value");
 
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home, .product) a", false);
+         Elements variants = doc.select(".display-name.display-name-shade.no-bullet>li");
 
-         String description = crawlDescription(doc);
+         for (Element variant : variants) {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
 
-         JSONObject priceProducts = fetchPrice(internalPid);
+            Document variantProductPage = fetchVariantProductPage(internalId);
+            String name = scrapName(variantProductPage);
+            List<String> secondaryImages = crawlImages(variantProductPage);
+            String primaryImage = secondaryImages.isEmpty() ? null : secondaryImages.remove(0);
 
-         String nameBase = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", false);
+            boolean isAvailable = variantProductPage.select(".not-available-msg").isEmpty();
+            Offers offers = isAvailable ? scrapOffers(variantProductPage) : new Offers();
 
-         for (String internalId : priceProducts.keySet()) {
-
-            JSONObject jsonPrice = JSONUtils.getJSONValue(priceProducts, internalId);
-
-            Element variantEl = crawlVariationElement(doc, internalId);
-
-            String name = scrapName(variantEl, nameBase);
-
-            String primaryImage = crawlPrimaryImage(doc, internalId);
-
-            List<String> secondaryImages = crawlSecondaryImages(doc);
-
-            Offers offers = scrapOffers(jsonPrice);
-
-            RatingsReviews ratingReviews = crawRating(doc, internalPid);
-
-            // Creating the product
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
@@ -96,11 +83,11 @@ public class BrasilSephoraCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setOffers(offers)
-               .setRatingReviews(ratingReviews)
                .build();
 
             products.add(product);
          }
+
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
@@ -114,27 +101,24 @@ public class BrasilSephoraCrawler extends Crawler {
     *******************************/
 
    private boolean isProductPage(Document document) {
-      return document.selectFirst(".reference") != null;
+      return document.selectFirst(".product-cart") != null;
    }
 
    /*******************
     * General methods *
     *******************/
 
-   private String scrapName(Element variantEl, String nameBase) {
-      return nameBase != null ? nameBase + " " +CrawlerUtils.scrapStringSimpleInfo(variantEl, "label p.reference.info", false) : null;
+   private String scrapName(Document doc){
+      return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false)
+         + " - "
+         + CrawlerUtils.scrapStringSimpleInfo(doc, "span.selected-value-name", false);
    }
 
-   private Offers scrapOffers(JSONObject jsonPrice) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      if (!JSONUtils.getValue(jsonPrice, "is_salable").equals(true)) {
-         return offers;
-      }
-
-      Pricing pricing = scrapPricing(jsonPrice);
-
-      List<String> sales = scrapSales(jsonPrice);
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -148,21 +132,15 @@ public class BrasilSephoraCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject jsonPrice) throws MalformedPricingException {
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-sales>span", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-standard", null, false, ',', session);
 
-      Double spotlightPrice = CrawlerUtils.getDoubleValueFromJSON(jsonPrice, "current_price", true, false);
-
-      Double priceFrom = CrawlerUtils.getDoubleValueFromJSON(jsonPrice, "price", true, false);
-
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
-
-      if (priceFrom <= spotlightPrice) {
-         priceFrom = null;
-      }
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -170,24 +148,21 @@ public class BrasilSephoraCrawler extends Crawler {
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
-
    }
 
-   private List<String> scrapSales(JSONObject jsonPrice) {
+   private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
 
-      Object showDiscount = JSONUtils.getValue(jsonPrice, "show_discount");
-
-      if (showDiscount instanceof Integer) {
-         String sale = showDiscount.toString()+"% OFF";
-         sales.add(sale);
+      String saleDiscount = CrawlerUtils.calculateSales(pricing);
+      if (saleDiscount != null) {
+         sales.add(saleDiscount);
       }
 
       return sales;
    }
 
 
-   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Set<Card> cards = Sets.newHashSet(
@@ -199,12 +174,7 @@ public class BrasilSephoraCrawler extends Crawler {
          Card.AMEX
       );
 
-      Installments installments = new Installments();
-
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
+      Installments installments = scrapInstallments(doc, spotlightPrice);
 
       for (Card card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
@@ -217,266 +187,48 @@ public class BrasilSephoraCrawler extends Crawler {
       return creditCards;
    }
 
-   private Element crawlVariationElement(Document doc, String internalId) {
+   private Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      Installments installments = new Installments();
 
-      return doc.selectFirst(".col-bundle li[data-productid=\" " + internalId + "\"]");
-   }
+      Element installmentPrice = doc.selectFirst(".installments.installments-pdp");
 
-   private Float crawlPrice(Prices prices) {
-      Float price = null;
-
-      if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
-         Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
-         price = priceDouble.floatValue();
+      if (installmentPrice != null) {
+         installments.add(
+            Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(Integer.parseInt(installmentPrice.text().substring(0, 1)))
+               .setInstallmentPrice(Double.parseDouble(installmentPrice.text().substring(5)))
+               .build()
+         );
+      }else{
+         installments.add(
+            Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(spotlightPrice)
+               .build());
       }
 
-      return price;
+      return installments;
    }
 
-   private String crawlPrimaryImage(Document doc, String internalId) {
-      String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#variant-" + internalId + "[data-zoom-image]", "data-zoom-image");
-
-      if (primaryImage == null) {
-         primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#image-main[data-zoom-image]", "data-zoom-image");
-      }
-
-      return primaryImage;
-   }
-
-   private List<String> crawlSecondaryImages(Document doc) {
+   private List<String> crawlImages(Document productPage) {
       List<String> secondaryImagesArray = new ArrayList<>();
 
-      Elements images = doc.select("#container_gallery .link-media-gallery");
-      for (int i = 1; i < images.size(); i++) {
-         String image = images.attr("data-zoom-image").trim();
-         if (!image.isEmpty()) {
-            secondaryImagesArray.add(image);
+      Elements imagesList = productPage.select("div.show-for-small-only.text-center ul li.thumb>a");
+
+      if (!imagesList.isEmpty()) {
+         for (Element imageElement : imagesList) {
+            secondaryImagesArray.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(imageElement, "a", "href"));
          }
       }
+
       return secondaryImagesArray;
    }
 
-   private Map<String, Prices> crawlMarketplace(JSONObject jsonSku, Document doc) {
-      Map<String, Prices> marketplace = new HashMap<>();
-
-      String sellerName = MAIN_SELLER_NAME_LOWER;
-
-      if (jsonSku.has("seller")) {
-         JSONObject sellerJson = jsonSku.getJSONObject("seller");
-
-         if (sellerJson.has("name")) {
-            sellerName = sellerJson.getString("name").toLowerCase();
-         }
-      }
-
-      marketplace.put(sellerName, crawlPrices(jsonSku, doc));
-
-      return marketplace;
-
-   }
-
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
-
-      Elements elementsInformation = doc.select("#section-description, #neemu-how-to-use, #neemu-look, .info-content#brand");
-      for (Element e : elementsInformation) {
-         description.append(e.html());
-      }
-
-      return description.toString();
-   }
-
-   /**
-    * To crawl installments in this site, we need crawl the installments array rule, like this:
-    * [["40","1",""],["60","2",""],["80","3",""],["100","4",""],["120","5",""],["140","6",""],["160","7",""],["180","8",""],["200","9",""],["","10",""]]
-    * <p>
-    * I found this array because in this site, the installments values are calculated, so
-    * <p>
-    * <p>
-    * - if the price is lower then 40 will have 1 installment
-    * <p>
-    * - if the price is lower then 60 and greater then 40 will have 2 installments
-    * <p>
-    * ...
-    *
-    * @param doc
-    * @param jsonSku
-    * @return
-    */
-   private Prices crawlPrices(JSONObject jsonSku, Document doc) {
-      Prices prices = new Prices();
-
-
-      if (jsonSku.has("price")) {
-         Float price = CrawlerUtils.getFloatValueFromJSON(jsonSku, "price", true, false);
-         prices.setBankTicketPrice(price);
-
-         Map<Integer, Float> mapInstallments = new HashMap<>();
-         mapInstallments.put(1, price);
-
-         Map<Float, Integer> installmentsRules = crawlInstallmentsRules(doc);
-
-         Integer installmentsNumber = 1;
-         for (Entry<Float, Integer> entry : installmentsRules.entrySet()) {
-            if (price < entry.getKey()) {
-               installmentsNumber = entry.getValue();
-               break;
-            }
-         }
-
-         mapInstallments.put(installmentsNumber, MathUtils.normalizeTwoDecimalPlaces(price / installmentsNumber));
-
-         prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
-      }
-
-      return prices;
-   }
-
-   private Map<Float, Integer> crawlInstallmentsRules(Document doc) {
-      Map<Float, Integer> installmentsRulesMap = new TreeMap<>();
-
-      Elements scripts = doc.select("script");
-      for (Element e : scripts) {
-         String script = e.html().replace(" ", "").toLowerCase();
-
-         if (script.contains("newcatalogproduct(")) {
-            int x = script.indexOf("[[");
-            int y = script.indexOf("]]", x) + 2;
-
-            try {
-               JSONArray array = new JSONArray(script.substring(x, y));
-
-               for (Object o : array) {
-                  JSONArray installments = (JSONArray) o;
-
-                  if (installments.length() > 1) {
-                     Float value = MathUtils.parseFloatWithComma(installments.get(0).toString());
-                     Integer installmentNumber = MathUtils.parseInt(installments.get(1).toString());
-
-                     if (value != null && installmentNumber != null) {
-                        installmentsRulesMap.put(value, installmentNumber);
-                     } else if (installmentNumber != null) {
-                        installmentsRulesMap.put(999999999f, installmentNumber);
-                     }
-                  }
-               }
-            } catch (JSONException e1) {
-               Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e1));
-            }
-
-            break;
-         }
-      }
-
-      return installmentsRulesMap;
-   }
-
-
-   private RatingsReviews crawRating(Document doc, String internalPid) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
-
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(doc);
-
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(getTotalAvgRating(doc));
-      ratingReviews.setAdvancedRatingReview(scrapTotalOfRewviesPerEachStar(doc, internalPid));
-
-
-      return ratingReviews;
-   }
-
-   private Double getTotalAvgRating(Document docRating) {
-      Double avgRating = 0d;
-      Element rating = docRating.selectFirst("#customer-reviews .average span");
-
-      if (rating != null) {
-         String text = rating.ownText().replaceAll("[^0-9.]", "").trim();
-
-         if (!text.isEmpty()) {
-            avgRating = Double.parseDouble(text);
-         }
-      }
-
-      return avgRating;
-   }
-
-
-   private Integer getTotalNumOfRatings(Document doc) {
-      Integer totalRating = 0;
-      Element totalRatingElement = doc.selectFirst("#customer-reviews .average");
-
-      if (totalRatingElement != null) {
-         String totalText = totalRatingElement.ownText().replaceAll("[^0-9]", "").trim();
-
-         if (!totalText.isEmpty()) {
-            totalRating = Integer.parseInt(totalText);
-         }
-      }
-
-      return totalRating;
-   }
-
-   private JSONObject fetchPrice(String id) {
-      String url = "https://www.sephora.com.br/restapi/price/getpricesbyparent/product/" + id;
-
+   private Document fetchVariantProductPage(String internalPid) {
+      String url = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalPid + "&format=ajax";
       Request request = Request.RequestBuilder.create().setUrl(url).build();
       String response = this.dataFetcher.get(session, request).getBody();
 
-      return JSONUtils.stringToJson(response);
+      return Jsoup.parse(response);
    }
-
-
-   private JSONArray fetchRatingApi(String internalPid){
-      String url = "https://www.sephora.com.br/ajaxreview/list?product_id="+internalPid+"&cur_page=1";
-
-      Request request =  Request.RequestBuilder.create().setUrl(url).build();
-      String response = this.dataFetcher.get(session,request).getBody();
-
-      return JSONUtils.stringToJsonArray(response);
-
-   }
-
-   private AdvancedRatingReview scrapTotalOfRewviesPerEachStar(Document doc,String internalPid) {
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
-
-      JSONArray ratingInfoArr = fetchRatingApi(internalPid);
-
-      if(ratingInfoArr != null) {
-         for (Object e : ratingInfoArr) {
-            JSONObject ratingInfo = (JSONObject) e;
-            int numberOfStars = ratingInfo.optInt("votes_percent");
-
-            if (numberOfStars == 20) {
-               star1++;
-            } else if (numberOfStars == 40) {
-               star2++;
-            } else if (numberOfStars == 60) {
-               star3++;
-            } else if (numberOfStars == 80) {
-               star4++;
-            } else if (numberOfStars == 100) {
-               star5++;
-            }
-         }
-      }
-      return new AdvancedRatingReview.Builder()
-         .totalStar1(star1)
-         .totalStar2(star2)
-         .totalStar3(star3)
-         .totalStar4(star4)
-         .totalStar5(star5)
-         .build();
-   }
-
-
 }

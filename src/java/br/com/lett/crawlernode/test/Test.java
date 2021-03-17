@@ -46,9 +46,8 @@ public class Test {
 
    private static final Logger LOGGER = LoggerFactory.getLogger(Test.class);
 
-   public static Map<String, List<Product>> products = new HashMap<>();
 
-   public static void main(String args[]) {
+   public static void main(String[] args) {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
       // setting global configuraions

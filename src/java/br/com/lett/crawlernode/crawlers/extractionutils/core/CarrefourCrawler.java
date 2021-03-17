@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -69,21 +70,21 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setHeaders(headers)
-            .setSendUserAgent(false)
-            .mustSendContentEncoding(false)
-            .setFetcheroptions(
-                  FetcherOptionsBuilder.create()
-                        .mustUseMovingAverage(false)
-                        .mustRetrieveStatistics(true)
-                        .build())
-            .setProxyservice(Arrays.asList(
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.LUMINATI_SERVER_BR)
-            )
-            .build();
+         .setUrl(url)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .mustSendContentEncoding(false)
+         .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .build())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_SERVER_BR)
+         )
+         .build();
 
       Response response = alternativeFetch(request);
 
@@ -109,8 +110,8 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       int statusCode = response.getLastStatusCode();
 
       return (Integer.toString(statusCode).charAt(0) == '2'
-            || Integer.toString(statusCode).charAt(0) == '3'
-            || statusCode == 404);
+         || Integer.toString(statusCode).charAt(0) == '3'
+         || statusCode == 404);
    }
 
    @Override
@@ -122,7 +123,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       JSONObject productApi = new JSONObject();
 
-      String path = session.getOriginalURL().replace(homePage, "");
+      String path = session.getOriginalURL().replace(homePage, "").toLowerCase();
 
       String url = homePage + "api/catalog_system/pub/products/search/" + path;
 
@@ -190,9 +191,9 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       return BankSlip.BankSlipBuilder.create()
-            .setFinalPrice(bankSlipPrice)
-            .setOnPageDiscount(discount)
-            .build();
+         .setFinalPrice(bankSlipPrice)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    @Override
