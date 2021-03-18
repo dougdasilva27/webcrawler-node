@@ -1,36 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import models.AdvancedRatingReview;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import models.RatingsReviews;
-import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
-import models.prices.Prices;
-import org.jsoup.select.Elements;
 
-public class BrasilApoiomineiroCrawler extends Crawler {
+public class BrasilApoiomineiroCrawler extends VTEXOldScraper {
 
    public BrasilApoiomineiroCrawler(Session session) {
       super(session);
@@ -47,259 +25,19 @@ public class BrasilApoiomineiroCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTPS));
    }
 
+   @Override
+   protected String getHomePage() {
+      return HOME_PAGE;
+   }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
-      List<Product> products = new ArrayList<>();
-
-      if (isProductPage(doc)) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
-
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
-         String internalPid = vtexUtil.crawlInternalPid(skuJson);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
-         String description = crawlDescription(doc);
-         String primaryImage = null;
-         String secondaryImages = null;
-
-         // sku data in json
-         JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-
-         // ean data in json
-         JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
-
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
-
-            String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String name = apiJSON.has("Name") ? apiJSON.get("Name").toString() : vtexUtil.crawlName(jsonSku, skuJson, " ");
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-            Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-            boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-            primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-            Float price = vtexUtil.crawlMainPagePrice(prices);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
-            String skuDescription = description + CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber());
-            String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-            RatingsReviews ratingsReviews = scrapRating(name, internalPid, doc);
-
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
-
-            // Creating the product
-            Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(skuDescription)
-                  .setStock(stock)
-                  .setMarketplace(marketplace)
-                  .setEans(eans)
-                  .setRatingReviews(ratingsReviews)
-                  .build();
-
-            List<Pair<Double, Integer>> quantities = fetchQuantities(internalId);
-            if (!quantities.isEmpty()) {
-               for (Pair<Double, Integer> pack : quantities) {
-                  Product clone = product.clone();
-
-                  clone.setInternalId(product.getInternalId() + "-" + pack.getSecond());
-                  clone.setName(product.getName() + " - " + pack.getSecond() + " un");
-
-                  Float clonePrice = pack.getFirst().floatValue() * pack.getSecond();
-
-                  clone.setPrice(clonePrice);
-                  clone.setPrices(buildPackPrices(clonePrice));
-
-                  products.add(clone);
-               }
-            } else {
-               products.add(product);
-            }
-         }
-
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-      }
-
-      return products;
+   protected List<String> getMainSellersNames() {
+      return Arrays.asList(MAIN_SELLER_NAME_LOWER);
    }
 
-
-   private boolean isProductPage(Document document) {
-      return document.select(".productName").first() != null;
-   }
-
-   private String crawlDescription(Document document) {
-      String description = "";
-
-      Element shortDesc = document.select(".section-product-info").first();
-
-      if (shortDesc != null) {
-         description = description + shortDesc.html();
-      }
-
-      Element descElement = document.select(".section-specification").first();
-
-      if (descElement != null) {
-         description = description + descElement.outerHtml();
-      }
-
-      return description;
-   }
-
-   private List<Pair<Double, Integer>> fetchQuantities(String internalId) {
-      List<Pair<Double, Integer>> quantities = new ArrayList<>();
-
-      JSONObject apiJson = fetchPackAPI(internalId);
-
-      if (apiJson.has("fixedPrices") && apiJson.get("fixedPrices") instanceof JSONArray) {
-         for (Object obj : apiJson.getJSONArray("fixedPrices")) {
-            if (obj instanceof JSONObject) {
-               JSONObject pack = (JSONObject) obj;
-
-               if (pack.has("tradePolicyId") && pack.get("tradePolicyId") instanceof String && pack.getString("tradePolicyId").equals("2")) {
-                  if (pack.has("listPrice") && pack.get("listPrice") instanceof Double && pack.has("minQuantity") && pack.get("minQuantity") instanceof Integer) {
-                     quantities.add(new Pair<Double, Integer>(pack.getDouble("listPrice"), pack.getInt("minQuantity")));
-                  }
-               }
-            }
-         }
-      }
-
-      return quantities;
-   }
-
-   private Prices buildPackPrices(Float price) {
-      Prices prices = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      }
-
-      return prices;
-   }
-
-   private JSONObject fetchPackAPI(String skuId) {
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-
-      String payload = "sku_id=" + skuId;
-
-      Request request = RequestBuilder.create()
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .setUrl(PACKAGE_API_URL)
-            .setPayload(payload)
-            .build();
-
-      String response = new FetcherDataFetcher().post(session, request).getBody();
-      response = response.replace("\\\"", "\"");
-
-      if (response.startsWith("\"")) {
-         response = response.substring(1);
-      }
-
-      if (response.endsWith("\"")) {
-         response = response.substring(0, response.length() - 1);
-      }
-
-      return JSONUtils.stringToJson(response);
-   }
-
-   private RatingsReviews scrapRating(String name, String internalPid, Document doc) {
-
-      Document rating = fetchRatingApi(name, internalPid);
-
-      RatingsReviews ratingsReviews = new RatingsReviews();
-
-      AdvancedRatingReview advancedRatingReview = scrapAdvancedRating(rating);
-
-      int totalReviews = advancedRatingReview.getTotalStar1() + advancedRatingReview.getTotalStar2() + advancedRatingReview.getTotalStar3() +
-         advancedRatingReview.getTotalStar4() + advancedRatingReview.getTotalStar5();
-
-      int avgReviews = CrawlerUtils.scrapIntegerFromHtml(rating, ".avaliacao .media span:last-child", true, 0);
-
-      ratingsReviews.setTotalRating(totalReviews);
-      ratingsReviews.setAverageOverallRating((double)avgReviews);
-      ratingsReviews.setTotalWrittenReviews(totalReviews);
-      ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
-
-      return ratingsReviews;
-   }
-
-   private AdvancedRatingReview scrapAdvancedRating(Document ratingStars) {
-
-      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-
-      Elements stars = ratingStars.select("ul.rating li");
-
-      int count = 0;
-      for (Element star : stars) {
-         count++;
-         int starNum = CrawlerUtils.scrapIntegerFromHtml(star, "span:nth-of-type(2)", null, null, false, true, 0);
-         switch (count) {
-            case 1:
-               advancedRatingReview.setTotalStar1(starNum);
-               break;
-            case 2:
-               advancedRatingReview.setTotalStar2(starNum);
-               break;
-            case 3:
-               advancedRatingReview.setTotalStar3(starNum);
-               break;
-            case 4:
-               advancedRatingReview.setTotalStar4(starNum);
-               break;
-            case 5:
-               advancedRatingReview.setTotalStar5(starNum);
-               break;
-            default:
-         }
-      }
-      return advancedRatingReview;
-   }
-
-   private Document fetchRatingApi(String name, String internalPid){
-      String apiRating = "https://www.trimais.com.br/userreview";
-      String nameComplete = name.toLowerCase().replace(" ", "-");
-
-      StringBuilder formData = new StringBuilder();
-      formData.append("productId=").append(internalPid).append("&productLinkId=").append(nameComplete);
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "*/*");
-      headers.put("accept-encoding", "gzip, deflate, br");
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-
-      Request request = Request.RequestBuilder.create().setUrl(apiRating).setHeaders(headers).setPayload(formData.toString()).setCookies(cookies).build();
-
-      String response = this.dataFetcher.post(session, request).getBody();
-
-      return Jsoup.parse(response);
+   //The rating reviews api has changed and i cannot find any product with ratings to adapt the crawler
+   @Override
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject apiJson) {
+      return new RatingsReviews();
    }
 }
