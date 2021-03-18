@@ -20,7 +20,7 @@ class RiodejaneiroFarinhapuraCrawler(session: Session?) : Crawler(session) {
    private val sellerName = "Farinha Pura"
 
    override fun extractInformation(doc: Document): MutableList<Product> {
-      val name = doc.select(".font-weight-bold").text()
+      val name = doc.select("#product-details .font-weight-bold").text()
       val prodOption = doc.selectFirst(".flex-wrap.ml-0 .product-options")
 
       val categories = doc.select(".breadcrumb a")
