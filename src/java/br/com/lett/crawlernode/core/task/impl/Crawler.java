@@ -64,15 +64,12 @@ import models.prices.Prices;
  */
 
 
-
-
-
- public abstract class Crawler extends Task {
+public abstract class Crawler extends Task {
 
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
-         + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+      + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
    /**
     * Maximum attempts during active void analysis It's essentially the number of times that we will
@@ -134,7 +131,7 @@ import models.prices.Prices;
    }
 
    private void setDataFetcher() {
-      switch (config.getFetcher()){
+      switch (config.getFetcher()) {
          case APACHE:
             dataFetcher = new ApacheDataFetcher();
             break;
@@ -171,8 +168,8 @@ import models.prices.Prices;
          KPLProducer.getInstance().put(p, session);
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "product");
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
@@ -181,8 +178,8 @@ import models.prices.Prices;
             KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
 
             JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-                  .put("aws_type", "kinesis")
-                  .put("kinesis_flow_type", "rating");
+               .put("aws_type", "kinesis")
+               .put("kinesis_flow_type", "rating");
 
             Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
          }
@@ -242,17 +239,10 @@ import models.prices.Prices;
       }
 
       // crawl informations and create a list of products
-      List<Product> products;
-      try {
-         products = extract();
+      List<Product> products = extract();
 
-         if (session instanceof SeedCrawlerSession) {
-            Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 75);
-         }
-
-      } catch (Exception e) {
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-         products = new ArrayList<>();
+      if (session instanceof SeedCrawlerSession) {
+         Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 75);
       }
 
       // This happen if a error ocurred on seed scrap information or if the seed is not a product page
@@ -280,13 +270,7 @@ import models.prices.Prices;
          Product activeVoidResultProduct = crawledProduct;
          if (crawledProduct.isVoid()) {
             Logging.printLogDebug(logger, session, "Product is void...going to start the active void.");
-            try {
-               activeVoidResultProduct = activeVoid(crawledProduct);
-            } catch (Exception e) {
-               Logging.printLogError(logger, session, "Error in active void method: " + CommonMethods.getStackTrace(e));
-               SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-               session.registerError(error);
-            }
+            activeVoidResultProduct = activeVoid(crawledProduct);
          }
 
          // Before process and save to PostgreSQL
@@ -297,15 +281,8 @@ import models.prices.Prices;
          // product after the extra extraction attempts
          // if the resultant product is not void, the we will process it
          if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
-            try {
-               processProduct(activeVoidResultProduct);
-            } catch (Exception e) {
-               Logging.printLogError(logger, session, "Error in process product method: " + CommonMethods.getStackTraceString(e));
-               SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-               session.registerError(error);
-            }
+            processProduct(activeVoidResultProduct);
          }
-
       }
 
       // discovery session
@@ -320,14 +297,8 @@ import models.prices.Prices;
          }
 
          for (Product product : products) {
-            try {
-               if (!(session instanceof EqiCrawlerSession)) {
-                  processProduct(product);
-               }
-            } catch (Exception e) {
-               Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-               SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
-               session.registerError(error);
+            if (!(session instanceof EqiCrawlerSession)) {
+               processProduct(product);
             }
          }
       }
@@ -339,25 +310,13 @@ import models.prices.Prices;
    private void testRun() {
 
       // crawl informations and create a list of products
-      List<Product> products;
-      try {
-         products = extract();
-      } catch (Exception e) {
-
-         if(session instanceof TestCrawlerSession){
-            ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
-         }
-
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-         products = new ArrayList<>();
-      }
+      List<Product> products = extract();
 
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
-      if(session instanceof TestCrawlerSession){
+      if (session instanceof TestCrawlerSession) {
          ((TestCrawlerSession) session).setProducts(products);
       }
-
 
       for (Product p : products) {
 
@@ -398,13 +357,13 @@ import models.prices.Prices;
     *
     * @param product
     */
-   private void processProduct(Product product){
+   private void processProduct(Product product) {
       Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
 
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             scheduleImages(persistenceResult, newProcessedProduct);
@@ -422,11 +381,11 @@ import models.prices.Prices;
             }
          } else if (previousProcessedProduct == null) {
             Logging.printLogDebug(logger, session,
-                  "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                     "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
             }
          }
       }
@@ -483,9 +442,11 @@ import models.prices.Prices;
     * </ul>
     *
     * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an
-    *         empty array list if no product was found.
+    * empty array list if no product was found.
     */
-   public List<Product> extract() throws Exception {
+   public List<Product> extract() {
+      List<Product> processedProducts = new ArrayList<>();
+      List<Product> products = new ArrayList<>();
 
       // in cases we are running a truco iteration
       if (webdriver != null && ((RemoteWebDriver) webdriver.driver).getSessionId() != null) {
@@ -504,7 +465,6 @@ import models.prices.Prices;
       Object obj = fetch();
 
       session.setProductPageResponse(obj);
-      List<Product> products = new ArrayList<>();
 
       try {
          if (obj instanceof Document) {
@@ -514,16 +474,17 @@ import models.prices.Prices;
          } else if (obj instanceof JSONArray) {
             products = extractInformation((JSONArray) obj);
          }
+
+         for (Product p : products) {
+            processedProducts.add(ProductDTO.processCaptureData(p, session));
+         }
       } catch (Exception e) {
-         if(session instanceof TestCrawlerSession){
+         if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
 
-      List<Product> processedProducts = new ArrayList<>();
-      for (Product p : products) {
-         processedProducts.add(ProductDTO.processCaptureData(p, session));
+         return new ArrayList<>();
       }
 
       return processedProducts;
@@ -536,7 +497,7 @@ import models.prices.Prices;
     * @param document
     * @return A product with all it's crawled informations
     */
-   public  List<Product> extractInformation(Document document) throws Exception {
+   public List<Product> extractInformation(Document document) throws Exception {
       return new ArrayList<>();
    }
 
@@ -546,7 +507,7 @@ import models.prices.Prices;
     * @param json
     * @return A product with all it's crawled informations
     */
-   public  List<Product> extractInformation(JSONObject json) throws Exception{
+   public List<Product> extractInformation(JSONObject json) throws Exception {
       return new ArrayList<>();
    }
 
@@ -556,7 +517,7 @@ import models.prices.Prices;
     * @param array
     * @return A product with all it's crawled informations
     */
-   public List<Product> extractInformation(JSONArray array) throws Exception{
+   public List<Product> extractInformation(JSONArray array) throws Exception {
       return new ArrayList<>();
    }
 
@@ -600,12 +561,12 @@ import models.prices.Prices;
 
             if (session instanceof TestCrawlerSession) {
                throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
-                     + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
+                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
             }
          }
 
          Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
-               "\nregex_status: " + status);
+            "\nregex_status: " + status);
       } catch (MalformedProductException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
@@ -654,7 +615,7 @@ import models.prices.Prices;
     * @param product the crawled product
     * @return The resultant product from the analysis
     */
-   private Product activeVoid(Product product) throws Exception {
+   private Product activeVoid(Product product) {
       String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
       Processor processor = new Processor();
