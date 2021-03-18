@@ -24,6 +24,8 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    private final String STORE_ID = getStoreId();
    private final String STORE_TYPE = getStoreType();
 
+   protected boolean newUnification = false;
+
    public RappiCrawlerRanking(Session session) {
       super(session);
    }
@@ -59,7 +61,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
             JSONObject product = products.getJSONObject(i);
 
             String internalPid = crawlInternalPid(product);
-            String internalId = crawlInternalId(product);
+            String internalId =  newUnification? internalPid : crawlInternalId(product);
             String productUrl = crawlProductUrl(product, internalId);
 
             saveDataProduct(internalId, internalPid, productUrl);
