@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 public class CrawlerTaskEndpoint {
 
@@ -23,7 +22,7 @@ public class CrawlerTaskEndpoint {
       super();
    }
 
-   public static String perform(HttpServletResponse res, Request request) throws IOException {
+   public static String perform(HttpServletResponse res, Request request) {
       String response;
 
       Logging.printLogDebug(logger, "Creating session....");
@@ -40,7 +39,7 @@ public class CrawlerTaskEndpoint {
       // check final task status
       if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
          response = ServerCrawler.MSG_TASK_COMPLETED;
-         res.setStatus(HttpServletResponse.SC_OK);
+         res.setStatus(ServerCrawler.HTTP_STATUS_CODE_OK);
          Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + ServerCrawler.HTTP_STATUS_CODE_OK);
          Main.server.incrementSucceededTasks();
       } else {

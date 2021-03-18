@@ -3,21 +3,26 @@ package br.com.lett.crawlernode.core.server.endpoints;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.sun.net.httpserver.HttpExchange;
 import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.util.Logging;
 
-public class CrawlerHealthEndpoint {
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-  protected static final Logger logger = LoggerFactory.getLogger(CrawlerHealthEndpoint.class);
+public class CrawlerHealthEndpoint extends HttpServlet {
 
-  public static String perform() throws IOException {
-    String response = ServerCrawler.MSG_SERVER_HEALTH_OK;
+   protected static final Logger logger = LoggerFactory.getLogger(CrawlerHealthEndpoint.class);
 
 
-    Logging.printLogDebug(logger, "Health: " + ServerCrawler.MSG_SERVER_HEALTH_OK);
+   @Override
+   protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
+      res.setStatus(HttpServletResponse.SC_OK);
 
-    return response;
+      Logging.printLogDebug(logger, "Received a request on " + ServerCrawler.ENDPOINT_HEALTH_CHECK);
+      Logging.printLogDebug(logger, "Health: " + ServerCrawler.MSG_SERVER_HEALTH_OK);
+      res.getWriter().println(ServerCrawler.MSG_SERVER_HEALTH_OK);
+
   }
 
 }

@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.core.server;
 
-import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
@@ -17,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 
@@ -42,53 +42,50 @@ public class ServerHandler extends HttpServlet {
    private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
    private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
 
+
    @Override
    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
-      String endpoint = req.getServletPath();
       String response;
+      Logging.printLogInfo(logger, "Received a request on " + ServerCrawler.ENDPOINT_TASK);
 
-      // handle request on the task endpoint
-      if (ServerCrawler.ENDPOINT_TASK.equals(endpoint)) {
-         Logging.printLogInfo(logger, "Received a request on " + ServerCrawler.ENDPOINT_TASK);
+      String scraperType = req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCRAPER_TYPE);
+      if (hasScraperType(scraperType)) {
+         Request request = parseRequest(req, scraperType);
 
-         Request request = parseRequest(req);
+         if (CrawlerTaskRequestChecker.checkRequest(request)) {
 
-         Logging.printLogDebug(logger, request.toString());
+            Logging.printLogDebug(logger, request.toString());
 
-         if (CrawlerTaskRequestChecker.checkRequestMethod(request)) {
-            if (CrawlerTaskRequestChecker.checkRequest(request)) {
-               response = CrawlerTaskEndpoint.perform(res, request);
-            } else {
-               response = ServerCrawler.MSG_BAD_REQUEST;
-               res.setStatus(ServerCrawler.HTTP_STATUS_CODE_BAD_REQUEST);
-            }
-         } else {
-            response = ServerCrawler.MSG_METHOD_NOT_ALLOWED;
-            res.setStatus(ServerCrawler.HTTP_STATUS_CODE_METHOD_NOT_ALLOWED);
+            response = CrawlerTaskEndpoint.perform(res, request);
+
+         } else  {
+            response = ServerCrawler.MSG_BAD_REQUEST;
+            res.setStatus(ServerCrawler.HTTP_STATUS_CODE_BAD_REQUEST);
          }
-      }
-
-      // handle request on the health check endpoint
-      else {
-         if (ServerCrawler.ENDPOINT_HEALTH_CHECK.equals(endpoint)) {
-            Logging.printLogDebug(logger, "Received a request on " + ServerCrawler.ENDPOINT_HEALTH_CHECK);
-
-            response = CrawlerHealthEndpoint.perform();
-         }
-
-         // handle request on the test endpoint
-         else {
-            Logging.printLogDebug(logger, "Received a request on " + ServerCrawler.ENDPOINT_TEST);
-
-            response = "Testing crawler...";
-         }
+      } else {
+         response = ServerCrawler.MSG_BAD_REQUEST;
       }
       res.getWriter().println(response);
 
    }
 
-   private Request parseRequest(HttpServletRequest req) {
-      String scraperType = req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCRAPER_TYPE);
+   private boolean hasScraperType(String scraperType) {
+      if (scraperType != null) {
+         for (ScrapersTypes type : ScrapersTypes.values()) {
+            if (type.name().equalsIgnoreCase(scraperType)) {
+               return true;
+            }
+         }
+      } else {
+         Logging.printLogError(logger, "Request is missing scraper type");
+         return false;
+      }
+
+      Logging.printLogError(logger, "Scraper type not recognized." + "[" + scraperType + "]");
+      return false;
+   }
+
+   private Request parseRequest(HttpServletRequest req, String scraperType) {
       Request request;
 
       if (ScrapersTypes.IMAGES_DOWNLOAD.toString().equals(scraperType)) {
@@ -148,24 +145,11 @@ public class ServerHandler extends HttpServlet {
       return request;
    }
 
-   //esse método pega outras linhas
-   protected String readBody(HttpServletRequest request) throws IOException {
-      StringBuilder strBuilder = new StringBuilder();
-      int bytesRead;
-      char[] charBuffer = new char[128];
-      try (BufferedReader bufferedReader = request.getReader()) {
-         while ((bytesRead = bufferedReader.read(charBuffer, 0, 128)) > 0) {
-            strBuilder.append(charBuffer, 0, bytesRead);
-         }
-      }
-      return strBuilder.toString();
-   }
-
    public String getRequestBody(HttpServletRequest req) {
       try (BufferedReader br = req.getReader()) {
          return br.lines().collect(Collectors.joining(System.lineSeparator()));
       } catch (IOException e) {
-         return "failed";
+         return "failed to get body!";
       }
    }
 

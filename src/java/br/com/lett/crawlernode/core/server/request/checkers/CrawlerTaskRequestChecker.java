@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.server.request.checkers;
 
+import br.com.lett.crawlernode.core.models.Market;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.server.ServerHandler;
@@ -16,10 +17,6 @@ public class CrawlerTaskRequestChecker {
 
    public static boolean checkRequest(Request request) {
       String scraperType = request.getScraperType();
-      if (scraperType == null) {
-         Logging.printLogError(logger, "Request is missing scraper type");
-         return false;
-      }
 
       if (GlobalConfigurations.markets.getMarket(request.getMarketId()) == null) {
          Logging.printLogError(logger, "Market " + request.getMarketId() + " doesn't exist.");
