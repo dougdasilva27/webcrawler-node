@@ -110,8 +110,9 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    private String crawlProductUrl(JSONObject product, String internalId) {
       String productUrl = null;
 
-      if (product.has("store_type")) {
-         productUrl = PRODUCT_BASE_URL + internalId + "?store_type=" + product.get("store_type");
+      if (product.has("id")) {
+         String id = product.optString("id");
+         productUrl = PRODUCT_BASE_URL + id;
       }
 
       return productUrl;
