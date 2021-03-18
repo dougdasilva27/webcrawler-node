@@ -2,7 +2,8 @@ package br.com.lett.crawlernode.main;
 
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
-import br.com.lett.crawlernode.core.server.Server;
+import br.com.lett.crawlernode.core.server.ServerCrawler;
+import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.util.Logging;
@@ -37,9 +38,9 @@ public class Main {
 
    public static QueueHandler queueHandler;
    public static Resources globalResources;
-   public static Server server;
+   public static ServerCrawler server;
 
-   public static void main(String[] args) {
+   public static void main(String[] args) throws Exception {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
       // Setting global configuraions
@@ -57,6 +58,6 @@ public class Main {
       queueHandler = new QueueHandler();
 
       // Create the server
-      server = new Server();
+      server = new ServerCrawler();
    }
 }

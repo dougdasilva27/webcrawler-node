@@ -10,10 +10,10 @@ public class ServerExecutorStatusCollector implements Runnable {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ServerExecutorStatusCollector.class);
 	
-	private Server server;
+	private ServerCrawler serverCrawler;
 	
-	public ServerExecutorStatusCollector(Server server) {
-		this.server = server;
+	public ServerExecutorStatusCollector(ServerCrawler serverCrawler) {
+		this.serverCrawler = serverCrawler;
 	}
 	
 	@Override
@@ -24,11 +24,11 @@ public class ServerExecutorStatusCollector implements Runnable {
 	private void logExecutorStatusMessage() {				
 		JSONObject metadata = new JSONObject();
 		
-		metadata.put("crawler_node_tasks_active", server.getActiveTasks());
-		metadata.put("crawler_node_tasks_success", server.getSucceededTasks());
-		metadata.put("crawler_node_tasks_fail", server.getFailedTasksCount());
-		metadata.put("crawler_node_tasks_queue_size", server.getTaskQueueSize());
-		metadata.put("crawler_node_threads_active", server.getActiveThreads());
+		//metadata.put("crawler_node_tasks_active", serverCrawler.getActiveTasks());
+		metadata.put("crawler_node_tasks_success", serverCrawler.getSucceededTasks());
+		metadata.put("crawler_node_tasks_fail", serverCrawler.getFailedTasksCount());
+	//	metadata.put("crawler_node_tasks_queue_size", serverCrawler.getTaskQueueSize());
+		//metadata.put("crawler_node_threads_active", serverCrawler.getActiveThreads());
 		
 		Logging.logDebug(logger, null, metadata, "Server status: ");
 	}

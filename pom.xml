@@ -136,11 +136,14 @@
 
     <dependencies>
 
+
+        <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server -->
         <dependency>
-            <groupId>com.sun.net.httpserver</groupId>
-            <artifactId>http</artifactId>
-            <version>${sun.httpserver.version}</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>9.4.38.v20210224</version>
         </dependency>
+
 
         <!-- A JPEG reader plugin for Java ImageIO This plugin will deal with cases
             where we have Images encoded in CYMK color space -->
@@ -286,6 +289,18 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.10</version>
+        </dependency>
+        <dependency>
+            <groupId>br.com.lett</groupId>
+            <artifactId>worker-server</artifactId>
+            <version>0.0.1-BETA</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>9.4.36.v20210114</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

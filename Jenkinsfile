@@ -21,7 +21,7 @@ pipeline {
             steps {
                 script {
                     def scannerHome = tool 'SonarQube Scanner Latest';
-                    withSonarQubeEnv("ec2-server") {
+                    withSonarQubeEnv("ec2-serverCrawler") {
                         if (env.CHANGE_ID != null) {
                             sh "${scannerHome}/bin/sonar-scanner -Dsonar.branch.name=$CHANGE_BRANCH -Dsonar.branch.target=$CHANGE_TARGET"
                             shouldWaitForQualityGate = true

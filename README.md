@@ -92,11 +92,11 @@ After that you need to add that file to your home's .m2 folder.
 
 <settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/SETTINGS/1.0.0">
     <servers>
-        <server>
+        <serverCrawler>
             <id>lett-maven</id>
             <username>{{INSERT YOUR USERNAME HERE}}</username>
             <password>{{INSERT YOUR PASSWORD HERE}}</password>
-        </server>
+        </serverCrawler>
     </servers>
 </settings>
 ```

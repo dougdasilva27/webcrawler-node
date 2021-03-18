@@ -1,21 +1,21 @@
 package br.com.lett.crawlernode.core.server;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.sun.net.httpserver.HttpServer;
-import br.com.lett.crawlernode.core.task.base.RejectedTaskHandler;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class Server {
+import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
 
-   private static final Logger logger = LoggerFactory.getLogger(Server.class);
+public class ServerCrawler {
+
+   private static final Logger logger = LoggerFactory.getLogger(ServerCrawler.class);
 
    public static final String MSG_TASK_COMPLETED = "task completed";
    public static final String MSG_TASK_FAILED = "task failed";
@@ -32,6 +32,12 @@ public class Server {
    public static final int HTTP_STATUS_CODE_NOT_FOUND = 404;
    public static final int HTTP_STATUS_CODE_TOO_MANY_REQUESTS = 429;
 
+   public static final int DEFAULT_MAX_THREADS = 8;
+   public static final int DEFAULT_MIN_THREADS = 5;
+
+   public static final int DEFAULT_IDLE_TIMEOUT = 60000;
+   public static final int DEFAULT_BLOCKING_QUEUE_SIZE = 5;
+
    public static final String ENDPOINT_TASK = "/task";
    public static final String ENDPOINT_TEST = "/test";
    public static final String ENDPOINT_HEALTH_CHECK = "/health-check";
@@ -39,8 +45,7 @@ public class Server {
    private static final int SERVER_PORT = 5000;
    private static final String SERVER_HOST = "localhost";
 
-   private HttpServer httpServer;
-   private PoolExecutor executor;
+   private Server server;
 
    public static final int DEFAULT_MAX_WEBDRIVER_INSTANCES = 4;
 
@@ -51,45 +56,48 @@ public class Server {
    private final Object webdriverInstancesCounterLock = new Object();
    private int webdriverInstances;
 
-   public Server() {
+   public ServerCrawler() throws Exception {
       Logging.printLogDebug(logger, "Initializing values...");
       succeededTasks = 0;
       failedTasksCount = 0;
       webdriverInstances = 0;
 
       Logging.printLogDebug(logger, "Creating executor...");
-      createExecutor();
       Logging.printLogDebug(logger, "Done.");
-      Logging.printLogDebug(logger, executor.toString());
 
       Logging.printLogDebug(logger, "Creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]...");
-      createServer(executor);
+      createServer();
       Logging.printLogDebug(logger, "Done.");
    }
 
-   private void createExecutor() {
-      executor = new PoolExecutor(GlobalConfigurations.executionParameters.getCoreThreads(), GlobalConfigurations.executionParameters.getCoreThreads(),
-            0L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(PoolExecutor.DEFAULT_BLOQUING_QUEUE_MAX_SIZE), new RejectedTaskHandler());
-   }
 
-   private void createServer(Executor executor) {
+   private void createServer() throws Exception {
       try {
-         httpServer = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 0);
-         ServerHandler serverHandler = new ServerHandler();
+         QueuedThreadPool threadPool = new QueuedThreadPool(DEFAULT_MAX_THREADS, DEFAULT_MIN_THREADS, DEFAULT_IDLE_TIMEOUT, new ArrayBlockingQueue<Runnable>(DEFAULT_BLOCKING_QUEUE_SIZE));
+         this.server = new Server(threadPool);
 
-         httpServer.createContext(Server.ENDPOINT_TASK, serverHandler);
-         httpServer.createContext(Server.ENDPOINT_HEALTH_CHECK, serverHandler);
-         httpServer.createContext(Server.ENDPOINT_TEST, serverHandler);
+         ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory());
+         ServletHandler handler = new ServletHandler();
 
-         httpServer.setExecutor(executor);
-         httpServer.start();
+         connector.setHost(SERVER_HOST);
+         connector.setPort(SERVER_PORT);
+
+         server.addConnector(connector);
+         server.setHandler(handler);
+         handler.addServletWithMapping(ServerHandler.class, ENDPOINT_TASK);
+         handler.addServletWithMapping(ServerHandler.class, ENDPOINT_HEALTH_CHECK);
+         handler.addServletWithMapping(ServerHandler.class, ENDPOINT_TEST);
+
+         server.start();
 
          Logging.printLogInfo(logger, "Server started. Listening on port " + SERVER_PORT);
 
-      } catch (IOException ex) {
+      } catch (
+         IOException ex) {
          Logging.printLogError(logger, "error creating server.");
          CommonMethods.getStackTraceString(ex);
       }
+
    }
 
    public boolean isAcceptingWebdriverTasks() {
@@ -98,9 +106,9 @@ public class Server {
       }
    }
 
-   public int getActiveTasks() {
-      return executor.getActiveTaskCount();
-   }
+//   public int getActiveTasks() {
+//      return executor.getActiveTaskCount();
+//   }
 
    public void incrementSucceededTasks() {
       synchronized (lock) {
@@ -126,13 +134,13 @@ public class Server {
       }
    }
 
-   public int getTaskQueueSize() {
-      return executor.getBloquingQueueSize();
-   }
+//   public int getTaskQueueSize() {
+//      return executor.getBloquingQueueSize();
+//   }
 
-   public int getActiveThreads() {
-      return executor.getActiveThreadsCount();
-   }
+//   public int getActiveThreads() {
+//      return executor.getActiveThreadsCount();
+//   }
 
    public int getWebdriverInstances() {
       synchronized (webdriverInstancesCounterLock) {
