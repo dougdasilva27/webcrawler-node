@@ -99,13 +99,11 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
    private fun scrapAvailable(jsonsku: JSONObject): Boolean {
       var available = false
-      print(jsonsku)
 
       if (jsonsku.has("stock")) {
          val stock = JSONUtils.getJSONValue(jsonsku, "stock")
          if (stock.has("inStock")) {
             available = stock.optBoolean("inStock")
-            print(available)
          }
       }
       return available
