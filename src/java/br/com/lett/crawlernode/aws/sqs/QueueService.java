@@ -53,7 +53,7 @@ public class QueueService {
       queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS.toString());
       queueURLMap.put(QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_KEYWORDS_WEBDRIVER.toString());
       queueURLMap.put(QueueName.DISCOVERER_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.DISCOVERER_BY_CATEGORIES.toString());
-      queueURLMap.put(QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), QUEUE_URL + QueueName.PRODUCT_IMAGE_DOWNLOAD.toString());
+      queueURLMap.put(QueueName.IMAGES_DOWNLOAD.toString(), QUEUE_URL + QueueName.IMAGES_DOWNLOAD.toString());
       queueURLMap.put(QueueName.RANKING_BY_KEYWORDS.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS.toString());
       queueURLMap.put(QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString(), QUEUE_URL + QueueName.RANKING_BY_KEYWORDS_WEBDRIVER.toString());
       queueURLMap.put(QueueName.RANKING_BY_CATEGORIES.toString(), QUEUE_URL + QueueName.RANKING_BY_CATEGORIES.toString());
