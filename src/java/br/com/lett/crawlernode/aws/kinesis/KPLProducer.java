@@ -1,34 +1,32 @@
 package br.com.lett.crawlernode.aws.kinesis;
 
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration.ThreadingModel;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.kinesis.producer.Attempt;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
+import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration.ThreadingModel;
 import com.amazonaws.services.kinesis.producer.UserRecordFailedException;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import models.RatingsReviews;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KPLProducer {
 
@@ -131,12 +129,12 @@ public class KPLProducer {
       }
    }
 
-   @NotNull
+
    private FutureCallback<UserRecordResult> getCallback(Session session) {
       return new FutureCallback<UserRecordResult>() {
 
          @Override
-         public void onFailure(@NotNull Throwable t) {
+         public void onFailure(Throwable t) {
             if (t instanceof UserRecordFailedException) {
                UserRecordFailedException ex = (UserRecordFailedException) t;
                UserRecordResult r = ex.getResult();
