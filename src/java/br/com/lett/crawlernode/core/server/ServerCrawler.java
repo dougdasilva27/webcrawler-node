@@ -32,10 +32,11 @@ public class ServerCrawler {
 
    private static final int SERVER_PORT = 5000;
    private static final String SERVER_HOST = "localhost";
-   private int activeTasks;
-   private int taskQueueSize;
+
 
    private Server server;
+
+   private final StatisticsHandler statisticsHandler = new StatisticsHandler();
 
    private final Object lock = new Object();
    private long succeededTasks;
@@ -72,11 +73,9 @@ public class ServerCrawler {
          handler.addServletWithMapping(ServerHandler.class, ENDPOINT_TASK);
          handler.addServletWithMapping(CrawlerHealthEndpoint.class, ENDPOINT_HEALTH_CHECK);
 
-         StatisticsHandler statisticsHandler = new StatisticsHandler();
          statisticsHandler.setHandler(server.getHandler());
          server.setHandler(statisticsHandler);
-         activeTasks = statisticsHandler.getRequestsActive();
-         taskQueueSize = statisticsHandler.getAsyncRequestsWaiting();
+
 
          server.start();
 
@@ -90,9 +89,8 @@ public class ServerCrawler {
 
    }
 
-
    public int getActiveTasks() {
-      return activeTasks;
+      return statisticsHandler.getRequestsActive();
    }
 
    public void incrementSucceededTasks() {
@@ -120,7 +118,7 @@ public class ServerCrawler {
    }
 
    public int getTaskQueueSize() {
-      return taskQueueSize;
+      return statisticsHandler.getAsyncRequestsWaiting();
    }
 
    public int getActiveThreads() {
