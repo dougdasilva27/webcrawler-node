@@ -15,9 +15,9 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
 
     companion object {
         private const val HOME_PAGE = "https://www.nagumo.com.br/guarulhos-lj42-guarulhos-aruja-jardim-cumbica-caminho-do-campo-do-rincao"
-        private const val API_URL = "https://b2c-api-premiumlabel.sitemercado.com.br/api/v1/b2c/"
+       private const val API_URL = "https://b2c-api-premiumlabel.sitemercado.com.br/api/"
 
-        private const val IDLOJA = 2700
+        private const val IDLOJA = 4951
         private const val IDREDE = 884
     }
 
@@ -38,8 +38,8 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
 
    override fun crawlProductInformatioFromApi(productUrl: String): JSONObject? {
       val lojaUrl = CommonMethods.getLast(homePage.split("www.nagumo.com.br").toTypedArray())
-      val loadUrl = API_URL + "page/store" + lojaUrl
-      val url = API_URL + lojaInfo!!["IdLoja"] + "/product/" + CommonMethods.getLast(productUrl.split("/").toTypedArray()).split("\\?").toTypedArray()[0]
+      val loadUrl = API_URL + "v1/b2c/page/store" + lojaUrl
+      val url = API_URL + "b2c/product/" + CommonMethods.getLast(productUrl.split("/").toTypedArray()).split("\\?").toTypedArray()[0] + "?id_loja=" + lojaInfo!!["IdLoja"]
       val headers: MutableMap<String, String?> = HashMap()
       headers[HttpHeaders.REFERER] = productUrl
       headers[HttpHeaders.ACCEPT] = "application/json, text/plain, */*"
@@ -58,6 +58,5 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
       val requestApi = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build()
       return CrawlerUtils.stringToJson(dataFetcher[session, requestApi].body)
    }
-
 
 }
