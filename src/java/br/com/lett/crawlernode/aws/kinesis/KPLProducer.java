@@ -148,7 +148,7 @@ public class KPLProducer {
 
          @Override
          public void onSuccess(UserRecordResult result) {
-            Logging.printLogDebug(LOGGER, session, "Succesfully put record: " + result.getSequenceNumber());
+            Logging.printLogDebug(LOGGER, session, "Successfully put record: " + result.getSequenceNumber());
             long putCount = eventsPut.incrementAndGet();
             Logging.printLogDebug(LOGGER, session, String.format("Events successfully put so far: %s", putCount));
          }
