@@ -52,8 +52,6 @@ public class ExecutionParameters {
    }
 
    public void setUpExecutionParameters() {
-      nthreads = getEnvNumOfThreads();
-      coreThreads = getEnvCoreThreads();
       debug = getEnvDebug();
       forceImageUpdate = getEnvForceImgUpdate();
       environment = getEnvEnvironment();
@@ -151,13 +149,6 @@ public class ExecutionParameters {
       return System.getenv(EnvironmentVariables.ENV_ENVIRONMENT);
    }
 
-   private int getEnvNumOfThreads() {
-      String nThreads = System.getenv(EnvironmentVariables.ENV_NTHREADS);
-      if (nThreads == null) {
-         return PoolExecutor.DEFAULT_NTHREADS;
-      }
-      return Integer.parseInt(nThreads);
-   }
 
    private boolean getEnvForceImgUpdate() {
       String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
@@ -175,14 +166,6 @@ public class ExecutionParameters {
    private boolean getEnvUseFetcher() {
       String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
       return useFetcher != null && useFetcher.equals("true");
-   }
-
-   private int getEnvCoreThreads() {
-      String coreThreadsString = System.getenv(EnvironmentVariables.ENV_CORE_THREADS);
-      if (coreThreadsString == null) {
-         return PoolExecutor.DEFAULT_NTHREADS;
-      }
-      return Integer.parseInt(coreThreadsString);
    }
 
    private String getEnvLogsBucketName() {
