@@ -141,13 +141,14 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>11.0.1</version>
+            <version>9.4.38.v20210224</version>
         </dependency>
+
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
-            <version>11.0.1</version>
+            <version>9.4.38.v20210224</version>
         </dependency>
 
 

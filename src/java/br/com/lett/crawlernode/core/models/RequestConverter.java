@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.exceptions.RequestException;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
