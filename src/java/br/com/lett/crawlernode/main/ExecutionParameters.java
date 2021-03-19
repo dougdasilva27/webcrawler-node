@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.main;
 
-import br.com.lett.crawlernode.core.server.PoolExecutor;
+import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +28,6 @@ public class ExecutionParameters {
    private String fetcherUrl;
    private String replicatorUrl;
    private String tmpImageFolder;
-   private int nthreads;
-   private int coreThreads;
    private String environment;
    private String version;
    private Boolean debug;
@@ -52,8 +50,6 @@ public class ExecutionParameters {
    }
 
    public void setUpExecutionParameters() {
-      nthreads = getEnvNumOfThreads();
-      coreThreads = getEnvCoreThreads();
       debug = getEnvDebug();
       forceImageUpdate = getEnvForceImgUpdate();
       environment = getEnvEnvironment();
@@ -151,14 +147,6 @@ public class ExecutionParameters {
       return System.getenv(EnvironmentVariables.ENV_ENVIRONMENT);
    }
 
-   private int getEnvNumOfThreads() {
-      String nThreads = System.getenv(EnvironmentVariables.ENV_NTHREADS);
-      if (nThreads == null) {
-         return PoolExecutor.DEFAULT_NTHREADS;
-      }
-      return Integer.parseInt(nThreads);
-   }
-
    private boolean getEnvForceImgUpdate() {
       String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
       return forceImgUpdate != null;
@@ -175,14 +163,6 @@ public class ExecutionParameters {
    private boolean getEnvUseFetcher() {
       String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
       return useFetcher != null && useFetcher.equals("true");
-   }
-
-   private int getEnvCoreThreads() {
-      String coreThreadsString = System.getenv(EnvironmentVariables.ENV_CORE_THREADS);
-      if (coreThreadsString == null) {
-         return PoolExecutor.DEFAULT_NTHREADS;
-      }
-      return Integer.parseInt(coreThreadsString);
    }
 
    private String getEnvLogsBucketName() {
@@ -225,24 +205,12 @@ public class ExecutionParameters {
       return forceImageUpdate;
    }
 
-   public int getCoreThreads() {
-      return this.coreThreads;
-   }
-
    public String getKinesisStream() {
       return kinesisStream;
    }
 
    public String getKinesisRatingStream() {
       return kinesisRatingStream;
-   }
-
-   public int getNthreads() {
-      return nthreads;
-   }
-
-   public void setNthreads(int nthreads) {
-      this.nthreads = nthreads;
    }
 
    public String getVersion() {
