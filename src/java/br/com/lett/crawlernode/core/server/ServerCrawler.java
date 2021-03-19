@@ -77,7 +77,6 @@ public class ServerCrawler {
          statisticsHandler.setHandler(server.getHandler());
          server.setHandler(statisticsHandler);
 
-
          server.start();
 
          Logging.printLogInfo(logger, "Server started. Listening on port " + SERVER_PORT);
@@ -107,15 +106,11 @@ public class ServerCrawler {
    }
 
    public long getSucceededTasks() {
-      synchronized (lock) {
-         return succeededTasks;
-      }
+      return succeededTasks;
    }
 
    public long getFailedTasksCount() {
-      synchronized (lock) {
-         return failedTasksCount;
-      }
+      return failedTasksCount;
    }
 
    public int getTaskQueueSize() {
