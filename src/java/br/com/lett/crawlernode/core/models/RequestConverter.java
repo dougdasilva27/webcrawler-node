@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.core.models;
 
-import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
@@ -8,10 +7,10 @@ import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.exceptions.RequestException;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
