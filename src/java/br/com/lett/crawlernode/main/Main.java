@@ -40,7 +40,7 @@ public class Main {
    public static Resources globalResources;
    public static ServerCrawler server;
 
-   public static void main(String[] args) throws Exception {
+   public static void main(String[] args) {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
 
       // Setting global configuraions
@@ -58,6 +58,10 @@ public class Main {
       queueHandler = new QueueHandler();
 
       // Create the server
-      server = new ServerCrawler();
+      try {
+         server = new ServerCrawler();
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
    }
 }
