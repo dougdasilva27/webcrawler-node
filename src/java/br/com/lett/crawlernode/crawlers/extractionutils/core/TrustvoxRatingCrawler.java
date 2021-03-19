@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,9 @@ public class TrustvoxRatingCrawler {
     if (trustVoxResponse.has(averageKey) && trustVoxResponse.get(averageKey) instanceof Double) {
       return trustVoxResponse.getDouble(averageKey);
     }
-    return 0d;
+    else {
+       return 0d;
+    }
   }
 
   public JSONObject requestTrustVoxEndpoint(String id, Document doc, DataFetcher dataFetcher) {
