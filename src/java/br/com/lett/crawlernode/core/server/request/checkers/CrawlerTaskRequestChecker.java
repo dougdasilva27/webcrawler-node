@@ -1,9 +1,8 @@
 package br.com.lett.crawlernode.core.server.request.checkers;
 
-import br.com.lett.crawlernode.core.models.Market;
+import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.server.ServerHandler;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
@@ -47,7 +46,7 @@ public class CrawlerTaskRequestChecker {
    }
 
    public static boolean checkRequestMethod(Request request) {
-      return ServerHandler.POST.equals(request.getRequestMethod());
+      return CrawlerTaskEndpoint.POST.equals(request.getRequestMethod());
    }
 
    private static boolean checkImageTaskRequest(Request request) {

@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.server;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
+import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -70,7 +71,7 @@ public class ServerCrawler {
 
          server.addConnector(connector);
          server.setHandler(handler);
-         handler.addServletWithMapping(ServerHandler.class, ENDPOINT_TASK);
+         handler.addServletWithMapping(CrawlerTaskEndpoint.class, ENDPOINT_TASK);
          handler.addServletWithMapping(CrawlerHealthEndpoint.class, ENDPOINT_HEALTH_CHECK);
 
          statisticsHandler.setHandler(server.getHandler());
