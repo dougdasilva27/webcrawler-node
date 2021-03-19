@@ -12,12 +12,12 @@ public class SaopauloRappidrogasilitainCrawler extends BrasilRappiCrawlerRanking
 
    @Override
    protected String getStoreId() {
-      return "900005057";
+      return "900005065";
    }
 
    @Override
    protected String getStoreType() {
-      return "raia";
+      return "drogasil";
    }
 
 
