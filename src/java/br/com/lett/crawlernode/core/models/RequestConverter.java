@@ -7,12 +7,12 @@ import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.exceptions.RequestException;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RequestConverter {
 
@@ -103,7 +103,7 @@ public class RequestConverter {
 
    private static String getRequestBody(HttpServletRequest req) {
       try (BufferedReader br = req.getReader()) {
-         return br.lines().collect(Collectors.joining(System.lineSeparator()));
+         return br.readLine();
       } catch (IOException e) {
          logger.error("Failed to get body");
          throw new RequestException("Body");
