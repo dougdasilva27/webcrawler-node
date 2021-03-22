@@ -93,7 +93,6 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
    private JSONObject crawlSearchApi() {
       JSONObject searchApi = new JSONObject();
       JSONArray searchFilters = getProductsFilter();
-      System.err.println(searchFilters);
 
       if (this.accessToken != null && !searchFilters.isEmpty()) {
          String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/filtered-products";
