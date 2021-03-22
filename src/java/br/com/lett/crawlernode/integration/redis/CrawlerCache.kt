@@ -33,18 +33,19 @@ object CrawlerCache {
       return if (value != null) value as T? else null
    }
 
-   fun <T> setKey(key: String, value: T, seconds: Int) {
+   fun <T> put(key: String, value: T, seconds: Int) {
       val duration: Duration = measureTime { mapCache.put(key, value, seconds.toLong(), TimeUnit.SECONDS) }
       logger.debug("$logPrefix [Set] ${duration.inMilliseconds} ms")
    }
 
-   fun <T> setKey(key: String, value: T) {
-      setKey(key, value, defaultTtl)
+   fun <T> put(key: String, value: T) {
+      put(key, value, defaultTtl)
    }
 
+   @JvmOverloads
    fun <T> getPutCache(
       key: String,
-      ttl: Int,
+      ttl: Int = 7200,
       requestMethod: RequestMethod,
       request: Request,
       function: Function<Response, T>,
@@ -58,12 +59,8 @@ object CrawlerCache {
             RequestMethod.POST -> function.apply(dataFetcher.post(session, request))
             else -> throw RequestMethodNotFoundException(requestMethod.name)
          }
-         setKey(key, value as Any, ttl)
+         put(key, value as Any, ttl)
       }
       return value as T?
-   }
-
-   fun <T> getPutCache(key: String, requestMethod: RequestMethod, request: Request, function: Function<Response, T>, dataFetcher: DataFetcher, session: Session): T? {
-      return getPutCache(key, defaultTtl, requestMethod, request, function, dataFetcher, session)
    }
 }

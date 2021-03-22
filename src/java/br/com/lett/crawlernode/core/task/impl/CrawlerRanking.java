@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
 import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
@@ -13,7 +12,6 @@ import java.util.Map.Entry;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.ranking.*;
-import java.util.Objects;
 import java.util.function.Function;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
@@ -251,11 +249,11 @@ public abstract class CrawlerRanking extends Task {
    }
 
    protected <T> void setCache(String key, int ttl, T value) {
-      cache.setKey(getClass().getSimpleName() + ":" + key, value, ttl);
+      cache.put(getClass().getSimpleName() + ":" + key, value, ttl);
    }
 
    protected <T> void setCache(String key, T value) {
-      cache.setKey(getClass().getSimpleName() + ":" + key, value);
+      cache.put(getClass().getSimpleName() + ":" + key, value);
    }
 
    protected <T> T getCache(String key) {

@@ -1,21 +1,5 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Pattern;
-
-
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -55,7 +39,6 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -146,7 +129,7 @@ public class Crawler extends Task {
    }
 
    private void setDataFetcher() {
-      switch (config.getFetcher()){
+      switch (config.getFetcher()) {
          case APACHE:
             dataFetcher = new ApacheDataFetcher();
             break;
@@ -365,10 +348,9 @@ public class Crawler extends Task {
 
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
 
-      if(session instanceof TestCrawlerSession){
+      if (session instanceof TestCrawlerSession) {
          ((TestCrawlerSession) session).setProducts(products);
       }
-
 
       for (Product p : products) {
 
@@ -379,19 +361,6 @@ public class Crawler extends Task {
          }
          printCrawledInformation(p);
       }
-   }
-
-
-   private static void addProductsTest(Product product) {
-
-      List<Product> productsMap = Test.products.get(product.getUrl());
-
-      if (productsMap == null) {
-         Test.products.put(product.getUrl(), Collections.singletonList(product));
-      } else {
-         productsMap.add(product);
-      }
-
    }
 
 
@@ -573,12 +542,12 @@ public class Crawler extends Task {
       return new ArrayList<>();
    }
 
-   protected <T> void setCache(String key, int ttl, T value) {
-      cache.setKey(getClass().getSimpleName() + ":" + key, value, ttl);
+   protected <T> void putCache(String key, int ttl, T value) {
+      cache.put(getClass().getSimpleName() + ":" + key, value, ttl);
    }
 
-   protected <T> void setCache(String key, T value) {
-      cache.setKey(getClass().getSimpleName() + ":" + key, value);
+   protected <T> void putCache(String key, T value) {
+      cache.put(getClass().getSimpleName() + ":" + key, value);
    }
 
    protected <T> T getCache(String key) {
