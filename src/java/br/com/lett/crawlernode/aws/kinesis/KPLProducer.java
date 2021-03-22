@@ -163,7 +163,7 @@ public class KPLProducer {
    }
 
    private String randomPartitionKey() {
-      return UUID.randomUUID().toString() + "-" + UUID.randomUUID().toString();
+      return UUID.randomUUID().toString();
    }
 
 }
