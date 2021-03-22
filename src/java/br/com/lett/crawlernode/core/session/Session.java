@@ -226,11 +226,6 @@ public class Session {
       return -1;
    }
 
-   public int getTrucoAttempts() {
-      /* returns -1 by default */
-      return -1;
-   }
-
    public Object getProductPageResponse() {
       return productPageResponse;
    }
@@ -240,10 +235,6 @@ public class Session {
    }
 
    public void incrementVoidAttemptsCounter() {
-      /* do nothing by default */
-   }
-
-   public void incrementTrucoAttemptsCounter() {
       /* do nothing by default */
    }
 

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -77,8 +78,6 @@ public abstract class Crawler extends Task {
     */
    protected static final int MAX_VOID_ATTEMPTS = 3;
 
-   protected static final int MAX_TRUCO_ATTEMPTS = 3;
-
    protected DataFetcher dataFetcher;
 
    protected CrawlerConfig config;
@@ -109,6 +108,67 @@ public abstract class Crawler extends Task {
       this.config.setConnectionAttempts(0);
       // It will be false until exists rating out of core.
       this.config.setMustSendRatingToKinesis(false);
+   }
+
+   /**
+    * It defines wether the crawler must true to extract data or not.
+    *
+    * @return
+    */
+   public boolean shouldVisit() {
+      return true;
+   }
+
+   /**
+    * Set cookies before page fetching
+    */
+   public void handleCookiesBeforeFetch() {
+      /* subclasses must implement */
+   }
+
+   /**
+    * Performs any desired transformation on the URL before the actual fetching.
+    *
+    * @param url the URL we want to modify
+    * @return the modified URL, that will be used in the fetching
+    */
+   public String handleURLBeforeFetch(String url) {
+      return url;
+   }
+
+   /**
+    * Contains all the logic to sku information extraction. Must be implemented on subclasses.
+    *
+    * @param document
+    * @return A product with all it's crawled informations
+    */
+   public List<Product> extractInformation(Document document) throws Exception {
+      return new ArrayList<>();
+   }
+
+   /**
+    * Contains all the logic to sku information extraction. Must be implemented on subclasses.
+    *
+    * @param json
+    * @return A product with all it's crawled informations
+    */
+   public List<Product> extractInformation(JSONObject json) throws Exception {
+      return new ArrayList<>();
+   }
+
+   /**
+    * Contains all the logic to sku information extraction. Must be implemented on subclasses.
+    *
+    * @param array
+    * @return A product with all it's crawled informations
+    */
+   public List<Product> extractInformation(JSONArray array) throws Exception {
+      return new ArrayList<>();
+   }
+
+   @Override
+   public void onStart() {
+      Logging.printLogInfo(logger, session, "START");
    }
 
    /**
@@ -150,104 +210,18 @@ public abstract class Crawler extends Task {
       }
    }
 
-   /**
-    * This method serializes the crawled sku instance and put its raw bytes on a kinesis stream. The
-    * instance passed as parameter is not altered. Instead we perform a clone to securely alter the
-    * attributes.
-    *
-    * @param product
-    */
-   private void sendToKinesis(Product product) {
-      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
-         Product p = ProductDTO.convertProductToKinesisFormat(product, session);
-
-         Logging.printLogInfo(logger, session, "Sending data to Kinesis ...");
-
-         long productStartTime = System.currentTimeMillis();
-
-         KPLProducer.getInstance().put(p, session);
-
-         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-            .put("aws_type", "kinesis")
-            .put("kinesis_flow_type", "product");
-
-         Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
-
-         if (!p.isVoid()) {
-            long ratingStartTime = System.currentTimeMillis();
-            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
-
-            JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "rating");
-
-            Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
-         }
-
-
-      }
-   }
-
-   @Override
-   public void onStart() {
-      Logging.printLogInfo(logger, session, "START");
-   }
-
-   @Override
-   public void onFinish() {
-      try {
-         if (!(session instanceof TestCrawlerSession)) {
-            S3Service.uploadCrawlerSessionContentToAmazon(session);
-         }
-
-         // close the webdriver
-         if (webdriver != null) {
-            Logging.printLogDebug(logger, session, "Terminating Chromium instance ...");
-            webdriver.terminate();
-         }
-
-         List<SessionError> errors = session.getErrors();
-
-         // errors collected manually
-         // they can be exceptions or business logic errors
-         // and are all gathered inside the session
-         if (!errors.isEmpty()) {
-            Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
-            session.setTaskStatus(Task.STATUS_FAILED);
-         } else {
-            Logging.printLogInfo(logger, session, "Task completed.");
-            session.setTaskStatus(Task.STATUS_COMPLETED);
-         }
-
-         // only print statistics of void and truco if we are running an Insights session crawling
-         if (session instanceof InsightsCrawlerSession) {
-            Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
-         }
-
-      } catch (Exception e) {
-         Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
-         session.setTaskStatus(Task.STATUS_FAILED);
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
-
-      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
-   }
-
    private void productionRun() {
-      if (session instanceof SeedCrawlerSession) {
-         Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 50);
-      }
+
+      sendProgress(50);
 
       // crawl informations and create a list of products
       List<Product> products = extract();
 
-      if (session instanceof SeedCrawlerSession) {
-         Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), 75);
-      }
+      sendProgress(75);
 
       // This happen if a error ocurred on seed scrap information or if the seed is not a product page
       if (session instanceof SeedCrawlerSession && products.isEmpty()) {
-         Persistence.updateFrozenServerTask(((SeedCrawlerSession) session));
+         sendProgress(null);
       }
 
       Logging.printLogDebug(logger, session, "Number of crawled products: " + products.size());
@@ -261,28 +235,7 @@ public abstract class Crawler extends Task {
       // there is only one product that will be selected
       // by it's internalId, passed by the crawler session
       if (session instanceof InsightsCrawlerSession) {
-
-         // get crawled product by it's internalId
-         Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
-         Product crawledProduct = filter(products, session.getInternalId());
-
-         // if the product is void run the active void analysis
-         Product activeVoidResultProduct = crawledProduct;
-         if (crawledProduct.isVoid()) {
-            Logging.printLogDebug(logger, session, "Product is void...going to start the active void.");
-            activeVoidResultProduct = activeVoid(crawledProduct);
-         }
-
-         // Before process and save to PostgreSQL
-         // we must send the raw crawled data to Kinesis
-         sendToKinesis(activeVoidResultProduct);
-
-         // after active void analysis we have the resultant
-         // product after the extra extraction attempts
-         // if the resultant product is not void, the we will process it
-         if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
-            processProduct(activeVoidResultProduct);
-         }
+         insightsProcess(products);
       }
 
       // discovery session
@@ -300,6 +253,41 @@ public abstract class Crawler extends Task {
             if (!(session instanceof EqiCrawlerSession)) {
                processProduct(product);
             }
+         }
+      }
+   }
+
+   private void insightsProcess(List<Product> products) {
+
+      // get crawled product by it's internalId
+      Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
+      Product crawledProduct = filter(products, session.getInternalId());
+
+      // if the product is void run the active void analysis
+      Product activeVoidResultProduct = crawledProduct;
+      if (crawledProduct.isVoid()) {
+         Logging.printLogDebug(logger, session, "Product is void...going to start the active void.");
+         activeVoidResultProduct = activeVoid(crawledProduct);
+      }
+
+      // Before process and save to PostgreSQL
+      // we must send the raw crawled data to Kinesis
+      sendToKinesis(activeVoidResultProduct);
+
+      // after active void analysis we have the resultant
+      // product after the extra extraction attempts
+      // if the resultant product is not void, the we will process it
+      if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
+         processProduct(activeVoidResultProduct);
+      }
+   }
+
+   private void sendProgress(Integer progress) {
+      if (session instanceof SeedCrawlerSession) {
+         if ((progress != null)) {
+            Persistence.updateFrozenServerTaskProgress(((SeedCrawlerSession) session), progress);
+         } else {
+            Persistence.updateFrozenServerTask(((SeedCrawlerSession) session));
          }
       }
    }
@@ -327,108 +315,6 @@ public abstract class Crawler extends Task {
          }
          printCrawledInformation(p);
       }
-   }
-
-
-   /**
-    * This method is responsible for the main post processing stages of a crawled product. It takes
-    * care of the following tasks <br>
-    * 1. Print the crawled information; <br>
-    * 2. Persist the product; <br>
-    * 3. Fetch the previous processed product. Which is a product with the same processed id as the
-    * current crawled product;</li> <br>
-    * 4. Create a new ProcessedModel; <br>
-    * 5. Persist the new ProcessedModel;
-    * <p>
-    * In this method we also have the so called 'truco' stage. In cases that we already have the
-    * ProcessedModel, we will only update the informations of the previous ProcessedModel with the new
-    * information crawled. But we don't update the information in the first try. When we detect some
-    * important change, such as in sku availability or price, we run the process all over again. The
-    * crawler runs again and all the above enumerated stages are repeated, just to be shure that the
-    * information really changed or if it isn't a crawling bug or an URL blocking, by the ecommerce
-    * website.
-    * </p>
-    * <p>
-    * This process of rerun the crawler and so on, is repeated, until a maximum number of tries, or
-    * until we find two consecutive equals sets of crawled informations. If this occurs, then we
-    * persist the new ProcessedModel. If the we run all the truco checks, and don't find consistent
-    * information, the crawler doesn't persist the new ProcessedModel.
-    * </p>
-    *
-    * @param product
-    */
-   private void processProduct(Product product) {
-      Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
-
-      if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
-
-         Processed newProcessedProduct =
-            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
-         if (newProcessedProduct != null) {
-            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
-            scheduleImages(persistenceResult, newProcessedProduct);
-
-            if (session instanceof SeedCrawlerSession) {
-               Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, ((SeedCrawlerSession) session));
-
-               // This code block send a processed Id to elastic replicator,
-               // who is responsable to show products suggestions on winter for unifications
-               String replicatorUrl = GlobalConfigurations.executionParameters.getReplicatorUrl();
-               if (replicatorUrl != null) {
-                  replicatorUrl += newProcessedProduct.getId();
-                  new ApacheDataFetcher().getAsyncHttp(replicatorUrl, session);
-               }
-            }
-         } else if (previousProcessedProduct == null) {
-            Logging.printLogDebug(logger, session,
-               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
-
-            if (session instanceof SeedCrawlerSession) {
-               Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
-            }
-         }
-      }
-   }
-
-   private void scheduleImages(PersistenceResult persistenceResult, Processed processed) {
-      Long createdId = null;
-      if (persistenceResult instanceof ProcessedModelPersistenceResult) {
-         createdId = ((ProcessedModelPersistenceResult) persistenceResult).getCreatedId();
-      }
-
-      if (createdId != null) {
-         Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
-         Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
-      }
-
-   }
-
-
-   /**
-    * It defines wether the crawler must true to extract data or not.
-    *
-    * @return
-    */
-   public boolean shouldVisit() {
-      return true;
-   }
-
-   /**
-    * Set cookies before page fetching
-    */
-   public void handleCookiesBeforeFetch() {
-      /* subclasses must implement */
-   }
-
-   /**
-    * Performs any desired transformation on the URL before the actual fetching.
-    *
-    * @param url the URL we want to modify
-    * @return the modified URL, that will be used in the fetching
-    */
-   public String handleURLBeforeFetch(String url) {
-      return url;
    }
 
    /**
@@ -490,37 +376,6 @@ public abstract class Crawler extends Task {
       return processedProducts;
    }
 
-
-   /**
-    * Contains all the logic to sku information extraction. Must be implemented on subclasses.
-    *
-    * @param document
-    * @return A product with all it's crawled informations
-    */
-   public List<Product> extractInformation(Document document) throws Exception {
-      return new ArrayList<>();
-   }
-
-   /**
-    * Contains all the logic to sku information extraction. Must be implemented on subclasses.
-    *
-    * @param json
-    * @return A product with all it's crawled informations
-    */
-   public List<Product> extractInformation(JSONObject json) throws Exception {
-      return new ArrayList<>();
-   }
-
-   /**
-    * Contains all the logic to sku information extraction. Must be implemented on subclasses.
-    *
-    * @param array
-    * @return A product with all it's crawled informations
-    */
-   public List<Product> extractInformation(JSONArray array) throws Exception {
-      return new ArrayList<>();
-   }
-
    /**
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according
     * to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
@@ -536,7 +391,7 @@ public abstract class Crawler extends Task {
    protected Object fetch() {
       String html = "";
       if (config.getFetcher() == FetchMode.WEBDRIVER) {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
          if (webdriver != null) {
             html = webdriver.getCurrentPageSource();
@@ -549,45 +404,6 @@ public abstract class Crawler extends Task {
       }
 
       return Jsoup.parse(html);
-   }
-
-   private void printCrawledInformation(Product product) {
-
-      try {
-         String status = getFirstPartyRegexStatus(product);
-
-         if (product.getAvailable() && status.equalsIgnoreCase("3P")) {
-            Logging.printLogWarn(logger, session, "REGEX PROBLEM!");
-
-            if (session instanceof TestCrawlerSession) {
-               throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
-                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
-            }
-         }
-
-         Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
-            "\nregex_status: " + status);
-      } catch (MalformedProductException e) {
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
-   }
-
-   private String getFirstPartyRegexStatus(Product product) {
-      String status = "-";
-
-      Offers offers = product.getOffers();
-      if (offers != null && !offers.isEmpty()) {
-         status = "3P";
-
-         for (Offer offer : offers.getOffersList()) {
-            if (offer.getSlugSellerName().matches(session.getMarket().getFirstPartyRegex())) {
-               status = "1P";
-               break;
-            }
-         }
-      }
-
-      return status;
    }
 
    /**
@@ -674,5 +490,196 @@ public abstract class Crawler extends Task {
 
       return currentProduct;
 
+   }
+
+   /**
+    * This method serializes the crawled sku instance and put its raw bytes on a kinesis stream. The
+    * instance passed as parameter is not altered. Instead we perform a clone to securely alter the
+    * attributes.
+    *
+    * @param product
+    */
+   private void sendToKinesis(Product product) {
+      if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
+         Product p = ProductDTO.convertProductToKinesisFormat(product, session);
+
+         Logging.printLogInfo(logger, session, "Sending data to Kinesis ...");
+
+         long productStartTime = System.currentTimeMillis();
+
+         KPLProducer.getInstance().put(p, session);
+
+         JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "product");
+
+         Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
+
+         if (!p.isVoid()) {
+            long ratingStartTime = System.currentTimeMillis();
+            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
+
+            JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
+               .put("aws_type", "kinesis")
+               .put("kinesis_flow_type", "rating");
+
+            Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
+         }
+
+
+      }
+   }
+
+   /**
+    * This method is responsible for the main post processing stages of a crawled product. It takes
+    * care of the following tasks <br>
+    * 1. Print the crawled information; <br>
+    * 2. Persist the product; <br>
+    * 3. Fetch the previous processed product. Which is a product with the same processed id as the
+    * current crawled product;</li> <br>
+    * 4. Create a new ProcessedModel; <br>
+    * 5. Persist the new ProcessedModel;
+    * <p>
+    * In this method we also have the so called 'truco' stage. In cases that we already have the
+    * ProcessedModel, we will only update the informations of the previous ProcessedModel with the new
+    * information crawled. But we don't update the information in the first try. When we detect some
+    * important change, such as in sku availability or price, we run the process all over again. The
+    * crawler runs again and all the above enumerated stages are repeated, just to be shure that the
+    * information really changed or if it isn't a crawling bug or an URL blocking, by the ecommerce
+    * website.
+    * </p>
+    * <p>
+    * This process of rerun the crawler and so on, is repeated, until a maximum number of tries, or
+    * until we find two consecutive equals sets of crawled informations. If this occurs, then we
+    * persist the new ProcessedModel. If the we run all the truco checks, and don't find consistent
+    * information, the crawler doesn't persist the new ProcessedModel.
+    * </p>
+    *
+    * @param product
+    */
+   private void processProduct(Product product) {
+      Processed previousProcessedProduct = new Processor().fetchPreviousProcessed(product, session);
+
+      if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
+
+         Processed newProcessedProduct =
+            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+         if (newProcessedProduct != null) {
+            PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
+            scheduleImages(persistenceResult, newProcessedProduct);
+
+            if (session instanceof SeedCrawlerSession) {
+               Persistence.updateFrozenServerTask(previousProcessedProduct, newProcessedProduct, ((SeedCrawlerSession) session));
+
+               // This code block send a processed Id to elastic replicator,
+               // who is responsable to show products suggestions on winter for unifications
+               String replicatorUrl = GlobalConfigurations.executionParameters.getReplicatorUrl();
+               if (replicatorUrl != null) {
+                  replicatorUrl += newProcessedProduct.getId();
+                  new ApacheDataFetcher().getAsyncHttp(replicatorUrl, session);
+               }
+            }
+         } else if (previousProcessedProduct == null) {
+            Logging.printLogDebug(logger, session,
+               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+
+            if (session instanceof SeedCrawlerSession) {
+               Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
+                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+            }
+         }
+      }
+   }
+
+   private void scheduleImages(PersistenceResult persistenceResult, Processed processed) {
+      Long createdId = null;
+      if (persistenceResult instanceof ProcessedModelPersistenceResult) {
+         createdId = ((ProcessedModelPersistenceResult) persistenceResult).getCreatedId();
+      }
+
+      if (createdId != null) {
+         Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
+         Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
+      }
+
+   }
+
+   private void printCrawledInformation(Product product) {
+
+      try {
+         String status = getFirstPartyRegexStatus(product);
+
+         if (product.getAvailable() && status.equalsIgnoreCase("3P")) {
+            Logging.printLogWarn(logger, session, "REGEX PROBLEM!");
+
+            if (session instanceof TestCrawlerSession) {
+               throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
+                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
+            }
+         }
+
+         Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
+            "\nregex_status: " + status);
+      } catch (MalformedProductException e) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
+   }
+
+   private String getFirstPartyRegexStatus(Product product) {
+      String status = "-";
+
+      Offers offers = product.getOffers();
+      if (offers != null && !offers.isEmpty()) {
+         status = "3P";
+
+         for (Offer offer : offers.getOffersList()) {
+            if (offer.getSlugSellerName().matches(session.getMarket().getFirstPartyRegex())) {
+               status = "1P";
+               break;
+            }
+         }
+      }
+
+      return status;
+   }
+
+   @Override
+   public void onFinish() {
+      try {
+         if (!(session instanceof TestCrawlerSession)) {
+            S3Service.uploadCrawlerSessionContentToAmazon(session);
+         }
+
+         // close the webdriver
+         if (webdriver != null) {
+            Logging.printLogDebug(logger, session, "Terminating Chromium instance ...");
+            webdriver.terminate();
+         }
+
+         List<SessionError> errors = session.getErrors();
+
+         // errors collected manually
+         // they can be exceptions or business logic errors
+         // and are all gathered inside the session
+         if (!errors.isEmpty()) {
+            Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+            session.setTaskStatus(Task.STATUS_FAILED);
+         } else {
+            Logging.printLogInfo(logger, session, "Task completed.");
+            session.setTaskStatus(Task.STATUS_COMPLETED);
+         }
+
+         // only print statistics of void and truco if we are running an Insights session crawling
+         if (session instanceof InsightsCrawlerSession) {
+            Logging.printLogInfo(logger, session, "[ACTIVE_VOID_ATTEMPTS]" + session.getVoidAttempts());
+         }
+
+      } catch (Exception e) {
+         Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
+         session.setTaskStatus(Task.STATUS_FAILED);
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+      }
+
+      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
    }
 }
