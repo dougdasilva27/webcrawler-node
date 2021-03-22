@@ -24,7 +24,7 @@ Testes
 # Mergiu? Builda ai !!
 
 
-[Build Now](https://jenkins.lett.global/job/webcrawler-node/job/prod/build?delay=0sec)
+[Build Now](https://jenkins.lett.global/job/webcrawler-node/job/prod/)
     
 <!--   Checklist comentado 
 Checklist:
