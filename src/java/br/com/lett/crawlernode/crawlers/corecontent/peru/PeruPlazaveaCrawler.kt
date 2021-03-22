@@ -23,7 +23,7 @@ import org.jsoup.nodes.Document
 import java.net.URL
 import java.util.*
 
-class PeruPlazaveaCrawler(session: Session?) : VTEXOldScraper(session) {
+class PeruPlazaveaCrawler(session: Session) : VTEXOldScraper(session) {
 
 companion object {
    private val HOME_PAGE = "https://www.plazavea.com.pe/"
