@@ -18,7 +18,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
 
    public PeruInkafarmaCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    private String accessToken;
