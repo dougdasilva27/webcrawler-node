@@ -126,7 +126,7 @@ public class FetcherDataFetcher implements DataFetcher {
       try {
          Integer defaultTimeout = request.getTimeout() != null ? request.getTimeout() : FetchUtilities.DEFAULT_CONNECTION_REQUEST_TIMEOUT * 18;
 
-         URL url = new URL(session instanceof RankingKeywordsSession ? "https://api-fetcher-eqi.lett.global/" : FETCHER_HOST);
+         URL url = new URL(FETCHER_HOST);
          HttpURLConnection connection = (HttpURLConnection) url.openConnection();
          connection.setRequestMethod(FetchUtilities.POST_REQUEST);
          connection.setInstanceFollowRedirects(true);
