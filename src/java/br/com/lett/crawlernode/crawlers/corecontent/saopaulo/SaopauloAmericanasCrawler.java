@@ -159,7 +159,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             Integer.toString(statusCode).charAt(0) != '3'
             && statusCode != 404)) {
             request.setProxyServices(Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.BUY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
