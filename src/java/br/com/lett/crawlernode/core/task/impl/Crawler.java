@@ -403,6 +403,7 @@ public abstract class Crawler extends Task {
          try {
             Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
          } catch (SQLException throwables) {
+            Logging.printLogDebug(logger, session, "Download image scheduler attempt failed");
             throwables.printStackTrace();
          }
       }
