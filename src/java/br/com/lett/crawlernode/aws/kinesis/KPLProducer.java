@@ -23,7 +23,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 import models.RatingsReviews;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +32,6 @@ public class KPLProducer {
    private static final Logger LOGGER = LoggerFactory.getLogger(KPLProducer.class);
 
    private static final Random RANDOM = new Random();
-
-   private static final AtomicLong eventsCreated = new AtomicLong(0);
-   private static final AtomicLong eventsPut = new AtomicLong(0);
 
    private static final char RECORD_SEPARATOR = '\n';
 
@@ -66,8 +62,6 @@ public class KPLProducer {
    }
 
    public void close() {
-      LOGGER.debug("Stopping KPL ...");
-
       LOGGER.debug("Running KPL flushSync ...");
       kinesisProducer.flushSync();
 
@@ -84,9 +78,6 @@ public class KPLProducer {
     */
    public void put(RatingsReviews r, Session session, String kinesisStream) {
       try {
-         long countCreated = eventsCreated.incrementAndGet();
-
-         Logging.printLogDebug(LOGGER, session, "Received event " + countCreated);
 
          ByteBuffer data = ByteBuffer.wrap((r.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
@@ -111,9 +102,6 @@ public class KPLProducer {
     */
    public void put(Product p, Session session) {
       try {
-         long countCreated = eventsCreated.incrementAndGet();
-
-         Logging.printLogDebug(LOGGER, session, "Received event " + countCreated);
 
          ByteBuffer data = ByteBuffer.wrap((p.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
@@ -149,8 +137,6 @@ public class KPLProducer {
          @Override
          public void onSuccess(UserRecordResult result) {
             Logging.printLogDebug(LOGGER, session, "Successfully put record: " + result.getSequenceNumber());
-            long putCount = eventsPut.incrementAndGet();
-            Logging.printLogDebug(LOGGER, session, String.format("Events successfully put so far: %s", putCount));
          }
       };
    }
