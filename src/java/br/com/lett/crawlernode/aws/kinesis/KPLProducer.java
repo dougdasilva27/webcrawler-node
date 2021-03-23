@@ -23,7 +23,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import models.RatingsReviews;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,31 +66,6 @@ public class KPLProducer {
 
       LOGGER.debug("Closing KPL child process ...");
       kinesisProducer.destroy();
-   }
-
-   /**
-    * Asynchronously put an event to the kinesis internal queue
-    *
-    * @param r             data to send to kineses
-    * @param session       session
-    * @param kinesisStream stream name
-    */
-   public void put(RatingsReviews r, Session session, String kinesisStream) {
-      try {
-
-         ByteBuffer data = ByteBuffer.wrap((r.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
-
-         FutureCallback<UserRecordResult> myCallback = getCallback(session);
-
-         ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(kinesisStream,
-            randomPartitionKey(), randomExplicitHashKey(), data);
-
-         Futures.addCallback(f, myCallback, callbackThreadPool);
-
-
-      } catch (Exception e) {
-         Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
-      }
    }
 
    /**

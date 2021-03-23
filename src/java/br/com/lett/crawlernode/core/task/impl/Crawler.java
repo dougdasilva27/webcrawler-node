@@ -173,18 +173,6 @@ public abstract class Crawler extends Task {
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
 
-         if (!p.isVoid()) {
-            long ratingStartTime = System.currentTimeMillis();
-            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
-
-            JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "rating");
-
-            Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
-         }
-
-
       }
    }
 
