@@ -69,7 +69,6 @@ public class BrasilEnutriCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod__name h1", false);
          Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".prod__shop:last-child .price span", null, false, ',', session);
          Prices prices = crawlPrices(price, doc);
-         System.err.println(prices);
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img", Arrays.asList("src"), "https://", "www.enutri.com.br");
@@ -148,7 +147,7 @@ public class BrasilEnutriCrawler extends Crawler {
    }
 
    private boolean crawlAvailability(Document doc) {
-      return !doc.select(".add-to-cart-buttons").isEmpty();
+      return doc.select(".prod__esgotado").isEmpty();
    }
 
    /**
