@@ -57,7 +57,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-info .live_price", "data-product-sku");
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".add-to-cart-buttons .live_stock", "data-product-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1 span", false);
-         List<String> categories = doc.select(".breadcrumbs ul li:not(.home):not(.product) a").eachText();
+         List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(.home):not(.product) a");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-description"));
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img", Arrays.asList("data-zoom-image"), "https://", "www.drogaraia.com.br/");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".product-image-gallery img", Arrays.asList("data-zoom-image"), "https://", "www.drogaraia.com.br/", primaryImage);
@@ -139,7 +139,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       List<String> sales = scrapSales(pricing, doc);
 
       String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc, ".sold-and-delivered a", false);
-      boolean isMainSeller = sellerName.equals(SELLER_NAME_LOWER);
+      boolean isMainSeller = sellerName != null && sellerName.equals(SELLER_NAME_LOWER);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
