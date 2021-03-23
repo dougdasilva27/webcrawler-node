@@ -1,162 +1,126 @@
 package br.com.lett.crawlernode.core.task;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
+import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import enums.QueueName;
-import enums.ScrapersTypes;
 import models.Processed;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class Scheduler {
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+   protected static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+
+   public static void scheduleImages(Session session, QueueHandler queueHandler, Processed processed, Long processedId) throws SQLException {
+      Logging.printLogDebug(LOGGER, session, "Scheduling images to be downloaded...");
+
+      List<SendMessageBatchRequestEntry> entries = new ArrayList<>(); // send messages batch to Amazon SQS
+
+      Integer counter = 0;
+
+      Market market = session.getMarket();
+      String primaryPic = processed.getPic();
+      String internalId = processed.getInternalId();
+
+      try {
+
+         // assemble the primary image message
+         if (primaryPic != null && !primaryPic.isEmpty()) {
+            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR);
 
 
-  public static void scheduleImages(Session session, QueueHandler queueHandler, Processed processed, Long processedId) {
-    Logging.printLogDebug(LOGGER, session, "Scheduling images to be downloaded...");
+            String body = removesUselessCharacters(attrPrimary.toString());
 
-    List<SendMessageBatchRequestEntry> entries = new ArrayList<>(); // send messages batch to Amazon SQS
-    // List<TaskDocumentModel> tasksDocuments = new ArrayList<TaskDocumentModel>();
-    Integer counter = 0;
-    Integer insideBatchId = 0;
+            SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+            entry.setId(String.valueOf(counter)); // the id must be unique in the batch
+            entry.setMessageBody(body);
 
-    int marketId = session.getMarket().getNumber();
-    String primaryPic = processed.getPic();
-    String internalId = processed.getInternalId();
+            entries.add(entry);
+            counter++;
 
-    // assemble the primary image message
-    if (primaryPic != null && !primaryPic.isEmpty()) {
-      Map<String, MessageAttributeValue> attrPrimary =
-          assembleImageMessageAttributes(marketId, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR, internalId, processedId, 1);
-      
-      SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
-      entry.setId(String.valueOf(insideBatchId)); // the id must be unique in the batch
-      entry.setMessageAttributes(attrPrimary);
-      entry.setMessageBody(primaryPic);
+            // when the batch reaches size 10, we send them all to sqs and empty the list
+            if (entries.size() == 10) {
+               Logging.printLogDebug(LOGGER, session, "Sending batch of " + entries.size() + " messages...");
 
-      entries.add(entry);
-      counter++;
-      insideBatchId++;
+               // send the batch
+               SendMessageBatchResult result;
+               result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_DEV.toString(), entries);
 
-      // when the batch reaches size 10, we send them all to sqs and empty the list
-      if (entries.size() == 10) {
-        Logging.printLogDebug(LOGGER, session, "Sending batch of " + entries.size() + " messages...");
+               // get send request results
+               result.getSuccessful();
+               entries.clear();
+            }
+         }
 
-        // send the batch
-        SendMessageBatchResult result;
-        result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES_DOWNLOAD.toString(), entries);
+         if (entries.size() > 0) { // the left over
+            Logging.printLogDebug(LOGGER, session, "Sending remaining batch of " + entries.size() + " messages...");
 
-        // get send request results
-        result.getSuccessful();
+            SendMessageBatchResult result = null;
+            result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_DEV.toString(), entries);
 
-        entries.clear();
-        insideBatchId = 0;
+            result.getSuccessful();
+
+            entries.clear();
+         }
+
+         Logging.printLogInfo(LOGGER, session, counter + " tasks scheduled.");
+      } catch (Exception e) {
+         Logging.printLogError(LOGGER, "Error during sqs query execution.");
+         Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
       }
-    }
+   }
 
-    // TODO comentando porque estava dando muita imagem
-    // assemble the secondary images
-    // for (int i = 0; i < secondaryPicsJSON.length(); i++) {
-    // Map<String, MessageAttributeValue> attrSecondary = assembleImageMessageAttributes(
-    // marketCity,
-    // marketName,
-    // QueueService.SECONDARY_IMAGES_MESSAGE_ATTR,
-    // internalId,
-    // processedId,
-    // i+2);
-    //
-    // SendMessageBatchRequestEntry secondaryEntry = new SendMessageBatchRequestEntry();
-    // secondaryEntry.setId(String.valueOf(insideBatchId)); // the id must be unique in the batch
-    // secondaryEntry.setMessageAttributes(attrSecondary);
-    // secondaryEntry.setMessageBody(secondaryPicsJSON.getString(i));
-    //
-    // entries.add(secondaryEntry);
-    // counter++;
-    // insideBatchId++;
-    //
-    // // when the batch reaches size 10, we send them all to sqs and empty the list
-    // if (entries.size() == 10) {
-    // Logging.printLogDebug(logger, session, "Sending batch of " + entries.size() + " messages...");
-    //
-    // // send the batch
-    // SendMessageBatchResult result = null;
-    // if (session instanceof TestCrawlerSession) {
-    // result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.DEVELOPMENT),
-    // QueueHandler.DEVELOPMENT, entries);
-    // } else {
-    // result = QueueService.sendBatchMessages(queueHandler.getQueue(QueueHandler.IMAGES),
-    // QueueHandler.IMAGES, entries);
-    // }
-    //
-    // // get send request results
-    // List<SendMessageBatchResultEntry> successResultEntryList = result.getSuccessful();
-    //
-    // entries.clear();
-    // insideBatchId = 0;
-    // }
-    // }
+   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, Market market, String type) {
 
-    if (entries.size() > 0) { // the left over
-      Logging.printLogDebug(LOGGER, session, "Sending remaining batch of " + entries.size() + " messages...");
+      String market_code = market.getCode();
 
-      SendMessageBatchResult result = null;
-      result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.IMAGES_DOWNLOAD.toString(), entries);
+      JSONObject download_config = new JSONObject();
+      JSONObject headers = new JSONObject();
+      headers.put("Accept", "*");
 
-      result.getSuccessful();
+      download_config.put("headers", headers);
+      download_config.put("proxies", market.getProxies());
 
-      entries.clear();
-    }
+      JSONObject body = new JSONObject();
+      body.put("processed_id", processedId);
+      body.put("type", type);
+      body.put("market_code", market_code);
+      body.put("internal_id", internalId);
+      body.put("images", imagesTypes(type));
+      body.put("download_config", download_config);
 
-    Logging.printLogInfo(LOGGER, session, counter + " tasks scheduled.");
+      return body;
+   }
 
-  }
+   private static String removesUselessCharacters (String string) {
+      String body = "";
+      if(string != null && string.contains("\\\"")){
+         body = string.replace("\\\"", "");
+      }
+      return  body;
+   }
+   private static List<JSONObject> imagesTypes (String type) {
+      ArrayList<JSONObject> imagesArr = new ArrayList<>();
 
-  private static Map<String, MessageAttributeValue> assembleImageMessageAttributes(int marketId, String type, String internalId, Long processedId,
-      int number) {
-
-    Map<String, MessageAttributeValue> attr = new HashMap<>();
-    attr.put(QueueService.MARKET_ID_MESSAGE_ATTR, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-    		.withStringValue(String.valueOf(marketId)));
-    
-    attr.put(QueueService.IMAGE_TYPE, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-    		.withStringValue(type));
-    
-    attr.put(QueueService.INTERNAL_ID_MESSAGE_ATTR, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-    		.withStringValue(internalId));
-    
-    attr.put(QueueService.PROCESSED_ID_MESSAGE_ATTR, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-    		.withStringValue(String.valueOf(processedId)));
-    
-    attr.put(QueueService.NUMBER_MESSAGE_ATTR, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-    		.withStringValue(String.valueOf(number)));
-    
-    attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, 
-    		new MessageAttributeValue()
-    		.withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-            .withStringValue(String.valueOf(ScrapersTypes.IMAGES_DOWNLOAD.toString())));
-    
-    return attr;
-  }
+      if(type.equals("primary")){
+         JSONObject image = new JSONObject();
+         image.put("url", type);
+         image.put("position", 1);
+         imagesArr.add(image);
+      }
+      return imagesArr;
+   }
 
 }
