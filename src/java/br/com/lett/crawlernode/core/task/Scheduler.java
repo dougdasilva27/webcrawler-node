@@ -33,13 +33,13 @@ public class Scheduler {
       Market market = session.getMarket();
       String primaryPic = processed.getPic();
       String internalId = processed.getInternalId();
+      String url = processed.getPic();
 
       try {
 
          // assemble the primary image message
          if (primaryPic != null && !primaryPic.isEmpty()) {
-            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR);
-
+            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, url, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR);
 
             String body = removesUselessCharacters(attrPrimary.toString());
 
@@ -56,7 +56,7 @@ public class Scheduler {
 
                // send the batch
                SendMessageBatchResult result;
-               result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_DEV.toString(), entries);
+               result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
 
                // get send request results
                result.getSuccessful();
@@ -68,7 +68,7 @@ public class Scheduler {
             Logging.printLogDebug(LOGGER, session, "Sending remaining batch of " + entries.size() + " messages...");
 
             SendMessageBatchResult result = null;
-            result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_DEV.toString(), entries);
+            result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
 
             result.getSuccessful();
 
@@ -82,7 +82,7 @@ public class Scheduler {
       }
    }
 
-   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, Market market, String type) {
+   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, String url, Market market, String type) {
 
       String market_code = market.getCode();
 
@@ -98,25 +98,28 @@ public class Scheduler {
       body.put("type", type);
       body.put("market_code", market_code);
       body.put("internal_id", internalId);
-      body.put("images", imagesTypes(type));
+      body.put("images", imagesTypes(type ,url));
       body.put("download_config", download_config);
 
       return body;
    }
 
    private static String removesUselessCharacters (String string) {
-      String body = "";
-      if(string != null && string.contains("\\\"")){
+      String body;
+
+      if (string != null && string.contains("\\\"")){
          body = string.replace("\\\"", "");
+      } else {
+         body = string;
       }
       return  body;
    }
-   private static List<JSONObject> imagesTypes (String type) {
+   private static List<JSONObject> imagesTypes (String type, String url) {
       ArrayList<JSONObject> imagesArr = new ArrayList<>();
 
       if(type.equals("primary")){
          JSONObject image = new JSONObject();
-         image.put("url", type);
+         image.put("url", url);
          image.put("position", 1);
          imagesArr.add(image);
       }
