@@ -14,7 +14,7 @@ public class SaopauloRappidrogasilitainCrawler extends BrasilRappiCrawler {
 
    @Override
    protected String getStoreId() {
-      return "900005057";
+      return "900005065";
    }
 
 

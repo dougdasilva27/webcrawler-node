@@ -53,7 +53,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
   protected void extractProductsFromCurrentPage() {
     this.log("Página " + this.currentPage);
 
-    String url = PROTOCOL +DOMAIN+"?p=13365&Txt_Bsq_Descripcion=Galleta&Paginacion=" +this.currentPage;
+    String url = PROTOCOL + DOMAIN + "?p=13365&Txt_Bsq_Descripcion=" + this.keywordEncoded + "&Paginacion=" +this.currentPage;
 
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
@@ -68,7 +68,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
       for (Element e : products) {
 
         String internalId = crawlInternalId(e);
-        String productUrl = CrawlerUtils.scrapUrl(e, "a[href]:first-child", "href",PROTOCOL ,DOMAIN);
+        String productUrl = PROTOCOL + DOMAIN + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a[href]:first-child", "href");
 
         saveDataProduct(internalId, null, productUrl);
 

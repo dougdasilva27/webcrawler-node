@@ -33,7 +33,6 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
       const val SELLER_NAME: String = "Delhaize"
    }
 
-
    class BelgiumDelhaizeCrawler(session: Session?) : Crawler(session) {
       override fun handleCookiesBeforeFetch() {
          val request = RequestBuilder.create().setUrl("https://www.delhaize.be/").build()
@@ -74,6 +73,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
          val description = scrapDescription(jsonSku)
 
          val available = scrapAvailable(jsonSku)
+
          val offers = if (available) scrapOffers(jsonSku) else Offers()
 
          // Creating the product
@@ -99,6 +99,7 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
    private fun scrapAvailable(jsonsku: JSONObject): Boolean {
       var available = false
+
       if (jsonsku.has("stock")) {
          val stock = JSONUtils.getJSONValue(jsonsku, "stock")
          if (stock.has("inStock")) {
@@ -155,11 +156,8 @@ class BelgiumDelhaizeCrawler(session: Session) : Crawler(session) {
 
       val price: Double? = JSONUtils.getValueRecursive(json, "price.value", java.lang.Double::class.java)?.toDouble()
 
-      price ?: return offers
-
       val bankSlip = spotlightPrice.toBankSlip()
       val creditCards = listOf(Card.MASTERCARD, Card.VISA).toCreditCards(spotlightPrice)
-
 
       offers.add(
          Offer.OfferBuilder.create()
