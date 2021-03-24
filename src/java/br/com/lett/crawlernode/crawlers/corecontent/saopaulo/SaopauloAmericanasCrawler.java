@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -40,7 +41,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs");
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.homePage = HOME_PAGE;
-      this.dataFetcher = new JsoupDataFetcher();
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    // @Override
