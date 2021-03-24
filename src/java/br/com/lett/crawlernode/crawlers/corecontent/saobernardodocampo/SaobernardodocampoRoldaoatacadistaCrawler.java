@@ -26,6 +26,7 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
 
    private static final String SELLER_NAME = "Roldao Atacadista";
    private static final String STORE_ID = "13322";
+
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
 
 
@@ -35,18 +36,37 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
 
    }
 
+   private JSONObject requestLogin(){
+
+      String url = "https://api.roldao.com.br/api/public/anonymous-client";
+
+      Request request = RequestBuilder.create()
+         .setPayload("{}")
+         .setUrl(url)
+         .build();
+
+      String content = this.dataFetcher
+         .post(session,request)
+         .getBody();
+
+      return CrawlerUtils.stringToJson(content);
+   }
+
+
+
    private JSONObject requestToken() {
 
       String url = "https://api.roldao.com.br/api/public/oauth/access-token";
+      JSONObject json = requestLogin();
+      String username = json.optString("user");
+      String password = json.getString("password");
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-      String payload = "username=LosMHFRwCFq0p5B5ky0E&password=Z7dw5zWIQjSWhjxGJiWI&client_id=KFxk0cvYvtsKMe9fCpjxucUFwTQW4ZZy&client_secret=UBFfD3mFNT6EOpT7hSGFILk2MDA72Dq9b0wmYUPJq7yDg1kLcnWGhh7JahKka4XY&grant_type=password";
+      String payload = "username=" + username + "&password=" + password +"&client_id=KFxk0cvYvtsKMe9fCpjxucUFwTQW4ZZy&client_secret=UBFfD3mFNT6EOpT7hSGFILk2MDA72Dq9b0wmYUPJq7yDg1kLcnWGhh7JahKka4XY&grant_type=password";
 
-      Request request = null;
-
-      request = RequestBuilder.create()
+      Request request = RequestBuilder.create()
          .setUrl(url)
          .setHeaders(headers)
          .setPayload(payload)
