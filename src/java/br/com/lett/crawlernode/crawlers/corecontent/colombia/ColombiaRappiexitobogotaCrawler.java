@@ -6,7 +6,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.ColombiaRappiCrawle
 public class ColombiaRappiexitobogotaCrawler extends ColombiaRappiCrawler {
 
    public static final String CEP = "";
-   public static final String STORE_ID = "6660303";
+   public static final String STORE_ID = "6660088";
 
    public ColombiaRappiexitobogotaCrawler(Session session) {
       super(session);
