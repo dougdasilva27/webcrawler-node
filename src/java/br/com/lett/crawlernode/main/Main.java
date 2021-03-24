@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.database.Persistence;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,7 @@ public class Main {
       try {
          server = new ServerCrawler();
       } catch (Exception e) {
-         e.printStackTrace();
+         Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
       }
    }
 }
