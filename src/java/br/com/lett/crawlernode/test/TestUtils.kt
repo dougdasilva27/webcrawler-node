@@ -16,9 +16,16 @@ import br.com.lett.crawlernode.core.task.base.Task
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
 import java.util.concurrent.*
 
+enum class TestType {
+   KEYWORDS, CORE , DISCOVERY
+
+}
+
+
 class TestUtils {
    companion object {
 
+      @JvmStatic
       fun initialize() {
 
          GlobalConfigurations.executionParameters = ExecutionParameters()
@@ -36,7 +43,8 @@ class TestUtils {
          GlobalConfigurations.proxies = ProxyCollection(GlobalConfigurations.markets, GlobalConfigurations.dbManager)
       }
 
-      fun taskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0): List<Task> {
+      @JvmStatic
+      fun taskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.CORE, productsLimit: Int = 0): List<Task> {
 
          val market: Market? = fetchMarket(city, marketName, marketId)
 
@@ -100,7 +108,7 @@ class TestUtils {
       }
 
 
-      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1): List<TestRunnable> {
+      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.CORE, productsLimit: Int = 0, corePoolSize: Int = 1): List<TestRunnable> {
          val tests: MutableList<TestRunnable> = mutableListOf()
 
          val executor = Executors.newFixedThreadPool(corePoolSize)
@@ -115,6 +123,10 @@ class TestUtils {
          executor.awaitTermination(24L, TimeUnit.HOURS)
          return tests
       }
+
+
+
+
    }
 }
 
