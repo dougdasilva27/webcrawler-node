@@ -65,7 +65,7 @@ public class BrasilFastshopCrawler extends Crawler {
          StringBuilder description = crawlDescription(internalPid);
 
          // sku data in json
-         JSONArray arraySkus =  productAPIJSON.has("voltage") ? productAPIJSON.getJSONArray("voltage") : new JSONArray();
+         JSONArray arraySkus =  productAPIJSON.has("skus") ? productAPIJSON.optJSONArray("skus") : new JSONArray();
          //productAPIJSON != null  ja feito na linha 61;
          for (int i = 0; i < arraySkus.length(); i++) {
             JSONObject variationJson = arraySkus.getJSONObject(i);
@@ -84,7 +84,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
             String primaryImage = crawlPrimaryImage(skuAPIJSON);
             String name = crawlName(skuAPIJSON, variationJson) + " - " + internalPid;
-            String secondaryImages = crawlSecondaryImages(skuAPIJSON);
+            List<String> secondaryImages = crawlSecondaryImages(skuAPIJSON);
             description.append(skuAPIJSON.has("longDescription") ? skuAPIJSON.get("longDescription") : "");
             boolean pageAvailability = crawlAvailability(skuAPIJSON);
             JSONObject jsonPrices =
@@ -359,9 +359,8 @@ public class BrasilFastshopCrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(JSONObject json) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> crawlSecondaryImages(JSONObject json) {
+      List<String> secondaryImagesArray = new ArrayList<String>();
 
       if (json.has("images")) {
          JSONArray images = json.getJSONArray("images");
@@ -376,16 +375,12 @@ public class BrasilFastshopCrawler extends Crawler {
                   image = "https://prdresources1-a.akamaihd.net/wcsstore/" + image;
                }
 
-               secondaryImagesArray.put(image);
+               secondaryImagesArray.add(image);
             }
          }
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
+      return secondaryImagesArray;
    }
 
    private StringBuilder crawlDescription(String partnerId) {
