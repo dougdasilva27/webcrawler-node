@@ -28,7 +28,6 @@ public class ExecutionParameters {
    private String fetcherUrl;
    private String replicatorUrl;
    private String tmpImageFolder;
-   private int nthreads;
    private int coreThreads;
    private String environment;
    private String version;
@@ -52,7 +51,6 @@ public class ExecutionParameters {
    }
 
    public void setUpExecutionParameters() {
-      nthreads = getEnvNumOfThreads();
       coreThreads = getEnvCoreThreads();
       debug = getEnvDebug();
       forceImageUpdate = getEnvForceImgUpdate();
@@ -151,14 +149,6 @@ public class ExecutionParameters {
       return System.getenv(EnvironmentVariables.ENV_ENVIRONMENT);
    }
 
-   private int getEnvNumOfThreads() {
-      String nThreads = System.getenv(EnvironmentVariables.ENV_NTHREADS);
-      if (nThreads == null) {
-         return PoolExecutor.DEFAULT_NTHREADS;
-      }
-      return Integer.parseInt(nThreads);
-   }
-
    private boolean getEnvForceImgUpdate() {
       String forceImgUpdate = System.getenv(EnvironmentVariables.ENV_FORCE_IMG_UPDATE);
       return forceImgUpdate != null;
@@ -235,14 +225,6 @@ public class ExecutionParameters {
 
    public String getKinesisRatingStream() {
       return kinesisRatingStream;
-   }
-
-   public int getNthreads() {
-      return nthreads;
-   }
-
-   public void setNthreads(int nthreads) {
-      this.nthreads = nthreads;
    }
 
    public String getVersion() {
