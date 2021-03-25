@@ -82,6 +82,33 @@ public class Scheduler {
       }
    }
 
+   /*
+    This is an example of the message format that is sent to the Download queue
+
+   {
+    "processed_id": 35253474,
+    "images": [
+        {
+            "position": 1,
+            "url": "https://images-na.ssl-images-amazon.com/images/I/81pULMGKjsL._AC_SL1500_.jpg"
+        }
+    ],
+    "internal_id": "2063",
+    "download_config": {
+        "headers": {
+            "Accept": "*"
+        },
+        "proxies": [
+            "luminati_server_br",
+            "bonanza",
+            "no_proxy"
+        ]
+    },
+    "type": "primary",
+    "market_code": "market_nVR500va435qyD"
+}
+   */
+
    private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, String url, Market market, String type) {
 
       String market_code = market.getCode();
