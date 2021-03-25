@@ -218,7 +218,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       extensions.put("persistedQuery", persistedQuery);
 
       StringBuilder payload = new StringBuilder();
-      payload.append("workspace=master");
+      payload.append("workspace=vtexsearch");
       payload.append("&maxAge=short");
       payload.append("&appsEtag=remove");
       payload.append("&domain=store");
@@ -254,7 +254,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       search.put("productOriginVtex", false);
       search.put("map", "ft");
       search.put("query", keywordEncoded);
-      search.put("orderBy", "OrderByScoreDESC");
+      search.put("orderBy", "");
       search.put("from", this.arrayProducts.size());
       search.put("to", this.arrayProducts.size() + (this.pageSize - 1));
 

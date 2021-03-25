@@ -83,7 +83,7 @@ public class SaopauloNdaysCrawler extends Crawler {
 
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = new ArrayList<>();
+      List<String> sales = scrapSales(doc);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -96,6 +96,16 @@ public class SaopauloNdaysCrawler extends Crawler {
          .build());
 
       return offers;
+   }
+
+   private List<String> scrapSales(Document doc){
+      List<String> sales = new ArrayList<>();
+      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-econ strong", true);
+      if (sale != null){
+         sales.add(sale);
+      }
+
+      return sales;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {

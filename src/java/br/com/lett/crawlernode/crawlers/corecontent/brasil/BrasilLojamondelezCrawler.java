@@ -14,13 +14,21 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.*;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -32,6 +40,10 @@ public class BrasilLojamondelezCrawler extends Crawler {
    private static final String LOGIN_URL = "https://www.lojamondelez.com.br/Cliente/Logar";
    private static final String CNPJ = "33033028004090";
    private static final String PASSWORD = "monica08";
+   private static final String SELLER_NAME_LOWER = "loja mondelez brasil";
+
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilLojamondelezCrawler(Session session) {
       super(session);
@@ -91,14 +103,14 @@ public class BrasilLojamondelezCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONArray productJsonArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
+         JSONArray productJsonArray = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", null, false, true);
          JSONObject productJson = extractProductData(productJsonArray);
 
          String internalPid = crawlInternalPid(productJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList("#nav-descricao"));
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-gallery-thumbnails img", "src");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#product-gallery-thumbnails button:not(:first-child) img", Collections.singletonList("src"), "https", IMAGES_HOST, primaryImage);
+         List<String> secondaryImages = scrapImages(doc);
+         String primaryImage = secondaryImages.remove(0);
 
          JSONArray productsArray = getSkusList(productJson);
 
@@ -108,17 +120,14 @@ public class BrasilLojamondelezCrawler extends Crawler {
             String internalId = crawlInternalId(skuJson);
             List<String> eans = Arrays.asList(internalId);
             String name = crawlName(skuJson);
-            Float price = JSONUtils.getFloatValueFromJSON(skuJson, "price", true);
-            Prices prices = scrapPrices(price);
+            Offers offers = isAvailable(skuJson) ? scrapOffers(skuJson, doc) : new Offers();
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(price != null && price > 0)
+               .setOffers(offers)
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
@@ -185,6 +194,17 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return name;
    }
 
+   private List<String> scrapImages(Document doc){
+      List<String> images = new ArrayList<String>();
+      Elements imageElements = doc.select("div .product-gallery-thumbnails button");
+
+      if(!imageElements.isEmpty()){
+         imageElements.forEach(e -> images.add(e.select("img").attr("src")));
+      }
+
+      return images;
+   }
+
    private JSONArray getSkusList(JSONObject productJson) {
       JSONArray skus = new JSONArray();
 
@@ -201,18 +221,85 @@ public class BrasilLojamondelezCrawler extends Crawler {
       return skus;
    }
 
-   private Prices scrapPrices(Float price) {
-      Prices prices = new Prices();
+   private boolean isAvailable(JSONObject jsonObject) {
+      return !jsonObject.optString("available").equals("no");
+   }
 
-      if (price != null && price > 0) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
+   private Offers scrapOffers(JSONObject json, Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(json);
+      List<String> sales = new ArrayList<>(); //no sales was found
 
-         prices.setBankTicketPrice(price);
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME_LOWER)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(json, "old_price", false);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "price", false);
+
+      if (spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
       }
 
-      return prices;
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditcards(json, spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditcards(JSONObject json, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(json, spotlightPrice);
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(JSONObject json, Double spotlightPrice) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      JSONObject installmentJson = json.optJSONObject("installment");
+
+      if (installmentJson != null) {
+         Integer installmentNumber = JSONUtils.getIntegerValueFromJSON(installmentJson, "count", 1);
+         Double installmentPriceJson = JSONUtils.getDoubleValueFromJSON(installmentJson, "price", false);
+
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installmentNumber)
+            .setInstallmentPrice(installmentPriceJson)
+            .build());
+
+      } else {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      return installments;
    }
 }

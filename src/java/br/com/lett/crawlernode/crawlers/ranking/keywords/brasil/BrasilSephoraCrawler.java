@@ -1,51 +1,74 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilSephoraCrawler extends CrawlerRankingKeywords {
 
-  public BrasilSephoraCrawler(Session session) {
-    super(session);
-  }
+   public BrasilSephoraCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.log("Página " + this.currentPage);
+   public JSONObject crawlApi() {
 
-    this.pageSize = 40;
+      String apiUrl = "https://api.linximpulse.com/engage/search/v3/search?apiKey=sephora-br&page=" + this.currentPage + "&resultsPerPage=" + productsLimit + "&terms=" + this.keywordEncoded;
 
-    String url = "https://www.sephora.com.br/search/?q=" + this.keywordEncoded.toLowerCase() + "&page=" + this.currentPage;
+      this.log("Link onde são feitos os crawlers: " + apiUrl);
 
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url, cookies);
+      Map<String, String> headers = new HashMap<>();
+      headers.put("origin", "https://www.sephora.com.br");
 
-    Elements products = this.currentDoc.select("ul.search-result-items>li");
-    boolean emptySearch = this.currentDoc.selectFirst(".results-hits") == null;
+      Request request = Request.RequestBuilder.create()
+         .setUrl(apiUrl)
+         .setHeaders(headers)
+         .build();
+      String content = this.dataFetcher
+         .get(session, request)
+         .getBody();
 
-    if (!products.isEmpty() && !emptySearch) {
-      if (this.totalProducts == 0)
-         this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "div.results-hits", false, 0);
+      return CrawlerUtils.stringToJson(content);
 
-      for (Element e : products) {
-        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.product-tile", "data-variant-id");
-        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.product-image>a", "href");
+   }
 
-        saveDataProduct(null, internalPid, productUrl);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.log("Página " + this.currentPage);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+      JSONObject json = crawlApi();
+      JSONArray products = JSONUtils.getValueRecursive(json, "products", JSONArray.class);
+
+      if (!products.isEmpty()) {
+
+         for (Object obj : products) {
+            if (obj instanceof JSONObject) {
+               JSONObject product = (JSONObject) obj;
+
+               String internalPid = product.optString("id");
+               String url = product.optString("url");
+
+               String productUrl = url != null ? "https://www.sephora.com.br" + url : null;
+
+               saveDataProduct(null, internalPid, productUrl);
+
+               //Didn’t put internalid because the product has variation, that is, two internalids
+               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
 }

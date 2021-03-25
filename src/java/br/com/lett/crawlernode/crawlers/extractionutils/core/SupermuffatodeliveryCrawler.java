@@ -59,7 +59,8 @@ public class SupermuffatodeliveryCrawler extends VTEXOldScraper {
       ratingReviews.setAverageOverallRating(avgRating == null ? 0d : avgRating);
       ratingReviews.setInternalId(internalId);
 
-      return ratingReviews;
+      // The rating api was disabled
+      return new RatingsReviews();
    }
 
    private JSONObject getRating(Document doc, String internalId) {
