@@ -12,7 +12,7 @@ import java.util.List;
 public class ArgentinaCordiezCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://www.cordiez.com.ar/";
-   private static final List<String> MAIN_SELLERS = Collections.singletonList("C.Y.R.E. S.A.");
+   private static final List<String> MAIN_SELLERS = Collections.singletonList("cordiez.com.ar");
 
    public ArgentinaCordiezCrawler(Session session) {
       super(session);
