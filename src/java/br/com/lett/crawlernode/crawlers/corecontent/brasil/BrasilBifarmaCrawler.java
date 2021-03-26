@@ -1,8 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -34,20 +32,15 @@ public class BrasilBifarmaCrawler extends Crawler {
 
    public BrasilBifarmaCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.WEBDRIVER);
    }
 
    @Override
    protected Object fetch() {
-      Document doc = new Document("");
-      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .build();
 
-      if (this.webdriver != null) {
-         doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-         this.webdriver.waitLoad(20000);
-      }
-
-      return doc;
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
 
    @Override
@@ -61,11 +54,10 @@ public class BrasilBifarmaCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
 
-      if (doc.selectFirst(".main_body .product-primary") != null) {
+      if (doc.selectFirst(".main_body") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#produto_id", "value");
-         String internalPid = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_content h1", false);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
@@ -78,7 +70,7 @@ public class BrasilBifarmaCrawler extends Crawler {
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
@@ -210,7 +202,7 @@ public class BrasilBifarmaCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product_previous_price", null, false, ',', session);
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product_current_price .preco-produto", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -220,7 +212,7 @@ public class BrasilBifarmaCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
