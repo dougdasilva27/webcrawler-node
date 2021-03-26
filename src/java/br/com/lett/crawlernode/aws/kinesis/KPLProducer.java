@@ -71,24 +71,17 @@ public class KPLProducer {
     * @param session session
     */
    public void put(Product p, Session session) {
-      try {
+      ByteBuffer data = ByteBuffer.wrap((p.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
-         ByteBuffer data = ByteBuffer.wrap((p.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
+      FutureCallback<UserRecordResult> myCallback = getCallback(session);
 
-         FutureCallback<UserRecordResult> myCallback = getCallback(session);
+      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStream(),
+         p.getTimestamp(), randomExplicitHashKey(), data);
 
-         ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStream(),
-            p.getTimestamp(), randomExplicitHashKey(), data);
-
-         Futures.addCallback(f, myCallback, callbackThreadPool);
-
-      } catch (Exception e) {
-         Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
-      }
+      Futures.addCallback(f, myCallback, callbackThreadPool);
    }
 
-
-   private FutureCallback<UserRecordResult> getCallback(Session session) {
+   private static FutureCallback<UserRecordResult> getCallback(Session session) {
       return new FutureCallback<UserRecordResult>() {
 
          @Override

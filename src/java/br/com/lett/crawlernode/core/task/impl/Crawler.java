@@ -497,7 +497,7 @@ public abstract class Crawler extends Task {
     * instance passed as parameter is not altered. Instead we perform a clone to securely alter the
     * attributes.
     *
-    * @param product
+    * @param product data to send
     */
    private void sendToKinesis(Product product) {
       if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
@@ -514,19 +514,6 @@ public abstract class Crawler extends Task {
             .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
-
-         if (!p.isVoid()) {
-            long ratingStartTime = System.currentTimeMillis();
-            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
-
-            JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "rating");
-
-            Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
-         }
-
-
       }
    }
 
