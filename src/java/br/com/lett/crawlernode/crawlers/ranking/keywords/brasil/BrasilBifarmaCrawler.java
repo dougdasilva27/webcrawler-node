@@ -35,9 +35,9 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
             // Url do produto
             String productUrl = crawlProductUrl(e);
 
-            saveDataProduct(null, internalPid, productUrl);
+            saveDataProduct(internalPid, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: "
+            this.log("Position: " + this.position + " - InternalId: " + internalPid + " - InternalPid: "
                + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;

@@ -35,15 +35,6 @@ public class BrasilBifarmaCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .build();
-
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-   }
-
-   @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
