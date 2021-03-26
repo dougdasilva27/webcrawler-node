@@ -12,8 +12,7 @@ public class ExecutionParameters {
    public static final String DEFAULT_CRAWLER_VERSION = "-1";
    private static final Logger logger = LoggerFactory.getLogger(ExecutionParameters.class);
    /**
-    * In case we want to force image update on Amazon bucket, when downloading images In some cases the
-    * crawler must update the redimensioned versions of images, and we must use this option in case we
+    * In case we want to force image update on Amazon bucket, when downloading images In some cases the crawler must update the redimensioned versions of images, and we must use this option in case we
     * want to force this, even if the image on market didn't changed.
     */
    private boolean forceImageUpdate;
@@ -24,6 +23,7 @@ public class ExecutionParameters {
    private int hikariCpConnectionTimeout;
    private int hikariCpIdleTimeout;
 
+   private int threads;
    private String queueUrlFirstPart;
    private String fetcherUrl;
    private String replicatorUrl;
@@ -64,6 +64,7 @@ public class ExecutionParameters {
       s3BatchRemoteLocation = System.getenv(EnvironmentVariables.S3_BATCH_REMOTE_LOCATION);
       s3BatchUser = System.getenv(EnvironmentVariables.S3_BATCH_USER);
       s3BatchPass = System.getenv(EnvironmentVariables.S3_BATCH_PASS);
+      threads = System.getenv(EnvironmentVariables.ENV_CORE_THREADS) != null ? Integer.parseInt(System.getenv(EnvironmentVariables.ENV_CORE_THREADS)) : 20;
       setQueueUrlFirstPart(getEnvQueueUrlFirstPart());
       setFetcherUrl(getEnvFetcherUrl());
       setHikariCpConnectionTimeout();
@@ -84,7 +85,9 @@ public class ExecutionParameters {
       if (chromePath == null) {
          Logging.logWarn(logger, null, null, EnvironmentVariables.CHROME_PATH + " not set");
          System.setProperty("webdriver.chrome.driver", "/home/chrome/chromedriver");
-      } else System.setProperty("webdriver.chrome.driver", chromePath);
+      } else {
+         System.setProperty("webdriver.chrome.driver", chromePath);
+      }
    }
 
    public boolean mustSendToKinesis() {
@@ -163,6 +166,10 @@ public class ExecutionParameters {
    private boolean getEnvUseFetcher() {
       String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
       return useFetcher != null && useFetcher.equals("true");
+   }
+
+   public int getThreads() {
+      return threads;
    }
 
    private String getEnvLogsBucketName() {

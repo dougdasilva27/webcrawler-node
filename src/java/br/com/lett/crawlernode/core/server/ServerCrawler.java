@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.core.server;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -57,10 +58,9 @@ public class ServerCrawler {
       Logging.printLogDebug(logger, "Done.");
    }
 
-
    private void createServer() throws Exception {
       try {
-         QueuedThreadPool threadPool = new QueuedThreadPool();
+         QueuedThreadPool threadPool = new QueuedThreadPool(100, GlobalConfigurations.executionParameters.getThreads());
          this.server = new Server(threadPool);
 
          ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory());
