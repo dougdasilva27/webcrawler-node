@@ -570,7 +570,7 @@ public class B2WCrawler extends Crawler {
       return info.optDouble("priceFrom");
    }
 
-   private BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
+   protected BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
 
       if (info.has("bankSlip")) {
          return BankSlipBuilder.create()
@@ -692,7 +692,7 @@ public class B2WCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(JSONObject seller) throws MalformedPricingException {
+   protected CreditCards scrapCreditCards(JSONObject seller) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       if (seller.has("installments")) {
