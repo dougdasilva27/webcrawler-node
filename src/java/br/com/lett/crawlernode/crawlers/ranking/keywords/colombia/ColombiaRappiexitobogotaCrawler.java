@@ -9,7 +9,7 @@ public class ColombiaRappiexitobogotaCrawler extends ColombiaRappiCrawlerRanking
     super(session);
   }
 
-  public static final String STORE_ID = "6660303";
+  public static final String STORE_ID = "6660081";
   public static final String STORE_TYPE = "hiper";
 
    @Override
