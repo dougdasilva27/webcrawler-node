@@ -81,7 +81,7 @@ public abstract class RappiCrawler extends Crawler {
       return productsInfo;
    }
 
-   private String fetchProduct(String productId, String storeId, String token) {
+   protected String fetchProduct(String productId, String storeId, String token) {
 
       String url = "https://services." + getHomeDomain() + "/api/dynamic/context/content";
 
@@ -103,7 +103,7 @@ public abstract class RappiCrawler extends Crawler {
       return this.dataFetcher.post(session, request).getBody();
    }
 
-   private String fetchToken() {
+   protected String fetchToken() {
       String url = "https://services." + getHomeDomain() + "/api/auth/guest_access_token";
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
