@@ -41,17 +41,15 @@ public class KPLProducer {
    private static final KPLProducer INSTANCE = new KPLProducer();
 
    private KPLProducer() {
-      KinesisProducerConfiguration config = new KinesisProducerConfiguration()
-         .setRegion(KPLProducerConfig.REGION)
-         .setCredentialsProvider(new DefaultAWSCredentialsProviderChain())
-         .setMaxConnections(KPLProducerConfig.KPL_MAX_CONNECTIONS)
-         .setRequestTimeout(KPLProducerConfig.KPL_REQUEST_TIMEOUT)
-         .setRecordTtl(KPLProducerConfig.RECORD_TTL) // 5 minutes to avoid data loss
-         .setRecordMaxBufferedTime(KPLProducerConfig.RECORD_MAX_BUFFERED_TIME) // Consumer needs to know how to disassemble records
-         .setAggregationEnabled(true)
-         .setThreadPoolSize(KPLProducerConfig.THREAD_POOL_NUMBER)
-         .setThreadingModel(ThreadingModel.POOLED)
-         .setMetricsLevel(KPLProducerConfig.METRIC_LEVEL_NONE);
+      KinesisProducerConfiguration config = new KinesisProducerConfiguration();
+      config.setRegion(KPLProducerConfig.REGION);
+      config.setCredentialsProvider(new DefaultAWSCredentialsProviderChain());
+      config.setMaxConnections(KPLProducerConfig.KPL_MAX_CONNECTIONS);
+      config.setRequestTimeout(KPLProducerConfig.KPL_REQUEST_TIMEOUT);
+      config.setRecordTtl(KPLProducerConfig.RECORD_TTL); // 5 minutes to avoid data loss
+      config.setRecordMaxBufferedTime(KPLProducerConfig.RECORD_MAX_BUFFERED_TIME); // Consumer needs to know how to disassemble records
+      config.setAggregationEnabled(true);
+      config.setMetricsLevel(KPLProducerConfig.METRIC_LEVEL_NONE); // Do not send any KPL metrics do CloudWatch
 
       kinesisProducer = new KinesisProducer(config);
    }
@@ -82,7 +80,7 @@ public class KPLProducer {
          FutureCallback<UserRecordResult> myCallback = getCallback(session);
 
          ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStream(),
-            randomPartitionKey(), randomExplicitHashKey(), data);
+            p.getTimestamp(), randomExplicitHashKey(), data);
 
          Futures.addCallback(f, myCallback, callbackThreadPool);
 
@@ -121,9 +119,4 @@ public class KPLProducer {
    private String randomExplicitHashKey() {
       return new BigInteger(128, RANDOM).toString(10);
    }
-
-   private String randomPartitionKey() {
-      return UUID.randomUUID().toString();
-   }
-
 }

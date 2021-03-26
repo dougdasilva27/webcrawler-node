@@ -3,11 +3,9 @@ package br.com.lett.crawlernode.aws.kinesis;
 public class KPLProducerConfig {
 
    private KPLProducerConfig() {
-
    }
 
-   public static final long KPL_MAX_CONNECTIONS = 25;
-   public static final int THREAD_POOL_NUMBER = 25;
+   public static final long KPL_MAX_CONNECTIONS = 1;
    public static final long KPL_REQUEST_TIMEOUT = 120 * 1000; // 2 minutes
    public static final long RECORD_TTL = 300 * 1000; // 5 minutes
    public static final long RECORD_MAX_BUFFERED_TIME = 30 * 1000; // 30 seconds
