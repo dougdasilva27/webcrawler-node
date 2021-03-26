@@ -194,9 +194,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             JSONObject info = (JSONObject) sellerInfo.get(i);
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
-               if(name.equals("centralar.com")) {
-                  System.out.println("DEBUG");
-               }
                String internalSellerId = info.get("id").toString();
                Integer mainPagePosition = i == 0 ? 1 : null;
                Integer sellersPagePosition = i == 0 ? 1 : null;
