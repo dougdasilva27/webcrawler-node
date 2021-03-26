@@ -147,8 +147,10 @@ public class GPACrawler extends Crawler {
          String name = crawlName(jsonSku);
          RatingsReviews ratingsReviews = extractRatingAndReviews(internalId);
          String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
-         if (internalPid != null && session.getRedirectedToURL(productUrl) != null) {
-            productUrl = session.getRedirectedToURL(productUrl);
+
+         String redirectedToURL = session.getRedirectedToURL(productUrl);
+         if (internalPid != null && redirectedToURL!= null && !redirectedToURL.isEmpty()) {
+            productUrl = redirectedToURL;
          }
 
          Product product =
