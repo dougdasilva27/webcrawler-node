@@ -18,9 +18,10 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 public class BrasilJcdistribuicaoCrawler extends CrawlerRankingKeywords {
 
   private static final String API_URL = "https://superon.lifeapps.com.br/api/v1/app";
-  private static final String COMPANY_ID = "6f0ae38d-50cd-4873-89a5-6861467b5f52";
-  private static final String APP_ID = "dccca000-b2ea-11e9-a27c-b76c91df9dd6cc64548c0cbad6cf58d4d3bbd433142b";
-  private static final String FORMA_PAGAMENTO = "2001546a-9851-4393-bb68-7c04e932fa4c";
+  private static final String COMPANY_ID = "6f0ae38d-50cd-4873-89a5-6861467b5f52";  //never changes
+  private static final String APP_ID = "dccca000-b2ea-11e9-a27c-b76c91df9dd6cc64548c0cbad6cf58d4d3bbd433142b"; //can change, but is working since 2019
+  private static final String FORMA_PAGAMENTO = "2001546a-9851-4393-bb68-7c04e932fa4c";   //never changes
+
   private JSONArray search = new JSONArray();
 
   public BrasilJcdistribuicaoCrawler(Session session) {
