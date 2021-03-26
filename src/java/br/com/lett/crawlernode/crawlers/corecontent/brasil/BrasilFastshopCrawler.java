@@ -68,13 +68,13 @@ public class BrasilFastshopCrawler extends Crawler {
          JSONArray arraySkus =  productAPIJSON.has("skus") ? productAPIJSON.optJSONArray("skus") : new JSONArray();
          //productAPIJSON != null  ja feito na linha 61;
          for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject variationJson = arraySkus.getJSONObject(i);
+            JSONObject variationJson = arraySkus.optJSONObject(i);
 
             String internalId = crawlInternalId(variationJson);
             JSONObject skuAPIJSON = productAPIJSON;
 
-            if (arraySkus.length() > 1 && productAPIJSON.has("buyable") && productAPIJSON.getBoolean("buyable")) { // In case the array only has 1 sku.
-               skuAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(variationJson.has("partNumber") ? variationJson.getString("partNumber") : null,
+            if (arraySkus.length() > 1 && productAPIJSON.has("buyable") && productAPIJSON.optBoolean("buyable")) { // In case the array only has 1 sku.
+               skuAPIJSON = BrasilFastshopCrawlerUtils.crawlApiJSON(variationJson.has("partNumber") ? variationJson.optString("partNumber") : null,
                      session, cookies, dataFetcher);
 
                if (skuAPIJSON.length() < 1) {
@@ -126,7 +126,7 @@ public class BrasilFastshopCrawler extends Crawler {
       String internalId = null;
 
       if (json.has("catEntry")) {
-         internalId = json.getString("catEntry");
+         internalId = json.optString("catEntry");
       }
 
       return internalId;
@@ -141,7 +141,7 @@ public class BrasilFastshopCrawler extends Crawler {
       if (jsonArray.length()>0) {
          jsonArray = jsonArray.optJSONArray(jsonArray.length() - 1);
          for (int i = 0; i < jsonArray.length(); i++) {
-            category.add(jsonArray.getJSONObject(i).optString("name",""));
+            category.add(jsonArray.optJSONObject(i).optString("name",""));
          }
       }
       return category;
@@ -185,8 +185,8 @@ public class BrasilFastshopCrawler extends Crawler {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(jsonPrices, apiSku);
 
-      if (apiSku.has("marketPlace") && apiSku.getBoolean("marketPlace") && apiSku.has("marketPlaceText") && apiSku.has("priceOffer")) {
-         String sellerName = apiSku.get("marketPlaceText").toString();
+      if (apiSku.has("marketPlace") && apiSku.optBoolean("marketPlace") && apiSku.has("marketPlaceText") && apiSku.has("priceOffer")) {
+         String sellerName = apiSku.optString("marketPlaceText");
 
          offers.add(OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)
@@ -332,7 +332,7 @@ public class BrasilFastshopCrawler extends Crawler {
 
    private boolean crawlAvailability(JSONObject json) {
       if (json.has("buyable")) {
-         return json.getBoolean("buyable");
+         return json.optBoolean("buyable");
       }
       return false;
    }
@@ -341,13 +341,13 @@ public class BrasilFastshopCrawler extends Crawler {
       String primaryImage = null;
 
       if (json.has("images")) {
-         JSONArray images = json.getJSONArray("images");
+         JSONArray images = json.optJSONArray("images");
 
          if (images.length() > 0) {
-            JSONObject imageJson = images.getJSONObject(0);
+            JSONObject imageJson = images.optJSONObject(0);
 
             if (imageJson.has("path")) {
-               primaryImage = imageJson.getString("path");
+               primaryImage = imageJson.optString("path");
 
                if (!primaryImage.startsWith("http")) {
                   primaryImage = "https://prdresources1-a.akamaihd.net/wcsstore/" + primaryImage;
@@ -363,13 +363,13 @@ public class BrasilFastshopCrawler extends Crawler {
       List<String> secondaryImagesArray = new ArrayList<String>();
 
       if (json.has("images")) {
-         JSONArray images = json.getJSONArray("images");
+         JSONArray images = json.optJSONArray("images");
 
          for (int i = 1; i < images.length(); i++) {
-            JSONObject imageJson = images.getJSONObject(i);
+            JSONObject imageJson = images.optJSONObject(i);
 
             if (imageJson.has("path")) {
-               String image = imageJson.getString("path");
+               String image = imageJson.optString("path");
 
                if (!image.startsWith("http")) {
                   image = "https://prdresources1-a.akamaihd.net/wcsstore/" + image;
@@ -440,14 +440,14 @@ public class BrasilFastshopCrawler extends Crawler {
 
 
       if (JsonRating.has("RatingDistribution")) {
-         JSONArray ratingDistribution = JsonRating.getJSONArray("RatingDistribution");
+         JSONArray ratingDistribution = JsonRating.optJSONArray("RatingDistribution");
 
          for (int i = 0; i < ratingDistribution.length(); i++) {
-            JSONObject rV = ratingDistribution.getJSONObject(i);
+            JSONObject rV = ratingDistribution.optJSONObject(i);
 
 
-            int val1 = rV.getInt("RatingValue");
-            int val2 = rV.getInt("Count");
+            int val1 = rV.optInt("RatingValue");
+            int val2 = rV.optInt("Count");
 
             switch (val1) {
                case 5:
@@ -501,7 +501,7 @@ public class BrasilFastshopCrawler extends Crawler {
    private Double getAverageOverallRating(JSONObject reviewStatistics) {
       Double avgOverallRating = 0d;
       if (reviewStatistics.has("AverageOverallRating")) {
-         avgOverallRating = reviewStatistics.getDouble("AverageOverallRating");
+         avgOverallRating = reviewStatistics.optDouble("AverageOverallRating");
       }
       return avgOverallRating;
    }
@@ -525,16 +525,16 @@ public class BrasilFastshopCrawler extends Crawler {
 
    private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
       if (ratingReviewsEndpointResponse.has("Includes")) {
-         JSONObject includes = ratingReviewsEndpointResponse.getJSONObject("Includes");
+         JSONObject includes = ratingReviewsEndpointResponse.optJSONObject("Includes");
 
          if (includes.has("Products")) {
-            JSONObject products = includes.getJSONObject("Products");
+            JSONObject products = includes.optJSONObject("Products");
 
             if (products.has(skuInternalPid)) {
-               JSONObject product = products.getJSONObject(skuInternalPid);
+               JSONObject product = products.optJSONObject(skuInternalPid);
 
                if (product.has("ReviewStatistics")) {
-                  return product.getJSONObject("ReviewStatistics");
+                  return product.optJSONObject("ReviewStatistics");
                }
             }
          }
