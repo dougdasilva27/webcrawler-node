@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
@@ -17,6 +18,8 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,6 +36,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private static final String HOME_PAGE = "https://www.americanas.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
+   private static final Card DEFAULT_CARD = Card.VISA;
    private static final int RATING_API_VERSION = 1;
    private static final String KEY_SHA_256 = "3a716c1d89ae750c969fadfecf3d88e8057880358c57ddc29f3255083cdd6505";
 
@@ -190,6 +194,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             JSONObject info = (JSONObject) sellerInfo.get(i);
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
+               if(name.equals("centralar.com")) {
+                  System.out.println("DEBUG");
+               }
                String internalSellerId = info.get("id").toString();
                Integer mainPagePosition = i == 0 ? 1 : null;
                Integer sellersPagePosition = i == 0 ? 1 : null;
@@ -234,4 +241,35 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
       return offers;
    }
+
+   @Override
+   protected Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
+      throws MalformedPricingException {
+
+      Double priceFrom = scrapPriceFrom(info);
+      CreditCards creditCards = scrapCreditCards(info);
+      Double spotlightPrice = scrapSpotlightPrice(info);
+      BankSlip bt = scrapBankTicket(info);
+
+      if (!newWay || offerIndex != 0) {
+         mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
+      }
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom > 0d ? priceFrom : null)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bt)
+         .build();
+   }
+
+   private Double scrapPriceFrom(JSONObject info) {
+      return info.optDouble("priceFrom");
+   }
+
+
+   private Double scrapSpotlightPrice(JSONObject info) {
+    return info.getDouble("defaultPrice");
+   }
+
 }
