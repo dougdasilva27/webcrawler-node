@@ -1,5 +1,5 @@
 
-FROM sgrio/java-oracle
+FROM openjdk:8-jre-slim
 MAINTAINER TEAM_DATA_CAPTURE (datacapture@lett.digital)
 RUN apt-get update
 RUN apt-get install -y maven
