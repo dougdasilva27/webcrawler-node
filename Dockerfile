@@ -10,6 +10,6 @@ RUN mvn -f /home/app/pom.xml clean package
 # Package stage
 #
 FROM openjdk:8-jre-slim
-COPY target/deployment/webcrawler.jar /app/webcrawler.jar
+COPY target/deployment/.jar /app/.jar
 EXPOSE 5000
 ENTRYPOINT ["java","-jar","/usr/local/lib/demo.jar"]
