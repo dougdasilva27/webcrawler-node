@@ -1,5 +1,20 @@
 version: "3.7"
 services:
+    maven:
+        image: maven:3.6.3-openjdk-8-slim
+        container_name: maven
+        working_dir: /app
+        volumes:
+            - ./:/app
+            - ~/.m2:/root/.m2
+            - ~/.aws/credentials:/root/.aws/credentials:ro
+        command:
+            - /bin/bash
+            - -c
+            - |
+                mvn clean
+                mvn package
+
     webcrawler-node:
         image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev
         build: .
