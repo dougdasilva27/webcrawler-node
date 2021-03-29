@@ -7,7 +7,7 @@ class TestRunnable(
    val marketName: String = "",
    val marketId: Long = 0,
    val parameters: List<String>,
-   val currentTest: TestType = TestType.INSIGHTS,
+   val currentTest: TestType = TestType.CORE,
    val productsLimit: Int = 0
 ) : Runnable {
 

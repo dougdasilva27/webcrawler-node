@@ -1,9 +1,7 @@
 package br.com.lett.crawlernode.test
 
 import br.com.lett.crawlernode.core.models.RankingProducts
-import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession
-import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
 import br.com.lett.crawlernode.util.CommonMethods
 import org.json.JSONArray
@@ -49,7 +47,7 @@ class LocalDiscovery {
 
       val urls = products.map { it.url }
 
-      val tests = TestUtils.poolTaskProcess(marketId = marketId, parameters = urls, currentTest = TestType.INSIGHTS, corePoolSize = corePoolSize)
+      val tests = TestUtils.poolTaskProcess(marketId = marketId, parameters = urls, currentTest = TestType.CORE, corePoolSize = corePoolSize)
 
       var count = 0
       for (test in tests) {
