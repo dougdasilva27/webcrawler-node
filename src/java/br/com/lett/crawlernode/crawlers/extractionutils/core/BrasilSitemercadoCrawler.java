@@ -36,6 +36,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
    public BrasilSitemercadoCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.FETCHER);
    }
 
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),

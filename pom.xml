@@ -290,8 +290,8 @@
 
         <dependency>
             <groupId>io.github.cdimascio</groupId>
-            <artifactId>dotenv-java</artifactId>
-            <version>2.2.0</version>
+            <artifactId>dotenv-kotlin</artifactId>
+            <version>6.2.2</version>
         </dependency>
 
     </dependencies>
