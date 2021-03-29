@@ -19,15 +19,14 @@
             ],
             "portMappings": [
                 {
-                    "containerPort": 5030,
+                    "containerPort": 5000,
                     "hostPort": 80
                 },
                 {
                     "containerPort": 9229,
                     "hostPort": 9229
                 }
-            ],
-            "sharedMemorySize": 256
+            ]
         },
         {
             "essential": true,

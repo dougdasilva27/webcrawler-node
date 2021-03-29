@@ -1,7 +1,7 @@
 version: "3.7"
 services:
     maven:
-        image: maven:3.6.3-openjdk-8
+        image: maven:3.6.3-openjdk-8-slim
         container_name: maven
         working_dir: /app
         volumes:
