@@ -29,7 +29,7 @@ public abstract class BistekCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
-      String url = "https://" + getLocation() + ".bistek.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      String url = "https://www" + getLocation() + ".bistek.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url, cookies);
