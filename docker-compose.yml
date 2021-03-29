@@ -10,4 +10,4 @@ services:
         env_file:
             - .env
         volumes:
-            - ~/.aws:/root/.aws:ro
+            - ~/.aws:/root/.aws
