@@ -1,0 +1,164 @@
+{
+    "AWSEBDockerrunVersion": 2,
+    "containerDefinitions": [
+        {
+            "essential": true,
+            "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev",
+            "name": "webcrawler-core-dev",
+            "memory": 1200,
+            "ipcMode": "host",
+            "mountPoints": [
+                {
+                    "containerPath": "/usr/src/app/logs",
+                    "sourceVolume": "AppLog"
+                },
+                {
+                    "containerPath": "/tmp",
+                    "sourceVolume": "Tmp"
+                }
+            ],
+            "portMappings": [
+                {
+                    "containerPort": 5030,
+                    "hostPort": 80
+                },
+                {
+                    "containerPort": 9229,
+                    "hostPort": 9229
+                }
+            ],
+            "sharedMemorySize": 256
+        },
+        {
+            "essential": true,
+            "privileged": true,
+            "image": "gcr.io/google-containers/cadvisor:v0.36.0",
+            "name": "cadvisor",
+            "memory": 100,
+            "mountPoints": [
+                {
+                    "containerPath": "/rootfs",
+                    "sourceVolume": "RootFs"
+                },
+                {
+                    "containerPath": "/var/run",
+                    "sourceVolume": "VarRun"
+                },
+                {
+                    "containerPath": "/sys",
+                    "sourceVolume": "Sys"
+                },
+                {
+                    "containerPath": "/var/lib/docker",
+                    "sourceVolume": "VarLibDocker"
+                },
+                {
+                    "containerPath": "/sys/fs/cgroup",
+                    "sourceVolume": "Cgroup"
+                }
+            ],
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080
+                }
+            ]
+        },
+        {
+
+            "essential": true,
+            "image": "prom/node-exporter:v1.0.1",
+            "name": "nodeexporter",
+            "memory": 100,
+            "mountPoints": [
+                {
+                    "containerPath": "/host/proc",
+                    "sourceVolume": "Proc"
+                },
+                {
+                    "containerPath": "/host/sys",
+                    "sourceVolume": "Sys"
+                },
+                {
+                    "containerPath": "/rootfs",
+                    "sourceVolume": "RootFs"
+                },
+                {
+                    "containerPath": "/var/run/dbus/system_bus_socket",
+                    "sourceVolume": "RunDbusSystem_Bus_Socket"
+                }
+            ],
+            "command": [
+                "--path.procfs=/host/proc",
+                "--path.rootfs=/rootfs",
+                "--path.sysfs=/host/sys",
+                "--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)",
+                "--collector.systemd",
+                "--collector.processes"
+            ],
+            "portMappings": [
+                {
+                    "containerPort": 9100,
+                    "hostPort": 9100
+                }
+            ]
+        }
+    ],
+    "family": "",
+    "volumes": [
+        {
+            "host": {
+                "sourcePath": "/proc"
+            },
+            "name": "Proc"
+        },
+        {
+            "host": {
+                "sourcePath": "/sys"
+            },
+            "name": "Sys"
+        },
+        {
+            "host": {
+                "sourcePath": "/run/dbus/system_bus_socket"
+            },
+            "name": "RunDbusSystem_Bus_Socket"
+        },
+        {
+            "host": {
+                "sourcePath": "/var/run"
+            },
+            "name": "VarRun"
+        },
+        {
+            "host": {
+                "sourcePath": "/var/lib/docker"
+            },
+            "name": "VarLibDocker"
+        },
+        {
+            "host": {
+                "sourcePath": "/cgroup"
+            },
+            "name": "Cgroup"
+        },
+        {
+            "host": {
+                "sourcePath": "/"
+            },
+            "name": "RootFs"
+        },
+        {
+            "host": {
+                "sourcePath": "/usr/src/app/logs"
+            },
+            "name": "AppLog"
+        },
+        {
+            "host": {
+                "sourcePath": "/tmp"
+            },
+            "name": "Tmp"
+        }
+    ]
+}
