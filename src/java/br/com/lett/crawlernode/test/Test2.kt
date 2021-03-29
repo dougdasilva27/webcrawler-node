@@ -1,8 +1,5 @@
 package br.com.lett.crawlernode.test
 
-enum class TestType {
-   KEYWORDS, INSIGHTS
-}
 
 fun main() {
 
@@ -20,7 +17,7 @@ fun main() {
       ""
    )
 
-   val currentTest = TestType.INSIGHTS
+   val currentTest = TestType.CORE
 
    TestUtils.initialize()
 

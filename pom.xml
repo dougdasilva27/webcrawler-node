@@ -152,7 +152,6 @@
             <version>9.4.38.v20210224</version>
         </dependency>
 
-
         <!-- A JPEG reader plugin for Java ImageIO This plugin will deal with cases
             where we have Images encoded in CYMK color space -->
         <dependency>
@@ -299,6 +298,11 @@
             <version>3.10</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-kotlin</artifactId>
+            <version>6.2.2</version>
+        </dependency>
 
     </dependencies>
 

@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -350,6 +351,7 @@ public abstract class Crawler extends Task {
 
       Object obj = fetch();
 
+
       session.setProductPageResponse(obj);
 
       try {
@@ -599,7 +601,12 @@ public abstract class Crawler extends Task {
 
       if (createdId != null) {
          Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
-         Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
+         try {
+            Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
+         } catch (SQLException throwables) {
+            Logging.printLogDebug(logger, session, "Download image scheduler attempt failed");
+            throwables.printStackTrace();
+         }
       }
 
    }
