@@ -37,7 +37,7 @@ private fun coreRanking() {
       ""
    )
 
-   val currentTest = TestType.INSIGHTS
+   val currentTest = TestType.CORE
 //   val currentTest = TestType.KEYWORDS
 
    val parameters = if (currentTest == TestType.KEYWORDS) keywords else urls
