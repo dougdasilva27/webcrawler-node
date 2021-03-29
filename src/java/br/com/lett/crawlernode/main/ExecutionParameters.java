@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.main;
 
-import br.com.lett.crawlernode.core.server.ServerCrawler;
+import br.com.lett.crawlernode.core.server.PoolExecutor;
 import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,8 @@ public class ExecutionParameters {
    public static final String DEFAULT_CRAWLER_VERSION = "-1";
    private static final Logger logger = LoggerFactory.getLogger(ExecutionParameters.class);
    /**
-    * In case we want to force image update on Amazon bucket, when downloading images In some cases the crawler must update the redimensioned versions of images, and we must use this option in case we
+    * In case we want to force image update on Amazon bucket, when downloading images In some cases the
+    * crawler must update the redimensioned versions of images, and we must use this option in case we
     * want to force this, even if the image on market didn't changed.
     */
    private boolean forceImageUpdate;

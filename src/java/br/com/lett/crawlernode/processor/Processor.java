@@ -462,7 +462,7 @@ public class Processor {
             previousProcessedProduct.getPrice() != null &&
             newProcessedProduct.getPrice() < previousProcessedProduct.getPrice()) {
 
-         Float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
+         float discount = 100f - ((newProcessedProduct.getPrice() / previousProcessedProduct.getPrice()) * 100f);
 
          boolean shouldSend = false;
          String quote = null;
@@ -505,12 +505,12 @@ public class Processor {
          }
 
          if (shouldSend) {
-            String DISCORD_MSG_TEMPLATE = ("*{0}*\n" +
+            String discordTemplate = ("*{0}*\n" +
                   ":shopping_bags: **{1}**\n" +
                   ":moneybag: ~~{2}~~ **{3}** (-{4}%) [ℹ️](http://localhost?processed:{5}/session:{6}/)\n" +
                   ":link: {7}");
             DecimalFormat priceFormat = new DecimalFormat("#,##0.00");
-            String msg = MessageFormat.format(DISCORD_MSG_TEMPLATE, quote,
+            String msg = MessageFormat.format(discordTemplate, quote,
                   newProcessedProduct.getOriginalName(),
                   priceFormat.format(previousProcessedProduct.getPrice()),
                   priceFormat.format(newProcessedProduct.getPrice()),
@@ -532,7 +532,7 @@ public class Processor {
       }
 
       // update lms in case we had a status change
-      if (oldStatus == null || !newProcessedProduct.getStatus().equals(oldStatus)) {
+      if (!newProcessedProduct.getStatus().equals(oldStatus)) {
          newProcessedProduct.setLms(nowISO);
       }
    }

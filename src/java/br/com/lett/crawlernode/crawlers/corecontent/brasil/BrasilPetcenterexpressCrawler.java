@@ -1,31 +1,38 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.Pair;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
-import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.*;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilPetcenterexpressCrawler extends Crawler {
+
+   private static final String SELLER_NAME = "Petcenter Express Brasil";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+
 
    public BrasilPetcenterexpressCrawler(Session session) {
       super(session);
@@ -38,9 +45,9 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
       String url = session.getOriginalURL().contains("?") ? session.getOriginalURL() + "&comtodos=s" : session.getOriginalURL() + "?comtodos=s";
 
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -52,39 +59,29 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-variation .selecionado [codigo_tamanho]", "codigo_tamanho");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".codProduto span", true);
          String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-name", true);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-values .ctrValorMoeda", null, false, ',', session);
-         Prices prices = crawlPrices(doc, price);
-         boolean available = !doc.select(".product-info .ctrBotaoComprarArea:not(.hidden)").isEmpty();
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb li:not(:first-child) a");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".maisfotos-foto a", Arrays.asList("urlfoto"), "https:", "cdnv2.moovin.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".maisfotos-foto a", Arrays.asList("urlfoto"), "https:", "cdnv2.moovin.com.br", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-description.clearfix", ".product-features"));
-         String ean = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-variation .selecionado [ean]", "ean");
-         List<String> eans = ean != null && !ean.isEmpty() ? Arrays.asList(ean) : null;
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#produto-nome", true);
+         boolean available = !doc.select(".column.btnComprar .btn-comprar.action ").isEmpty(); // when this crawler was remade, there was no product that was unavailable
+         //hasn't category
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#galleypc .car-gallery.thumbnails.slick-dotted.mobile-hide a", Arrays.asList("data-standard"), "https", "static.petcenterexpress.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#galleypc .car-gallery.thumbnails.slick-dotted.mobile-hide a", Arrays.asList("data-standard"), "https", "static.petcenterexpress.com.br", primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui.grid.one.column"));
          RatingsReviews rating = scrapRatingReviews(doc);
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(new Marketplace())
-               .setEans(eans)
-               .setRatingReviews(rating)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setOffers(offers)
+            .setRatingReviews(rating)
+            .build();
 
          products.add(product);
 
@@ -96,35 +93,63 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
 
    }
 
-   private Prices crawlPrices(Document doc, Float price) {
-      Prices prices = new Prices();
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      //site hasn't sale
 
-      if (price != null) {
-         Map<Integer, Float> installments = new HashMap<>();
-         installments.put(1, price);
-         prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-values .ctrValorVistaMoeda", null, true, ',', session));
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
 
-         Elements parcels = doc.select(".product-values .parcel");
-         for (Element parcel : parcels) {
-            Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, parcel, false, "x");
-            if (!pair.isAnyValueNull()) {
-               installments.put(pair.getFirst(), pair.getSecond());
-            }
-         }
 
-         prices.insertCardInstallment(Card.VISA.toString(), installments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installments);
-         prices.insertCardInstallment(Card.DINERS.toString(), installments);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installments);
-         prices.insertCardInstallment(Card.AMEX.toString(), installments);
-         prices.insertCardInstallment(Card.ELO.toString(), installments);
-      }
-
-      return prices;
+      return offers;
    }
 
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#variacao-preco span", null, false, ',', session);
+      //site hasn't old price
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+
    private boolean isProductPage(Document doc) {
-      return !doc.select(".product-content").isEmpty();
+      return !doc.select(".row.detalhes.produto").isEmpty();
    }
 
    private RatingsReviews scrapRatingReviews(Document doc) {
@@ -176,11 +201,11 @@ public class BrasilPetcenterexpressCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 }

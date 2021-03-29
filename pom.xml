@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>webcrawler-node</groupId>
     <artifactId>webcrawler-node</artifactId>
@@ -30,7 +30,7 @@
         <slack.webhook.version>1.2.1</slack.webhook.version>
         <hikaricp.version>3.3.0</hikaricp.version>
         <surefire-plugin-version>2.22.0</surefire-plugin-version>
-        <temmie-webhook.version>-SNAPSHOT</temmie-webhook.version>
+        <discord-webhooks.version>0.5.4</discord-webhooks.version>
         <kotlin.version>1.4.30</kotlin.version>
     </properties>
 
@@ -275,9 +275,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.MrPowerGamerBR</groupId>
-            <artifactId>TemmieWebhook</artifactId>
-            <version>${temmie-webhook.version}</version>
+            <groupId>club.minnced</groupId>
+            <artifactId>discord-webhooks</artifactId>
+            <version>${discord-webhooks.version}</version>
         </dependency>
 
         <dependency>
@@ -303,17 +303,10 @@
     </dependencies>
 
     <repositories>
-
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-
         <repository>
             <id>lett-maven</id>
             <url>s3://lett-maven</url>
         </repository>
-
     </repositories>
 
 </project>

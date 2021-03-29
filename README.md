@@ -149,7 +149,7 @@ Here below you see how to config in Intellij IDEA, but is very similar in others
 
 Example:
 ```txt
-CRAWLER_THREADS=1;
+CRAWLER_CORE_THREADS=1;
 DEBUG=ON;
 ENVIRONMENT=production;
 FETCHER_URL=https://api-fetcher.lett.global/;

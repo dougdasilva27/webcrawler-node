@@ -9,10 +9,16 @@ public class MexicoRappisuperamaguadalajaraCrawler extends MexicoRappiCrawlerRan
 
    public MexicoRappisuperamaguadalajaraCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override
    protected String getStoreId() {
       return STORE_ID;
+   }
+
+   @Override
+   protected String getStoreType() {
+      return "superama";
    }
 }
