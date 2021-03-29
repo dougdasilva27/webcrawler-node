@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.test
 
+import br.com.lett.crawlernode.core.models.Market
 import br.com.lett.crawlernode.core.models.RankingProducts
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
@@ -11,21 +12,11 @@ class LocalDiscovery {
 
    val errors = JSONArray()
 
-   fun discovery(marketId: Long, supplierId: Long, maxProducts: Int) {
 
-      val keywords = listOf<String>()
 
-      if (keywords.isEmpty()) {
-         println("keywords is required")
-         return
-      }
+   fun discovery(market: Market, keywords: List<String>, maxProducts: Int, corePoolSize: Int = 1) {
 
-      discovery(marketId, keywords, maxProducts)
-   }
-
-   fun discovery(marketId: Long, keywords: List<String>, maxProducts: Int, corePoolSize: Int = 1) {
-
-      val tasks = TestUtils.taskProcess(marketId = marketId, parameters = keywords, currentTest = TestType.KEYWORDS, productsLimit = maxProducts)
+      val tasks = TestUtils.taskProcess(market, parameters = keywords, currentTest = TestType.KEYWORDS, productsLimit = maxProducts)
 
       val products = mutableListOf<RankingProducts>()
 
@@ -47,7 +38,7 @@ class LocalDiscovery {
 
       val urls = products.map { it.url }
 
-      val tests = TestUtils.poolTaskProcess(marketId = marketId, parameters = urls, currentTest = TestType.CORE, corePoolSize = corePoolSize)
+      val tests = TestUtils.poolTaskProcess(market, parameters = urls, currentTest = TestType.CORE, corePoolSize = corePoolSize)
 
       var count = 0
       for (test in tests) {
