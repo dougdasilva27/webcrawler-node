@@ -34,7 +34,6 @@ public class ExecutionParameters {
    private Boolean debug;
    private Boolean useFetcher;
    private String kinesisStream;
-   private String kinesisRatingStream = null;
    private boolean sendToKinesis;
 
    private String logsBucketName;
@@ -57,7 +56,6 @@ public class ExecutionParameters {
       environment = getEnvEnvironment();
       tmpImageFolder = getEnvTmpImagesFolder();
       kinesisStream = getEnvKinesisStream();
-      kinesisRatingStream = getEnvKinesisRatingStream();
       sendToKinesis = getEnvSendToKinesis();
       logsBucketName = getEnvLogsBucketName();
       imagesBucketName = getEnvImagesBucketName();
@@ -158,10 +156,6 @@ public class ExecutionParameters {
       return System.getenv(EnvironmentVariables.KINESIS_STREAM);
    }
 
-   private String getEnvKinesisRatingStream() {
-      return System.getenv(EnvironmentVariables.KINESIS_RATING_STREAM);
-   }
-
    private boolean getEnvUseFetcher() {
       String useFetcher = System.getenv(EnvironmentVariables.USE_FETCHER);
       return useFetcher != null && useFetcher.equals("true");
@@ -221,10 +215,6 @@ public class ExecutionParameters {
 
    public String getKinesisStream() {
       return kinesisStream;
-   }
-
-   public String getKinesisRatingStream() {
-      return kinesisRatingStream;
    }
 
    public String getVersion() {
