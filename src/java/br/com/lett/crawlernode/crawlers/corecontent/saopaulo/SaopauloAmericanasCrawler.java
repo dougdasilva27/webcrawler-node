@@ -253,7 +253,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       }
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom > 0d ? priceFrom : null)
+         .setPriceFrom(priceFrom > 0d && !priceFrom.equals(spotlightPrice) ? priceFrom : null)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .setBankSlip(bt)
@@ -266,7 +266,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
 
    private Double scrapSpotlightPrice(JSONObject info) {
-    return info.getDouble("defaultPrice");
+      return info.has("defaultPrice") ? info.optDouble("defaultPrice") : info.optDouble("priceFrom");
    }
 
 }
