@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -10,10 +9,20 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -34,8 +43,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
-
 public class GPACrawler extends Crawler {
 
    protected String homePageHttps;
@@ -48,9 +55,6 @@ public class GPACrawler extends Crawler {
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
    private String MAIN_SELLER_NAME;
-
-   private static final List<String> workingProxies = Arrays.asList(ProxyCollection.NO_PROXY,
-      ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.INFATICA_RESIDENTIAL_BR);
 
    public GPACrawler(Session session) {
       super(session);
@@ -80,7 +84,6 @@ public class GPACrawler extends Crawler {
 
       Request request =
          RequestBuilder.create()
-            .setProxyservice(workingProxies)
             .setUrl(url)
             .setCookies(cookies)
             .build();
@@ -589,7 +592,6 @@ public class GPACrawler extends Crawler {
       }
 
       Request request = RequestBuilder.create()
-         .setProxyservice(workingProxies)
          .setUrl(url).setCookies(cookies).build();
       String res = this.dataFetcher.get(session, request).getBody();
 
@@ -629,7 +631,6 @@ public class GPACrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       Request request =
          RequestBuilder.create()
-            .setProxyservice(workingProxies)
             .setUrl(END_POINT_REQUEST + store + "/products/" + internalId + "/review")
             .build();
       JSONObject jsonObject = JSONUtils.stringToJson(dataFetcher.get(session, request).getBody());
