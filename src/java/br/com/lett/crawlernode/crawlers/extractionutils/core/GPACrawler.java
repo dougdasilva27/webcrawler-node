@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -48,6 +49,8 @@ public class GPACrawler extends Crawler {
 
    private String MAIN_SELLER_NAME;
 
+   private static final List<String> workingProxies = Arrays.asList(ProxyCollection.NO_PROXY,
+      ProxyCollection.NETNUT_RESIDENTIAL_BR, ProxyCollection.INFATICA_RESIDENTIAL_BR);
 
    public GPACrawler(Session session) {
       super(session);
@@ -77,6 +80,7 @@ public class GPACrawler extends Crawler {
 
       Request request =
          RequestBuilder.create()
+            .setProxyservice(workingProxies)
             .setUrl(url)
             .setCookies(cookies)
             .build();
@@ -149,7 +153,7 @@ public class GPACrawler extends Crawler {
          String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
 
          String redirectedToURL = session.getRedirectedToURL(productUrl);
-         if (internalPid != null && redirectedToURL!= null && !redirectedToURL.isEmpty()) {
+         if (internalPid != null && redirectedToURL != null && !redirectedToURL.isEmpty()) {
             productUrl = redirectedToURL;
          }
 
@@ -584,7 +588,9 @@ public class GPACrawler extends Crawler {
          url += "&storeId=" + this.storeId;
       }
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Request request = RequestBuilder.create()
+         .setProxyservice(workingProxies)
+         .setUrl(url).setCookies(cookies).build();
       String res = this.dataFetcher.get(session, request).getBody();
 
       JSONObject apiGPA = JSONUtils.stringToJson(res);
@@ -623,6 +629,7 @@ public class GPACrawler extends Crawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       Request request =
          RequestBuilder.create()
+            .setProxyservice(workingProxies)
             .setUrl(END_POINT_REQUEST + store + "/products/" + internalId + "/review")
             .build();
       JSONObject jsonObject = JSONUtils.stringToJson(dataFetcher.get(session, request).getBody());
