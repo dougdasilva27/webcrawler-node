@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker-compose -f build-dev.yml run --rm maven
-docker-compose -f build-dev.yml build webcrawler
+docker-compose -f build.yml run --rm maven
+docker-compose -f build.yml build webcrawler

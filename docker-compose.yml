@@ -1,8 +1,7 @@
-
 version: "3.7"
 services:
     webcrawler:
-        image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev
+        image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:${TAG}
         container_name: webcrawler
         restart: unless-stopped
         ports:
@@ -10,4 +9,4 @@ services:
         env_file:
             - .env
         volumes:
-            - ~/.aws:/root/.aws
+            - ~/.aws:/root/.aws:ro
