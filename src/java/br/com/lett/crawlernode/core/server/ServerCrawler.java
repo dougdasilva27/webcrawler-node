@@ -58,6 +58,10 @@ public class ServerCrawler {
       Logging.printLogDebug(logger, "Done.");
    }
 
+   /**
+    * Create server, maximum 100 threads, min from env 'CRAWLER_CORE_THREADS'.
+    * @throws Exception error instantiating server
+    */
    private void createServer() throws Exception {
       try {
          QueuedThreadPool threadPool = new QueuedThreadPool(100, GlobalConfigurations.executionParameters.getThreads());

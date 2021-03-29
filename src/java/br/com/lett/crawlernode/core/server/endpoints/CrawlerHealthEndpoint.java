@@ -16,7 +16,12 @@ public class CrawlerHealthEndpoint extends HttpServlet {
 
    protected static final Logger logger = LoggerFactory.getLogger(CrawlerHealthEndpoint.class);
 
-
+   /**
+    *
+    * @param req http request
+    * @param res http response ok message
+    * @throws IOException error writing o response
+    */
    @Override
    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
       res.setStatus(HttpServletResponse.SC_OK);

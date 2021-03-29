@@ -24,6 +24,11 @@ public class CrawlerTaskEndpoint extends HttpServlet {
 
    protected static final Logger logger = LoggerFactory.getLogger(CrawlerTaskEndpoint.class);
 
+   /**
+    * Main route
+    * @param req http request with data
+    * @param res http response 
+    */
    @Override
    protected void doPost(HttpServletRequest req, HttpServletResponse res) {
       String response;
