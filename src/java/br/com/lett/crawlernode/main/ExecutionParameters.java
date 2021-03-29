@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.main;
 
-import br.com.lett.crawlernode.core.server.PoolExecutor;
 import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
