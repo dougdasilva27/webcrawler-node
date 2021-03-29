@@ -11,10 +11,10 @@ fun main() {
 
 private fun discovery() {
 
-   val marketId: Long = 114
+   val marketId: Long = 440
 
    val keywords = listOf(
-      "arroz"
+      ""
    )
 
    LocalDiscovery().discovery(marketId, keywords, 100, 5)
@@ -37,7 +37,7 @@ private fun coreRanking() {
       ""
    )
 
-   val currentTest = TestType.CORE
+   val currentTest = TestType.INSIGHTS
 //   val currentTest = TestType.KEYWORDS
 
    val parameters = if (currentTest == TestType.KEYWORDS) keywords else urls
