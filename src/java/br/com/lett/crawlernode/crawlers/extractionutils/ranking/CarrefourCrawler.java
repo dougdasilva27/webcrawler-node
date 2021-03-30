@@ -218,7 +218,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       extensions.put("persistedQuery", persistedQuery);
 
       StringBuilder payload = new StringBuilder();
-      payload.append("workspace=vtexsearch");
+      payload.append("workspace=master");
       payload.append("&maxAge=short");
       payload.append("&appsEtag=remove");
       payload.append("&domain=store");
