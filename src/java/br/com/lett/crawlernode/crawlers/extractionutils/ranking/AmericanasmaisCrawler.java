@@ -98,7 +98,7 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
                JSONObject id = (JSONObject) e;
 
                String internalId = id.optString("id");
-               String productUrl = "https://www.americanas.com.br/lojas-proximas/33014556000196/5328/ship?ordenacao=relevance&conteudo=" + internalId;
+               String productUrl = HOME_PAGE + storeId + "/ship?ordenacao=relevance&conteudo=" + internalId;
 
                saveDataProduct(internalId, null, productUrl);
 
