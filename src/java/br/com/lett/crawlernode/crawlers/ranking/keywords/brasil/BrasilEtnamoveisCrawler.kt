@@ -30,6 +30,6 @@ class BrasilEtnamoveisCrawler(session: Session) : CrawlerRankingKeywords(session
    }
 
    override fun setTotalProducts() {
-      totalProducts = currentDoc.selectFirst(".row .pagination-bar-results").toInt() ?: 0
+      totalProducts = currentDoc.selectFirst(".row .pagination-bar-results")?.toInt() ?: 0
    }
 }
