@@ -95,7 +95,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
    private String getName(Document doc) {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1 span", false);
-      String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-attributes  .quantidade.hide-hover", true);
+      String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-attributes .quantidade.show-hover", true);
       if (quantity != null && quantity.contains("-")) {
          String[] quantitySplit = quantity.split("-");
 
