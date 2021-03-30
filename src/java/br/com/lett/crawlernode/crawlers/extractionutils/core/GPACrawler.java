@@ -15,6 +15,7 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
+import com.mongodb.util.JSON;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import java.util.ArrayList;
@@ -707,11 +708,13 @@ public class GPACrawler extends Crawler {
       Offers offers = new Offers();
       if (data != null) {
          Pricing pricing = scrapPricing(data);
+         String sales = CrawlerUtils.calculateSales(pricing);
 
          if (pricing != null) {
             offers.add(Offer.OfferBuilder.create()
                .setUseSlugNameAsInternalSellerId(true)
                .setSellerFullName(MAIN_SELLER_NAME)
+               .setSales(Collections.singletonList(sales))
                .setSellersPagePosition(1)
                .setIsBuybox(false)
                .setIsMainRetailer(true)
@@ -723,11 +726,26 @@ public class GPACrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      Double spotlightPrice = data.optDouble("currentPrice");
-      Double priceFrom = null;
-      if (data.has("priceFrom")) {
-         priceFrom = data.optDouble("priceFrom");
+      Double spotlightPrice = 0.0;
+      Double priceFrom = 0.0;
+
+      if (data.has("productPromotions")) {
+         JSONArray promotions = data.optJSONArray("productPromotions");
+         for (Object e : promotions) {
+            if(e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 51241) {
+               spotlightPrice = ((JSONObject) e).optDouble("unitPrice");
+               priceFrom = data.optDouble("currentPrice");
+            }
+         }
+      } else {
+         spotlightPrice = data.optDouble("currentPrice");
+         priceFrom = null;
+
+         if (data.has("priceFrom")) {
+            priceFrom = data.optDouble("priceFrom");
+         }
       }
+
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
