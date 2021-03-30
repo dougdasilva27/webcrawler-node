@@ -39,7 +39,7 @@ public abstract class ColombiaRappiCrawler extends RappiCrawler {
 
 
    protected String getHomeDomain() {
-      return "rappi.com.co";
+      return "grability.rappi.com";
    }
 
    protected String getImagePrefix() {

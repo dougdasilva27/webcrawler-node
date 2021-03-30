@@ -36,7 +36,7 @@ public abstract class RappiCrawler extends Crawler {
 
    public RappiCrawler(Session session) {
       super(session);
-      this.config.setFetcher(FetchMode.FETCHER);
+      this.config.setFetcher(FetchMode.APACHE);
    }
 
    abstract protected String getStoreId();
