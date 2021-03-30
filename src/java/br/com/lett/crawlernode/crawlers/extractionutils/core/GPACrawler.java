@@ -18,12 +18,9 @@ import com.google.common.collect.Sets;
 import com.mongodb.util.JSON;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
