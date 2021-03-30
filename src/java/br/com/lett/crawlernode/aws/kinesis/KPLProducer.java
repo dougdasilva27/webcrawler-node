@@ -1,12 +1,10 @@
 package br.com.lett.crawlernode.aws.kinesis;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.kinesis.producer.Attempt;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
@@ -17,12 +15,14 @@ import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
-import models.RatingsReviews;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KPLProducer {
 
@@ -30,12 +30,11 @@ public class KPLProducer {
 
    private static final Random RANDOM = new Random();
 
-   private static final AtomicLong eventsCreated = new AtomicLong(0);
-   private static final AtomicLong eventsPut = new AtomicLong(0);
-
    private static final char RECORD_SEPARATOR = '\n';
 
-   private KinesisProducer kinesisProducer;
+   private final KinesisProducer kinesisProducer;
+
+   private final ExecutorService callbackThreadPool = Executors.newCachedThreadPool();
 
    private static final KPLProducer INSTANCE = new KPLProducer();
 
@@ -58,8 +57,6 @@ public class KPLProducer {
    }
 
    public void close() {
-      LOGGER.debug("Stoping KPL ...");
-
       LOGGER.debug("Running KPL flushSync ...");
       kinesisProducer.flushSync();
 
@@ -68,105 +65,43 @@ public class KPLProducer {
    }
 
    /**
-    * Assynchronously put an event to the kinesis internal queue
-    * 
-    * @param r
-    */
-   public void put(RatingsReviews r, Session session, String kinesisStream) {
-      try {
-         long countCreated = eventsCreated.incrementAndGet();
-
-         Logging.printLogDebug(LOGGER, session, "Received event " + countCreated);
-
-         ByteBuffer data = ByteBuffer.wrap(new StringBuilder().append(r.serializeToKinesis()).append(RECORD_SEPARATOR).toString().getBytes(StandardCharsets.UTF_8));
-
-         FutureCallback<UserRecordResult> myCallback = new FutureCallback<UserRecordResult>() {
-
-            /* Analyze and respond to the failure */
-            @Override
-            public void onFailure(Throwable t) {
-               if (t instanceof UserRecordFailedException) {
-                  UserRecordFailedException ex = (UserRecordFailedException) t;
-                  UserRecordResult r = ex.getResult();
-                  Attempt last = Iterables.getLast(r.getAttempts());
-                  Logging.printLogError(LOGGER, session, String.format("Record failed to put - %s(Duration) : %s(ErrorCode) : %s(ErrorMessage)",
-                        last.getDuration(), last.getErrorCode(), last.getErrorMessage()));
-               }
-               Logging.printLogError(LOGGER, session, "Exception during put.");
-               Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(t));
-            }
-
-            @Override
-            public void onSuccess(UserRecordResult result) {
-               Logging.printLogDebug(LOGGER, session, "Succesfully put record: " + result.getSequenceNumber());
-               long putCount = eventsPut.incrementAndGet();
-               Logging.printLogDebug(LOGGER, session, String.format("Events successfully put so far: %s", putCount));
-            }
-         };
-
-         // TIMESTAMP is our partition key
-         ListenableFuture<UserRecordResult> f =
-               kinesisProducer.addUserRecord(
-                     kinesisStream,
-                     r.getTimestamp(),
-                     randomExplicitHashKey(),
-                     data
-               );
-
-         Futures.addCallback(f, myCallback);
-
-
-      } catch (Exception e) {
-         Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
-      }
-   }
-
-   /**
-    * Assynchronously put an event to the kinesis internal queue
-    * 
-    * @param p
+    * Asynchronously put an event to the kinesis internal queue
+    *
+    * @param p       product to send
+    * @param session session
     */
    public void put(Product p, Session session) {
-      try {
-         long countCreated = eventsCreated.incrementAndGet();
+      ByteBuffer data = ByteBuffer.wrap((p.serializeToKinesis() + RECORD_SEPARATOR).getBytes(StandardCharsets.UTF_8));
 
-         Logging.printLogDebug(LOGGER, session, "Received event " + countCreated);
+      FutureCallback<UserRecordResult> myCallback = getCallback(session);
 
-         ByteBuffer data = ByteBuffer.wrap(new StringBuilder().append(p.serializeToKinesis()).append(RECORD_SEPARATOR).toString().getBytes(StandardCharsets.UTF_8));
+      ListenableFuture<UserRecordResult> f = kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStream(),
+         p.getTimestamp(), randomExplicitHashKey(), data);
 
-         FutureCallback<UserRecordResult> myCallback = new FutureCallback<UserRecordResult>() {
+      Futures.addCallback(f, myCallback, callbackThreadPool);
+   }
 
-            /* Analyze and respond to the failure */
-            @Override
-            public void onFailure(Throwable t) {
-               if (t instanceof UserRecordFailedException) {
-                  UserRecordFailedException ex = (UserRecordFailedException) t;
-                  UserRecordResult r = ex.getResult();
-                  Attempt last = Iterables.getLast(r.getAttempts());
-                  Logging.printLogError(LOGGER, session, String.format("Record failed to put - %s(Duration) : %s(ErrorCode) : %s(ErrorMessage)",
-                        last.getDuration(), last.getErrorCode(), last.getErrorMessage()));
-               }
-               Logging.printLogError(LOGGER, session, "Exception during put.");
-               Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(t));
+   private static FutureCallback<UserRecordResult> getCallback(Session session) {
+      return new FutureCallback<UserRecordResult>() {
+
+         @Override
+         public void onFailure(Throwable t) {
+            if (t instanceof UserRecordFailedException) {
+               UserRecordFailedException ex = (UserRecordFailedException) t;
+               UserRecordResult r = ex.getResult();
+               Attempt last = Iterables.getLast(r.getAttempts());
+               Logging.printLogError(LOGGER, session, String.format("Record failed to put - %s(Duration) : %s(ErrorCode) : %s(ErrorMessage)",
+                  last.getDuration(), last.getErrorCode(), last.getErrorMessage()));
             }
+            Logging.printLogError(LOGGER, session, "Exception during put.");
+            Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(t));
+         }
 
-            @Override
-            public void onSuccess(UserRecordResult result) {
-               Logging.printLogDebug(LOGGER, session, "Succesfully put record: " + result.getSequenceNumber());
-               long putCount = eventsPut.incrementAndGet();
-               Logging.printLogDebug(LOGGER, session, String.format("Events successfully put so far: %s", putCount));
-            }
-         };
-
-         // TIMESTAMP is our partition key
-         ListenableFuture<UserRecordResult> f =
-               kinesisProducer.addUserRecord(GlobalConfigurations.executionParameters.getKinesisStream(), p.getTimestamp(), randomExplicitHashKey(), data);
-
-         Futures.addCallback(f, myCallback);
-
-      } catch (Exception e) {
-         Logging.printLogError(LOGGER, session, CommonMethods.getStackTrace(e));
-      }
+         @Override
+         public void onSuccess(UserRecordResult result) {
+            Logging.printLogDebug(LOGGER, session, "Successfully put record: " + result.getSequenceNumber());
+         }
+      };
    }
 
    /**
@@ -175,5 +110,4 @@ public class KPLProducer {
    private String randomExplicitHashKey() {
       return new BigInteger(128, RANDOM).toString(10);
    }
-
 }

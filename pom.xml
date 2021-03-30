@@ -18,7 +18,7 @@
         <tika.version>1.5</tika.version>
         <s3.version>1.11.957</s3.version>
         <sqs.version>1.11.957</sqs.version>
-        <kinesis.version>0.14.5</kinesis.version>
+        <kinesis.version>0.14.6</kinesis.version>
         <db.version>8.0.0</db.version>
         <jsoup.version>1.13.1</jsoup.version>
         <models.version>2.7.12</models.version>
@@ -290,8 +290,8 @@
 
         <dependency>
             <groupId>io.github.cdimascio</groupId>
-            <artifactId>dotenv-java</artifactId>
-            <version>2.2.0</version>
+            <artifactId>dotenv-kotlin</artifactId>
+            <version>6.2.2</version>
         </dependency>
 
     </dependencies>

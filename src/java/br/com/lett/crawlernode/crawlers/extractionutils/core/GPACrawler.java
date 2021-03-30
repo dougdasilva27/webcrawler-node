@@ -9,10 +9,20 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -33,8 +43,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
-
 public class GPACrawler extends Crawler {
 
    protected String homePageHttps;
@@ -47,7 +55,6 @@ public class GPACrawler extends Crawler {
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
    private String MAIN_SELLER_NAME;
-
 
    public GPACrawler(Session session) {
       super(session);
@@ -149,7 +156,7 @@ public class GPACrawler extends Crawler {
          String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
 
          String redirectedToURL = session.getRedirectedToURL(productUrl);
-         if (internalPid != null && redirectedToURL!= null && !redirectedToURL.isEmpty()) {
+         if (internalPid != null && redirectedToURL != null && !redirectedToURL.isEmpty()) {
             productUrl = redirectedToURL;
          }
 
@@ -584,7 +591,8 @@ public class GPACrawler extends Crawler {
          url += "&storeId=" + this.storeId;
       }
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Request request = RequestBuilder.create()
+         .setUrl(url).setCookies(cookies).build();
       String res = this.dataFetcher.get(session, request).getBody();
 
       JSONObject apiGPA = JSONUtils.stringToJson(res);
