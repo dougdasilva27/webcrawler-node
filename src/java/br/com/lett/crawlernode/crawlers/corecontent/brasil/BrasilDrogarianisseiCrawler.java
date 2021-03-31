@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -19,11 +18,8 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -192,7 +188,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       String cookies = CommonMethods.cookiesToString(this.cookies);
 
-      token = CommonMethods.substring(cookies,"=",";",true);
+      token = CommonMethods.substring(cookies, "=", ";", true);
 
       Map<String, String> headers = new HashMap<>();
       headers.put("cookie", cookies);
@@ -216,18 +212,15 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       JSONObject response = CrawlerUtils.stringToJson(content);
 
-      JSONArray precos = response != null ? response.optJSONArray("precos") : null;
+      JSONObject precos = response != null ? response.optJSONObject("precos") : null;
 
       if (precos != null && !precos.isEmpty()) {
-         for (Object objectJson : precos) {
+         JSONObject dataProduct = precos.optJSONObject(internalId);
+         return dataProduct != null ? dataProduct.optJSONObject("publioco") : null;
 
-            JSONObject productInfo = (JSONObject) objectJson;
-
-            if (productInfo.optString("produto_id").equals(internalId)) {
-               return productInfo;
-            }
-         }
       }
+
+
       return new JSONObject();
    }
 
