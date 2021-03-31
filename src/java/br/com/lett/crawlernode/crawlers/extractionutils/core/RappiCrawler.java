@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import br.com.lett.crawlernode.exceptions.NotMarketUrlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
@@ -48,12 +50,17 @@ public abstract class RappiCrawler extends Crawler {
    protected boolean newUnification = false;
 
    @Override
-   protected JSONObject fetch() {
+   protected JSONObject fetch() throws NotMarketUrlException {
       JSONObject productsInfo = new JSONObject();
 
       String storeId = getStoreId();
 
       String productUrl = session.getOriginalURL();
+
+      if(!productUrl.contains(storeId)){
+         throw new NotMarketUrlException();
+      }
+
       String productId = null;
 
       if (productUrl.contains("_")) {

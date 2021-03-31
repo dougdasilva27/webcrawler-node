@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import br.com.lett.crawlernode.exceptions.NotMarketUrlException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -57,7 +59,7 @@ public class BrasilMartinsCrawler extends Crawler {
    }
 
    @Override
-   protected Object fetch() {
+   protected Object fetch() throws NotMarketUrlException {
       if (login == null || password == null) {
          return super.fetch();
       }
