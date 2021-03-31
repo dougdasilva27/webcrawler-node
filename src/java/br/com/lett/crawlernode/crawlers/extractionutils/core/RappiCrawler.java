@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import br.com.lett.crawlernode.exceptions.NotMarketUrlException;
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
@@ -49,16 +49,20 @@ public abstract class RappiCrawler extends Crawler {
 
    protected boolean newUnification = false;
 
+
+
    @Override
-   protected JSONObject fetch() throws NotMarketUrlException {
+   protected JSONObject fetch() {
       JSONObject productsInfo = new JSONObject();
 
       String storeId = getStoreId();
 
       String productUrl = session.getOriginalURL();
 
+
+
       if(!productUrl.contains(storeId)){
-         throw new NotMarketUrlException();
+         throw new MalformedUrlException();
       }
 
       String productId = null;

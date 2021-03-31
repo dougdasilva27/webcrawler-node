@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.exceptions.NotMarketUrlException;
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -215,9 +215,11 @@ public abstract class Crawler extends Task {
       }
    }
 
-   private void productionRun() throws NotMarketUrlException {
+   private void productionRun() {
 
       sendProgress(50);
+
+
 
       // crawl informations and create a list of products
       List<Product> products = extract();
@@ -262,7 +264,7 @@ public abstract class Crawler extends Task {
       }
    }
 
-   private void insightsProcess(List<Product> products) throws NotMarketUrlException {
+   private void insightsProcess(List<Product> products) {
 
       // get crawled product by it's internalId
       Logging.printLogDebug(logger, session, "Selecting product with internalId " + session.getInternalId());
@@ -300,7 +302,7 @@ public abstract class Crawler extends Task {
    /**
     * Run method to be used when testing
     */
-   private void testRun() throws NotMarketUrlException {
+   private void testRun() {
 
       // crawl informations and create a list of products
       List<Product> products = extract();
@@ -335,7 +337,7 @@ public abstract class Crawler extends Task {
     * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an
     * empty array list if no product was found.
     */
-   public List<Product> extract() throws NotMarketUrlException {
+   public List<Product> extract() {
       List<Product> processedProducts = new ArrayList<>();
       List<Product> products = new ArrayList<>();
 
@@ -394,7 +396,7 @@ public abstract class Crawler extends Task {
     *
     * @return Parsed HTML in form of a Document.
     */
-   protected Object fetch() throws NotMarketUrlException {
+   protected Object fetch()  {
       String html = "";
       if (config.getFetcher() == FetchMode.WEBDRIVER) {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
@@ -437,7 +439,7 @@ public abstract class Crawler extends Task {
     * @param product the crawled product
     * @return The resultant product from the analysis
     */
-   private Product activeVoid(Product product) throws NotMarketUrlException {
+   private Product activeVoid(Product product)  {
       String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
       Processor processor = new Processor();
