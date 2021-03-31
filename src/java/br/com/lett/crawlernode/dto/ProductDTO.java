@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.dto;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -26,6 +31,8 @@ import models.pricing.Pricing.PricingBuilder;
 
 public class ProductDTO {
 
+   private static final Logger logger = LoggerFactory.getLogger(ProductDTO.class);
+
    public static Product convertProductToKinesisFormat(Product product, Session session) {
       Product p = new Product();
 
@@ -43,6 +50,24 @@ public class ProductDTO {
                p.setStatus(SkuStatus.MARKETPLACE_ONLY);
             } else {
                p.setStatus(SkuStatus.UNAVAILABLE);
+            }
+         }
+
+         Offers offers = p.getOffers();
+         for (Offer o : offers.getOffersList()) {
+            List<String> sales = o.getSales();
+
+            boolean hasNullValue = false;
+            for (String sale : sales) {
+               if (sale == null) {
+                  hasNullValue = true;
+                  break;
+               }
+            }
+
+            if (hasNullValue) {
+               o.setSales(new ArrayList<>());
+               Logging.printLogWarn(logger, session, "SALES CANNOT HAVE VALUE NULL!");
             }
          }
 

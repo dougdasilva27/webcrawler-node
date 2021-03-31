@@ -1,5 +1,19 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -14,13 +28,8 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import com.google.common.collect.Sets;
-import com.mongodb.util.JSON;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
-import java.util.*;
-
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -34,12 +43,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 public class GPACrawler extends Crawler {
 
@@ -48,7 +51,7 @@ public class GPACrawler extends Crawler {
    protected String store;
    protected String cep;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
@@ -67,7 +70,7 @@ public class GPACrawler extends Crawler {
          fetchStoreId();
          BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", this.storeId);
          cookie.setDomain(
-            homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
+               homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
          cookie.setPath("/");
          this.cookies.add(cookie);
       }
@@ -81,10 +84,10 @@ public class GPACrawler extends Crawler {
       String url = END_POINT_REQUEST + this.store + "/delivery/options?zipCode=" + this.cep.replace("-", "");
 
       Request request =
-         RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .build();
+            RequestBuilder.create()
+                  .setUrl(url)
+                  .setCookies(cookies)
+                  .build();
 
       String response = this.dataFetcher.get(session, request).getBody();
       JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
@@ -99,7 +102,7 @@ public class GPACrawler extends Crawler {
             for (Object object : jsonDeliveryTypes) {
                JSONObject deliveryType = (JSONObject) object;
                if (deliveryType.optString("name") instanceof String
-                  && deliveryType.optString("name").contains("TRADICIONAL")) {
+                     && deliveryType.optString("name").contains("TRADICIONAL")) {
                   this.storeId = deliveryType.optString("storeid");
                   break;
                }
@@ -133,7 +136,7 @@ public class GPACrawler extends Crawler {
 
       if (jsonSku.has("id")) {
          Logging.printLogDebug(
-            logger, session, "Product page identified: " + this.session.getOriginalURL());
+               logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          JSONObject data = JSONUtils.getValueRecursive(jsonSku, "sellInfos.0", JSONObject.class);
 
@@ -159,20 +162,20 @@ public class GPACrawler extends Crawler {
          }
 
          Product product =
-            ProductBuilder.create()
-               .setUrl(productUrl)
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setOffers(offers)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setRatingReviews(ratingsReviews)
-               .build();
+               ProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setOffers(offers)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setRatingReviews(ratingsReviews)
+                     .build();
 
          products.add(product);
 
@@ -360,7 +363,7 @@ public class GPACrawler extends Crawler {
          JSONArray shelfList = json.getJSONArray("shelfList");
 
          Set<String> listCategories =
-            new HashSet<>(); // It is a "set" because it has been noticed that there are repeated
+               new HashSet<>(); // It is a "set" because it has been noticed that there are repeated
          // categories
 
          // The category fetched by crawler can be in a different ordination than showed on the website
@@ -405,36 +408,36 @@ public class GPACrawler extends Crawler {
 
          if (itemMap.length() > 0) {
             description.append(
-               "<table class=\"nutritional-table table product-table\">\n"
-                  + "                                <thead>\n"
-                  + "                                    <tr>\n"
-                  + "                                        <th colspan=\"2\" class=\"title\">Produtos no kit</th>\n"
-                  + "                                    </tr>\n"
-                  + "                                    <tr>\n"
-                  + "                                        <th>Nome</th>\n"
-                  + "                                        <th>Quantidade</th>\n"
-                  + "                                    </tr>\n"
-                  + "                                </thead>\n"
-                  + "                                <tbody>\n");
+                  "<table class=\"nutritional-table table product-table\">\n"
+                        + "                                <thead>\n"
+                        + "                                    <tr>\n"
+                        + "                                        <th colspan=\"2\" class=\"title\">Produtos no kit</th>\n"
+                        + "                                    </tr>\n"
+                        + "                                    <tr>\n"
+                        + "                                        <th>Nome</th>\n"
+                        + "                                        <th>Quantidade</th>\n"
+                        + "                                    </tr>\n"
+                        + "                                </thead>\n"
+                        + "                                <tbody>\n");
             for (int i = 0; i < itemMap.length(); i++) {
                JSONObject productInfo = itemMap.getJSONObject(i);
 
                if (productInfo.has("quantity")
-                  && productInfo.get("quantity") instanceof Integer
-                  && productInfo.has("name")) {
+                     && productInfo.get("quantity") instanceof Integer
+                     && productInfo.has("name")) {
                   int quantity = productInfo.getInt("quantity");
                   String name = productInfo.get("name").toString();
 
                   if (quantity > 1 || itemMap.length() > 1) {
                      description.append(
-                        "<tr ng-repeat=\"item in productDetailCtrl.product.itemMap\" class=\"ng-scope\">\n"
-                           + "        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">"
-                           + name
-                           + "l</td>\n"
-                           + "        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">"
-                           + quantity
-                           + "</td>\n"
-                           + "     </tr><!-- end ngRepeat: item in productDetailCtrl.product.itemMap -->\n");
+                           "<tr ng-repeat=\"item in productDetailCtrl.product.itemMap\" class=\"ng-scope\">\n"
+                                 + "        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">"
+                                 + name
+                                 + "l</td>\n"
+                                 + "        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">"
+                                 + quantity
+                                 + "</td>\n"
+                                 + "     </tr><!-- end ngRepeat: item in productDetailCtrl.product.itemMap -->\n");
                   }
                }
             }
@@ -451,21 +454,21 @@ public class GPACrawler extends Crawler {
          StringBuilder str = new StringBuilder();
 
          str.append(
-            "<div class=\"product-nutritional-table\">\n"
-               + "  <p class=\"title\">Tabela nutricional</p>\n"
-               + "   <!-- ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->"
-               + "<div class=\"main-infos ng-scope\" ng-if=\"productDetailCtrl.product.nutritionalMap.cabecalho\">\n"
-               + "           <p ng-bind-html=\"productDetailCtrl.product.nutritionalMap.cabecalho || "
-               + "productDetailCtrl.product.nutritionalMap.cabecalho.value\" class=\"ng-binding\"></p>\n"
-               + "       </div><!-- end ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->\n"
-               + "       <table class=\"table table-responsive\">\n"
-               + "         <thead>\n"
-               + "              <tr>\n"
-               + "                 <th>Item</th>\n"
-               + "                   <th>Quantidade por porção</th>\n"
-               + "                   <th>Valores diários</th>\n"
-               + "             </tr>\n"
-               + "           </thead>\n");
+               "<div class=\"product-nutritional-table\">\n"
+                     + "  <p class=\"title\">Tabela nutricional</p>\n"
+                     + "   <!-- ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->"
+                     + "<div class=\"main-infos ng-scope\" ng-if=\"productDetailCtrl.product.nutritionalMap.cabecalho\">\n"
+                     + "           <p ng-bind-html=\"productDetailCtrl.product.nutritionalMap.cabecalho || "
+                     + "productDetailCtrl.product.nutritionalMap.cabecalho.value\" class=\"ng-binding\"></p>\n"
+                     + "       </div><!-- end ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->\n"
+                     + "       <table class=\"table table-responsive\">\n"
+                     + "         <thead>\n"
+                     + "              <tr>\n"
+                     + "                 <th>Item</th>\n"
+                     + "                   <th>Quantidade por porção</th>\n"
+                     + "                   <th>Valores diários</th>\n"
+                     + "             </tr>\n"
+                     + "           </thead>\n");
          str.append(crawlNutritionalTableAttributes(nutritionalJson));
          str.append("</table>\n</div>");
 
@@ -490,16 +493,16 @@ public class GPACrawler extends Crawler {
 
             if (attributeJson != null && attributeJson.has("value") && attributeJson.has("label")) {
                str.append(
-                  putAttribute(attributeJson.getString("value"), attributeJson.getString("label")));
+                     putAttribute(attributeJson.getString("value"), attributeJson.getString("label")));
             }
          } else {
             str.append(
-               "<div class=\"main-infos ng-scope\" ng-if=\"productDetailCtrl.product.nutritionalMap.cabecalho\">\n"
-                  + "<p ng-bind-html=\"productDetailCtrl.product.nutritionalMap.cabecalho "
-                  + "|| productDetailCtrl.product.nutritionalMap.cabecalho.value\" class=\"ng-binding\">"
-                  + nutritionalMap.getString(attribute)
-                  + "</p>\n"
-                  + "</div>");
+                  "<div class=\"main-infos ng-scope\" ng-if=\"productDetailCtrl.product.nutritionalMap.cabecalho\">\n"
+                        + "<p ng-bind-html=\"productDetailCtrl.product.nutritionalMap.cabecalho "
+                        + "|| productDetailCtrl.product.nutritionalMap.cabecalho.value\" class=\"ng-binding\">"
+                        + nutritionalMap.getString(attribute)
+                        + "</p>\n"
+                        + "</div>");
          }
       }
 
@@ -511,26 +514,26 @@ public class GPACrawler extends Crawler {
       if (label != null) {
          if (label.equalsIgnoreCase("rodape")) {
             return "<tfoot>\n"
-               + "  <tr>\n"
-               + "     <td colspan=\"3\" ng-bind-html=\"productDetailCtrl.product.nutritionalMap.rodape.value\""
-               + "class=\"last ng-binding\">"
-               + value
-               + "</td>\n"
-               + "  </tr>\n"
-               + "</tfoot>\n";
+                  + "  <tr>\n"
+                  + "     <td colspan=\"3\" ng-bind-html=\"productDetailCtrl.product.nutritionalMap.rodape.value\""
+                  + "class=\"last ng-binding\">"
+                  + value
+                  + "</td>\n"
+                  + "  </tr>\n"
+                  + "</tfoot>\n";
          } else {
             return "    <tr ng-repeat=\"(key, item) in productDetailCtrl.product.nutritionalMap \" ng-if=\"[ 'cabecalho', 'rodape'].indexOf(key) === -1 \" class=\"ng-scope\">\n"
-               + "     <td class=\"ng-binding\">"
-               + label
-               + "</td>\n"
-               + "      <td class=\"ng-binding\">"
-               + value
-               + "</td>\n"
-               + "     <td class=\"ng-binding\"></td>\n"
-               + "   </tr><!-- end ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 --><!-- end ngRepeat: "
-               + "(key, item) in productDetailCtrl.product.nutritionalMap --><!-- ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 -->"
-               + "<tr ng-repeat=\"(key, item) in productDetailCtrl.product.nutritionalMap \" ng-if=\"[ 'cabecalho', 'rodape'].indexOf(key) === -1 "
-               + "\" class=\"ng-scope\">\n";
+                  + "     <td class=\"ng-binding\">"
+                  + label
+                  + "</td>\n"
+                  + "      <td class=\"ng-binding\">"
+                  + value
+                  + "</td>\n"
+                  + "     <td class=\"ng-binding\"></td>\n"
+                  + "   </tr><!-- end ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 --><!-- end ngRepeat: "
+                  + "(key, item) in productDetailCtrl.product.nutritionalMap --><!-- ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 -->"
+                  + "<tr ng-repeat=\"(key, item) in productDetailCtrl.product.nutritionalMap \" ng-if=\"[ 'cabecalho', 'rodape'].indexOf(key) === -1 "
+                  + "\" class=\"ng-scope\">\n";
          }
       }
 
@@ -578,19 +581,19 @@ public class GPACrawler extends Crawler {
       }
 
       String url =
-         END_POINT_REQUEST
-            + this.store
-            + "/v4/products/ecom/"
-            + id
-            + "/bestPrices"
-            + "?isClienteMais=false";
+            END_POINT_REQUEST
+                  + this.store
+                  + "/v4/products/ecom/"
+                  + id
+                  + "/bestPrices"
+                  + "?isClienteMais=false";
 
       if (this.storeId != null) {
          url += "&storeId=" + this.storeId;
       }
 
       Request request = RequestBuilder.create()
-         .setUrl(url).setCookies(cookies).build();
+            .setUrl(url).setCookies(cookies).build();
       String res = this.dataFetcher.get(session, request).getBody();
 
       JSONObject apiGPA = JSONUtils.stringToJson(res);
@@ -628,9 +631,9 @@ public class GPACrawler extends Crawler {
    protected RatingsReviews extractRatingAndReviews(String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       Request request =
-         RequestBuilder.create()
-            .setUrl(END_POINT_REQUEST + store + "/products/" + internalId + "/review")
-            .build();
+            RequestBuilder.create()
+                  .setUrl(END_POINT_REQUEST + store + "/products/" + internalId + "/review")
+                  .build();
       JSONObject jsonObject = JSONUtils.stringToJson(dataFetcher.get(session, request).getBody());
 
       if (jsonObject.has("content")) {
@@ -688,17 +691,17 @@ public class GPACrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-         .totalStar1(star1)
-         .totalStar2(star2)
-         .totalStar3(star3)
-         .totalStar4(star4)
-         .totalStar5(star5)
-         .build();
+            .totalStar1(star1)
+            .totalStar2(star2)
+            .totalStar3(star3)
+            .totalStar4(star4)
+            .totalStar5(star5)
+            .build();
    }
 
    private String crawlInternalId(String productUrl) {
       return CommonMethods.getLast(productUrl.replace(this.homePageHttps, "").split("produto/"))
-         .split("/")[0];
+            .split("/")[0];
    }
 
    private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
@@ -709,14 +712,15 @@ public class GPACrawler extends Crawler {
 
          if (pricing != null) {
             offers.add(Offer.OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(MAIN_SELLER_NAME)
-               .setSales(Collections.singletonList(sales))
-               .setSellersPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(true)
-               .setPricing(pricing)
-               .build());
+                  .setUseSlugNameAsInternalSellerId(true)
+                  .setSellerFullName(MAIN_SELLER_NAME)
+                  .setSales(Collections.singletonList(sales))
+                  .setMainPagePosition(1)
+                  .setSellersPagePosition(1)
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(true)
+                  .setPricing(pricing)
+                  .build());
          }
       }
       return offers;
@@ -729,7 +733,7 @@ public class GPACrawler extends Crawler {
       if (data.has("productPromotions")) {
          JSONArray promotions = data.optJSONArray("productPromotions");
          for (Object e : promotions) {
-            if(e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 51241) {
+            if (e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 51241) {
                spotlightPrice = ((JSONObject) e).optDouble("unitPrice");
                priceFrom = data.optDouble("currentPrice");
             }
@@ -746,13 +750,13 @@ public class GPACrawler extends Crawler {
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
-         .setBankSlip(BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build())
-         .build();
+            .setSpotlightPrice(spotlightPrice)
+            .setPriceFrom(priceFrom)
+            .setCreditCards(creditCards)
+            .setBankSlip(BankSlipBuilder.create()
+                  .setFinalPrice(spotlightPrice)
+                  .build())
+            .build();
 
    }
 
@@ -761,16 +765,16 @@ public class GPACrawler extends Crawler {
       Installments installments = new Installments();
 
       installments.add(InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(spotlightPrice)
-         .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-            .setBrand(brand)
-            .setIsShopCard(false)
-            .setInstallments(installments)
-            .build());
+               .setBrand(brand)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
       }
 
       return creditCards;
@@ -793,13 +797,13 @@ public class GPACrawler extends Crawler {
             boolean isMainRetailer = sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
 
             offers.add(Offer.OfferBuilder.create()
-               .setInternalSellerId(CommonMethods.toSlug(MAIN_SELLER_NAME))
-               .setSellerFullName(sellerName)
-               .setSellersPagePosition(pos)
-               .setIsBuybox(false)
-               .setIsMainRetailer(isMainRetailer)
-               .setPricing(pricing)
-               .build());
+                  .setInternalSellerId(CommonMethods.toSlug(MAIN_SELLER_NAME))
+                  .setSellerFullName(sellerName)
+                  .setSellersPagePosition(pos)
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(isMainRetailer)
+                  .setPricing(pricing)
+                  .build());
 
             pos++;
          }
@@ -812,9 +816,9 @@ public class GPACrawler extends Crawler {
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       return PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
+            .setSpotlightPrice(spotlightPrice)
+            .setCreditCards(creditCards)
+            .setBankSlip(bankSlip)
+            .build();
    }
 }
