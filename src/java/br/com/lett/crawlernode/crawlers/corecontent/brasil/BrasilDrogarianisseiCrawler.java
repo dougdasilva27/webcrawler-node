@@ -182,6 +182,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
 
    private JSONObject accesAPIOffers(String internalId) {
+      JSONObject jsonObject = new JSONObject();
       String token = "";
       String url = "https://www.farmaciasnissei.com.br/pegar/preco";
 
@@ -216,12 +217,11 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       if (precos != null && !precos.isEmpty()) {
          JSONObject dataProduct = precos.optJSONObject(internalId);
-         return dataProduct != null ? dataProduct.optJSONObject("publioco") : null;
+         return dataProduct != null ? dataProduct.optJSONObject("publico") : jsonObject;
 
       }
 
-
-      return new JSONObject();
+      return jsonObject;
    }
 
 
