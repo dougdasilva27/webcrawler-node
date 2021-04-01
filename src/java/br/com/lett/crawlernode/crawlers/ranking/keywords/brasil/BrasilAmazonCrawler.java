@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.util.HashMap;
+import java.util.stream.Collectors;
+
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -94,10 +96,10 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
    private String crawlProductUrl(Element e) {
       String productUrl = null;
 
-      Element url = e.select(".a-link-normal").first();
+      Element url = e.select(".a-link-normal.a-text-normal").first();
 
       if (url != null) {
-         productUrl = url.attr("href").split("\\?")[0];
+         productUrl = url.attr("href");
 
          if (!productUrl.contains("amazon.com.br")) {
             productUrl = "https://www.amazon.com.br" + productUrl;
