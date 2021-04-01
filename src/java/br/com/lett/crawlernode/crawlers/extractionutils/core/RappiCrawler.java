@@ -59,10 +59,11 @@ public abstract class RappiCrawler extends Crawler {
 
       String productUrl = session.getOriginalURL();
 
-
-
-      if(!productUrl.contains(storeId)){
-         throw new MalformedUrlException();
+      if(productUrl.matches("[0-9]*_[0-9]*")){
+         throw new MalformedUrlException("Formato da URL incorreto");
+      }
+      else if(!productUrl.contains(storeId)){
+         throw new MalformedUrlException("URL não corresponde ao id da loja");
       }
 
       String productId = null;
