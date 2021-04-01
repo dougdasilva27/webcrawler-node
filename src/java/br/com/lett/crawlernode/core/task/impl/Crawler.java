@@ -188,8 +188,8 @@ public abstract class Crawler extends Task {
             productionRun();
          }
       } catch (Exception e) {
-         if (session instanceof SeedCrawlerSession){
-            Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),e.getMessage());
+         if (session instanceof SeedCrawlerSession) {
+            Persistence.updateFrozenServerTask(((SeedCrawlerSession) session), e.getMessage());
          }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
@@ -218,7 +218,6 @@ public abstract class Crawler extends Task {
    private void productionRun() {
 
       sendProgress(50);
-
 
 
       // crawl informations and create a list of products
@@ -396,7 +395,7 @@ public abstract class Crawler extends Task {
     *
     * @return Parsed HTML in form of a Document.
     */
-   protected Object fetch()  {
+   protected Object fetch() {
       String html = "";
       if (config.getFetcher() == FetchMode.WEBDRIVER) {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
@@ -439,7 +438,7 @@ public abstract class Crawler extends Task {
     * @param product the crawled product
     * @return The resultant product from the analysis
     */
-   private Product activeVoid(Product product)  {
+   private Product activeVoid(Product product) {
       String nowISO = new DateTime(DateConstants.timeZone).toString("yyyy-MM-dd HH:mm:ss.SSS");
 
       Processor processor = new Processor();
