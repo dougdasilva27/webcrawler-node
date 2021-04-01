@@ -21,6 +21,9 @@ import enums.ScrapersTypes;
 
 public class SessionFactory {
 
+   private SessionFactory() {
+   }
+
    private static final Logger logger = LoggerFactory.getLogger(SessionFactory.class);
 
    public static Session createSession(Request request, Markets markets) {
