@@ -63,7 +63,7 @@ public abstract class RappiCrawler extends Crawler {
          throw new MalformedUrlException("Formato da URL incorreto");
       }
       else if(!productUrl.contains(storeId)){
-         throw new MalformedUrlException("URL não corresponde ao id da loja");
+         throw new MalformedUrlException("URL não corresponde ao market");
       }
 
       String productId = null;
