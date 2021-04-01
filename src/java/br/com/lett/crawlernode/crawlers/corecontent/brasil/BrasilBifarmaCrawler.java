@@ -21,10 +21,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
@@ -52,7 +49,8 @@ public class BrasilBifarmaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_content h1", false);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
-         List<String> secondaryImages = crawlSecondaryImages(doc, primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".slider_clip .slide .thumb img",Arrays.asList("src"), "https:", "cdn-bifarma3.stoom.com.br", primaryImage);
+         System.err.println(secondaryImages);
          String description = crawlDescription(doc, internalId);
          boolean available = doc.selectFirst(".btn.click.product_btn") != null;
          Offers offers = available ? scrapOffer(doc) : new Offers();
@@ -95,31 +93,6 @@ public class BrasilBifarmaCrawler extends Crawler {
          }
       }
       return primaryImage;
-   }
-
-   private List<String> crawlSecondaryImages(Document document, String primaryImage) {
-      List<String> secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      List<String> images = new ArrayList<>();
-      images.add(primaryImage);
-
-      Elements imagesElement = document.select(".slider-thumbs .thumb > img");
-
-      for (int i = 1; i < imagesElement.size(); i++) { // first index is the primary image
-         String image = imagesElement.get(i).attr("src").trim().replace("_mini", "");
-
-         if (!images.contains(image)) {
-            images.add(image);
-            secondaryImagesArray.put(image);
-         }
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = Collections.singletonList(secondaryImagesArray.toString());
-      }
-
-      return secondaryImages;
    }
 
    private CategoryCollection crawlCategories(Document doc) {
