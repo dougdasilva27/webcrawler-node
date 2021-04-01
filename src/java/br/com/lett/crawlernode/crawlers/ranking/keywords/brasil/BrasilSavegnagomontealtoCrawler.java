@@ -8,4 +8,11 @@ public class BrasilSavegnagomontealtoCrawler extends SavegnagoRanking {
    public BrasilSavegnagomontealtoCrawler(Session session) {
       super(session);
    }
+
+   public static final String STORE_ID = "12";
+
+   @Override
+   public String getStoreId() {
+      return STORE_ID;
+   }
 }
