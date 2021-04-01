@@ -57,17 +57,19 @@ public class ProductDTO {
          for (Offer o : offers.getOffersList()) {
             List<String> sales = o.getSales();
 
-            boolean hasNullValue = false;
-            for (String sale : sales) {
-               if (sale == null) {
-                  hasNullValue = true;
-                  break;
+            if (sales != null) {
+               boolean hasNullValue = false;
+               for (String sale : sales) {
+                  if (sale == null) {
+                     hasNullValue = true;
+                     break;
+                  }
                }
-            }
 
-            if (hasNullValue) {
-               o.setSales(new ArrayList<>());
-               Logging.printLogWarn(logger, session, "SALES CANNOT HAVE VALUE NULL!");
+               if (hasNullValue) {
+                  o.setSales(new ArrayList<>());
+                  Logging.printLogWarn(logger, session, "SALES CANNOT HAVE VALUE NULL!");
+               }
             }
          }
 
