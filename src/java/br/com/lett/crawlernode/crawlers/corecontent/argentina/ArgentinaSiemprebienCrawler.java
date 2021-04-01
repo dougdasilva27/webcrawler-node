@@ -118,25 +118,29 @@ public class ArgentinaSiemprebienCrawler extends Crawler {
    }
 
    private String crawlInternalId(Document doc) {
-     String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price_wrapper a", "data-id");
-   if (internalId == null || internalId.isEmpty()){
-      internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a.button-extra.BUTTONASK", "data-id");
-   }
-   return internalId;
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price_wrapper a", "data-id");
+      if (internalId == null || internalId.isEmpty()) {
+         internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "a.button-extra.BUTTONASK", "data-id");
+      }
+      return internalId;
    }
 
 
    private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
+      StringBuilder descriptions = new StringBuilder();
+      String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tab-pane.fade.active", false);
+      if (description != null) {
+         descriptions.append(description);
+      }
       Elements elements = doc.select("tbody > tr");
       if (elements != null) {
          for (Element el : elements) {
-            description.append(el.selectFirst(".ficha-tit"));
-            description.append(el.selectFirst(".ficha-dato"));
+            descriptions.append(el.selectFirst(".ficha-tit"));
+            descriptions.append(el.selectFirst(".ficha-dato"));
          }
       }
 
-      return description.toString();
+      return descriptions.toString();
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {

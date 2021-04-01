@@ -9,10 +9,16 @@ public class MexicoRappichedrauisateliteCrawler extends MexicoRappiCrawlerRankin
 
    public MexicoRappichedrauisateliteCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override
    protected String getStoreId() {
       return STORE_ID;
+   }
+
+   @Override
+   protected String getStoreType() {
+      return "chedraui";
    }
 }

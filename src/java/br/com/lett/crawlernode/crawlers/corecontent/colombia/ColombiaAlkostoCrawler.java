@@ -84,15 +84,21 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
    private String crawlDescription(Document doc) {
       StringBuilder description = new StringBuilder();
+
+      //capturing html description
       Elements elements = doc.select(".data-table tbody");
       if (elements != null) {
          for (Element el : elements) {
             description.append(el.selectFirst(".label"));
             description.append(": ");
             description.append(el.selectFirst(".data"));
-
          }
       }
+
+      //capturing short description
+      String descriptionShort = CrawlerUtils.scrapStringSimpleInfo(doc, "div.short-description.std", false);
+      description.append("\n");
+      description.append(descriptionShort);
 
       return description.toString();
    }

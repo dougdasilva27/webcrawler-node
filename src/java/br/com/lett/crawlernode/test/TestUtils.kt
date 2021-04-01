@@ -16,9 +16,16 @@ import br.com.lett.crawlernode.core.task.base.Task
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
 import java.util.concurrent.*
 
+enum class TestType {
+   KEYWORDS, CORE , DISCOVERY
+
+}
+
+
 class TestUtils {
    companion object {
 
+      @JvmStatic
       fun initialize() {
 
          GlobalConfigurations.executionParameters = ExecutionParameters()
@@ -36,9 +43,16 @@ class TestUtils {
          GlobalConfigurations.proxies = ProxyCollection(GlobalConfigurations.markets, GlobalConfigurations.dbManager)
       }
 
-      fun taskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0): List<Task> {
-
+      fun taskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.CORE, productsLimit: Int = 0): List<Task> {
          val market: Market? = fetchMarket(city, marketName, marketId)
+         return taskProcess(market!!, parameters, currentTest, productsLimit)
+      }
+
+
+      @JvmStatic
+      fun taskProcess(market: Market, parameters: List<String>, currentTest: TestType = TestType.CORE, productsLimit: Int = 0): List<Task> {
+
+
 
          val sessionFunc: (String, Market) -> Session
 
@@ -89,6 +103,7 @@ class TestUtils {
 
       // fetch market
       // if city is empty, fetch by marketId
+      @JvmStatic
       fun fetchMarket(city: String = "", marketName: String = "", marketId: Long = 0): Market? {
          val fetcherDAO = DatabaseDataFetcher(GlobalConfigurations.dbManager)
 
@@ -100,13 +115,13 @@ class TestUtils {
       }
 
 
-      fun poolTaskProcess(city: String = "", marketName: String = "", marketId: Long = 0, parameters: List<String>, currentTest: TestType = TestType.INSIGHTS, productsLimit: Int = 0, corePoolSize: Int = 1): List<TestRunnable> {
+      fun poolTaskProcess( market: Market , parameters: List<String>, currentTest: TestType = TestType.CORE, productsLimit: Int = 0, corePoolSize: Int = 1): List<TestRunnable> {
          val tests: MutableList<TestRunnable> = mutableListOf()
 
          val executor = Executors.newFixedThreadPool(corePoolSize)
 
          for (param in parameters) {
-            val t = TestRunnable(city, marketName, marketId, listOf(param), currentTest, productsLimit)
+            val t = TestRunnable( market, listOf(param), currentTest, productsLimit)
             executor.submit(t)
             tests.add(t)
          }
@@ -115,6 +130,10 @@ class TestUtils {
          executor.awaitTermination(24L, TimeUnit.HOURS)
          return tests
       }
+
+
+
+
    }
 }
 

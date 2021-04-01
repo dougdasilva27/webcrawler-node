@@ -11,8 +11,8 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.MercadolivreCrawler
  */
 public class BrasilMercadolivrelorealCrawler extends MercadolivreCrawler {
 
-   private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/loreal-paris";
-   private static final String MAIN_SELLER_NAME_LOWER = "L'Oreal Paris";
+   private static final String HOME_PAGE = "https://loja.mercadolivre.com.br/loreal-professionnel";
+   private static final String MAIN_SELLER_NAME_LOWER = "L'Oréal Professionnel";
 
    public BrasilMercadolivrelorealCrawler(Session session) {
       super(session);

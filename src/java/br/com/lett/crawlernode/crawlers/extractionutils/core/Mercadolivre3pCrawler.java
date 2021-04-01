@@ -373,7 +373,7 @@ public class Mercadolivre3pCrawler {
 
    private Pricing scrapPricing(Element doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "del.price-tag", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-tag", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-tag meta", "content", false, '.', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankTicket = BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)

@@ -196,13 +196,13 @@ public abstract class FalabellaCrawler extends Crawler {
       Element e = doc.selectFirst("li[data-normal-price]");
 
       if (e!=null) {
-         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, '.', session);
-         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-normal-price]", "data-normal-price", true, '.', session);
+         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, ',', session);
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-normal-price]", "data-normal-price", true, ',', session);
          if(price==null){
-            price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-event-price]", "data-event-price", true, '.', session);
+            price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-event-price]", "data-event-price", true, ',', session);
          }
       } else {
-         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, '.', session);
+         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "li[data-internet-price]", "data-internet-price", true, ',', session);
       }
 
       CreditCards creditCards = new CreditCards();

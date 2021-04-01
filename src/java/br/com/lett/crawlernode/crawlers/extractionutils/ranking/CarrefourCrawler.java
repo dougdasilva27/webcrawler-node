@@ -254,7 +254,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       search.put("productOriginVtex", false);
       search.put("map", "ft");
       search.put("query", keywordEncoded);
-      search.put("orderBy", "OrderByScoreDESC");
+      search.put("orderBy", "");
       search.put("from", this.arrayProducts.size());
       search.put("to", this.arrayProducts.size() + (this.pageSize - 1));
 

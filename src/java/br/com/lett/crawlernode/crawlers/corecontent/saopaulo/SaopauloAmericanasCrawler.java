@@ -1,7 +1,12 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
@@ -13,6 +18,8 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,6 +36,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private static final String HOME_PAGE = "https://www.americanas.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
+   private static final Card DEFAULT_CARD = Card.VISA;
    private static final int RATING_API_VERSION = 1;
    private static final String KEY_SHA_256 = "3a716c1d89ae750c969fadfecf3d88e8057880358c57ddc29f3255083cdd6505";
 
@@ -37,6 +45,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs");
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.homePage = HOME_PAGE;
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    // @Override
@@ -148,8 +157,23 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             )
          ).build();
-         String response = this.dataFetcher.get(session, request).getBody();
-         Document offersDoc = Jsoup.parse(response);
+         Response response = this.dataFetcher.get(session, request);
+         String content = response.getBody();
+
+         int statusCode = response.getLastStatusCode();
+
+         if ((Integer.toString(statusCode).charAt(0) != '2' &&
+            Integer.toString(statusCode).charAt(0) != '3'
+            && statusCode != 404)) {
+            request.setProxyServices(Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR));
+
+            content = new FetcherDataFetcher().get(session, request).getBody();
+         }
+
+         Document offersDoc = Jsoup.parse(content);
+
           jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
       } else {
           jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
@@ -211,7 +235,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             }
          }
       }
-
       return offers;
    }
 }

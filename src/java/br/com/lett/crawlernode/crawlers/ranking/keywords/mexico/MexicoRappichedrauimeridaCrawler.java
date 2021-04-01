@@ -15,4 +15,9 @@ public class MexicoRappichedrauimeridaCrawler extends MexicoRappiCrawlerRanking 
    protected String getStoreId() {
       return STORE_ID;
    }
+
+   @Override
+   protected String getStoreType() {
+      return "chedraui";
+   }
 }

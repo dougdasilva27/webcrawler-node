@@ -53,7 +53,7 @@ public class B2WCrawler extends Crawler {
    protected List<String> subSellers;
    protected String homePage;
    protected Set<String> cards = Sets.newHashSet(DEFAULT_CARD.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public B2WCrawler(Session session) {
       super(session);
@@ -65,7 +65,7 @@ public class B2WCrawler extends Crawler {
    protected void setHeaders() {
       headers.put(HttpHeaders.REFERER, this.homePage);
       headers.put(
-            HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
+         HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
       );
       headers.put(HttpHeaders.CACHE_CONTROL, "max-age=0");
       headers.put(HttpHeaders.CONNECTION, "keep-alive");
@@ -90,23 +90,23 @@ public class B2WCrawler extends Crawler {
 
    public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .mustSendContentEncoding(false)
-            // .setHeaders(headers)
-            .setFetcheroptions(
-                  FetcherOptionsBuilder.create()
-                        .mustUseMovingAverage(false)
-                        .mustRetrieveStatistics(true)
-                        .setForbiddenCssSelector("#px-captcha")
-                        .build()
-            ).setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-                  )
-            ).build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .mustSendContentEncoding(false)
+         // .setHeaders(headers)
+         .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         ).setProxyservice(
+            Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            )
+         ).build();
 
 
       Response response = new JsoupDataFetcher().get(session, request);
@@ -115,12 +115,12 @@ public class B2WCrawler extends Crawler {
       int statusCode = response.getLastStatusCode();
 
       if ((Integer.toString(statusCode).charAt(0) != '2' &&
-            Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404)) {
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR));
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            ProxyCollection.BUY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
          content = new FetcherDataFetcher().get(session, request).getBody();
       }
@@ -172,20 +172,20 @@ public class B2WCrawler extends Crawler {
 
             // Creating the product
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setOffers(offers)
-                  .setRatingReviews(ratingReviews)
-                  .setEans(eans)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setOffers(offers)
+               .setRatingReviews(ratingReviews)
+               .setEans(eans)
+               .build();
 
             products.add(product);
          }
@@ -447,14 +447,14 @@ public class B2WCrawler extends Crawler {
             Pricing pricing = scrapPricing(pricesJson, i, sellerId, mapOfSellerIdAndPrice, true);
 
             Offer offer = OfferBuilder.create()
-                  .setInternalSellerId(sellerId)
-                  .setSellerFullName(sellerName)
-                  .setMainPagePosition(mainPagePosition)
-                  .setSellersPagePosition(sellersPagePosition)
-                  .setPricing(pricing)
-                  .setIsBuybox(isBuyBox)
-                  .setIsMainRetailer(false)
-                  .build();
+               .setInternalSellerId(sellerId)
+               .setSellerFullName(sellerName)
+               .setMainPagePosition(mainPagePosition)
+               .setSellersPagePosition(sellersPagePosition)
+               .setPricing(pricing)
+               .setIsBuybox(isBuyBox)
+               .setIsMainRetailer(false)
+               .build();
 
             offers.add(offer);
          }
@@ -513,14 +513,14 @@ public class B2WCrawler extends Crawler {
                Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice, false);
 
                Offer offer = OfferBuilder.create()
-                     .setInternalSellerId(internalSellerId)
-                     .setSellerFullName(name)
-                     .setMainPagePosition(mainPagePosition)
-                     .setSellersPagePosition(sellersPagePosition)
-                     .setPricing(pricing)
-                     .setIsBuybox(isBuyBox)
-                     .setIsMainRetailer(false)
-                     .build();
+                  .setInternalSellerId(internalSellerId)
+                  .setSellerFullName(name)
+                  .setMainPagePosition(mainPagePosition)
+                  .setSellersPagePosition(sellersPagePosition)
+                  .setPricing(pricing)
+                  .setIsBuybox(isBuyBox)
+                  .setIsMainRetailer(false)
+                  .build();
 
                offers.add(offer);
             }
@@ -547,7 +547,7 @@ public class B2WCrawler extends Crawler {
    }
 
    protected Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
-         throws MalformedPricingException {
+      throws MalformedPricingException {
 
       Double priceFrom = scrapPriceFrom(info);
       CreditCards creditCards = scrapCreditCards(info);
@@ -559,28 +559,28 @@ public class B2WCrawler extends Crawler {
       }
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom > 0d ? priceFrom : null)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bt)
-            .build();
+         .setPriceFrom(priceFrom > 0d && priceFrom > spotlightPrice ? priceFrom : null)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bt)
+         .build();
    }
 
    private Double scrapPriceFrom(JSONObject info) {
       return info.optDouble("priceFrom");
    }
 
-   private BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
+   protected BankSlip scrapBankTicket(JSONObject info) throws MalformedPricingException {
 
       if (info.has("bankSlip")) {
          return BankSlipBuilder.create()
-               .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "bankSlip", true))
-               .setOnPageDiscount(JSONUtils.getDoubleValueFromJSON(info, "bankSlipDiscount", true))
-               .build();
+            .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "bankSlip", true))
+            .setOnPageDiscount(JSONUtils.getDoubleValueFromJSON(info, "bankSlipDiscount", true))
+            .build();
       } else {
          return BankSlipBuilder.create()
-               .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "defaultPrice", true))
-               .build();
+            .setFinalPrice(JSONUtils.getDoubleValueFromJSON(info, "defaultPrice", true))
+            .build();
       }
    }
 
@@ -592,23 +592,18 @@ public class B2WCrawler extends Crawler {
          Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
          Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
 
-
-         if (offerIndex + 1 <= 3) {
-            for (Double value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
-               if (featuredPrice == null || (value != null && value < featuredPrice)) {
-                  featuredPrice = value;
-               }
-            }
+         //In this case, the featuredPrice is setted as the main price of the offer. So, the featuredPrice has to be the price that is showed
+         //in the html page to the costumer accessing the page.
+         if (defaultPrice != null) {
+            featuredPrice = defaultPrice;
          } else {
-
-            if (defaultPrice != null) {
-               featuredPrice = defaultPrice;
-            } else if (price1x != null) {
-               featuredPrice = price1x;
-            } else if (bankTicket != null) {
+            if (bankTicket != null) {
                featuredPrice = bankTicket;
+            } else {
+               featuredPrice = price1x;
             }
          }
+
       } else {
          featuredPrice = info.optDouble("defaultPrice");
       }
@@ -624,11 +619,11 @@ public class B2WCrawler extends Crawler {
     */
    protected Map<String, Double> sortMapByValue(final Map<String, Double> map) {
       return map.entrySet()
-            .stream()
-            .sorted(Map.Entry.comparingByValue())
-            .collect(
-                  Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
-                        LinkedHashMap::new));
+         .stream()
+         .sorted(Map.Entry.comparingByValue())
+         .collect(
+            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
+               LinkedHashMap::new));
    }
 
    /*******************************
@@ -692,7 +687,7 @@ public class B2WCrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(JSONObject seller) throws MalformedPricingException {
+   protected CreditCards scrapCreditCards(JSONObject seller) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       if (seller.has("installments")) {
@@ -717,18 +712,18 @@ public class B2WCrawler extends Crawler {
 
             if (!defaultPrice.equals(cashInstallment.getInstallmentPrice())) {
                installments.add(InstallmentBuilder.create()
-                     .setInstallmentNumber(2)
-                     .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(defaultPrice / 2d))
-                     .build());
+                  .setInstallmentNumber(2)
+                  .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(defaultPrice / 2d))
+                  .build());
             }
          }
 
          for (String flag : cards) {
             creditCards.add(CreditCardBuilder.create()
-                  .setBrand(flag)
-                  .setIsShopCard(false)
-                  .setInstallments(installments)
-                  .build());
+               .setBrand(flag)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
          }
       }
 
@@ -745,26 +740,26 @@ public class B2WCrawler extends Crawler {
          }
 
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(Card.SHOP_CARD.toString())
-               .setIsShopCard(true)
-               .setInstallments(installments)
-               .build());
+            .setBrand(Card.SHOP_CARD.toString())
+            .setIsShopCard(true)
+            .setInstallments(installments)
+            .build());
       }
 
 
       if (creditCards.getCreditCards().isEmpty() && seller.has("defaultPrice")) {
          Installments installments = new Installments();
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(seller.optDouble("defaultPrice"))
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(seller.optDouble("defaultPrice"))
+            .build());
 
          for (String flag : cards) {
             creditCards.add(CreditCardBuilder.create()
-                  .setBrand(flag)
-                  .setIsShopCard(false)
-                  .setInstallments(installments)
-                  .build());
+               .setBrand(flag)
+               .setIsShopCard(false)
+               .setInstallments(installments)
+               .build());
          }
       }
 
@@ -802,12 +797,12 @@ public class B2WCrawler extends Crawler {
       Double discount = discountJson != null ? discountJson.optDouble("rate", 0d) / 100d : 0d;
 
       return InstallmentBuilder.create()
-            .setInstallmentNumber(quantity)
-            .setInstallmentPrice(value)
-            .setFinalPrice(finalPrice)
-            .setAmOnPageInterests(interest)
-            .setOnPageDiscount(discount)
-            .build();
+         .setInstallmentNumber(quantity)
+         .setInstallmentPrice(value)
+         .setFinalPrice(finalPrice)
+         .setAmOnPageInterests(interest)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    /*******************

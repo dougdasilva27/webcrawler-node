@@ -40,6 +40,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       Response response = this.dataFetcher.post(session, requestToken);
       JSONObject apiTokenJson = JSONUtils.stringToJson(response.getBody());
 
+
       if (apiTokenJson.has("idToken") && !apiTokenJson.isNull("idToken")) {
          this.accessToken = apiTokenJson.get("idToken").toString();
       }
@@ -91,8 +92,9 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
 
    private JSONObject crawlSearchApi() {
       JSONObject searchApi = new JSONObject();
+      JSONArray searchFilters = getProductsFilter();
 
-      if (this.accessToken != null) {
+      if (this.accessToken != null && !searchFilters.isEmpty()) {
          String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/filtered-products";
          this.log("Link onde são feitos os crawlers: " + url);
 
@@ -102,7 +104,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
          payload.put("departmentsFilter", new JSONArray());
          payload.put("order", "ASC");
          payload.put("page", this.currentPage - 1);
-         payload.put("productsFilter", getProductsFilter());
+         payload.put("productsFilter", searchFilters);
          payload.put("rows", 24);
          payload.put("sort", "ranking");
          payload.put("subcategoriesFilter", new JSONArray());
@@ -121,6 +123,7 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
                  .build();
 
          searchApi = JSONUtils.stringToJson(new JavanetDataFetcher().post(session, request).getBody());
+
       }
 
       return searchApi;
@@ -131,10 +134,9 @@ public class PeruInkafarmaCrawler extends CrawlerRankingKeywords {
       String url =  "https://td2fvf3nfk.execute-api.us-east-1.amazonaws.com/PROD/search-filters";
 
       JSONObject payload = new JSONObject();
-      payload.put("query", this.keywordEncoded);
-
+      payload.put("query", this.keywordWithoutAccents);
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json;charset=UTF-8");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
       headers.put("x-access-token", this.accessToken);
       headers.put("AndroidVersion", "100000");
 

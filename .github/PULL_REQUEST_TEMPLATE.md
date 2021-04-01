@@ -20,6 +20,11 @@ Testes
 * O que foi testado? 
   - <!-- coloque o teste aqui-->
   - <!-- coloque o teste aqui-->
+
+# Mergiu? Builda ai !!
+
+
+[Build Now](https://jenkins.lett.global/job/webcrawler-node/job/prod/)
     
 <!--   Checklist comentado 
 Checklist:

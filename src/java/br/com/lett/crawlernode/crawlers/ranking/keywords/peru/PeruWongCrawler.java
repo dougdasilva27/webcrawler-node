@@ -1,9 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -11,6 +16,12 @@ public class PeruWongCrawler extends CrawlerRankingKeywords {
 
    public PeruWongCrawler(Session session) {
       super(session);
+   }
+
+   private Document fetchPage(String url){
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+      Response response = new ApacheDataFetcher().get(session, request);
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
@@ -22,7 +33,7 @@ public class PeruWongCrawler extends CrawlerRankingKeywords {
          "https://www.wong.pe/busca/?ft=" + this.keywordEncoded + "&PageNumber=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
+      this.currentDoc = fetchPage(url);
       Elements products = this.currentDoc.select(".product-shelf .product-item");
 
       if (!products.isEmpty()) {
