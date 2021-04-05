@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
+
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
@@ -34,6 +37,8 @@ import models.pricing.Pricing.PricingBuilder;
 
 public abstract class RappiCrawler extends Crawler {
 
+   protected static final Pattern URL_PATTERN = Pattern.compile("^https://www\\.rappi\\.com\\..*?/([0-9][^a-z]*)_([0-9][^a-z]*?/)$");
+
    public RappiCrawler(Session session) {
       super(session);
       this.config.setFetcher(FetchMode.APACHE);
@@ -47,6 +52,8 @@ public abstract class RappiCrawler extends Crawler {
 
    protected boolean newUnification = false;
 
+
+
    @Override
    protected JSONObject fetch() {
       JSONObject productsInfo = new JSONObject();
@@ -54,6 +61,14 @@ public abstract class RappiCrawler extends Crawler {
       String storeId = getStoreId();
 
       String productUrl = session.getOriginalURL();
+
+      if(!URL_PATTERN.matcher(productUrl).matches()){
+         throw new MalformedUrlException("Formato da URL incorreto");
+      }
+      else if(!productUrl.contains(storeId)){
+         throw new MalformedUrlException("URL não corresponde ao market");
+      }
+
       String productId = null;
 
       if (productUrl.contains("_")) {
