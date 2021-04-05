@@ -1,37 +1,11 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import br.com.lett.crawlernode.core.models.RequestMethod;
-import br.com.lett.crawlernode.integration.redis.CrawlerCache;
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.session.ranking.*;
-import java.util.function.Function;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -42,19 +16,49 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
+import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverSession;
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
+import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
+import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
+import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import enums.QueueName;
 import enums.ScrapersTypes;
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
 import models.Processed;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
 
 public abstract class CrawlerRanking extends Task {
 
@@ -137,13 +141,12 @@ public abstract class CrawlerRanking extends Task {
    @Override
    protected void onFinish() {
       super.onFinish();
-      // if (session instanceof RankingSession) {
-      // // Identify anomalies
-      // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
-      // }
 
       if (!(session instanceof TestRankingKeywordsSession)) {
          S3Service.uploadCrawlerSessionContentToAmazon(session);
+      }
+      if (session instanceof TestCrawlerSession) {
+         cache.shutdown();
       }
 
       // close the webdriver
@@ -248,11 +251,11 @@ public abstract class CrawlerRanking extends Task {
       }
    }
 
-   protected <T> void setCache(String key, int ttl, T value) {
+   protected <T> void putCache(String key, int ttl, T value) {
       cache.put(getClass().getSimpleName() + ":" + key, value, ttl);
    }
 
-   protected <T> void setCache(String key, T value) {
+   protected <T> void putCache(String key, T value) {
       cache.put(getClass().getSimpleName() + ":" + key, value);
    }
 

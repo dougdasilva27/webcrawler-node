@@ -14,7 +14,13 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Function
 import kotlin.time.*
 
-
+/**
+ * Interface to interact with Redis.
+ *
+ * @see RedisClient
+ * @see RMapCache
+ * @author Charles Fonseca
+ */
 @ExperimentalTime
 object CrawlerCache {
    private val logger = LoggerFactory.getLogger(CrawlerCache::class.java)
@@ -22,8 +28,14 @@ object CrawlerCache {
    private val cache = RedisClient.client
    private const val logPrefix = "[Redis]"
 
+   /**
+    * Interface we interact with when it comes to get/put on cache
+    */
    private val mapCache: RMapCache<String, Any?> = cache.getMapCache("Crawler")
 
+   /**
+    * TTL (time to live)
+    */
    private const val defaultTtl = 7200
 
    fun <T> get(key: String): T? {
@@ -62,5 +74,9 @@ object CrawlerCache {
          put(key, value as Any, ttl)
       }
       return value as T?
+   }
+
+   fun shutdown() {
+      cache.shutdown()
    }
 }

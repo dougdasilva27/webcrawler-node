@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: redis-crawler
+    hostname: redis
+    volumes:
+      - ./redis-data/redis:/data
+
+  redis-c:
+    container_name: redis-commander-crawler
+    image: rediscommander/redis-commander
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - 8081:8081
+
+
