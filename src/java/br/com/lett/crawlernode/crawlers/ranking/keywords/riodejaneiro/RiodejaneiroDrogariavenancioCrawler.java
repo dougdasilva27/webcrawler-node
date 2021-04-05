@@ -1,12 +1,19 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords {
 
@@ -33,18 +40,16 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
 
       this.log("Página " + this.currentPage);
 
-      String url = "https://" + HOST + "/busca?ft=" + this.keywordEncoded + "&pg=" + this.currentPage;
-
-      this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".shelf-product");
+      JSONArray products = getInfoFromApi(this.keywordEncoded, this.currentPage, this.pageSize);
 
       if (!products.isEmpty()) {
-         for (Element e : products) {
-            String internalId = null;
-            String internalPid = e.attr("data-product-id");
-            String productUrl = CrawlerUtils.scrapUrl(e, "figure.shelf-product__container .shelf-product__image a", "href", "https", HOST);
+         for (Object o : products) {
 
+            JSONObject product = (JSONObject) o;
+
+            String internalId = null;
+            String internalPid = product.optString("id");
+            String productUrl =  product.optString("url").replace("//", "");
             saveDataProduct(null, internalPid, productUrl);
 
             this.log(
@@ -66,9 +71,37 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".resultado-busca-numero .value", true, 0);
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+   private JSONArray getInfoFromApi(String keyword, int page, int resultsPerPage){
+
+      StringBuilder urlBuilder = new StringBuilder();
+      urlBuilder.append("https://api.linximpulse.com/engage/search/v3/search?");
+      urlBuilder.append("apiKey=drogariavenancio-v7");
+      urlBuilder.append("&page=" + page);
+      urlBuilder.append("&resultsPerPage=" + resultsPerPage);
+      urlBuilder.append("&terms=" + keyword);
+      urlBuilder.append("&sortBy=relevance");
+
+      this.log("Link onde são feitos os crawlers: " + urlBuilder.toString());
+
+      Map<String,String> headers = new HashMap<>();
+      headers.put("origin","https://www.drogariavenancio.com.br");
+      headers.put("sec-fetch-dest","sec-fetch-dest");
+      headers.put("referer","https://www.drogariavenancio.com.br/");
+      headers.put("if-none-match","W/\"22ffb-l2FFtp/bptPucODPomcRxP7uLps\"");
+
+      Request request = Request.RequestBuilder.create().setHeaders(headers).setUrl(urlBuilder.toString()).build();
+
+      Response response = this.dataFetcher.get(session,request);
+      JSONObject json = CrawlerUtils.stringToJson(response.getBody());
+      this.totalProducts = json.optInt("size");
+
+      return JSONUtils.getJSONArrayValue(json, "products");
+
    }
 }
