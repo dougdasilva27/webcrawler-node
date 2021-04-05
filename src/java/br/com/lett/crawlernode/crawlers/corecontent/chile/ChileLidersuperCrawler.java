@@ -10,6 +10,11 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import models.prices.Prices;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,8 +23,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
-
-import java.util.*;
 
 /**
  * Date: 04/12/2018
@@ -32,7 +35,6 @@ public class ChileLidersuperCrawler extends Crawler {
 
    public ChileLidersuperCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.core.task.config;
 
-import java.util.List;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import java.util.List;
 
 public class Config {
 
@@ -20,13 +20,6 @@ public class Config {
    * fetching will be passed to the crawler extraction method.
    */
   protected FetchMode fetcher;
-
-  /**
-   * Define if the crawler will send rating to kinesis this will exists until core capture rating on
-   * all the crawlers
-   */
-  protected boolean sendRatingToKinesis;
-
 
   public Config() {
     super();
@@ -54,14 +47,6 @@ public class Config {
 
   public int getConnectionAttempts() {
     return this.connectionAttempts;
-  }
-
-  public boolean mustSendRatingToKinesis() {
-    return sendRatingToKinesis;
-  }
-
-  public void setMustSendRatingToKinesis(boolean sendRatingToKinesis) {
-    this.sendRatingToKinesis = sendRatingToKinesis;
   }
 
 }

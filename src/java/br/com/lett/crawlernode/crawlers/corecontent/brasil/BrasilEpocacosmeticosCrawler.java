@@ -1,14 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.Arrays;
-import java.util.List;
-
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import java.util.Arrays;
+import java.util.List;
 import models.RatingsReviews;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
 
@@ -17,7 +16,6 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
 
    public BrasilEpocacosmeticosCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

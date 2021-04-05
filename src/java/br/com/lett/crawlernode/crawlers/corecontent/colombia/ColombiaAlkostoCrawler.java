@@ -11,18 +11,21 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Offer;
-import models.Offers;
-import models.RatingsReviews;
-import models.pricing.*;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import models.Offer;
+import models.Offers;
+import models.RatingsReviews;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class ColombiaAlkostoCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Alkosto";
@@ -30,7 +33,6 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
    public ColombiaAlkostoCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
 
    }
 

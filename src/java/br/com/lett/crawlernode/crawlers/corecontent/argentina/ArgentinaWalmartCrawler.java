@@ -14,6 +14,15 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
@@ -36,11 +45,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.regex.Pattern;
-
 /**
  * Date: 07/12/2016
  * <p>
@@ -60,7 +64,6 @@ public class ArgentinaWalmartCrawler extends Crawler {
 
    public ArgentinaWalmartCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

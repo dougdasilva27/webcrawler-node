@@ -14,13 +14,21 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import models.Offer;
 import models.Offers;
-import models.pricing.*;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.*;
 
 /**
  * BrasiltintasmcCrawler
@@ -33,7 +41,6 @@ public class BrasilTintasmcCrawler extends Crawler {
 
    public BrasilTintasmcCrawler(final Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
       super.config.setFetcher(FetchMode.FETCHER);
    }
 

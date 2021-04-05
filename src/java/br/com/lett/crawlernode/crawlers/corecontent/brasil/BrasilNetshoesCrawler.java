@@ -16,7 +16,16 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import models.AdvancedRatingReview;
+import models.Marketplace;
+import models.RatingsReviews;
+import models.Seller;
+import models.Util;
 import models.prices.Prices;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
@@ -27,8 +36,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.*;
 
 /**
  * date: 27/03/2018
@@ -43,7 +50,6 @@ public class BrasilNetshoesCrawler extends Crawler {
 
    public BrasilNetshoesCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    private String userAgent;
