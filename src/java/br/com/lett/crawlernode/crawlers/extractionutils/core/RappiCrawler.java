@@ -53,7 +53,6 @@ public abstract class RappiCrawler extends Crawler {
    protected boolean newUnification = false;
 
 
-
    @Override
    protected JSONObject fetch() {
       JSONObject productsInfo = new JSONObject();
@@ -62,12 +61,15 @@ public abstract class RappiCrawler extends Crawler {
 
       String productUrl = session.getOriginalURL();
 
-      if(!URL_PATTERN.matcher(productUrl).matches()){
-         throw new MalformedUrlException("Formato da URL incorreto");
+
+      if(newUnification) {
+         if (!URL_PATTERN.matcher(productUrl).matches()) {
+            throw new MalformedUrlException("Formato da URL incorreto");
+         } else if (!productUrl.contains(storeId)) {
+            throw new MalformedUrlException("URL não corresponde ao market");
+         }
       }
-      else if(!productUrl.contains(storeId)){
-         throw new MalformedUrlException("URL não corresponde ao market");
-      }
+
 
       String productId = null;
 
@@ -110,10 +112,10 @@ public abstract class RappiCrawler extends Crawler {
       String payload = "{\"state\":{\"product_id\":\"" + productId + "\"},\"limit\":100,\"offset\":0,\"context\":\"product_detail\",\"stores\":[" + storeId + "]}";
 
       Request request = Request.RequestBuilder.create()
-            .setUrl(url)
-            .setHeaders(headers)
-            .setPayload(payload)
-            .build();
+         .setUrl(url)
+         .setHeaders(headers)
+         .setPayload(payload)
+         .build();
 
       return this.dataFetcher.post(session, request).getBody();
    }
@@ -128,11 +130,11 @@ public abstract class RappiCrawler extends Crawler {
       String payload = "{\"headers\":{\"normalizedNames\":{},\"lazyUpdate\":null},\"grant_type\":\"guest\"}";
 
       Request request = Request.RequestBuilder.create()
-            .setUrl(url)
-            .setHeaders(headers)
-            .setPayload(payload)
-            .mustSendContentEncoding(false)
-            .build();
+         .setUrl(url)
+         .setHeaders(headers)
+         .setPayload(payload)
+         .mustSendContentEncoding(false)
+         .build();
 
       JSONObject json = JSONUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
@@ -158,7 +160,7 @@ public abstract class RappiCrawler extends Crawler {
 
 
          String internalPid = crawlInternalPid(productJson);
-         String internalId = newUnification? internalPid : crawlInternalId(productJson);
+         String internalId = newUnification ? internalPid : crawlInternalId(productJson);
          String description = crawlDescription(productJson);
          String primaryImage = crawlPrimaryImage(jsonSku);
          List<String> secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
@@ -170,17 +172,17 @@ public abstract class RappiCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setCategories(categories)
-               .setDescription(description)
-               .setEans(eans)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setCategories(categories)
+            .setDescription(description)
+            .setEans(eans)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
       } else {
@@ -198,13 +200,13 @@ public abstract class RappiCrawler extends Crawler {
          List<String> sales = scrapSales(pricing);
 
          Offer offer = new OfferBuilder().setSellerFullName("Rappi")
-               .setInternalSellerId(jsonSku.optString("store_id", null))
-               .setMainPagePosition(1)
-               .setIsBuybox(false)
-               .setPricing(pricing)
-               .setIsMainRetailer(true)
-               .setSales(sales)
-               .build();
+            .setInternalSellerId(jsonSku.optString("store_id", null))
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setPricing(pricing)
+            .setIsMainRetailer(true)
+            .setSales(sales)
+            .build();
 
          offers.add(offer);
       } catch (Exception e) {
@@ -224,10 +226,10 @@ public abstract class RappiCrawler extends Crawler {
       CreditCards creditCards = scrapCreditCards(price);
 
       return PricingBuilder.create()
-            .setSpotlightPrice(price)
-            .setPriceFrom(priceFrom)
-            .setCreditCards(creditCards)
-            .build();
+         .setSpotlightPrice(price)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
    }
 
    public static CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
@@ -235,25 +237,25 @@ public abstract class RappiCrawler extends Crawler {
       Installments installments = new Installments();
 
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       Set<Card> cards = Sets.newHashSet(
-            Card.VISA,
-            Card.MASTERCARD,
-            Card.DINERS,
-            Card.AMEX,
-            Card.ELO,
-            Card.SHOP_CARD
+         Card.VISA,
+         Card.MASTERCARD,
+         Card.DINERS,
+         Card.AMEX,
+         Card.ELO,
+         Card.SHOP_CARD
       );
 
       for (Card card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-               .setBrand(card.toString())
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card.toString())
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
@@ -276,10 +278,9 @@ public abstract class RappiCrawler extends Crawler {
     *******************************/
 
    protected boolean isProductPage(JSONObject jsonSku) {
-      if(newUnification){
+      if (newUnification) {
          return jsonSku.length() > 0 && session.getOriginalURL().contains(getStoreId());
-      }
-      else {
+      } else {
          return jsonSku.length() > 0;
       }
    }
