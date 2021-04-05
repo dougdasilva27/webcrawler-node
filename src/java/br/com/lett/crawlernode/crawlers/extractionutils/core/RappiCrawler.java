@@ -37,7 +37,7 @@ import models.pricing.Pricing.PricingBuilder;
 
 public abstract class RappiCrawler extends Crawler {
 
-   protected static final Pattern URL_PATTERN = Pattern.compile("^https://www\\.rappi\\.com\\..*?/([0-9][^a-z]*)_([0-9][^a-z]*?/)$");
+   protected static final Pattern URL_PATTERN = Pattern.compile("^https://www[.]rappi[.]com[.].*/.*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)|/");
 
    public RappiCrawler(Session session) {
       super(session);
