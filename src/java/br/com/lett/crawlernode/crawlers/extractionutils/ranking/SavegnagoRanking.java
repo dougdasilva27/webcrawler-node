@@ -8,10 +8,15 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SavegnagoRanking extends CrawlerRankingKeywords {
 
@@ -43,21 +48,28 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
    }
 
 
-   private String buildUrl(Document doc) {
-
+   private String buildUrl() {
+      String host = "http://";
       if (urlModel == null) {
-         String script = doc.selectFirst(".vitrine script[type='text/javascript']").toString();
+         String urlFirst = "https://" + BASE_URL + "/" + this.keywordEncoded;
 
-         String[] firstSplit = script.split("load\\('");
-         if (firstSplit.length > 0) {
-            String url = firstSplit[1].split("' \\+ pageclickednumber")[0];
-            urlModel = BASE_URL + url;
-            return urlModel + this.currentPage;
+         this.currentDoc = getHtml(urlFirst);
+         Element element = this.currentDoc.selectFirst(".vitrine script[type='text/javascript']");
+
+         if (element != null) {
+            String script = element.toString();
+            String[] firstSplit = script.split("load\\('");
+            if (firstSplit.length > 0) {
+               String url = firstSplit[1].split("' \\+ pageclickednumber")[0];
+               urlModel = BASE_URL + url;
+               return host + urlModel + this.currentPage;
+            }
+         } else {
+            return null;
          }
       } else {
-         return urlModel + this.currentPage;
+         return host + urlModel + this.currentPage;
       }
-
       return null;
    }
 
@@ -71,14 +83,30 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 32;
+      this.pageSize = 16;
       this.log("Página " + this.currentPage);
 
-      String urlFirst = "https://" + BASE_URL + "/" + this.keywordEncoded;
+      String url = buildUrl();
 
-      Document doc = getHtml(urlFirst);
-      String url = "https://" + buildUrl(doc);
+      if (url != null) {
+         extract(url);
+      } else {
+         JSONObject json = loadJson();
+         if (json.has("products")) {
+            extractJson(json);
+         } else {
+            result = false;
+            log("Keyword sem resultado!");
+         }
 
+      }
+
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+         + this.arrayProducts.size() + " produtos crawleados");
+
+   }
+
+   private void extract(String url) {
       this.currentDoc = fetchDocument(url);
 
       if (currentDoc.selectFirst(".product-card") != null) {
@@ -88,7 +116,7 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
 
          if (products != null && !products.isEmpty()) {
             if (totalProducts == 0) {
-               setTotalProducts(doc);
+               setTotalProducts();
             }
             for (Element product : products) {
                String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-card", "item");
@@ -102,18 +130,57 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
                }
             }
          }
-      } else {
-         result = false;
-         log("Keyword sem resultado!");
       }
+   }
 
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-         + this.arrayProducts.size() + " produtos crawleados");
+   private void extractJson(JSONObject json) {
+
+      JSONArray products = json.optJSONArray("products");
+
+      if (products != null && !products.isEmpty()) {
+         if (totalProducts == 0) {
+            setTotalProducts(json);
+         }
+         for (Object obj : products) {
+            if (obj instanceof JSONObject) {
+               JSONObject product = (JSONObject) obj;
+               String internalId = product.optString("id");
+               String internalPid = internalId;
+               String url = product.optString("url");
+               String productUrl = url != null ? "http:" + url : null;
+               saveDataProduct(internalId, internalPid, productUrl);
+
+               log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               if (arrayProducts.size() == productsLimit) {
+                  break;
+               }
+            }
+         }
+      }
+   }
+
+   private JSONObject loadJson() {
+      String url = "https://api.linximpulse.com/engage/search/v3/search/?salesChannel=" + storeId + "&apiKey=savegnago&terms=" + this.keywordEncoded + "&resultsPerPage=32&page=" + this.currentPage;
+      this.log("Link onde são feitos os crawlers: " + url);
+      Map<String, String> headers = new HashMap<>();
+      headers.put("origin", "https://www.savegnago.com.br");
+
+      Request request = Request.RequestBuilder.create().setUrl(url)
+         .setHeaders(headers)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
+      return CrawlerUtils.stringToJson(response.getBody());
 
    }
 
-   protected void setTotalProducts(Document doc) {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, ".resultado-busca-numero .value", true, 0);
+   @Override
+   protected void setTotalProducts() {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", true, 0);
+      this.log("Total de produtos: " + this.totalProducts);
+   }
+
+   protected void setTotalProducts(JSONObject json) {
+      this.totalProducts = json.optInt("size");
       this.log("Total de produtos: " + this.totalProducts);
    }
 
