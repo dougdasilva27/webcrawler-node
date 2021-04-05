@@ -154,7 +154,7 @@ public class GPACrawler extends Crawler {
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          RatingsReviews ratingsReviews = extractRatingAndReviews(internalId);
-         String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
+         List<String> secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
 
          String redirectedToURL = session.getRedirectedToURL(productUrl);
          if (internalPid != null && redirectedToURL != null && !redirectedToURL.isEmpty()) {
@@ -304,9 +304,8 @@ public class GPACrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(JSONObject json, String primaryImage) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
+      List<String> secondaryImagesArray = new ArrayList<>();
 
       String primaryImageId = getImageId(primaryImage);
 
@@ -321,31 +320,27 @@ public class GPACrawler extends Crawler {
                String imageId = getImageId(image);
 
                if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.put(homePageHttps + imageObj.getString("BIG"));
+                  secondaryImagesArray.add(homePageHttps + imageObj.getString("BIG"));
                }
             } else if (imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
                String image = homePageHttps + imageObj.getString("MEDIUM");
                String imageId = getImageId(image);
 
                if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.put(homePageHttps + imageObj.getString("MEDIUM"));
+                  secondaryImagesArray.add(homePageHttps + imageObj.getString("MEDIUM"));
                }
             } else if (imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
                String image = homePageHttps + imageObj.getString("SMALL");
                String imageId = getImageId(image);
 
                if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.put(homePageHttps + imageObj.getString("SMALL"));
+                  secondaryImagesArray.add(homePageHttps + imageObj.getString("SMALL"));
                }
             }
          }
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
+      return secondaryImagesArray;
    }
 
    private String getImageId(String imageUrl) {
@@ -736,15 +731,18 @@ public class GPACrawler extends Crawler {
             if (e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 51241) {
                spotlightPrice = ((JSONObject) e).optDouble("unitPrice");
                priceFrom = data.optDouble("currentPrice");
+            }else{
+               spotlightPrice = data.optDouble("currentPrice");
+               priceFrom = null;
             }
          }
       } else {
          spotlightPrice = data.optDouble("currentPrice");
          priceFrom = null;
+      }
 
-         if (data.has("priceFrom")) {
-            priceFrom = data.optDouble("priceFrom");
-         }
+      if (priceFrom == null && data.has("priceFrom")) {
+         priceFrom = data.optDouble("priceFrom");
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
