@@ -95,7 +95,28 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return products;
    }
 
+
+   /* Brief explanation of the function
+   The number of units and the size of the product must be captured in the crawler (ex: 15ml);
+
+    1 - in some cases the number of units is already in the title but the size (15 ml) is only in the subtitle
+    -> in this case, the crawler checks to make a split in "-" and checks if the first index is already in the name;
+    2 - in other cases, only the quantity is given and nothing should be added to the name
+    -> in this case the crawler checks through the regex if it is stated in the number of units in the name
+    3 - In another case, the name does not contain anything of quantity
+    -> in this case, the crawler adds the entire subtitle to the name;
+    4 - In the last case, when the product is unavailable, the name is elsewhere;
+    -> which is the last else, taking only the title name;
+
+    follow the examples:
+
+    https://www.drogaraia.com.br/pampers-premium-care-tamanho-grande-com-68-tiras.html, in this case, the crawler checks whether the quantity is listed in the name;
+    https://www.drogaraia.com.br/pantene-ampola-de-tratamento-gold-com-3-unidades-15-ml-cada.html, in this case, the crawler splits the "-" and checks whether the first part repeats in the name;
+    https://www.drogaraia.com.br/always-absorvente-externo-active-com-abas-leve-32-com-preco-especial.html, in this case the crawler the crawler adds the entire subtitle to the name
+     */
+
    private String getName(Document doc) {
+
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1 span", false);
       String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-attributes .quantidade.show-hover", true);
       if (name != null && quantity != null) {
