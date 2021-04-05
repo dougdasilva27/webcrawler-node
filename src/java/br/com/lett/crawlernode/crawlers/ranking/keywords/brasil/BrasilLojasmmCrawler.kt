@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
@@ -31,7 +30,7 @@ class BrasilLojasmmCrawler(session: Session) : CrawlerRankingKeywords(session) {
       for (e in products) {
          if (e is JSONObject) {
             val internalPid = e.get("id").toString()
-            val urlProduct = "https://www.lojasmm.com/" + e.getString("link")
+            val urlProduct = "https://www.lojasmm.com/produto/" + e.getString("link")
             saveDataProduct(null, internalPid, urlProduct)
          }
       }
