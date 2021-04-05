@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SaopauloDrogaraiaCrawler extends Crawler {
 
@@ -55,8 +57,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-info .live_price", "data-product-sku");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".add-to-cart-buttons .live_stock", "data-product-id");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "tbody .data", true);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".page-header-container .header-minicart .novarnish", "data-productid");
          String name = getName(doc);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(.home):not(.product) a");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-description"));
@@ -96,16 +98,38 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
    private String getName(Document doc) {
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1 span", false);
       String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-attributes .quantidade.show-hover", true);
-      if (quantity != null && quantity.contains("-")) {
-         String[] quantitySplit = quantity.split("-");
+      if (name != null && quantity != null) {
 
-         return quantitySplit.length > 0 ? name + " " + quantitySplit[1] : null;
+         if (quantity.contains("-")) {
+            String[] quantitySplit = quantity.split(" -");
+            String quantityCompare = quantitySplit[0];
+
+            if (name.contains(quantityCompare)) {
+               return quantitySplit.length > 0 ? name + " " + quantitySplit[1] : null;
+
+            } else {
+               return name + " " + quantity;
+            }
+
+         }
+         Pattern r = Pattern.compile("[0-9]+");
+         Matcher m = r.matcher(quantity);
+         if (m.find()) {
+            if (name.contains(m.group(0))) {
+               return name;
+
+            } else {
+               return name + " " + quantity;
+            }
+         }
+
+      } else {
+         String nameWithStore = CrawlerUtils.scrapStringSimpleInfo(doc, "head title", true);
+         if (nameWithStore != null) {
+            name = nameWithStore.split("\\|")[0];
+         }
+         return name;
       }
-
-      if (quantity != null) {
-         return name + " " + quantity;
-      }
-
       return name;
    }
 
