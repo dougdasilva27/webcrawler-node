@@ -10,6 +10,7 @@ public class MexicoRappilacomerciudadmexicoCrawler extends MexicoRappiCrawlerRan
 
    public MexicoRappilacomerciudadmexicoCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override
