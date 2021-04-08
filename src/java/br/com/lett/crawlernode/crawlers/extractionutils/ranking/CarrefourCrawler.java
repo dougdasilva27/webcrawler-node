@@ -258,7 +258,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
       Integer statusCode = 0;
       List<RequestsStatistics> requestsStatistics = response.getRequests();
-      if (!requestsStatistics.isEmpty()) {
+      if (requestsStatistics != null && !requestsStatistics.isEmpty()) {
          statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
       }
 
