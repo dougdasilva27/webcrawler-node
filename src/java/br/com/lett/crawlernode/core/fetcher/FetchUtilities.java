@@ -1,5 +1,19 @@
 package br.com.lett.crawlernode.core.fetcher;
 
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.PageContent;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.parser.Parser;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.DateUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -26,24 +40,11 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.PageContent;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
-import br.com.lett.crawlernode.core.parser.Parser;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.DateUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 
 public class FetchUtilities {
 
-   private FetchUtilities() {}
+   private FetchUtilities() {
+   }
 
    public static final String USER_AGENT = "user-agent";
    public static final String FETCHER = "FETCHER";
@@ -67,8 +68,7 @@ public class FetchUtilities {
    private static final Logger logger = LoggerFactory.getLogger(FetchUtilities.class);
 
    /**
-    * Most popular agents, retrieved from
-    * https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
+    * Most popular agents, retrieved from https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
     */
    public static List<String> userAgents;
    public static List<String> userAgentsWithoutChrome;
@@ -78,51 +78,51 @@ public class FetchUtilities {
 
    static {
       userAgents = Arrays.asList(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.58",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
+         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+         "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+         "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36",
+         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.58",
+         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
 
       userAgentsWithoutChrome = Arrays.asList(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.58",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.37",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0",
+         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.58",
+         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.37",
+         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
       );
 
       mobileUserAgents = Arrays.asList(
-            "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36",
-            "Mozilla/5.0 (Linux; Android 7.0; SM-A310F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36 OPR/42.7.2246.114996",
-            "Opera/9.80 (Android 4.1.2; Linux; Opera Mobi/ADR-1305251841) Presto/2.11.355 Version/12.10",
-            "Mozilla/5.0 (Linux; Android 5.1.1; Nexus 5 Build/LMY48B; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/43.0.2357.65 Mobile Safari/537.36",
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/603.1.23 (KHTML, like Gecko) Version/10.0 Mobile/14E5239e Safari/602.1",
-            "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19");
+         "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36",
+         "Mozilla/5.0 (Linux; Android 7.0; SM-A310F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36 OPR/42.7.2246.114996",
+         "Opera/9.80 (Android 4.1.2; Linux; Opera Mobi/ADR-1305251841) Presto/2.11.355 Version/12.10",
+         "Mozilla/5.0 (Linux; Android 5.1.1; Nexus 5 Build/LMY48B; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/43.0.2357.65 Mobile Safari/537.36",
+         "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/603.1.23 (KHTML, like Gecko) Version/10.0 Mobile/14E5239e Safari/602.1",
+         "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19");
 
       errorCodes = Arrays.asList("403");
 
       highTimeoutMarkets = Arrays.asList("bemol", "abxclimatizacao", "drogariapovao", "webcontinental", "drogarianissei", "lacomer", "poupafarma",
-            "unicaarcondicionado", "multisom", "confianca", "medicamentosbrasil", "extramarketplace", "pontofrio", "casasbahia");
+         "unicaarcondicionado", "multisom", "confianca", "medicamentosbrasil", "extramarketplace", "pontofrio", "casasbahia");
    }
 
    /**
     * Retrieve a random user agent from the user agents array.
-    * 
+    *
     * @return
     */
    public static String randUserAgent() {
@@ -130,9 +130,8 @@ public class FetchUtilities {
    }
 
    /**
-    * Retrieve a random user agent (chrome is not considered for this fucntion) from the user agents
-    * array.
-    * 
+    * Retrieve a random user agent (chrome is not considered for this fucntion) from the user agents array.
+    *
     * @return
     */
    public static String randUserAgentWithoutChrome() {
@@ -141,7 +140,7 @@ public class FetchUtilities {
 
    /**
     * Retrieve a random mobile user agent from the user agents array.
-    * 
+    *
     * @return
     */
    public static String randMobileUserAgent() {
@@ -157,7 +156,10 @@ public class FetchUtilities {
       return new StringBuilder().append("Request : [").append(requestType).append(", ").append(url).append("]").toString();
    }
 
-   public static LettProxy getNextProxy(Session session, int attempt) {
+   public static LettProxy getNextProxy(Session session, Request request, int attempt) {
+      if (request.getProxyServices() != null) {
+         return getNextProxy(request, attempt);
+      }
       LettProxy nextProxy = null;
       List<LettProxy> proxies = new ArrayList<>();
       Integer attemptTemp = Integer.valueOf(attempt);
@@ -169,7 +171,7 @@ public class FetchUtilities {
          maxAttempts = session.getMaxConnectionAttemptsCrawler();
       }
 
-      String serviceName = null;
+      String serviceName;
 
       while (proxies.isEmpty() && attemptTemp <= maxAttempts) {
          serviceName = getProxyService(attemptTemp, session);
@@ -190,7 +192,7 @@ public class FetchUtilities {
 
                if (!ProxyCollection.NO_PROXY.equals(serviceName)) {
                   Logging.printLogWarn(logger, session,
-                        "Error: trying use proxy service " + serviceName + ", but there was no proxy fetched for this service.");
+                     "Error: trying use proxy service " + serviceName + ", but there was no proxy fetched for this service.");
                }
             }
          } else {
@@ -202,9 +204,15 @@ public class FetchUtilities {
       return nextProxy;
    }
 
+   public static LettProxy getNextProxy(Request request, int attempt) {
+      List<String> proxyServices = request.getProxyServices();
+      String proxy = proxyServices.get((attempt - 1) % proxyServices.size());
+      return GlobalConfigurations.proxies.getProxy(proxy).stream().findAny().orElse(new LettProxy());
+   }
+
    /**
     * Select a proxy service according to the number of attempt.
-    * 
+    *
     * @param attempt
     * @param session
     * @param proxyServices
@@ -223,7 +231,6 @@ public class FetchUtilities {
    }
 
    /**
-    * 
     * @param proxy
     * @return
     */
@@ -234,36 +241,36 @@ public class FetchUtilities {
 
          if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
             requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT)
-                  .setConnectTimeout(THIRTY_SECONDS_TIMEOUT)
-                  .setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
-                  .setProxy(proxy).build();
+               .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT)
+               .setConnectTimeout(THIRTY_SECONDS_TIMEOUT)
+               .setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
+               .setProxy(proxy).build();
          } else {
             requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
-                  .setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-                  .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-                  .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-                  .setProxy(proxy)
-                  .build();
+               .setRedirectsEnabled(followRedirect) // set // true
+               .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+               .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+               .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+               .setProxy(proxy)
+               .build();
          }
 
       } else {
          if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
             requestConfig = RequestConfig.custom()
-                  .setCookieSpec(CookieSpecs.STANDARD)
-                  .setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT)
-                  .setConnectTimeout(THIRTY_SECONDS_TIMEOUT)
-                  .setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
-                  .build();
+               .setCookieSpec(CookieSpecs.STANDARD)
+               .setRedirectsEnabled(followRedirect) // set // true
+               .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT)
+               .setConnectTimeout(THIRTY_SECONDS_TIMEOUT)
+               .setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
+               .build();
          } else {
             requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
-                  .setRedirectsEnabled(followRedirect) // set // true
-                  .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-                  .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
-                  .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
-                  .build();
+               .setRedirectsEnabled(followRedirect) // set // true
+               .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+               .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+               .setSocketTimeout(DEFAULT_SOCKET_TIMEOUT)
+               .build();
          }
       }
 
@@ -271,10 +278,9 @@ public class FetchUtilities {
    }
 
    /**
-    * Parse the page content, either to get a html or a plain text In case we are expecting JSONObject
-    * or JSONArray response from an API, the content will be parsed as a plain text. Otherwise it will
+    * Parse the page content, either to get a html or a plain text In case we are expecting JSONObject or JSONArray response from an API, the content will be parsed as a plain text. Otherwise it will
     * be parsed as a htlm format.
-    * 
+    *
     * @param pageContent
     * @param session
     * @return String with the request response, either in html or plain text format
@@ -335,7 +341,6 @@ public class FetchUtilities {
       for (Entry<String, List<String>> entry : headers.entrySet()) {
          String headerName = entry.getKey();
 
-
          if (headerName != null && headerName.equalsIgnoreCase(HEADER_SET_COOKIE)) {
             List<String> cookiesHeader = entry.getValue();
 
@@ -390,7 +395,6 @@ public class FetchUtilities {
    }
 
    /**
-    * 
     * @param headers
     * @return
     */
@@ -419,7 +423,6 @@ public class FetchUtilities {
    }
 
    /**
-    * 
     * @return
     * @throws NoSuchAlgorithmException
     * @throws KeyManagementException
@@ -427,15 +430,14 @@ public class FetchUtilities {
    public static SSLConnectionSocketFactory createSSLConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
       TrustManager trustManager = new TrustManager();
       SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-      sslContext.init(null, new TrustManager[] {
-               trustManager
+      sslContext.init(null, new TrustManager[]{
+         trustManager
       }, null);
 
       return new SSLConnectionSocketFactory(sslContext);
    }
 
    /**
-    * 
     * @return
     * @throws NoSuchAlgorithmException
     * @throws KeyManagementException
@@ -443,15 +445,14 @@ public class FetchUtilities {
    public static SSLSocketFactory createSSLSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
       TrustManager trustManager = new TrustManager();
       SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-      sslContext.init(null, new TrustManager[] {
-               trustManager
+      sslContext.init(null, new TrustManager[]{
+         trustManager
       }, null);
 
       return sslContext.getSocketFactory();
    }
 
    /**
-    * 
     * @param request
     * @param response
     * @param method
@@ -461,27 +462,27 @@ public class FetchUtilities {
     * @param requestHash
     */
    public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, LettProxy proxy, String method, String userAgent, Session session,
-         int status, String requestHash) {
+      int status, String requestHash) {
 
       JSONObject requestMetadata =
-            new JSONObject().put("req_hash", requestHash)
-                  .put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()))
-                  .put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress()))
-                  .put("user_agent", userAgent)
-                  .put("req_method", method)
-                  .put("req_location", request != null ? request.getUrl() : "")
-                  .put("res_http_code", status)
-                  .put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
+         new JSONObject().put("req_hash", requestHash)
+            .put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy.getSource()))
+            .put("proxy_ip", (proxy == null ? MDC.get("HOST_NAME") : proxy.getAddress()))
+            .put("user_agent", userAgent)
+            .put("req_method", method)
+            .put("req_location", request != null ? request.getUrl() : "")
+            .put("res_http_code", status)
+            .put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
       Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION]");
    }
 
    public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, String proxy, String method, String userAgent, Session session,
-         int status, String requestHash) {
+      int status, String requestHash) {
 
       JSONObject requestMetadata = new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy))
-            .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
-            .put("res_http_code", status).put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
+         .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
+         .put("res_http_code", status).put("req_elapsed_time", requestSatistic != null ? requestSatistic.getElapsedTime() : 0);
 
       Logging.logInfo(logger, session, requestMetadata, "[ATTEMPT " + attempt + "][REQUEST INFORMATION]");
    }
