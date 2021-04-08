@@ -25,10 +25,10 @@ import java.util.*;
 public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
 
    private static final String SELLER_NAME = "Roldao Atacadista";
-   private static final String STORE_ID = "13322";
+   private static final String STORE_ID = "34";
+   private String token;
 
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
-
 
    public SaobernardodocampoRoldaoatacadistaCrawler(Session session) {
       super(session);
@@ -36,7 +36,7 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
 
    }
 
-   private JSONObject requestLogin(){
+   private JSONObject requestLogin() {
 
       String url = "https://api.roldao.com.br/api/public/anonymous-client";
 
@@ -46,12 +46,11 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
          .build();
 
       String content = this.dataFetcher
-         .post(session,request)
+         .post(session, request)
          .getBody();
 
       return CrawlerUtils.stringToJson(content);
    }
-
 
 
    private JSONObject requestToken() {
@@ -64,7 +63,7 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/x-www-form-urlencoded");
 
-      String payload = "username=" + username + "&password=" + password +"&client_id=KFxk0cvYvtsKMe9fCpjxucUFwTQW4ZZy&client_secret=UBFfD3mFNT6EOpT7hSGFILk2MDA72Dq9b0wmYUPJq7yDg1kLcnWGhh7JahKka4XY&grant_type=password";
+      String payload = "username=" + username + "&password=" + password + "&client_id=KFxk0cvYvtsKMe9fCpjxucUFwTQW4ZZy&client_secret=UBFfD3mFNT6EOpT7hSGFILk2MDA72Dq9b0wmYUPJq7yDg1kLcnWGhh7JahKka4XY&grant_type=password";
 
       Request request = RequestBuilder.create()
          .setUrl(url)
@@ -72,7 +71,6 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-
       String content = this.dataFetcher
          .post(session, request)
          .getBody();
@@ -81,16 +79,40 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
 
    }
 
-   private String getToken() {
+
+   private JSONObject getCardId() {
       JSONObject json = requestToken();
-      String token = json.optString("access_token");
-      return "Bearer " + token;
+      token = "Bearer " + json.optString("access_token");
+      String url = "https://api.roldao.com.br/api/shopping-cart";
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("X-Authorization", token);
+      headers.put("Referer", "https://www.roldao.com.br/");
+      headers.put("Content-Type", "application/json; charset=UTF-8");
+      headers.put("Accept", "*/*");
+      headers.put("Accept-Encoding", "gzip, deflate, br");
+
+      String zipCode = "9695000";
+      Request request = RequestBuilder.create()
+         .setPayload("{\"type\":\"pickup\",\"zipcode\":" + zipCode + ",\"branchId\":" + STORE_ID + "}")
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
+
+      String content = this.dataFetcher
+         .post(session, request)
+         .getBody();
+
+      return CrawlerUtils.stringToJson(content);
    }
 
    private JSONObject getStatusOnStore(String internalId) {
 
+      JSONObject jsonObject = getCardId();
+      String cardId = jsonObject.optString("shoppingCartId");
+
       Map<String, String> headers = new HashMap<>();
-      headers.put("X-Authorization", getToken());
+      headers.put("X-Authorization", token);
       headers.put("Referer", "https://www.roldao.com.br/");
       headers.put("Content-Type", "application/json; charset=UTF-8");
       headers.put("Accept", "*/*");
@@ -98,10 +120,10 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
 
       String payload = "{\"quantity\":1,\"sku\":\"" + internalId + "\"}";
 
-      String API = "https://api.roldao.com.br/api/shopping-cart/" + STORE_ID + "/item";
+      String urlApi = "https://api.roldao.com.br/api/shopping-cart/" + cardId + "/item";
 
       Request request = Request.RequestBuilder.create()
-         .setUrl(API)
+         .setUrl(urlApi)
          .setHeaders(headers)
          .setPayload(payload)
          .build();
@@ -110,6 +132,7 @@ public class SaobernardodocampoRoldaoatacadistaCrawler extends Crawler {
          .getBody();
 
       return CrawlerUtils.stringToJson(content);
+
    }
 
 
