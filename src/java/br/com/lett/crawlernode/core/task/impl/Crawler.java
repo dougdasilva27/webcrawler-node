@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
@@ -69,7 +70,7 @@ public abstract class Crawler extends Task {
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
-         + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+      + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
    /**
     * Maximum attempts during active void analysis It's essentially the number of times that we will
@@ -331,7 +332,7 @@ public abstract class Crawler extends Task {
     * </ul>
     *
     * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an
-    *         empty array list if no product was found.
+    * empty array list if no product was found.
     */
    public List<Product> extract() {
       List<Product> processedProducts = new ArrayList<>();
@@ -372,6 +373,7 @@ public abstract class Crawler extends Task {
          if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
+         session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
          return new ArrayList<>();
@@ -514,8 +516,8 @@ public abstract class Crawler extends Task {
          KPLProducer.getInstance().put(p, session);
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "product");
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
       }
@@ -554,7 +556,7 @@ public abstract class Crawler extends Task {
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             scheduleImages(persistenceResult, newProcessedProduct);
@@ -572,11 +574,11 @@ public abstract class Crawler extends Task {
             }
          } else if (previousProcessedProduct == null) {
             Logging.printLogDebug(logger, session,
-                  "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                     "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
             }
          }
       }
@@ -610,12 +612,12 @@ public abstract class Crawler extends Task {
 
             if (session instanceof TestCrawlerSession) {
                throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
-                     + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
+                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
             }
          }
 
          Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
-               "\nregex_status: " + status);
+            "\nregex_status: " + status);
       } catch (MalformedProductException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
