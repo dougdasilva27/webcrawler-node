@@ -205,9 +205,13 @@ public class FetchUtilities {
    }
 
    public static LettProxy getNextProxy(Request request, int attempt) {
-      List<String> proxyServices = request.getProxyServices();
-      String proxy = proxyServices.get((attempt - 1) % proxyServices.size());
-      return GlobalConfigurations.proxies.getProxy(proxy).stream().findAny().orElseThrow(() ->new RuntimeException("Proxy not found"));
+      LettProxy lettProxy = null;
+      if(request.getProxyServices()!=null&&!request.getProxyServices().isEmpty()) {
+         List<String> proxyServices = request.getProxyServices();
+         String proxy = proxyServices.get((attempt - 1) % proxyServices.size());
+         lettProxy = GlobalConfigurations.proxies.getProxy(proxy).stream().findAny().orElse(null);
+      }
+      return lettProxy;
    }
 
    /**
