@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -331,7 +332,9 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
          .setCookies(cookies)
          .setHeaders(headers)
          .setPayload(loadPayload)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY,ProxyCollection.LUMINATI_RESIDENTIAL_BR,ProxyCollection.INFATICA_RESIDENTIAL_BR))
          .build();
+
 
       Map<String, String> responseHeaders = dataFetcher.get(session, request).getHeaders();
 
@@ -341,10 +344,14 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       headers.put("sm-token", jsonObject.toString());
       headers.put("sm-mmc", responseHeaders.get("sm-mmc"));
       headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
-      Request requestApi = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
-      JSONObject jsonApi = CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
+      Request requestApi = RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY,ProxyCollection.LUMINATI_RESIDENTIAL_BR,ProxyCollection.INFATICA_RESIDENTIAL_BR))
+         .build();
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
 
-      return jsonApi;
    }
 
 }
