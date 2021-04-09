@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -27,6 +28,7 @@ import java.util.Map.Entry;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -206,7 +208,7 @@ public class FetchUtilities {
 
    public static LettProxy getNextProxy(Request request, int attempt) {
       LettProxy lettProxy = null;
-      if(request.getProxyServices()!=null&&!request.getProxyServices().isEmpty()) {
+      if (request.getProxyServices() != null && !request.getProxyServices().isEmpty()) {
          List<String> proxyServices = request.getProxyServices();
          String proxy = proxyServices.get((attempt - 1) % proxyServices.size());
          lettProxy = GlobalConfigurations.proxies.getProxy(proxy).stream().findAny().orElse(null);
@@ -466,7 +468,7 @@ public class FetchUtilities {
     * @param requestHash
     */
    public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, LettProxy proxy, String method, String userAgent, Session session,
-      int status, String requestHash) {
+                                         int status, String requestHash) {
 
       JSONObject requestMetadata =
          new JSONObject().put("req_hash", requestHash)
@@ -482,7 +484,7 @@ public class FetchUtilities {
    }
 
    public static void sendRequestInfoLog(int attempt, Request request, RequestsStatistics requestSatistic, String proxy, String method, String userAgent, Session session,
-      int status, String requestHash) {
+                                         int status, String requestHash) {
 
       JSONObject requestMetadata = new JSONObject().put("req_hash", requestHash).put("proxy_name", (proxy == null ? ProxyCollection.NO_PROXY : proxy))
          .put("user_agent", userAgent).put("req_method", method).put("req_location", request != null ? request.getUrl() : "")
