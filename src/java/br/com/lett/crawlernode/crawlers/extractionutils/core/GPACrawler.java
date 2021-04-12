@@ -150,7 +150,7 @@ public class GPACrawler extends Crawler {
          Offers offers = new Offers();
 
          if (available) {
-            offers = hasMarketPlace ? scrapOffers(data): offersFromMarketPlace(doc);
+            offers = hasMarketPlace ? offersFromMarketPlace(doc):scrapOffers(data) ;
          }
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);

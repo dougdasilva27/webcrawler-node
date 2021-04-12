@@ -34,9 +34,9 @@ public class SaopauloPaodeacucarCrawler extends GPACrawler {
       boolean equalsSeller = false;
 
       if(sellerName != null){
-         equalsSeller = sellerName.equalsIgnoreCase(SELLER_NAME);
+         equalsSeller = !sellerName.equalsIgnoreCase(SELLER_NAME);
       }
-      return sellerContainer.size() > 1 || equalsSeller;
+      return !(sellerContainer.size() > 1) || equalsSeller;
    }
 
 
