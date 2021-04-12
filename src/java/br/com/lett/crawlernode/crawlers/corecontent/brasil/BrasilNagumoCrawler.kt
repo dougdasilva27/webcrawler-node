@@ -34,6 +34,9 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
    override fun getApiUrl(): String {
       return API_URL
    }
+   override fun getLoadApiUrl(): String {
+      return API_URL
+   }
 
    override fun crawlProductInformatioFromApi(productUrl: String): JSONObject? {
       val lojaUrl = CommonMethods.getLast(homePage.split("www.nagumo.com.br").toTypedArray())
