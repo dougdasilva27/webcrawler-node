@@ -25,12 +25,14 @@ class SaopauloChoppbrahmaexpressCrawler(session: Session) : CrawlerRankingKeywor
                 .setHeaders(headers)
                 .build()
 
+        // Get product's document, select all scripts from doc, search for '__STATE__' string, then transform it into json
         val strJson = dataFetcher.get(session, request).body?.toDoc()?.select("script")
             ?.first { element -> element.html().contains("__STATE__") }
             .toString().substringAfter("__STATE__ =").substringBeforeLast("}") + "}"
 
         val respMap = CrawlerUtils.stringToJSONObject(strJson).toMap()
 
+        // Get all key/value that matches regex
         val products = respMap.filterKeys { key -> key.matches("Product:sp-[0-9]+\$".toRegex()) }
         pageSize = products.size
         if (products.isNotEmpty()) {
