@@ -42,6 +42,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
 
+   private final String LOAD_API_URL = getLoadApiUrl();
    private final String API_URL = getApiUrl();
    private static final String MAIN_SELLER_NAME = "Sitemercado";
    private String homePage = getHomePage();
@@ -50,6 +51,9 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
    protected abstract String getHomePage();
    protected String getApiUrl(){
+      return "https://www.sitemercado.com.br/api/b2c/";
+   }
+   protected String getLoadApiUrl(){
       return "https://www.sitemercado.com.br/api/v1/b2c/";
    }
 
@@ -317,9 +321,9 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
     */
    protected JSONObject crawlProductInformatioFromApi(String productUrl) {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
-      String loadUrl = API_URL+"page/store"+lojaUrl;
+      String loadUrl = LOAD_API_URL+"page/store"+lojaUrl;
       String productName = CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
-      String url = API_URL+getLojaInfo().get("IdLoja")+"/product/" + productName;
+      String url = API_URL+"product/" + productName+"?id_loja="+lojaInfo.get("IdLoja");
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.REFERER, productUrl);
