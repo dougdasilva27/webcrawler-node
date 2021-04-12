@@ -17,13 +17,11 @@ class SaopauloChoppbrahmaexpressCrawler(session: Session) : CrawlerRankingKeywor
     }
 
     override fun extractProductsFromCurrentPage() {
-//        val cookiesHome = dataFetcher.get(session, RequestBuilder.create().setUrl(HOME_PAGE).build()).cookies
         val url = "$HOME_PAGE$keywordEncoded?_q=$keywordEncoded&map=ft&page=$currentPage"
         val headers: MutableMap<String, String> = HashMap()
         headers["Content-Type"] = "text/html; charset=utf-8"
         val request =
             RequestBuilder.create().setUrl(url.replace("+", "%20"))
-//                .setCookies(cookiesHome)
                 .setHeaders(headers)
                 .build()
 
