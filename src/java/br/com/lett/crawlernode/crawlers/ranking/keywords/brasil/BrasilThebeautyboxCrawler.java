@@ -22,14 +22,7 @@ public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
       this.pageSize = 36;
       this.log("Página " + this.currentPage);
 
-      String keywordEncoded = null;
-      try {
-         keywordEncoded = URLEncoder.encode(this.keywordWithoutAccents, "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-         e.printStackTrace();
-      }
-
-      String url = "https://www.beautybox.com.br/busca?q=" + keywordEncoded + "&pagina=" + this.currentPage;
+      String url = "https://www.beautybox.com.br/busca?q=" + this.keywordEncoded + "&pagina=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
@@ -74,6 +67,5 @@ public class BrasilThebeautyboxCrawler extends CrawlerRankingKeywords {
       this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".pagination-total strong", null, null, false, true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
-
 
 }
