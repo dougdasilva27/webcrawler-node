@@ -109,7 +109,7 @@ public class GPACrawler extends Crawler {
       if (className.contains("paodeacucar")) {
          this.store = "pa";
          this.homePageHttps = "https://www.paodeacucar.com/";
-         MAIN_SELLER_NAME = "pao de acucar";
+         MAIN_SELLER_NAME = "Pão de Açúcar";
       } else if (className.contains("extra")) {
          this.store = "ex";
          this.homePageHttps = "https://www.clubeextra.com.br/";
@@ -764,19 +764,28 @@ public class GPACrawler extends Crawler {
       return creditCards;
    }
 
-   protected boolean hasMarketPlace(Document doc) {
-      return doc.select(".buy-box-tabstyles__Tab-sc-1j5ta4y-0").size() > 1;
+
+   private boolean hasMarketPlace(Document doc) {
+      Elements sellerContainer = doc.select(".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk");
+      String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc,".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk p:first-child span:not(:first-child)", false);
+
+      boolean equalsSeller = false;
+
+      if(sellerName != null){
+         equalsSeller = !sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
+      }
+      return !(sellerContainer.size() > 1) || equalsSeller;
    }
 
-   protected Offers offersFromMarketPlace(Document doc) throws OfferException, MalformedPricingException {
+   private Offers offersFromMarketPlace(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
 
-      Elements ofertas = doc.select(".buy-box-tabstyles__Tab-sc-1j5ta4y-0");
+      Elements ofertas = doc.select(".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk");
 
       if (ofertas != null) {
          for (Element oferta : ofertas) {
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(oferta, "p:first-child", false);
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(oferta, "p:first-child span:not(:first-child)", false);
             Pricing pricing = scrapSellersPricing(oferta);
             boolean isMainRetailer = sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
 
@@ -795,11 +804,12 @@ public class GPACrawler extends Crawler {
       return offers;
    }
 
-   protected Pricing scrapSellersPricing(Element e) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, "p:last-child", null, false, ',', session);
+
+   private Pricing scrapSellersPricing(Element e) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, ".current-pricesectionstyles__CurrentPrice-sc-17j9p6i-0 p", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
-      return PricingBuilder.create()
+      return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
