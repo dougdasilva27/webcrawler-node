@@ -292,7 +292,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       RatingsReviews ratingsReviews = new RatingsReviews();
 
       JSONObject jsonRating = alternativeRatingFetch(internalId);
-      JSONObject storeRate = JSONUtils.getJSONValue(jsonRating,"store_raate");
+      JSONObject storeRate = JSONUtils.getJSONValue(jsonRating,"store_rate");
 
       if (storeRate != null && !storeRate.isEmpty()) {
 
