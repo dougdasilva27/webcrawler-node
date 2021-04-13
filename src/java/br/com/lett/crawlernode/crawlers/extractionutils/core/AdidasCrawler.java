@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -23,6 +14,16 @@ import br.com.lett.crawlernode.util.MathUtils;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AdidasCrawler extends Crawler {
   private String homePage = "";
@@ -30,7 +31,7 @@ public class AdidasCrawler extends Crawler {
   public AdidasCrawler(Session session, String homePage) {
     super(session);
     this.homePage = homePage;
-    super.config.setMustSendRatingToKinesis(true);
+
   }
 
   @Override
@@ -74,22 +75,22 @@ public class AdidasCrawler extends Crawler {
 
         // Creating the product
         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(availability)
-            .setCategory1(categories.getCategory(0))
-            .setRatingReviews(ratingAndReviews)
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setStock(stock)
-            .build();
+                .setUrl(session.getOriginalURL())
+                .setInternalId(internalId)
+                .setInternalPid(internalPid)
+                .setName(name)
+                .setPrice(price)
+                .setPrices(prices)
+                .setAvailable(availability)
+                .setCategory1(categories.getCategory(0))
+                .setRatingReviews(ratingAndReviews)
+                .setCategory2(categories.getCategory(1))
+                .setCategory3(categories.getCategory(2))
+                .setPrimaryImage(primaryImage)
+                .setSecondaryImages(secondaryImages)
+                .setDescription(description)
+                .setStock(stock)
+                .build();
 
         products.add(product);
       }
@@ -175,13 +176,13 @@ public class AdidasCrawler extends Crawler {
 
   private Float scrapPrice(JSONObject pricingInformation) {
     return pricingInformation.has("currentPrice") ? MathUtils
-        .parseFloatWithDots(pricingInformation.get("currentPrice").toString()) : null;
+            .parseFloatWithDots(pricingInformation.get("currentPrice").toString()) : null;
   }
 
   private Prices scrapPrices(JSONObject pricingInformation, Float price) {
     Prices prices = new Prices();
     prices.setPriceFrom(pricingInformation.has("standard_price") ? CrawlerUtils
-        .getDoubleValueFromJSON(pricingInformation, "standard_price", true, null) : null);
+            .getDoubleValueFromJSON(pricingInformation, "standard_price", true, null) : null);
 
     Map<Integer, Float> installmentPriceMap = new HashMap<>();
     installmentPriceMap.put(1, price);

@@ -13,20 +13,24 @@ import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.*;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Date: 15/10/2018
@@ -43,7 +47,6 @@ public class BrasilPichauCrawler extends Crawler {
 
    public BrasilPichauCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

@@ -1,41 +1,19 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
@@ -56,6 +34,20 @@ import models.Offer;
 import models.Offers;
 import models.Processed;
 import models.prices.Prices;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit
@@ -106,8 +98,6 @@ public abstract class Crawler extends Task {
       this.config.setFetcher(FetchMode.STATIC);
       this.config.setProxyList(new ArrayList<>());
       this.config.setConnectionAttempts(0);
-      // It will be false until exists rating out of core.
-      this.config.setMustSendRatingToKinesis(false);
    }
 
    /**

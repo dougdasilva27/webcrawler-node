@@ -1,15 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -22,9 +13,17 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class ColombiaFarmatodoCrawler extends Crawler {
 
@@ -37,7 +36,6 @@ public class ColombiaFarmatodoCrawler extends Crawler {
 
    public ColombiaFarmatodoCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
       super.config.setFetcher(FetchMode.APACHE);
    }
 

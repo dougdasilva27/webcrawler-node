@@ -23,15 +23,29 @@ import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.*;
+import models.pricing.BankSlip;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
 import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
@@ -39,11 +53,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-
-import java.text.Normalizer;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 public class B2WCrawler extends Crawler {
    protected Map<String, String> headers = new HashMap<>();
@@ -58,7 +67,6 @@ public class B2WCrawler extends Crawler {
    public B2WCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
-      super.config.setMustSendRatingToKinesis(true);
       this.setHeaders();
    }
 

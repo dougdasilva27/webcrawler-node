@@ -1,36 +1,24 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * Date: 08/08/2017 - Remade date: 11/03/2019
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class DrogariaMinasbrasilNetCrawler extends Crawler {
 
@@ -38,7 +26,7 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
 
   public DrogariaMinasbrasilNetCrawler(Session session) {
     super(session);
-    super.config.setMustSendRatingToKinesis(true);
+
   }
 
   @Override
@@ -64,7 +52,7 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
       CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs-tree li:not(:first-child) > a");
       String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-picture figure a", Arrays.asList("href"), "https", this.host);
       String secondaryImages =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-picture figure a", Arrays.asList("href"), "https:", this.host, primaryImage);
+              CrawlerUtils.scrapSimpleSecondaryImages(doc, ".product-picture figure a", Arrays.asList("href"), "https:", this.host, primaryImage);
       String description = crawlDescription(doc);
       String ean = CrawlerUtils.scrapStringSimpleInfo(doc, "[itemprop=gtin13]", true);
 
@@ -74,23 +62,23 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
 
       // Creating the product
       Product product = ProductBuilder.create()
-          .setUrl(session.getOriginalURL())
-          .setInternalId(internalId)
-          .setInternalPid(internalPid)
-          .setName(name)
-          .setPrice(price)
-          .setPrices(prices)
-          .setAvailable(available)
-          .setCategory1(categories.getCategory(0))
-          .setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2))
-          .setPrimaryImage(primaryImage)
-          .setSecondaryImages(secondaryImages)
-          .setDescription(description)
-          .setMarketplace(new Marketplace())
-          .setEans(Arrays.asList(ean))
-          .setRatingReviews(ratingReviews)
-          .build();
+              .setUrl(session.getOriginalURL())
+              .setInternalId(internalId)
+              .setInternalPid(internalPid)
+              .setName(name)
+              .setPrice(price)
+              .setPrices(prices)
+              .setAvailable(available)
+              .setCategory1(categories.getCategory(0))
+              .setCategory2(categories.getCategory(1))
+              .setCategory3(categories.getCategory(2))
+              .setPrimaryImage(primaryImage)
+              .setSecondaryImages(secondaryImages)
+              .setDescription(description)
+              .setMarketplace(new Marketplace())
+              .setEans(Arrays.asList(ean))
+              .setRatingReviews(ratingReviews)
+              .build();
 
       products.add(product);
 
@@ -121,7 +109,7 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
 
   /**
    * Avg appear in html element
-   * 
+   *
    * @param document
    * @return
    */
@@ -158,9 +146,9 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
     StringBuilder description = new StringBuilder();
 
     description.append(CrawlerUtils.scrapElementsDescription(doc,
-        Arrays.asList(".product-short-description", ".product-page .product-section:not(:first-child):not(.-related):not(.-send-review)",
-            "section[class=\"product-section\"] .container h2", ".product-section div[itemprop=\"description\"] .content-text",
-            ".product-section.-characteristics", ".product-section.-attributes")));
+            Arrays.asList(".product-short-description", ".product-page .product-section:not(:first-child):not(.-related):not(.-send-review)",
+                    "section[class=\"product-section\"] .container h2", ".product-section div[itemprop=\"description\"] .content-text",
+                    ".product-section.-characteristics", ".product-section.-attributes")));
 
     String apiUrl = null;
     Elements scripts = doc.select("script");
@@ -182,7 +170,6 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
   }
 
   /**
-   * 
    * @param doc
    * @param price
    * @return
@@ -193,7 +180,7 @@ public class DrogariaMinasbrasilNetCrawler extends Crawler {
     if (price != null) {
       prices.setBankTicketPrice(price);
       prices.setPriceFrom(
-          CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productForm .product-price-regular span[id^=old-price-]", null, true, ',', session));
+              CrawlerUtils.scrapDoublePriceFromHtml(doc, "#productForm .product-price-regular span[id^=old-price-]", null, true, ',', session));
 
       Elements cards = doc.select("#productForm .installment-options .card-option");
 

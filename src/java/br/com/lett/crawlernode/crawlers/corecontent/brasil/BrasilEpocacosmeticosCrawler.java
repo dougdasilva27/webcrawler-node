@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
@@ -18,7 +19,6 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
 
    public BrasilEpocacosmeticosCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
       config.setFetcher(FetchMode.FETCHER);
    }
 
