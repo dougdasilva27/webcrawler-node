@@ -6,22 +6,14 @@ import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
@@ -37,10 +29,6 @@ import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
 import models.DateConstants;
 import models.Offer;
 import models.Offers;
@@ -56,6 +44,11 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit
  * and extract methods.
@@ -69,7 +62,7 @@ public abstract class Crawler extends Task {
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
-         + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
+      + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
 
    /**
     * Maximum attempts during active void analysis It's essentially the number of times that we will
@@ -329,7 +322,7 @@ public abstract class Crawler extends Task {
     * </ul>
     *
     * @return An array with all the products crawled in the URL passed by the CrawlerSession, or an
-    *         empty array list if no product was found.
+    * empty array list if no product was found.
     */
    public List<Product> extract() {
       List<Product> processedProducts = new ArrayList<>();
@@ -370,6 +363,7 @@ public abstract class Crawler extends Task {
          if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
+         session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
          return new ArrayList<>();
@@ -512,8 +506,8 @@ public abstract class Crawler extends Task {
          KPLProducer.getInstance().put(p, session);
 
          JSONObject kinesisProductFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - productStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "product");
+            .put("aws_type", "kinesis")
+            .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
       }
@@ -552,7 +546,7 @@ public abstract class Crawler extends Task {
       if (previousProcessedProduct != null || (session instanceof DiscoveryCrawlerSession || session instanceof SeedCrawlerSession)) {
 
          Processed newProcessedProduct =
-               Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
+            Processor.createProcessed(product, session, previousProcessedProduct, GlobalConfigurations.processorResultManager);
          if (newProcessedProduct != null) {
             PersistenceResult persistenceResult = Persistence.persistProcessedProduct(newProcessedProduct, session);
             scheduleImages(persistenceResult, newProcessedProduct);
@@ -570,11 +564,11 @@ public abstract class Crawler extends Task {
             }
          } else if (previousProcessedProduct == null) {
             Logging.printLogDebug(logger, session,
-                  "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
+               "New processed product is null, and don't have a previous processed. Exiting processProduct method...");
 
             if (session instanceof SeedCrawlerSession) {
                Persistence.updateFrozenServerTask(((SeedCrawlerSession) session),
-                     "Probably this crawler could not perform the capture, make sure the url is not a void url.");
+                  "Probably this crawler could not perform the capture, make sure the url is not a void url.");
             }
          }
       }
@@ -608,12 +602,12 @@ public abstract class Crawler extends Task {
 
             if (session instanceof TestCrawlerSession) {
                throw new MalformedProductException("THIS PRODUCT IS AVAILABLE BUT THIS MARKET REGEX DOES NOT MATCHES "
-                     + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
+                  + "WITH NONE OF SELLERS NAMES IN THIS PRODUCT OFFERS");
             }
          }
 
          Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
-               "\nregex_status: " + status);
+            "\nregex_status: " + status);
       } catch (MalformedProductException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }

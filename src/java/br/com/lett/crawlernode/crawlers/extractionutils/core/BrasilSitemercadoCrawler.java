@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -41,6 +42,7 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
    private static final Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
 
+   private final String LOAD_API_URL = getLoadApiUrl();
    private final String API_URL = getApiUrl();
    private static final String MAIN_SELLER_NAME = "Sitemercado";
    private String homePage = getHomePage();
@@ -49,6 +51,9 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
 
    protected abstract String getHomePage();
    protected String getApiUrl(){
+      return "https://www.sitemercado.com.br/api/b2c/";
+   }
+   protected String getLoadApiUrl(){
       return "https://www.sitemercado.com.br/api/v1/b2c/";
    }
 
@@ -316,9 +321,9 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
     */
    protected JSONObject crawlProductInformatioFromApi(String productUrl) {
       String lojaUrl = CommonMethods.getLast(getHomePage().split("sitemercado.com.br"));
-      String loadUrl = API_URL+"page/store"+lojaUrl;
+      String loadUrl = LOAD_API_URL+"page/store"+lojaUrl;
       String productName = CommonMethods.getLast(productUrl.split("/")).split("\\?")[0];
-      String url = API_URL+getLojaInfo().get("IdLoja")+"/product/" + productName;
+      String url = API_URL+"product/" + productName+"?id_loja="+lojaInfo.get("IdLoja");
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.REFERER, productUrl);
@@ -331,7 +336,9 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
          .setCookies(cookies)
          .setHeaders(headers)
          .setPayload(loadPayload)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY,ProxyCollection.LUMINATI_RESIDENTIAL_BR,ProxyCollection.INFATICA_RESIDENTIAL_BR))
          .build();
+
 
       Map<String, String> responseHeaders = dataFetcher.get(session, request).getHeaders();
 
@@ -341,10 +348,14 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       headers.put("sm-token", jsonObject.toString());
       headers.put("sm-mmc", responseHeaders.get("sm-mmc"));
       headers.put(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7");
-      Request requestApi = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
-      JSONObject jsonApi = CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
+      Request requestApi = RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(ProxyCollection.BUY,ProxyCollection.LUMINATI_RESIDENTIAL_BR,ProxyCollection.INFATICA_RESIDENTIAL_BR))
+         .build();
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, requestApi).getBody());
 
-      return jsonApi;
    }
 
 }

@@ -1,27 +1,5 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
@@ -45,11 +23,33 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FetcherDataFetcher implements DataFetcher {
 
    private static final String FETCHER_CONTENT_TYPE = "application/json";
-   public static final String FETCHER_HOST = GlobalConfigurations.executionParameters.getFetcherUrl();
+   public static final String FETCHER_HOST = "https://api-fetcher.lett.global/";
    private static final Logger logger = LoggerFactory.getLogger(FetcherDataFetcher.class);
 
    @Override
@@ -102,7 +102,6 @@ public class FetcherDataFetcher implements DataFetcher {
    }
 
    /**
-    * 
     * @param session
     * @param request
     * @param method
@@ -115,7 +114,7 @@ public class FetcherDataFetcher implements DataFetcher {
       FetcherRequest payload = fetcherPayloadBuilder(request, method, session);
 
       Logging.printLogDebug(logger, session,
-            "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
+         "Performing POST request in fetcher to perform a " + payload.getRequestType() + " request in: " + payload.getUrl());
 
       long requestsStartTime = System.currentTimeMillis();
 
@@ -135,21 +134,6 @@ public class FetcherDataFetcher implements DataFetcher {
          connection.setDoInput(true);
          connection.setDoOutput(true);
          connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, FETCHER_CONTENT_TYPE);
-
-         // test if ranking is the reaso of fetcher use 100%cpu
-         if (session instanceof RankingKeywordsSession) {
-            List<String> proxies = request.getProxyServices();
-            List<String> newProxiesList = new ArrayList<String>();
-
-            for (String proxyName : proxies) {
-               if (proxyName.contains("infatica")) {
-                  newProxiesList.add(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY);
-               } else {
-                  newProxiesList.add(proxyName);
-               }
-            }
-
-         }
 
          // Inserting payload
          OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8);
@@ -215,9 +199,9 @@ public class FetcherDataFetcher implements DataFetcher {
       sendRequestInfoLog(request, response, method, session, requestHash, requestId, System.currentTimeMillis() - requestsStartTime);
 
       JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_attempts_number", 1)
-            .put("req_type", "url_request")
-            .put("req_lib", "fetcher");
+         .put("req_attempts_number", 1)
+         .put("req_type", "url_request")
+         .put("req_lib", "fetcher");
 
       Logging.logInfo(logger, session, apacheMetadata, "FETCHER REQUESTS INFO");
 
@@ -225,8 +209,8 @@ public class FetcherDataFetcher implements DataFetcher {
       List<Integer> crawlersToNotTryAgain = Arrays.asList(59, 60, 61, 62, 63, 73, 235);
 
       if (fetcherIsDown
-            && !crawlersToNotTryAgain.contains(session.getMarket().getNumber())
-            && !session.getMarket().getName().contains("carrefour")) {
+         && !crawlersToNotTryAgain.contains(session.getMarket().getNumber())
+         && !session.getMarket().getName().contains("carrefour")) {
 
          Logging.printLogWarn(logger, session, "Trying to request with jsoup becaus fetcher is down!");
 
@@ -237,7 +221,6 @@ public class FetcherDataFetcher implements DataFetcher {
    }
 
    /**
-    * 
     * @param fetcherResponse
     * @return
     */
@@ -325,7 +308,6 @@ public class FetcherDataFetcher implements DataFetcher {
    }
 
    /**
-    * 
     * @param fetcherResponse
     * @return
     */
@@ -398,10 +380,9 @@ public class FetcherDataFetcher implements DataFetcher {
 
    /**
     * Build payload to request 'FETCHER'
-    * 
+    *
     * @param {@link Request}
     * @param method Get OR Post
-    * 
     * @return FetcherRequest
     */
    private static FetcherRequest fetcherPayloadBuilder(Request request, String method, Session session) {
@@ -447,47 +428,47 @@ public class FetcherDataFetcher implements DataFetcher {
 
       if (options != null) {
          payload = FetcherRequestBuilder.create()
-               .setUrl(url)
-               .setMustUseMovingAverage(options.isMustUseMovingAverage())
-               .setRequestType(method)
-               .setRetrieveStatistics(options.isRetrieveStatistics())
-               .setRetrieveByteArray(options.isRetrieveByteArray())
-               .setForbiddenCssSelector(options.getForbiddenCssSelector())
-               .setRequiredCssSelector(options.getRequiredCssSelector())
-               .setForcedProxies(
-                     new FetcherRequestForcedProxies()
-                           .setAny(proxies)
-                           .setSpecific(request.getProxy())
-               )
-               .setParameters(
-                     new FetcherRequestsParameters().setHeaders(finalHeaders)
-                           .setPayload(request.getPayload())
-                           .setMustFollowRedirects(request.isFollowRedirects())
-               )
-               .setIgnoreStatusCode(request.mustIgnoreStatusCode())
-               .setBodyIsRequired(request.bodyIsRequired())
-               .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
-               .build();
+            .setUrl(url)
+            .setMustUseMovingAverage(options.isMustUseMovingAverage())
+            .setRequestType(method)
+            .setRetrieveStatistics(options.isRetrieveStatistics())
+            .setRetrieveByteArray(options.isRetrieveByteArray())
+            .setForbiddenCssSelector(options.getForbiddenCssSelector())
+            .setRequiredCssSelector(options.getRequiredCssSelector())
+            .setForcedProxies(
+               new FetcherRequestForcedProxies()
+                  .setAny(proxies)
+                  .setSpecific(request.getProxy())
+            )
+            .setParameters(
+               new FetcherRequestsParameters().setHeaders(finalHeaders)
+                  .setPayload(request.getPayload())
+                  .setMustFollowRedirects(request.isFollowRedirects())
+            )
+            .setIgnoreStatusCode(request.mustIgnoreStatusCode())
+            .setBodyIsRequired(request.bodyIsRequired())
+            .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
+            .build();
       } else {
          payload = FetcherRequestBuilder.create()
-               .setUrl(url)
-               .setMustUseMovingAverage(true)
-               .setRetrieveStatistics(true)
-               .setRequestType(method)
-               .setForcedProxies(
-                     new FetcherRequestForcedProxies()
-                           .setAny(proxies)
-                           .setSpecific(request.getProxy())
-               )
-               .setParameters(
-                     new FetcherRequestsParameters().setHeaders(finalHeaders)
-                           .setPayload(request.getPayload())
-                           .setMustFollowRedirects(request.isFollowRedirects())
-               )
-               .setIgnoreStatusCode(request.mustIgnoreStatusCode())
-               .setBodyIsRequired(request.bodyIsRequired())
-               .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
-               .build();
+            .setUrl(url)
+            .setMustUseMovingAverage(true)
+            .setRetrieveStatistics(true)
+            .setRequestType(method)
+            .setForcedProxies(
+               new FetcherRequestForcedProxies()
+                  .setAny(proxies)
+                  .setSpecific(request.getProxy())
+            )
+            .setParameters(
+               new FetcherRequestsParameters().setHeaders(finalHeaders)
+                  .setPayload(request.getPayload())
+                  .setMustFollowRedirects(request.isFollowRedirects())
+            )
+            .setIgnoreStatusCode(request.mustIgnoreStatusCode())
+            .setBodyIsRequired(request.bodyIsRequired())
+            .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
+            .build();
       }
 
       return payload;
@@ -495,7 +476,7 @@ public class FetcherDataFetcher implements DataFetcher {
 
    /**
     * Log for requests
-    * 
+    *
     * @param request
     * @param response
     * @param method
