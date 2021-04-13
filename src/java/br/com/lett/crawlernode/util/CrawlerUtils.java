@@ -84,7 +84,7 @@ public class CrawlerUtils {
     * Get availability from marketplaceMap
     *
     * @param marketplaceMap
-    * @param List<String> sellers
+    * @param List<String>   sellers
     * @return
     */
    public static boolean getAvailabilityFromMarketplaceMap(Map<String, Prices> marketplaceMap, List<String> sellerList) {
@@ -106,7 +106,7 @@ public class CrawlerUtils {
     * Get Prices From marketplace Map
     *
     * @param marketplaceMap
-    * @param List<String> sellers
+    * @param List<String>   sellers
     * @return
     */
    public static Prices getPrices(Map<String, Prices> marketplaceMap, List<String> sellerList) {
@@ -127,7 +127,7 @@ public class CrawlerUtils {
     *
     * @param doc
     * @param cssSelector - if null will scrap info from doc
-    * @param ownText - if must use element.ownText(), if false will be used element.text()
+    * @param ownText     - if must use element.ownText(), if false will be used element.text()
     * @return
     */
    @Nullable
@@ -153,7 +153,7 @@ public class CrawlerUtils {
     *
     * @param doc
     * @param cssSelector - if null will scrap info from doc
-    * @param att - ex: class, id, value, content
+    * @param att         - ex: class, id, value, content
     * @return
     */
    public static String scrapStringSimpleInfoByAttribute(Element doc, String cssSelector, String att) {
@@ -171,11 +171,11 @@ public class CrawlerUtils {
    /**
     * Scrap simple price from html
     *
-    * @param doc - html
+    * @param doc         - html
     * @param cssSelector - cssSelector for scrap info (cssSelector != null ?
-    *        doc.selectFirst(cssSelector) : doc)
-    * @param att - ex: class, id, value, content
-    * @param ownText - if must use element.ownText(), if false will be used element.text()
+    *                    doc.selectFirst(cssSelector) : doc)
+    * @param att         - ex: class, id, value, content
+    * @param ownText     - if must use element.ownText(), if false will be used element.text()
     * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
     * @return
     */
@@ -201,8 +201,8 @@ public class CrawlerUtils {
    /**
     * Scrap simple price from text
     *
-    * @param text - string containing price
-    * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+    * @param text           - string containing price
+    * @param priceFormat    - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
     * @param firstDelimiter
     * @param lastDelimiter
     * @param session
@@ -247,11 +247,11 @@ public class CrawlerUtils {
    /**
     * Scrap simple price from html
     *
-    * @param doc - html
+    * @param doc         - html
     * @param cssSelector - cssSelector for scrap info (cssSelector != null ?
-    *        doc.selectFirst(cssSelector) : doc)
-    * @param att - ex: class, id, value, content
-    * @param ownText - if must use element.ownText(), if false will be used element.text()
+    *                    doc.selectFirst(cssSelector) : doc)
+    * @param att         - ex: class, id, value, content
+    * @param ownText     - if must use element.ownText(), if false will be used element.text()
     * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
     * @return
     */
@@ -344,9 +344,9 @@ public class CrawlerUtils {
     * Set Bank Slip Offers
     *
     * @param Double - Bank slip price - when a store has no price on the bill you must put the
-    *        spotlight price in place.
+    *               spotlight price in place.
     * @param Double - When the site has information such as: "22% discount" we must capture this
-    *        information and do the calculation.
+    *               information and do the calculation.
     * @return bankSlip
     */
 
@@ -358,15 +358,15 @@ public class CrawlerUtils {
          Double discountFinal = discount / 100d;
 
          bankSlip = BankSlipBuilder.create()
-               .setFinalPrice(bankSlipPrice)
-               .setOnPageDiscount(discountFinal)
-               .build();
+            .setFinalPrice(bankSlipPrice)
+            .setOnPageDiscount(discountFinal)
+            .build();
 
       } else {
 
          bankSlip = BankSlipBuilder.create()
-               .setFinalPrice(bankSlipPrice)
-               .build();
+            .setFinalPrice(bankSlipPrice)
+            .build();
       }
 
       return bankSlip;
@@ -436,9 +436,9 @@ public class CrawlerUtils {
    /**
     * @param doc
     * @param cssSelector
-    * @param attributes - attributes list for get image
-    * @param protocol - https: or https:// or http: or http://
-    * @param host - www.hostname.com.br
+    * @param attributes  - attributes list for get image
+    * @param protocol    - https: or https:// or http: or http://
+    * @param host        - www.hostname.com.br
     * @return
     */
    public static String scrapSimplePrimaryImage(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
@@ -455,14 +455,14 @@ public class CrawlerUtils {
    /**
     * @param doc
     * @param cssSelector
-    * @param attributes - attributes list for get image
-    * @param protocol - https: or https:// or http: or http://
-    * @param host - www.hostname.com.br
+    * @param attributes   - attributes list for get image
+    * @param protocol     - https: or https:// or http: or http://
+    * @param host         - www.hostname.com.br
     * @param primaryImage - if null, all images will be in secondary images
     * @return
     */
    public static List<String> scrapSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
-         String primaryImage) {
+                                                   String primaryImage) {
       List<String> secondaryImages = new ArrayList<>();
 
       Elements images = doc.select(cssSelector);
@@ -480,14 +480,14 @@ public class CrawlerUtils {
    /**
     * @param doc
     * @param cssSelector
-    * @param attributes - attributes list for get image
-    * @param protocol - https: or https:// or http: or http://
-    * @param host - www.hostname.com.br
+    * @param attributes   - attributes list for get image
+    * @param protocol     - https: or https:// or http: or http://
+    * @param host         - www.hostname.com.br
     * @param primaryImage - if null, all images will be in secondary images
     * @return
     */
    public static String scrapSimpleSecondaryImages(Document doc, String cssSelector, List<String> attributes, String protocol, String host,
-         String primaryImage) {
+                                                   String primaryImage) {
       String secondaryImages = null;
       JSONArray secondaryImagesArray = CommonMethods.listToJSONArray(scrapSecondaryImages(doc, cssSelector, attributes, protocol, host, primaryImage));
 
@@ -502,11 +502,11 @@ public class CrawlerUtils {
     * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
     * the list sent in sequence to find a url
     *
-    * @param doc - html
+    * @param doc         - html
     * @param cssSelector - Ex: "a.url"
-    * @param attributes - ex: "href", "src"
-    * @param protocol - ex: https: or https:// or http: or http://
-    * @param host - send host in this format: "www.hostname.com.br"
+    * @param attributes  - ex: "href", "src"
+    * @param protocol    - ex: https: or https:// or http: or http://
+    * @param host        - send host in this format: "www.hostname.com.br"
     * @return Url with protocol and host
     */
    public static String scrapUrl(Element doc, String cssSelector, String attribute, String protocol, String host) {
@@ -517,11 +517,11 @@ public class CrawlerUtils {
     * Select url from html - Append host and protocol if url needs Scroll through all the attributes in
     * the list sent in sequence to find a url
     *
-    * @param doc - html
+    * @param doc         - html
     * @param cssSelector - Ex: "a.url"
-    * @param attributes - ex: "href", "src"
-    * @param protocol - ex: https: or https:// or http: or http://
-    * @param host - send host in this format: "www.hostname.com.br"
+    * @param attributes  - ex: "href", "src"
+    * @param protocol    - ex: https: or https:// or http: or http://
+    * @param host        - send host in this format: "www.hostname.com.br"
     * @return Url with protocol and host
     */
    public static String scrapUrl(Element doc, String cssSelector, List<String> attributes, String protocol, String host) {
@@ -539,10 +539,10 @@ public class CrawlerUtils {
     * Append host and protocol if url needs Scroll through all the attributes in the list sent in
     * sequence to find a url
     *
-    * @param element - code block that contains url (Jsoup Element)
+    * @param element    - code block that contains url (Jsoup Element)
     * @param attributes - ex: "href", "src"
-    * @param protocol - ex: https: or https:// or http: or http://
-    * @param host - send host in this format: "www.hostname.com.br"
+    * @param protocol   - ex: https: or https:// or http: or http://
+    * @param host       - send host in this format: "www.hostname.com.br"
     * @return Url with protocol and host
     */
    public static String sanitizeUrl(Element element, List<String> attributes, String protocol, String host) {
@@ -598,7 +598,7 @@ public class CrawlerUtils {
             sanitizedUrl.append(protocol.endsWith("//") || url.startsWith("//") ? protocol : protocol + "//").append(url);
          } else if (!hasHost && !url.startsWith("http")) {
             sanitizedUrl.append(protocol.endsWith("//") ? protocol : protocol + "//").append(host)
-                  .append(url.startsWith("/") ? url : "/" + url);
+               .append(url.startsWith("/") ? url : "/" + url);
          } else {
             sanitizedUrl.append(url);
          }
@@ -613,10 +613,10 @@ public class CrawlerUtils {
     * Append host and protocol if url needs Scroll through all the attributes in the list sent in
     * sequence to find a url
     *
-    * @param element - code block that contains url (Jsoup Element)
+    * @param element   - code block that contains url (Jsoup Element)
     * @param attribute - ex: "href"
-    * @param protocol - ex: https: or https:// or http: or http://
-    * @param host - send host in this format: "www.hostname.com.br"
+    * @param protocol  - ex: https: or https:// or http: or http://
+    * @param host      - send host in this format: "www.hostname.com.br"
     * @return Url with protocol and host
     */
    public static String sanitizeUrl(Element element, String att, String protocol, String host) {
@@ -638,16 +638,16 @@ public class CrawlerUtils {
    /**
     * Crawl cookies from a page
     *
-    * @param url - page where are cookies
+    * @param url                - page where are cookies
     * @param cookiesToBeCrawled - list(string) of cookies to be crawled
-    * @param domain - domain to set in cookie
-    * @param path - path to set in cookie
+    * @param domain             - domain to set in cookie
+    * @param path               - path to set in cookie
     * @param cookiesClient
-    * @param session - crawler session
+    * @param session            - crawler session
     * @return List<Cookie>
     */
    public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
-         List<Cookie> cookiesClient, Session session, DataFetcher dataFetcher) {
+                                                    List<Cookie> cookiesClient, Session session, DataFetcher dataFetcher) {
 
       return fetchCookiesFromAPage(url, cookiesToBeCrawled, domain, path, cookiesClient, session, null, dataFetcher);
    }
@@ -655,17 +655,17 @@ public class CrawlerUtils {
    /**
     * Crawl cookies from a page
     *
-    * @param url - page where are cookies
+    * @param url                - page where are cookies
     * @param cookiesToBeCrawled - list(string) of cookies to be crawled
-    * @param domain - domain to set in cookie
-    * @param path - path to set in cookie
+    * @param domain             - domain to set in cookie
+    * @param path               - path to set in cookie
     * @param cookiesClient
-    * @param session - crawler session
-    * @param headers - request headers
+    * @param session            - crawler session
+    * @param headers            - request headers
     * @return List<Cookie>
     */
    public static List<Cookie> fetchCookiesFromAPage(String url, List<String> cookiesToBeCrawled, String domain, String path,
-         List<Cookie> cookiesClient, Session session, Map<String, String> headers, DataFetcher dataFetcher) {
+                                                    List<Cookie> cookiesClient, Session session, Map<String, String> headers, DataFetcher dataFetcher) {
       List<Cookie> cookies = new ArrayList<>();
 
       Request request = RequestBuilder.create().setCookies(cookiesClient).setUrl(url).setHeaders(headers).build();
@@ -687,17 +687,17 @@ public class CrawlerUtils {
    /**
     * Crawl cookies from a page
     *
-    * @param url - page where are cookies
+    * @param url                - page where are cookies
     * @param cookiesToBeCrawled - list(string) of cookies to be crawled
-    * @param domain - domain to set in cookie
-    * @param path - path to set in cookie
+    * @param domain             - domain to set in cookie
+    * @param path               - path to set in cookie
     * @param cookiesClient
-    * @param session - crawler session
-    * @param headers - request headers
+    * @param session            - crawler session
+    * @param headers            - request headers
     * @return List<Cookie>
     */
    public static List<Cookie> fetchCookiesFromAPage(Request request, String domain, String path, List<String> cookiesToBeCrawled, Session session,
-         DataFetcher dataFetcher) {
+                                                    DataFetcher dataFetcher) {
       List<Cookie> cookies = new ArrayList<>();
 
       Response response = dataFetcher.get(session, request);
@@ -747,7 +747,7 @@ public class CrawlerUtils {
          for (DataNode node : tag.dataNodes()) {
             if (tag.html().trim().startsWith(scriptVariableName)) {
                skuJsonString = node.getWholeData().split(Pattern.quote(scriptVariableName))[1]
-                     + node.getWholeData().split(Pattern.quote(scriptVariableName))[1].split(Pattern.quote("};"))[0];
+                  + node.getWholeData().split(Pattern.quote(scriptVariableName))[1].split(Pattern.quote("};"))[0];
                break;
             }
          }
@@ -778,7 +778,7 @@ public class CrawlerUtils {
     * @deprecated
     */
    public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex)
-         throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
       return selectJsonFromHtml(doc, cssElement, token, finalIndex, true);
    }
 
@@ -795,7 +795,7 @@ public class CrawlerUtils {
     * @deprecated
     */
    public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces)
-         throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+      throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
       return selectJsonFromHtml(doc, cssElement, token, finalIndex, withoutSpaces, false);
    }
 
@@ -808,18 +808,18 @@ public class CrawlerUtils {
     * token = "vtxctx=" finalIndex = ";"
     *
     * @param doc
-    * @param cssElement selector used to get the desired json element
-    * @param token whithout spaces
-    * @param finalIndex if final index is null or is'nt in html, substring will use only the token
-    * @param withoutSpaces remove all spaces
+    * @param cssElement     selector used to get the desired json element
+    * @param token          whithout spaces
+    * @param finalIndex     if final index is null or is'nt in html, substring will use only the token
+    * @param withoutSpaces  remove all spaces
     * @param lastFinalIndex if true, the substring will find last index of finalIndex
     * @return JSONObject
     * @throws JSONException
     * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
-    * @throws IllegalArgumentException if doc is null
+    * @throws IllegalArgumentException       if doc is null
     */
    public static JSONObject selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
-         boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+                                               boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
       if (doc == null)
          throw new IllegalArgumentException("Argument doc cannot be null");
@@ -855,18 +855,18 @@ public class CrawlerUtils {
     * token = "vtxctx=" finalIndex = ";"
     *
     * @param doc
-    * @param cssElement selector used to get the desired json element
-    * @param token whithout spaces
-    * @param finalIndex if final index is null or is'nt in html, substring will use only the token
-    * @param withoutSpaces remove all spaces
+    * @param cssElement     selector used to get the desired json element
+    * @param token          whithout spaces
+    * @param finalIndex     if final index is null or is'nt in html, substring will use only the token
+    * @param withoutSpaces  remove all spaces
     * @param lastFinalIndex if true, the substring will find last index of finalIndex
     * @return JSONArray
     * @throws JSONException
     * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
-    * @throws IllegalArgumentException if doc is null
+    * @throws IllegalArgumentException       if doc is null
     */
    public static JSONArray selectJsonArrayFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
-         boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+                                                   boolean lastFinalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
       if (doc == null)
          throw new IllegalArgumentException("Argument doc cannot be null");
@@ -902,20 +902,20 @@ public class CrawlerUtils {
     * token = "vtxctx=" finalIndex = ";"
     *
     * @param doc
-    * @param cssElement selector used to get the desired json element
-    * @param token whithout spaces
-    * @param finalIndex if final index is null or is'nt in html, substring will use only the token
-    * @param withoutSpaces remove all spaces
-    * @param lastFinalIndex if true, the substring will find last index of finalIndex
+    * @param cssElement                 selector used to get the desired json element
+    * @param token                      whithout spaces
+    * @param finalIndex                 if final index is null or is'nt in html, substring will use only the token
+    * @param withoutSpaces              remove all spaces
+    * @param lastFinalIndex             if true, the substring will find last index of finalIndex
     * @param lastOccurrenceOfFirstIndex if true, the substring will find the last occurrence of first
-    *        index
+    *                                   index
     * @return JSONArray
     * @throws JSONException
     * @throws ArrayIndexOutOfBoundsException if finalIndex doesn't exists or there is a duplicate
-    * @throws IllegalArgumentException if doc is null
+    * @throws IllegalArgumentException       if doc is null
     */
    public static JSONArray selectJsonArrayFromHtml(Document doc, String cssElement, String token, String finalIndex, boolean withoutSpaces,
-         boolean lastFinalIndex, boolean lastOccurrenceOfFirstIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+                                                   boolean lastFinalIndex, boolean lastOccurrenceOfFirstIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
 
       if (doc == null)
          throw new IllegalArgumentException("Argument doc cannot be null");
@@ -949,8 +949,8 @@ public class CrawlerUtils {
     * <p>
     * token = "vtxctx=" finalIndex = ";"
     *
-    * @param token whithout spaces
-    * @param finalIndex if final index is null or is'nt in html, substring will use only the token
+    * @param token          whithout spaces
+    * @param finalIndex     if final index is null or is'nt in html, substring will use only the token
     * @param lastFinalIndex if true, the substring will find last index of finalIndex
     * @return
     * @deprecated
@@ -966,16 +966,16 @@ public class CrawlerUtils {
     * <p>
     * token = "vtxctx=" finalIndex = ";"
     *
-    * @param firstIndexString whithout spaces
+    * @param firstIndexString           whithout spaces
     * @param lastOccurrenceOfFirstIndex if true, the substring will find last index of firstIndexString
-    * @param lastIndexString if final index is null or is'nt in html, substring will use only the token
-    *        if lastIndex is "},", "};" or "})" this function will treat caracter "}" as part of json
-    * @param lastOccurrenceOfLastIndex if true, the substring will find last index of lastIndexString
+    * @param lastIndexString            if final index is null or is'nt in html, substring will use only the token
+    *                                   if lastIndex is "},", "};" or "})" this function will treat caracter "}" as part of json
+    * @param lastOccurrenceOfLastIndex  if true, the substring will find last index of lastIndexString
     * @return
     */
    public static String extractSpecificStringFromScript(String script, String firstIndexString, boolean lastOccurrenceOfFirstIndex,
-         String lastIndexString,
-         boolean lastOccurrenceOfLastIndex) {
+                                                        String lastIndexString,
+                                                        boolean lastOccurrenceOfLastIndex) {
       String json = null;
 
       if (script != null && !script.isEmpty()) {
@@ -1056,7 +1056,7 @@ public class CrawlerUtils {
     * Crawl description of stores with flix media
     *
     * @param storeId -> you will find this id in product html, may be close of description
-    * @param ean -> product Ean, in vtex stores you find in a javascript script
+    * @param ean     -> product Ean, in vtex stores you find in a javascript script
     * @param session -> session of tasks
     * @return
     */
@@ -1064,7 +1064,7 @@ public class CrawlerUtils {
       StringBuilder description = new StringBuilder();
 
       String url =
-            "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
+         "https://media.flixcar.com/delivery/js/inpage/" + storeId + "/br/ean/" + ean + "?&=" + storeId + "&=br&ean=" + ean + "&ssl=1&ext=.js";
 
       Response response = dataFetcher.get(session, RequestBuilder.create().setUrl(url).build());
 
@@ -1090,7 +1090,7 @@ public class CrawlerUtils {
          String id = productInfo.getString("product");
 
          String urlDesc = "https://media.flixcar.com/delivery/inpage/show/" + storeId + "/br/" + id + "/json?c=jsonpcar" + storeId + "r" + id
-               + "&complimentary=0&type=.html";
+            + "&complimentary=0&type=.html";
 
          Response response2 = dataFetcher.get(session, RequestBuilder.create().setUrl(urlDesc).build());
 
@@ -1122,20 +1122,20 @@ public class CrawlerUtils {
    }
 
    /**
-    * @param marketplaceMap -> map of sellerName - Prices
+    * @param marketplaceMap      -> map of sellerName - Prices
     * @param sellerNameLowerList -> list of principal sellers
-    * @param session -> session of crawler
+    * @param session             -> session of crawler
     * @return Marketplace
     * @deprecated Because you need to send paramater card after sellerNameLowerList
-    *             <p>
-    *             AssembleMarketplaceFromMap Return object Marketplaces only with sellers of the market
+    * <p>
+    * AssembleMarketplaceFromMap Return object Marketplaces only with sellers of the market
     */
    public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Session session) {
       return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Card.VISA, session);
    }
 
    public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, Card card,
-         Session session) {
+                                                        Session session) {
       return assembleMarketplaceFromMap(marketplaceMap, sellerNameLowerList, Arrays.asList(card), session);
    }
 
@@ -1185,14 +1185,14 @@ public class CrawlerUtils {
     * <p>
     * Return object Marketplaces only with sellers of the market
     *
-    * @param marketplaceMap -> map of sellerName - Prices
+    * @param marketplaceMap      -> map of sellerName - Prices
     * @param sellerNameLowerList -> list of principal sellers
-    * @param card -> models.Card like Card.VISA
-    * @param session -> session of crawler
+    * @param card                -> models.Card like Card.VISA
+    * @param session             -> session of crawler
     * @return Marketplace
     */
    public static Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap, List<String> sellerNameLowerList, List<Card> cards,
-         Session session) {
+                                                        Session session) {
       Marketplace marketplace = new Marketplace();
 
       for (Entry<String, Prices> entry : marketplaceMap.entrySet()) {
@@ -1224,7 +1224,7 @@ public class CrawlerUtils {
     * Extract 1x price from model prices
     *
     * @param prices - model.Prices
-    * @param card - model.Card
+    * @param card   - model.Card
     * @return
     */
    public static Float extractPriceFromPrices(Prices prices, Card card) {
@@ -1235,7 +1235,7 @@ public class CrawlerUtils {
    /**
     * Extract 1x price from model prices
     *
-    * @param prices - model.Prices
+    * @param prices     - model.Prices
     * @param List<Card> - model.Card
     * @return
     */
@@ -1314,7 +1314,7 @@ public class CrawlerUtils {
     * @param json
     * @param key
     * @param stringWithFloatLayout -> if price string is a float in a string format like "23.99"
-    * @param priceWithComma -> e.g: R$ 2.779,20 returns the Float 2779.2
+    * @param priceWithComma        -> e.g: R$ 2.779,20 returns the Float 2779.2
     * @return
     */
    public static Float getFloatValueFromJSON(JSONObject json, String key, boolean stringWithFloatLayout, Boolean priceWithComma) {
@@ -1353,7 +1353,7 @@ public class CrawlerUtils {
     * @param json
     * @param key
     * @param stringWithDoubleLayout -> if price string is a double in a string format like "23.99"
-    * @param doubleWithComma -> e.g: R$ 2.779,20 returns the Double 2779.2
+    * @param doubleWithComma        -> e.g: R$ 2.779,20 returns the Double 2779.2
     * @return
     */
    public static Double getDoubleValueFromJSON(JSONObject json, String key, boolean stringWithDoubleLayout, Boolean doubleWithComma) {
@@ -1420,8 +1420,8 @@ public class CrawlerUtils {
     * 2x de R$12,90
     *
     * @param cssSelector - if null, you must pass the specific element in the html parameter
-    * @param html - document html or element html
-    * @param ownText - if the returned text of the element is taken from the first child
+    * @param html        - document html or element html
+    * @param ownText     - if the returned text of the element is taken from the first child
     * @return Pair<Integer, Float>
     */
    public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText) {
@@ -1434,8 +1434,8 @@ public class CrawlerUtils {
     * 2x de R$12,90
     *
     * @param cssSelector - if null, you must pass the specific element in the html parameter
-    * @param html - document html or element html
-    * @param ownText - if the returned text of the element is taken from the first child
+    * @param html        - document html or element html
+    * @param ownText     - if the returned text of the element is taken from the first child
     * @return Pair<Integer, Float>
     */
    public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String firstDelimiter) {
@@ -1443,19 +1443,19 @@ public class CrawlerUtils {
    }
 
    /**
-    * @param cssSelector - if null, you must pass the specific element in the html parameter
-    * @param html - document html or element html
-    * @param ownText - if the returned text of the element is taken from the first child
-    * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros de
-    *        (2.8%)" delimiter will be "x"
-    * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
-    *        lastDelimiter will be "com"
+    * @param cssSelector                    - if null, you must pass the specific element in the html parameter
+    * @param html                           - document html or element html
+    * @param ownText                        - if the returned text of the element is taken from the first child
+    * @param delimiter                      - string to separate a intallment from your value like "12x 101,08 com juros de
+    *                                       (2.8%)" delimiter will be "x"
+    * @param lastDelimiter                  - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
+    *                                       lastDelimiter will be "com"
     * @param lastOccurrenceForLastDelimiter - if lastDelimiter will be last ocurrence on text
     * @return Pair<Integer, Float>
     * @deprecated Because of non possibility to parse price with ',' or '.'
     */
    public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter, String lastDelimiter,
-         boolean lastOccurrenceForLastDelimiter) {
+                                                             boolean lastOccurrenceForLastDelimiter) {
 
       return crawlSimpleInstallment(cssSelector, html, ownText, delimiter, lastDelimiter, lastOccurrenceForLastDelimiter, ',');
    }
@@ -1465,19 +1465,19 @@ public class CrawlerUtils {
     * <p>
     * 2 (@param delimiter) R$12,90
     *
-    * @param cssSelector - if null, you must pass the specific element in the html parameter
-    * @param html - document html or element html
-    * @param ownText - if the returned text of the element is taken from the first child
-    * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros de
-    *        (2.8%)" delimiter will be "x"
-    * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
-    *        lastDelimiter will be "com"
+    * @param cssSelector                    - if null, you must pass the specific element in the html parameter
+    * @param html                           - document html or element html
+    * @param ownText                        - if the returned text of the element is taken from the first child
+    * @param delimiter                      - string to separate a intallment from your value like "12x 101,08 com juros de
+    *                                       (2.8%)" delimiter will be "x"
+    * @param lastDelimiter                  - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
+    *                                       lastDelimiter will be "com"
     * @param lastOccurrenceForLastDelimiter - if lastDelimiter will be last ocurrence on text
-    * @param priceFormat - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
+    * @param priceFormat                    - '.' for price like this: "2099.0" or ',' for price like this: "2.099,00"
     * @return Pair<Integer, Float>
     */
    public static Pair<Integer, Float> crawlSimpleInstallment(String cssSelector, Element html, boolean ownText, String delimiter, String lastDelimiter,
-         boolean lastOccurrenceForLastDelimiter, char priceFormat) {
+                                                             boolean lastOccurrenceForLastDelimiter, char priceFormat) {
       Pair<Integer, Float> pair = new Pair<>();
 
       Element installment = cssSelector != null ? html.selectFirst(cssSelector) : html;
@@ -1529,16 +1529,16 @@ public class CrawlerUtils {
     * <p>
     * 2 (@param delimiter) R$12,90
     *
-    * @param text string to search
-    * @param delimiter - string to separate a intallment from your value like "12x 101,08 com juros de
-    *        (2.8%)" delimiter will be "x"
-    * @param lastDelimiter - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
-    *        lastDelimiter will be "com"
+    * @param text                           string to search
+    * @param delimiter                      - string to separate a intallment from your value like "12x 101,08 com juros de
+    *                                       (2.8%)" delimiter will be "x"
+    * @param lastDelimiter                  - string to separate a value from text like "12x 101,08 com juros de (2.8%)"
+    *                                       lastDelimiter will be "com"
     * @param lastOccurrenceForLastDelimiter - if lastDelimiter will be last ocurrence on text
     * @return Pair<Integer, Float>
     */
    public static Pair<Integer, Float> crawlSimpleInstallmentFromString(String text, String delimiter, String lastDelimiter,
-         boolean lastOccurrenceForLastDelimiter) {
+                                                                       boolean lastOccurrenceForLastDelimiter) {
       Pair<Integer, Float> pair = new Pair<>();
 
       if (text.contains(delimiter) && text.contains(lastDelimiter)) {
@@ -1721,7 +1721,7 @@ public class CrawlerUtils {
     * @param selector
     * @return default value is 0
     * @parm owntext - if true this function will use element.ownText(), if false will be used
-    *       element.text()
+    * element.text()
     * @deprecated
     */
    public static Integer scrapIntegerFromHtml(Element doc, String selector, boolean ownText) {
@@ -1743,8 +1743,8 @@ public class CrawlerUtils {
    /**
     * @param doc
     * @param selector
-    * @param ownText - if true this function will use element.ownText(), if false will be used
-    *        element.text()
+    * @param ownText      - if true this function will use element.ownText(), if false will be used
+    *                     element.text()
     * @param defaultValue - return value if condition == null
     * @return
     */
@@ -1774,7 +1774,7 @@ public class CrawlerUtils {
     *
     * @param doc
     * @param selector
-    * @param attr - attribute to search
+    * @param attr         - attribute to search
     * @param defaultValue - return value if condition == null
     * @return
     */
@@ -1797,8 +1797,8 @@ public class CrawlerUtils {
    /**
     * @param doc
     * @param selector
-    * @param ownText - if true this function will use element.ownText(), if false will be used
-    *        element.text()
+    * @param ownText      - if true this function will use element.ownText(), if false will be used
+    *                     element.text()
     * @param defaultValue - return value if condition == null
     * @return
     * @deprecated
@@ -1827,13 +1827,13 @@ public class CrawlerUtils {
    /**
     * @param doc
     * @param selector
-    * @param ownText - if true this function will use element.ownText(), if false will be used
-    *        element.text()
+    * @param ownText      - if true this function will use element.ownText(), if false will be used
+    *                     element.text()
     * @param defaultValue - return value if condition == null
     * @return
     */
    public static Integer scrapIntegerFromHtml(Element doc, String selector, String firstDelimiter, String lastDelimiter,
-         boolean lastOccurrenceOfLastDelimiter, boolean ownText, Integer defaultValue) {
+                                              boolean lastOccurrenceOfLastDelimiter, boolean ownText, Integer defaultValue) {
       Integer total = defaultValue;
 
       Element totalElement = selector != null ? doc.selectFirst(selector) : doc;
@@ -1942,7 +1942,7 @@ public class CrawlerUtils {
       JSONObject skuMap = CrawlerUtils.stringToJson(dataFetcher.get(session, request).getBody());
       if (skuMap.has(internalId)) {
          Request requestSkuMap = RequestBuilder.create().setUrl(skuMap.get(internalId).toString())
-               .setProxyservice(Arrays.asList(ProxyCollection.NO_PROXY)).setFetcheroptions(options).build();
+            .setProxyservice(Arrays.asList(ProxyCollection.NO_PROXY)).setFetcheroptions(options).build();
          doc = Jsoup.parse(dataFetcher.get(session, requestSkuMap).getBody());
       }
 
@@ -1985,10 +1985,10 @@ public class CrawlerUtils {
       }
 
       return (reviewsWith5stars * 5.0 +
-            reviewsWith4stars * 4.0 +
-            reviewsWith3stars * 3.0 +
-            reviewsWith2stars * 2.0 +
-            reviewsWith1star * 1.0) / totalOfReviews;
+         reviewsWith4stars * 4.0 +
+         reviewsWith3stars * 3.0 +
+         reviewsWith2stars * 2.0 +
+         reviewsWith1star * 1.0) / totalOfReviews;
    }
 
    public static String toSlug(String input) {
@@ -2019,26 +2019,24 @@ public class CrawlerUtils {
    public static ProductBuilder scrapSchemaOrg(Document doc) {
       JSONObject jsonInfo = selectJsonFromHtml(doc, "script[type='application/ld+json']", "", null, false, false);
       return ProductBuilder.create()
-            .setInternalId(jsonInfo.optString("sku"))
-            .setName(jsonInfo.optString("name"))
-            .setDescription(jsonInfo.optString("description"));
+         .setInternalId(jsonInfo.optString("sku"))
+         .setName(jsonInfo.optString("name"))
+         .setDescription(jsonInfo.optString("description"));
    }
 
    /**
-    * 
     * Return a list of strinf that have images urls from json array
-    * 
-    * @param images -> JSONArray of images
-    * @param imageKey -> if this array has objects, you can send the image url key
+    *
+    * @param images     -> JSONArray of images
+    * @param imageKey   -> if this array has objects, you can send the image url key
     * @param validation -> This is a pair<Sting.Object> that you can validate if the object has a
-    *        specific value to scrap url
-    * 
-    *        like this {"img":"https://www.image.com/1.jpg", "active": true}
-    * 
-    *        when your pair will have the first value "active" and the second "true"
-    * 
-    * @param protocol -> protocol of image url
-    * @param host -> host of image url
+    *                   specific value to scrap url
+    *                   <p>
+    *                   like this {"img":"https://www.image.com/1.jpg", "active": true}
+    *                   <p>
+    *                   when your pair will have the first value "active" and the second "true"
+    * @param protocol   -> protocol of image url
+    * @param host       -> host of image url
     * @param session
     * @return
     */
@@ -2076,31 +2074,29 @@ public class CrawlerUtils {
 
 
    /**
-    *
     * Returns product ratings for sites using Your Views
     *
-    * @param internalPid -> Product internalPid
-    * @param storekey -> Storekey you can find it in HTML or by searching Your Views api
+    * @param internalPid                   -> Product internalPid
+    * @param storekey                      -> Storekey you can find it in HTML or by searching Your Views api
     * @param totalNumOfEvaluationsSelector -> Total number of evaluations selector
-    * @param avgRatingSelector -> Average ratings selector
-    * @param numberOfPagesSelector -> Number of evaluation pages selector
+    * @param avgRatingSelector             -> Average ratings selector
+    * @param numberOfPagesSelector         -> Number of evaluation pages selector
+    *                                      <p>
+    *                                      Ex:1,2,3
+    * @param starsConteinerSelector        -> Selector that contains the number of stars per comment Ex:
+    *                                      .starsConteinerSelector
     *
-    *        Ex:1,2,3
-    * @param starsConteinerSelector -> Selector that contains the number of stars per comment Ex:
-    *        .starsConteinerSelector
+    *                                      <div class="starsConteinerSelector">
     *
-    *        <div class="starsConteinerSelector">
+    *                                      <span class="star1">1</span> <span class="star1">2</span> <span class="star1">3</span>
+    *                                      <span class="star1">4</span> <span class="star1">5</span>
     *
-    *        <span class="star1">1</span> <span class="star1">2</span> <span class="star1">3</span>
-    *        <span class="star1">4</span> <span class="star1">5</span>
+    *                                      </div>
+    * @param starsSelector                 -> Star number selector Ex: .starsSelector
     *
-    *        </div>
-    *
-    * @param starsSelector -> Star number selector Ex: .starsSelector
-    *
-    *        <span class="starsSelector">1</span> <span class="starsSelector">2</span>
-    *        <span class="starsSelector">3</span> <span class="starsSelector">4</span>
-    *        <span class="starsSelector">5</span>
+    *                                      <span class="starsSelector">1</span> <span class="starsSelector">2</span>
+    *                                      <span class="starsSelector">3</span> <span class="starsSelector">4</span>
+    *                                      <span class="starsSelector">5</span>
     * @param dataFetcher
     * @param session
     * @param logger
@@ -2108,14 +2104,14 @@ public class CrawlerUtils {
     */
 
    public static RatingsReviews scrapRatingReviewsFromYourViews(String internalPid, String storekey, String totalNumOfEvaluationsSelector, String avgRatingSelector, String numberOfPagesSelector, String starsConteinerSelector, String starsSelector,
-         DataFetcher dataFetcher, Session session, Logger logger, List<Cookie> cookies) {
+                                                                DataFetcher dataFetcher, Session session, Logger logger, List<Cookie> cookies) {
 
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
       String storeKey = storekey;
 
       YourreviewsRatingCrawler yourReviews =
-            new YourreviewsRatingCrawler(session, cookies, logger, storeKey, dataFetcher);
+         new YourreviewsRatingCrawler(session, cookies, logger, storeKey, dataFetcher);
 
       Document docRating = yourReviews.crawlPageRatingsFromYourViews(internalPid, storeKey, dataFetcher);
 
@@ -2159,7 +2155,7 @@ public class CrawlerUtils {
    }
 
    private static AdvancedRatingReview getTotalStarsFromEachValue(String internalPid, String storeKey, Document docRating, String numberOfPagesSelector, String starsConteinerSelector, String starsSelector, DataFetcher dataFetcher,
-         List<Cookie> cookies, Session session) {
+                                                                  List<Cookie> cookies, Session session) {
       Document allPagesDocRating;
       int pages;
       boolean pagination = false;
@@ -2251,18 +2247,41 @@ public class CrawlerUtils {
 
    /**
     * scrap simple script from html
-    * @param doc html
+    *
+    * @param doc         html
     * @param cssSelector selector for script
     * @return String
     */
 
-   public static String scrapScriptFromHtml(Element doc,String cssSelector){
+   public static String scrapScriptFromHtml(Element doc, String cssSelector) {
       String value = null;
       Element element = doc.selectFirst(cssSelector);
-      if (element!=null) {
+      if (element != null) {
          value = element.dataNodes().toString().trim();
       }
       return value;
    }
+
+   /**
+    * get same text between two strings
+    *
+    * @param text  String
+    * @param first is the first String to split
+    * @param last  is the last String to split
+    * @return String or if not worlk -> return null
+    */
+
+   public static String getStringBetween(String text, String first, String last) {
+      String result = null;
+      if (text != null) {
+         String[] fistSplit = text.split(first);
+         if (fistSplit.length > 0) {
+            result = fistSplit[1].split(last)[0];
+
+         }
+
+      } return result;
+   }
+
 
 }

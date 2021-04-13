@@ -8,36 +8,41 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.net.URLDecoder;
 import java.util.Arrays;
+import java.util.Iterator;
 
 public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
+
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
    }
 
 
-   private JSONObject fetchPage() throws UnsupportedEncodingException {
+   private Document fetchPage() {
 
-      String url = getUrl();
-
+      String url = "https://www.americanas.com.br/busca/" + this.keywordEncoded + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
       this.log("Link onde são feitos os crawlers: " + url);
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
-         .setCookies(cookies)
          .mustSendContentEncoding(false)
          .setFetcheroptions(
             FetcherOptions.FetcherOptionsBuilder.create()
                .mustUseMovingAverage(false)
                .mustRetrieveStatistics(true)
-               .setForbiddenCssSelector("#px-captcha")
                .build()
          ).setProxyservice(
             Arrays.asList(
@@ -64,65 +69,99 @@ public class SaopauloAmericanasCrawler extends CrawlerRankingKeywords {
          content = new FetcherDataFetcher().get(session, request).getBody();
       }
 
-      return JSONUtils.stringToJson(content);
+      return Jsoup.parse(content);
 
    }
 
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
       this.pageSize = 24;
-
       this.log("Página " + this.currentPage);
 
-      JSONObject json = fetchPage();
+      Document doc = fetchPage();
+      JSONObject json = selectJsonFromHtml(doc);
 
-      JSONArray products = JSONUtils.getValueRecursive(json, "data.search.products", JSONArray.class);
+      JSONObject search = json != null ? getProducts(json) : null;
+      JSONArray products = search != null ? search.optJSONArray("products") : null;
 
       if (products != null && !products.isEmpty()) {
-         if (totalProducts == 0)
-            setTotalProducts(json);
-
+         if (this.totalProducts == 0) {
+            setTotalProducts(search);
+         }
          for (Object e : products) {
             if (e instanceof JSONObject) {
-               JSONObject product = (JSONObject) e;
+               JSONObject productJson = (JSONObject) e;
+               JSONObject productInfo = productJson.optJSONObject("product");
 
-               JSONObject data = product.optJSONObject("product");
+               if (productInfo != null && !productInfo.isEmpty()) {
 
-               String internalPid = JSONUtils.getStringValue(data, "id");
+                  String internalId = JSONUtils.getValueRecursive(productInfo, "offers.result.0.sku", String.class);
+                  String internalPid = productInfo.optString("id");
+                  String productUrl = "https://www.americanas.com.br/produto/" + internalPid;
 
-               String internalId = JSONUtils.getValueRecursive(data, "offers.result.0.sku", String.class);
+                  saveDataProduct(internalId, internalPid, productUrl);
 
-               String productUrl = "https://www.americanas.com.br/produto/" + internalPid;
+                  this.log(
+                     "Position: " + this.position +
+                        " - InternalId: " + internalId +
+                        " - InternalPid: " + internalPid +
+                        " - Url: " + productUrl);
 
-               saveDataProduct(internalId, internalPid, productUrl);
-
-               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-               if (this.arrayProducts.size() == productsLimit)
-                  break;
+                  if (this.arrayProducts.size() == productsLimit) {
+                     break;
+                  }
+               }
             }
+
          }
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
-   }
 
-   private String getUrl() throws UnsupportedEncodingException {
-
-      String variables = "{\"path\":\"/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "?limit=24&offset=" + (this.currentPage - 1) * pageSize + "\",\"content\":\"" + this.keywordWithoutAccents + "\",\"offset\":" + (this.currentPage - 1) * pageSize + ",\"limit\":24,\"segmented\":false,\"filters\":[],\"oneDayDelivery\":false}\"";
-      String extensions = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"dc1d06c9124fb3b8d1332cfae79f587926aef50f9322e50f0136780b2b94ed5a\"}}";
-
-      return "https://catalogo-bff-v2-americanas.b2w.io/graphql?operationName=pageSearch&variables=" + URLEncoder.encode(variables, "UTF-8") + "&extensions=" + URLEncoder.encode(extensions, "UTF-8");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
+         + this.arrayProducts.size() + " produtos crawleados");
 
    }
 
-   protected void setTotalProducts(JSONObject json) {
-      JSONObject data = JSONUtils.getValueRecursive(json, "data.search", JSONObject.class);
-      Integer total = data != null && !data.isEmpty() ? JSONUtils.getIntegerValueFromJSON(data, "total", 0) : null;
-      if (total != null) {
-         this.totalProducts = total;
-         this.log("Total da busca: " + this.totalProducts);
+
+   public JSONObject selectJsonFromHtml(Document doc) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException, UnsupportedEncodingException {
+      JSONObject jsonObject = new JSONObject();
+      Elements scripts = doc.select("body > script");
+
+      for (Element e : scripts) {
+         String script = e.html();
+         if (script.contains("window.__PRELOADED_STATE__ =")) {
+            String readyToDecode = script.replace("%", "%25");
+            String decode = URLDecoder.decode(readyToDecode, "UTF-8");
+            String split = CrawlerUtils.getStringBetween(decode, "window.__PRELOADED_STATE__ =", ",\"session\":") + "}";
+            jsonObject = CrawlerUtils.stringToJson(split);
+            break;
+         }
       }
+
+      return jsonObject;
    }
 
+   private JSONObject getProducts(JSONObject json) {
+      JSONObject search = new JSONObject();
+      JSONObject pages = json.optJSONObject("pages");
+      if (pages != null) {
+         Iterator<String> keys = pages.keys();
+         String currentKey;
+         while (keys.hasNext()) {
+            currentKey = keys.next();
+            JSONObject valueContent = pages.optJSONObject(currentKey);
+            if (valueContent != null && valueContent.has("queries")) {
+               search = JSONUtils.getValueRecursive(valueContent, "queries.pageSearch.result.search", JSONObject.class);
+            }
+         }
+      }
+      return search;
+   }
+
+   private void setTotalProducts(JSONObject json) {
+      this.totalProducts = JSONUtils.getValueRecursive(json, "total", Integer.class);
+      this.log("Total da busca: " + this.totalProducts);
+   }
 }
