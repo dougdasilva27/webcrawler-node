@@ -139,7 +139,7 @@ public class GPACrawler extends Crawler {
          Offers offers = new Offers();
 
          if (available) {
-            offers = hasMarketPlace ? offersFromMarketPlace(doc) : scrapOffers(data);
+            offers = hasMarketPlace ? offersFromMarketPlace(doc):scrapOffers(data) ;
          }
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
@@ -744,7 +744,7 @@ public class GPACrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+   protected CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
@@ -764,11 +764,11 @@ public class GPACrawler extends Crawler {
       return creditCards;
    }
 
-   private boolean hasMarketPlace(Document doc) {
+   protected boolean hasMarketPlace(Document doc) {
       return doc.select(".buy-box-tabstyles__Tab-sc-1j5ta4y-0").size() > 1;
    }
 
-   private Offers offersFromMarketPlace(Document doc) throws OfferException, MalformedPricingException {
+   protected Offers offersFromMarketPlace(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
 
@@ -795,7 +795,7 @@ public class GPACrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapSellersPricing(Element e) throws MalformedPricingException {
+   protected Pricing scrapSellersPricing(Element e) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, "p:last-child", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
