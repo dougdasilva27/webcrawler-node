@@ -9,10 +9,6 @@ abstract class TieliSupermercadoRanking(session: Session) : CrawlerRankingKeywor
 
     protected abstract val emp: String
 
-//    init {
-//        fetchMode = FetchMode.FETCHER
-//    }
-
     private val searchUrl = "http://compras.tieli.com.br:38999/KiProcesso/CompraOnLine2.jsp?emp=${emp}&a=0"
 
     override fun extractProductsFromCurrentPage() {
