@@ -38,7 +38,7 @@ public class ArgentinaMasfarmaciasCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         Logging.printLogInfo(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".aws-container", "data-page-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
@@ -62,9 +62,10 @@ public class ArgentinaMasfarmaciasCrawler extends Crawler {
             .build();
 
          products.add(product);
+         Logging.printLogInfo(logger, session, "Product added.");
 
       } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+         Logging.printLogInfo(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
