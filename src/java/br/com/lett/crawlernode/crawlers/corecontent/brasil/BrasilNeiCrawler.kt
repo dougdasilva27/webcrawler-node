@@ -41,15 +41,15 @@ class BrasilNeiCrawler(session: Session?) : Crawler(session) {
                         .setDescription(
                            CrawlerUtils.scrapElementsDescription(
                               document, mutableListOf(
-                              ".product-main--description",
-                              ".product-details > *:not(#trustvox-reviews):not(#_sincero_widget):not(script)"
-                           )
+                                 ".product-main--description",
+                                 ".product-details > *:not(#trustvox-reviews):not(#_sincero_widget):not(script)"
+                              )
                            )
                         )
                         .setPrice(if (price == 0F) null else price)
                         .setPrices(if (price == 0F) null else prices)
                         .setRatingReviews(scrapRating(ratingId = ratingId, doc = document))
-                        .setAvailable(document?.selectFirst(".formAddCart--button") != null)
+                        .setAvailable((document.selectFirst(".formAddCart--button") != null) && price != 0F)
                         .setCategories(CrawlerUtils.crawlCategories(document, "ul.breadcrumbs li a span", true))
                         .setPrimaryImage(any.optString("image"))
                         .build()
