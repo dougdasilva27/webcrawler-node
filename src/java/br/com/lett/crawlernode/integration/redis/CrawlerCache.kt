@@ -21,17 +21,9 @@ import kotlin.time.*
  * @see RMapCache
  * @author Charles Fonseca
  */
-@ExperimentalTime
 object CrawlerCache {
-   private val logger = LoggerFactory.getLogger(CrawlerCache::class.java)
 
-   private val cache = RedisClient.client
-   private const val logPrefix = "[Redis]"
-
-   /**
-    * Interface we interact with when it comes to get/put on cache
-    */
-   private val mapCache: RMapCache<String, Any?> = cache.getMapCache("Crawler")
+   private val mapCache by lazy { RedisClient.crawlerCache }
 
    /**
     * TTL (time to live)
@@ -39,15 +31,12 @@ object CrawlerCache {
    private const val defaultTtl = 7200
 
    fun <T> get(key: String): T? {
-      val timedValue: TimedValue<Any?> = measureTimedValue { mapCache[key] }
-      logger.debug("$logPrefix [Get] ${timedValue.duration.inMilliseconds} ms")
-      val value = timedValue.value
+      val value: Any? = mapCache[key]
       return if (value != null) value as T? else null
    }
 
    fun <T> put(key: String, value: T, seconds: Int) {
-      val duration: Duration = measureTime { mapCache.put(key, value, seconds.toLong(), TimeUnit.SECONDS) }
-      logger.debug("$logPrefix [Set] ${duration.inMilliseconds} ms")
+      mapCache.put(key, value, seconds.toLong(), TimeUnit.SECONDS)
    }
 
    fun <T> put(key: String, value: T) {
@@ -57,7 +46,7 @@ object CrawlerCache {
    @JvmOverloads
    fun <T> getPutCache(
       key: String,
-      ttl: Int = 7200,
+      ttl: Int = defaultTtl,
       requestMethod: RequestMethod,
       request: Request,
       function: Function<Response, T>,
@@ -74,9 +63,5 @@ object CrawlerCache {
          put(key, value as Any, ttl)
       }
       return value as T?
-   }
-
-   fun shutdown() {
-      cache.shutdown()
    }
 }

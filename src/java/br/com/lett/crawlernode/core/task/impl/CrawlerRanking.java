@@ -28,6 +28,7 @@ import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
+import br.com.lett.crawlernode.integration.redis.RedisClient;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
@@ -95,7 +96,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
-   private static final CrawlerCache cache = CrawlerCache.INSTANCE;
+   private static final CrawlerCache cacheClient = CrawlerCache.INSTANCE;
 
    // variável que identifica se há resultados na página
    protected boolean result;
@@ -145,8 +146,9 @@ public abstract class CrawlerRanking extends Task {
       if (!(session instanceof TestRankingKeywordsSession)) {
          S3Service.uploadCrawlerSessionContentToAmazon(session);
       }
+
       if (session instanceof TestCrawlerSession) {
-         cache.shutdown();
+         RedisClient.INSTANCE.shutdown();
       }
 
       // close the webdriver
@@ -251,26 +253,14 @@ public abstract class CrawlerRanking extends Task {
       }
    }
 
-   protected <T> void putCache(String key, int ttl, T value) {
-      cache.put(getClass().getSimpleName() + ":" + key, value, ttl);
-   }
-
-   protected <T> void putCache(String key, T value) {
-      cache.put(getClass().getSimpleName() + ":" + key, value);
-   }
-
-   protected <T> T getCache(String key) {
-      return cache.get(getClass().getSimpleName() + ":" + key);
-   }
-
-   protected <T> T getPutCache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+   protected <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cache.getPutCache(component, ttl, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.getPutCache(component, ttl, requestMethod, request, function, dataFetcher, session);
    }
 
-   protected <T> T getPutCache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+   protected <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cache.getPutCache(component, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.getPutCache(component, requestMethod, request, function, dataFetcher, session);
    }
 
    public void setProductsLimit(int productsLimit) {

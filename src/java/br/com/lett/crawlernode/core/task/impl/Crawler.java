@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.integration.redis.CrawlerCache;
+import br.com.lett.crawlernode.integration.redis.RedisClient;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
@@ -77,7 +78,7 @@ public abstract class Crawler extends Task {
 
    protected CrawlerWebdriver webdriver;
 
-   private static final CrawlerCache cache = CrawlerCache.INSTANCE;
+   private static final CrawlerCache cacheClient = CrawlerCache.INSTANCE;
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */
@@ -508,22 +509,14 @@ public abstract class Crawler extends Task {
       }
    }
 
-   protected <T> void putCache(String key, int ttl, T value) {
-      cache.put(getClass().getSimpleName() + ":" + key, value, ttl);
-   }
-
-   protected <T> T getCache(String key) {
-      return cache.get(getClass().getSimpleName() + ":" + key);
-   }
-
-   protected <T> T getPutCache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+   protected <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cache.getPutCache(component, ttl, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.getPutCache(component, ttl, requestMethod, request, function, dataFetcher, session);
    }
 
-   protected <T> T getPutCache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+   protected <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cache.getPutCache(component, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.getPutCache(component, requestMethod, request, function, dataFetcher, session);
    }
 
    /**
@@ -642,7 +635,7 @@ public abstract class Crawler extends Task {
          }
 
          if (session instanceof TestCrawlerSession) {
-            cache.shutdown();
+            RedisClient.INSTANCE.shutdown();
          }
 
          // close the webdriver

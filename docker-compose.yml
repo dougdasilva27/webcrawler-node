@@ -5,6 +5,8 @@ services:
     image: redis:alpine
     container_name: redis-crawler
     hostname: redis
+    ports:
+    -   6379:6379
     volumes:
       - ./redis-data/redis:/data
 
@@ -17,5 +19,3 @@ services:
       REDIS_HOSTS: local:redis:6379
     ports:
       - 8081:8081
-
-
