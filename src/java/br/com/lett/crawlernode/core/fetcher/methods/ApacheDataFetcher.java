@@ -205,8 +205,9 @@ public class ApacheDataFetcher implements DataFetcher {
             requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             if (responseCode == 404 || responseCode == 204) {
                FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, responseCode, requestHash);
-               break;
+               mustContinue = false;
             } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+               requests.add(requestStats);
                throw new ResponseCodeException(responseCode);
             }
 
