@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
@@ -15,13 +14,21 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import models.Offer;
 import models.Offers;
-import models.pricing.*;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.*;
 
 public class BrasilLojastaqiCrawler extends Crawler {
 
@@ -31,7 +38,6 @@ public class BrasilLojastaqiCrawler extends Crawler {
 
    public BrasilLojastaqiCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

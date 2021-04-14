@@ -13,6 +13,11 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
@@ -21,8 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-
-import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (27/06/2019):
@@ -41,7 +44,6 @@ public class BrasilKoerichCrawler extends Crawler {
 
    public BrasilKoerichCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

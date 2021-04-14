@@ -9,4 +9,11 @@ public class RibeiraopretoSavegnagoCrawler extends SavegnagoRanking {
       super(session);
    }
 
+   public static final String STORE_ID = "14";
+
+   @Override
+   public String getStoreId() {
+      return STORE_ID;
+   }
+
 }

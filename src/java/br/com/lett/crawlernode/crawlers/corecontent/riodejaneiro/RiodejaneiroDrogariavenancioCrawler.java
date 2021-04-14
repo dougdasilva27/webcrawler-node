@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -16,9 +10,15 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawl
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
 public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.drogariavenancio.com.br/";
@@ -26,7 +26,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
    public RiodejaneiroDrogariavenancioCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
 

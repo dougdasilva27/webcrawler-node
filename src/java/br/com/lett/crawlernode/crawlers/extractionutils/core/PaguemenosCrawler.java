@@ -5,21 +5,23 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.*;
-
 public class PaguemenosCrawler extends VTEXNewScraper {
 
    public PaguemenosCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    private static final String HOME_PAGE = "https://www.paguemenos.com.br/";
@@ -63,7 +65,6 @@ public class PaguemenosCrawler extends VTEXNewScraper {
       JSONObject element = null;
       Integer totalNumOfEvaluations = null;
       Double avgRating = null;
-      System.err.println(jsonRating);
 
       if (jsonRating != null) {
          JSONObject data = jsonRating.has("data") ? jsonRating.optJSONObject("data") : new JSONObject();
@@ -134,11 +135,9 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    private JSONObject crawlPageRatings(String internalId) throws UnsupportedEncodingException {
 
       String query = "{\"persistedQuery\":" +
-                     "{\"version\":1," +
-                     "\"sha256Hash\":\"9b88e6124d7df2ce8c432100a71691e9f4be53fb9dff342c8daba6be7022ba37\"," +
-                     "\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
-                     "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
-                     "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
+                       "{\"version\":1,\"sha256Hash\":\"7431b8f262b7a1b65d65ad2c3b5482f17324a34c314c2cb6577cea367b5a2691\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
+                        "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
+                        "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
 
       String encodedQuery = URLEncoder.encode(query, "UTF-8");
 

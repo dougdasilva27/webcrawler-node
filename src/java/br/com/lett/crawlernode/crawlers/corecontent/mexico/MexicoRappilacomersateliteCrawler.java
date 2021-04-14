@@ -7,9 +7,10 @@ public class MexicoRappilacomersateliteCrawler extends MexicoRappiCrawler {
 
    public MexicoRappilacomersateliteCrawler(Session session) {
       super(session);
+      newUnification=true;
    }
 
-    public static final String STORE_ID = "942000254";
+    public static final String STORE_ID = "1306706482";
 
    @Override
    protected String getStoreId() {

@@ -29,7 +29,6 @@ import java.util.Set;
  * Date: 23/10/2019
  *
  * @author Gabriel Dornelas
- *
  */
 public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
@@ -59,27 +58,27 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".prodTitle", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#fbits-breadcrumb li a span");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoomImagemProduto", Arrays.asList("src"), "https:",
-                 "abcdaconstrucao.fbitsstatic.net/");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#galeria .fbits-produto-imagensMinicarrossel-item a", Arrays.asList("data-zoom-image", "data-image"),
-                 "https:", "abcdaconstrucao.fbitsstatic.net/", primaryImage);
+            "abcdaconstrucao.fbitsstatic.net/");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#galeria .fbits-produto-imagensMinicarrossel-item a", Arrays.asList("data-zoom-image", "data-image"),
+            "https:", "abcdaconstrucao.fbitsstatic.net/", primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".paddingbox", false);
-         boolean available = doc.selectFirst(".fbits-geral.fbits-produto-indisponivel") == null;
-         Offers offers = available? scrapOffer(doc): new Offers();
+         boolean available = doc.selectFirst(" a[id*=produto-botao-adicionar-carrinho]") == null;
+         Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
-                 .setUrl(session.getOriginalURL())
-                 .setInternalId(internalId)
-                 .setInternalPid(internalPid)
-                 .setName(name)
-                 .setCategory1(categories.getCategory(0))
-                 .setCategory2(categories.getCategory(1))
-                 .setCategory3(categories.getCategory(2))
-                 .setPrimaryImage(primaryImage)
-                 .setSecondaryImages(secondaryImages)
-                 .setDescription(description)
-                 .setOffers(offers)
-                 .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -100,14 +99,14 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       List<String> sales = scrapSales(doc);
 
       offers.add(Offer.OfferBuilder.create()
-              .setUseSlugNameAsInternalSellerId(true)
-              .setSellerFullName("abd da constução")
-              .setMainPagePosition(1)
-              .setIsBuybox(false)
-              .setIsMainRetailer(true)
-              .setPricing(pricing)
-              .setSales(sales)
-              .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName("abc da constução")
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -135,39 +134,39 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#fbits-div-preco-off input", "value", false, ',', session);
       }
 
-       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-       Double bank = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoPreco-boleto .precoParcela .fbits-parcela", null, false, ',', session);
-       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bank, null);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      Double bank = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoPreco-boleto .precoParcela .fbits-parcela", null, false, ',', session);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bank, null);
 
-       return Pricing.PricingBuilder.create()
-          .setPriceFrom(priceFrom)
-          .setSpotlightPrice(spotlightPrice)
-          .setCreditCards(creditCards)
-          .setBankSlip(bankSlip)
-          .build();
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
 
    }
 
-   private CreditCards scrapCreditCards(Document doc,Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
       Installments installments = scrapInstallments(doc);
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
-                 .setInstallmentNumber(1)
-                 .setInstallmentPrice(spotlightPrice)
-                 .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-              Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-                 .setBrand(card)
-                 .setInstallments(installments)
-                 .setIsShopCard(false)
-                 .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
@@ -184,18 +183,18 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
             String installmentString = e.text();
 
-            Integer installment = installmentString.contains("x")? MathUtils.parseInt(installmentString.split("x")[0]): null;
+            Integer installment = installmentString.contains("x") ? MathUtils.parseInt(installmentString.split("x")[0]) : null;
 
             //4 x sem juros de R$ 29,49 no Cartão
-            String valueString =  installmentString.contains("R$")? installmentString.split("R")[1].replace("$ ", ""): null;
-            String valueString2 = valueString != null && valueString.contains(" ")? valueString.split(" ")[0]: null;
+            String valueString = installmentString.contains("R$") ? installmentString.split("R")[1].replace("$ ", "") : null;
+            String valueString2 = valueString != null && valueString.contains(" ") ? valueString.split(" ")[0] : null;
 
-            double installmentValue = valueString2 != null ? MathUtils.parseDoubleWithComma(valueString2): null;
+            double installmentValue = valueString2 != null ? MathUtils.parseDoubleWithComma(valueString2) : null;
 
             installments.add(Installment.InstallmentBuilder.create()
-                    .setInstallmentNumber(installment)
-                    .setInstallmentPrice(installmentValue)
-                    .build());
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(installmentValue)
+               .build());
          }
       }
 

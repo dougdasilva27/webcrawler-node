@@ -23,18 +23,17 @@ public class BrasilServnutriCrawler extends CrawlerRankingKeywords {
 
     this.log("Página " + this.currentPage);
 
-    String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
-    String url = "http://www.servnutri.com.br/page/" + this.currentPage + "/?s=" + key
-        + "&post_type=product";
+    String key = this.keywordWithoutAccents.replaceAll(" ", "+");
+    String url = "http://www.servnutri.com.br/search?q=" + key;
 
     this.currentDoc = fetchDocument(url);
 
-    Elements products = this.currentDoc.select(".product.type-product");
+    Elements products = this.currentDoc.select(".item-box");
 
      for (Element e : products) {
-        String internalId =CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product_type_simple", "data-product_id");
-        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
-
+        String internalId =CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div[data-productid]", "data-productid");
+        String captureUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
+        String productUrl = CrawlerUtils.completeUrl(captureUrl,"http:","www.servnutri.com.br");
         saveDataProduct(internalId, internalId, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + productUrl);

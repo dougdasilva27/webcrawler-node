@@ -15,6 +15,12 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -32,8 +38,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
-
 public class BrasilTudodebichoCrawler extends Crawler {
 
    private static final String HOME_PAGE = "tudodebicho.com.br";
@@ -42,7 +46,6 @@ public class BrasilTudodebichoCrawler extends Crawler {
 
    public BrasilTudodebichoCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    public List<Product> extractInformation(Document doc) throws Exception {

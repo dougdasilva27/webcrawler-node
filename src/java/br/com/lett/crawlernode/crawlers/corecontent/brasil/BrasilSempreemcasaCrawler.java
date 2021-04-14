@@ -1,158 +1,138 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class BrasilSempreemcasaCrawler extends Crawler {
 
-  private static final String IMAGES_HOST = "cdn.shopify.com";
-  private static final String HOME_PAGE = "sempreemcasa.com.br";
-
-  public BrasilSempreemcasaCrawler(Session session) {
-    super(session);
-  }
-
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
-
-    Element productItem = doc.selectFirst(".product-item");
-
-    if (productItem != null) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-      CategoryCollection categories = new CategoryCollection();
-      String primaryImage =
-          CrawlerUtils.scrapSimplePrimaryImage(productItem, ".product-item__img img", Arrays.asList("data-src"), "https", IMAGES_HOST);
-      String name = CrawlerUtils.scrapStringSimpleInfo(productItem, ".product-item__title-text", false);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("div.container > div.product-item__img > div"));
-      Elements variations = productItem.select(".product-item__variants-item[data-variant]");
-      for (Element e : variations) {
-        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, null, "data-id");
-        String internalId = e.attr("data-variant");
-
-        // In this market all products are sold per pack, so variations always have "unidades"
-        String nameVariation = name.concat(" ").concat(e.text().trim());
-
-        Prices prices = crawlPrices(doc, internalId);
-        Float price = CrawlerUtils.extractPriceFromPrices(prices, Card.MASTERCARD);
-
-        // In this market was not found unavailable products
-        boolean available = true;
-
-        // Creating the product
-        Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(nameVariation)
-            .setDescription(description)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setMarketplace(new Marketplace())
-            .build();
-
-         // Products variations ( UNITIES )
-         String internalIdU = internalId + "-1";
-
-         String nameVariationU = name.concat(" ").concat("1un. - ").concat(e.text().trim());;
-
-         Prices pricesU = crawlPricesU(doc, internalId);
-         Float priceU = CrawlerUtils.extractPriceFromPrices(pricesU, Card.MASTERCARD);
-
-         boolean availableU = true;
-
-         Product productU = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalIdU)
-            .setInternalPid(internalPid)
-            .setName(nameVariationU)
-            .setDescription(description)
-            .setPrice(priceU)
-            .setPrices(pricesU)
-            .setAvailable(availableU)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setMarketplace(new Marketplace())
-            .build();
+   private static final String SELLER_FULL_NAME = "Sempre em casa brasil";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+           Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
-        // Fixing wrong urls on postgres
-        if (session.getOriginalURL().contains("/search?q=")) {
-          String fullUrl = CrawlerUtils.scrapUrl(doc, "#PID" + internalPid + " > a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
-          if (fullUrl != null) {
-            product.setUrl(fullUrl.split("\\?")[0]);
-            productU.setUrl(fullUrl.split("\\?")[0]);
-          }
-        }
-        products.add(product);
-        products.add(productU);
-      }
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
-    return products;
-  }
+   public BrasilSempreemcasaCrawler(Session session) {
+      super(session);
+   }
 
-  /**
-   * @param doc
-   * @param internalId
-   * @return
-   */
-  private Prices crawlPrices(Element doc, String internalId) {
-    Prices prices = new Prices();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-    Float price = CrawlerUtils.scrapFloatPriceFromHtml(
-        doc, ".product-item__variant-data[data-variant=" + internalId + "] .price__price", null, true, ',', session);
+      JSONObject productInfo = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
+      JSONObject data = JSONUtils.getValueRecursive(productInfo, "props.pageProps.data", JSONObject.class);
 
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(price);
+      if (Objects.nonNull(data) && !data.isEmpty()) {
 
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-    }
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-    return prices;
-  }
+         String productCode = data.optString("ambev_product_code");
+         String primaryImage = data.optString("image");
+         String name = data.optString("name");
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".title__unities"));
+         JSONArray variations = data.optJSONArray("packs");
 
-   private Prices crawlPricesU(Element doc, String internalId) {
-      Prices prices = new Prices();
+         for (Object o : variations) {
 
-      Float price = CrawlerUtils.scrapFloatPriceFromHtml(
-         doc, ".product-item__variant-data[data-variant=" + internalId + "] .unity__text", null, true, ',', session);
+            JSONObject variation = (JSONObject) o;
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
-         prices.setBankTicketPrice(price);
+            String internalId = productCode + "-" + variation.optString("id");
+            int qtd = variation.optInt("unities");
+            String variationName = name + " - " + qtd;
 
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+            Offers offer = scrapOffer(variation);
+
+            // Creating the product
+            Product product = ProductBuilder.create()
+                    .setUrl(session.getOriginalURL())
+                    .setInternalId(internalId)
+                    .setInternalPid(internalId)
+                    .setName(variationName)
+                    .setDescription(description)
+                    .setPrimaryImage(primaryImage)
+                    .setOffers(offer)
+                    .build();
+
+            products.add(product);
+
+         }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      return prices;
+      return products;
+   }
+
+   private Offers scrapOffer(JSONObject json) throws OfferException, MalformedPricingException {
+
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(json);
+      List<String> sales = new ArrayList<>();
+
+      offers.add(Offer.OfferBuilder.create()
+              .setUseSlugNameAsInternalSellerId(true)
+              .setSellerFullName(SELLER_FULL_NAME)
+              .setMainPagePosition(1)
+              .setIsBuybox(false)
+              .setIsMainRetailer(true)
+              .setPricing(pricing)
+              .setSales(sales)
+              .build());
+
+      return offers;
+   }
+
+
+   private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
+      Double spotlightPrice = json.optDouble("current_price");
+      Double priceFrom = json.optDouble("original_price") != 0d ? json.optDouble("original_price") : null;
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+              .setPriceFrom(priceFrom)
+              .setSpotlightPrice(spotlightPrice)
+              .setCreditCards(creditCards)
+              .build();
+   }
+
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+                 .setInstallmentNumber(1)
+                 .setInstallmentPrice(spotlightPrice)
+                 .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+                 .setBrand(card)
+                 .setInstallments(installments)
+                 .setIsShopCard(false)
+                 .build());
+      }
+
+      return creditCards;
    }
 }

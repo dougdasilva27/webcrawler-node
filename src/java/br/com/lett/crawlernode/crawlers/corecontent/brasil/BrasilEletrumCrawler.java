@@ -1,18 +1,18 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.MathUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 public class BrasilEletrumCrawler extends VTEXOldScraper {
 
@@ -22,7 +22,6 @@ public class BrasilEletrumCrawler extends VTEXOldScraper {
 
    public BrasilEletrumCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

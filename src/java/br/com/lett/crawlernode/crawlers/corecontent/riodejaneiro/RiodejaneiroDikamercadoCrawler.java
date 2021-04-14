@@ -11,15 +11,18 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Offer;
-import models.Offers;
-import models.pricing.*;
-import org.jsoup.nodes.Document;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import models.Offer;
+import models.Offers;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
+import org.jsoup.nodes.Document;
 
 
 public class RiodejaneiroDikamercadoCrawler extends Crawler {
@@ -29,7 +32,6 @@ public class RiodejaneiroDikamercadoCrawler extends Crawler {
 
    public RiodejaneiroDikamercadoCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

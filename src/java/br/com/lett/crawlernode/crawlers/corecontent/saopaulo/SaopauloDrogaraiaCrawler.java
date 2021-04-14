@@ -9,7 +9,9 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -17,16 +19,14 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SaopauloDrogaraiaCrawler extends Crawler {
 
@@ -55,8 +55,8 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-info .live_price", "data-product-sku");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".add-to-cart-buttons .live_stock", "data-product-id");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "tbody .data", true);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".page-header-container .header-minicart .novarnish", "data-productid");
          String name = getName(doc);
          List<String> categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(.home):not(.product) a");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-description"));
@@ -93,19 +93,62 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return products;
    }
 
+
+   /* Brief explanation of the function
+   The number of units and the size of the product must be captured in the crawler (ex: 15ml);
+
+    1 - in some cases the number of units is already in the title but the size (15 ml) is only in the subtitle
+    -> in this case, the crawler checks to make a split in "-" and checks if the first index is already in the name;
+    2 - in other cases, only the quantity is given and nothing should be added to the name
+    -> in this case the crawler checks through the regex if it is stated in the number of units in the name
+    3 - In another case, the name does not contain anything of quantity
+    -> in this case, the crawler adds the entire subtitle to the name;
+    4 - In the last case, when the product is unavailable, the name is elsewhere;
+    -> which is the last else, taking only the title name;
+
+    follow the examples:
+
+    https://www.drogaraia.com.br/pampers-premium-care-tamanho-grande-com-68-tiras.html, in this case, the crawler checks whether the quantity is listed in the name;
+    https://www.drogaraia.com.br/pantene-ampola-de-tratamento-gold-com-3-unidades-15-ml-cada.html, in this case, the crawler splits the "-" and checks whether the first part repeats in the name;
+    https://www.drogaraia.com.br/always-absorvente-externo-active-com-abas-leve-32-com-preco-especial.html, in this case the crawler the crawler adds the entire subtitle to the name
+     */
+
    private String getName(Document doc) {
+
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1 span", false);
       String quantity = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-attributes .quantidade.show-hover", true);
-      if (quantity != null && quantity.contains("-")) {
-         String[] quantitySplit = quantity.split("-");
+      if (name != null && quantity != null) {
 
-         return quantitySplit.length > 0 ? name + " " + quantitySplit[1] : null;
+         if (quantity.contains("-")) {
+            String[] quantitySplit = quantity.split(" -");
+            String quantityCompare = quantitySplit[0];
+
+            if (name.contains(quantityCompare)) {
+               return quantitySplit.length > 0 ? name + " " + quantitySplit[1] : null;
+
+            } else {
+               return name + " " + quantity;
+            }
+
+         }
+         Pattern r = Pattern.compile("[0-9]+");
+         Matcher m = r.matcher(quantity);
+         if (m.find()) {
+            if (name.contains(m.group(0))) {
+               return name;
+
+            } else {
+               return name + " " + quantity;
+            }
+         }
+
+      } else {
+         String nameWithStore = CrawlerUtils.scrapStringSimpleInfo(doc, "head title", true);
+         if (nameWithStore != null) {
+            name = nameWithStore.split("\\|")[0];
+         }
+         return name;
       }
-
-      if (quantity != null) {
-         return name + " " + quantity;
-      }
-
       return name;
    }
 
@@ -229,43 +272,35 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return ratingsReviews;
    }
 
-   private String alternativeRatingFetch(String internalId) {
+   private JSONObject alternativeRatingFetch(String internalId) {
 
-      StringBuilder apiRating = new StringBuilder();
+      String urlApi = "https://trustvox.com.br/widget/root?&code=" + internalId + "&store_id=71450&product_extra_attributes[group]=";
 
-      apiRating.append("https://trustvox.com.br/widget/shelf/v2/products_rates?codes[]=")
-         .append(internalId)
-         .append("&store_id=71450&callback=_tsRatesReady");
+      Map<String,String> headers = new HashMap<>();
+      headers.put("Accept","application/vnd.trustvox-v2+json");
+      headers.put("Referer","https://www.drogaraia.com.br/");
+      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
 
-      Request request = RequestBuilder.create().setUrl(apiRating.toString()).build();
+      Request request = RequestBuilder.create().setHeaders(headers).setUrl(urlApi).build();
+      String jsonString = this.dataFetcher.get(session, request).getBody();
 
-      return this.dataFetcher.get(session, request).getBody();
+      return JSONUtils.stringToJson(jsonString);
    }
 
    private RatingsReviews scrapAlternativeRating(String internalId) {
 
       RatingsReviews ratingsReviews = new RatingsReviews();
 
-      String ratingResponse = alternativeRatingFetch(internalId);
+      JSONObject jsonRating = alternativeRatingFetch(internalId);
+      JSONObject storeRate = JSONUtils.getJSONValue(jsonRating,"store_rate");
 
-      // Split in parentheses
-      String[] responseSplit = ratingResponse.split("\\s*[()]\\s*");
+      if (storeRate != null && !storeRate.isEmpty()) {
 
-      JSONObject rating;
+         double avgReviews = JSONUtils.getDoubleValueFromJSON(storeRate, "average", true);
+         int totalRating = JSONUtils.getIntegerValueFromJSON(storeRate, "count", 0);
 
-      if (responseSplit.length > 1) {
-         String ratingFormatted = responseSplit[1];
-         rating = CrawlerUtils.stringToJson(ratingFormatted);
-
-         JSONArray productRateArray = rating.optJSONArray("products_rates");
-
-         int totalReviews = ((JSONObject) productRateArray.get(0)).optInt("count");
-
-         double avgReviews = ((JSONObject) productRateArray.get(0)).optDouble("average");
-
-         ratingsReviews.setTotalRating(totalReviews);
-         ratingsReviews.setTotalWrittenReviews(totalReviews);
-         ratingsReviews.setAverageOverallRating(avgReviews);
+         ratingsReviews.setAverageOverallRating(MathUtils.normalizeTwoDecimalPlaces(avgReviews));
+         ratingsReviews.setTotalRating(totalRating);
       }
       return ratingsReviews;
    }

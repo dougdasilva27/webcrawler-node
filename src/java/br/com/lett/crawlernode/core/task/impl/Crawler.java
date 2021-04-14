@@ -6,11 +6,7 @@ import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -18,11 +14,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
@@ -39,11 +31,6 @@ import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.TestHtmlBuilder;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import java.util.regex.Pattern;
 import models.DateConstants;
 import models.Offer;
 import models.Offers;
@@ -58,6 +45,12 @@ import org.jsoup.nodes.Document;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit and extract methods.
@@ -106,8 +99,6 @@ public abstract class Crawler extends Task {
       this.config.setFetcher(FetchMode.STATIC);
       this.config.setProxyList(new ArrayList<>());
       this.config.setConnectionAttempts(0);
-      // It will be false until exists rating out of core.
-      this.config.setMustSendRatingToKinesis(false);
    }
 
    /**
@@ -185,6 +176,9 @@ public abstract class Crawler extends Task {
             productionRun();
          }
       } catch (Exception e) {
+         if (session instanceof SeedCrawlerSession) {
+            Persistence.updateFrozenServerTask(((SeedCrawlerSession) session), e.getMessage());
+         }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
    }
@@ -212,6 +206,7 @@ public abstract class Crawler extends Task {
    private void productionRun() {
 
       sendProgress(50);
+
 
       // crawl informations and create a list of products
       List<Product> products = extract();
@@ -366,6 +361,7 @@ public abstract class Crawler extends Task {
          if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
+         session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
          return new ArrayList<>();
