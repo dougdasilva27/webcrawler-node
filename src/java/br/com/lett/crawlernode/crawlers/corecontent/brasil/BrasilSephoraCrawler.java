@@ -65,8 +65,7 @@ public class BrasilSephoraCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
 
-
-         Elements variants = doc.select(".display-name.display-name-shade.no-bullet>li");
+         Elements variants = doc.select(".product-detail .product-variations .no-bullet > li");
 
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
@@ -93,8 +92,6 @@ public class BrasilSephoraCrawler extends Crawler {
 
             products.add(product);
          }
-
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -102,17 +99,9 @@ public class BrasilSephoraCrawler extends Crawler {
       return products;
    }
 
-   /*******************************
-    * Product page identification *
-    *******************************/
-
    private boolean isProductPage(Document document) {
       return document.selectFirst(".product-cart") != null;
    }
-
-   /*******************
-    * General methods *
-    *******************/
 
    private String scrapName(Document doc){
       return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false)
@@ -166,7 +155,6 @@ public class BrasilSephoraCrawler extends Crawler {
 
       return sales;
    }
-
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
