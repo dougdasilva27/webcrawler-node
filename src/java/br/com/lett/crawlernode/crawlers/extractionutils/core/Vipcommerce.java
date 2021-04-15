@@ -109,7 +109,7 @@ public abstract class Vipcommerce extends Crawler {
          JSONObject OffersInfo = JSONUtils.getJSONValue(productInfo, "oferta");
          String internalId = productInfo.optString("produto_id");
 
-         if (internalId != null) {
+         if (internalId == null) {
             return products;
          }
 
