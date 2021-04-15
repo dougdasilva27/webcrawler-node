@@ -1,18 +1,24 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoOldRappiCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoRappiCrawlerRanking;
 
-public class MexicoRappiwalmartciudadmexicoCrawler extends MexicoOldRappiCrawlerRanking {
+public class MexicoRappiwalmartciudadmexicoCrawler extends MexicoRappiCrawlerRanking {
 
-   public static final String STORE_ID = "990007483";
+   public static final String STORE_ID = "1923291869";
 
    public MexicoRappiwalmartciudadmexicoCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override
    protected String getStoreId() {
       return STORE_ID;
+   }
+
+   @Override
+   protected String getStoreType() {
+      return "walmart";
    }
 }
