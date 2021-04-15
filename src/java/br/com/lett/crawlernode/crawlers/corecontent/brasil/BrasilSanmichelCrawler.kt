@@ -4,41 +4,29 @@ import br.com.lett.crawlernode.core.models.Card.*
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.product
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
-import br.com.lett.crawlernode.util.toDoubleComma
+import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilSitemercadoCrawler
+import br.com.lett.crawlernode.util.*
 import org.jsoup.nodes.Document
+import java.util.HashMap
 
-class BrasilSanmichelCrawler(session: Session) : Crawler(session) {
-   override fun extractInformation(doc: Document): MutableList<Product> {
-      val products = mutableListOf<Product>()
+class BrasilSanmichelCrawler(session: Session) : BrasilSitemercadoCrawler(session) {
+   
+   companion object {
+      val HOME_PAGE = "https://www.sitemercado.com.br/sanmichelsupermercados/pocos-de-caldas-loja-pernambuco-centro-r-pernambuco"
 
-      products += product {
-         name = doc.selectFirst(".title a").text()
-         url = session.originalURL
-         internalId = doc.selectFirst(".brand").text()?.substringAfter(": ")?.substringBefore(" -") ?: throw IllegalStateException("Id not found")
-         primaryImage = "https://www.meusanmichel.com.br/${doc.selectFirst(".img-responsive").attr("src")}"
-         description = doc.selectFirst("#description").text()
-         offer {
-            isMainRetailer
-            sellerFullName = "San Michel"
-            useSlugNameAsInternalSellerId
-            if (doc.selectFirst(".available").text() == "Disponível") {
-               pricing {
-                  val priceNullable = doc.selectFirst(".price-current").toDoubleComma()
-                  priceNullable?.let { price ->
+      val IDLOJA = 6755
+      val IDREDE = 3748
+   }
 
-                     spotlightPrice = price
-                     priceFrom = doc.selectFirst(".price-prev").toDoubleComma()
 
-                     bankSlip = price.toBankSlip()
-                     creditCards = setOf(VISA, MASTERCARD, AMEX, ELO, DINERS, DISCOVER, HIPERCARD, AURA, JCB).toCreditCards(price)
-                  }
-               }
-            }
-         }
-      }
-      return products
+   override fun getHomePage(): String {
+      return HOME_PAGE
+   }
+
+   override fun getLojaInfo(): Map<String, Int> {
+      val lojaInfo: MutableMap<String, Int> = HashMap()
+      lojaInfo["IdLoja"] = IDLOJA
+      lojaInfo["IdRede"] = IDREDE
+      return lojaInfo
    }
 }
