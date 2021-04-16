@@ -6,6 +6,7 @@ public abstract class  BrasilRappiCrawlerRanking extends RappiCrawlerRanking {
 
    public BrasilRappiCrawlerRanking(Session session) {
       super(session);
+      PRODUCT_BASE_URL = "https://www."+getProductDomain()+"/produto/";
    }
 
    public static final String API_DOMAIN = "rappi.com.br";
