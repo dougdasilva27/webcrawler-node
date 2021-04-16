@@ -77,7 +77,8 @@ public class SaopauloDrogasilCrawler extends Crawler {
                "file", validationImages, "https", "img.drogasil.com.br/catalog/product", session);
             // Site hasn't category
 
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".swiper-container a img", Arrays.asList("src"), "https", "img.drogasil.com.br");
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".small-img", Arrays.asList("src"), "https", "img.drogasil.com.br");
+
 
             if (primaryImage != null) {
                primaryImage = primaryImage.split("\\?")[0]; // we need to remove parameters because this site resize img on html
