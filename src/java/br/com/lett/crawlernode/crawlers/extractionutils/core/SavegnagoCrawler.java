@@ -55,38 +55,4 @@ public abstract class SavegnagoCrawler extends VTEXOldScraper {
       return super.handleURLBeforeFetch(url.split("\\?")[0] + "?sc=" + CITY_CODE);
    }
 
-   @Override
-   protected Offers scrapOffer(Document doc, JSONObject jsonSku, String internalId, String internalPid) throws OfferException, MalformedPricingException {
-
-      if(isAvailable()) {
-         return super.scrapOffer(doc, jsonSku, internalId, internalPid);
-      }
-      else {
-         return new Offers();
-      }
-   }
-
-   private boolean isAvailable() {
-
-      String url = "https://www.savegnago.com.br/api/checkout/pub/orderForms/simulation?sc="+CITY_CODE;
-
-      String payload = "{\"items\":[{\"id\":6921,\"quantity\":1,\"seller\":\"1\"}],\"postalCode\":\""+CEP+"\",\"country\":\"BRA\"}";
-
-      Map<String,String> headers = new HashMap<>();
-      headers.put("Content-Type","application/json");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url)
-         .setPayload(payload)
-         .setHeaders(headers)
-         .build();
-
-      Response response = new FetcherDataFetcher().post(session,request);
-      JSONObject jsonObject = new JSONObject(response.getBody());
-
-      String available = JSONUtils.getValueRecursive(jsonObject,"items.0.availability",String.class);
-
-      return available.equals("available");
-
-   }
 }
