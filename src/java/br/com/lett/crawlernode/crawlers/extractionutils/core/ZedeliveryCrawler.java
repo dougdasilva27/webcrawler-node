@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -42,7 +43,7 @@ public abstract class ZedeliveryCrawler extends Crawler {
    protected abstract ZedeliveryInfo getZedeliveryInfo();
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ZedeliveryCrawler(Session session) {
       super(session);
@@ -68,25 +69,25 @@ public abstract class ZedeliveryCrawler extends Crawler {
       ZedeliveryInfo zeDeliveryInfo = getZedeliveryInfo();
 
       String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":{\"address\":{\"latitude\":" + zeDeliveryInfo.getLatitude()
-            + ",\"longitude\":" + zeDeliveryInfo.getLongitude() + ",\"zipcode\":null,\"street\":\"" + zeDeliveryInfo.getStreet() + "\""
-            + ",\"neighborhood\":\"" + zeDeliveryInfo.getNeighborhood() + "\",\"city\":\"" + zeDeliveryInfo.getCity() + "\","
-            + "\"province\":\"" + zeDeliveryInfo.getProvince() + "\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\","
-            + "\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},"
-            + "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption:"
-            + " $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n"
-            + "      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n"
-            + "          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n"
-            + "          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n"
-            + "          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n"
-            + "            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n"
-            + "        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+         + ",\"longitude\":" + zeDeliveryInfo.getLongitude() + ",\"zipcode\":null,\"street\":\"" + zeDeliveryInfo.getStreet() + "\""
+         + ",\"neighborhood\":\"" + zeDeliveryInfo.getNeighborhood() + "\",\"city\":\"" + zeDeliveryInfo.getCity() + "\","
+         + "\"province\":\"" + zeDeliveryInfo.getProvince() + "\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\","
+         + "\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},"
+         + "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption:"
+         + " $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n"
+         + "      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n"
+         + "          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n"
+         + "          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n"
+         + "          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n"
+         + "            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n"
+         + "        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
-            .setPayload(initPayload)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .mustSendContentEncoding(false)
-            .build();
+         .setPayload(initPayload)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .mustSendContentEncoding(false)
+         .build();
       this.dataFetcher.post(session, request);
    }
 
@@ -98,15 +99,15 @@ public abstract class ZedeliveryCrawler extends Crawler {
       headers.put("content-type:", "application/json");
 
       String payload = "{\"variables\":{\"isVisitor\":false,\"id\":\"" + id + "\"},\"query\":\"query loadProduct($id: ID, $isVisitor: Boolean!)"
-            + "{loadProduct(id: $id, isVisitor: $isVisitor) {id displayName description isRgb price {min max} images category {id displayName} brand "
-            + "{id displayName} applicableDiscount {discountType finalValue presentedDiscountValue}}}\",\"operationName\":\"loadProduct\"}";
+         + "{loadProduct(id: $id, isVisitor: $isVisitor) {id displayName description isRgb price {min max} images category {id displayName} brand "
+         + "{id displayName} applicableDiscount {discountType finalValue presentedDiscountValue}}}\",\"operationName\":\"loadProduct\"}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
-            .setPayload(payload)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .mustSendContentEncoding(false)
-            .build();
+         .setPayload(payload)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .mustSendContentEncoding(false)
+         .build();
       Response response = this.dataFetcher.post(session, request);
       return CrawlerUtils.stringToJson(response.getBody());
    }
@@ -130,9 +131,9 @@ public abstract class ZedeliveryCrawler extends Crawler {
       JSONObject apiJson = fetchJson(productId);
 
       JSONObject data = JSONUtils.getJSONValue(apiJson, "data");
-      JSONObject loadProduct = JSONUtils.getJSONValue(data , "loadProduct");
+      JSONObject loadProduct = JSONUtils.getJSONValue(data, "loadProduct");
 
-      if (loadProduct != null) {
+      if (loadProduct != null && !loadProduct.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = loadProduct.optString("id");
@@ -147,15 +148,15 @@ public abstract class ZedeliveryCrawler extends Crawler {
          Offers offers = scrapOffer(loadProduct);
 
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalId)
-               .setName(name)
-               .setCategory1(category)
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImage)
-               .setDescription(description)
-               .setOffers(offers)
-               .build();
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setCategory1(category)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
          products.add(product);
       }
       return products;
@@ -166,13 +167,13 @@ public abstract class ZedeliveryCrawler extends Crawler {
       Pricing pricing = scrapPricing(product);
 
       offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULL_NAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
 
       return offers;
    }
@@ -190,11 +191,11 @@ public abstract class ZedeliveryCrawler extends Crawler {
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setPriceFrom(priceFrom)
-            .setCreditCards(creditCards)
-            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).build())
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).build())
+         .build();
    }
 
 
@@ -203,16 +204,16 @@ public abstract class ZedeliveryCrawler extends Crawler {
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(brand)
-               .setIsShopCard(false)
-               .setInstallments(installments)
-               .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
       }
       return creditCards;
    }
