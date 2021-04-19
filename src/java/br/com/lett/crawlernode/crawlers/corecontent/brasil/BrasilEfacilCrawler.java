@@ -39,7 +39,7 @@ import models.pricing.Pricing;
 
 public class BrasilEfacilCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME = "eFácil";
+   private static final String SELLER_FULL_NAME = "eFácil brasil";
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
