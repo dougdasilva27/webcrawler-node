@@ -19,4 +19,4 @@ services:
         container_name: web-scraper
         build:
            context: .
-           dockerfile: Dockerfile.dev
+           dockerfile: Dockerfile
