@@ -50,7 +50,7 @@ public class ArgentinaCentraloesteCrawler extends Crawler {
          String primaryImage = JSONUtils.getValueRecursive(json, "[data-gallery-role=gallery-placeholder].mage/gallery/gallery.data.0.img", String.class);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product.attribute.description .value"));
          String stock = CrawlerUtils.scrapStringSimpleInfo(doc, ".stock.available span", true);
-         boolean available = stock != null ? stock.contains("En stock") : null;
+         boolean available = stock != null && stock.contains("En stock");
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
