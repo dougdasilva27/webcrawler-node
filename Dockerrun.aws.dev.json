@@ -26,7 +26,8 @@
                     "containerPort": 9229,
                     "hostPort": 9229
                 }
-            ]
+            ],
+            "sharedMemorySize": 256
         },
         {
             "essential": true,

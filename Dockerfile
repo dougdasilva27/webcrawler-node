@@ -1,8 +1,8 @@
 FROM openjdk:8-jre-slim
 
 COPY target/deployment/*.jar /app/webcrawler.jar
-WORKDIR /app
 
+WORKDIR /app
 
 EXPOSE 5000
 
