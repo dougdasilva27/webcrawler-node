@@ -61,6 +61,7 @@ public class QueueService {
 
       queueURLMap.put(QueueName.INTEREST_PROCESSED.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED.toString());
       queueURLMap.put(QueueName.INTEREST_PROCESSED_RATING.toString(), QUEUE_URL + QueueName.INTEREST_PROCESSED_RATING.toString());
+      queueURLMap.put(QueueName.WEB_SCRAPER_PRODUCT_DEV.toString(), QUEUE_URL + QueueName.WEB_SCRAPER_PRODUCT_DEV.toString());
    }
 
    /**
