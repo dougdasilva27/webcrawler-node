@@ -7,4 +7,9 @@ public class BrasilSavegnagosertaozinhoCrawler extends SavegnagoRanking {
    public BrasilSavegnagosertaozinhoCrawler(Session session) {
       super(session);
    }
+
+   @Override
+   public String getStoreId() {
+      return "6";
+   }
 }
