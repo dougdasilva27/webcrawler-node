@@ -1,9 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 
@@ -15,27 +22,39 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 15;
+      this.pageSize = 48;
       this.log("Página " + this.currentPage);
 
       this.productsJSONArray = new JSONArray();
       int index = this.arrayProducts.size();
 
-      String url = "https://www.drogariasaopaulo.com.br/api/catalog_system/pub/products/search/" + this.keywordWithoutAccents.replace(" ", "%20") + "?_from=" + index + "&_to="
-            + (index + 14) + "&O=OrderByTopSaleDESC";
-      this.log("Link onde são feitos os crawlers: " + url);
+      String urlApi = "https://api.linximpulse.com/engage/search/v3/search?apiKey=drogariasaopaulo&productFormat=complete&resultsPerPage=48&page="+this.currentPage+"&terms="+keywordEncoded;
 
-      String response = fetchGETString(url, null);
+      Map<String,String> headers = new HashMap<>();
+      headers.put("origin","https://www.drogariasaopaulo.com.br");
 
-      if (response.startsWith("[") && response.endsWith("]")) {
-         productsJSONArray = new JSONArray(response);
-      }
+      Request request = Request.RequestBuilder.create()
+         .setUrl(urlApi)
+         .setHeaders(headers)
+         .build();
+
+      String response = dataFetcher.get(session,request).getBody() ;
+
+      JSONObject jsononj = CrawlerUtils.stringToJson(response);
+
+
+      productsJSONArray = JSONUtils.getJSONArrayValue(jsononj,"products");
+
+
 
       if (productsJSONArray.length() > 0) {
          for (Object o : productsJSONArray) {
             JSONObject item = (JSONObject) o;
-            String internalPid = crawlInternalPid(item);
-            String productUrl = crawlProductUrl(item);
+            String internalPid = item.optString("id") ;
+            String url = JSONUtils.getValueRecursive(item,"skus.0.properties.url",String.class);
+
+            String productUrl = CrawlerUtils.completeUrl(url,"https","www.drogariasaopaulo.com.br");
+
 
             saveDataProduct(null, internalPid, productUrl);
 
@@ -55,7 +74,7 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return this.productsJSONArray.length() == 15;
+      return true;
    }
 
    private String crawlProductUrl(JSONObject item) {
