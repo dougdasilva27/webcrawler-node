@@ -216,7 +216,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .old-price .price .cifra", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .old-price .price", null, false, ',', session);
       Double spotlightPrice = getPrice(doc);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
