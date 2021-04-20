@@ -95,18 +95,21 @@ public class BrasilCliniqueCrawler extends Crawler {
       return doc.selectFirst(".page-product") != null;
    }
 
-   private RatingsReviews crawlRatingReviews(Document doc, String internalId) {
+   private RatingsReviews crawlRatingReviews(Document doc, String internalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
-      String id = internalId.replace("PROD", "");
 
-      JSONObject ratingsJson = fetchJsonRatings(doc, id);
+      if(internalPid != null){
+         String id = internalPid.replace("PROD", "");
 
-      ratingReviews.setDate(session.getDate());
-      int totalRating = JSONUtils.getValueRecursive(ratingsJson, "paging.total_results", Integer.class);
-      ratingReviews.setTotalRating(totalRating);
-      ratingReviews.setTotalWrittenReviews(totalRating);
-      ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(ratingsJson));
-      ratingReviews.setAverageOverallRating(scrapAverageRating(ratingsJson));
+         JSONObject ratingsJson = fetchJsonRatings(doc, id);
+
+         ratingReviews.setDate(session.getDate());
+         int totalRating = JSONUtils.getValueRecursive(ratingsJson, "paging.total_results", Integer.class);
+         ratingReviews.setTotalRating(totalRating);
+         ratingReviews.setTotalWrittenReviews(totalRating);
+         ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(ratingsJson));
+         ratingReviews.setAverageOverallRating(scrapAverageRating(ratingsJson));
+      }
 
       return ratingReviews;
    }
