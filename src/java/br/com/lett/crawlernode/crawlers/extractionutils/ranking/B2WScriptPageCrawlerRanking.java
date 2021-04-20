@@ -36,7 +36,9 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
 
    private Document fetchPage() {
 
-      String url = homePage + "busca/" + this.keywordEncoded + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
+      String keyword = this.keywordWithoutAccents.replace(" ", "-");
+
+      String url = homePage + "busca/" + keyword + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
       this.log("Link onde são feitos os crawlers: " + url);
 
       Request request = Request.RequestBuilder.create()
