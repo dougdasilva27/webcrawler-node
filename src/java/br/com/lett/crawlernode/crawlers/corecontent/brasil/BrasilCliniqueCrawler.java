@@ -47,26 +47,26 @@ public class BrasilCliniqueCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[name=productId]", "content");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "meta[name=productId]", "content");
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "div.abstract", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ul.breadcrumbs > li");
-         RatingsReviews ratingReviews = crawlRatingReviews(doc, internalId);
+         RatingsReviews ratingReviews = crawlRatingReviews(doc, internalPid);
 
          Elements variants = doc.select("div[itemprop=offers]");
-         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "[id=page_data]", null, null, false, false);
 
          if (variants != null && !variants.isEmpty()) {
             for (Element variant : variants) {
 
                String name = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=name]", "content");
-               String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
-               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img[data-skuid=" + internalPid + "]",
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
+               String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "img[data-skuid=" + internalId + "]",
                   Collections.singletonList("data-src"),
                   "https",
                   "www.clinique.com.br");
                boolean isAvailable = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=availability]", "content").equals("In Stock");
 
-               Offers offers = isAvailable ? scrapOffers(json, internalPid) : new Offers();
+               JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "[id=page_data]", null, null, false, false);
+               Offers offers = isAvailable && json != null ? scrapOffers(json, internalId) : new Offers();
 
                // Creating the product
                Product product = ProductBuilder.create()
@@ -170,7 +170,7 @@ public class BrasilCliniqueCrawler extends Crawler {
          .build();
    }
 
-   private Double scrapAverageRating(JSONObject json){
+   private Double scrapAverageRating(JSONObject json) {
       Double averageRating = 0d;
 
       JSONArray resultsArray = json.optJSONArray("results");
