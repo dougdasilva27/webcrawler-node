@@ -6,4 +6,4 @@ WORKDIR /app
 
 EXPOSE 5000
 
-CMD ["java", "-jar", "/webcrawler.jar"]
+CMD ["java", "-jar", "webcrawler.jar"]
