@@ -6,7 +6,6 @@
             "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev",
             "name": "web-scraper",
             "memory": 1200,
-            "ipcMode": "host",
             "mountPoints": [
                 {
                     "containerPath": "/usr/src/app/logs",
@@ -21,13 +20,8 @@
                 {
                     "containerPort": 5000,
                     "hostPort": 5000
-                },
-                {
-                    "containerPort": 9229,
-                    "hostPort": 9229
                 }
-            ],
-            "sharedMemorySize": 256
+            ]
         },
         {
             "essential": true,
@@ -65,7 +59,6 @@
             ]
         },
         {
-
             "essential": true,
             "image": "prom/node-exporter:v1.0.1",
             "name": "nodeexporter",
