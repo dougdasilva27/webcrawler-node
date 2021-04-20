@@ -4,6 +4,6 @@ COPY target/deployment/*.jar /app/webcrawler.jar
 
 WORKDIR /app
 
-EXPOSE 8080
+EXPOSE 8030
 
 CMD ["java", "-jar", "webcrawler.jar"]
