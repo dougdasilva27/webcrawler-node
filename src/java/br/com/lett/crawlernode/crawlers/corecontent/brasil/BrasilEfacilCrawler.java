@@ -39,7 +39,7 @@ import models.pricing.Pricing;
 
 public class BrasilEfacilCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME = "eFácil brasil";
+   private static final String SELLER_FULL_NAME = "eFácil";
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
          Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -65,8 +65,8 @@ public class BrasilEfacilCrawler extends Crawler {
          String description = scrapDescription(doc);
          boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;         Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
 
-         String code = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-code", false);
-         RatingsReviews reviews = new TrustvoxRatingCrawler(session, "545", logger).extractRatingAndReviews(code, doc, dataFetcher);
+         String codeTrustVox = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-star a div", "data-trustvox-product-code-js");
+         RatingsReviews reviews = new TrustvoxRatingCrawler(session, "545", logger).extractRatingAndReviews(codeTrustVox, doc, dataFetcher);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -108,11 +108,8 @@ public class BrasilEfacilCrawler extends Crawler {
    }
 
    private String scrapDescription(Document doc) {
+      return CrawlerUtils.scrapStringSimpleInfo(doc, "#tab1_content div", false);
 
-      String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#tab2_content > div:nth-child(1)", false);
-      description += CrawlerUtils.scrapStringSimpleInfo(doc, "#especificacoes-content", false);
-
-      return description;
    }
 
    private Offers scrapOffer(Document doc, String internalPid, String internalId) throws OfferException, MalformedPricingException {
