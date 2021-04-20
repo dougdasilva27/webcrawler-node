@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belgium
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -15,9 +16,12 @@ import models.pricing.Pricing
 import models.pricing.Pricing.PricingBuilder
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.nodes.Document
-import java.lang.StringBuilder
 
 abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
+
+   init {
+      config.fetcher = FetchMode.JSOUP
+   }
 
    private val BASE_URL = "drive.carrefour.eu"
    private val SELLER_FULL_NAME = "carrefour"
@@ -40,7 +44,7 @@ abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
          Logging.printLogDebug(logger, session, "Product page identified: ${session.originalURL}")
          val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".pdp-titleSection", "data-productid")
          val internalPid = internalId
-         val name = scrapNameAndBrand(doc);
+         val name = scrapNameAndBrand(doc)
          val categories = CrawlerUtils.crawlCategories(doc, "#cfbreadcrumbsdesktop .nounderline", true)
          val description = CrawlerUtils.scrapElementsDescription(doc, listOf(".description-section-inner > div[id]"))
          val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image-gallery1 > div > img", listOf("src"), "https", BASE_URL)
@@ -78,19 +82,21 @@ abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
       val offers = Offers()
       val pricing: Pricing = scrapPricing(doc)
 
-      offers.add(OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(SELLER_FULL_NAME)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(true)
-         .setPricing(pricing)
-         .build())
+      offers.add(
+         OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_FULL_NAME)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build()
+      )
       return offers
    }
 
    private fun scrapPricing(doc: Document): Pricing {
-      val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod-price", null, true, ',', this.session)
+      val spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod-price span", null, true, ',', this.session)
       val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod-priceCut", null, true, ',', this.session)
 
       return PricingBuilder.create()
@@ -103,21 +109,21 @@ abstract class BelgiumCarrefourCrawler(session: Session) : Crawler(session) {
 
    private fun scrapNameAndBrand(doc: Document): String? {
 
-      var brandWithName = "";
+      var brandWithName = ""
 
-      val brandName = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod-brand", false);
-      val justName =  CrawlerUtils.scrapStringSimpleInfo(doc, ".prod-title", true);
+      val brandName = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod-brand", false)
+      val justName = CrawlerUtils.scrapStringSimpleInfo(doc, ".prod-title", true)
 
-      if(brandName != null){
-         val  sb =  StringBuilder();
+      if (brandName != null) {
+         val sb = StringBuilder()
          sb.append(brandName)
          sb.append(" ")
          sb.append(justName)
-         brandWithName = sb.toString();
+         brandWithName = sb.toString()
 
-         return brandWithName;
+         return brandWithName
       }
-      return justName;
+      return justName
    }
 
 }
