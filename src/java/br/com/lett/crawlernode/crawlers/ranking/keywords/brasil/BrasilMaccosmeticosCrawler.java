@@ -140,7 +140,7 @@ public class BrasilMaccosmeticosCrawler extends CrawlerRankingKeywords {
          JSONObject jsonObject = CrawlerUtils.stringToJson(data);
          String internalPid = jsonObject.optString("sku");
          String internalId = jsonObject.optString("prodid");
-         String productUrl = CrawlerUtils.scrapUrl(product, ".product_header_details a", "href", "https", "https://www.maccosmetics.com.br/");
+         String productUrl = CrawlerUtils.scrapUrl(product, ".product_header_details a", "href", "https", "www.maccosmetics.com.br/");
          saveDataProduct(internalId, internalPid, productUrl);
 
          log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
