@@ -51,7 +51,7 @@ public abstract class TottusCrawler extends Crawler {
 
          String name = doc.selectFirst("h1.title").text() + " " + doc.selectFirst("h2.brand").text();
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs .link.small");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-gallery-image", Collections.singletonList("src"), "http://",
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".GalleryImg", Collections.singletonList("src"), "http://",
             homePage);
          Elements secondaryImages = doc.select(".product-gallery-thumbnails-item img");
          if (secondaryImages.first() != null) {
