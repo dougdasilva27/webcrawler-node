@@ -1,41 +1,19 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.openqa.selenium.remote.RemoteWebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.InsightsCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.config.CrawlerConfig;
@@ -56,6 +34,20 @@ import models.Offer;
 import models.Offers;
 import models.Processed;
 import models.prices.Prices;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit
@@ -106,8 +98,6 @@ public abstract class Crawler extends Task {
       this.config.setFetcher(FetchMode.STATIC);
       this.config.setProxyList(new ArrayList<>());
       this.config.setConnectionAttempts(0);
-      // It will be false until exists rating out of core.
-      this.config.setMustSendRatingToKinesis(false);
    }
 
    /**
@@ -186,6 +176,9 @@ public abstract class Crawler extends Task {
             productionRun();
          }
       } catch (Exception e) {
+         if (session instanceof SeedCrawlerSession) {
+            Persistence.updateFrozenServerTask(((SeedCrawlerSession) session), e.getMessage());
+         }
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
    }
@@ -213,6 +206,7 @@ public abstract class Crawler extends Task {
    private void productionRun() {
 
       sendProgress(50);
+
 
       // crawl informations and create a list of products
       List<Product> products = extract();
@@ -350,6 +344,7 @@ public abstract class Crawler extends Task {
 
       Object obj = fetch();
 
+
       session.setProductPageResponse(obj);
 
       try {
@@ -368,6 +363,7 @@ public abstract class Crawler extends Task {
          if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
+         session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
 
          return new ArrayList<>();
@@ -497,7 +493,7 @@ public abstract class Crawler extends Task {
     * instance passed as parameter is not altered. Instead we perform a clone to securely alter the
     * attributes.
     *
-    * @param product
+    * @param product data to send
     */
    private void sendToKinesis(Product product) {
       if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
@@ -514,19 +510,6 @@ public abstract class Crawler extends Task {
             .put("kinesis_flow_type", "product");
 
          Logging.logInfo(logger, session, kinesisProductFlowMetadata, "AWS TIMING INFO");
-
-         if (!p.isVoid()) {
-            long ratingStartTime = System.currentTimeMillis();
-            KPLProducer.getInstance().put(p.getRatingReviews(), session, GlobalConfigurations.executionParameters.getKinesisRatingStream());
-
-            JSONObject kinesisRatingFlowMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - ratingStartTime)
-               .put("aws_type", "kinesis")
-               .put("kinesis_flow_type", "rating");
-
-            Logging.logInfo(logger, session, kinesisRatingFlowMetadata, "AWS TIMING INFO");
-         }
-
-
       }
    }
 
@@ -599,7 +582,12 @@ public abstract class Crawler extends Task {
 
       if (createdId != null) {
          Logging.printLogDebug(logger, session, "Scheduling images download tasks...");
-         Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
+         try {
+            Scheduler.scheduleImages(session, Main.queueHandler, processed, createdId);
+         } catch (SQLException throwables) {
+            Logging.printLogDebug(logger, session, "Download image scheduler attempt failed");
+            throwables.printStackTrace();
+         }
       }
 
    }

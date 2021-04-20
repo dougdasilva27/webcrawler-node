@@ -20,7 +20,7 @@ import java.util.Map;
 public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
    private final String PRODUCTS_API_URL = "https://services."+getApiDomain()+"/api/es-proxy/search/v2/products?page=";
-   private final String PRODUCT_BASE_URL = "https://www."+getProductDomain()+"/product/";
+   protected String PRODUCT_BASE_URL = "https://www."+getProductDomain()+"/product/";
    private final String STORE_ID = getStoreId();
    private final String STORE_TYPE = getStoreType();
 

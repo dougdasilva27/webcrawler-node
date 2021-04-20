@@ -1,5 +1,21 @@
 package br.com.lett.crawlernode.core.fetcher.methods;
 
+import br.com.lett.crawlernode.aws.s3.S3Service;
+import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
+import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.fetcher.models.PageContent;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
+import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
+import br.com.lett.crawlernode.exceptions.ResponseCodeException;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -47,22 +63,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.aws.s3.S3Service;
-import br.com.lett.crawlernode.core.fetcher.DataFetcherRedirectStrategy;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.fetcher.models.PageContent;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.fetcher.models.Response.ResponseBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.ImageCrawlerSession;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.exceptions.ResponseCodeException;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
 
 public class ApacheDataFetcher implements DataFetcher {
 
@@ -91,9 +91,8 @@ public class ApacheDataFetcher implements DataFetcher {
 
       long requestsStartTime = System.currentTimeMillis();
 
-
       while (attempt <= session.getMaxConnectionAttemptsCrawler() && ((request.bodyIsRequired() && (response.getBody() == null || response.getBody()
-            .isEmpty())) || !request.bodyIsRequired()) && mustContinue) {
+         .isEmpty())) || !request.bodyIsRequired()) && mustContinue) {
          RequestsStatistics requestStats = new RequestsStatistics();
          requestStats.setAttempt(attempt);
 
@@ -106,18 +105,18 @@ public class ApacheDataFetcher implements DataFetcher {
          try {
             long requestStartTime = System.currentTimeMillis();
 
-            randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
+            randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, request, attempt);
 
             requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
 
             SocketConfig socketConfig = SocketConfig.custom()
-                  .setSoKeepAlive(false)
-                  .setSoLinger(1)
-                  .setSoReuseAddress(true)
-                  .setSoTimeout(FetchUtilities.DEFAULT_SOCKET_TIMEOUT)
-                  .setTcpNoDelay(true)
-                  .build();
+               .setSoKeepAlive(false)
+               .setSoLinger(1)
+               .setSoReuseAddress(true)
+               .setSoTimeout(FetchUtilities.DEFAULT_SOCKET_TIMEOUT)
+               .setTcpNoDelay(true)
+               .build();
 
             CookieStore cookieStore = createCookieStore(request.getCookies());
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -126,7 +125,7 @@ public class ApacheDataFetcher implements DataFetcher {
                Logging.printLogDebug(logger, session, "[ATTEMPT " + attempt + "] Using " + randProxy.getSource() + " (proxy) for this request.");
                if (randProxy.getUser() != null) {
                   credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-                        new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
+                     new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
                Logging.printLogDebug(logger, session, "[NO_PROXY ALERT][ATTEMPT " + attempt + "]Using no proxy for this request.");
@@ -157,16 +156,16 @@ public class ApacheDataFetcher implements DataFetcher {
             RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
 
             CloseableHttpClient httpclient =
-                  HttpClients.custom()
-                        .setDefaultCookieStore(cookieStore)
-                        .setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
-                        .setRedirectStrategy(redirectStrategy)
-                        .setDefaultCredentialsProvider(credentialsProvider)
-                        .setDefaultHeaders(reqHeaders)
-                        .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory())
-                        .setSSLHostnameVerifier(hostNameVerifier)
-                        .setDefaultSocketConfig(socketConfig)
-                        .build();
+               HttpClients.custom()
+                  .setDefaultCookieStore(cookieStore)
+                  .setUserAgent(randUserAgent).setDefaultRequestConfig(requestConfig)
+                  .setRedirectStrategy(redirectStrategy)
+                  .setDefaultCredentialsProvider(credentialsProvider)
+                  .setDefaultHeaders(reqHeaders)
+                  .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory())
+                  .setSSLHostnameVerifier(hostNameVerifier)
+                  .setDefaultSocketConfig(socketConfig)
+                  .build();
 
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -206,8 +205,9 @@ public class ApacheDataFetcher implements DataFetcher {
             requestStats.setElapsedTime(System.currentTimeMillis() - requestStartTime);
             if (responseCode == 404 || responseCode == 204) {
                FetchUtilities.sendRequestInfoLog(attempt, request, requestStats, randProxy, method, randUserAgent, session, responseCode, requestHash);
-               break;
+               mustContinue = false;
             } else if (Integer.toString(responseCode).charAt(0) != '2' && Integer.toString(responseCode).charAt(0) != '3') { // errors
+               requests.add(requestStats);
                throw new ResponseCodeException(responseCode);
             }
 
@@ -264,13 +264,13 @@ public class ApacheDataFetcher implements DataFetcher {
             Map<String, String> responseHeaders = FetchUtilities.headersToMap(closeableHttpResponse.getAllHeaders());
 
             response = new ResponseBuilder()
-                  .setBody(FetchUtilities.processContent(pageContent, session).trim())
-                  .setRedirecturl(redirectStrategy.getFinalURL())
-                  .setProxyused(randProxy)
-                  .setHeaders(responseHeaders)
-                  .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE)))
-                  .setLastStatusCode(responseCode)
-                  .build();
+               .setBody(FetchUtilities.processContent(pageContent, session).trim())
+               .setRedirecturl(redirectStrategy.getFinalURL())
+               .setProxyused(randProxy)
+               .setHeaders(responseHeaders)
+               .setCookies(FetchUtilities.getCookiesFromHeaders(closeableHttpResponse.getHeaders(FetchUtilities.HEADER_SET_COOKIE)))
+               .setLastStatusCode(responseCode)
+               .build();
             mustContinue = false;
             requestStats.setHasPassedValidation(true);
             requests.add(requestStats);
@@ -291,9 +291,9 @@ public class ApacheDataFetcher implements DataFetcher {
       }
 
       JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_attempts_number", attempt)
-            .put("req_type", "url_request")
-            .put("req_lib", "apache");
+         .put("req_attempts_number", attempt)
+         .put("req_type", "url_request")
+         .put("req_lib", "apache");
 
       Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
@@ -321,7 +321,7 @@ public class ApacheDataFetcher implements DataFetcher {
          try {
             long requestStartTime = System.currentTimeMillis();
 
-            randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, attempt);
+            randProxy = request.getProxy() != null ? request.getProxy() : FetchUtilities.getNextProxy(session, request, attempt);
             requestStats.setProxy(randProxy);
             session.addRequestProxy(url, randProxy);
 
@@ -332,7 +332,7 @@ public class ApacheDataFetcher implements DataFetcher {
                Logging.printLogDebug(logger, session, "Using " + randProxy.getSource() + "(proxy) for this request.");
                if (randProxy.getUser() != null) {
                   credentialsProvider.setCredentials(new AuthScope(randProxy.getAddress(), randProxy.getPort()),
-                        new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
+                     new UsernamePasswordCredentials(randProxy.getUser(), randProxy.getPass()));
                }
             } else {
                Logging.printLogDebug(logger, session, "[NO_PROXY ALERT]Using no proxy for this request.");
@@ -357,28 +357,27 @@ public class ApacheDataFetcher implements DataFetcher {
                }
             };
 
-
             HttpHost proxy = randProxy != null ? new HttpHost(randProxy.getAddress(), randProxy.getPort()) : null;
             RequestConfig requestConfig = FetchUtilities.getRequestConfig(proxy, request.isFollowRedirects(), session);
 
             SocketConfig socketConfig = SocketConfig.custom()
-                  .setSoKeepAlive(false)
-                  .setSoLinger(1)
-                  .setSoReuseAddress(true)
-                  .setSoTimeout(FetchUtilities.DEFAULT_SOCKET_TIMEOUT)
-                  .setTcpNoDelay(true)
-                  .build();
+               .setSoKeepAlive(false)
+               .setSoLinger(1)
+               .setSoReuseAddress(true)
+               .setSoTimeout(FetchUtilities.DEFAULT_SOCKET_TIMEOUT)
+               .setTcpNoDelay(true)
+               .build();
 
             CloseableHttpClient httpclient = HttpClients.custom()
-                  .setDefaultCookieStore(cookieStore)
-                  .setUserAgent(randUserAgent)
-                  .setDefaultRequestConfig(requestConfig)
-                  .setDefaultHeaders(reqHeaders)
-                  .setSSLHostnameVerifier(hostNameVerifier)
-                  .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory())
-                  .setDefaultCredentialsProvider(credentialsProvider)
-                  .setDefaultSocketConfig(socketConfig)
-                  .build();
+               .setDefaultCookieStore(cookieStore)
+               .setUserAgent(randUserAgent)
+               .setDefaultRequestConfig(requestConfig)
+               .setDefaultHeaders(reqHeaders)
+               .setSSLHostnameVerifier(hostNameVerifier)
+               .setSSLSocketFactory(FetchUtilities.createSSLConnectionSocketFactory())
+               .setDefaultCredentialsProvider(credentialsProvider)
+               .setDefaultSocketConfig(socketConfig)
+               .build();
 
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
@@ -431,9 +430,9 @@ public class ApacheDataFetcher implements DataFetcher {
       }
 
       JSONObject apacheMetadata = new JSONObject().put("req_elapsed_time", System.currentTimeMillis() - requestsStartTime)
-            .put("req_attempts_number", attempt)
-            .put("req_type", "image_download")
-            .put("req_lib", "apache");
+         .put("req_attempts_number", attempt)
+         .put("req_type", "image_download")
+         .put("req_lib", "apache");
 
       Logging.logInfo(logger, session, apacheMetadata, "APACHE REQUESTS INFO");
 
@@ -452,7 +451,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
    /**
     * This function make a asynchronous get request on a url
-    * 
+    *
     * @param url
     * @param session
     * @return Future<Content>
@@ -470,10 +469,9 @@ public class ApacheDataFetcher implements DataFetcher {
          ExecutorService threadpool = Executors.newFixedThreadPool(1);
          Async async = Async.newInstance().use(threadpool);
          final org.apache.http.client.fluent.Request request = org.apache.http.client.fluent.Request
-               .Get(requestURL)
-               .socketTimeout(5000)
-               .connectTimeout(5000);
-
+            .Get(requestURL)
+            .socketTimeout(5000)
+            .connectTimeout(5000);
 
          return async.execute(request, new FutureCallback<Content>() {
             @Override

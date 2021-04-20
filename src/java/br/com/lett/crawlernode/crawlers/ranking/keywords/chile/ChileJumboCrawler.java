@@ -11,6 +11,6 @@ public class ChileJumboCrawler extends br.com.lett.crawlernode.crawlers.extracti
 
    @Override
    protected String getStoreCode() {
-      return CODE_LOCATE;
+      return "11";
    }
 }

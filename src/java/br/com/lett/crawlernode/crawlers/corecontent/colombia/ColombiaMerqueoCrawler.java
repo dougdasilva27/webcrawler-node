@@ -220,7 +220,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
          apiUrl.append("&product_slug=").append(slugs.get(3));
       }
 
-      apiUrl.append("&limit=7&zoneId=40&adq=1");
+      apiUrl.append("&limit=7&zoneId=32&adq=1");
 
       Request request = RequestBuilder
          .create()

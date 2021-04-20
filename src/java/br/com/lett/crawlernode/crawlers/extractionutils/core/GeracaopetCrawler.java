@@ -12,6 +12,12 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
@@ -26,13 +32,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public class GeracaopetCrawler extends Crawler {
 
    private static final String SELLER_NAME = "PETLAND";
@@ -44,7 +43,6 @@ public class GeracaopetCrawler extends Crawler {
       super(session);
       this.cep = cep;
       this.storeId = storeId;
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

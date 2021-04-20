@@ -7,6 +7,7 @@ public class ColombiaRappiexitobogotaCrawler extends ColombiaRappiCrawlerRanking
 
   public ColombiaRappiexitobogotaCrawler(Session session) {
     super(session);
+    newUnification = true;
   }
 
   public static final String STORE_ID = "6660081";

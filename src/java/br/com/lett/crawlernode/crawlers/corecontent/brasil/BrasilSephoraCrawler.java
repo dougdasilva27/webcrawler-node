@@ -8,19 +8,26 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import models.Offer;
 import models.Offers;
-import models.pricing.*;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.*;
 
 /**
  * date: 05/09/2018
@@ -39,7 +46,6 @@ public class BrasilSephoraCrawler extends Crawler {
 
    public BrasilSephoraCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override
@@ -59,8 +65,7 @@ public class BrasilSephoraCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
 
-
-         Elements variants = doc.select(".display-name.display-name-shade.no-bullet>li");
+         Elements variants = doc.select(".product-detail .product-variations .no-bullet > li");
 
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
@@ -87,8 +92,6 @@ public class BrasilSephoraCrawler extends Crawler {
 
             products.add(product);
          }
-
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -96,17 +99,9 @@ public class BrasilSephoraCrawler extends Crawler {
       return products;
    }
 
-   /*******************************
-    * Product page identification *
-    *******************************/
-
    private boolean isProductPage(Document document) {
       return document.selectFirst(".product-cart") != null;
    }
-
-   /*******************
-    * General methods *
-    *******************/
 
    private String scrapName(Document doc){
       return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false)
@@ -160,7 +155,6 @@ public class BrasilSephoraCrawler extends Crawler {
 
       return sales;
    }
-
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();

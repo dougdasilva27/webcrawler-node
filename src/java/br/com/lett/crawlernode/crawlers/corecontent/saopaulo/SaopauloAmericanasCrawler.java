@@ -235,38 +235,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             }
          }
       }
-
       return offers;
    }
-
-   @Override
-   protected Pricing scrapPricing(JSONObject info, int offerIndex, String internalSellerId, Map<String, Double> mapOfSellerIdAndPrice, boolean newWay)
-      throws MalformedPricingException {
-
-      Double priceFrom = scrapPriceFrom(info);
-      CreditCards creditCards = scrapCreditCards(info);
-      Double spotlightPrice = scrapSpotlightPrice(info);
-      BankSlip bt = scrapBankTicket(info);
-
-      if (!newWay || offerIndex != 0) {
-         mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
-      }
-
-      return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom > 0d ? priceFrom : null)
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bt)
-         .build();
-   }
-
-   private Double scrapPriceFrom(JSONObject info) {
-      return info.optDouble("priceFrom");
-   }
-
-
-   private Double scrapSpotlightPrice(JSONObject info) {
-    return info.getDouble("defaultPrice");
-   }
-
 }

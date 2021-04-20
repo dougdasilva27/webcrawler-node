@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.florianopolis;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -11,22 +9,27 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AngelonieletroUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.*;
-import models.prices.Prices;
-import models.pricing.*;
-import org.apache.http.HttpHeaders;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import models.AdvancedRatingReview;
+import models.Offer;
+import models.Offers;
+import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import org.json.JSONArray;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * This crawler uses WebDriver to detect when we have sku variations on the same page.
@@ -55,7 +58,6 @@ public class FlorianopolisAngelonieletroCrawler extends Crawler {
 
    public FlorianopolisAngelonieletroCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

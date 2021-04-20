@@ -48,10 +48,8 @@ public class GPACrawler extends Crawler {
 
    private String MAIN_SELLER_NAME;
 
-
    public GPACrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
       inferFields();
       super.config.setFetcher(FetchMode.FETCHER);
    }
@@ -111,7 +109,7 @@ public class GPACrawler extends Crawler {
       if (className.contains("paodeacucar")) {
          this.store = "pa";
          this.homePageHttps = "https://www.paodeacucar.com/";
-         MAIN_SELLER_NAME = "pao de acucar";
+         MAIN_SELLER_NAME = "Pão de Açúcar";
       } else if (className.contains("extra")) {
          this.store = "ex";
          this.homePageHttps = "https://www.clubeextra.com.br/";
@@ -141,15 +139,15 @@ public class GPACrawler extends Crawler {
          Offers offers = new Offers();
 
          if (available) {
-            offers = hasMarketPlace ? offersFromMarketPlace(doc) : scrapOffers(data);
+            offers = hasMarketPlace ? offersFromMarketPlace(doc):scrapOffers(data) ;
          }
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          RatingsReviews ratingsReviews = extractRatingAndReviews(internalId);
-         String secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
+         List<String> secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
 
          String redirectedToURL = session.getRedirectedToURL(productUrl);
-         if (internalPid != null && redirectedToURL!= null && !redirectedToURL.isEmpty()) {
+         if (internalPid != null && redirectedToURL != null && !redirectedToURL.isEmpty()) {
             productUrl = redirectedToURL;
          }
 
@@ -296,9 +294,8 @@ public class GPACrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImages(JSONObject json, String primaryImage) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
+      List<String> secondaryImagesArray = new ArrayList<>();
 
       String primaryImageId = getImageId(primaryImage);
 
@@ -313,31 +310,27 @@ public class GPACrawler extends Crawler {
                String imageId = getImageId(image);
 
                if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.put(homePageHttps + imageObj.getString("BIG"));
+                  secondaryImagesArray.add(homePageHttps + imageObj.getString("BIG"));
                }
             } else if (imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
                String image = homePageHttps + imageObj.getString("MEDIUM");
                String imageId = getImageId(image);
 
                if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.put(homePageHttps + imageObj.getString("MEDIUM"));
+                  secondaryImagesArray.add(homePageHttps + imageObj.getString("MEDIUM"));
                }
             } else if (imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
                String image = homePageHttps + imageObj.getString("SMALL");
                String imageId = getImageId(image);
 
                if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.put(homePageHttps + imageObj.getString("SMALL"));
+                  secondaryImagesArray.add(homePageHttps + imageObj.getString("SMALL"));
                }
             }
          }
       }
 
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
+      return secondaryImagesArray;
    }
 
    private String getImageId(String imageUrl) {
@@ -584,7 +577,8 @@ public class GPACrawler extends Crawler {
          url += "&storeId=" + this.storeId;
       }
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Request request = RequestBuilder.create()
+         .setUrl(url).setCookies(cookies).build();
       String res = this.dataFetcher.get(session, request).getBody();
 
       JSONObject apiGPA = JSONUtils.stringToJson(res);
@@ -699,27 +693,44 @@ public class GPACrawler extends Crawler {
       Offers offers = new Offers();
       if (data != null) {
          Pricing pricing = scrapPricing(data);
+         String sales = CrawlerUtils.calculateSales(pricing);
 
-         if (pricing != null) {
-            offers.add(Offer.OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(MAIN_SELLER_NAME)
-               .setSellersPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(true)
-               .setPricing(pricing)
-               .build());
-         }
+         offers.add(Offer.OfferBuilder.create()
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(MAIN_SELLER_NAME)
+            .setSales(Collections.singletonList(sales))
+            .setMainPagePosition(1)
+            .setSellersPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .build());
       }
+
       return offers;
    }
 
    private Pricing scrapPricing(JSONObject data) throws MalformedPricingException {
-      Double spotlightPrice = data.optDouble("currentPrice");
+      Double spotlightPrice = null;
       Double priceFrom = null;
-      if (data.has("priceFrom")) {
+
+      if (data.has("productPromotions")) {
+         JSONArray promotions = data.optJSONArray("productPromotions");
+         for (Object e : promotions) {
+            if (e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 51241) {
+               spotlightPrice = ((JSONObject) e).optDouble("unitPrice");
+               priceFrom = data.optDouble("currentPrice");
+            }
+         }
+      }
+      if (spotlightPrice == null) {
+         spotlightPrice = data.optDouble("currentPrice");
+      }
+
+      if (priceFrom == null && data.has("priceFrom")) {
          priceFrom = data.optDouble("priceFrom");
       }
+
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return PricingBuilder.create()
@@ -733,7 +744,7 @@ public class GPACrawler extends Crawler {
 
    }
 
-   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+   protected CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
@@ -753,19 +764,28 @@ public class GPACrawler extends Crawler {
       return creditCards;
    }
 
+
    private boolean hasMarketPlace(Document doc) {
-      return doc.select(".buy-box-tabstyles__Tab-sc-1j5ta4y-0").size() > 1;
+      Elements sellerContainer = doc.select(".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk");
+      String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc,".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk p:first-child span:not(:first-child)", false);
+
+      boolean equalsSeller = false;
+
+      if(sellerName != null){
+         equalsSeller = !sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
+      }
+      return !(sellerContainer.size() > 1) || equalsSeller;
    }
 
    private Offers offersFromMarketPlace(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       int pos = 1;
 
-      Elements ofertas = doc.select(".buy-box-tabstyles__Tab-sc-1j5ta4y-0");
+      Elements ofertas = doc.select(".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk");
 
       if (ofertas != null) {
          for (Element oferta : ofertas) {
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(oferta, "p:first-child", false);
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(oferta, "p:first-child span:not(:first-child)", false);
             Pricing pricing = scrapSellersPricing(oferta);
             boolean isMainRetailer = sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
 
@@ -784,11 +804,12 @@ public class GPACrawler extends Crawler {
       return offers;
    }
 
+
    private Pricing scrapSellersPricing(Element e) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, "p:last-child", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, ".current-pricesectionstyles__CurrentPrice-sc-17j9p6i-0 p", null, false, ',', session);
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
-      return PricingBuilder.create()
+      return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)

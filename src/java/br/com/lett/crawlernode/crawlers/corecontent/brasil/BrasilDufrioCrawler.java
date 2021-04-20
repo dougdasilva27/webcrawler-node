@@ -11,24 +11,32 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
-import models.pricing.*;
-import org.json.JSONArray;
+import models.pricing.BankSlip;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.*;
 
 /*****************************************************************************************************************************
  * Crawling notes (12/07/2016):
@@ -57,7 +65,6 @@ public class BrasilDufrioCrawler extends Crawler {
    public BrasilDufrioCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.WEBDRIVER);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

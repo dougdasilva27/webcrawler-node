@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -21,6 +12,12 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class NikeCrawler extends Crawler {
 
@@ -32,7 +29,7 @@ public class NikeCrawler extends Crawler {
   public NikeCrawler(Session session) {
     super(session);
     super.config.setFetcher(FetchMode.APACHE);
-    super.config.setMustSendRatingToKinesis(true);
+
 
     defaultHeaders = new HashMap<>();
     defaultHeaders.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
@@ -92,18 +89,18 @@ public class NikeCrawler extends Crawler {
 
             // Creating the product
             Product product = ProductBuilder.create()
-                .setUrl(session.getOriginalURL())
-                .setInternalId(internalId)
-                .setInternalPid(internalPid)
-                .setRatingReviews(ratingsReviews)
-                .setName(skuName)
-                .setPrice(price)
-                .setPrices(prices)
-                .setDescription(description)
-                .setPrimaryImage(primaryImage)
-                .setSecondaryImages(secondaryImages)
-                .setAvailable(available)
-                .build();
+                    .setUrl(session.getOriginalURL())
+                    .setInternalId(internalId)
+                    .setInternalPid(internalPid)
+                    .setRatingReviews(ratingsReviews)
+                    .setName(skuName)
+                    .setPrice(price)
+                    .setPrices(prices)
+                    .setDescription(description)
+                    .setPrimaryImage(primaryImage)
+                    .setSecondaryImages(secondaryImages)
+                    .setAvailable(available)
+                    .build();
 
             products.add(product);
           }

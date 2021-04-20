@@ -6,14 +6,17 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-
-import java.util.*;
 
 public class BrasilSupermuffatoCrawler extends VTEXOldScraper {
 
@@ -22,7 +25,6 @@ public class BrasilSupermuffatoCrawler extends VTEXOldScraper {
 
    public BrasilSupermuffatoCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

@@ -11,19 +11,20 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
-import models.pricing.*;
+import models.pricing.CreditCard;
+import models.pricing.CreditCards;
+import models.pricing.Installment;
+import models.pricing.Installments;
+import models.pricing.Pricing;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawler {
    private static final String HOME_PAGE = "https://supermercado.laanonimaonline.com/";
@@ -32,7 +33,6 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
    public ArgentinaSupermercadolaanonimaonlinecipollettiCrawler(Session session) {
       super(session);
-      super.config.setMustSendRatingToKinesis(true);
    }
 
    @Override

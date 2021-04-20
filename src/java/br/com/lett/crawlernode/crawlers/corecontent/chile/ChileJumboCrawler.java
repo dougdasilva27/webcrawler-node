@@ -9,6 +9,11 @@ public class ChileJumboCrawler extends br.com.lett.crawlernode.crawlers.extracti
    }
 
    @Override
+   protected String getCodeLocate() {
+      return "11";
+   }
+
+   @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(ChileJumboCrawler.HOME_PAGE));

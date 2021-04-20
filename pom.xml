@@ -8,6 +8,7 @@
     <packaging>jar</packaging>
 
     <properties>
+        <java.version>1.8</java.version>
         <maven.build.timestamp.format>yyyy-MM-dd_HH-mm</maven.build.timestamp.format>
         <mustache.compiler.version>0.9.4</mustache.compiler.version>
         <sun.httpserver.version>20070405</sun.httpserver.version>
@@ -18,7 +19,7 @@
         <tika.version>1.5</tika.version>
         <s3.version>1.11.957</s3.version>
         <sqs.version>1.11.957</sqs.version>
-        <kinesis.version>0.14.5</kinesis.version>
+        <kinesis.version>0.14.6</kinesis.version>
         <db.version>8.0.0</db.version>
         <jsoup.version>1.13.1</jsoup.version>
         <models.version>2.7.12</models.version>
@@ -69,8 +70,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
 
@@ -136,10 +137,19 @@
 
     <dependencies>
 
+
+        <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server -->
         <dependency>
-            <groupId>com.sun.net.httpserver</groupId>
-            <artifactId>http</artifactId>
-            <version>${sun.httpserver.version}</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>9.4.38.v20210224</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>9.4.38.v20210224</version>
         </dependency>
 
         <!-- A JPEG reader plugin for Java ImageIO This plugin will deal with cases
@@ -287,6 +297,13 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.10</version>
         </dependency>
+
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-kotlin</artifactId>
+            <version>6.2.2</version>
+        </dependency>
+
     </dependencies>
 
     <repositories>

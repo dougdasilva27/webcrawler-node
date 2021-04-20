@@ -2,9 +2,11 @@ package br.com.lett.crawlernode.main;
 
 import br.com.lett.crawlernode.aws.kinesis.KPLProducer;
 import br.com.lett.crawlernode.aws.sqs.QueueHandler;
-import br.com.lett.crawlernode.core.server.Server;
+import br.com.lett.crawlernode.core.server.ServerCrawler;
+import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.task.Resources;
 import br.com.lett.crawlernode.database.Persistence;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ public class Main {
 
    public static QueueHandler queueHandler;
    public static Resources globalResources;
-   public static Server server;
+   public static ServerCrawler server;
 
    public static void main(String[] args) {
       Logging.printLogInfo(LOGGER, "Starting webcrawler-node...");
@@ -57,6 +59,10 @@ public class Main {
       queueHandler = new QueueHandler();
 
       // Create the server
-      server = new Server();
+      try {
+         server = new ServerCrawler();
+      } catch (Exception e) {
+         Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
+      }
    }
 }

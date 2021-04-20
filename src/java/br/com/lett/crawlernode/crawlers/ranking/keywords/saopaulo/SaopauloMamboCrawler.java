@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,109 +9,76 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class SaopauloMamboCrawler extends CrawlerRankingKeywords {
 
-  public SaopauloMamboCrawler(Session session) {
-    super(session);
-  }
+   public SaopauloMamboCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 12;
-    this.log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 12;
+      this.log("Página " + this.currentPage);
 
-    JSONObject resultsList = fetchJsonApi();
-    JSONArray products = resultsList.has("records") ? resultsList.getJSONArray("records") : new JSONArray();
+      JSONObject json = fetchJsonApi(this.currentPage);
 
-    if (products.length() > 0) {
-      if (this.totalProducts == 0) {
-        setTotalBusca(resultsList);
-      }
+      JSONArray products = json.optJSONArray("products");
 
-      for (Object o : products) {
-        JSONObject productInfo = (JSONObject) o;
+      if (products != null && products.length() > 0) {
+         if (this.totalProducts == 0) {
+            setTotalBusca(json);
+         }
 
-        if (productInfo.has("records")) {
-          JSONArray records = productInfo.getJSONArray("records");
-          this.position++;
+         for (Object o : products) {
+            JSONObject jsonProduct = (JSONObject) o;
 
-          for (Object obj : records) {
-            JSONObject jsonSku = (JSONObject) obj;
-            String internalId = crawlInternalId(jsonSku);
-            String productUrl = crawlProductUrl(jsonSku);
+            this.position++;
+
+            String internalId = jsonProduct.optString("id");
+            String productUrl = jsonProduct.optString("url");
 
             saveDataProduct(internalId, null, productUrl, this.position);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
-              break;
+               break;
             }
-          }
-        }
+         }
+
+      }else{
+         this.result = false;
+         this.log("Keyword sem resultados!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultados!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-  }
+   }
 
+   protected void setTotalBusca(JSONObject apiSearch) {
+      this.totalProducts = JSONUtils.getIntegerValueFromJSON(apiSearch, "size", 0);
+      this.log("Total da busca: " + this.totalProducts);
+   }
 
-  protected void setTotalBusca(JSONObject apiSearch) {
-    this.totalProducts = JSONUtils.getIntegerValueFromJSON(apiSearch, "totalNumRecs", 0);
-    this.log("Total da busca: " + this.totalProducts);
-  }
+   private JSONObject fetchJsonApi(int page) {
+      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=mambo-v7&showOnlyAvailable=false&resultsPerPage=12"
+         + "&page=" + page + "&productFormat=complete&terms="
+         + this.keywordWithoutAccents;
 
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authority", "api.linximpulse.com");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("origin", "https://www.mambo.com.br");
 
-  private String crawlInternalId(JSONObject sku) {
-    String internalId = null;
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
+      Response response = dataFetcher.get(session, request);
 
-    if (sku.has("attributes")) {
-      JSONObject attributes = sku.getJSONObject("attributes");
-
-      if (attributes.has("product.repositoryId")) {
-        String id = attributes.get("product.repositoryId").toString().replace("[", "").replace("]", "").replace("\"", "").trim();
-
-        if (!id.isEmpty()) {
-          internalId = id;
-        }
-      }
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(JSONObject sku) {
-    String productUrl = null;
-
-    if (sku.has("attributes")) {
-      JSONObject attributes = sku.getJSONObject("attributes");
-      if (attributes.has("product.route")) {
-        String route = attributes.get("product.route").toString().replace("[", "").replace("]", "").replace("\"", "").trim();
-
-        if (!route.isEmpty()) {
-          productUrl = CrawlerUtils.completeUrl(route, "https:", "www.mambo.com.br");
-        }
-      }
-    }
-
-    return productUrl;
-  }
-
-  private JSONObject fetchJsonApi() {
-    JSONObject resultsList = new JSONObject();
-    String url = "https://www.mambo.com.br/ccstoreui/v1/search?Ntt=" + this.keywordWithoutAccents.replace(" ", "%20") + "*&No="
-        + this.arrayProducts.size() + "&Nrpp=12&searchType=simple&totalResults=true"
-        + "&Nr=AND(product.active%3A1%2Csku.location_id%3A208%2CNOT(sku.availabilityStatus%3AOUTOFSTOCK))";
-
-    JSONObject response = CrawlerUtils.stringToJson(fetchGETString(url, cookies));
-
-    if (response.has("resultsList")) {
-      resultsList = response.getJSONObject("resultsList");
-    }
-
-    return resultsList;
-  }
+      return CrawlerUtils.stringToJson(response.getBody());
+   }
 }
