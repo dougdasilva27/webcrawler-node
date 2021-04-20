@@ -26,8 +26,6 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       this.productsJSONArray = new JSONArray();
-      int index = this.arrayProducts.size();
-
       String urlApi = "https://api.linximpulse.com/engage/search/v3/search?apiKey=drogariasaopaulo&productFormat=complete&resultsPerPage=48&page="+this.currentPage+"&terms="+keywordEncoded;
 
       Map<String,String> headers = new HashMap<>();
@@ -77,23 +75,5 @@ public class SaopauloDrogariasaopauloCrawler extends CrawlerRankingKeywords {
       return true;
    }
 
-   private String crawlProductUrl(JSONObject item) {
-      String productUrl = null;
 
-      if (item.has("link")) {
-         productUrl = item.getString("link");
-      }
-
-      return productUrl;
-   }
-
-   private String crawlInternalPid(JSONObject item) {
-      String internalPid = null;
-
-      if (item.has("productId")) {
-         internalPid = item.getString("productId");
-      }
-
-      return internalPid;
-   }
 }
