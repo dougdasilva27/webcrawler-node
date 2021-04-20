@@ -6,7 +6,5 @@ services:
         restart: unless-stopped
         ports:
             - 5000:5000
-        env_file:
-            - .env
         volumes:
             - ~/.aws:/root/.aws:ro

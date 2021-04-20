@@ -1,9 +1,7 @@
 .env
 bin/
-node_modules/
 .vscode/
 .idea
-*.sum
 app
 
 .git
