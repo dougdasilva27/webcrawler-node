@@ -132,26 +132,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin-version}</version>
             </plugin>
-
-            <plugin>
-                <groupId>com.google.cloud.tools</groupId>
-                <artifactId>jib-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <from>
-                        <image>openjdk:8-jre-slim</image>
-                    </from>
-                    <container>
-                        <mainClass>br.com.lett.crawlernode.main.Main</mainClass>
-                        <ports>
-                            <port>5000</port>
-                        </ports>
-                    </container>
-                    <to>
-                        <image>868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler</image>
-                    </to>
-                </configuration>
-            </plugin>
         </plugins>
 
     </build>
