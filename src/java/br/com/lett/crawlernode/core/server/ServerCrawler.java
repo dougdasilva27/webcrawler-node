@@ -33,7 +33,7 @@ public class ServerCrawler {
    public static final String ENDPOINT_HEALTH_CHECK = "/status";
 
    private static final int SERVER_PORT = 5000;
-   private static final String SERVER_HOST = "localhost";
+   private static final String SERVER_HOST = "0.0.0.0";
 
 
    private Server server;
