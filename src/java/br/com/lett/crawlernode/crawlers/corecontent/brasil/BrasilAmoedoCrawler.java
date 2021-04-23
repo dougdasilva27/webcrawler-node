@@ -1,16 +1,18 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,23 +21,23 @@ import java.util.*;
 
 /************************************************************************************************************************************************************************************
  * Crawling notes (23/08/2016):
- * 
+ *
  * 1) For this crawler, we have one url per each sku. There is no page is more than one sku in it.
- * 
+ *
  * 2) There is no stock information for skus in this ecommerce by the time this crawler was made.
- * 
+ *
  * 3) There is no marketplace in this ecommerce by the time this crawler was made.
- * 
+ *
  * 4) The sku page identification is done simply looking for an specific html element.
- * 
+ *
  * 5) In this market was not found a product with status unnavailable.
- * 
+ *
  * 6) There is internalPid for skus in this ecommerce.
- * 
+ *
  * 7) The primary image is the first image in the secondary images selector.
- * 
+ *
  * 8) Categories in this market appear only with cookies.
- * 
+ *
  * Examples: ex1 (available):
  * http://www.amoedo.com.br/ar-condicionado-split-piso-teto-komeco-60btus-kop60fc ex2 (unavailable):
  * For this market, was not found product unnavailable
@@ -46,8 +48,11 @@ import java.util.*;
 
 public class BrasilAmoedoCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "http://www.amoedo.com.br/";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
+   private static final String SELLER_NAME_LOWER = "amoedo brasil";
+   private static final String HOME_PAGE = "http://www.amoedo.com.br/";
 
 
    public BrasilAmoedoCrawler(Session session) {
@@ -71,33 +76,23 @@ public class BrasilAmoedoCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = crawlInternalPid(doc);
          String name = crawlName(doc);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".product-info-main .special-price .price, .product-info-main [data-price-type=finalPrice] .price", null, true, ',',
-               session);
-         Prices prices = crawlPrices(doc, price);
-         boolean available = !doc.select(".stock:not(.unavailable)").isEmpty();
-         CategoryCollection categories = new CategoryCollection();
-         JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product.media link:nth-of-type(2)", Collections.singletonList("href"), "https", HOME_PAGE);
-         String secondaryImages = crawlSecondaryImages(images);
+         List<String> images = scrapImages(doc);
+         String primaryImage = images.remove(0);
          String description = crawlDescription(doc);
-         Marketplace marketplace = crawlMarketplace();
+
+         boolean available = doc.select("div.container-fluid.container-aviseme-box").isEmpty();
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(1))
-               .setCategory2(categories.getCategory(2))
-               .setCategory3(categories.getCategory(3))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(marketplace)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setOffers(offers)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
+            .setDescription(description)
+            .build();
 
          products.add(product);
 
@@ -155,31 +150,15 @@ public class BrasilAmoedoCrawler extends Crawler {
       return name;
    }
 
-   private Marketplace crawlMarketplace() {
-      return new Marketplace();
-   }
+   private List<String> scrapImages(Document doc) {
+      List<String> secondaryImages = new ArrayList<>();
 
-   private String crawlPrimaryImage(JSONArray images) {
-      String primaryImage = null;
+      JSONArray images = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc, "script[type=text/x-magento-init]");
 
-      if (images.length() > 0) {
-         primaryImage = images.getString(0);
-      }
-
-      return primaryImage;
-   }
-
-   private String crawlSecondaryImages(JSONArray images) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      if (images.length() > 1) {
-         images.remove(0);
-         secondaryImagesArray = images;
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();// É pra ser tostring mesmo? Não era um array?
+      if(!images.isEmpty()){
+         for (Object e : images) {
+            secondaryImages.add(e.toString());
+         }
       }
 
       return secondaryImages;
@@ -201,36 +180,67 @@ public class BrasilAmoedoCrawler extends Crawler {
       return description.toString();
    }
 
-   private Prices crawlPrices(Document doc, Float price) {
-      Prices prices = new Prices();
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = new ArrayList<>(); // When this new offer model was implemented, no sales was found
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         prices.setBankTicketPrice(price);
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME_LOWER)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-         installmentPriceMap.put(1, price);
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-      }
-
-      prices.setPriceFrom(crawlPriceFrom(doc));
-
-      return prices;
+      return offers;
    }
 
-   private Double crawlPriceFrom(Document doc) {
-      Double priceFrom = null;
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      BankSlip bankSlip;
+      CreditCards creditCards;
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-main .special-price .price, .product-info-main [data-price-type=finalPrice] .price", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session);
 
-      Element priceFromElement = doc.selectFirst(".old-price .price");
-      if (priceFromElement != null) {
-         priceFrom = MathUtils.parseDoubleWithComma(priceFromElement.text());
+      bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      creditCards = scrapCreditcards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+
+   }
+
+   private CreditCards scrapCreditcards(Double installmentPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(installmentPrice);
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
-      return priceFrom;
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Double installmentPrice) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(installmentPrice)
+         .build());
+
+      return installments;
    }
 
 }
