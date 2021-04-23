@@ -48,7 +48,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends CrawlerRankingKeywords 
 
             String internalId = null;
             String internalPid = product.optString("id");
-            String productUrl =  product.optString("url").replace("//", "");
+            String productUrlIncomplete =  product.optString("url");
+            String productUrl = productUrlIncomplete != null ? "https:" + productUrlIncomplete : null;
             saveDataProduct(null, internalPid, productUrl);
 
             this.log(
