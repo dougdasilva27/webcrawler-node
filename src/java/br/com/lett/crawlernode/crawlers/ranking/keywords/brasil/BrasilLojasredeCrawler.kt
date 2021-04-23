@@ -1,79 +1,43 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.core.session.Session
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 
-public class BrasilLojasredeCrawler extends CrawlerRankingKeywords {
+class BrasilLojasredeCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
-  public BrasilLojasredeCrawler(Session session) {
-    super(session);
-  }
+   init {
+      pageSize = 24
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.log("Página " + this.currentPage);
+   override fun extractProductsFromCurrentPage() {
+      val url = "https://www.lojasrede.com.br/${keywordWithoutAccents.replace(" ", "%20")}?PageNumber=$currentPage"
+      log("Link onde são feitos os crawlers: $url")
+      currentDoc = fetchDocument(url, cookies)
+      val products = currentDoc.select(".vitrine.resultItemsWrapper li[layout] span[data-id]")
+         .distinctBy { element -> element.attr("data-id") }
+      if (products.isNotEmpty()) {
+         if (totalProducts == 0) {
+            setTotalProducts()
+         }
+         products.forEach { e ->
+            val internalPid = e.attr("data-id")
+            val productUrl = e.selectFirst(".product-name a")?.attr("href")
+            saveDataProduct(null, internalPid, productUrl)
 
-    this.pageSize = 24;
-    String url = "https://www.lojasrede.com.br/" + this.keywordWithoutAccents.replaceAll(" ", "%20") + "?PageNumber=" + this.currentPage;
-
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url, cookies);
-
-    Elements products = this.currentDoc.select("li[layout] > span[data-id]");
-
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
+            log("Position: $position - InternalPid: $internalPid - Url: $productUrl")
+         }
       }
+      log("Pag $currentPage | ${arrayProducts.size} products")
+   }
 
-      for (Element e : products) {
-        String internalPid = crawlInternalPid(e);
-        String productUrl = crawlProductUrl(e);
-
-        saveDataProduct(null, internalPid, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+   override fun setTotalProducts() {
+      val totalElement = currentDoc.selectFirst(".resultado-busca-numero .value")
+      if (totalElement != null) {
+         val text = totalElement.text().replace("[^0-9]".toRegex(), "").trim()
+         if (text.isNotEmpty()) {
+            totalProducts = text.toInt()
+         }
+         log("Total da busca: $totalProducts")
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".resultado-busca-numero .value");
-
-    if (totalElement != null) {
-      String text = totalElement.text().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlInternalPid(Element e) {
-    return e.attr("data-id");
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-    Element urlElement = e.selectFirst(".product-name a");
-
-    if (urlElement != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(urlElement, "href", "https:", "www.lojasrede.com.br");
-    }
-
-    return productUrl;
-  }
+   }
 }
