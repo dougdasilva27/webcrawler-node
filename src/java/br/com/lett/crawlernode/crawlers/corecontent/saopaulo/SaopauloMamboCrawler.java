@@ -205,8 +205,8 @@ public class SaopauloMamboCrawler extends Crawler {
    private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      float multiplicadorUnidade = JSONUtils.getFloatValueFromJSON(json, "x_multiplicadorDeUnidade", true);
-      Pricing pricing = crawlPricing(json, multiplicadorUnidade);
+
+      Pricing pricing = crawlPricing(json);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
       offers.add(Offer.OfferBuilder.create()
@@ -222,7 +222,7 @@ public class SaopauloMamboCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing crawlPricing(JSONObject json, float multiplicadorUnidade) throws MalformedPricingException {
+   private Pricing crawlPricing(JSONObject json) throws MalformedPricingException {
       Double spotlightPrice = null;
       Double priceFrom = null;
 
@@ -232,31 +232,13 @@ public class SaopauloMamboCrawler extends Crawler {
          JSONObject jsonSku = arraySkus.getJSONObject(0);
 
          spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "salesPrice", false);
-
+         System.out.println(spotlightPrice);
          if (spotlightPrice != null) {
             priceFrom = JSONUtils.getDoubleValueFromJSON(jsonSku, "listPrice", false);
          } else {
             spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonSku, "listPrice", false);
          }
 
-         if (multiplicadorUnidade != 0.0 || multiplicadorUnidade < spotlightPrice) {
-            spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice / multiplicadorUnidade);
-         }
-
-         //in case we dont found the key "listPrice" to set in price from, but the product has a discount.
-         //we can check the "listPrices" object
-         if (priceFrom == null) {
-            JSONObject pricesListJson = json.optJSONObject("listPrices");
-
-            if (pricesListJson != null && !pricesListJson.isEmpty()) {
-               for (String key : pricesListJson.keySet()) {
-                  if (pricesListJson.optDouble(key) < spotlightPrice) {
-                     priceFrom = spotlightPrice;
-                     spotlightPrice = pricesListJson.optDouble(key);
-                  }
-               }
-            }
-         }
       }
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
