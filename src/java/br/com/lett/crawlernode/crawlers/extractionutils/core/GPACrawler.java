@@ -786,27 +786,29 @@ public class GPACrawler extends Crawler {
       if (ofertas != null) {
          for (Element oferta : ofertas) {
             String sellerName = CrawlerUtils.scrapStringSimpleInfo(oferta, "p:first-child span:not(:first-child)", false);
-            Pricing pricing = scrapSellersPricing(oferta);
-            boolean isMainRetailer = sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
+            Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(oferta, ".current-pricesectionstyles__CurrentPrice-sc-17j9p6i-0 p", null, false, ',', session);
+            if(spotlightPrice!=null) {
+               Pricing pricing = scrapSellersPricing(spotlightPrice);
+               boolean isMainRetailer = sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
 
-            offers.add(Offer.OfferBuilder.create()
-               .setInternalSellerId(CommonMethods.toSlug(MAIN_SELLER_NAME))
-               .setSellerFullName(sellerName)
-               .setSellersPagePosition(pos)
-               .setIsBuybox(false)
-               .setIsMainRetailer(isMainRetailer)
-               .setPricing(pricing)
-               .build());
+               offers.add(Offer.OfferBuilder.create()
+                  .setInternalSellerId(CommonMethods.toSlug(MAIN_SELLER_NAME))
+                  .setSellerFullName(sellerName)
+                  .setSellersPagePosition(pos)
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(isMainRetailer)
+                  .setPricing(pricing)
+                  .build());
 
-            pos++;
+               pos++;
+            }
          }
       }
       return offers;
    }
 
 
-   private Pricing scrapSellersPricing(Element e) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(e, ".current-pricesectionstyles__CurrentPrice-sc-17j9p6i-0 p", null, false, ',', session);
+   private Pricing scrapSellersPricing(  Double spotlightPrice) throws MalformedPricingException {
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       return Pricing.PricingBuilder.create()
