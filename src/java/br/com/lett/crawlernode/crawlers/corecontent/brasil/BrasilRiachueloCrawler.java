@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -67,6 +68,9 @@ public class BrasilRiachueloCrawler extends Crawler {
          .setIgnoreStatusCode(false)
          .mustSendContentEncoding(false)
          .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setFetcheroptions(
             FetcherOptionsBuilder.create()
                .mustUseMovingAverage(false)
