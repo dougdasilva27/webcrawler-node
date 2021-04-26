@@ -30,8 +30,7 @@ class ArgentinaHiperlibertadCrawler(session: Session) : CrawlerRankingKeywords(s
       for (product in products) {
          if (product is JSONObject) {
               val internalPid = product.optString("productId")
-              val productUrlText = product.optString("linkText")
-              val productUrl = "https://hiperlibertad.com.ar/$productUrlText/p"
+              val productUrl = product.optString("link")
               saveDataProduct(null, internalPid, productUrl)
          }
       }
