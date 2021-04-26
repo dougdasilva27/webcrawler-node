@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -59,12 +61,12 @@ public class BrasilEfacilCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=productId]", "value");
          CategoryCollection categories = scrapCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-photo a", Collections.singletonList("href"), "https", "efacil.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".wrap-thumbnails .thumbnails a", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".wrap-thumbnails .thumbnails a", Collections.singletonList("href"), "https", "efacil.com.br", primaryImage);
          String description = scrapDescription(doc);
          boolean available = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-secondary-info #widget_product_info_viewer", false) != null;         Offers offers = available ? scrapOffer(doc, internalPid, internalId) : new Offers();
 
-         String code = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-code", false);
-         RatingsReviews reviews = new TrustvoxRatingCrawler(session, "545", logger).extractRatingAndReviews(code, doc, dataFetcher);
+         String codeTrustVox = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product-star a div", "data-trustvox-product-code-js");
+         RatingsReviews reviews = new TrustvoxRatingCrawler(session, "545", logger).extractRatingAndReviews(codeTrustVox, doc, dataFetcher);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -90,19 +92,13 @@ public class BrasilEfacilCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select("input[name=productId]").isEmpty();
+      return !doc.select(".product-details > div").isEmpty();
    }
 
    private String scrapInternalPid(Document doc) {
+      String rawPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-details > div", "id");
 
-      String internalPid = null;
-      String[] fullTag = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-details > div", "id").split("_");
-
-      if (fullTag.length > 0) {
-         internalPid = fullTag[1];
-      }
-
-      return internalPid;
+      return rawPid != null? CommonMethods.getLast(rawPid.split("_")): null;
    }
 
    private CategoryCollection scrapCategories(Document doc) {
@@ -112,11 +108,8 @@ public class BrasilEfacilCrawler extends Crawler {
    }
 
    private String scrapDescription(Document doc) {
+      return CrawlerUtils.scrapStringSimpleInfo(doc, "#tab1_content div", false);
 
-      String description = CrawlerUtils.scrapStringSimpleInfo(doc, "#tab2_content > div:nth-child(1)", false);
-      description += CrawlerUtils.scrapStringSimpleInfo(doc, "#especificacoes-content", false);
-
-      return description;
    }
 
    private Offers scrapOffer(Document doc, String internalPid, String internalId) throws OfferException, MalformedPricingException {

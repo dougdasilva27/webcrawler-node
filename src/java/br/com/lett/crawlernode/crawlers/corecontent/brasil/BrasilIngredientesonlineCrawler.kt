@@ -53,15 +53,16 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
       val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-shop .product-name", false)
       val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li:not(:first-child):not(:last-child) a span")
       val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-shop input[name=product]", "value")
-      val primaryImage = doc.selectFirst(".product-view .product-image img").attr("src")
+      val primaryImage = doc.selectFirst(".product-view .product-image img")?.attr("src")
 
-      val secondaryImages = doc.select(".product-view .product-image div:not(:first-child) img").map { it.attr("src") }.toList()
+      val secondaryImages = doc.select(".product-view .product-image div:not(:first-child) img").map { it?.attr("src") }
+          .toMutableList().filterNotNull()
 
       val description = doc.select("#descricao .contentDescWrap")?.first {
          it.attr("id") != "tabelanutricional"
       }?.html()
 
-      var offers = scrapOffers(doc)
+      val offers = scrapOffers(doc)
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)

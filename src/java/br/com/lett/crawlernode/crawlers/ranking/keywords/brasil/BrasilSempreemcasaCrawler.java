@@ -1,68 +1,74 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.Arrays;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import java.util.HashMap;
+import java.util.Map;
+
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
-  
-  private static final String HOME_PAGE = "sempreemcasa.com.br";
 
-  public BrasilSempreemcasaCrawler(Session session) {
-    super(session);
-  }
+   public BrasilSempreemcasaCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 30;
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 24;
 
-    this.log("Página " + this.currentPage);
+      this.log("Página " + this.currentPage);
 
-    // monta a url com a keyword e a página
-    String url = "https://sempreemcasa.com.br/search?page=" + this.currentPage + "&q=" + this.keywordEncoded;
-    this.log("Link onde são feitos os crawlers: " + url);
+      // monta a url com a keyword e a página
+      String url = "https://api.sempreemcasa.com.br/products?page=" + this.currentPage + "&limit=24&text=" + this.keywordEncoded;
+      this.log("Link onde são feitos os crawlers: " + url);
 
-    this.currentDoc = fetchDocument(url);
+      JSONObject json = fetchApi(url);
 
-    Elements products = this.currentDoc.select(".product-item");
+      JSONArray products = json.optJSONArray("items");
 
-    if (!products.isEmpty()) {
-      for (Element e : products) {
-        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item__variant-data[data-id]", "data-id");
-        String productUrl = scrapUrl(e);
+      if (products != null && !products.isEmpty()) {
+         this.totalProducts = json.optInt("total");
 
-        saveDataProduct(null, internalPid, productUrl);
+         for (Object e : products) {
+            JSONObject product = (JSONObject) e;
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+            String internalPid = product.optString("ambev_product_code");
+            String productUrl = "https://sempreemcasa.com.br/produtos/" + product.optString("slug");
 
+            saveDataProduct(null, internalPid, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-  
-  private String scrapUrl(Element e) {
-    String url = null;
-    String fullUrl = CrawlerUtils.scrapUrl(e, "a.product-link", Arrays.asList("href"), "https", HOME_PAGE);
-    
-    if(fullUrl != null) {
-      url = fullUrl.split("\\?")[0];
-    }
-    
-    return url;
-  }
-  
-  @Override
-  protected boolean hasNextPage() {
-    return this.currentDoc.selectFirst(".pages-navigation__btn-next > a[href=\"\"]") == null;
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private JSONObject fetchApi(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept", "*/*");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
+
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
+      Response response = new JsoupDataFetcher().get(session, request);
+
+      return CrawlerUtils.stringToJson(response.getBody());
+   }
 }
