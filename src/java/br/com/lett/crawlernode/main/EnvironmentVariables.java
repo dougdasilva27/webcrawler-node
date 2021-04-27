@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.main;
 
 public class EnvironmentVariables {
+
+   //Database connection variables are located in the model project
+
    public static final String ENV_CORE_THREADS = "CRAWLER_CORE_THREADS";
    public static final String ENV_DEBUG = "DEBUG";
    public static final String ENV_ENVIRONMENT = "ENVIRONMENT";
