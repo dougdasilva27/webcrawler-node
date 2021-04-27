@@ -19,7 +19,6 @@ import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverSession;
 import br.com.lett.crawlernode.core.session.ranking.RankingSession;
@@ -27,8 +26,8 @@ import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.integration.redis.CrawlerCache;
-import br.com.lett.crawlernode.integration.redis.RedisClient;
+import br.com.lett.crawlernode.integration.redis.Cache;
+import br.com.lett.crawlernode.integration.redis.CacheType;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
@@ -96,7 +95,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
-   private static final CrawlerCache cacheClient = CrawlerCache.INSTANCE;
+   private static final Cache cacheClient = new Cache(CacheType.RANKING);
 
    // variável que identifica se há resultados na página
    protected boolean result;
@@ -147,9 +146,6 @@ public abstract class CrawlerRanking extends Task {
          S3Service.uploadCrawlerSessionContentToAmazon(session);
       }
 
-      if (session instanceof TestCrawlerSession) {
-         RedisClient.INSTANCE.shutdown();
-      }
 
       // close the webdriver
       if (webdriver != null) {

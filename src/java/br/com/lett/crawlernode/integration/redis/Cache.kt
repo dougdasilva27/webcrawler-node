@@ -9,34 +9,31 @@ import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException
 import org.redisson.api.RMapCache
-import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 import java.util.function.Function
-import kotlin.time.*
 
 /**
  * Interface to interact with Redis.
  *
- * @see RedisClient
+ * @see Redis
  * @see RMapCache
- * @author Charles Fonseca
  */
-object CrawlerCache {
+class Cache(private val cacheType: CacheType) {
 
-   private val mapCache by lazy { RedisClient.crawlerCache }
+   private val mapCache: RMapCache<String, Any?>? by lazy {
+      CacheFactory.createCache(cacheType)
+   }
 
-   /**
-    * TTL (time to live)
-    */
-   private const val defaultTtl = 7200
+   private val defaultTtl = 7200
+
 
    fun <T> get(key: String): T? {
-      val value: Any? = mapCache[key]
+      val value: Any? = mapCache?.get(key)
       return if (value != null) value as T? else null
    }
 
    fun <T> put(key: String, value: T, seconds: Int) {
-      mapCache.put(key, value, seconds.toLong(), TimeUnit.SECONDS)
+      mapCache?.put(key, value, seconds.toLong(), TimeUnit.SECONDS)
    }
 
    fun <T> put(key: String, value: T) {

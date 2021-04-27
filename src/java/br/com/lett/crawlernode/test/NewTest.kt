@@ -1,11 +1,13 @@
 package br.com.lett.crawlernode.test
 
+import br.com.lett.crawlernode.integration.redis.Redis
 import br.com.lett.crawlernode.test.TestUtils.Companion.initialize
 import br.com.lett.crawlernode.test.TestUtils.Companion.fetchMarket
 import br.com.lett.crawlernode.test.TestUtils.Companion.taskProcess
 import kotlin.jvm.JvmStatic
 import io.github.cdimascio.dotenv.Dotenv.configure
 import io.github.cdimascio.dotenv.dotenv
+
 
 object NewTest {
 
@@ -38,5 +40,6 @@ object NewTest {
             taskProcess(market, listOf(parameters), TestType.valueOf(testType), 0)
          }
       }
+      Redis.shutdown()
     }
 }

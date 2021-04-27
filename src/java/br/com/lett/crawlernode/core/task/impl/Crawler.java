@@ -23,8 +23,8 @@ import br.com.lett.crawlernode.database.PersistenceResult;
 import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.integration.redis.CrawlerCache;
-import br.com.lett.crawlernode.integration.redis.RedisClient;
+import br.com.lett.crawlernode.integration.redis.Cache;
+import br.com.lett.crawlernode.integration.redis.CacheType;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
@@ -78,7 +78,7 @@ public abstract class Crawler extends Task {
 
    protected CrawlerWebdriver webdriver;
 
-   private static final CrawlerCache cacheClient = CrawlerCache.INSTANCE;
+   private static final Cache cacheClient = new Cache(CacheType.CRAWLER);
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */
@@ -632,10 +632,6 @@ public abstract class Crawler extends Task {
       try {
          if (!(session instanceof TestCrawlerSession)) {
             S3Service.uploadCrawlerSessionContentToAmazon(session);
-         }
-
-         if (session instanceof TestCrawlerSession) {
-            RedisClient.INSTANCE.shutdown();
          }
 
          // close the webdriver
