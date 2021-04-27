@@ -43,7 +43,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String productCode = data.optString("ambev_product_code");
+         String internalPid = data.optString("ambev_product_code");
          String primaryImage = data.optString("image");
          String name = data.optString("name");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".title__unities"));
@@ -53,7 +53,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
 
             JSONObject variation = (JSONObject) o;
 
-            String internalId = productCode + "-" + variation.optString("id");
+            String internalId = internalPid + "-" + variation.optString("id");
             int qtd = variation.optInt("unities");
             String variationName = name + " - " + qtd;
 
@@ -63,7 +63,7 @@ public class BrasilSempreemcasaCrawler extends Crawler {
             Product product = ProductBuilder.create()
                     .setUrl(session.getOriginalURL())
                     .setInternalId(internalId)
-                    .setInternalPid(internalId)
+                    .setInternalPid(internalPid)
                     .setName(variationName)
                     .setDescription(description)
                     .setPrimaryImage(primaryImage)
