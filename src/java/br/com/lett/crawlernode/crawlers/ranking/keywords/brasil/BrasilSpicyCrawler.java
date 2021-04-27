@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.session.ranking.RankingSession;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -19,7 +22,7 @@ public class BrasilSpicyCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 12;
+      this.pageSize = 100;
       this.log("Página " + this.currentPage);
 
       JSONObject apiResponse = fetchApi();
@@ -30,16 +33,17 @@ public class BrasilSpicyCrawler extends CrawlerRankingKeywords {
             setTotalProducts(apiResponse);
          }
 
+
          for (Object element : products) {
             JSONObject product = (JSONObject) element;
 
-            JSONArray pidArray = product.optJSONArray("ItemGroupId");
-            String internalPid = pidArray != null && !pidArray.isEmpty() ? pidArray.optString(0) : null;
+            String internalPid = JSONUtils.getStringValue(product,"ItemGroupId");
+            String internalId = JSONUtils.getStringValue(product,"ProductId");
             String productUrl = CrawlerUtils.completeUrl(product.optString("Link"), "https:", "www.spicy.com.br");
 
-            saveDataProduct(null, internalPid, productUrl);
+            saveDataProduct(internalId, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -83,6 +87,9 @@ public class BrasilSpicyCrawler extends CrawlerRankingKeywords {
          int lastIndex = response.indexOf("\"])", firstIndex);
 
          apiResponse = CrawlerUtils.stringToJson(response.substring(firstIndex, lastIndex).replace("\\\"", "\"").replace("\\\\\"", "\\\""));
+      }
+      else if(!response.isEmpty()) {
+         apiResponse = CrawlerUtils.stringToJson(response);
       }
 
       return apiResponse;
