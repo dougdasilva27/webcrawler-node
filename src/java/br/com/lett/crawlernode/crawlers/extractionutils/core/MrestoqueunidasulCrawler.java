@@ -32,12 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-/**
- * 27/04/2021
- *
- * @author Thainá Aguiar
- */
-
 public abstract class MrestoqueunidasulCrawler extends Crawler {
 
 
@@ -52,13 +46,9 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
    private final String password = getPassword();
    private final String login = getLogin();
 
-   protected String getPassword() {
-      return null;
-   }
+   protected abstract String getPassword();
 
-   protected String getLogin() {
-      return null;
-   }
+   protected abstract String getLogin();
 
    @Override
    public boolean shouldVisit() {
@@ -132,7 +122,6 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumb.active img", Arrays.asList("src"),
             "https",
             "www.mrestoque.com.br");
-         //site hasn't any second image
          String description = scrapDescription(doc);
          boolean available = !doc.select(".add-to-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();

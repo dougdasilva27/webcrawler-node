@@ -7,10 +7,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
- * 27/04/2021
- *
- * @author Thainá Aguiar
- * <p>
  * the order doesn’t change with the login, so I didn’t apply the webdrive to the crawler ranking
  */
 
@@ -49,7 +45,6 @@ public abstract class MrestoqueunidasulCrawler extends CrawlerRankingKeywords {
 
          }
       } else {
-         this.result = false;
          this.log("Keyword sem resultado!");
       }
 

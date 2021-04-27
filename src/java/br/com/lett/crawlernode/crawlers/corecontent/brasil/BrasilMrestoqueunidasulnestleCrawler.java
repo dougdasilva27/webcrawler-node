@@ -3,11 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.MrestoqueunidasulCrawler;
 
-/**
- * 27/04/2021
- *
- * @author Thainá Aguiar
- */
 
 public class BrasilMrestoqueunidasulnestleCrawler extends MrestoqueunidasulCrawler {
 
