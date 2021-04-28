@@ -119,9 +119,7 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".infos .right .descricao", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".tt-product-name", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumb.active img", Arrays.asList("src"),
-            "https",
-            "www.mrestoque.com.br");
+         String primaryImage = scrapImage(doc);
          String description = scrapDescription(doc);
          boolean available = !doc.select(".add-to-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -174,6 +172,20 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
 
       return description.toString();
 
+   }
+
+   private String scrapImage(Document doc){
+
+      Element selector = doc.selectFirst(".zoomWindowContainer div");
+
+      String selectorString = selector.toString();
+      if (selectorString != null){
+         String primaryImageSmall = CrawlerUtils.getStringBetween(selectorString, "url\\(&quot;", "&quot;\\);");
+       String primaryImage = primaryImageSmall !=  null ? primaryImageSmall.replace("/0/", "/360/") : null;
+         return primaryImage != null ? "https://www.mrestoque.com.br" + primaryImage : null;
+      }
+
+    return null;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
