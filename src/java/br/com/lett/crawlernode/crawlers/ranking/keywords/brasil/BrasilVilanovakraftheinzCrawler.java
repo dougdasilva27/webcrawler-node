@@ -8,14 +8,4 @@ public class BrasilVilanovakraftheinzCrawler extends BrasilVilanova {
   public BrasilVilanovakraftheinzCrawler(Session session) {
     super(session);
   }
-
-  @Override
-  protected String getCnpj() {
-    return null;
-  }
-
-  @Override
-  protected String getPassword() {
-    return null;
-  }
 }

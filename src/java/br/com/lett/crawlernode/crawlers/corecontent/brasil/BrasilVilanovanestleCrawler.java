@@ -3,29 +3,24 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilVilanova;
 
-/**
- * Date: 09/07/2019
- *
- * @author Gabriel Dornelas
- */
-public class BrasilVilanovamondelezCrawler extends BrasilVilanova {
+public class BrasilVilanovanestleCrawler extends BrasilVilanova {
 
-   public BrasilVilanovamondelezCrawler(Session session) {
+   public BrasilVilanovanestleCrawler(Session session) {
       super(session);
    }
 
    @Override
    public String getCnpj() {
-      return "33033028004090";
-   }
+      return "60.409.075/0127-54";
+   }//60.409.075/0127-54
 
    @Override
    public String getPassword() {
-      return "521542";
+      return "nestle2020";
    }
 
    @Override
    public String getSellerFullname() {
-      return "vila nova - login mondelez";
+      return "vila nova - login nestle";
    }
 }
