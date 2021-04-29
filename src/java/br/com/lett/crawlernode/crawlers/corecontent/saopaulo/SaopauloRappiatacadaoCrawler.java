@@ -11,6 +11,7 @@ public class SaopauloRappiatacadaoCrawler extends BrasilRappiCrawler {
 
    public SaopauloRappiatacadaoCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override

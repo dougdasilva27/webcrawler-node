@@ -7,6 +7,7 @@ public class SaopauloRappiatacadaoCrawler extends BrasilRappiCrawlerRanking {
 
    public SaopauloRappiatacadaoCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    public static final String STORE_ID = "900136949";
