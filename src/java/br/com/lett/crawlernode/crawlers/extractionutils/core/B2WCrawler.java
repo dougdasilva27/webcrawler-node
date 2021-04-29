@@ -567,7 +567,7 @@ public class B2WCrawler extends Crawler {
       }
 
       return PricingBuilder.create()
-         .setPriceFrom(priceFrom > 0d && priceFrom > spotlightPrice ? priceFrom : null)
+         .setPriceFrom(priceFrom > 0d ? priceFrom : null)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .setBankSlip(bt)
@@ -600,18 +600,23 @@ public class B2WCrawler extends Crawler {
          Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
          Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
 
-         //In this case, the featuredPrice is setted as the main price of the offer. So, the featuredPrice has to be the price that is showed
-         //in the html page to the costumer accessing the page.
-         if (defaultPrice != null) {
-            featuredPrice = defaultPrice;
+
+         if (offerIndex + 1 <= 3) {
+            for (Double value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
+               if (featuredPrice == null || (value != null && value < featuredPrice)) {
+                  featuredPrice = value;
+               }
+            }
          } else {
-            if (bankTicket != null) {
-               featuredPrice = bankTicket;
-            } else {
+
+            if (defaultPrice != null) {
+               featuredPrice = defaultPrice;
+            } else if (price1x != null) {
                featuredPrice = price1x;
+            } else if (bankTicket != null) {
+               featuredPrice = bankTicket;
             }
          }
-
       } else {
          featuredPrice = info.optDouble("defaultPrice");
       }
