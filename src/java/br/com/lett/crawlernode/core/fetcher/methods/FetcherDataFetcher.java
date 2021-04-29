@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 public class FetcherDataFetcher implements DataFetcher {
 
    private static final String FETCHER_CONTENT_TYPE = "application/json";
-   public static final String FETCHER_HOST = GlobalConfigurations.executionParameters.getFetcherUrl();
+   public static final String FETCHER_HOST = "https://api-fetcher.lett.global/";
    private static final Logger logger = LoggerFactory.getLogger(FetcherDataFetcher.class);
 
    @Override
