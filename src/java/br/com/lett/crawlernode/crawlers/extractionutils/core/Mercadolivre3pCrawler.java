@@ -45,7 +45,7 @@ public class Mercadolivre3pCrawler {
    private Session session;
    private DataFetcher dataFetcher;
    private Logger logger;
-   protected boolean allow3PSellers = false;
+   protected boolean allow3PSellers;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
    protected Mercadolivre3pCrawler(Session session, DataFetcher dataFetcher, String mainSellerNameLower, boolean allow3PSellers, Logger logger) {
@@ -56,9 +56,10 @@ public class Mercadolivre3pCrawler {
       this.allow3PSellers = allow3PSellers;
    }
 
-   public List<Product> extractInformation(Document doc, String variationTitle) throws OfferException, MalformedPricingException, MalformedProductException {
-      List<Product> products = new ArrayList<>();
-
+   public Product extractInformation(Document doc,
+                                     RatingsReviews ratingReviews,
+                                     String variationTitle) throws OfferException, MalformedPricingException, MalformedProductException {
+      Product product = null;
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
@@ -69,8 +70,15 @@ public class Mercadolivre3pCrawler {
 
          if (mustAddProduct || mustAddProductUnavailable) {
             JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
+
             String internalPid = jsonInfo.optString("productID");
-            String internalId = jsonInfo.optString("sku");
+            String internalId;
+            Element variationElement = doc.selectFirst("input[name='variation']");
+            if (variationElement != null) {
+               internalId = internalPid + variationElement.attr("value");
+            } else {
+               internalId = jsonInfo.optString("sku");
+            }
 
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.ui-pdp-title", true) + (Objects.nonNull(variationTitle) ? " " + variationTitle : "");
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
@@ -81,12 +89,10 @@ public class Mercadolivre3pCrawler {
                CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
 
             RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalPid, internalId));
-            RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
+            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+            ratingReviews = Objects.isNull(ratingReviews) ? ratingReviewsCollection.getRatingReviews(internalId) : ratingReviews;
 
-
-            // Creating the product
-            Product product = ProductBuilder.create()
+            product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
                .setInternalPid(internalPid)
@@ -100,16 +106,13 @@ public class Mercadolivre3pCrawler {
                .setRatingReviews(ratingReviews)
                .setOffers(offers)
                .build();
-
-            products.add(product);
          }
 
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      return products;
-
+      return product;
    }
 
    private boolean isProductPage(Document doc) {
@@ -145,13 +148,13 @@ public class Mercadolivre3pCrawler {
    private boolean checkIfMustScrapProductUnavailable(Document doc) {
       boolean mustAddProductUnavailable = this.allow3PSellers;
       if (!allow3PSellers) {
-         mustAddProductUnavailable = scrapSeller(doc) != null ? scrapSeller(doc).equalsIgnoreCase(mainSellerNameLower) : false;
+         mustAddProductUnavailable = scrapSeller(doc) != null && scrapSeller(doc).equalsIgnoreCase(mainSellerNameLower);
       }
 
       return mustAddProductUnavailable;
    }
 
-   private RatingsReviews crawlRating(Document doc, String internalPid, String internalId) {
+   private RatingsReviews crawlRating(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
