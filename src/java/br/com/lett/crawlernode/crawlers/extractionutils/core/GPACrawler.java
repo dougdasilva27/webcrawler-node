@@ -17,8 +17,6 @@ import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
-import models.pricing.BankSlip;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
@@ -30,8 +28,6 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -46,7 +42,6 @@ public class GPACrawler extends Crawler {
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
-   private String MAIN_SELLER_NAME;
 
    public GPACrawler(Session session) {
       super(session);
@@ -71,7 +66,7 @@ public class GPACrawler extends Crawler {
     */
    private void fetchStoreId() {
 
-      String url = END_POINT_REQUEST + this.store + "/delivery/options?zipCode=" + this.cep.replace("-", "");
+      String url = END_POINT_REQUEST + this.store + "/v2/delivery/ecom/" + this.cep.replace("-", "");
 
       Request request =
          RequestBuilder.create()
@@ -81,24 +76,7 @@ public class GPACrawler extends Crawler {
 
       String response = this.dataFetcher.get(session, request).getBody();
       JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
-      if (jsonObjectGPA.optJSONObject("content") instanceof JSONObject) {
-         JSONObject jsonObject = jsonObjectGPA.optJSONObject("content");
-         if (jsonObject.optJSONArray("deliveryTypes") instanceof JSONArray) {
-            JSONArray jsonDeliveryTypes = jsonObject.optJSONArray("deliveryTypes");
-
-            if (jsonDeliveryTypes.optJSONObject(0) instanceof JSONObject) {
-               this.storeId = jsonDeliveryTypes.optJSONObject(0).optString("storeid");
-            }
-            for (Object object : jsonDeliveryTypes) {
-               JSONObject deliveryType = (JSONObject) object;
-               if (deliveryType.optString("name") instanceof String
-                  && deliveryType.optString("name").contains("TRADICIONAL")) {
-                  this.storeId = deliveryType.optString("storeid");
-                  break;
-               }
-            }
-         }
-      }
+      this.storeId = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes.0.storeid", Integer.class).toString();
    }
 
    /**
@@ -109,11 +87,9 @@ public class GPACrawler extends Crawler {
       if (className.contains("paodeacucar")) {
          this.store = "pa";
          this.homePageHttps = "https://www.paodeacucar.com/";
-         MAIN_SELLER_NAME = "Pão de Açúcar";
       } else if (className.contains("extra")) {
          this.store = "ex";
          this.homePageHttps = "https://www.clubeextra.com.br/";
-         MAIN_SELLER_NAME = "clube extra";
       }
    }
 
@@ -133,18 +109,14 @@ public class GPACrawler extends Crawler {
          String internalId = crawlInternalId(jsonSku);
          String internalPid = crawlInternalPid(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
-         String description = crawlDescription(jsonSku, internalId);
+         String description = crawlDescription(jsonSku);
          boolean available = data != null && crawlAvailability(data);
-         boolean hasMarketPlace = hasMarketPlace(doc);
-         Offers offers = new Offers();
+         Offers offers = available ? scrapOffers(data) : new Offers();
 
-         if (available) {
-            offers = hasMarketPlace ? offersFromMarketPlace(doc):scrapOffers(data) ;
-         }
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          RatingsReviews ratingsReviews = extractRatingAndReviews(internalId);
-         List<String> secondaryImages = crawlSecondaryImages(jsonSku, primaryImage);
+         List<String> secondaryImages = crawlSecondaryImages(jsonSku);
 
          String redirectedToURL = session.getRedirectedToURL(productUrl);
          if (internalPid != null && redirectedToURL != null && !redirectedToURL.isEmpty()) {
@@ -206,140 +178,32 @@ public class GPACrawler extends Crawler {
       return name;
    }
 
-   private Double crawlPriceFrom(JSONObject json) {
-      Double price = null;
-
-      if (json.has("priceFrom")) {
-         Object pObj = json.get("priceFrom");
-
-         if (pObj instanceof Double) {
-            price = (Double) pObj;
-         }
-      }
-
-      return price;
-   }
-
-   private Float crawlPrice(JSONObject json) {
-      Float price = null;
-
-      if (json.has("currentPrice")) {
-         Object pObj = json.get("currentPrice");
-
-         if (pObj instanceof Double) {
-            price = MathUtils.normalizeTwoDecimalPlaces(((Double) pObj).floatValue());
-         }
-      }
-
-      if (json.has("productPromotion")) {
-         JSONObject productPromotion = json.getJSONObject("productPromotion");
-
-         if (productPromotion.has("unitPrice") && productPromotion.has("promotionPercentOffOnUnity")) {
-            Object promotionPercentOffOnUnity = productPromotion.get("promotionPercentOffOnUnity");
-
-            if (promotionPercentOffOnUnity instanceof Integer) {
-               Integer promotion = (Integer) promotionPercentOffOnUnity;
-
-               if (promotion == 1) {
-                  price = CrawlerUtils.getFloatValueFromJSON(productPromotion, "unitPrice");
-               }
-            }
-         }
-      }
-
-      return price;
-   }
-
    private boolean crawlAvailability(JSONObject data) {
       return data.has("stock") && data.getBoolean("stock");
    }
 
    private String crawlPrimaryImage(JSONObject json) {
-      String primaryImage = null;
-
-      if (json.has("mapOfImages")) {
-         JSONObject images = json.getJSONObject("mapOfImages");
-
-         for (int i = 0; i < images.length(); i++) {
-            if (images.length() > 0 && images.has(Integer.toString(i))) {
-               JSONObject imageObj = images.getJSONObject(Integer.toString(i));
-
-               if (imageObj.has("BIG") && !imageObj.getString("BIG").isEmpty()) {
-                  String image = homePageHttps + imageObj.getString("BIG");
-
-                  if (image.contains("img")) {
-                     primaryImage = homePageHttps + imageObj.getString("BIG");
-                  }
-               } else if (imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
-                  String image = homePageHttps + imageObj.getString("MEDIUM");
-
-                  if (image.contains("img")) {
-                     primaryImage = homePageHttps + imageObj.getString("MEDIUM");
-                  }
-               } else if (imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
-                  String image = homePageHttps + imageObj.getString("SMALL");
-
-                  if (image.contains("img")) {
-                     primaryImage = homePageHttps + imageObj.getString("SMALL");
-                  }
-               }
-            }
-
-            if (primaryImage != null) {
-               break;
-            }
-         }
-      }
-
-      return primaryImage;
+      String image = JSONUtils.getValueRecursive(json, "mapOfImages.0.BIG", String.class);
+      return CrawlerUtils.completeUrl(image,"https","static.paodeacucar.com");
    }
 
-   private List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
+   private List<String> crawlSecondaryImages(JSONObject json) {
       List<String> secondaryImagesArray = new ArrayList<>();
-
-      String primaryImageId = getImageId(primaryImage);
-
-      if (json.has("mapOfImages")) {
-         JSONObject images = json.getJSONObject("mapOfImages");
-
-         for (String key : images.keySet()) { // index 0 may be a primary Image
-            JSONObject imageObj = images.getJSONObject(key);
-
-            if (imageObj.has("BIG") && !imageObj.getString("BIG").isEmpty()) {
-               String image = homePageHttps + imageObj.getString("BIG");
-               String imageId = getImageId(image);
-
-               if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.add(homePageHttps + imageObj.getString("BIG"));
-               }
-            } else if (imageObj.has("MEDIUM") && !imageObj.getString("MEDIUM").isEmpty()) {
-               String image = homePageHttps + imageObj.getString("MEDIUM");
-               String imageId = getImageId(image);
-
-               if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.add(homePageHttps + imageObj.getString("MEDIUM"));
-               }
-            } else if (imageObj.has("SMALL") && !imageObj.getString("SMALL").isEmpty()) {
-               String image = homePageHttps + imageObj.getString("SMALL");
-               String imageId = getImageId(image);
-
-               if (image.contains("img") && !imageId.equals(primaryImageId)) {
-                  secondaryImagesArray.add(homePageHttps + imageObj.getString("SMALL"));
-               }
-            }
+      JSONObject array = JSONUtils.getJSONValue(json,"mapOfImages");
+      if(array != null && array.length()>1){
+         for (int i = 1; i<array.length(); i++){
+            JSONObject jsonObject = array.optJSONObject(Integer.toString(i));
+            String image = jsonObject.optString("BIG");
+            String imageUrl = CrawlerUtils.completeUrl(image,"https","static.paodeacucar.com");
+            secondaryImagesArray.add(imageUrl);
          }
       }
+
 
       return secondaryImagesArray;
    }
 
-   private String getImageId(String imageUrl) {
-      if (imageUrl != null) {
-         return imageUrl.replace(homePageHttps, "").split("/")[4];
-      }
 
-      return null;
-   }
 
    private CategoryCollection crawlCategories(JSONObject json) {
       CategoryCollection categories = new CategoryCollection();
@@ -366,196 +230,18 @@ public class GPACrawler extends Crawler {
                listCategories.add(cat2.getString("name"));
             }
          }
-
-         for (String category : listCategories) {
-            categories.add(category);
-         }
+         categories.addAll(listCategories);
       }
 
       return categories;
    }
 
-   private String crawlDescription(JSONObject json, String internalId) {
-      StringBuilder description = new StringBuilder();
-      String attributesDescription = JSONUtils.getStringValue(json, "description");
-
-      if (attributesDescription != null) {
-         description.append(attributesDescription);
-      }
-
-      if (json.has("shortDescription") && json.get("shortDescription") instanceof String) {
-         description.append(json.getString("shortDescription"));
-      }
-
-      // Ex: https://www.paodeacucar.com/produto/329137
-      if (json.has("itemMap")) {
-         JSONArray itemMap = json.getJSONArray("itemMap");
-
-         if (itemMap.length() > 0) {
-            description.append(
-               "<table class=\"nutritional-table table product-table\">\n"
-                  + "                                <thead>\n"
-                  + "                                    <tr>\n"
-                  + "                                        <th colspan=\"2\" class=\"title\">Produtos no kit</th>\n"
-                  + "                                    </tr>\n"
-                  + "                                    <tr>\n"
-                  + "                                        <th>Nome</th>\n"
-                  + "                                        <th>Quantidade</th>\n"
-                  + "                                    </tr>\n"
-                  + "                                </thead>\n"
-                  + "                                <tbody>\n");
-            for (int i = 0; i < itemMap.length(); i++) {
-               JSONObject productInfo = itemMap.getJSONObject(i);
-
-               if (productInfo.has("quantity")
-                  && productInfo.get("quantity") instanceof Integer
-                  && productInfo.has("name")) {
-                  int quantity = productInfo.getInt("quantity");
-                  String name = productInfo.get("name").toString();
-
-                  if (quantity > 1 || itemMap.length() > 1) {
-                     description.append(
-                        "<tr ng-repeat=\"item in productDetailCtrl.product.itemMap\" class=\"ng-scope\">\n"
-                           + "        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">"
-                           + name
-                           + "l</td>\n"
-                           + "        <td ng-class=\"{'last':$last}\" class=\"ng-binding last\">"
-                           + quantity
-                           + "</td>\n"
-                           + "     </tr><!-- end ngRepeat: item in productDetailCtrl.product.itemMap -->\n");
-                  }
-               }
-            }
-
-            description.append("</tbody>\n</table>");
-         }
-      }
-
-      // This key in json has a map of attributes -> {label: "", value = ""} , For crawl niutritional
-      // table we make the html and put the values in html
-      if (json.has("nutritionalMap") && json.getJSONObject("nutritionalMap").length() > 0) {
-         JSONObject nutritionalJson = json.getJSONObject("nutritionalMap");
-
-         StringBuilder str = new StringBuilder();
-
-         str.append(
-            "<div class=\"product-nutritional-table\">\n"
-               + "  <p class=\"title\">Tabela nutricional</p>\n"
-               + "   <!-- ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->"
-               + "<div class=\"main-infos ng-scope\" ng-if=\"productDetailCtrl.product.nutritionalMap.cabecalho\">\n"
-               + "           <p ng-bind-html=\"productDetailCtrl.product.nutritionalMap.cabecalho || "
-               + "productDetailCtrl.product.nutritionalMap.cabecalho.value\" class=\"ng-binding\"></p>\n"
-               + "       </div><!-- end ngIf: productDetailCtrl.product.nutritionalMap.cabecalho -->\n"
-               + "       <table class=\"table table-responsive\">\n"
-               + "         <thead>\n"
-               + "              <tr>\n"
-               + "                 <th>Item</th>\n"
-               + "                   <th>Quantidade por porção</th>\n"
-               + "                   <th>Valores diários</th>\n"
-               + "             </tr>\n"
-               + "           </thead>\n");
-         str.append(crawlNutritionalTableAttributes(nutritionalJson));
-         str.append("</table>\n</div>");
-
-         description.append(str.toString());
-      }
-
-      description.append(CrawlerUtils.scrapStandoutDescription("gpa", session, cookies, dataFetcher));
-      description.append(CrawlerUtils.scrapLettHtml(internalId, session, store.equals("pa") ? 4 : 5));
-
-      return description.toString();
-   }
-
-   private String crawlNutritionalTableAttributes(JSONObject nutritionalMap) {
-      StringBuilder str = new StringBuilder();
-      str.append("<tbody>");
-
-      Set<String> attributesList = nutritionalMap.keySet();
-
-      for (String attribute : attributesList) {
-         if (!(nutritionalMap.get(attribute) instanceof String)) {
-            JSONObject attributeJson = JSONUtils.getValueRecursive(nutritionalMap, "attributes.0", JSONObject.class);
-
-            if (attributeJson != null && attributeJson.has("value") && attributeJson.has("label")) {
-               str.append(
-                  putAttribute(attributeJson.getString("value"), attributeJson.getString("label")));
-            }
-         } else {
-            str.append(
-               "<div class=\"main-infos ng-scope\" ng-if=\"productDetailCtrl.product.nutritionalMap.cabecalho\">\n"
-                  + "<p ng-bind-html=\"productDetailCtrl.product.nutritionalMap.cabecalho "
-                  + "|| productDetailCtrl.product.nutritionalMap.cabecalho.value\" class=\"ng-binding\">"
-                  + nutritionalMap.getString(attribute)
-                  + "</p>\n"
-                  + "</div>");
-         }
-      }
-
-      str.append("</tbody");
-      return str.toString();
-   }
-
-   private String putAttribute(String value, String label) {
-      if (label != null) {
-         if (label.equalsIgnoreCase("rodape")) {
-            return "<tfoot>\n"
-               + "  <tr>\n"
-               + "     <td colspan=\"3\" ng-bind-html=\"productDetailCtrl.product.nutritionalMap.rodape.value\""
-               + "class=\"last ng-binding\">"
-               + value
-               + "</td>\n"
-               + "  </tr>\n"
-               + "</tfoot>\n";
-         } else {
-            return "    <tr ng-repeat=\"(key, item) in productDetailCtrl.product.nutritionalMap \" ng-if=\"[ 'cabecalho', 'rodape'].indexOf(key) === -1 \" class=\"ng-scope\">\n"
-               + "     <td class=\"ng-binding\">"
-               + label
-               + "</td>\n"
-               + "      <td class=\"ng-binding\">"
-               + value
-               + "</td>\n"
-               + "     <td class=\"ng-binding\"></td>\n"
-               + "   </tr><!-- end ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 --><!-- end ngRepeat: "
-               + "(key, item) in productDetailCtrl.product.nutritionalMap --><!-- ngIf: [ 'cabecalho', 'rodape'].indexOf(key) === -1 -->"
-               + "<tr ng-repeat=\"(key, item) in productDetailCtrl.product.nutritionalMap \" ng-if=\"[ 'cabecalho', 'rodape'].indexOf(key) === -1 "
-               + "\" class=\"ng-scope\">\n";
-         }
-      }
-
-      return "";
-   }
-
-   /**
-    * In this site has no information of installments
-    *
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, Double priceFrom) {
-      Prices p = new Prices();
-
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-
-         p.setPriceFrom(priceFrom);
-         p.setBankTicketPrice(price);
-
-         p.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         p.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMap);
-      }
-
-      return p;
+   private String crawlDescription(JSONObject json) {
+      return JSONUtils.getValueRecursive(json,"content.description",String.class);
    }
 
    /**
     * Get the json of gpa api, this api has all info of product
-    *
-    * @return
     */
    private JSONObject crawlProductInformatioFromGPAApi(String productUrl) {
       JSONObject productsInfo = new JSONObject();
@@ -582,7 +268,7 @@ public class GPACrawler extends Crawler {
       String res = this.dataFetcher.get(session, request).getBody();
 
       JSONObject apiGPA = JSONUtils.stringToJson(res);
-      if (apiGPA.optJSONObject("content") instanceof JSONObject) {
+      if (apiGPA.optJSONObject("content") != null) {
          productsInfo = apiGPA.optJSONObject("content");
       }
 
@@ -593,7 +279,7 @@ public class GPACrawler extends Crawler {
     * Number of ratings appear in key rating in json
     */
    private Integer getTotalNumOfReviews(JSONObject rating) {
-      Integer totalReviews = 0;
+      int totalReviews = 0;
 
       if (rating.has("rating")) {
          JSONObject ratingValues = rating.getJSONObject("rating");
@@ -644,35 +330,22 @@ public class GPACrawler extends Crawler {
    }
 
    public static AdvancedRatingReview getTotalStarsFromEachValue(JSONObject rating) {
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
+      int star1 = 0;
+      int star2 = 0;
+      int star3 = 0;
+      int star4 = 0;
+      int star5 = 0;
 
       if (rating.has("rating")) {
 
          JSONObject histogram = rating.getJSONObject("rating");
 
-         if (histogram.has("1") && histogram.get("1") instanceof Integer) {
-            star1 = histogram.getInt("1");
-         }
+            star1 = histogram.optInt("1");
+            star2 = histogram.optInt("2");
+            star3 = histogram.optInt("3");
+            star4 = histogram.optInt("4");
+            star5 = histogram.optInt("5");
 
-         if (histogram.has("2") && histogram.get("2") instanceof Integer) {
-            star2 = histogram.getInt("2");
-         }
-
-         if (histogram.has("3") && histogram.get("3") instanceof Integer) {
-            star3 = histogram.getInt("3");
-         }
-
-         if (histogram.has("4") && histogram.get("4") instanceof Integer) {
-            star4 = histogram.getInt("4");
-         }
-
-         if (histogram.has("5") && histogram.get("5") instanceof Integer) {
-            star5 = histogram.getInt("5");
-         }
       }
 
       return new AdvancedRatingReview.Builder()
@@ -694,10 +367,11 @@ public class GPACrawler extends Crawler {
       if (data != null) {
          Pricing pricing = scrapPricing(data);
          String sales = CrawlerUtils.calculateSales(pricing);
+         String sellerName = JSONUtils.getStringValue(data, "name");
 
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(MAIN_SELLER_NAME)
+            .setSellerFullName(sellerName)
             .setSales(Collections.singletonList(sales))
             .setMainPagePosition(1)
             .setSellersPagePosition(1)
@@ -762,59 +436,5 @@ public class GPACrawler extends Crawler {
       }
 
       return creditCards;
-   }
-
-
-   private boolean hasMarketPlace(Document doc) {
-      Elements sellerContainer = doc.select(".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk");
-      String sellerName = CrawlerUtils.scrapStringSimpleInfo(doc,".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk p:first-child span:not(:first-child)", false);
-
-      boolean equalsSeller = false;
-
-      if(sellerName != null){
-         equalsSeller = !sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
-      }
-      return !(sellerContainer.size() > 1) || equalsSeller;
-   }
-
-   private Offers offersFromMarketPlace(Document doc) throws OfferException, MalformedPricingException {
-      Offers offers = new Offers();
-      int pos = 1;
-
-      Elements ofertas = doc.select(".buy-box-contentstyles__Container-sc-18rwav0-2.grwTtk");
-
-      if (ofertas != null) {
-         for (Element oferta : ofertas) {
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(oferta, "p:first-child span:not(:first-child)", false);
-            Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(oferta, ".current-pricesectionstyles__CurrentPrice-sc-17j9p6i-0 p", null, false, ',', session);
-            if(spotlightPrice!=null) {
-               Pricing pricing = scrapSellersPricing(spotlightPrice);
-               boolean isMainRetailer = sellerName.equalsIgnoreCase(MAIN_SELLER_NAME);
-
-               offers.add(Offer.OfferBuilder.create()
-                  .setInternalSellerId(CommonMethods.toSlug(MAIN_SELLER_NAME))
-                  .setSellerFullName(sellerName)
-                  .setSellersPagePosition(pos)
-                  .setIsBuybox(false)
-                  .setIsMainRetailer(isMainRetailer)
-                  .setPricing(pricing)
-                  .build());
-
-               pos++;
-            }
-         }
-      }
-      return offers;
-   }
-
-
-   private Pricing scrapSellersPricing(  Double spotlightPrice) throws MalformedPricingException {
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
-      return Pricing.PricingBuilder.create()
-         .setSpotlightPrice(spotlightPrice)
-         .setCreditCards(creditCards)
-         .setBankSlip(bankSlip)
-         .build();
    }
 }
