@@ -7,7 +7,7 @@ import org.jsoup.nodes.Element
 
 class RiodejaneiroSuperprixCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
-   private val home = "https://www.ipanema.superprix.com.br/"
+   private val home = "https://www.superprix.com.br/"
 
    val token: String by lazy {
       fetchDocument(home).selectFirst("li[layout]").attr("layout")
@@ -15,7 +15,6 @@ class RiodejaneiroSuperprixCrawler(session: Session) : CrawlerRankingKeywords(se
 
    init {
       pageSize = 15
-      cookies.add(BasicClientCookie("VTEXSC", "sc=4"))
    }
 
    override fun extractProductsFromCurrentPage() {
