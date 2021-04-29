@@ -19,6 +19,7 @@ public class FetcherRequest {
    public static final String FETCHER_PARAMETER_STATUS_CODES_TO_IGNORE = "status_codes_to_ignore";
    public static final String FETCHER_PARAMETER_REQUIRED_CSS_SELECTOR = "required_css_selector";
    public static final String FETCHER_PARAMETER_FORBIDDEN_CSS_SELECTOR = "forbidden_css_selector";
+   public static final String FETCHER_SESSION = "session";
 
    private String url;
    private String requestType;
@@ -32,6 +33,7 @@ public class FetcherRequest {
    private List<Integer> statusCodesToIgnore = new ArrayList<>();
    private FetcherRequestsParameters parameters;
    private FetcherRequestForcedProxies forcedProxies;
+   private String session;
 
    public JSONObject toJson() {
       JSONObject fetcherParameters = new JSONObject();
@@ -43,6 +45,7 @@ public class FetcherRequest {
       fetcherParameters.put(FETCHER_PARAMETER_USE_PROXY_BY_MOVING_AVERAGE, mustUseMovingAverage);
       fetcherParameters.put(FETCHER_PARAMETER_IGNORE_STATUS_CODE, ignoreStatusCode);
       fetcherParameters.put(FETCHER_PARAMETER_BODY_IS_REQUIRED, bodyIsRequired);
+      fetcherParameters.put(FETCHER_SESSION, session);
 
       if (statusCodesToIgnore != null && !statusCodesToIgnore.isEmpty()) {
          JSONArray array = new JSONArray();
@@ -167,5 +170,9 @@ public class FetcherRequest {
 
    public void setRetrieveByteArray(boolean retrieveByteArray) {
       this.retrieveByteArray = retrieveByteArray;
+   }
+
+   public void setSession(String session) {
+      this.session = session;
    }
 }
