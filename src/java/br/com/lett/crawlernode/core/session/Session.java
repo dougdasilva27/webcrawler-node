@@ -1,20 +1,20 @@
 package br.com.lett.crawlernode.core.session;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateUtils;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Session {
 
@@ -26,37 +26,59 @@ public class Session {
 
    protected String taskStaus;
 
-   /** Id of current crawling session. It's the same id of the message from Amazon SQS */
+   /**
+    * Id of current crawling session. It's the same id of the message from Amazon SQS
+    */
    protected String sessionId;
 
-   /** Name of the queue from which the message was retrieved */
+   /**
+    * Name of the queue from which the message was retrieved
+    */
    protected String queueName;
 
-   /** Original URL of the sku being crawled */
+   /**
+    * Original URL of the sku being crawled
+    */
    protected String originalURL;
 
-   /** Association of URL and its final modified version, a redirection for instance */
+   /**
+    * Association of URL and its final modified version, a redirection for instance
+    */
    Map<String, String> redirectionMap;
 
-   /** Association of URL and its proxy */
+   /**
+    * Association of URL and its proxy
+    */
    protected Map<String, LettProxy> requestProxyMap;
 
-   /** Market associated with this session */
+   /**
+    * Market associated with this session
+    */
    protected Market market;
 
-   /** Supplier Id associated with this session */
+   /**
+    * Supplier Id associated with this session
+    */
    protected Long supplierId;
 
-   /** Errors occurred during crawling session */
+   /**
+    * Errors occurred during crawling session
+    */
    protected List<SessionError> crawlerSessionErrors;
 
-   /** The maximum number of connection attempts to be made when crawling normal information */
+   /**
+    * The maximum number of connection attempts to be made when crawling normal information
+    */
    protected int maxConnectionAttemptsWebcrawler;
 
-   /** The maximum number of connection attempts to be made when downloading images */
+   /**
+    * The maximum number of connection attempts to be made when downloading images
+    */
    protected int maxConnectionAttemptsImages;
 
-   /** Response when request product page */
+   /**
+    * Response when request product page
+    */
    protected Object productPageResponse;
 
    protected long startTime;
@@ -89,7 +111,7 @@ public class Session {
 
    }
 
-   public Session(Request request, String queueName, Markets markets) {
+   public Session(Request request, String queueName, Market market) {
       taskStaus = Task.STATUS_COMPLETED;
 
       this.startTime = System.currentTimeMillis();
@@ -99,7 +121,7 @@ public class Session {
       redirectionMap = new HashMap<>();
       requestProxyMap = new HashMap<>();
       sessionId = request.getMessageId();
-      market = markets.getMarket(request.getMarketId());
+      this.market = market;
       supplierId = request.getSupplierId();
 
       if (!(request instanceof CrawlerRankingKeywordsRequest)) {

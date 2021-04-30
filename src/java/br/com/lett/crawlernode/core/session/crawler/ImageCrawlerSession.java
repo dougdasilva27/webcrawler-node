@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.core.session.crawler;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import br.com.lett.crawlernode.core.models.Market;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.joda.time.DateTime;
@@ -29,8 +31,8 @@ public class ImageCrawlerSession extends Session {
    private String originalImageKeyOnBucket; // original image s3object path on S3 bucket
    private String transformedImageKeyOnBucket; // transformed image s3object path on S3 bucket
 
-   public ImageCrawlerSession(Request request, String queueName, Markets markets) {
-      super(request, queueName, markets);
+   public ImageCrawlerSession(Request request, String queueName, Market market) {
+      super(request, queueName, market);
 
       ImageCrawlerRequest imageCrawlerRequest = (ImageCrawlerRequest) request;
 
@@ -83,7 +85,7 @@ public class ImageCrawlerSession extends Session {
 
    /**
     * Create a base name for the image.
-    * 
+    *
     * @return a String representing the name of the image.
     */
    private String createImageBaseName() {
@@ -98,24 +100,24 @@ public class ImageCrawlerSession extends Session {
 
    private String createOriginalImageKeyOnBucket() {
       return new StringBuilder().append("market").append("/").append("product-image").append("/").append(processedId).append("/").append(imageNumber)
-            .append("_original").toString();
+         .append("_original").toString();
    }
 
    private String createTransformedImageKeyOnBucket() {
       return new StringBuilder().append("market").append("/").append("product-image").append("/").append(processedId).append("/").append(imageNumber)
-            .append(".jpg").toString();
+         .append(".jpg").toString();
    }
 
    private String createLocalOriginalImageFileDir() {
       return new StringBuilder().append(GlobalConfigurations.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity())
-            .append("/").append(super.market.getName()).append("/").append("images").append("/").append(internalId).append("_").append(imageNumber)
-            .append("_").append(createImageBaseName()).toString();
+         .append("/").append(super.market.getName()).append("/").append("images").append("/").append(internalId).append("_").append(imageNumber)
+         .append("_").append(createImageBaseName()).toString();
    }
 
    private String createLocalTransformedImageFileDir() {
       return new StringBuilder().append(GlobalConfigurations.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity())
-            .append("/").append(super.market.getName()).append("/").append("images").append(internalId).append("_").append("imageNumber_transformed")
-            .append("_").append(createImageBaseName()).toString();
+         .append("/").append(super.market.getName()).append("/").append("images").append(internalId).append("_").append("imageNumber_transformed")
+         .append("_").append(createImageBaseName()).toString();
    }
 
    public String getLocalOriginalFileDir() {

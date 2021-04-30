@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.server.endpoints;
 
+import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.RequestConverter;
 import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.server.request.Request;
@@ -13,6 +14,8 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
 
 import java.io.IOException;
+import java.util.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +61,7 @@ public class CrawlerTaskEndpoint extends HttpServlet {
       String response;
 
       Logging.printLogDebug(logger, "Creating session....");
-      Session session = SessionFactory.createSession(request, GlobalConfigurations.markets);
+      Session session = SessionFactory.createSession(request, new Market(1, "asas","asa","sasa","asa", Arrays.asList(),Arrays.asList(),"qas"));
 
       // create the task
       Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
