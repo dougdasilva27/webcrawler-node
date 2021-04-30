@@ -24,11 +24,13 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
+import java.net.URISyntaxException;
 import java.util.*;
 
 public class GPACrawler extends Crawler {
@@ -182,19 +184,19 @@ public class GPACrawler extends Crawler {
       return data.has("stock") && data.getBoolean("stock");
    }
 
-   private String crawlPrimaryImage(JSONObject json) {
-      String image = JSONUtils.getValueRecursive(json, "mapOfImages.0.BIG", String.class);
-      return CrawlerUtils.completeUrl(image,"https","static.paodeacucar.com");
+   private String crawlPrimaryImage(JSONObject json) throws URISyntaxException {
+      return new URIBuilder(homePageHttps).setPath((String) json.optQuery("/mapOfImages/0/BIG")).toString();
+
    }
 
-   private List<String> crawlSecondaryImages(JSONObject json) {
+   private List<String> crawlSecondaryImages(JSONObject json) throws URISyntaxException {
       List<String> secondaryImagesArray = new ArrayList<>();
-      JSONObject array = JSONUtils.getJSONValue(json,"mapOfImages");
-      if(array != null && array.length()>1){
-         for (int i = 1; i<array.length(); i++){
+      JSONObject array = JSONUtils.getJSONValue(json, "mapOfImages");
+      if (array != null && array.length() > 1) {
+         for (int i = 1; i < array.length(); i++) {
             JSONObject jsonObject = array.optJSONObject(Integer.toString(i));
             String image = jsonObject.optString("BIG");
-            String imageUrl = CrawlerUtils.completeUrl(image,"https","static.paodeacucar.com");
+            String imageUrl = new URIBuilder(homePageHttps).setPath(image).toString();
             secondaryImagesArray.add(imageUrl);
          }
       }
@@ -202,7 +204,6 @@ public class GPACrawler extends Crawler {
 
       return secondaryImagesArray;
    }
-
 
 
    private CategoryCollection crawlCategories(JSONObject json) {
@@ -237,7 +238,7 @@ public class GPACrawler extends Crawler {
    }
 
    private String crawlDescription(JSONObject json) {
-      return JSONUtils.getValueRecursive(json,"content.description",String.class);
+      return JSONUtils.getValueRecursive(json, "content.description", String.class);
    }
 
    /**
@@ -340,11 +341,11 @@ public class GPACrawler extends Crawler {
 
          JSONObject histogram = rating.getJSONObject("rating");
 
-            star1 = histogram.optInt("1");
-            star2 = histogram.optInt("2");
-            star3 = histogram.optInt("3");
-            star4 = histogram.optInt("4");
-            star5 = histogram.optInt("5");
+         star1 = histogram.optInt("1");
+         star2 = histogram.optInt("2");
+         star3 = histogram.optInt("3");
+         star4 = histogram.optInt("4");
+         star5 = histogram.optInt("5");
 
       }
 
