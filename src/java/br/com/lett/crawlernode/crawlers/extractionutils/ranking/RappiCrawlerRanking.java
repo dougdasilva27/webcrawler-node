@@ -6,7 +6,6 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import com.sun.xml.internal.ws.policy.EffectiveAlternativeSelector;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
