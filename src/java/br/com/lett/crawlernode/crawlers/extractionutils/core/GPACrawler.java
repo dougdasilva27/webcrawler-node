@@ -111,7 +111,7 @@ public class GPACrawler extends Crawler {
          String internalId = crawlInternalId(jsonSku);
          String internalPid = crawlInternalPid(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
-         String description = crawlDescription(jsonSku);
+         String description = jsonSku.optString("description");
          boolean available = data != null && crawlAvailability(data);
          Offers offers = available ? scrapOffers(data) : new Offers();
 
@@ -235,10 +235,6 @@ public class GPACrawler extends Crawler {
       }
 
       return categories;
-   }
-
-   private String crawlDescription(JSONObject json) {
-      return JSONUtils.getValueRecursive(json, "content.description", String.class);
    }
 
    /**
