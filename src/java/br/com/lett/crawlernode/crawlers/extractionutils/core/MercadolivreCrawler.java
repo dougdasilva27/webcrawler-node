@@ -207,7 +207,8 @@ public class MercadolivreCrawler extends Crawler {
          }
       } else {
          Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
-         products.addAll(meli.extractInformation(doc, null));
+         Product product = meli.extractInformation(doc, null, null);
+         products.add(product);
          doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").parallelStream()
             .map(element -> {
                Request request = RequestBuilder.create()
@@ -218,7 +219,7 @@ public class MercadolivreCrawler extends Crawler {
             })
             .forEach(responsePair -> {
                try {
-                  products.addAll(meli.extractInformation(Jsoup.parse(responsePair.getFirst()), responsePair.getSecond()));
+                  products.add(meli.extractInformation(Jsoup.parse(responsePair.getFirst()), product.getRatingReviews(), responsePair.getSecond()));
                } catch (OfferException | MalformedPricingException | MalformedProductException e) {
                   throw new IllegalStateException(e);
                }
