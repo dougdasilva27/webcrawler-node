@@ -10,7 +10,6 @@ import org.jsoup.select.Elements;
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
    public ArgentinaCotoCrawler(Session session) {
-
       super(session);
       super.fetchMode = FetchMode.FETCHER;
    }
