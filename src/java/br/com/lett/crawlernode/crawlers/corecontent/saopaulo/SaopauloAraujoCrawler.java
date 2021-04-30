@@ -3,10 +3,13 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.JSONUtils;
 import models.RatingsReviews;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -17,6 +20,20 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    public SaopauloAraujoCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      String description = "";
+      JSONArray descriptionArr = productJson.optJSONArray("Saiba Mais");
+
+      if(descriptionArr != null && !descriptionArr.isEmpty()){
+         description = descriptionArr.toString();
+      }else{
+         description = productJson.optString("description");
+      }
+
+      return description;
    }
 
    @Override
