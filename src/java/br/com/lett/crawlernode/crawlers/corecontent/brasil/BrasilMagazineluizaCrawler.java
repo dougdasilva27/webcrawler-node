@@ -435,11 +435,15 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    private RatingsReviews crawlRatingReviews(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
-      ratingReviews.setDate(session.getDate());
+      Element ratingsElement = doc.selectFirst("div.product-review > div.wrapper-review");
 
-      ratingReviews.setTotalRating(getTotalReviewCount(doc));
-      ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
-      ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(internalId));
+      if(ratingsElement != null){
+         ratingReviews.setDate(session.getDate());
+
+         ratingReviews.setTotalRating(getTotalReviewCount(doc));
+         ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
+         ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(internalId));
+      }
 
       return ratingReviews;
    }
