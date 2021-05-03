@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.core.session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
@@ -28,6 +27,7 @@ public class SessionFactory {
 
    public static Session createSession(Request request, Market market) {
       String scraperType = request.getScraperType();
+
 
       if (ScrapersTypes.CORE.toString().equals(scraperType)) {
          return new InsightsCrawlerSession(request, scraperType, market);
