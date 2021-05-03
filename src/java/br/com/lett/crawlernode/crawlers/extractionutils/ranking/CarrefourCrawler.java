@@ -38,6 +38,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
    private String keySHA256 = "";
+   protected String locale = "pt-BR";
 
    @Override
    protected void processBeforeFetch() {
@@ -167,7 +168,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
     *
     * @return
     */
-   private JSONObject fetchSearchApi() {
+   protected JSONObject fetchSearchApi() {
       StringBuilder url = new StringBuilder();
       url.append(getHomePage() + "_v/segment/graphql/v1?");
 
@@ -187,7 +188,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       payload.append("&maxAge=short");
       payload.append("&appsEtag=remove");
       payload.append("&domain=store");
-      payload.append("&locale=pt-BR");
+      payload.append("&locale=").append(locale);
       payload.append("&operationName=productSearchV3");
       try {
          payload.append("&variables=");
@@ -197,7 +198,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       } catch (UnsupportedEncodingException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
-      url.append(payload.toString());
+      url.append(payload);
 
       log("Link onde são feitos os crawlers:" + url);
 

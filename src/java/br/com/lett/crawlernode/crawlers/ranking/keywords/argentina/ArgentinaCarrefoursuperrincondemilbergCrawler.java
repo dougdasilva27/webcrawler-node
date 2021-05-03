@@ -1,9 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingKeywordsSession;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.ArgentinaCarrefoursuper;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
 
 public class ArgentinaCarrefoursuperrincondemilbergCrawler extends ArgentinaCarrefoursuper {
 
@@ -11,16 +10,17 @@ public class ArgentinaCarrefoursuperrincondemilbergCrawler extends ArgentinaCarr
       super(session);
    }
 
-   private static final String DEFAULT_CEP = br.com.lett.crawlernode.crawlers.corecontent.argentina.ArgentinaCarrefoursuperrincondemilbergCrawler.CEP;
-   private static final String RANKKING_CEP = "1646";
+   @Override
+   protected String getHomePage() {
+      return "https://supermercado.carrefour.com.ar/";
+   }
 
    @Override
-   protected String getCep() {
-      // This happen because has a business rule that on share of search we need to scrap
-      // information for a specific location, but for discover products we need to use the
-      // default location of core capture.
-      return session instanceof RankingKeywordsSession || session instanceof TestCrawlerSession
-            ? RANKKING_CEP
-            : DEFAULT_CEP;
+   protected String getLocation() {
+      return "eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjoiVTFjalkyRnljbVZtYjNWeVlYSXdNREkxTzJOaG" +
+         "NuSmxabTkxY21GeU1EZzVPUT09IiwidXRtX2NhbXBhaWduIjpudWxsLCJ1dG1fc291cmNlIjpudWxsLCJ1dG1pX2NhbXBhaWduIjpudWxsLCJjdXJyZW5jeUNvZGUi" +
+         "OiJBUlMiLCJjdXJyZW5jeVN5bWJvbCI6IiQiLCJjb3VudHJ5Q29kZSI6IkFSRyIsImN1bHR1cmVJbmZvIjoiZXMtQVIiLCJhZG1pbl9jdWx0dXJlSW5mbyI6ImVzLU" +
+         "FSIiwiY2hhbm5lbFByaXZhY3kiOiJwdWJsaWMifQ";
    }
+
 }
