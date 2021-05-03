@@ -2,10 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
@@ -25,6 +24,7 @@ import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.sql.SQLOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -135,10 +135,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             Integer.toString(statusCode).charAt(0) != '3'
             && statusCode != 404)) {
             request.setProxyServices(Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR));
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
 
-            content = new FetcherDataFetcher().get(session, request).getBody();
+            content = new JsoupDataFetcher().get(session, request).getBody();
          }
 
          Document offersDoc = Jsoup.parse(content);
@@ -146,9 +147,12 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
       } else {
          jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+
       }
 
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
+
+      JSONObject pages = jsonSeller.optJSONObject("pages");
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       boolean twoPositions = false;
 

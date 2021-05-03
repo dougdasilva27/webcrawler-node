@@ -300,6 +300,25 @@ public class SaopauloB2WCrawlersUtils {
          String jsonPath = internalPid + ".offers.result";
 
          offersJsonArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
+
+         if (offersJsonArray == null){
+            jsonPath = internalPid + ".skus";
+
+            JSONArray skusArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
+
+            if(skusArray != null) {
+
+               if (!skusArray.isEmpty() && skusArray.length() > 0) {
+
+                  JSONObject jsonObject = skusArray.getJSONObject(0);
+                  jsonPath = "offers.result";
+                  offersJsonArray = JSONUtils.getValueRecursive(jsonObject, jsonPath, JSONArray.class);
+
+               }
+            }
+
+         }
+
       }
 
       if (offersJsonArray != null && offersJsonArray.length() > 0) {
@@ -561,15 +580,15 @@ public class SaopauloB2WCrawlersUtils {
                JSONObject productJSON = rootQuery.optJSONObject(key);
                Object obj = productJSON.optQuery("/offers/result");
 
-                  if (obj instanceof JSONArray) {
-                     JSONArray offerResult = (JSONArray) obj;
+               if (obj instanceof JSONArray) {
+                  JSONArray offerResult = (JSONArray) obj;
 
-                     for (Object o : offerResult) {
-                        JSONObject offerObj = (JSONObject) o;
+                  for (Object o : offerResult) {
+                     JSONObject offerObj = (JSONObject) o;
 
-                        extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
-                     }
+                     extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
                   }
+               }
             }
          }
       }
