@@ -24,6 +24,7 @@ import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.pricing.BankSlip;
+import org.jsoup.nodes.Element;
 
 public abstract class CarrefourCrawler extends VTEXNewScraper {
 
@@ -46,6 +47,13 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
          JSONObject params = route != null ? route.optJSONObject("params") : new JSONObject();
 
          internalPid = params.optString("id", null);
+      }
+      if (internalPid == null) {
+         Optional<Element> scriptElement = doc.select("script").stream()
+            .filter(element -> element.data().startsWith("[{\"@context\":\"https://schema.org/\"")).findFirst();
+
+         internalPid = scriptElement.map(element -> (String) JSONUtils.stringToJsonArray(element
+            .data()).optQuery("/0/sku")).orElse(null);
       }
 
       return internalPid;
