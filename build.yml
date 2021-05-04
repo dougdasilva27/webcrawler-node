@@ -8,14 +8,10 @@ services:
             - ./:/app
             - ~/.m2:/root/.m2
             - ~/.aws/credentials:/root/.aws/credentials:ro
-        command:
-            - /bin/bash
-            - -c
-            - |
-                mvn clean
-                mvn package
+        command: mvn clean package
+
     webcrawler:
-        image: 868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev
+        image: ${ECR_IMAGE_URL}
         build:
-           context: .
-           dockerfile: Dockerfile
+            context: .
+            dockerfile: Dockerfile

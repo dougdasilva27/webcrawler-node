@@ -1,7 +1,6 @@
 .env
-bin/
-.vscode/
 .idea
-app
-
+.dockerignore
+Dockerfile
 .git
+.gitignore

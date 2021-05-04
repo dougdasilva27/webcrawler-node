@@ -3,7 +3,7 @@
     "containerDefinitions": [
         {
             "essential": true,
-            "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:dev",
+            "image": "",
             "name": "web-scraper",
             "memory": 1200,
             "mountPoints": [
