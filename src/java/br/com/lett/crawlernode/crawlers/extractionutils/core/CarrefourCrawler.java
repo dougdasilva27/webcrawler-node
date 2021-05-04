@@ -1,9 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,7 +27,7 @@ import models.pricing.BankSlip;
 
 public abstract class CarrefourCrawler extends VTEXNewScraper {
 
-   private static final List<String> SELLERS = Arrays.asList("Carrefour");
+   private static final List<String> SELLERS = Collections.singletonList("Carrefour");
 
    public CarrefourCrawler(Session session) {
       super(session);
@@ -91,7 +88,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       return response.getBody();
    }
 
-   Response alternativeFetch(Request request) {
+   protected Response alternativeFetch(Request request) {
       List<DataFetcher> dataFetchers = Arrays.asList(new ApacheDataFetcher(), new JsoupDataFetcher());
 
       Response response = null;
