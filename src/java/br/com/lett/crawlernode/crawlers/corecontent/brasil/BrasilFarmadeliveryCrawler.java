@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,25 +10,39 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+
+import java.util.*;
+
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
 import org.json.JSONArray;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class BrasilFarmadeliveryCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "http://www.farmadelivery.com.br/";
+   private static final String HOME_PAGE = "https://www.farmadelivery.com.br/";
 
    public BrasilFarmadeliveryCrawler(Session session) {
       super(session);
+   }
+
+   @Override
+   protected Object fetch() {
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL())
+         .setProxyservice(
+            Arrays.asList(ProxyCollection.BUY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
+            ))
+         .build();
+      Response response = dataFetcher.get(session, request);
+
+      return Jsoup.parse(response.getBody());
    }
 
    @Override
@@ -198,7 +215,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
    /**
     * In product page only has bank slip price and showcase price
-    * 
+    *
     * @param document
     * @return
     */
@@ -351,12 +368,12 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
 }
