@@ -8,8 +8,8 @@ export ECR_IMAGE_URL=868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capt
 
 npx json -I -f Dockerrun.aws.json -e "this.containerDefinitions[0].image"="'$ECR_IMAGE_URL'"
 
-docker-compose -f build.yml run --force-rm maven
-docker-compose -f build.dev.yml build webcrawler
+docker-compose -f build.yml run --rm maven
+docker-compose -f build.yml build webcrawler
 
 docker push $ECR_IMAGE_URL
 docker rmi $(docker image ls -q $ECR_IMAGE_URL)

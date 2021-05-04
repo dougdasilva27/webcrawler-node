@@ -1,6 +1,6 @@
 FROM openjdk:8-jre-slim
 
-COPY target/deployment/*.jar /app/webcrawler.jar
+COPY target/deployment/webcrawler.jar /app/webcrawler.jar
 
 WORKDIR /app
 
