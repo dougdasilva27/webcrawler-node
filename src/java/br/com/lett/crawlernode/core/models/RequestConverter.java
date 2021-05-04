@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RequestConverter {
 
@@ -55,19 +56,19 @@ public class RequestConverter {
 
       String supplierIdString = body.optString("supplierId");
 
-      if (supplierIdString != null) {
+      if (supplierIdString != null && !supplierIdString.isEmpty()) {
             request.setSupplierId(Long.parseLong(supplierIdString.trim()));
       }
 
 
-      String marketIdString = (String) body.optQuery("market.id");
+      String marketIdString = (String) body.optQuery("/market/id");
       if (marketIdString != null) {
          request.setMarketId(Integer.parseInt(marketIdString));
       }
 
 
       String processedIdString = body.optString("processedId");
-      if (processedIdString != null) {
+      if (processedIdString != null && !processedIdString.isEmpty()) {
          request.setProcessedId(Long.parseLong(processedIdString));
       }
 
@@ -93,8 +94,8 @@ public class RequestConverter {
    }
 
    private static String getRequestBody(HttpServletRequest req) {
-      try (BufferedReader br = req.getReader()) {
-         return br.readLine();
+      try {
+         return req.getReader().lines().collect(Collectors.joining(System.lineSeparator())).trim();
       } catch (IOException e) {
          logger.error("Failed to get body");
          throw new RequestException("Body");
