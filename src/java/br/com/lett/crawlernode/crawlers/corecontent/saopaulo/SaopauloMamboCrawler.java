@@ -96,7 +96,9 @@ public class SaopauloMamboCrawler extends Crawler {
 
          String internalPid = crawlInternalPid(json);
          String name = JSONUtils.getStringValue(json, "displayName");
-         boolean available = scrapAvailability(internalPid);
+
+         //in this website, we dont have a unavailable product page. Even if the product is unavailable, the page is the same - 04/05/2021
+         boolean available = true;
          String primaryImage = crawlPrimaryImage(json);
          List<String> secondaryImages = crawlSecondaryImages(json);
          RatingsReviews rating = scrapRating(internalPid);
