@@ -50,6 +50,8 @@ public abstract class RappiCrawler extends Crawler {
 
    abstract protected String getImagePrefix();
 
+   abstract protected String getUrlPrefix();
+
    protected boolean newUnification = false;
 
 
@@ -172,7 +174,7 @@ public abstract class RappiCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(session.getOriginalURL().replace("product", getUrlPrefix()))
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
