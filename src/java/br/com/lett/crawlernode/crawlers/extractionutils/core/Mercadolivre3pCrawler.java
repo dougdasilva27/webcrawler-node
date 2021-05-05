@@ -75,7 +75,7 @@ public class Mercadolivre3pCrawler {
             String internalId;
             Element variationElement = doc.selectFirst("input[name='variation']");
             if (variationElement != null) {
-               internalId = internalPid + variationElement.attr("value");
+               internalId = internalPid; //+ "-" + variationElement.attr("value");
             } else {
                internalId = jsonInfo.optString("sku");
             }
