@@ -313,13 +313,20 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected String crawlName(JSONObject json) {
-      String name = null;
+      StringBuilder nameComplet = new StringBuilder();
 
       if (json.has("name")) {
-         name = json.getString("name");
+         nameComplet.append(json.optString("name")).append(" ");
+      }
+      if (json.has("quantity")){
+         nameComplet.append(json.optString("quantity")).append(" ");
+         if (json.has("unit_type")){
+            nameComplet.append(json.optString("unit_type"));
       }
 
-      return name;
+      }
+
+      return nameComplet.toString();
    }
 
    protected boolean crawlAvailability(JSONObject json) {
