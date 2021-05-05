@@ -27,9 +27,9 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
       String description = "";
       JSONArray descriptionArr = productJson.optJSONArray("Saiba Mais");
 
-      if(descriptionArr != null && !descriptionArr.isEmpty()){
+      if (descriptionArr != null && !descriptionArr.isEmpty()) {
          description = descriptionArr.toString();
-      }else{
+      } else {
          description = productJson.optString("description");
       }
 
@@ -48,8 +48,11 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "78444", logger);
-      return trustVox.extractRatingAndReviews(internalPid, doc, dataFetcher);
+//      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "78444", logger);
+//      return trustVox.extractRatingAndReviews(internalPid, doc, dataFetcher);
+
+      //TrustVox for this store is not working. Disable temporarily to prevent exception.
+      return null;
    }
 
 }
