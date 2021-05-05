@@ -122,7 +122,7 @@ public class MercadolivreCrawler extends Crawler {
 
                if (isMainSeller) {
                   String variationId = skuJson.optString("id");
-                  String internalId = internalPid + "-" + variationId;
+                  String internalId = internalPid; // + "-" + variationId;
 
                   String name = crawlName(doc, skuJson);
                   String nameUrl = extractNameUrl(session.getOriginalURL());
@@ -165,7 +165,7 @@ public class MercadolivreCrawler extends Crawler {
 
                if (isMainSeller) {
                   String variationId = CrawlerUtils.scrapStringSimpleInfoByAttribute(docVariation, "input[name=variation]", "value");
-                  String internalId = variationId == null || variations.size() < 2 ? internalPid : internalPid + "-" + variationId;
+                  String internalId = variationId == null || variations.size() < 2 ? internalPid : internalPid;// + "-" + variationId;
 
                   String name = crawlName(docVariation);
                   String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
