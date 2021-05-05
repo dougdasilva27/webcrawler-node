@@ -209,21 +209,6 @@ public class MercadolivreCrawler extends Crawler {
          Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
          Product product = meli.extractInformation(doc, null, null);
          products.add(product);
-         doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").parallelStream()
-            .map(element -> {
-               Request request = RequestBuilder.create()
-                  .setUrl("https://produto.mercadolivre.com.br" + element.attr("href"))
-                  .setCookies(cookies)
-                  .build();
-               return new Pair<>(dataFetcher.get(session, request).getBody(), element.attr("title"));
-            })
-            .forEach(responsePair -> {
-               try {
-                  products.add(meli.extractInformation(Jsoup.parse(responsePair.getFirst()), product.getRatingReviews(), responsePair.getSecond()));
-               } catch (OfferException | MalformedPricingException | MalformedProductException e) {
-                  throw new IllegalStateException(e);
-               }
-            });
       }
 
       return products;
