@@ -66,10 +66,9 @@ public class BrasilSephoraCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
 
-         Elements variants = doc.select(".product-detail .product-variations .no-bullet .variation-content--list");
+         Elements variants = doc.select(".product-detail .product-variations .no-bullet li div[itemprop]");
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
-
             Document variantProductPage = fetchVariantProductPage(internalId);
             String name = scrapName(variantProductPage);
             List<String> secondaryImages = crawlImages(variantProductPage);
