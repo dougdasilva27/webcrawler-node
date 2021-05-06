@@ -1,5 +1,8 @@
 FROM openjdk:8-jre-slim
 
+RUN apt-get update
+RUN apt-get --no-install-recommends install chromium-driver -y
+
 COPY target/deployment/webcrawler.jar /app/webcrawler.jar
 
 WORKDIR /app
