@@ -1,0 +1,17 @@
+version: "3.7"
+services:
+    maven:
+        image: maven:3-openjdk-8-slim
+        container_name: maven
+        working_dir: /app
+        volumes:
+            - ./:/app
+            - ~/.m2:/root/.m2
+            - ~/.aws/credentials:/root/.aws/credentials:ro
+        command: mvn clean package
+
+    webcrawler:
+        image: ${ECR_IMAGE_URL}
+        build:
+            context: .
+            dockerfile: Dockerfile
