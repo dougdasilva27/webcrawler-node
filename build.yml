@@ -12,6 +12,10 @@ services:
 
     webcrawler:
         image: ${ECR_IMAGE_URL}
+        ports:
+        -   5000:5000
         build:
             context: .
             dockerfile: Dockerfile
+        env_file:
+            -   .env
