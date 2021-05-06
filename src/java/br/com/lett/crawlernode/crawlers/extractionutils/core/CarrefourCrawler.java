@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.*;
-
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -24,7 +27,6 @@ import exceptions.MalformedPricingException;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import models.pricing.BankSlip;
-import org.jsoup.nodes.Element;
 
 public abstract class CarrefourCrawler extends VTEXNewScraper {
 
@@ -41,22 +43,10 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
    protected String scrapInternalpid(Document doc) {
       String internalPid = super.scrapInternalpid(doc);
 
-      if (internalPid == null) {
-         JSONObject runTimeJSON = scrapRuntimeJson(doc);
-         JSONObject route = runTimeJSON.optJSONObject("route");
-         JSONObject params = route != null ? route.optJSONObject("params") : new JSONObject();
+      JSONObject json = crawlProductApi(internalPid, null);
 
-         internalPid = params.optString("id", null);
-      }
-      if (internalPid == null) {
-         Optional<Element> scriptElement = doc.select("script").stream()
-            .filter(element -> element.data().startsWith("[{\"@context\":\"https://schema.org/\"")).findFirst();
 
-         internalPid = scriptElement.map(element -> (String) JSONUtils.stringToJsonArray(element
-            .data()).optQuery("/0/sku")).orElse(null);
-      }
-
-      return internalPid;
+      return json.optString("productId");
    }
 
    protected String fetchPage(String url) {
@@ -75,21 +65,21 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       Request request = RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .mustSendContentEncoding(false)
-         .setFetcheroptions(
-            FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .build())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR)
-         )
-         .build();
+            .setUrl(url)
+            .setHeaders(headers)
+            .setSendUserAgent(false)
+            .mustSendContentEncoding(false)
+            .setFetcheroptions(
+                  FetcherOptionsBuilder.create()
+                        .mustUseMovingAverage(false)
+                        .mustRetrieveStatistics(true)
+                        .build())
+            .setProxyservice(Arrays.asList(
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                  ProxyCollection.LUMINATI_SERVER_BR)
+            )
+            .build();
 
       Response response = alternativeFetch(request);
 
@@ -115,8 +105,8 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       int statusCode = response.getLastStatusCode();
 
       return (Integer.toString(statusCode).charAt(0) == '2'
-         || Integer.toString(statusCode).charAt(0) == '3'
-         || statusCode == 404);
+            || Integer.toString(statusCode).charAt(0) == '3'
+            || statusCode == 404);
    }
 
    @Override
@@ -196,9 +186,9 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       return BankSlip.BankSlipBuilder.create()
-         .setFinalPrice(bankSlipPrice)
-         .setOnPageDiscount(discount)
-         .build();
+            .setFinalPrice(bankSlipPrice)
+            .setOnPageDiscount(discount)
+            .build();
    }
 
    @Override
