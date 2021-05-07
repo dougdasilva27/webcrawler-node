@@ -28,7 +28,12 @@ public class ChileRappijumboCrawler extends RappiCrawler {
 
    @Override
    protected String getUrlPrefix() {
-      return "producto";
+      return "producto/";
+   }
+
+   @Override
+   protected String getHomeCountry() {
+      return "https://www.rappi.com.cl/";
    }
 
    public ChileRappijumboCrawler(Session session) {

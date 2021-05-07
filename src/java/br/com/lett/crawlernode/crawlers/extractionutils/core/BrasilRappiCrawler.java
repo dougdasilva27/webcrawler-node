@@ -24,7 +24,12 @@ public abstract class BrasilRappiCrawler extends RappiCrawler {
 
    @Override
    protected String getUrlPrefix() {
-      return "produto";
+      return "produto/";
+   }
+
+   @Override
+   protected String getHomeCountry() {
+      return "https://www.rappi.com.br/";
    }
 
    @Override

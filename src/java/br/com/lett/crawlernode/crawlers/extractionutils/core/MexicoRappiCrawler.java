@@ -1,22 +1,14 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import models.Offers;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class MexicoRappiCrawler extends RappiCrawler {
 
    private static final String HOME_PAGE = "https://www.rappi.com.mx/";
+
    @Override
    protected String getHomeDomain() {
       return "mxgrability.rappi.com";
@@ -29,7 +21,12 @@ public abstract class MexicoRappiCrawler extends RappiCrawler {
 
    @Override
    protected String getUrlPrefix() {
-      return "producto";
+      return "producto/";
+   }
+
+   @Override
+   protected String getHomeCountry() {
+      return HOME_PAGE;
    }
 
    public MexicoRappiCrawler(Session session) {
