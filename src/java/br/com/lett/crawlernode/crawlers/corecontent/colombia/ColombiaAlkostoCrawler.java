@@ -12,7 +12,6 @@ import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import models.Offer;
@@ -44,35 +43,34 @@ public class ColombiaAlkostoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ids span", true);
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.yotpo.bottomLine", "data-product-id");
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name__sku-code span.code", true);
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-img-box img", "src");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".image-extra a", Arrays.asList("href"), "https", "media.aws.alkosto.com", primaryImage);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-name__name", true);
+         List<String> images = scrapImages(doc);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
          //Site hasn't categories
          String description = crawlDescription(doc);
-         boolean available = !doc.select(".availability.in-stock").isEmpty(); //I didn't find any product unavailable to test
-         Offers offers = available ? scrapOffers(doc) : new Offers();
-         RatingsReviews ratingReviews = scrapRating(doc, internalPid);
 
+         //The availability is defined by location. Without setting the location we cannot find the availability.
+         boolean available = true; //I didn't find any product unavailable to test
+         Offers offers = available ? scrapOffers(doc) : new Offers();
+         RatingsReviews ratingReviews = scrapRating(doc, internalId);
 
          // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
-            .setInternalPid(internalPid)
+            .setInternalPid(internalId)
             .setName(name)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
+            .setSecondaryImages(images)
             .setDescription(description)
             .setOffers(offers)
             .setRatingReviews(ratingReviews)
             .build();
 
          products.add(product);
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -81,44 +79,30 @@ public class ColombiaAlkostoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".product-essential") != null;
+      return doc.selectFirst(".product-main-info") != null;
+   }
+
+   private List<String> scrapImages(Document doc){
+      List<String> imagesList = new ArrayList<>();
+
+      Elements el = doc.select("div.image-gallery__image img.js-zoom-desktop");
+
+      if(el != null && !el.isEmpty()){
+         el.forEach(img -> imagesList.add("https://www.alkosto.com" + img.attr("data-zoom-image")));
+      }
+
+      return imagesList;
    }
 
    private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
+      String description = "";
 
-      //capturing html description
-      Elements elements = doc.select(".data-table tbody");
-      if (elements != null) {
-         for (Element el : elements) {
-            description.append(el.selectFirst(".label"));
-            description.append(": ");
-            description.append(el.selectFirst(".data"));
-         }
+      Element el = doc.selectFirst("div.row div.tab-details__outer-content");
+      if (el != null) {
+         description = el.toString();
       }
 
-      //capturing short description
-      String descriptionShort = CrawlerUtils.scrapStringSimpleInfo(doc, "div.short-description.std", false);
-      description.append("\n");
-      description.append(descriptionShort);
-
-      return description.toString();
-   }
-
-   private List<String> scrapSales(Pricing pricing) {
-      List<String> sales = new ArrayList<>();
-
-      if (scrapSaleDiscount(pricing) != null) {
-         sales.add(scrapSaleDiscount(pricing));
-
-      }
-
-      return sales;
-   }
-
-   private String scrapSaleDiscount(Pricing pricing) {
-
-      return CrawlerUtils.calculateSales(pricing);
+      return description;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -141,8 +125,8 @@ public class ColombiaAlkostoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .price", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-old", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.product-price-pickup", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.before-price-pickup", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
@@ -173,6 +157,18 @@ public class ColombiaAlkostoCrawler extends Crawler {
       return creditCards;
    }
 
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+
+      String saleDiscount = CrawlerUtils.calculateSales(pricing);
+
+      if (saleDiscount != null) {
+         sales.add(saleDiscount);
+      }
+
+      return sales;
+   }
+
    private RatingsReviews scrapRating(Document doc, String internalPid) {
       String url = "https://staticw2.yotpo.com/batch/" + fetchAppKey(doc) + "/" + internalPid;
 
@@ -181,7 +177,6 @@ public class ColombiaAlkostoCrawler extends Crawler {
 
       return yotpo.scrapRatingYotpo(apiDoc);
    }
-
 
    private String getPayload(String internalPid) {
       return "[{\"method\":\"main_widget\",\"params\":{\"pid\":\"" + internalPid + "\",\"order_metadata_fields\":{},\"index\":0,\"element_id\":\"1\"}}," +
