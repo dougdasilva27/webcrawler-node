@@ -24,8 +24,7 @@ class Cache(private val cacheType: CacheType) {
       CacheFactory.createCache(cacheType)
    }
 
-   private val defaultTtl = 7200
-
+   private val defaultTimeSecs = 7200
 
    fun <T> get(key: String): T? {
       val value: Any? = mapCache?.get(key)
@@ -36,14 +35,19 @@ class Cache(private val cacheType: CacheType) {
       mapCache?.put(key, value, seconds.toLong(), TimeUnit.SECONDS)
    }
 
-   fun <T> put(key: String, value: T) {
-      put(key, value, defaultTtl)
-   }
-
+   /**
+    * @param key cache key
+    * @param ttl time to live in seconds
+    * @param requestMethod request method e.g. GET, POST
+    * @param request request being cached
+    * @param function should return object to be cached
+    * @param dataFetcher http client
+    * @param session session data
+    */
    @JvmOverloads
    fun <T> getPutCache(
       key: String,
-      ttl: Int = defaultTtl,
+      ttl: Int = defaultTimeSecs,
       requestMethod: RequestMethod,
       request: Request,
       function: Function<Response, T>,
