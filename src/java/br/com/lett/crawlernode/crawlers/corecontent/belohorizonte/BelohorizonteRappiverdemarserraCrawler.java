@@ -15,6 +15,7 @@ public class BelohorizonteRappiverdemarserraCrawler extends BrasilRappiCrawler {
 
    public BelohorizonteRappiverdemarserraCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override
