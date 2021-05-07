@@ -10,17 +10,22 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilVilanova;
  */
 public class BrasilVilanovamondelezCrawler extends BrasilVilanova {
 
-  public BrasilVilanovamondelezCrawler(Session session) {
-    super(session);
-  }
+   public BrasilVilanovamondelezCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public String getCnpj() {
-    return "33033028004090";
-  }
+   @Override
+   public String getCnpj() {
+      return "33033028004090";
+   }
 
-  @Override
-  public String getPassword() {
-    return "521542";
-  }
+   @Override
+   public String getPassword() {
+      return "521542";
+   }
+
+   @Override
+   public String getSellerFullname() {
+      return "vila nova - login mondelez";
+   }
 }

@@ -1,45 +1,40 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
+import br.com.lett.crawlernode.util.JSONUtils;
+import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.Seller;
-import models.Util;
-import models.prices.Prices;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
 
 public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://www.araujo.com.br/";
    private static final List<String> SELLERS = Arrays.asList("araujo");
 
-  public SaopauloAraujoCrawler(Session session) {
-    super(session);
-  }
+   public SaopauloAraujoCrawler(Session session) {
+      super(session);
+   }
+
+   @Override
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      String description = "";
+      JSONArray descriptionArr = productJson.optJSONArray("Saiba Mais");
+
+      if (descriptionArr != null && !descriptionArr.isEmpty()) {
+         description = descriptionArr.toString();
+      } else {
+         description = productJson.optString("description");
+      }
+
+      return description;
+   }
 
    @Override
    protected String getHomePage() {
@@ -53,6 +48,10 @@ public class SaopauloAraujoCrawler extends VTEXOldScraper {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
+//      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "78444", logger);
+//      return trustVox.extractRatingAndReviews(internalPid, doc, dataFetcher);
+
+      //TrustVox for this store is not working. Disable temporarily to prevent exception.
       return null;
    }
 

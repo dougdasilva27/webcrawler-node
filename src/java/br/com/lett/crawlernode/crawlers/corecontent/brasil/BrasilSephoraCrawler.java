@@ -8,14 +8,16 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+
 import models.Offer;
 import models.Offers;
 import models.pricing.BankSlip;
@@ -33,7 +35,6 @@ import org.jsoup.select.Elements;
  * date: 05/09/2018
  *
  * @author gabriel
- *
  * @author gabriel
  */
 
@@ -65,11 +66,9 @@ public class BrasilSephoraCrawler extends Crawler {
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".tabs-panel.is-active", false);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.breadcrumb-element", true);
 
-         Elements variants = doc.select(".product-detail .product-variations .no-bullet > li");
-
+         Elements variants = doc.select(".product-detail .product-variations .no-bullet li div[itemprop]");
          for (Element variant : variants) {
             String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(variant, "meta[itemprop=sku]", "content");
-
             Document variantProductPage = fetchVariantProductPage(internalId);
             String name = scrapName(variantProductPage);
             List<String> secondaryImages = crawlImages(variantProductPage);
@@ -103,7 +102,7 @@ public class BrasilSephoraCrawler extends Crawler {
       return document.selectFirst(".product-cart") != null;
    }
 
-   private String scrapName(Document doc){
+   private String scrapName(Document doc) {
       return CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name-small-wrapper", false)
          + " - "
          + CrawlerUtils.scrapStringSimpleInfo(doc, "span.selected-value-name", false);
@@ -128,7 +127,7 @@ public class BrasilSephoraCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-sales>span", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-sales.price-sales-standard span:first-child", null, false, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-standard", null, false, ',', session);
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
@@ -168,37 +167,46 @@ public class BrasilSephoraCrawler extends Crawler {
          Card.AMEX
       );
 
-      Installments installments = scrapInstallments(doc, spotlightPrice);
+      Installments installments = scrapInstallments(doc);
 
-      for (Card card : cards) {
-         creditCards.add(CreditCard.CreditCardBuilder.create()
-            .setBrand(card.toString())
-            .setInstallments(installments)
-            .setIsShopCard(false)
+      if (installments.getInstallments().isEmpty()) {
+
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
             .build());
+
       }
+         for (Card card : cards) {
+            creditCards.add(CreditCard.CreditCardBuilder.create()
+               .setBrand(card.toString())
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+         }
 
       return creditCards;
    }
 
-   private Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private Installments scrapInstallments(Document doc) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      Element installmentPrice = doc.selectFirst(".installments.installments-pdp");
+      String[] pairInstallment = null;
+      Element installmentElem = doc.selectFirst(".installments.installments-pdp");
+      if (installmentElem != null) {
+         String text = installmentElem.text();
+         if (text != null) {
+            pairInstallment = text.split("\\sde\\s");
+         }
+      }
 
-      if (installmentPrice != null) {
+      if (Objects.nonNull(pairInstallment) && pairInstallment.length >= 2) {
          installments.add(
             Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(Integer.parseInt(installmentPrice.text().substring(0, 1)))
-               .setInstallmentPrice(Double.parseDouble(installmentPrice.text().substring(5)))
+               .setInstallmentNumber(MathUtils.parseInt(pairInstallment[0]))
+               .setInstallmentPrice(MathUtils.parseDoubleWithDot(pairInstallment[1]))
                .build()
          );
-      }else{
-         installments.add(
-            Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
       }
 
       return installments;
@@ -220,6 +228,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
    private Document fetchVariantProductPage(String internalPid) {
       String url = "https://www.sephora.com.br/on/demandware.store/Sites-Sephora_BR-Site/pt_BR/Product-Variation?pid=" + internalPid + "&format=ajax";
+
       Request request = Request.RequestBuilder.create().setUrl(url).build();
       String response = this.dataFetcher.get(session, request).getBody();
 

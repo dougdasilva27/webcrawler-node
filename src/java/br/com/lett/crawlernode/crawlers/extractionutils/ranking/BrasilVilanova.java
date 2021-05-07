@@ -1,76 +1,17 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.HttpHeaders;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public abstract class BrasilVilanova extends CrawlerRankingKeywords {
 
   public BrasilVilanova(Session session) {
     super(session);
     super.fetchMode = FetchMode.FETCHER;
-  }
-
-  private static final String LOGIN_URL =
-      "https://secure.vilanova.com.br/ckout/api/v2/customer/login";
-
-  protected abstract String getCnpj();
-
-  protected abstract String getPassword();
-
-  @Override
-  protected void processBeforeFetch() {
-    JSONObject payload = new JSONObject();
-    payload.put("login", getCnpj());
-    payload.put("password", getPassword());
-
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-    headers.put("sec-fetch-mode", "cors");
-    headers.put("origin", "https://secure.vilanova.com.br");
-    headers.put("sec-fetch-site", "same-origin");
-    headers.put("x-requested-with", "XMLHttpRequest");
-
-    String payloadString = "jsonData=";
-
-    try {
-      payloadString += URLEncoder.encode(payload.toString(), "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-    }
-
-    Request request =
-        RequestBuilder.create()
-            .setUrl(LOGIN_URL)
-            .setPayload(payloadString)
-            .setHeaders(headers)
-            .build();
-    List<Cookie> cookiesResponse = this.dataFetcher.post(session, request).getCookies();
-
-    for (Cookie cookieResponse : cookiesResponse) {
-      BasicClientCookie cookie =
-          new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-      cookie.setDomain(".vilanova.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-    }
   }
 
   @Override
@@ -85,7 +26,7 @@ public abstract class BrasilVilanova extends CrawlerRankingKeywords {
             + "&ordenacao=6&limit=24";
 
     this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url, this.cookies);
+    this.currentDoc = fetchDocument(url);
 
     Elements products = this.currentDoc.select(".shelf-content-items .box-produto");
 

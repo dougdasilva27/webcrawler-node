@@ -2,11 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
@@ -18,8 +16,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
-import models.pricing.CreditCards;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,6 +24,7 @@ import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.sql.SQLOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,9 +33,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private static final String HOME_PAGE = "https://www.americanas.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
-   private static final Card DEFAULT_CARD = Card.VISA;
    private static final int RATING_API_VERSION = 1;
-   private static final String KEY_SHA_256 = "3a716c1d89ae750c969fadfecf3d88e8057880358c57ddc29f3255083cdd6505";
+   private static final String KEY_SHA_256 = "291cd512e18fb8148bb39aa57d389741fd588346b0fd8ce2260a21c3a34b6598";
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
@@ -48,32 +44,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.config.setFetcher(FetchMode.JSOUP);
    }
 
-   // @Override
-   // public void handleCookiesBeforeFetch() {
-   // Request request;
-   //
-   // if (dataFetcher instanceof FetcherDataFetcher) {
-   // request = RequestBuilder.create().setUrl(HOME_PAGE)
-   // .setCookies(cookies)
-   // .setProxyservice(
-   // Arrays.asList(
-   // ProxyCollection.INFATICA_RESIDENTIAL_BR,
-   // ProxyCollection.NETNUT_RESIDENTIAL_BR,
-   // ProxyCollection.BUY
-   // )
-   // ).mustSendContentEncoding(false)
-   // .setFetcheroptions(FetcherOptionsBuilder.create()
-   // .setForbiddenCssSelector("#px-captcha")
-   // .mustUseMovingAverage(false)
-   // .mustRetrieveStatistics(true).build())
-   // .build();
-   // } else {
-   // request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
-   // }
-   //
-   // this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.americanas.com.br", "/", null,
-   // session, dataFetcher);
-   // }
 
    @Override
    protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
@@ -107,7 +77,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private JSONObject fetchRatingApi(String internalId) {
       StringBuilder url = new StringBuilder();
-      url.append("https://catalogo-bff-v1-americanas.b2w.io/graphql?");
+      url.append("https://catalogo-bff-v2-americanas.b2w.io/graphql?");
 
       JSONObject variables = new JSONObject();
       JSONObject extensions = new JSONObject();
@@ -143,13 +113,12 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    @Override
    protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0.hqboso a[to]","href");
+      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0.hqboso .more-offers__Touchable-sc-15yqej3-2[href]", "href");
+      String offersPageUrl = CrawlerUtils.completeUrl(scrapUrl, "https://", "americanas.com.br");
 
-      String offersPageUrl = CrawlerUtils.completeUrl(scrapUrl,"https://", "americanas.com.br");
+      JSONObject jsonSeller;
 
-      JSONObject jsonSeller = new JSONObject();
-
-      if(offersPageUrl != null) {
+      if (offersPageUrl != null) {
          Request request = Request.RequestBuilder.create().setUrl(offersPageUrl).setProxyservice(
             Arrays.asList(
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
@@ -166,20 +135,24 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             Integer.toString(statusCode).charAt(0) != '3'
             && statusCode != 404)) {
             request.setProxyServices(Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR));
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
 
-            content = new FetcherDataFetcher().get(session, request).getBody();
+            content = new JsoupDataFetcher().get(session, request).getBody();
          }
 
          Document offersDoc = Jsoup.parse(content);
 
-          jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
+         jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
       } else {
-          jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+         jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+
       }
 
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
+
+      JSONObject pages = jsonSeller.optJSONObject("pages");
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       boolean twoPositions = false;
 

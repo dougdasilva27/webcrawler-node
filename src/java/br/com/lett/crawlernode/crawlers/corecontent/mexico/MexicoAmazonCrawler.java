@@ -16,12 +16,8 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -154,8 +150,8 @@ public class MexicoAmazonCrawler extends Crawler {
       if (seller == null) {
          seller = CrawlerUtils.scrapStringSimpleInfo(doc, "#merchant-info", false);
 
-         if (seller != null && seller.contains("vendido por")) {
-            seller = CommonMethods.getLast(seller.split("vendido por")).trim();
+         if (seller != null && (seller.toLowerCase().contains("enviado por") || seller.toLowerCase().contains("vendido por"))) {
+            seller = CommonMethods.getLast(seller.split("\\spor")).trim();
 
             if (seller.endsWith(".")) {
                seller = seller.substring(0, seller.length() - 1);

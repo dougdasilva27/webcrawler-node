@@ -6,16 +6,17 @@ import br.com.lett.crawlernode.core.session.Session;
  * Date: 05/11/20
  *
  * @author Fellype Layunne
- *
  */
 public abstract class ColombiaRappiCrawlerRanking extends RappiCrawlerRanking {
 
-  public ColombiaRappiCrawlerRanking(Session session) {
-    super(session);
-  }
+   protected ColombiaRappiCrawlerRanking(Session session) {
+      super(session);
+      PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/producto/";
 
-  public static final String API_DOMAIN = "grability.rappi.com";
-  public static final String PRODUCT_DOMAIN = "rappi.com.co";
+   }
+
+   public static final String API_DOMAIN = "grability.rappi.com";
+   public static final String PRODUCT_DOMAIN = "rappi.com.co";
 
    @Override
    protected String getApiDomain() {

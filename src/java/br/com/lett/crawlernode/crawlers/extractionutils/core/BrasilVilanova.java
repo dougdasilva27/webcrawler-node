@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -14,9 +17,16 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.prices.Prices;
+import models.pricing.*;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -28,198 +38,225 @@ import static java.util.Collections.singletonList;
 
 public abstract class BrasilVilanova extends Crawler {
 
-  public static final String HOME_PAGE = "https://www.vilanova.com.br/";
-  private static final String IMAGES_HOST = "i2-vilanova.a8e.net.br";
+   public static final String HOME_PAGE = "https://www.vilanova.com.br/";
+   private static final String IMAGES_HOST = "i2-vilanova.a8e.net.br";
 
-  private static final String LOGIN_URL = "https://www.vilanova.com.br/Cliente/Logar";
-  private final String CNPJ = getCnpj();
-  private final String PASSWORD = getPassword();
+   private static final String LOGIN_URL = "https://www.vilanova.com.br/Cliente/Logar";
+   private final String CNPJ = getCnpj();
+   private final String PASSWORD = getPassword();
 
-  public BrasilVilanova(Session session) {
-    super(session);
-    super.config.setFetcher(FetchMode.APACHE);
-  }
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-  public abstract String getCnpj();
+   public BrasilVilanova(Session session) {
+      super(session);
+      super.config.setFetcher(FetchMode.JSOUP);
+   }
 
-  public abstract String getPassword();
+   public abstract String getCnpj();
+   public abstract String getPassword();
+   public abstract String getSellerFullname();
 
-  private String cookiePHPSESSID = null;
+   private String cookiePHPSESSID = null;
 
-  @Override
-  public void handleCookiesBeforeFetch() {
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+      headers.put("X-Requested-With", "XMLHttpRequest");
 
-    if (getCnpj() == null || getPassword() == null) {
-      return;
-    }
-    Map<String, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-    headers.put("sec-fetch-mode", "cors");
-    headers.put("origin", "https://www.vilanova.com.br");
-    headers.put("sec-fetch-site", "same-origin");
-    headers.put("x-requested-with", "XMLHttpRequest");
+      StringBuilder payload = new StringBuilder();
+      payload.append("usuario_cnpj=").append(CNPJ);
+      payload.append("&usuario_senha=").append(PASSWORD);
 
-    String payload = "usuario_cnpj=" + CNPJ + "&usuario_senha=" + PASSWORD;
-    Request request =
-        RequestBuilder.create().setUrl(LOGIN_URL).setPayload(payload).setHeaders(headers).build();
-    Response response = this.dataFetcher.post(session, request);
+      Request requestHome = RequestBuilder.create()
+         .setUrl(LOGIN_URL)
+         .setHeaders(headers)
+         .setPayload(payload.toString())
+         .build();
+      Response response = this.dataFetcher.post(session, requestHome);
 
-    cookies = response.getCookies();
-    cookies.removeIf(cookie -> cookie.getValue().equals("deleted"));
-    for (Cookie cookieResponse : cookies) {
-      if (cookieResponse.getName().equalsIgnoreCase("PHPSESSID")) {
-        cookiePHPSESSID = cookieResponse.getValue();
+      String cookieStr = response.getHeaders().getOrDefault("set-cookie", "");
+      if (!cookieStr.equals("")) {
+         cookiePHPSESSID = cookieStr.substring(10, cookieStr.indexOf(';'));
       }
-    }
-  }
+   }
 
-  @Override
-  protected Object fetch() {
-    Map<String, String> headers = new HashMap<>();
-    if (getCnpj() != null && getPassword() != null) {
-      headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
-    }
-
-    Request request =
-        RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).build();
-
-    return Jsoup.parse(new ApacheDataFetcher().get(session, request).getBody());
-  }
-
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
-
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(
-          logger, session, "Product page identified: " + this.session.getOriginalURL());
-
-      JSONArray productJsonArray =
-          CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
-      JSONObject productJson = extractProductData(productJsonArray);
-
-      String internalPid = productJson.optString("productSKU", null);
-      List<String> eans = singletonList(CrawlerUtils.scrapStringSimpleInfo(doc, ".product-ean .value", true));
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#Breadcrumbs li a", true);
-      String description = CrawlerUtils.scrapElementsDescription(doc,
-          singletonList("#info-abas-mobile"));
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg",
-          Arrays.asList("data-zoom-image", "href", "src"), "https", IMAGES_HOST);
-      String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#imagem-produto #elevateImg",
-          Arrays.asList("data-zoom-image", "href", "src"), "https", IMAGES_HOST, primaryImage);
-
-      JSONObject productsJson = getSkusList(doc);
-
-      for (String key : productsJson.keySet()) {
-        JSONObject skuJson = productsJson.optJSONObject(key);
-        String name = skuJson.optString("Nome");
-        String internalId = skuJson.optString("Id");
-
-        if (skuJson.optString("Picking", null) != null) {
-          name += " " + skuJson.optString("Picking") + "un";
-        }
-
-        int stock = JSONUtils.getJSONValue(skuJson, "Estoque").optInt("Disponivel", 0);
-
-        float price = skuJson.optFloat("PrecoPor", 0F);
-        Prices prices = scrapPrices(price, skuJson);
-
-        if (price != 0F) {
-          price = skuJson.optFloat("PrecoPorSemPromocao", 0F);
-          prices.setPriceFrom(null);
-        }
-
-        boolean available = price != 0F;
-
-        Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
-            .setCategory1(categories.getCategory(0))
-            .setCategory2(categories.getCategory(1))
-            .setCategory3(categories.getCategory(2))
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
-            .setDescription(description)
-            .setEans(eans)
-            .setStock(stock)
-            .build();
-
-        products.add(product);
+   @Override
+   protected Object fetch() {
+      Map<String, String> headers = new HashMap<>();
+      if (getCnpj() != null && getPassword() != null) {
+         headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
       }
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
+      Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).build();
 
-    return products;
-  }
+      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+   }
 
-  private JSONObject extractProductData(JSONArray productJsonArray) {
-    JSONObject firstObjectFromArray =
-        productJsonArray.length() > 0 ? productJsonArray.getJSONObject(0) : new JSONObject();
-    return firstObjectFromArray.has("productData")
-        ? firstObjectFromArray.getJSONObject("productData")
-        : firstObjectFromArray;
-  }
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".container #detalhes-container").isEmpty();
-  }
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(
+            logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-  private JSONObject getSkusList(Document doc) {
-    String ean =
-        CrawlerUtils.scrapStringSimpleInfoByAttribute(
+         JSONArray json = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
+
+         if (json != null && !json.isEmpty()) {
+            JSONObject jsonProduct = json.optJSONObject(0);
+            String internalPid = JSONUtils.getValueRecursive(jsonProduct, "productData.productSKU", String.class);
+            List<String> eans = singletonList(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".variacao-container", "data-produtoean"));
+            CategoryCollection categories = scrapCategories(jsonProduct);
+            String description = CrawlerUtils.scrapElementsDescription(doc, singletonList("#info-abas-mobile"));
+            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"), "https", IMAGES_HOST);
+            //cannot find any secondary image
+
+            JSONObject productsJson = getSkusList(doc);
+            for (String key : productsJson.keySet()) {
+               JSONObject skuJson = productsJson.optJSONObject(key);
+               String name = skuJson.optString("Nome");
+               String internalId = skuJson.optString("Id");
+
+               if (skuJson.optString("Picking", null) != null) {
+                  name += " " + skuJson.optString("Picking") + "un";
+               }
+
+               String stockStr = JSONUtils.getValueRecursive(skuJson, "Estoque.Disponivel", String.class);
+               int stock = stockStr != null ? Integer.parseInt(JSONUtils.getValueRecursive(skuJson, "Estoque.Disponivel", String.class)) : 0;
+
+               boolean isAvailable = stock != 0;
+               Offers offers = isAvailable ? scrapOffers(skuJson) : new Offers();
+
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setOffers(offers)
+                  .setCategories(categories)
+                  .setPrimaryImage(primaryImage)
+                  .setDescription(description)
+                  .setEans(eans)
+                  .setStock(stock)
+                  .build();
+
+               products.add(product);
+            }
+         }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      }
+
+      return products;
+   }
+
+   private boolean isProductPage(Document doc) {
+      return !doc.select(".container #detalhes-container").isEmpty();
+   }
+
+   private CategoryCollection scrapCategories(JSONObject json){
+      CategoryCollection categories = new CategoryCollection();
+      String categoriesStr = JSONUtils.getValueRecursive(json, "productData.categoryTree", String.class);
+
+      if(categoriesStr != null){
+         String[] categorieList = categoriesStr.split("/");
+         if(categorieList.length != 0){
+            categories.addAll(Arrays.asList(categorieList));
+         }
+      }
+
+      return categories;
+   }
+
+   private JSONObject getSkusList(Document doc) {
+      String ean =
+         CrawlerUtils.scrapStringSimpleInfoByAttribute(
             doc, ".variacao-container", "data-produtoean");
-    if (ean == null) {
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var dataLayer = [", "];",
-          false, true).optJSONObject("productData");
-      JSONObject jsonObject = new JSONObject();
+      if (ean == null) {
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var dataLayer = [", "];",
+            false, true).optJSONObject("productData");
+         JSONObject jsonObject = new JSONObject();
 
-      jsonObject.put("productData", new JSONObject()
-          .put("Nome", json.optString("productName"))
-          .put("Id", json.optString("productID"))
-          .put("PrecoPor", json.opt("productDiscountPrice"))
-          .put("PrecoPorSemPromocao", json.opt("productOldPrice")));
+         jsonObject.put("productData", new JSONObject()
+            .put("Nome", json.optString("productName"))
+            .put("Id", json.optString("productID"))
+            .put("PrecoPor", json.opt("productDiscountPrice"))
+            .put("PrecoPorSemPromocao", json.opt("productOldPrice")));
 
-      return jsonObject;
-    }
-    Map<String, String> headers = new HashMap<>();
-    StringBuilder cookiebuilder = new StringBuilder();
+         return jsonObject;
+      }
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
 
-    for (Cookie cookie : cookies) {
-      cookiebuilder.append(cookie.getName()).append("=").append(cookie.getValue()).append("; ");
-    }
-    headers.put("cookie", cookiebuilder.toString());
-    Response response =
-        dataFetcher.get(
-            session,
+      Response response =
+         dataFetcher.get(session,
             RequestBuilder.create()
-                .setUrl("https://www.vilanova.com.br/Produto/Variacoes/" + ean)
-                .setHeaders(headers)
-                .build());
+               .setUrl("https://www.vilanova.com.br/Produto/Variacoes/" + ean)
+               .setHeaders(headers)
+               .build());
 
-    return JSONUtils.stringToJson(response.getBody());
-  }
+      return JSONUtils.stringToJson(response.getBody());
+   }
 
-  private Prices scrapPrices(Float price, JSONObject json) {
-    Prices prices = new Prices();
+   private Offers scrapOffers(JSONObject product) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(product);
+      List<String> sales = new ArrayList<>(); // When this new offer model was implemented, no sales was found
 
-    if (price != null && price > 0) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(getSellerFullname())
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-      prices.setPriceFrom(json.optDouble("PrecoPorSemPromocao"));
-      prices.setBankTicketPrice(price);
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-    }
 
-    return prices;
-  }
+      return offers;
+   }
+
+   private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "PrecoDe", true);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "PrecoPor", true);
+
+      if (priceFrom.equals(spotlightPrice)) {
+         priceFrom = null;
+      }
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(JSONUtils.getDoubleValueFromJSON(product, "precoBoleto", false), null);
+      CreditCards creditCards = scrapCreditcards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(bankSlip)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditcards(Double installmentPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(installmentPrice)
+         .build());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
 }

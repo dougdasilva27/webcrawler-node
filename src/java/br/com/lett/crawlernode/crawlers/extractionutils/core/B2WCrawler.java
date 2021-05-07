@@ -66,7 +66,7 @@ public class B2WCrawler extends Crawler {
 
    public B2WCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
       this.setHeaders();
    }
 
@@ -110,6 +110,7 @@ public class B2WCrawler extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
@@ -127,7 +128,7 @@ public class B2WCrawler extends Crawler {
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
             ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
          content = new FetcherDataFetcher().get(session, request).getBody();
@@ -567,7 +568,7 @@ public class B2WCrawler extends Crawler {
       }
 
       return PricingBuilder.create()
-         .setPriceFrom(priceFrom > 0d && priceFrom > spotlightPrice ? priceFrom : null)
+         .setPriceFrom(priceFrom > 0d ? priceFrom : null)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .setBankSlip(bt)
@@ -600,18 +601,23 @@ public class B2WCrawler extends Crawler {
          Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
          Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);
 
-         //In this case, the featuredPrice is setted as the main price of the offer. So, the featuredPrice has to be the price that is showed
-         //in the html page to the costumer accessing the page.
-         if (defaultPrice != null) {
-            featuredPrice = defaultPrice;
+
+         if (offerIndex + 1 <= 3) {
+            for (Double value : Arrays.asList(price1x, bankTicket, defaultPrice)) {
+               if (featuredPrice == null || (value != null && value < featuredPrice)) {
+                  featuredPrice = value;
+               }
+            }
          } else {
-            if (bankTicket != null) {
-               featuredPrice = bankTicket;
-            } else {
+
+            if (defaultPrice != null) {
+               featuredPrice = defaultPrice;
+            } else if (price1x != null) {
                featuredPrice = price1x;
+            } else if (bankTicket != null) {
+               featuredPrice = bankTicket;
             }
          }
-
       } else {
          featuredPrice = info.optDouble("defaultPrice");
       }

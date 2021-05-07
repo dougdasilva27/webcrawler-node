@@ -23,9 +23,12 @@ abstract class TieliSupermercadoCrawler(session: Session) : Crawler(session) {
 
     private val sellerName = "Tieli Supermercado"
 
+   override fun handleCookiesBeforeFetch() {
+      cookies.addAll(dataFetcher.get(session, RequestBuilder.create().setUrl("http://compras.tieli.com.br:38999/KiProcesso/CompraOnLine1.jsp?dp=PC").build()).cookies)
+   }
     override fun fetch(): Any {
         val headers = mutableMapOf(
-            "Cookie" to "JSESSIONID=5F52AB30D36C5E3446A46F1CDE121D33; __cfduid=d33f084f0b0c5802e097effe60c91b2101617986855"
+            "Cookie" to "JSESSIONID=${cookies.first { it.name == "JSESSIONID" }.value}; __cfduid=d33f084f0b0c5802e097effe60c91b2101617986855"
         )
         val request =
             RequestBuilder.create().setHeaders(headers).setUrl(searchUrl).setPayload("valor=$internalId&x=0&y=0")

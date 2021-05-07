@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.TottusCrawler;
 public class PeruTottusCrawler extends TottusCrawler {
 
    private static final String home_page = "https://www.tottus.com.pe/";
-   private static final String seller_full_name = "Tottus";
+   private static final String seller_full_name = "Tottus-peru";
    
    public PeruTottusCrawler(Session session) {
       super(session);

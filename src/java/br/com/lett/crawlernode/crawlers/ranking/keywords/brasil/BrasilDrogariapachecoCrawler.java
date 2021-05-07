@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -18,24 +19,23 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
 
    private JSONArray extractJsonFromApi() {
 
-      String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search/?ft=" + this.keywordWithoutAccents.replace(" ", "%20") + "&_from=0&_to=8&O=OrderByReleaseDateDESC";
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
-      headers.put("Accept", "*/*");
+      String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search/?ft="
+         + this.keywordWithoutAccents.replace(" ", "%20")
+         + "&_from="
+         + this.arrayProducts.size()
+         + "&_to=" + (this.arrayProducts.size() + this.pageSize)
+         + "&O=OrderByReleaseDateDESC";
 
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
       String body = this.dataFetcher.get(session, request).getBody();
 
-      JSONArray stringToJson = JSONUtils.stringToJsonArray(body);
-
-      return stringToJson;
+      return JSONUtils.stringToJsonArray(body);
 
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 18;
+      this.pageSize = 48;
 
       this.log("Página" + this.currentPage);
 
@@ -57,9 +57,6 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
                break;
             }
          }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
@@ -84,5 +81,10 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
       }
 
       return urlProduct;
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return (this.arrayProducts.size() / this.currentPage) >= this.pageSize;
    }
 }

@@ -6,6 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import com.amazonaws.ClientConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
 import org.json.JSONObject;
@@ -50,19 +53,25 @@ public class S3Service {
    // Amazon crawler-session
    private static final AmazonS3 s3clientCrawlerSessions;
    private static final String LOGS_BUCKET_NAME = GlobalConfigurations.executionParameters.getLogsBucketName();
+   private static final int AWS_CONNECTION_TIMEOUT = Math.toIntExact(TimeUnit.MINUTES.toMillis(20));
 
    static {
+      ClientConfiguration clientConfiguration = new ClientConfiguration();
+      clientConfiguration.setConnectionTimeout(AWS_CONNECTION_TIMEOUT);
+
       s3clientImages = AmazonS3ClientBuilder
-            .standard()
-            .withRegion(Regions.US_EAST_1)
-            .withCredentials(new DefaultAWSCredentialsProviderChain())
-            .build();
+         .standard()
+         .withRegion(Regions.US_EAST_1)
+         .withClientConfiguration(clientConfiguration)
+         .withCredentials(new DefaultAWSCredentialsProviderChain())
+         .build();
 
       s3clientCrawlerSessions = AmazonS3ClientBuilder
-            .standard()
-            .withRegion(Regions.US_EAST_1)
-            .withCredentials(new DefaultAWSCredentialsProviderChain())
-            .build();
+         .standard()
+         .withRegion(Regions.US_EAST_1)
+         .withClientConfiguration(clientConfiguration)
+         .withCredentials(new DefaultAWSCredentialsProviderChain())
+         .build();
    }
 
    /**

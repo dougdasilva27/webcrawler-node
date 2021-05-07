@@ -68,7 +68,7 @@ class ArgentinaLareinaCrawler(session: Session) : CrawlerRankingKeywords(session
 
          val internalId = scrapInternalId(productDoc)
 
-         val productUrl = "https://www.lareinaonline.com.ar/carrito.asp?Pr=${internalId}&P="
+         val productUrl = "https://www.lareinaonline.com.ar/Detalle.asp?Pr=${internalId}&P="
          saveDataProduct(internalId, null, productUrl)
          log("Position: $position - internalId: $internalId - internalPid null - url: $productUrl")
       }

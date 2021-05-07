@@ -26,6 +26,11 @@ public class ChileRappijumboCrawler extends RappiCrawler {
       return "images.rappi.cl/products";
    }
 
+   @Override
+   protected String getUrlPrefix() {
+      return "producto";
+   }
+
    public ChileRappijumboCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);

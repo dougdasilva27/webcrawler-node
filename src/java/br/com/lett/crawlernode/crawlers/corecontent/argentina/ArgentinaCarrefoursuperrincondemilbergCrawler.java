@@ -15,12 +15,12 @@ public class ArgentinaCarrefoursuperrincondemilbergCrawler extends ArgentinaCarr
       super(session);
    }
 
-   public static final String CEP = "1648";
-
    @Override
-   protected String getCep() {
-      return CEP;
+   protected String getLocationToken() {
+      return "eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjoiVTFjalkyRnljbVZtYjNWeVlYSXdNREkxTzJOaG" +
+         "NuSmxabTkxY21GeU1EZzVPUT09IiwidXRtX2NhbXBhaWduIjpudWxsLCJ1dG1fc291cmNlIjpudWxsLCJ1dG1pX2NhbXBhaWduIjpudWxsLCJjdXJyZW5jeUNvZGUi" +
+         "OiJBUlMiLCJjdXJyZW5jeVN5bWJvbCI6IiQiLCJjb3VudHJ5Q29kZSI6IkFSRyIsImN1bHR1cmVJbmZvIjoiZXMtQVIiLCJhZG1pbl9jdWx0dXJlSW5mbyI6ImVzLU" +
+         "FSIiwiY2hhbm5lbFByaXZhY3kiOiJwdWJsaWMifQ";
    }
-
 
 }

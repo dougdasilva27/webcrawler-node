@@ -17,10 +17,12 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
@@ -87,7 +89,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
             Integer stock = jsonSku.optInt("availablequantity");
             String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-            Offers offer = available? scrapOffers(jsonSku): new Offers();
+            Offers offer = available ? scrapOffers(jsonSku) : new Offers();
 
             List<String> eans = new ArrayList<>();
             eans.add(ean);
@@ -177,7 +179,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
       return totalRating;
    }
-
 
 
    private boolean isProductPage(Document document, String url) {
@@ -294,13 +295,13 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
 
-      Double spotlightPrice = !json.optString("bestPriceFormated").isEmpty()? MathUtils.parseDoubleWithComma(json.optString("bestPriceFormated")): null;
-      Double priceFrom      = !json.optString("listPriceFormated").isEmpty()? MathUtils.parseDoubleWithDot(json.optString("listPriceFormated")): null;
+      Double spotlightPrice = !json.optString("bestPriceFormated").isEmpty() ? MathUtils.parseDoubleWithComma(json.optString("bestPriceFormated")) : null;
+      Double priceFrom = json.optString("listPriceFormated") != null ? MathUtils.parseDoubleWithComma(json.optString("listPriceFormated")) : null;
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom != 0D? priceFrom : null)
+         .setPriceFrom(priceFrom != 0D ? priceFrom : null)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .build();

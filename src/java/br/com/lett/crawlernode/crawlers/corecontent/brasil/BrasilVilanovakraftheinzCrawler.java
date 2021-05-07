@@ -5,17 +5,22 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilVilanova;
 
 public class BrasilVilanovakraftheinzCrawler extends BrasilVilanova {
 
-  public BrasilVilanovakraftheinzCrawler(Session session) {
-    super(session);
-  }
+   public BrasilVilanovakraftheinzCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public String getCnpj() {
-    return null;
-  }
+   @Override
+   public String getCnpj() {
+      return null;
+   }
 
-  @Override
-  public String getPassword() {
-    return null;
-  }
+   @Override
+   public String getPassword() {
+      return null;
+   }
+
+   @Override
+   public String getSellerFullname() {
+      return "vila nova - login kraftheinz";
+   }
 }

@@ -8,8 +8,10 @@ public abstract class MexicoRappiCrawlerRanking extends RappiCrawlerRanking {
    private static final String DOMAIN = "rappi.com.mx";
    private static final String API_DOMAIN = "mxgrability.rappi.com";
 
-   public MexicoRappiCrawlerRanking(Session session) {
+   protected MexicoRappiCrawlerRanking(Session session) {
       super(session);
+      PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/producto/";
+
    }
 
    @Override
