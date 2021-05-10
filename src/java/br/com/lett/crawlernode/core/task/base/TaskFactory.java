@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.core.task.base;
 
-import br.com.lett.crawlernode.core.models.Market;
+
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.crawler.*;
 import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
@@ -30,23 +30,24 @@ public class TaskFactory {
     * @param session
     * @return
     */
-   public static Task createTask(Session session) {
+   public static Task createTask(Session session,String className) {
+
       if (session instanceof InsightsCrawlerSession || session instanceof SeedCrawlerSession || session instanceof DiscoveryCrawlerSession || session instanceof EqiCrawlerSession) {
-         return createCrawlerTask(session);
+         return createCrawlerTask(session,className);
       }
 
       if (session instanceof ImageCrawlerSession) {
-         return createImageCrawlerTask(session);
+         return createImageCrawlerTask(session,className);
       }
 
       if (session instanceof RankingKeywordsSession || session instanceof RankingDiscoverKeywordsSession || session instanceof EqiRankingDiscoverKeywordsSession
          || session instanceof TestRankingKeywordsSession) {
-         return createCrawlerRankingKeywordsTask(session);
+         return createCrawlerRankingKeywordsTask(session,className);
       }
 
       if (session instanceof TestCrawlerSession) {
          if (br.com.lett.crawlernode.test.Test.testType.equals(br.com.lett.crawlernode.test.Test.INSIGHTS_TEST)) {
-            return createCrawlerTask(session);
+            return createCrawlerTask(session,className);
          }
       }
 
@@ -59,10 +60,10 @@ public class TaskFactory {
     *
     * @return Controller instance
     */
-   private static Task createCrawlerTask(Session session) {
+   private static Task createCrawlerTask(Session session,String className) {
 
       // assemble the class name
-      String taskClassName = session.getClassName();
+      String taskClassName = className;
 
       try {
          // instantiating a crawler task with the given session as it's constructor parameter
@@ -77,14 +78,14 @@ public class TaskFactory {
       return null;
    }
 
-   private static Task createImageCrawlerTask(Session session) {
+   private static Task createImageCrawlerTask(Session session,String className) {
       return new ImageCrawler(session);
    }
 
-   private static Task createCrawlerRankingKeywordsTask(Session session) {
+   private static Task createCrawlerRankingKeywordsTask(Session session,String className) {
 
       // assemble the class name
-      String taskClassName = session.getClassName();
+      String taskClassName = className;
 
       try {
 

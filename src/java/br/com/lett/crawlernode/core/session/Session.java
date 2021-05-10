@@ -80,9 +80,6 @@ public class Session {
 
    protected long startTime;
 
-
-   private String className;
-
    private JSONObject options;
 
    /**
@@ -123,7 +120,6 @@ public class Session {
       supplierId = request.getSupplierId();
 
       this.options = request.getOptions();
-      this.className = request.getClassName();
 
       JSONArray proxiesArray = this.options.optJSONArray("proxies");
       if(proxiesArray!= null &&!proxiesArray.isEmpty()){
@@ -296,14 +292,6 @@ public class Session {
       sb.append("marketId: " + market.getNumber() + "\n");
 
       return sb.toString();
-   }
-
-   public String getClassName() {
-      return className;
-   }
-
-   public void setClassName(String className) {
-      this.className = className;
    }
 
    public void setProxies(ArrayList<String> proxies) {

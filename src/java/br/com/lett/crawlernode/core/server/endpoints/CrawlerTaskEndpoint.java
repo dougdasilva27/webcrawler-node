@@ -63,7 +63,7 @@ public class CrawlerTaskEndpoint extends HttpServlet {
 
       // create the task
       Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
-      Task task = TaskFactory.createTask(session);
+      Task task = TaskFactory.createTask(session,request.getClassName());
 
       // perform the task
       Logging.printLogDebug(logger, session, "Processing task ...");

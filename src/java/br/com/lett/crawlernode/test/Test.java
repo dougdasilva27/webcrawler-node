@@ -108,7 +108,7 @@ public class Test {
                         market);
          }
 
-         Task task = TaskFactory.createTask(session);
+         Task task = TaskFactory.createTask(session,"");
 
          task.process();
       } else {
