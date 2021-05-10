@@ -8,20 +8,18 @@ import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateUtils;
 import org.joda.time.DateTime;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Session {
 
    protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-   private ArrayList<String> proxies;
+   private List<String> proxies = new ArrayList<>();
 
    protected DateTime date = new DateTime(DateUtils.timeZone);
 
@@ -104,6 +102,7 @@ public class Session {
       requestProxyMap = new HashMap<>();
       maxConnectionAttemptsWebcrawler = 0;
 
+
       for (String proxy : this.proxies) {
          maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
       }
@@ -125,6 +124,16 @@ public class Session {
 
       this.options = request.getOptions();
       this.className = request.getClassName();
+
+      JSONArray proxiesArray = this.options.optJSONArray("proxies");
+      if(proxiesArray!= null &&!proxiesArray.isEmpty()){
+         for (Object o :proxiesArray) {
+            String proxy = (String) o;
+            proxies.add(proxy);
+         }
+      }else {
+         proxies = Arrays.asList("buy","luminati_server_br","no_proxy");
+      }
 
       if (!(request instanceof CrawlerRankingKeywordsRequest)) {
          originalURL = request.getParameter();
