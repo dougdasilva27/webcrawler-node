@@ -52,6 +52,8 @@ public abstract class RappiCrawler extends Crawler {
 
    abstract protected String getUrlPrefix();
 
+   abstract protected String getHomeCountry();
+
    protected boolean newUnification = false;
 
 
@@ -160,7 +162,6 @@ public abstract class RappiCrawler extends Crawler {
       if (isProductPage(productJson)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-
          String internalPid = crawlInternalPid(productJson);
          String internalId = newUnification ? internalPid : crawlInternalId(productJson);
          String description = crawlDescription(productJson);
@@ -174,7 +175,7 @@ public abstract class RappiCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL().replace("product", getUrlPrefix()))
+            .setUrl(getUrl(productJson))
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
@@ -290,6 +291,14 @@ public abstract class RappiCrawler extends Crawler {
    /*******************
     * General methods *
     *******************/
+
+   public String getUrl(JSONObject productJson){
+
+      String idToUrl = productJson.optString("id");
+
+      return idToUrl != null ? getHomeCountry() + getUrlPrefix() + idToUrl : null;
+
+   }
 
    protected String crawlInternalId(JSONObject json) {
       String internalId = null;
