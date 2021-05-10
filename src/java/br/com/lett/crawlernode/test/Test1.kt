@@ -32,7 +32,7 @@ fun main() {
       } else {
          createTestSession(url, market)
       }
-      val task = TaskFactory.createTask(session)
+      val task = TaskFactory.createTask(session,"")
       task ?: println("Not found!")
       task.process()
    } else {
