@@ -20,6 +20,8 @@ public class Session {
 
    protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
+   private ArrayList<String> proxies;
+
    protected DateTime date = new DateTime(DateUtils.timeZone);
 
    protected List<String> responseBodiesPath = new ArrayList<>();
@@ -71,10 +73,6 @@ public class Session {
     */
    protected int maxConnectionAttemptsWebcrawler;
 
-   /**
-    * The maximum number of connection attempts to be made when downloading images
-    */
-   protected int maxConnectionAttemptsImages;
 
    /**
     * Response when request product page
@@ -82,6 +80,9 @@ public class Session {
    protected Object productPageResponse;
 
    protected long startTime;
+
+
+   private String className;
 
    /**
     * Default empty constructor
@@ -100,13 +101,8 @@ public class Session {
       requestProxyMap = new HashMap<>();
       maxConnectionAttemptsWebcrawler = 0;
 
-      for (String proxy : market.getProxies()) {
+      for (String proxy : this.proxies) {
          maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
-      }
-
-      maxConnectionAttemptsImages = 0;
-      for (String proxy : market.getImageProxies()) {
-         maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
       }
 
    }
@@ -125,7 +121,7 @@ public class Session {
       supplierId = request.getSupplierId();
 
       if (!(request instanceof CrawlerRankingKeywordsRequest)) {
-         originalURL = request.getMessageBody();
+         originalURL = request.getParameter();
       }
 
       maxConnectionAttemptsWebcrawler = 0;
@@ -137,14 +133,9 @@ public class Session {
          // maxConnectionAttemptsWebcrawler++;
          maxConnectionAttemptsWebcrawler = 2;
       } else {
-         for (String proxy : market.getProxies()) {
+         for (String proxy : this.proxies) {
             maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
          }
-      }
-
-      maxConnectionAttemptsImages = 0;
-      for (String proxy : market.getImageProxies()) {
-         maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
       }
 
    }
@@ -163,14 +154,6 @@ public class Session {
 
    public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
       this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
-   }
-
-   public int getMaxConnectionAttemptsImages() {
-      return this.maxConnectionAttemptsImages;
-   }
-
-   public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
-      this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
    }
 
    public String getInternalId() {
@@ -300,4 +283,11 @@ public class Session {
       return sb.toString();
    }
 
+   public String getClassName() {
+      return className;
+   }
+
+   public void setClassName(String className) {
+      this.className = className;
+   }
 }

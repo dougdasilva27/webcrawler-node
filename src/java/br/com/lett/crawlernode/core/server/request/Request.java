@@ -1,14 +1,16 @@
 package br.com.lett.crawlernode.core.server.request;
 
+import br.com.lett.crawlernode.core.models.Market;
+
 public class Request {
 
    private String requestMethod;
 
    // common to all tasks
    private String messageId;
-   private String messageBody;
+   private String parameter;
    private String scraperType;
-   private int marketId;
+   private Market market;
    private Long supplierId;
 
    private String internalId;
@@ -27,12 +29,12 @@ public class Request {
       this.messageId = messageId;
    }
 
-   public String getMessageBody() {
-      return messageBody;
+   public String getParameter() {
+      return parameter;
    }
 
-   public void setMessageBody(String messageBody) {
-      this.messageBody = messageBody.trim();
+   public void setParameter(String parameter) {
+      this.parameter = parameter.trim();
    }
 
    public String getInternalId() {
@@ -59,12 +61,12 @@ public class Request {
       this.requestMethod = requestMethod;
    }
 
-   public int getMarketId() {
-      return marketId;
+   public Market getMarket() {
+      return market;
    }
 
-   public void setMarketId(int marketId) {
-      this.marketId = marketId;
+   public void setMarket(Market market) {
+      this.market = market;
    }
 
    public String getScraperType() {
@@ -93,8 +95,8 @@ public class Request {
 
    @Override
    public String toString() {
-      return "Request[messageId=" + messageId + ", messageBody=" + messageBody + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
-            + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + marketId + ", queueName=" + queueName
+      return "Request[messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
+            + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
             + ", supplierId=" + supplierId + "]";
    }
 }

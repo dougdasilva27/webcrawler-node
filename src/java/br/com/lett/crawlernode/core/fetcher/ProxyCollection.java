@@ -114,21 +114,6 @@ public class ProxyCollection {
       }
    }
 
-   private void assembleIntervalsImages(Markets markets) {
-      List<Market> marketList = markets.getMarkets();
-      for (Market m : marketList) {
-         List<Interval<Integer>> intervals = new ArrayList<>();
-         List<String> proxies = m.getImageProxies();
-         int index = 1;
-         for (int i = 0; i < proxies.size(); i++) {
-            intervals.add(new Interval<Integer>(proxies.get(i), index, index + MAX_ATTEMPTS_PER_PROXY - 1));
-            index = index + MAX_ATTEMPTS_PER_PROXY;
-         }
-         this.intervalsMarketsMapImages.put(m.getNumber(), intervals);
-      }
-   }
-
-
    /**
     * Select a proxy service to be used, given the number of attempt. To solve this, we create a list
     * of intervals from the maximmum number of attempts per proxy. The list contains all intervals

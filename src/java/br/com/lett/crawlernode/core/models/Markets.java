@@ -73,8 +73,7 @@ public class Markets {
                   r.get(marketTable.CODE),
                   r.get(marketTable.FULLNAME),
                   proxies,
-                  imageProxies,
-                  r.get(marketTable.FIRST_PARTY_REGEX));
+                    r.get(marketTable.FIRST_PARTY_REGEX));
 
             market.setMustUseCrawlerWebdriver(r.get(marketTable.CRAWLER_WEBDRIVER));
 

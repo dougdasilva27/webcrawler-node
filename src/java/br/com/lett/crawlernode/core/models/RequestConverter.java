@@ -13,10 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RequestConverter {
 
@@ -61,9 +59,9 @@ public class RequestConverter {
       }
 
 
-      String marketIdString = (String) body.optQuery("/market/id");
-      if (marketIdString != null) {
-         request.setMarketId(Integer.parseInt(marketIdString));
+      JSONObject marketObj = (JSONObject) body.optQuery("/market/id");
+      if (marketObj != null) {
+         request.setMarket(createMarket(marketObj));
       }
 
 
@@ -74,7 +72,7 @@ public class RequestConverter {
 
       String parameters = body.optString("parameters");
 
-      request.setMessageBody(parameters);
+      request.setParameter(parameters);
       request.setScraperType(scraperType);
 
 
@@ -91,6 +89,10 @@ public class RequestConverter {
       }
 
       return request;
+   }
+
+   private static Market createMarket(JSONObject marketObj) {
+      return new Market(marketObj.optInt("Id"), marketObj.optString("code"),marketObj.optString("regex"));
    }
 
    private static String getRequestBody(HttpServletRequest req) {

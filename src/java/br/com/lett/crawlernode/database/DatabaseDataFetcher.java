@@ -138,8 +138,7 @@ public class DatabaseDataFetcher {
                   r.getValue(marketTable.CODE),
                   r.getValue(marketTable.FULLNAME),
                   proxies,
-                  imageProxies,
-                  r.getValue(marketTable.FIRST_PARTY_REGEX));
+                    r.getValue(marketTable.FIRST_PARTY_REGEX));
          }
 
       } catch (Exception e) {

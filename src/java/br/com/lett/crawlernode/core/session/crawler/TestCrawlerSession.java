@@ -73,7 +73,7 @@ public class TestCrawlerSession extends Session {
       this.market = market;
 
       // setting URL and originalURL
-      this.originalURL = request.getMessageBody();
+      this.originalURL = request.getParameter();
    }
 
    @Override

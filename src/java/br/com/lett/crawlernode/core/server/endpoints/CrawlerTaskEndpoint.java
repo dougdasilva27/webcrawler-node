@@ -1,7 +1,5 @@
 package br.com.lett.crawlernode.core.server.endpoints;
 
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.models.RequestConverter;
 import br.com.lett.crawlernode.core.server.ServerCrawler;
 import br.com.lett.crawlernode.core.server.request.Request;
@@ -10,13 +8,11 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.test.TestUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +59,7 @@ public class CrawlerTaskEndpoint extends HttpServlet {
       String response;
 
       Logging.printLogDebug(logger, "Creating session....");
-      Session session = SessionFactory.createSession(request, TestUtils.fetchMarket("","",request.getMarketId()));
+      Session session = SessionFactory.createSession(request,request.getMarket());
 
       // create the task
       Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
