@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.core.server.request;
 
 import br.com.lett.crawlernode.core.models.Market;
+import org.json.JSONObject;
 
 public class Request {
 
@@ -12,6 +13,8 @@ public class Request {
    private String scraperType;
    private Market market;
    private Long supplierId;
+   private String className;
+   private JSONObject options;
 
    private String internalId;
    private Long processedId;
@@ -98,5 +101,21 @@ public class Request {
       return "Request[messageId=" + messageId + ", messageBody=" + parameter + ", scraperType=" + scraperType + ", requestMethod=" + requestMethod
             + ", internalId=" + internalId + ", processedId=" + processedId + ", marketId=" + market + ", queueName=" + queueName
             + ", supplierId=" + supplierId + "]";
+   }
+
+   public String getClassName() {
+      return className;
+   }
+
+   public void setClassName(String className) {
+      this.className = className;
+   }
+
+   public JSONObject getOptions() {
+      return options;
+   }
+
+   public void setOptions(JSONObject options) {
+      this.options = options;
    }
 }

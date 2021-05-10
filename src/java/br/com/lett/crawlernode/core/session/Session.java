@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateUtils;
 import org.joda.time.DateTime;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +85,8 @@ public class Session {
 
    private String className;
 
+   private JSONObject options;
+
    /**
     * Default empty constructor
     */
@@ -119,6 +122,9 @@ public class Session {
       sessionId = request.getMessageId();
       this.market = market;
       supplierId = request.getSupplierId();
+
+      this.options = request.getOptions();
+      this.className = request.getClassName();
 
       if (!(request instanceof CrawlerRankingKeywordsRequest)) {
          originalURL = request.getParameter();
@@ -289,5 +295,21 @@ public class Session {
 
    public void setClassName(String className) {
       this.className = className;
+   }
+
+   public void setProxies(ArrayList<String> proxies) {
+      this.proxies = proxies;
+   }
+
+public List<String> getProxies(){
+      return this.proxies;
+   }
+
+   public JSONObject getOptions() {
+      return options;
+   }
+
+   public void setOptions(JSONObject options) {
+      this.options = options;
    }
 }

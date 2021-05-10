@@ -9,11 +9,9 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.joda.time.DateTime;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.DateUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -65,8 +63,6 @@ public class ImageCrawlerSession extends Session {
       }
 
       // local tmp directories
-      localOriginalFileDir = createLocalOriginalImageFileDir();
-      localTransformedFileDir = createLocalTransformedImageFileDir();
 
       // amazon bucket keys
       originalImageKeyOnBucket = createOriginalImageKeyOnBucket();
@@ -108,17 +104,6 @@ public class ImageCrawlerSession extends Session {
          .append(".jpg").toString();
    }
 
-   private String createLocalOriginalImageFileDir() {
-      return new StringBuilder().append(GlobalConfigurations.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity())
-         .append("/").append(super.market.getName()).append("/").append("images").append("/").append(internalId).append("_").append(imageNumber)
-         .append("_").append(createImageBaseName()).toString();
-   }
-
-   private String createLocalTransformedImageFileDir() {
-      return new StringBuilder().append(GlobalConfigurations.executionParameters.getTmpImageFolder()).append("/").append(super.market.getCity())
-         .append("/").append(super.market.getName()).append("/").append("images").append(internalId).append("_").append("imageNumber_transformed")
-         .append("_").append(createImageBaseName()).toString();
-   }
 
    public String getLocalOriginalFileDir() {
       return localOriginalFileDir;

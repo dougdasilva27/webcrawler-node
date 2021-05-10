@@ -20,8 +20,6 @@ import org.jooq.conf.ParamType;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.session.Session;
@@ -575,33 +573,6 @@ public class Persistence {
 
    }
 
-   /**
-    * 
-    * @param markets
-    */
-   public static void initializeImagesDirectories(Markets markets) {
-      Logging.printLogDebug(logger, "Initializing temp images directory at:" + GlobalConfigurations.executionParameters.getTmpImageFolder() + "...");
-
-      List<Market> marketsList = markets.getMarkets();
-
-      String[] subdirectories = new String[] {
-               "images"
-      };
-
-      int counter = 0;
-
-      // create folder for each market
-      for (Market m : marketsList) {
-         processDirectory(m.getCity(), null, null);
-         processDirectory(m.getCity(), m.getName(), null);
-         for (String folder : subdirectories) {
-            processDirectory(m.getCity(), m.getName(), folder);
-         }
-         counter++;
-      }
-
-      Logging.printLogDebug(logger, "Initialized directory for " + counter + " markets.");
-   }
 
    /**
     * Directory creation.

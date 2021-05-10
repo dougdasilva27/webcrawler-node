@@ -39,7 +39,7 @@ public class Scheduler {
 
          // assemble the primary image message
          if (primaryPic != null && !primaryPic.isEmpty()) {
-            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, url, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR);
+            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, url, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR,session);
 
             String body = removesUselessCharacters(attrPrimary.toString());
 
@@ -109,7 +109,7 @@ public class Scheduler {
 }
    */
 
-   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, String url, Market market, String type) {
+   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, String url, Market market, String type,Session session) {
 
       String market_code = market.getCode();
 
@@ -118,7 +118,7 @@ public class Scheduler {
       headers.put("Accept", "*");
 
       download_config.put("headers", headers);
-      download_config.put("proxies", market.getProxies());
+      download_config.put("proxies", session.getProxies());
 
       JSONObject body = new JSONObject();
       body.put("processed_id", processedId);

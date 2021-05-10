@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.exceptions.RequestException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
@@ -48,7 +49,13 @@ public class RequestConverter {
 
       request.setRequestMethod(req.getMethod());
       request.setQueueName(body.optString("queue"));
-      request.setMessageId(body.optString("msgid"));
+      request.setMessageId(body.optString("msgId"));
+      request.setClassName(body.optString("className"));
+
+      String options = body.optString("options");
+      if(options!=null && !options.isEmpty()) {
+         request.setOptions(JSONUtils.stringToJson(options));
+      }
 
       request.setInternalId(body.optString("internalId"));
 
@@ -59,7 +66,7 @@ public class RequestConverter {
       }
 
 
-      JSONObject marketObj = (JSONObject) body.optQuery("/market/id");
+      JSONObject marketObj = body.getJSONObject("market");
       if (marketObj != null) {
          request.setMarket(createMarket(marketObj));
       }
@@ -92,7 +99,7 @@ public class RequestConverter {
    }
 
    private static Market createMarket(JSONObject marketObj) {
-      return new Market(marketObj.optInt("Id"), marketObj.optString("code"),marketObj.optString("regex"));
+      return new Market(marketObj.optInt("marketId"), marketObj.optString("name"), marketObj.optString("fullName"), marketObj.optString("code"),marketObj.optString("regex"),marketObj.optBoolean("use_browser"));
    }
 
    private static String getRequestBody(HttpServletRequest req) {

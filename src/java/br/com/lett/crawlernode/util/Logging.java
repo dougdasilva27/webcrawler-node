@@ -103,7 +103,6 @@ public class Logging {
       metadata.put("version", VERSION);
 
       if (session != null) {
-         metadata.put("city", session.getMarket().getCity());
          metadata.put("market", session.getMarket().getName());
          metadata.put("market_id", session.getMarket().getNumber());
 

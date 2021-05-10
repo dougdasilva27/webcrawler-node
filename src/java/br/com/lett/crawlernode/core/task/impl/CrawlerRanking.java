@@ -482,9 +482,9 @@ public abstract class CrawlerRanking extends Task {
       String queueName;
 
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
-         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
+         queueName = session.getMarket().isUseBrowser() ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+         queueName = session.getMarket().isUseBrowser() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
       }
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);

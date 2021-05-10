@@ -57,13 +57,12 @@ public class TaskFactory {
     * Create an instance of a crawler task for the market in the session.
     * http://stackoverflow.com/questions/5658182/initializing-a-class-with-class-forname-and-which-have-a-constructor-which-tak
     *
-    * @param controllerClassName The name of the controller class
     * @return Controller instance
     */
    private static Task createCrawlerTask(Session session) {
 
       // assemble the class name
-      String taskClassName = assembleCrawlerClassName(session.getMarket());
+      String taskClassName = session.getClassName();
 
       try {
          // instantiating a crawler task with the given session as it's constructor parameter
@@ -85,7 +84,7 @@ public class TaskFactory {
    private static Task createCrawlerRankingKeywordsTask(Session session) {
 
       // assemble the class name
-      String taskClassName = assembleRankingClassName(session.getMarket(), "keywords");
+      String taskClassName = session.getClassName();
 
       try {
 
@@ -99,45 +98,5 @@ public class TaskFactory {
 
       return null;
    }
-
-   /**
-    * Assemble the name of a task class.
-    *
-    * @param the  market for which we will run the task
-    * @param name The name of the market
-    * @return The name of the task class
-    */
-   public static String assembleCrawlerClassName(Market market) {
-      String city = market.getCity();
-      String name = market.getName();
-
-      StringBuilder sb = new StringBuilder();
-      sb.append("br.com.lett.crawlernode.crawlers.corecontent." + city + ".");
-      sb.append(city.substring(0, 1).toUpperCase());
-      sb.append(city.substring(1).toLowerCase());
-      sb.append(name.substring(0, 1).toUpperCase());
-      sb.append(name.substring(1).toLowerCase());
-      sb.append("Crawler");
-
-      return sb.toString();
-   }
-
-   /**
-    * Assemble the name of a CrawlerRanking class.
-    *
-    * @param city The city corresponding to this controller
-    * @param name The name of the market
-    * @return The name of the crawler class
-    */
-   private static String assembleRankingClassName(Market market, String rankType) {
-      String crawlerClassName = "br.com.lett.crawlernode.crawlers.ranking." + rankType + "." + market.getCity() + ".";
-      crawlerClassName += market.getCity().substring(0, 1).toUpperCase();
-      crawlerClassName += market.getCity().substring(1);
-      crawlerClassName += market.getName().substring(0, 1).toUpperCase();
-      crawlerClassName += market.getName().substring(1);
-      crawlerClassName += "Crawler";
-      return crawlerClassName;
-   }
-
 
 }

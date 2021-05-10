@@ -19,10 +19,6 @@ public class CrawlerTaskRequestChecker {
    public static boolean checkRequest(Request request) {
       String scraperType = request.getScraperType();
 
-      if (GlobalConfigurations.markets.getMarket(request.getMarket()) == null) {
-         Logging.printLogError(logger, "Market " + request.getMarket() + " doesn't exist.");
-         return false;
-      }
 
       if (request instanceof ImageCrawlerRequest) {
          return checkImageTaskRequest(request);

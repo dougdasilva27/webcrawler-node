@@ -308,7 +308,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
       long requestsStartTime = System.currentTimeMillis();
 
-      while (attempt <= session.getMaxConnectionAttemptsImages() && localFile == null) {
+      while (attempt <= session.getMaxConnectionAttemptsCrawler() && localFile == null) {
          LettProxy randProxy = null;
          String url = request.getUrl();
          Map<String, String> headers = request.getHeaders();

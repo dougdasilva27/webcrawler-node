@@ -132,13 +132,12 @@ public class DatabaseDataFetcher {
             }
 
             // create market
-            return new Market(r.getValue(marketTable.ID).intValue(),
-                  r.getValue(marketTable.CITY),
-                  r.getValue(marketTable.NAME),
-                  r.getValue(marketTable.CODE),
-                  r.getValue(marketTable.FULLNAME),
-                  proxies,
-                    r.getValue(marketTable.FIRST_PARTY_REGEX));
+            return new Market(
+               r.getValue(marketTable.ID).intValue(),
+               r.getValue(marketTable.NAME),
+               r.getValue(marketTable.FULLNAME),
+               r.getValue(marketTable.CODE),
+               r.getValue(marketTable.FIRST_PARTY_REGEX));
          }
 
       } catch (Exception e) {
@@ -287,7 +286,6 @@ public class DatabaseDataFetcher {
 
    Set<String> fetchKeywordsFromSupplierId(Long supplierId) {
       Set<String> keywords = new HashSet<>();
-
 
 
       return keywords;

@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.test
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.models.Market
-import br.com.lett.crawlernode.core.models.Markets
 import br.com.lett.crawlernode.core.session.SessionFactory
 import br.com.lett.crawlernode.core.session.SessionFactory.createTestSession
 import br.com.lett.crawlernode.core.task.base.TaskFactory
@@ -55,9 +54,7 @@ fun initialize() {
 
    GlobalConfigurations.dbManager = DatabaseManager(dbCredentials)
 
-   GlobalConfigurations.markets = Markets(GlobalConfigurations.dbManager)
-
    GlobalConfigurations.processorResultManager = ResultManager(GlobalConfigurations.dbManager)
 
-   GlobalConfigurations.proxies = ProxyCollection(GlobalConfigurations.markets, GlobalConfigurations.dbManager)
+   GlobalConfigurations.proxies = ProxyCollection(GlobalConfigurations.dbManager)
 }

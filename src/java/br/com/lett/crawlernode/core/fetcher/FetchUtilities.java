@@ -167,11 +167,8 @@ public class FetchUtilities {
       Integer attemptTemp = Integer.valueOf(attempt);
       Integer maxAttempts;
 
-      if (session instanceof ImageCrawlerSession) {
-         maxAttempts = session.getMaxConnectionAttemptsImages();
-      } else {
-         maxAttempts = session.getMaxConnectionAttemptsCrawler();
-      }
+      maxAttempts = session.getMaxConnectionAttemptsCrawler();
+
 
       String serviceName;
 
@@ -221,16 +218,15 @@ public class FetchUtilities {
     *
     * @param attempt
     * @param session
-    * @param proxyServices
     * @return
     */
    public static String getProxyService(int attempt, Session session) {
       String service = null;
 
       if (session instanceof ImageCrawlerSession) {
-         service = GlobalConfigurations.proxies.selectProxy(session.getMarket(), false, attempt);
+         service = GlobalConfigurations.proxies.selectProxy(session, false, attempt);
       } else {
-         service = GlobalConfigurations.proxies.selectProxy(session.getMarket(), true, attempt);
+         service = GlobalConfigurations.proxies.selectProxy(session, true, attempt);
       }
 
       return service;
@@ -246,13 +242,16 @@ public class FetchUtilities {
       if (proxy != null) {
 
          if (session.getMarket().getName() != null && highTimeoutMarkets.contains(session.getMarket().getName())) {
-            requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setRedirectsEnabled(followRedirect) // set // true
+            requestConfig = RequestConfig.custom()
+               .setCookieSpec(CookieSpecs.STANDARD)
+               .setRedirectsEnabled(followRedirect) // set // true
                .setConnectionRequestTimeout(THIRTY_SECONDS_TIMEOUT)
                .setConnectTimeout(THIRTY_SECONDS_TIMEOUT)
                .setSocketTimeout(THIRTY_SECONDS_TIMEOUT)
                .setProxy(proxy).build();
          } else {
-            requestConfig = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD)
+            requestConfig = RequestConfig.custom()
+               .setCookieSpec(CookieSpecs.STANDARD)
                .setRedirectsEnabled(followRedirect) // set // true
                .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
                .setConnectTimeout(DEFAULT_CONNECT_TIMEOUT)

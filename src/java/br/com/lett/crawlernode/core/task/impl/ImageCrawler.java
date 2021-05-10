@@ -297,7 +297,6 @@ public class ImageCrawler extends Task {
                   .mustRetrieveByteArray(true)
                   .mustRetrieveStatistics(true)
                   .build())
-            .setProxyservice(session.getMarket().getImageProxies())
             .build();
 
       int marketId = session.getMarket().getNumber();
@@ -343,7 +342,7 @@ public class ImageCrawler extends Task {
 
    /**
     * 
-    * @param metadata
+
     * @param md5
     * @return
     */
