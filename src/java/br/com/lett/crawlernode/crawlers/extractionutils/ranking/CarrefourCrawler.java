@@ -1,30 +1,27 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.*;
-
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
-import br.com.lett.crawlernode.core.fetcher.models.RequestsStatistics;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
@@ -33,19 +30,20 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   private static final Integer API_VERSION = 1;
-   private static final String SENDER = "vtex.store-resources@0.x";
-   private static final String PROVIDER = "vtex.search-graphql@0.x";
-
-   private String keySHA256 = "";
    protected String locale = "pt-BR";
+
+   private String hash;
 
    @Override
    protected void processBeforeFetch() {
       super.processBeforeFetch();
 
-      BasicClientCookie cookie = new BasicClientCookie("userLocationData", getLocation());
-      cookie.setDomain(getHomePage().replace("https://", "").replace("/", ""));
+      BasicClientCookie cookie = new BasicClientCookie("vtex_segment", getLocation());
+      try {
+         cookie.setDomain(new URL(getHomePage()).getHost());
+      } catch (MalformedURLException e) {
+         throw new IllegalStateException(e);
+      }
       cookie.setPath("/");
       this.cookies.add(cookie);
    }
@@ -54,20 +52,27 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
    protected abstract String getLocation();
 
+   private void setTotalProducts(JSONObject data) {
+      if (data.has("recordsFiltered") && data.get("recordsFiltered") instanceof Integer) {
+         this.totalProducts = data.getInt("recordsFiltered");
+         this.log("Total da busca: " + this.totalProducts);
+      }
+   }
+
    @Override
    protected void extractProductsFromCurrentPage() {
       this.log("Página " + this.currentPage);
-      this.pageSize = 50;
+      this.pageSize = 24;
 
-      if (this.currentPage == 1) {
-         //Fetch document: call the method "fetchPage" to set the currentDoc with the html search page. This is necessary
-         //because we need the hash code present in html in order to make the api request.
-         this.currentDoc = fetchDocument();
-         scrapHashCode();
-      }
+      String url = getHomePage() + this.keywordEncoded + "?_q=" + this.keywordEncoded + "&map=ft&page=" + this.currentPage;
 
-      JSONObject searchApi = fetchSearchApi();
-      JSONArray products = JSONUtils.getJSONArrayValue(searchApi, "products");
+      Map<String, String> headers = new HashMap<>();
+
+      Request request = Request.RequestBuilder.create().setUrl(url.replace("+", "%20")).setCookies(cookies).setHeaders(headers).build();
+      String response = this.dataFetcher.get(session, request).getBody();
+
+      JSONObject searchApi = fetchSearchApi(response);
+      JSONArray products = searchApi != null && searchApi.has("products") ? searchApi.optJSONArray("products") : new JSONArray();
 
       if (products.length() > 0) {
 
@@ -77,157 +82,61 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
          for (Object object : products) {
             JSONObject product = (JSONObject) object;
-            String productUrl = CrawlerUtils.completeUrl(product.optString("linkText") + "/p", "https",
-               getHomePage().replace("https://", "").replace("/", ""));
-            String internalPid = product.optString("productId");
-
-            saveDataProduct(null, internalPid, productUrl);
-
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            try {
+               String productUrl = new URIBuilder(getHomePage()).setPath(product.optString("linkText") + "/p").build().toString();
+               String internalPid = product.optString("productId");
+               saveDataProduct(null, internalPid, productUrl);
+               this.log("Position: " + this.position + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            } catch (URISyntaxException e) {
+               logger.error("Error get url", e);
+            }
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
          }
 
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
+      }
+   }
+
+   private String fetchSHA256Key(String response) {
+
+      if (hash != null) {
+         return hash;
       }
 
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
+      if (response != null && !response.isEmpty()) {
+         Document doc = Jsoup.parse(response);
+         String nonFormattedJson = doc.selectFirst("template[data-varname=__STATE__] script").html();
+         JSONObject stateJson = CrawlerUtils.stringToJson(nonFormattedJson);
 
-   private void setTotalProducts(JSONObject data) {
-      this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "recordsFiltered", 0);
-      this.log("Total da busca: " + this.totalProducts);
-   }
+         for (String key : stateJson.keySet()) {
+            String firstIndexString = "@runtimeMeta(";
+            String keyIdentifier = ").correction";
 
-   private Document fetchDocument() {
-      StringBuilder searchPage = new StringBuilder();
+            if (key.contains(firstIndexString) && key.contains(keyIdentifier)) {
+               int x = key.indexOf(firstIndexString) + firstIndexString.length();
+               int y = key.indexOf(')', x);
 
-      searchPage.append(getHomePage())
-         .append("busca/")
-         .append(this.keywordEncoded)
-         .append("?page=")
-         .append(this.currentPage);
-
-      String apiUrl = searchPage.toString().replace("+", "%20");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(apiUrl)
-         .setCookies(cookies)
-         .setFetcheroptions(
-            FetcherOptions.FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .build())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR))
-         .build();
-
-      return Jsoup.parse(fetchWithReAttempt(request));
-   }
-
-   private void scrapHashCode() {
-      JSONObject runtimeJson = new JSONObject();
-
-      Element nonFormattedJson = this.currentDoc.selectFirst("template[data-varname=__STATE__] script");
-
-      if (nonFormattedJson != null) {
-         runtimeJson = CrawlerUtils.stringToJson(nonFormattedJson.html());
-      }
-
-      if (runtimeJson != null) {
-
-         for (String e : runtimeJson.keySet()) {
-
-            if (e.contains("$ROOT_QUERY.productSearch")) {
-
-               String[] splited = e.split("hash\\\":\\\"");
-
-               if (splited.length > 0) {
-
-                  String[] result = splited[1].split("\\\"");
-
-                  if (result.length > 0) {
-                     this.keySHA256 = result[0];
-                  }
+               JSONObject hashJson = CrawlerUtils.stringToJson(key.substring(x, y).replace("\\\"", "\""));
+               if (hashJson.has("hash") && !hashJson.isNull("hash")) {
+                  hash = hashJson.get("hash").toString();
                }
+
+               break;
             }
          }
       }
-   }
-
-   /**
-    * This function request a api with a JSON encoded on BASE64
-    * <p>
-    * This json has informations like: pageSize, keyword and substantive
-    *
-    * @return
-    */
-   protected JSONObject fetchSearchApi() {
-      StringBuilder url = new StringBuilder();
-      url.append(getHomePage() + "_v/segment/graphql/v1?");
-
-      JSONObject extensions = new JSONObject();
-      JSONObject persistedQuery = new JSONObject();
-
-      persistedQuery.put("version", API_VERSION);
-      persistedQuery.put("sha256Hash", this.keySHA256);
-      persistedQuery.put("sender", SENDER);
-      persistedQuery.put("provider", PROVIDER);
-
-      extensions.put("variables", createVariablesBase64());
-      extensions.put("persistedQuery", persistedQuery);
-
-      StringBuilder payload = new StringBuilder();
-      payload.append("workspace=master");
-      payload.append("&maxAge=short");
-      payload.append("&appsEtag=remove");
-      payload.append("&domain=store");
-      payload.append("&locale=").append(locale);
-      payload.append("&operationName=productSearchV3");
-      try {
-         payload.append("&variables=");
-         payload.append(URLEncoder.encode("{}", "UTF-8"));
-         payload.append("&extensions=");
-         payload.append(URLEncoder.encode(extensions.toString(), "UTF-8"));
-      } catch (UnsupportedEncodingException e) {
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
-      }
-      url.append(payload);
-
-      log("Link onde são feitos os crawlers:" + url);
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url.toString())
-         .setHeaders(headers)
-         .setCookies(cookies)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_SERVER_BR))
-         .setPayload(payload.toString())
-         .build();
-
-      String response = fetchWithReAttempt(request);
-
-      return JSONUtils.getValueRecursive(CrawlerUtils.stringToJson(response), "data.productSearch", JSONObject.class, new JSONObject());
+      return hash;
    }
 
    private String createVariablesBase64() {
       JSONObject search = new JSONObject();
       search.put("hideUnavailableItems", false);
-      search.put("skusFilter", "ALL_AVAILABLE");
+      search.put("skusFilter", "ALL");
       search.put("simulationBehavior", "default");
       search.put("installmentCriteria", "MAX_WITHOUT_INTEREST");
-      search.put("productOriginVtex", false);
+      search.put("productOriginVtex", true);
       search.put("map", "ft");
       search.put("query", keywordEncoded);
       search.put("orderBy", "");
@@ -243,46 +152,65 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
       search.put("selectedFacets", selectedFacets);
       search.put("fullText", this.location);
-      search.put("operator", JSONObject.NULL);
-      search.put("fuzzy", JSONObject.NULL);
-      search.put("excludedPaymentSystems", new JSONArray().put("Cartão Carrefour"));
-      search.put("facetsBehavior", "dynamic");
+      search.put("operator", "and");
+      search.put("fuzzy", "0");
+      search.put("facetsBehavior", "Static");
+      search.put("searchState", JSONObject.NULL);
       search.put("withFacets", false);
 
       return Base64.getEncoder().encodeToString(search.toString().getBytes());
    }
 
-   private String fetchWithReAttempt(Request request) {
-      int attempts = 0;
-      Response response = this.dataFetcher.get(session, request);
-      String body = response.getBody();
+   private JSONObject fetchSearchApi(String response) {
+      JSONObject searchApi = new JSONObject();
 
-      Integer statusCode = 0;
-      List<RequestsStatistics> requestsStatistics = response.getRequests();
-      if (requestsStatistics != null && !requestsStatistics.isEmpty()) {
-         statusCode = requestsStatistics.get(requestsStatistics.size() - 1).getStatusCode();
+      StringBuilder url = new StringBuilder();
+      url.append(getHomePage()).append("_v/segment/graphql/v1?")
+         .append("workspace=master")
+         .append("&maxAge=medium")
+         .append("&appsEtag=remove")
+         .append("&domain=store")
+         .append("&locale=").append(locale)
+         .append("&operationName=productSearchV3")
+         .append("&variables=%7B%7D");
+
+      JSONObject extensions = new JSONObject();
+      JSONObject persistedQuery = new JSONObject();
+
+      persistedQuery.put("version", "1");
+      persistedQuery.put("sha256Hash", fetchSHA256Key(response));
+
+      persistedQuery.put("sender", "vtex.store-resources@0.x");
+      persistedQuery.put("provider", "vtex.search-graphql@0.x");
+
+      extensions.put("variables", createVariablesBase64());
+      extensions.put("persistedQuery", persistedQuery);
+
+      StringBuilder payload = new StringBuilder();
+      try {
+         payload.append("&variables=").append(URLEncoder.encode("{}", "UTF-8"));
+         payload.append("&extensions=").append(URLEncoder.encode(extensions.toString(), "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      boolean retry = statusCode == null ||
-         (Integer.toString(statusCode).charAt(0) != '2'
-            && Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404);
+      url.append(payload);
 
-      // The api request only works with JsoupDataFetcher
-      if (retry) {
-         do {
-            if (attempts == 0) {
-               body = new JsoupDataFetcher().get(session, request).getBody();
-            } else if (attempts == 1) {
-               body = new JavanetDataFetcher().get(session, request).getBody();
-            } else {
-               body = new ApacheDataFetcher().get(session, request).getBody();
-            }
 
-            attempts++;
-         } while (attempts < 3 && (body == null || body.isEmpty()));
+      Map<String, String> headers = new HashMap<>();
+
+      Request request = Request.RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setHeaders(headers).build();
+      JSONObject resp = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+      if (resp.has("data")) {
+         JSONObject data = resp.optJSONObject("data");
+
+         if (data != null && data.has("productSearch")) {
+            searchApi = data.optJSONObject("productSearch");
+         }
       }
 
-      return body;
+      return searchApi;
    }
+
 }
