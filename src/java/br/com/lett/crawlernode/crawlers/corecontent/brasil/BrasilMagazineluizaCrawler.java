@@ -45,7 +45,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    private static final String SELLER_NAME = "magalu";
    private static final String SELLER_NAME_1 = "magazine luiza";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-           Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
@@ -89,17 +89,17 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       // Creating the product
       return ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalId)
-              .setInternalPid(internalId)
-              .setName(frontPageName)
-              .setCategories(categories)
-              .setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages)
-              .setDescription(description)
-              .setOffers(offers)
-              .setRatingReviews(ratingReviews)
-              .build();
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setInternalPid(internalId)
+         .setName(frontPageName)
+         .setCategories(categories)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(secondaryImages)
+         .setDescription(description)
+         .setOffers(offers)
+         .setRatingReviews(ratingReviews)
+         .build();
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -110,13 +110,13 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
 
       offers.add(OfferBuilder.create()
-              .setUseSlugNameAsInternalSellerId(true)
-              .setSellerFullName(sellerFullName)
-              .setMainPagePosition(1)
-              .setIsBuybox(false)
-              .setIsMainRetailer(isMainRetailer)
-              .setPricing(pricing)
-              .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(sellerFullName)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(isMainRetailer)
+         .setPricing(pricing)
+         .build());
 
       return offers;
    }
@@ -129,11 +129,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       BankSlip bankSlip = scrapBankslip(doc, spotlightPrice);
 
       return PricingBuilder.create()
-              .setPriceFrom(priceFrom)
-              .setSpotlightPrice(spotlightPrice)
-              .setCreditCards(creditCards)
-              .setBankSlip(bankSlip)
-              .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
    private BankSlip scrapBankslip(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -147,9 +147,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       }
 
       return BankSlipBuilder.create()
-              .setFinalPrice(bkPrice)
-              .setOnPageDiscount(discount)
-              .build();
+         .setFinalPrice(bkPrice)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    private CreditCards scrapCreditCardsFromProductPage(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -158,17 +158,17 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       Installments regularCard = scrapInstallments(doc, ".method-payment__card-box .method-payment__values--general-cards li > p");
       if (regularCard.getInstallments().isEmpty()) {
          regularCard.add(InstallmentBuilder.create()
-                 .setInstallmentNumber(1)
-                 .setInstallmentPrice(spotlightPrice)
-                 .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-                 .setBrand(brand)
-                 .setIsShopCard(false)
-                 .setInstallments(regularCard)
-                 .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(regularCard)
+            .build());
       }
 
       Installments shopCard = scrapInstallments(doc, ".method-payment__card-luiza-box ul[class^=method-payment__values--] li > p");
@@ -178,10 +178,10 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       }
 
       creditCards.add(CreditCardBuilder.create()
-              .setBrand(Card.SHOP_CARD.toString())
-              .setIsShopCard(true)
-              .setInstallments(shopCard)
-              .build());
+         .setBrand(Card.SHOP_CARD.toString())
+         .setIsShopCard(true)
+         .setInstallments(shopCard)
+         .build());
 
       return creditCards;
    }
@@ -199,18 +199,18 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
          if (!pair.isAnyValueNull()) {
             installments.add(InstallmentBuilder.create()
-                    .setInstallmentNumber(pair.getFirst())
-                    .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
-                    .setOnPageDiscount(discount)
-                    .build());
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+               .setOnPageDiscount(discount)
+               .build());
          } else if (!e.ownText().contains("x")) {
             Double price = MathUtils.parseDoubleWithComma(e.ownText());
             installments.add(InstallmentBuilder.create()
-                    .setInstallmentNumber(1)
-                    .setInstallmentPrice(price)
-                    .setFinalPrice(price)
-                    .setOnPageDiscount(discount)
-                    .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(price)
+               .setFinalPrice(price)
+               .setOnPageDiscount(discount)
+               .build());
          }
       }
 
@@ -433,15 +433,17 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       for (int page = 1; page <= totalPages || totalPages == 0; ++page) {
          JSONObject ratingJson = fetchAdvancedRating(internalId, page);
 
-         if(ratingJson != null && !ratingJson.isEmpty()) {
+         if (ratingJson != null && !ratingJson.isEmpty()) {
             JSONObject data = JSONUtils.getJSONValue(ratingJson, "data");
 
             if (page == 1) {
                totalPages = data.optInt("pages", -1);
+               Object totalReviews = data.optQuery("/ratings/total_review_count");
+               Object avg = data.optQuery("/ratings/average_rating");
 
                ratingReviews.setDate(session.getDate());
-               ratingReviews.setTotalRating(JSONUtils.getValueRecursive(data, "ratings.total_review_count", Integer.class));
-               ratingReviews.setAverageOverallRating(JSONUtils.getValueRecursive(data, "ratings.average_rating", Double.class));
+               ratingReviews.setTotalRating(Objects.nonNull(totalReviews) ? (Integer) totalReviews : null);
+               ratingReviews.setAverageOverallRating(Objects.nonNull(avg) ? ((Integer) avg).doubleValue() : null);
             }
 
             JSONArray objects = JSONUtils.getJSONArrayValue(data, "objects");
@@ -462,7 +464,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
                   }
                }
             }
-         }else{
+         } else {
             //The ratings API is unstable. If the API response is empty, then we catch the information present on html page,
             //total ratings and average rating
             ratingReviews = scrapRatingsAlternativeWay(doc);
@@ -470,11 +472,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          }
       }
 
-      if(starsCount.size() != 0 && writtenReviewsCount != 0){
-      ratingReviews.setTotalWrittenReviews(writtenReviewsCount);
-      ratingReviews.setAdvancedRatingReview(new AdvancedRatingReview.Builder()
-         .allStars(starsCount)
-         .build());
+      if (starsCount.size() != 0 && writtenReviewsCount != 0) {
+         ratingReviews.setTotalWrittenReviews(writtenReviewsCount);
+         ratingReviews.setAdvancedRatingReview(new AdvancedRatingReview.Builder()
+            .allStars(starsCount)
+            .build());
       }
 
       return ratingReviews;
@@ -492,7 +494,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       Element ratingsElement = doc.selectFirst("div.product-review > div.wrapper-review");
 
-      if(ratingsElement != null){
+      if (ratingsElement != null) {
          ratingReviews.setDate(session.getDate());
 
          ratingReviews.setTotalRating(getTotalReviewCount(doc));
