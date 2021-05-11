@@ -57,7 +57,7 @@ public class ColombiaHomecenterCrawler extends Crawler {
          String internalPid = internalId;
          String name = crawlName(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumbs.into-pdp .bread-crumb-wrapper:not(:last-child) a span", false);
-         String description = crawlDescription(doc);
+         String description = doc.select(".product-info .product-info-details").text();
          JSONObject jsonImages = getJson(internalId);
          List<String> images = crawlImages(jsonImages);
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
