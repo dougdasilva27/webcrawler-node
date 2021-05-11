@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -24,11 +25,13 @@ import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -42,9 +45,11 @@ public class BrasilRiachueloCrawler extends Crawler {
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
+   private static String x_app_token = "";
+
    public BrasilRiachueloCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.JAVANET);
    }
 
    @Override
@@ -60,9 +65,18 @@ public class BrasilRiachueloCrawler extends Crawler {
 
    public String fetchPage(String url, Session session) {
       Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "*/*");
-      headers.put("accept-encoding", "no");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("accept-encoding", "gzip, deflate, br");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("connection", "keep-alive");
+      headers.put("pragma", "no-cache");
+      headers.put("cache-control", "no-cache");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("sec-fetch-dest", "document");
+      headers.put("sec-fetch-mode", "navigate");
+      headers.put("sec-fetch-site", "same-origin");
+      headers.put("sec-fetch-user", "?1");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
       Request request = RequestBuilder.create()
          .setUrl(url)
          .setIgnoreStatusCode(false)
@@ -79,7 +93,41 @@ public class BrasilRiachueloCrawler extends Crawler {
                .build()
          ).build();
 
-      return this.dataFetcher.get(session, request).getBody();
+      Response response = this.dataFetcher.get(session, request);
+
+      List<Cookie> cookies = response.getCookies();
+
+      if(cookies.contains("token-aws")){
+         x_app_token = "cookies.";
+      }
+
+
+      return response.getBody();
+   }
+
+   private JSONObject fetchVariations(){
+      String url = "https://api-dc-rchlo-prd.riachuelo.com.br/ecommerce-web-catalog/v2/products/variations?slug=";
+      url += session.getOriginalURL().substring(28);
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "*/*");
+      headers.put("accept-encoding", "no");
+      headers.put("connection", "keep-alive");
+      headers.put("x-api-key", "KhMO3jH1hsjvSRzQXNfForv5FrnfSpX6StdqMmjncjGivPBj3MS4kFzRWn2j7MPn");
+      headers.put("x-app-token", "eyJraWQiOiJLZ1NcLytSZFlwVWJYTkJzbUs0NXNJS0poZjQwUmVoNndhQWtYSW1COGNVZz0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI5MzE4NzZhZS0yN2NhLTQ2ODMtOTFkNy1hZjIzMzExYTI4M2EiLCJhdWQiOiIzZms4aGg1aHA4NTRyaGNiaG1wMjQxbGRwMSIsImV2ZW50X2lkIjoiMDQwNjJiN2EtMTBjMi00OWUyLWFkMWEtMDZjMjI5NjdhODZjIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE2MjAzMjI3MzgsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX1V1ZkUySFlXayIsIm5hbWUiOiJFLWNvbW1lcmNlIFdFQiAtIFBSRCIsIm5pY2tuYW1lIjoiYmY2MGNiOTEtYTg2ZC00YTY4LTg2ZWItNDY4NTViNDczOGM4IiwiY29nbml0bzp1c2VybmFtZSI6IjV0cVoyS0p2YlRld1dsOGpCYVU4OFVXeEJxZU5DR01RIiwiZXhwIjoxNjIwMzI2MzM4LCJpYXQiOjE2MjAzMjI3Mzh9.Q0QvYhKqXYImK61XNxsxGBMQRxP5fV4fiZizuLcCIqIRZTNWBpmRu2ZYvYWUhkAn_dnMBBimiksy6gM2lUd7c9gIoTLk_Ixdza4TCXXUZr4z4Kaefa456yjtHjV9a7b9H74ZsUGNRnUZbrWFG2jaHuSbI3glYaynOvQ8eRXFBwRkpS00hlYVWhZGKWFTGtyn5ioBNYRSMeUC-UIvF9yrsE40lU9M4Hb5MmGTl9eklEqf2iysDZkPbQojE4tmJM960dbgXCR-ctzj4aof_QGN66BGtPOG5Kw6-_MZCPTx2I039yqu39cqy526ri9zWeGOXU9sCC3rMgd_Pa4FCqznww");
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setIgnoreStatusCode(false)
+         .mustSendContentEncoding(false)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .build();
+      String jsonStr = this.dataFetcher.get(session, request).getBody();
+
+      return JSONUtils.stringToJson(jsonStr);
    }
 
    @Override
@@ -89,6 +137,8 @@ public class BrasilRiachueloCrawler extends Crawler {
       if (isProductPage(doc)) {
          JSONObject jsonConfig = crawlJsonHtml(doc);
 
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[id=__NEXT_DATA__]", null, null, false, false);
+
          JSONArray jsonImages = crawlJsonImageData(doc);
 
          String internalPid = crawlInternalPid(doc);
@@ -97,34 +147,36 @@ public class BrasilRiachueloCrawler extends Crawler {
 
          JSONObject options = JSONUtils.getJSONValue(jsonConfig,"optionPrices");
 
-         if (options.length() > 0) {
+         JSONObject jsonVariations = fetchVariations();
+
+         if (jsonVariations != null && !jsonVariations.isEmpty()) {
             Map<String, Set<String>> variationsMap = crawlVariationsMap(jsonConfig);
 
-            for (String id : options.keySet()) {
+            if(true){
 
-               boolean available = crawlAvailabilityWithVariation(jsonConfig, id);
-
-               String name = crawlNameWithVariation(doc, variationsMap, id);
-               String primaryImage = crawlPrimaryImageWithVariation(jsonImages, jsonConfig, id);
-
-               String secondaryImages = crawlSecondaryImagesWithVariation(jsonImages, jsonConfig, id, available, primaryImage);
-
-               Integer stock = null;
-
-               Offers offers = scrapOffers(doc, jsonConfig, id, available);
-
-               String internalId = scrapInternalId(jsonConfig, id);
+//               boolean available = crawlAvailabilityWithVariation(jsonConfig, id);
+//
+//               String name = crawlNameWithVariation(doc, variationsMap, id);
+//               String primaryImage = crawlPrimaryImageWithVariation(jsonImages, jsonConfig, id);
+//
+//               String secondaryImages = crawlSecondaryImagesWithVariation(jsonImages, jsonConfig, id, available, primaryImage);
+//
+//               Integer stock = null;
+//
+//               Offers offers = scrapOffers(doc, jsonConfig, id, available);
+//
+//               String internalId = scrapInternalId(jsonConfig, id);
 
                Product product = ProductBuilder.create()
                   .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setOffers(offers)
-                  .setName(name)
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
+//                  .setInternalId(internalId)
+//                  .setInternalPid(internalPid)
+//                  .setOffers(offers)
+//                  .setName(name)
+//                  .setPrimaryImage(primaryImage)
+//                  .setSecondaryImages(secondaryImages)
+//                  .setDescription(description)
+//                  .setStock(stock)
                   .build();
 
                products.add(product);
@@ -165,6 +217,7 @@ public class BrasilRiachueloCrawler extends Crawler {
 
       return skuHtml.getString(id);
    }
+
    private Offers scrapOffers(Document doc, JSONObject jsonConfig, String internalId, boolean available)
       throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
@@ -436,12 +489,13 @@ public class BrasilRiachueloCrawler extends Crawler {
 
    private JSONObject crawlJsonHtml(Document doc) {
 
-      JSONObject jsonHtml =  doc.select("script[type='text/x-magento-init']")
-         .stream()
-         .filter(element -> element.html().contains("jsonConfig"))
-         .map(script -> CrawlerUtils.stringToJson(script.html()))
-         .findFirst()
-         .orElse(new JSONObject());
+      JSONObject jsonHtml = CrawlerUtils.selectJsonFromHtml(doc, "script[id=__NEXT_DATA__]", null, null, false, false);
+//         doc.select("script[type='text/x-magento-init']")
+//         .stream()
+//         .filter(element -> element.html().contains("jsonConfig"))
+//         .map(script -> CrawlerUtils.stringToJson(script.html()))
+//         .findFirst()
+//         .orElse(new JSONObject());
 
       JSONObject jsonConfig = JSONUtils.getValueRecursive(jsonHtml, "[data-role=swatch-options].Magento_Swatches/js/swatch-renderer.jsonConfig", JSONObject.class);
 
@@ -472,6 +526,6 @@ public class BrasilRiachueloCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst("h1 span[itemprop=name]") != null;
+      return doc.selectFirst("h1.MuiTypography-root.jss90.MuiTypography-h1.MuiTypography-gutterBottom") != null;
    }
 }
