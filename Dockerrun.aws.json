@@ -5,7 +5,7 @@
             "essential": true,
             "image": "",
             "name": "web-scraper",
-            "memoryReservation": 700,
+            "memoryReservation": 0,
             "mountPoints": [
                 {
                     "containerPath": "/usr/src/app/logs",
