@@ -54,25 +54,13 @@ $ sudo su
 ```
 
 ---
-#### Install Eclipse
 
-1 - Download Eclipse Oxygen. The "for Java EE Developers" or "for Java Developers" versions all seem to work. 
-Currently the file which was tested to work is (note that it is for 64 bit Ubuntu version) available at this page
-
-2 - Extract the Eclipse installation tarball into your home directory:
-
-```bash
-$ cd
-$ tar -xzvf <path/to/your-tar-file>
+#### Run in Docker
+Write your enviroment variables in a `.env` file, then run:
+```shell
+./local_run.sh
 ```
 
-3 - Run Eclipse:
-
-```bash
-$ ~/eclipse-installer/eclipse-inst
-```
-
----
 #### VPN connection
 
 Before running the application, you need to connect to our VPN. If you do not know how to do it, talk with the Team Leader.

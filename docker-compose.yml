@@ -3,10 +3,12 @@ services:
     webcrawler:
         container_name: web-scraper
         restart: unless-stopped
+        build:
+            context: .
+            dockerfile: Dockerfile
         ports:
             - 5000:5000
         volumes:
             - ~/.aws:/root/.aws:ro
-        build:
-            context: .
-            dockerfile: Dockerfile
+        env_file:
+            - .env
