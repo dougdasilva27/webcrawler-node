@@ -1,3 +1,4 @@
+
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
@@ -10,6 +11,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -18,6 +20,7 @@ import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -84,10 +88,10 @@ public class MercadolivreCrawler extends Crawler {
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgentWithoutChrome());
 
       Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -136,19 +140,19 @@ public class MercadolivreCrawler extends Crawler {
 
                   // Creating the product
                   Product product = ProductBuilder.create()
-                        .setUrl(session.getOriginalURL())
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setCategory1(categories.getCategory(0))
-                        .setCategory2(categories.getCategory(1))
-                        .setCategory3(categories.getCategory(2))
-                        .setPrimaryImage(primaryImage)
-                        .setSecondaryImages(secondaryImages)
-                        .setDescription(description)
-                        .setRatingReviews(ratingReviews)
-                        .setOffers(offers)
-                        .build();
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setRatingReviews(ratingReviews)
+                     .setOffers(offers)
+                     .build();
 
                   products.add(product);
                }
@@ -166,36 +170,36 @@ public class MercadolivreCrawler extends Crawler {
 
                   String name = crawlName(docVariation);
                   String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
-                        "http2.mlstatic.com");
+                     "http2.mlstatic.com");
                   String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, "figure.gallery-image-container a", Arrays.asList("href"),
-                        "https:", "http2.mlstatic.com", primaryImage);
+                     "https:", "http2.mlstatic.com", primaryImage);
                   String description =
-                        CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
+                     CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
                   RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
                   ratingReviewsCollection.addRatingReviews(crawlRating(docVariation, internalPid, internalId));
                   RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
                   boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
-                        || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
-                        || !docVariation.select(".item-actions [value~=Comprar]").isEmpty()
-                        || !docVariation.select(".ui-pdp-actions__container .andes-button__content").isEmpty();
+                     || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
+                     || !docVariation.select(".item-actions [value~=Comprar]").isEmpty()
+                     || !docVariation.select(".ui-pdp-actions__container .andes-button__content").isEmpty();
                   Offers offers = availableToBuy ? scrapOffers(docVariation) : new Offers();
 
                   // Creating the product
                   Product product = ProductBuilder.create()
-                        .setUrl(entry.getKey())
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setCategory1(categories.getCategory(0))
-                        .setCategory2(categories.getCategory(1))
-                        .setCategory3(categories.getCategory(2))
-                        .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
-                        .setSecondaryImages(secondaryImages != null ? secondaryImages.replace(".webp", ".jpg") : null)
-                        .setDescription(description)
-                        .setRatingReviews(ratingReviews)
-                        .setOffers(offers)
-                        .build();
+                     .setUrl(entry.getKey())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
+                     .setSecondaryImages(secondaryImages != null ? secondaryImages.replace(".webp", ".jpg") : null)
+                     .setDescription(description)
+                     .setRatingReviews(ratingReviews)
+                     .setOffers(offers)
+                     .build();
 
                   products.add(product);
                }
@@ -204,7 +208,23 @@ public class MercadolivreCrawler extends Crawler {
          }
       } else {
          Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
-         products = meli.extractInformation(doc);
+         Product product = meli.extractInformation(doc, null, null);
+         products.add(product);
+         doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").parallelStream()
+            .map(element -> {
+               Request request = RequestBuilder.create()
+                  .setUrl("https://produto.mercadolivre.com.br" + element.attr("href"))
+                  .setCookies(cookies)
+                  .build();
+               return new Pair<>(dataFetcher.get(session, request).getBody(), element.attr("title"));
+            })
+            .forEach(responsePair -> {
+               try {
+                  products.add(meli.extractInformation(Jsoup.parse(responsePair.getFirst()), product.getRatingReviews(), responsePair.getSecond()));
+               } catch (OfferException | MalformedPricingException | MalformedProductException e) {
+                  throw new IllegalStateException(e);
+               }
+            });
       }
 
       return products;
