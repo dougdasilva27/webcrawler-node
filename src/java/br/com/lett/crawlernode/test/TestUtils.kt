@@ -79,7 +79,7 @@ class TestUtils {
          for (parameter: String in parameters) {
             val session = sessionFunc(parameter, market)
 
-            val task = TaskFactory.createTask(session)
+            val task = TaskFactory.createTask(session,"")
 
             if (task != null) {
                if (productsLimit > 0 && sessionFunc == SessionFactory::createTestRankingKeywordsSession) {
