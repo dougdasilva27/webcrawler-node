@@ -87,7 +87,7 @@ public class Mercadolivre3pCrawler {
             String internalPid = jsonInfo.optString("productID");
             String internalId;
             Element variationElement = doc.selectFirst("input[name='variation']");
-            if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variationspicker:not(.ui-pdp-variations__picker-single)").isEmpty()) {
+            if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty()) {
                internalId = internalPid + '_' + variationElement.attr("value");
             } else {
                internalId = jsonInfo.optString("sku");
