@@ -208,7 +208,8 @@ public class MercadolivreCrawler extends Crawler {
          Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
          Product product = meli.extractInformation(doc, null);
 
-         if (doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").isEmpty() || !doc.select("input[name=variation]").isEmpty()) {
+         if (doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").isEmpty() || !doc.select("input[name=variation]").isEmpty()
+               || session.getOriginalURL().contains("www.mercadolivre.com.br")) {
             products.add(product);
          } else {
 
