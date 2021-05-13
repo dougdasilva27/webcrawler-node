@@ -342,12 +342,14 @@ public abstract class Crawler extends Task {
       String url = handleURLBeforeFetch(session.getOriginalURL());
       session.setOriginalURL(url);
 
-      Object obj = fetch();
 
-
-      session.setProductPageResponse(obj);
 
       try {
+
+         Object obj = fetch();
+
+         session.setProductPageResponse(obj);
+
          if (obj instanceof Document) {
             products = extractInformation((Document) obj);
          } else if (obj instanceof JSONObject) {
@@ -360,7 +362,9 @@ public abstract class Crawler extends Task {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
       } catch (Exception e) {
-         if (session instanceof TestCrawlerSession) {
+         if (session instanceof SeedCrawlerSession) {
+            Persistence.updateFrozenServerTask(((SeedCrawlerSession) session), e.getMessage());
+         }else if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
          session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
