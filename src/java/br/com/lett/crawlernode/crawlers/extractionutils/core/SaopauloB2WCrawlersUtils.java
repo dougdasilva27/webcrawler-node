@@ -440,11 +440,12 @@ public class SaopauloB2WCrawlersUtils {
       if(payment.has("minQuantity")){
          JSONArray minQuantity = payment.optJSONArray("minQuantity");
          for(Object o : minQuantity){
-            JSONObject paymentInfo = (JSONObject) o;
-            Double setSpotlighPrice = paymentInfo.optDouble("total");
+            if( o instanceof JSONObject) {
+               JSONObject paymentInfo = (JSONObject) o;
+               Double setSpotlighPrice = paymentInfo.optDouble("total");
 
-            jsonSeller.put("spotlightPrice", setSpotlighPrice);
-
+               jsonSeller.put("spotlightPrice", setSpotlighPrice);
+            }
          }
       }
    }
