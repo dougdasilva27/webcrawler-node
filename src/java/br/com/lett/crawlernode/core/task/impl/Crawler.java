@@ -362,9 +362,7 @@ public abstract class Crawler extends Task {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
       } catch (Exception e) {
-         if (session instanceof SeedCrawlerSession) {
-            Persistence.updateFrozenServerTask(((SeedCrawlerSession) session), e.getMessage());
-         }else if (session instanceof TestCrawlerSession) {
+         if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
          session.registerError(new SessionError(SessionError.EXCEPTION, e.getMessage()));
