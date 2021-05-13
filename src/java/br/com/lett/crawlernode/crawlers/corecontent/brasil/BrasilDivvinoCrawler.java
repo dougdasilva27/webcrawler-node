@@ -42,7 +42,7 @@ public class BrasilDivvinoCrawler extends Crawler {
 
          String name = CrawlerUtils.scrapStringSimpleInfo(document, ".product_title", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(document, ".breadcrumbs_wrapper ul li", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".img_product_container a img", Collections.singletonList("src"), "https://", "statics.divvino.com.br");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, ".img_product_container a img", Collections.singletonList("src"), "https:", "statics.divvino.com.br");
 
          String description = CrawlerUtils.scrapSimpleDescription(document, Collections.singletonList("[itemprop=\"description\"]"));
          boolean available = document.select("#backInStockForm").isEmpty();
