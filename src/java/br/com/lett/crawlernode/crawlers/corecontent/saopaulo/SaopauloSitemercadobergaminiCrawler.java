@@ -15,7 +15,7 @@ public class SaopauloSitemercadobergaminiCrawler extends BrasilSitemercadoCrawle
   }
 
   public static final String HOME_PAGE =
-          "https://www.sitemercado.com.br/bergamini/sao-paulo-hiper-vila-constanca-avenida-luis-stamatis/";
+          "https://www.sitemercado.com.br/bergamini/sao-paulo-hiper-vila-constanca-avenida-luis-stamatis";
   public static final String LOAD_PAYLOAD =
           "{\"lojaUrl\":\"sao-paulo-hiper-vila-constanca-avenida-luis-stamatis\",\"redeUrl\":\"bergamini\"}";
 

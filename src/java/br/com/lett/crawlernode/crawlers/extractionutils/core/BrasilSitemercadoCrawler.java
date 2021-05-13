@@ -100,9 +100,13 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
          List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(imagensFromArray, "img", null, "https", "img.sitemercado.com.br", session);
          String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
 
+
+         String pruductUrl = session.getOriginalURL().replace("//produto","/produto");
+
+
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(pruductUrl)
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
