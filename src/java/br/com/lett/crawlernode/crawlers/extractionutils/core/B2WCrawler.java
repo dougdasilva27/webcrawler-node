@@ -471,12 +471,11 @@ public class B2WCrawler extends Crawler {
          if (offers.size() > 1) {
             // Sellers page positios is order by price, in this map, price is the value
             Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
-
-            int position = twoPositions ? 3 : 2;
+            int position = 1;
 
             for (Entry<String, Double> entry : sortedMap.entrySet()) {
                for (Offer offer : offers.getOffersList()) {
-                  if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
+                  if (offer.getInternalSellerId().equals(entry.getKey())) {
                      offer.setSellersPagePosition(position);
                      position++;
                   }
@@ -505,7 +504,6 @@ public class B2WCrawler extends Crawler {
          JSONArray sellerInfo = offersJson.getJSONArray(internalId);
          // The Business logic is: if we have more than 1 seller is buy box
          boolean isBuyBox = sellerInfo.length() > 1;
-
          for (int i = 0; i < sellerInfo.length(); i++) {
             JSONObject info = (JSONObject) sellerInfo.get(i);
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
@@ -540,18 +538,17 @@ public class B2WCrawler extends Crawler {
          // Sellers page positios is order by price, in this map, price is the value
          Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
-         int position = twoPositions ? 3 : 2;
+         int position = 1;
 
          for (Entry<String, Double> entry : sortedMap.entrySet()) {
             for (Offer offer : offers.getOffersList()) {
-               if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
+               if (offer.getInternalSellerId().equals(entry.getKey())) {
                   offer.setSellersPagePosition(position);
                   position++;
                }
             }
          }
       }
-
       return offers;
    }
 
@@ -564,7 +561,11 @@ public class B2WCrawler extends Crawler {
       BankSlip bt = scrapBankTicket(info);
 
       if (!newWay || offerIndex != 0) {
-         mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
+         if (priceFrom != null) {
+            mapOfSellerIdAndPrice.put(internalSellerId, priceFrom);
+         } else {
+            mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
+         }
       }
 
       return PricingBuilder.create()
