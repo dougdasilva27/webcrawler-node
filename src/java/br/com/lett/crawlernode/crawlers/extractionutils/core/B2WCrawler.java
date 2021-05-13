@@ -492,7 +492,6 @@ public class B2WCrawler extends Crawler {
 
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
 
-
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
 
@@ -560,12 +559,10 @@ public class B2WCrawler extends Crawler {
       Double spotlightPrice = scrapSpotlightPrice(info, creditCards, offerIndex, newWay);
       BankSlip bt = scrapBankTicket(info);
 
-      if (!newWay || offerIndex != 0) {
-         if (priceFrom != null) {
-            mapOfSellerIdAndPrice.put(internalSellerId, priceFrom);
-         } else {
-            mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
-         }
+      if (priceFrom != null) {
+         mapOfSellerIdAndPrice.put(internalSellerId, priceFrom);
+      } else {
+         mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
       }
 
       return PricingBuilder.create()
@@ -598,6 +595,15 @@ public class B2WCrawler extends Crawler {
       Double featuredPrice = null;
 
       if (!newWay || offerIndex == 0) {
+
+         Double spotlightPrice = info.optDouble("spotlightPrice");
+
+         if(spotlightPrice != null && !spotlightPrice.isNaN()){
+            featuredPrice = spotlightPrice;
+
+            return featuredPrice;
+         }
+
          Double price1x = creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
          Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
          Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);

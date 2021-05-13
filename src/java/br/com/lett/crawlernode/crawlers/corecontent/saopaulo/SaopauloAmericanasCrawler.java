@@ -144,15 +144,13 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
          Document offersDoc = Jsoup.parse(content);
 
-         jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
+         jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
       } else {
          jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
 
       }
 
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
-
-      JSONObject pages = jsonSeller.optJSONObject("pages");
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       boolean twoPositions = false;
 
@@ -165,6 +163,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
          for (int i = 0; i < sellerInfo.length(); i++) {
             JSONObject info = (JSONObject) sellerInfo.get(i);
+
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
                String internalSellerId = info.get("id").toString();
@@ -172,7 +171,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
                Integer sellersPagePosition = i == 0 ? 1 : null;
 
                if (i > 0 && name.equalsIgnoreCase("b2w")) {
-                  sellersPagePosition = 2;
+                  sellersPagePosition = 1;
                   twoPositions = true;
                }
 
@@ -198,10 +197,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
          int position = twoPositions ? 3 : 2;
-
          for (Map.Entry<String, Double> entry : sortedMap.entrySet()) {
             for (Offer offer : offers.getOffersList()) {
-               if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
+               if (offer.getInternalSellerId().equals(entry.getKey())&& offer.getSellersPagePosition() == null) {
                   offer.setSellersPagePosition(position);
                   position++;
                }
