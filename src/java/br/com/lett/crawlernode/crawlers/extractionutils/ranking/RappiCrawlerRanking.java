@@ -128,7 +128,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       }
 
 
-      String payload = "{\"from\":" + startPage + " ,\"query\":\"" + this.keywordEncoded + "\",\"size\":" + pageSize + "}";
+      String payload = "{\"from\":" + startPage + " ,\"query\":\"" + this.keywordWithoutAccents + "\",\"size\":" + pageSize + "}";
 
       String url = PRODUCTS_API_URL + storeId + "/products";
 
