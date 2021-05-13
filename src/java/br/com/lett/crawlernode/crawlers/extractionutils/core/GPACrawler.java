@@ -367,6 +367,8 @@ public class GPACrawler extends Crawler {
          Pricing pricing = scrapPricing(data);
          String sales = CrawlerUtils.calculateSales(pricing);
          String sellerName = JSONUtils.getStringValue(data, "name");
+         boolean isMainRetailersMainRetailer = data.optString("sellType","").equals("1P");
+
 
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -375,7 +377,7 @@ public class GPACrawler extends Crawler {
             .setMainPagePosition(1)
             .setSellersPagePosition(1)
             .setIsBuybox(false)
-            .setIsMainRetailer(true)
+            .setIsMainRetailer(isMainRetailersMainRetailer)
             .setPricing(pricing)
             .build());
       }
