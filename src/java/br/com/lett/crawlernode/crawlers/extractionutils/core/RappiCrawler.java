@@ -220,8 +220,8 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    public static Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
-      Double price = jsonSku.optDouble("price", 0D);
-      Double priceFrom = jsonSku.optDouble("real_price", 0D);
+      Double priceFrom = jsonSku.optDouble("price", 0D);
+      Double price = jsonSku.optDouble("real_price", 0D);
       if (price == 0D || price.equals(priceFrom)) {
          price = priceFrom;
          priceFrom = null;
