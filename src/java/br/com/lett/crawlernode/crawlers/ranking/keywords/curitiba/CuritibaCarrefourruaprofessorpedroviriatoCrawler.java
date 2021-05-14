@@ -5,7 +5,6 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler
 
 public class CuritibaCarrefourruaprofessorpedroviriatoCrawler extends CarrefourCrawler {
    private static final String HOME_PAGE = br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourruaprofessorpedroviriatoCrawler.HOME_PAGE;
-   public static final String LOCATION = br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourruaprofessorpedroviriatoCrawler.LOCATION;
 
    public CuritibaCarrefourruaprofessorpedroviriatoCrawler(Session session) {
       super(session);
@@ -18,7 +17,11 @@ public class CuritibaCarrefourruaprofessorpedroviriatoCrawler extends CarrefourC
 
    @Override
    protected String getLocation() {
-      return LOCATION;
+      return br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourruaprofessorpedroviriatoCrawler.LOCATION_TOKEN;
    }
 
+   @Override
+   protected String getCep() {
+      return br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourruaprofessorpedroviriatoCrawler.CEP;
+   }
 }

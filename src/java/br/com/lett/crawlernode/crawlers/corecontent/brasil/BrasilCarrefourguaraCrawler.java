@@ -23,4 +23,8 @@ public class BrasilCarrefourguaraCrawler extends CarrefourCrawler {
       return HOME_PAGE;
    }
 
+   @Override
+   protected String getCep() {
+      return LOCATION;
+   }
 }
