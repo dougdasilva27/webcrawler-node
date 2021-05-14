@@ -350,7 +350,7 @@ public abstract class RappiCrawler extends Crawler {
       JSONObject product = json.optJSONObject("product");
       if (product != null){
          String imageId = product.optString("image");
-         primaryImage = CrawlerUtils.completeUrl(imageId,  "https://", "images.rappi.com.br/products");
+         primaryImage = CrawlerUtils.completeUrl(imageId,  "https://", getImagePrefix());
       }
       
       return primaryImage;
