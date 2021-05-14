@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -164,6 +165,11 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       return spotlightPrice;
+   }
+
+   @Override
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      return (JSONUtils.getStringValue(productJson, "description") + "\n" + scrapSpecsDescriptions(productJson)).trim();
    }
 
    @Override
