@@ -52,7 +52,7 @@ import models.pricing.Pricing.PricingBuilder;
  *
  * @author Gabriel Dornelas
  */
-public class Mercadolivre3pCrawler {
+public class MercadolivreNewCrawler {
 
    private String mainSellerNameLower;
    private Session session;
@@ -61,7 +61,7 @@ public class Mercadolivre3pCrawler {
    protected boolean allow3PSellers;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
-   protected Mercadolivre3pCrawler(Session session, DataFetcher dataFetcher, String mainSellerNameLower, boolean allow3PSellers, Logger logger) {
+   protected MercadolivreNewCrawler(Session session, DataFetcher dataFetcher, String mainSellerNameLower, boolean allow3PSellers, Logger logger) {
       this.session = session;
       this.dataFetcher = dataFetcher;
       this.mainSellerNameLower = mainSellerNameLower;
@@ -73,63 +73,54 @@ public class Mercadolivre3pCrawler {
          RatingsReviews ratingReviews
    ) throws OfferException, MalformedPricingException, MalformedProductException {
       Product product = null;
-      if (isProductPage(doc)) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
-         Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
-         boolean mustAddProductUnavailable = !availableToBuy && checkIfMustScrapProductUnavailable(doc);
-         boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
+      boolean availableToBuy = !doc.select(".andes-button--filled, .andes-button__content").isEmpty();
+      Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
+      boolean mustAddProductUnavailable = !availableToBuy && checkIfMustScrapProductUnavailable(doc);
+      boolean mustAddProduct = availableToBuy && checkIfMustScrapProduct(offers);
 
-         if (mustAddProduct || mustAddProductUnavailable) {
-            JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
+      if (mustAddProduct || mustAddProductUnavailable) {
+         JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
 
-            String internalPid = jsonInfo.optString("productID");
-            String internalId;
-            Element variationElement = doc.selectFirst("input[name='variation']");
-            if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty()) {
-               internalId = internalPid + '_' + variationElement.attr("value");
-            } else {
-               internalId = jsonInfo.optString("sku");
-            }
-
-            String name = scrapName(doc);
-            CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
-            String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
-                  "http2.mlstatic.com");
-            List<String> secondaryImages = crawlImages(primaryImage, doc);
-            String description =
-                  CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
-
-            RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-            ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
-            ratingReviews = Objects.isNull(ratingReviews) ? ratingReviewsCollection.getRatingReviews(internalId) : ratingReviews;
-
-            product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setRatingReviews(ratingReviews)
-                  .setOffers(offers)
-                  .build();
+         String internalPid = jsonInfo.optString("productID");
+         String internalId;
+         Element variationElement = doc.selectFirst("input[name='variation']");
+         if (variationElement != null && !doc.select(".ui-pdp-variations .ui-pdp-variations__picker:not(.ui-pdp-variations__picker-single) a").isEmpty()) {
+            internalId = internalPid + '_' + variationElement.attr("value");
+         } else {
+            internalId = jsonInfo.optString("sku");
          }
 
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+         String name = scrapName(doc);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".andes-breadcrumb__item a");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "figure.ui-pdp-gallery__figure img", Arrays.asList("data-zoom", "src"), "https:",
+               "http2.mlstatic.com");
+         List<String> secondaryImages = crawlImages(primaryImage, doc);
+         String description =
+               CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".ui-pdp-features", ".ui-pdp-description", ".ui-pdp-specs"));
+
+         RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+         ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+         ratingReviews = Objects.isNull(ratingReviews) ? ratingReviewsCollection.getRatingReviews(internalId) : ratingReviews;
+
+         product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setRatingReviews(ratingReviews)
+               .setOffers(offers)
+               .build();
       }
 
       return product;
-   }
-
-   private boolean isProductPage(Document doc) {
-      return !doc.select("h1.ui-pdp-title").isEmpty();
    }
 
    private String scrapName(Document doc) {
