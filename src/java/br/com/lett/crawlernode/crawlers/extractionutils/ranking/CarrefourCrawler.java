@@ -15,9 +15,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Base64;
 import java.util.HashMap;
@@ -38,19 +36,26 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    protected void processBeforeFetch() {
       super.processBeforeFetch();
 
-      BasicClientCookie cookie = new BasicClientCookie("vtex_segment", getLocation());
-      try {
-         cookie.setDomain(new URL(getHomePage()).getHost());
-      } catch (MalformedURLException e) {
-         throw new IllegalStateException(e);
+      if (getCep() != null) {
+         BasicClientCookie userLocationData = new BasicClientCookie("userLocationData", getCep());
+         userLocationData.setPath("/");
+         cookies.add(userLocationData);
       }
-      cookie.setPath("/");
-      this.cookies.add(cookie);
+
+      if (getLocation() != null) {
+         BasicClientCookie vtexSegment = new BasicClientCookie("vtex_segment", getLocation());
+         vtexSegment.setPath("/");
+         this.cookies.add(vtexSegment);
+      }
    }
 
    protected abstract String getHomePage();
 
    protected abstract String getLocation();
+
+   protected String getCep() {
+      return null;
+   }
 
    private void setTotalProducts(JSONObject data) {
       if (data.has("recordsFiltered") && data.get("recordsFiltered") instanceof Integer) {

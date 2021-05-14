@@ -29,4 +29,9 @@ public class SaopauloCarrefouranaliafrancoCrawler extends CarrefourCrawler {
    protected String getHomePage() {
       return HOME_PAGE;
    }
+
+   @Override
+   protected String getCep() {
+      return LOCATION;
+   }
 }

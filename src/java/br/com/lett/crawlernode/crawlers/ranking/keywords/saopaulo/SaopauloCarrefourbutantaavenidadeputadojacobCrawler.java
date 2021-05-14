@@ -6,7 +6,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler
 public class SaopauloCarrefourbutantaavenidadeputadojacobCrawler extends CarrefourCrawler {
 
    private static final String HOME_PAGE = br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloCarrefourbutantaavenidadeputadojacobCrawler.HOME_PAGE;
-   public static final String LOCATION = br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloCarrefourbutantaavenidadeputadojacobCrawler.LOCATION;
+   public static final String CEP = br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloCarrefourbutantaavenidadeputadojacobCrawler.CEP;
 
    public SaopauloCarrefourbutantaavenidadeputadojacobCrawler(Session session) {
       super(session);
@@ -19,7 +19,11 @@ public class SaopauloCarrefourbutantaavenidadeputadojacobCrawler extends Carrefo
 
    @Override
    protected String getLocation() {
-      return LOCATION;
+      return br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloCarrefourbutantaavenidadeputadojacobCrawler.LOCATION_TOKEN;
    }
 
+   @Override
+   protected String getCep() {
+      return CEP;
+   }
 }

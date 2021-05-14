@@ -9,15 +9,19 @@ public class BrasilCarrefourmercadojardimsaoluizCrawler extends BrasilCarrefourC
    }
 
    public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
-   public static final String LOCATION = "05724-030";
 
    @Override
    protected String getLocation() {
-      return LOCATION;
+      return br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilCarrefourmercadojardimsaoluizCrawler.LOCATION_TOKEN;
    }
 
    @Override
    protected String getHomePage() {
       return HOME_PAGE;
+   }
+
+   @Override
+   protected String getCep() {
+      return br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilCarrefourmercadojardimsaoluizCrawler.CEP;
    }
 }

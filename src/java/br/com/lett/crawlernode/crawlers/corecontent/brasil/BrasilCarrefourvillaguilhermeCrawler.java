@@ -24,4 +24,9 @@ public class BrasilCarrefourvillaguilhermeCrawler extends CarrefourCrawler {
       return HOME_PAGE;
    }
 
+   @Override
+   protected String getCep() {
+      return LOCATION;
+   }
+
 }
