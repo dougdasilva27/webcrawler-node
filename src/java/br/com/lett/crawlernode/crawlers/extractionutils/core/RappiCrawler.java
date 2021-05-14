@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import java.math.BigDecimal;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -158,6 +159,7 @@ public abstract class RappiCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       JSONObject productJson = JSONUtils.getJSONValue(jsonSku, "product");
+
 
       if (isProductPage(productJson)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -343,21 +345,15 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected String crawlPrimaryImage(JSONObject json) {
-      String primaryImage;
+      String primaryImage = null;
 
-      JSONArray images = JSONUtils.getJSONArrayValue(json, "images");
-
-      if (!images.isEmpty()) {
-         if (images.length() > 1) {
-            primaryImage = images.getString(1);
-         } else {
-            primaryImage = images.getString(0);
-         }
-      } else {
-         return null;
+      JSONObject product = json.optJSONObject("product");
+      if (product != null){
+         String imageId = product.optString("image");
+         primaryImage = CrawlerUtils.completeUrl(imageId,  "https://", "images.rappi.com.br/products");
       }
-
-      return CrawlerUtils.completeUrl(primaryImage, "https", getImagePrefix());
+      
+      return primaryImage;
    }
 
    protected List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
