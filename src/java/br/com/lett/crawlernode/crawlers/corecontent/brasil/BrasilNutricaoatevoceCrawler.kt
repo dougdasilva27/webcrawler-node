@@ -55,23 +55,11 @@ class BrasilNutricaoatevoceCrawler(session: Session?) : Crawler(session) {
   }
 
   private fun scrapPrimaryImage(images: JSONArray, doc: Document): String? {
-    val metaImage = doc.selectFirst("meta[property=\"og:image\"]");
-    var primaryImage: String? = null;
-
-    if (metaImage != null) {
-      var attr = metaImage.attr("content");
-      var token = attr.substring(attr.lastIndexOf("/"));
-
-      for (obj in images) {
-        val image: String = obj.toString();
-
-        if (image.endsWith(token)) {
-          primaryImage = image;
-        }
+     var image: String?="";
+     if(!images.isEmpty){
+         image = images.getString(0)
       }
-    }
-
-    return primaryImage;
+     return image
   }
 
   private fun scrapOffers(doc: Document): Offers {
