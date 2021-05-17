@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.gson.JsonParser;
@@ -16,14 +19,11 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
 
-  public static final String PRODUCTS_API_URL = "https://gri9dmsahc-dsn.algolia.net/1/indexes/*/queries?"
-      + "x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%20(lite)%203.32.1%3Binstantsearch.js%201.12.1%3BMagento%20integration%20(1.16.0)%3BJS%20"
-      + "Helper%202.26.1&x-algolia-application-id=GRI9DMSAHC&x-algolia-api-key=YmJiZTRhNmQ4ZTcxYzQ1N2E5NTYzZGU1ZjIyNjFjYmI0YjRhYzc2ZDZjYzkxMzQ5ZTQzN2YyY"
-      + "zkzYjNkYTU5YWZpbHRlcnM9Jm51bWVyaWNGaWx0ZXJzPXZpc2liaWxpdHlfc2VhcmNoJTNEMQ%3D%3D";
+  public static final String PRODUCTS_API_URL = "https://gri9dmsahc-3.algolianet.com/1/indexes/*/queries?x-algolia-agent=Algolia%20for%20vanilla%20JavaScript%20(lite)%203.32.1%3Binstantsearch.js%201.12.1%3BMagento%20integration%20(1.16.0)%3BJS%20Helper%202.26.1&x-algolia-application-id=GRI9DMSAHC&x-algolia-api-key=ZWE4ZDQyOTM5YjdjNDE0NWU5NjI5NWVhNzE4ODAwNDk5OTBjMjlhY2RiMTJiYzgzMjE0Mjc5ZmM3YmZiZTYzY2ZpbHRlcnM9Jm51bWVyaWNGaWx0ZXJzPXZpc2liaWxpdHlfc2VhcmNoJTNEMQ%3D%3D";
 
   public BrasilFarmadeliveryCrawler(Session session) {
     super(session);
-    super.fetchMode = FetchMode.FETCHER;
+    super.fetchMode = FetchMode.APACHE;
   }
 
   @Override
@@ -84,8 +84,13 @@ public class BrasilFarmadeliveryCrawler extends CrawlerRankingKeywords {
     headers.put("Content-Type", "application/x-www-form-urlencoded");
     headers.put("Accept-Encoding", "no");
 
-    Request request = RequestBuilder.create().setUrl(PRODUCTS_API_URL).setCookies(cookies).setHeaders(headers).setPayload(payload)
-        .mustSendContentEncoding(false).build();
+    Request request = RequestBuilder.create()
+       .setUrl(PRODUCTS_API_URL)
+       .setCookies(cookies)
+       .setHeaders(headers)
+       .setPayload(payload)
+       .mustSendContentEncoding(false)
+       .build();
     String page = this.dataFetcher.post(session, request).getBody();
 
     if (page.startsWith("{") && page.endsWith("}")) {
