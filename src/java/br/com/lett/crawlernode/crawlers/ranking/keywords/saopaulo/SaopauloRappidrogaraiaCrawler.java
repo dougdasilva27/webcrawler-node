@@ -9,7 +9,7 @@ public class SaopauloRappidrogaraiaCrawler extends BrasilRappiCrawlerRanking {
       super(session);
    }
 
-   public static final String STORE_ID = "900004148";
+   public static final String STORE_ID = "900004068";
    public static final String STORE_TYPE = "hiper";
 
    @Override
