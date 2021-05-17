@@ -113,7 +113,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    @Override
    protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0.hqboso .more-offers__Touchable-sc-15yqej3-2[href]", "href");
+      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0 a[aria-current]", "href");
       String offersPageUrl = CrawlerUtils.completeUrl(scrapUrl, "https://", "americanas.com.br");
 
       JSONObject jsonSeller;
