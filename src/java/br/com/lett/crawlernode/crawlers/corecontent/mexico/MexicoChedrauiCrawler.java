@@ -220,10 +220,11 @@ public class MexicoChedrauiCrawler extends Crawler {
       return categories;
    }
 
-   private String crawlDescription(Document document) {
+   private String crawlDescription(Document doc) {
       StringBuilder description = new StringBuilder();
-      Elements descriptionElements = document.select("#productTabs > div:not(#tabreview)");
+      Elements descriptionElements = doc.select("#productTabs > div:not(#tabreview)");
 
+      description.append(doc.selectFirst(".description").text());
       for (Element e : descriptionElements) {
          if (e.select(".tab-review").first() == null) {
             description.append(e.html());
