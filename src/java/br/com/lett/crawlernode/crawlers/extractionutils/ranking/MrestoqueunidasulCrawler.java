@@ -20,7 +20,7 @@ public abstract class MrestoqueunidasulCrawler extends CrawlerRankingKeywords {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.mrestoque.com.br/produtos/pesquisa/order/name_asc/keyword/" + this.keywordEncoded + "/pagina/" + this.currentPage;
+      String url = "https://www.mrestoque.com.br/busca?s=" + this.keywordEncoded + "&order=name_asc&pagina=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
