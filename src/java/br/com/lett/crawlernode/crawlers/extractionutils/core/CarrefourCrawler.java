@@ -34,6 +34,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    private static final List<String> SELLERS = Collections.singletonList("Carrefour");
 
+
    public CarrefourCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.JAVANET);
@@ -45,37 +46,23 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       return null;
    }
 
-   @Override
-   protected String scrapInternalpid(Document doc) {
-      String internalPid = super.scrapInternalpid(doc);
-
-      JSONObject json = crawlProductApi(internalPid, null);
-
-
-      return json.optString("productId");
-   }
-
    protected String fetchPage(String url) {
 
       Map<String, String> headers = new HashMap<>();
 
       String token = getLocationToken();
 
-      String userLocationData = getLocationToken();
-      headers.put("authority", "mercado.carrefour.com.br");
+      String userLocationData = getCep();
       headers.put("accept", "*/*");
-      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36");
-      headers.put("referer", session.getOriginalURL());
-      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
 
-      StringBuilder cookieBuffer = new StringBuilder();
+      StringBuilder cookiesBuilder = new StringBuilder();
       if (token != null) {
-         cookieBuffer.append("vtex_segment=").append(token).append(";");
+         cookiesBuilder.append("vtex_segment=").append(token).append(";");
       }
-      if (token != null) {
-         cookieBuffer.append("userLocationData=").append(userLocationData).append(";");
+      if (userLocationData != null) {
+         cookiesBuilder.append("userLocationData=").append(userLocationData).append(";");
       }
-      headers.put("cookie", cookieBuffer.toString());
+      headers.put("cookie", cookiesBuilder.toString());
 
       Request request = RequestBuilder.create()
          .setUrl(url)
@@ -124,6 +111,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    @Override
    protected Object fetch() {
+
       return Jsoup.parse(fetchPage(session.getOriginalURL()));
    }
 

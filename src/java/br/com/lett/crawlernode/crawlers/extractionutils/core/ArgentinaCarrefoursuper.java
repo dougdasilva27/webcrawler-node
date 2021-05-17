@@ -33,31 +33,6 @@ public abstract class ArgentinaCarrefoursuper extends CarrefourCrawler {
    }
 
    @Override
-   protected String fetchPage(String url) {
-
-      Map<String, String> headers = new HashMap<>();
-
-      headers.put("accept", "*/*");
-      headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36");
-      headers.put("referer", session.getOriginalURL());
-      headers.put("cookie", "vtex_segment=" + getLocationToken());
-
-      Request request = RequestBuilder.create()
-         .setUrl(url)
-         .setHeaders(headers)
-         .setSendUserAgent(false)
-         .mustSendContentEncoding(false)
-         .setFetcheroptions(
-            FetcherOptions.FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .build())
-         .build();
-
-      return dataFetcher.get(session, request).getBody();
-   }
-
-   @Override
    protected List<String> getMainSellersNames() {
       return Collections.singletonList(SELLER_FULL_NAME);
    }

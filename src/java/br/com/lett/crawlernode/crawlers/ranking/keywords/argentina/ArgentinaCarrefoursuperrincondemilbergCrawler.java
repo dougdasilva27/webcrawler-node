@@ -11,11 +11,6 @@ public class ArgentinaCarrefoursuperrincondemilbergCrawler extends ArgentinaCarr
    }
 
    @Override
-   protected String getHomePage() {
-      return "https://supermercado.carrefour.com.ar/";
-   }
-
-   @Override
    protected String getLocation() {
       return "eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjoiVTFjalkyRnljbVZtYjNWeVlYSXdNREkxTzJOaG" +
          "NuSmxabTkxY21GeU1EZzVPUT09IiwidXRtX2NhbXBhaWduIjpudWxsLCJ1dG1fc291cmNlIjpudWxsLCJ1dG1pX2NhbXBhaWduIjpudWxsLCJjdXJyZW5jeUNvZGUi" +

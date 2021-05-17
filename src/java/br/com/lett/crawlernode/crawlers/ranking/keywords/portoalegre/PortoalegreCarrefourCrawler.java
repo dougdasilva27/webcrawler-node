@@ -16,7 +16,8 @@ public class PortoalegreCarrefourCrawler extends BrasilCarrefourCrawler {
    }
 
    private static final String HOME_PAGE = br.com.lett.crawlernode.crawlers.corecontent.portoalegre.PortoalegreCarrefourCrawler.HOME_PAGE;
-   public static final String LOCATION = br.com.lett.crawlernode.crawlers.corecontent.portoalegre.PortoalegreCarrefourCrawler.LOCATION;
+   public static final String CEP = br.com.lett.crawlernode.crawlers.corecontent.portoalegre.PortoalegreCarrefourCrawler.CEP;
+   public static final String LOCATION_TOKEN = br.com.lett.crawlernode.crawlers.corecontent.portoalegre.PortoalegreCarrefourCrawler.LOCATION_TOKEN;
 
    @Override
    protected String getHomePage() {
@@ -25,6 +26,11 @@ public class PortoalegreCarrefourCrawler extends BrasilCarrefourCrawler {
 
    @Override
    protected String getLocation() {
-      return LOCATION;
+      return LOCATION_TOKEN;
+   }
+
+   @Override
+   protected String getCep() {
+      return CEP;
    }
 }
