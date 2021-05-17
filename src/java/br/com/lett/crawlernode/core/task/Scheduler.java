@@ -118,7 +118,7 @@ public class Scheduler {
       headers.put("Accept", "*");
 
       download_config.put("headers", headers);
-      download_config.put("proxies", session.getProxies());
+      download_config.put("proxies", session.getImageProxies());
 
       JSONObject body = new JSONObject();
       body.put("processed_id", processedId);

@@ -20,6 +20,7 @@ public class Session {
    protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
    private List<String> proxies = new ArrayList<>();
+   private List<String> imageProxies = new ArrayList<>();
 
    protected DateTime date = new DateTime(DateUtils.timeZone);
 
@@ -130,6 +131,18 @@ public class Session {
       }else {
          proxies = Arrays.asList("buy","luminati_server_br","no_proxy");
       }
+
+      JSONArray imageProxiesArray = this.options.optJSONArray("proxies");
+      if(imageProxiesArray!= null &&!imageProxiesArray.isEmpty()){
+         for (Object o :imageProxiesArray) {
+            String proxy = (String) o;
+            imageProxies.add(proxy);
+         }
+      }else {
+         imageProxies = Arrays.asList("buy","luminati_server_br","no_proxy");
+      }
+
+
 
       if (!(request instanceof CrawlerRankingKeywordsRequest)) {
          originalURL = request.getParameter();
@@ -308,5 +321,13 @@ public List<String> getProxies(){
 
    public void setOptions(JSONObject options) {
       this.options = options;
+   }
+
+   public List<String> getImageProxies() {
+      return imageProxies;
+   }
+
+   public void setImageProxies(List<String> imageProxies) {
+      this.imageProxies = imageProxies;
    }
 }
