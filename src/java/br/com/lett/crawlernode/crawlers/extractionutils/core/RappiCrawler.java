@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +40,7 @@ import models.pricing.Pricing.PricingBuilder;
 
 public abstract class RappiCrawler extends Crawler {
 
-   protected static final Pattern URL_PATTERN = Pattern.compile("^https://www[.]rappi[.]com[.].*/.*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)|/");
+   protected static final Pattern URL_PATH_PATTERN = Pattern.compile(".*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)");
 
    public RappiCrawler(Session session) {
       super(session);
@@ -67,8 +69,9 @@ public abstract class RappiCrawler extends Crawler {
       String productUrl = session.getOriginalURL();
 
 
-      if(newUnification) {
-         if (!URL_PATTERN.matcher(productUrl).matches()) {
+      if (newUnification) {
+
+         if (!checkUrl(productUrl)) {
             throw new MalformedUrlException("Formato da URL incorreto");
          } else if (!productUrl.contains(storeId)) {
             throw new MalformedUrlException("URL não corresponde ao market");
@@ -101,6 +104,18 @@ public abstract class RappiCrawler extends Crawler {
          }
       }
       return productsInfo;
+   }
+
+   private static boolean checkUrl(String productUrl) {
+      try {
+         URL url = new URL(productUrl);
+         boolean checkHost = url.getHost().contains("www.rappi.com");
+         boolean checkPath = URL_PATH_PATTERN.matcher(url.getPath()).matches();
+
+         return checkHost && checkPath;
+      } catch (MalformedURLException e) {
+         return false;
+      }
    }
 
    protected String fetchProduct(String productId, String storeId, String token) {
@@ -294,7 +309,7 @@ public abstract class RappiCrawler extends Crawler {
     * General methods *
     *******************/
 
-   public String getUrl(JSONObject productJson){
+   public String getUrl(JSONObject productJson) {
 
       String idToUrl = productJson.optString("id");
 
@@ -329,11 +344,11 @@ public abstract class RappiCrawler extends Crawler {
       if (json.has("name")) {
          nameComplet.append(json.optString("name")).append(" ");
       }
-      if (json.has("quantity")){
+      if (json.has("quantity")) {
          nameComplet.append(json.optString("quantity")).append(" ");
-         if (json.has("unit_type")){
+         if (json.has("unit_type")) {
             nameComplet.append(json.optString("unit_type"));
-      }
+         }
 
       }
 
@@ -348,11 +363,11 @@ public abstract class RappiCrawler extends Crawler {
       String primaryImage = null;
 
       JSONObject product = json.optJSONObject("product");
-      if (product != null){
+      if (product != null) {
          String imageId = product.optString("image");
-         primaryImage = CrawlerUtils.completeUrl(imageId,  "https://", getImagePrefix());
+         primaryImage = CrawlerUtils.completeUrl(imageId, "https://", getImagePrefix());
       }
-      
+
       return primaryImage;
    }
 
