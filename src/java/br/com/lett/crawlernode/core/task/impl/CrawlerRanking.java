@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.ranking.*;
+import br.com.lett.crawlernode.util.ScraperInformation;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -389,15 +390,26 @@ public abstract class CrawlerRanking extends Task {
     * @param url
     */
    protected void saveProductUrlToQueue(String url) {
-      Map<String, MessageAttributeValue> attr = new HashMap<>();
-      attr.put(QueueService.MARKET_ID_MESSAGE_ATTR,
-            new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
 
-      String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
+      ScraperInformation scraperInformation =  Persistence.fetchScraperInfoToOneMarket(session.getMarket().getNumber());
 
-      attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-            .withStringValue(String.valueOf(scraperType)));
+      if (scraperInformation != null) {
+         session.get
+         boolean webDrive = scraperInformation.isUseBrowser();
 
+      }
+
+
+
+//
+//      Map<String, MessageAttributeValue> attr = new HashMap<>();
+//      attr.put(QueueService.MARKET_ID_MESSAGE_ATTR,new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
+//
+//      String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
+//
+//      attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
+//            .withStringValue(String.valueOf(scraperType)));
+//
       this.messages.put(url.trim(), attr);
    }
 
