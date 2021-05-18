@@ -270,7 +270,7 @@ public class MexicoWalmartsuperCrawler extends Crawler {
 
                   if (optionValue.equalsIgnoreCase("Tabla nutrimental")) {
                      setAPIDescription(attribute, nutritionalTable);
-                  } else if (optionValue.equalsIgnoreCase("Caracterisitcas")) {
+                  } else if (optionValue.equalsIgnoreCase("Características")) {
                      setAPIDescription(attribute, caracteristicas);
                   }
                }
