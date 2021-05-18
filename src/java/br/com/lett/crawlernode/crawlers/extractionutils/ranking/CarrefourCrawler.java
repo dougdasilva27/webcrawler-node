@@ -20,7 +20,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
    public CarrefourCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      super.fetchMode = FetchMode.APACHE;
    }
 
    @Override
@@ -54,7 +54,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
 
       String homePage = getHomePage();
-      String url = homePage + "api/catalog_system/pub/products/search/" + keywordEncoded + "?_from=" + ((currentPage - 1) * pageSize) +
+      String url = homePage + "api/catalog_system/pub/products/search/" + keywordEncoded.replace("+", "%20") + "?_from=" + ((currentPage - 1) * pageSize) +
          "&_to=" + ((currentPage) * pageSize);
 
       String body = fetchPage(url);
