@@ -8,6 +8,7 @@ public abstract class ArgentinaCarrefoursuper extends CarrefourCrawler {
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
       super.fetchMode = FetchMode.APACHE;
+      pageSize = 31;
    }
 
    @Override
