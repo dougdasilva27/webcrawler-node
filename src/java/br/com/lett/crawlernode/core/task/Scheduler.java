@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.ScraperInformation;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import enums.QueueName;
@@ -151,6 +152,33 @@ public class Scheduler {
          imagesArr.add(image);
       }
       return imagesArr;
+   }
+
+   public static JSONObject messageToSendToQueue(Long processedId, String internalId, String parameters, Long supplierId, boolean webDrive, ScraperInformation scraper, String scraperType, Long marketId) {
+
+      JSONObject jsonToSendToCrawler = new JSONObject();
+      JSONObject marketInfo = new JSONObject();
+      marketInfo.put("code", scraper.getCode());
+      marketInfo.put("regex", scraper.getRegex());
+      marketInfo.put("fullName", scraper.getFullName());
+      marketInfo.put("marketId", marketId);
+      marketInfo.put("use_browser", webDrive);
+      marketInfo.put("name", scraper.getName());
+      jsonToSendToCrawler.put("type", scraperType);
+      jsonToSendToCrawler.put("options", jsonRefinement(scraper.getOptionsScraper(), scraper.getOptionsScraperClass()));
+      jsonToSendToCrawler.put("market", marketInfo);
+      jsonToSendToCrawler.put("className", scraper.getClassName());
+      jsonToSendToCrawler.put("parameters", parameters);
+      if (processedId != null && internalId != null) {
+         jsonToSendToCrawler.put("processedId", processedId);
+         jsonToSendToCrawler.put("internalId", internalId);
+      }
+      if (supplierId != null) {
+         jsonToSendToCrawler.put("supplierId", supplierId);
+      }
+
+      return jsonToSendToCrawler;
+
    }
 
 }

@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.ScraperInformation;
 import dbmodels.tables.SupplierTrackedLett;
 import exceptions.MalformedRatingModel;
 import exceptions.OfferException;
@@ -373,4 +374,6 @@ public class DatabaseDataFetcher {
       }
       return result;
    }
+
+
 }
