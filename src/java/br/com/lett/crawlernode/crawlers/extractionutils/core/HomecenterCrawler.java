@@ -45,17 +45,17 @@ public abstract class HomecenterCrawler extends Crawler {
       Card.DINERS.toString());
 
    public abstract String getCity();
-   public abstract String getCityColuna();
+   public abstract String getCityComuna();
 
    @Override
    public void handleCookiesBeforeFetch() {
+      String comuna = getCityComuna();
       String city = getCity();
-      String coluna = getCityColuna();
       if (city != null) {
          cookies.add(new BasicClientCookie("ZONE_NAME", city.toUpperCase(Locale.ROOT)));
       }
-      if (coluna != null) {
-         cookies.add(new BasicClientCookie("ZONE_NAME", coluna));
+      if (comuna != null) {
+         cookies.add(new BasicClientCookie("comuna", comuna));
       }
    }
 

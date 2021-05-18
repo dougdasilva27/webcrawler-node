@@ -15,7 +15,7 @@ public class MedellinHomecenterCrawler extends HomecenterCrawler {
    }
 
    @Override
-   public String getCityColuna() {
+   public String getCityComuna() {
       return "2";
    }
 }

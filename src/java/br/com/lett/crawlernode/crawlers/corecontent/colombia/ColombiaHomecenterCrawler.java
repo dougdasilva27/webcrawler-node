@@ -15,7 +15,7 @@ public class ColombiaHomecenterCrawler extends HomecenterCrawler {
    }
 
    @Override
-   public String getCityColuna() {
+   public String getCityComuna() {
       return null;
    }
 }

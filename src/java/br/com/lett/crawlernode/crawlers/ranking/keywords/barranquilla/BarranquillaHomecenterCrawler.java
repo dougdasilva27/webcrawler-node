@@ -1,10 +1,9 @@
-package br.com.lett.crawlernode.crawlers.corecontent.barranquilla;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.barranquilla;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.HomecenterCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.HomecenterCrawlerRanking;
 
-public class BarranquillaHomecenterCrawler extends HomecenterCrawler {
-
+public class BarranquillaHomecenterCrawler extends HomecenterCrawlerRanking {
    public BarranquillaHomecenterCrawler(Session session) {
       super(session);
    }
