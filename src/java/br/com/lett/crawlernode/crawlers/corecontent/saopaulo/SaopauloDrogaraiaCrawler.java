@@ -263,9 +263,7 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
 
    private RatingsReviews crawRating(Document doc, String internalId) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "71450", logger);
-      RatingsReviews ratingsReviews = trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
-
-      return ratingsReviews;
+      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 
 }
