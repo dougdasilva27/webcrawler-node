@@ -28,6 +28,7 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
+import software.amazon.awssdk.services.glue.model.Crawl;
 
 
 public class BrasilHavanCrawler extends Crawler {
@@ -60,10 +61,10 @@ public class BrasilHavanCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", false);
          boolean available = doc.selectFirst("#product-addtocart-button") != null;
 
-         JSONArray ImageArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-         String primaryImage = CrawlerUtils.scrapPrimaryImageMagento(ImageArray);
-         String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(ImageArray, primaryImage);
-
+         JSONArray imageArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
+         System.err.println(imageArray);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,".fotorama__stage .fotorama__stage__frame", Arrays.asList("href"),  "https", "https://www.havan.com.br/");
+         String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(imageArray, primaryImage);
          RatingsReviews ratingReviews = scrapRatingReviews(doc, internalPid);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
          String description =
