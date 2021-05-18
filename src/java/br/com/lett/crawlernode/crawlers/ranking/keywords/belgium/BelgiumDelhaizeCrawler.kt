@@ -1,11 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.belgium
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
-import org.json.Cookie
 import org.json.JSONObject
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import java.util.*
+import kotlin.collections.HashMap
 
 /**
  * Date: 30/07/20
@@ -16,53 +21,50 @@ import org.json.JSONObject
 class BelgiumDelhaizeCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    init {
-      pageSize = 100
+      pageSize = 20
+      fetchMode = FetchMode.JAVANET
    }
 
    override fun extractProductsFromCurrentPage() {
 
-      val result = requestApi()
+      val result = fetcherPage()
 
-      if (this.totalProducts == 0) {
-         setTotalProductsAndPageSize(result)
-      }
 
-      val products = result.optJSONArray("results")
 
-      for (it in products) {
+      val elements = result?.select(".data-item")
 
-         val product = it as JSONObject
+      if (elements != null) {
+         for (element in elements){
+            val internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(element,"[data-product-id]","data-product-id")
+            val productUrl = "https://www.delhaize.be${CrawlerUtils.scrapStringSimpleInfoByAttribute(element,".ProductHeader a","href")}"
 
-         val internalId = product.optString("code")
+            saveDataProduct(internalId, internalId, productUrl)
+            log("Position: " + position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl)
+         }
 
-         val productUrl = "https://www.delhaize.be${product.optString("url")}"
 
-         saveDataProduct(internalId, internalId, productUrl)
-         log("Position: " + position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl)
       }
    }
 
-   private fun requestApi() : JSONObject {
+   private fun fetcherPage() : Document? {
 
-      val url = "https://www.delhaize.be/search/products/loadMore" +
-         "?text=$keywordEncoded" +
-         "&pageSize=$pageSize" +
-         "&pageNumber=${currentPage-1}" +
-         "&sort=relevance"
+      val url = "https://www.delhaize.be/fr-be/shop/search?q="+ this.keywordEncoded + ":relevance&sort=relevance&pageNumber="+(this.currentPage - 1)
 
       val headers: MutableMap<String, String> = HashMap()
 
       headers["cookie"] = "groceryCookieLang=fr;"
 
-      val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
+      val request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setProxyservice(Arrays.asList(ProxyCollection.BONANZA_BELGIUM_HAPROXY,ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY))
+         .build()
 
-      return CrawlerUtils.stringToJson(dataFetcher[session, request].body)
+      return Jsoup.parse(dataFetcher.get(session, request).body)
    }
 
-   private fun setTotalProductsAndPageSize(search: JSONObject) {
-
-      val pagination = search.optJSONObject("pagination")
-
-      totalProducts = pagination.optInt("totalNumberOfResults")
+   override fun hasNextPage(): Boolean {
+      return true
    }
+
 }
