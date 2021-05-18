@@ -1,21 +1,22 @@
-package br.com.lett.crawlernode.crawlers.corecontent.colombia;
+package br.com.lett.crawlernode.crawlers.corecontent.cali;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.HomecenterCrawler;
 
-public class ColombiaHomecenterCrawler extends HomecenterCrawler {
+public class CaliHomecenterCrawler extends HomecenterCrawler {
 
-   public ColombiaHomecenterCrawler(Session session) {
+   public CaliHomecenterCrawler(Session session) {
       super(session);
    }
 
    @Override
    public String getCity() {
-      return null;
+      return "Cali";
    }
 
    @Override
    public String getCityColuna() {
-      return null;
+      return "3";
    }
+
 }
