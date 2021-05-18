@@ -21,6 +21,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    public CarrefourCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
+      this.pageSize = 12;
    }
 
    @Override
@@ -51,7 +52,6 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
    @Override
    protected void extractProductsFromCurrentPage() {
       this.log("Página " + this.currentPage);
-      this.pageSize = 12;
 
       String homePage = getHomePage();
       String url = homePage + "api/catalog_system/pub/products/search/" + keywordEncoded.replace("+", "%20") + "?_from=" + ((currentPage - 1) * pageSize) +
