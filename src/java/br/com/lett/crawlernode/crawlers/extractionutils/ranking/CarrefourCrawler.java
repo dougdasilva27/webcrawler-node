@@ -20,7 +20,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
    public CarrefourCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
+      super.fetchMode = FetchMode.FETCHER;
    }
 
    @Override
