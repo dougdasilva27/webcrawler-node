@@ -33,7 +33,7 @@ import models.pricing.BankSlip;
 public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    private static final List<String> SELLERS = Collections.singletonList("Carrefour");
-
+   private JSONArray crawlerApi;
 
    public CarrefourCrawler(Session session) {
       super(session);
@@ -116,6 +116,16 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
    }
 
    @Override
+   protected String scrapInternalpid(Document doc) {
+      String internalPid = super.scrapInternalpid(doc);
+      if (internalPid == null) {
+         JSONObject json = crawlProductApi(internalPid, null);
+         internalPid = json.optString("productId");
+      }
+      return internalPid;
+   }
+
+   @Override
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       JSONObject productApi = new JSONObject();
 
@@ -123,11 +133,13 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
       String url = homePage + "api/catalog_system/pub/products/search/" + path;
 
-      String body = fetchPage(url);
-      JSONArray array = CrawlerUtils.stringToJsonArray(body);
+      if (crawlerApi == null) {
+         String body = fetchPage(url);
+         crawlerApi = CrawlerUtils.stringToJsonArray(body);
+      }
 
-      if (!array.isEmpty()) {
-         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      if (!crawlerApi.isEmpty()) {
+         productApi = crawlerApi.optJSONObject(0) == null ? new JSONObject() : crawlerApi.optJSONObject(0);
       }
 
       return productApi;
