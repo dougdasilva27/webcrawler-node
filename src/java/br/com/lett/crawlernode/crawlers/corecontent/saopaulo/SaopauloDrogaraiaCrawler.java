@@ -261,48 +261,10 @@ public class SaopauloDrogaraiaCrawler extends Crawler {
       return creditCards;
    }
 
-
    private RatingsReviews crawRating(Document doc, String internalId) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "71450", logger);
-      RatingsReviews ratingsReviews = trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
-      if (ratingsReviews.getTotalReviews() == 0) {
-         ratingsReviews = scrapAlternativeRating(internalId);
-      }
-
-      return ratingsReviews;
+      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 
-   private JSONObject alternativeRatingFetch(String internalId) {
-
-      String urlApi = "https://trustvox.com.br/widget/root?&code=" + internalId + "&store_id=71450&product_extra_attributes[group]=";
-
-      Map<String,String> headers = new HashMap<>();
-      headers.put("Accept","application/vnd.trustvox-v2+json");
-      headers.put("Referer","https://www.drogaraia.com.br/");
-      headers.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
-
-      Request request = RequestBuilder.create().setHeaders(headers).setUrl(urlApi).build();
-      String jsonString = this.dataFetcher.get(session, request).getBody();
-
-      return JSONUtils.stringToJson(jsonString);
-   }
-
-   private RatingsReviews scrapAlternativeRating(String internalId) {
-
-      RatingsReviews ratingsReviews = new RatingsReviews();
-
-      JSONObject jsonRating = alternativeRatingFetch(internalId);
-      JSONObject storeRate = JSONUtils.getJSONValue(jsonRating,"store_rate");
-
-      if (storeRate != null && !storeRate.isEmpty()) {
-
-         double avgReviews = JSONUtils.getDoubleValueFromJSON(storeRate, "average", true);
-         int totalRating = JSONUtils.getIntegerValueFromJSON(storeRate, "count", 0);
-
-         ratingsReviews.setAverageOverallRating(MathUtils.normalizeTwoDecimalPlaces(avgReviews));
-         ratingsReviews.setTotalRating(totalRating);
-      }
-      return ratingsReviews;
-   }
 }
 
