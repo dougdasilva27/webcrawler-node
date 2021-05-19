@@ -1,70 +1,71 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
+import org.apache.http.impl.cookie.BasicClientCookie
+import com.google.common.collect.Maps
+import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.util.CommonMethods
+import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.models.Request
+import br.com.lett.crawlernode.core.session.Session
+import org.json.JSONArray
+import org.json.JSONObject
 
-import java.util.Arrays;
+class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
 
-public class MexicoJustoCrawler extends CrawlerRankingKeywords {
-
-   private static final String HOME_PAGE = "justo.mx";
-   private static final String POSTAL_CODE = "14300";
-
-   public MexicoJustoCrawler(Session session) {
-      super(session);
+   companion object {
+      private const val HOME_PAGE = "https://justo.mx"
+      private const val POSTAL_CODE = "14300"
    }
 
-   @Override
-   public void processBeforeFetch() {
-      BasicClientCookie cookie = new BasicClientCookie("postal_code", POSTAL_CODE);
-      cookie.setDomain("justo.mx");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
+   init {
+      fetchMode = FetchMode.JAVANET
+      pageSize = 25
    }
 
-   @Override
-   protected void extractProductsFromCurrentPage() {
-      this.pageSize = 15;
-      this.log("Página " + this.currentPage);
 
-      String url = "https://justo.mx/search/?q=" + this.keywordEncoded + "&page=" + this.currentPage;
+   public override fun processBeforeFetch() {
+      val cookie = BasicClientCookie("postal_code", POSTAL_CODE)
+      cookies.add(cookie)
+   }
 
-      this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".product-card");
+   override fun extractProductsFromCurrentPage() {
+      val url = "$HOME_PAGE/graphql/"
+      val offset = if (currentPage == 1) null else (currentPage - 1) * pageSize
+      val body = """
+         {
+           "query": "query searchProducts(  ${"$"}query: String!  ${"$"}first: Int  ${"$"}offset: Int  ${"$"}orderOptions: String  ${"$"}filter: ProductFilterInput) {  search(query: ${"$"}query) {    products(first: ${"$"}first, offset: ${"$"}offset, orderOptions: ${"$"}orderOptions, filter: ${"$"}filter) {      edges {        node {          id          name          isAvailable          url          action          sku          category{            id            name          }          maxQuantityAllowed          useWeightPicker          availability{            lineMaturationOptions            quantityOnCheckout            variantOnCheckout            priceRange{              start {                gross {                  amount                }                }                stop {                gross {                  amount                }              }            }            priceRangeUndiscounted{              start {                gross {                  amount                }              }              stop {                gross {                  amount                }              }            }          }          thumbnail{              url          }          price{              amount              currency          }          variants{              id              name              stockQuantity              weightUnit              isPiece              maturationOptions          }          shoppingList{              id              name          }        }      }    }    pages    total  }}",
+           "variables": {
+             "query": "$location",
+             "first": $pageSize,
+             "offset": $offset,
+             "orderOptions": "name",
+             "filter": {
+               "postalCode": "$POSTAL_CODE"
+             }
+           },
+           "operationName": null
+         }""".trimIndent()
+      val headers = mapOf("Content-Type" to "application/json")
 
-      if (!products.isEmpty()) {
-         for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div .product-card__content > div", "data-id");
-            String productUrl = CrawlerUtils.scrapUrl(e, "div .product-card__content > a", Arrays.asList("href"), "https", HOME_PAGE);
+      val request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies)
+         .setPayload(body).setHeaders(headers).build()
 
-            saveDataProduct(internalId, null, productUrl);
+      val response = dataFetcher.post(session, request)
+      val json = CrawlerUtils.stringToJson(response.body)
+      val apiResp = json.optQuery("/data/search") as JSONObject
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null
-               + " - Url: " + productUrl);
-
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-         }
-
-      }else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
+      if (currentPage == 1) {
+         totalProducts = apiResp.optInt("total")
       }
-
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-         + this.arrayProducts.size() + " produtos crawleados");
-
+      val products = apiResp.optQuery("/products/edges") as JSONArray
+      for (obj in products) {
+         val product = (obj as JSONObject).optJSONObject("node")
+         val urlPath = product.optString("url")
+         val internalId = urlPath.split("-").last().substringBeforeLast("/")
+         val productUrl = HOME_PAGE + urlPath
+         saveDataProduct(internalId, null, productUrl)
+         log("Position: $position - InternalId: $internalId - Url: $productUrl")
+      }
    }
-
-   protected boolean hasNextPage() {
-      Element page = this.currentDoc.selectFirst(".last.page-item.disabled");
-      return page == null;
-   }
-
 }
