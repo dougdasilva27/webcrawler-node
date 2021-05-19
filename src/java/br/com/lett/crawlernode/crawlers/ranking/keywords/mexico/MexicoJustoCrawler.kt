@@ -1,13 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico
 
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import org.apache.http.impl.cookie.BasicClientCookie
-import com.google.common.collect.Maps
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.CommonMethods
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
+import br.com.lett.crawlernode.util.CrawlerUtils
+import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -58,11 +56,11 @@ class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
       if (currentPage == 1) {
          totalProducts = apiResp.optInt("total")
       }
-      val products = apiResp.optQuery("/products/edges") as JSONArray
+      val products = apiResp.optQuery("/products/edges") as JSONArray? ?: throw IllegalStateException("Not possible to retrieve products' data")
       for (obj in products) {
-         val product = (obj as JSONObject).optJSONObject("node")
-         val urlPath = product.optString("url")
-         val internalId = urlPath.split("-").last().substringBeforeLast("/")
+         val product = (obj as JSONObject?)?.optJSONObject("node")
+         val urlPath = product?.optString("url")
+         val internalId = urlPath?.split("-")?.last()?.substringBeforeLast("/")
          val productUrl = HOME_PAGE + urlPath
          saveDataProduct(internalId, null, productUrl)
          log("Position: $position - InternalId: $internalId - Url: $productUrl")
