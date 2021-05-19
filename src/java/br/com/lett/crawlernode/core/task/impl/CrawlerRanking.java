@@ -53,6 +53,8 @@ import enums.QueueName;
 import enums.ScrapersTypes;
 import models.Processed;
 
+import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
+
 public abstract class CrawlerRanking extends Task {
 
    protected FetchMode fetchMode;
@@ -193,7 +195,7 @@ public abstract class CrawlerRanking extends Task {
 
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
             if (session instanceof RankingSession || session instanceof RankingDiscoverSession || session instanceof EqiRankingDiscoverKeywordsSession
-               && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
+               && executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
 
                sendMessagesToQueue();
             }
@@ -235,7 +237,7 @@ public abstract class CrawlerRanking extends Task {
 
    private void setDataFetcher() {
       if (this.fetchMode == FetchMode.STATIC) {
-         dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+         dataFetcher = executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.APACHE) {
          dataFetcher = new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.JAVANET) {
@@ -470,7 +472,6 @@ public abstract class CrawlerRanking extends Task {
       }
       this.messages.clear();
    }
-
 
    /**
     *
