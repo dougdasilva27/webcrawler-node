@@ -536,8 +536,8 @@ public class CommonMethods {
    }
 
    public static ScraperInformation getScraperInformation(ResultSet resultSet) throws SQLException {
-      ScraperInformation scraperInformation = new ScraperInformation(resultSet.getLong("market_id"), resultSet.getString("code"), resultSet.getString("first_party_regex"),
-         resultSet.getString("fullname"), resultSet.getString("options_scraper"), resultSet.getString("options"), resultSet.getString("class"), resultSet.getString("name"), resultSet.getBoolean("use_browser"));
+      ScraperInformation scraperInformation = new ScraperInformation(  resultSet.getString("options_scraper"), resultSet.getString("options"), resultSet.getString("class"), resultSet.getString("name"), resultSet.getBoolean("use_browser") );
+
 
 
       return scraperInformation;

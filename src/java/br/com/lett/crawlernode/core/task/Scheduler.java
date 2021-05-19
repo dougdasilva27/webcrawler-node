@@ -154,28 +154,23 @@ public class Scheduler {
       return imagesArr;
    }
 
-   public static JSONObject messageToSendToQueue(Long processedId, String internalId, String parameters, Long supplierId, boolean webDrive, ScraperInformation scraper, String scraperType, Long marketId) {
+
+   public static JSONObject messageToSendToQueue(String parameters, Market market , ScraperInformation scraper, String scraperType) {
 
       JSONObject jsonToSendToCrawler = new JSONObject();
       JSONObject marketInfo = new JSONObject();
-      marketInfo.put("code", scraper.getCode());
-      marketInfo.put("regex", scraper.getRegex());
-      marketInfo.put("fullName", scraper.getFullName());
-      marketInfo.put("marketId", marketId);
-      marketInfo.put("use_browser", webDrive);
-      marketInfo.put("name", scraper.getName());
+      marketInfo.put("code", market.getCode());
+      marketInfo.put("regex", market.getFirstPartyRegex());
+      marketInfo.put("fullName", market.getFullName());
+      marketInfo.put("marketId", market.getId());
+      marketInfo.put("use_browser", scraper.isUseBrowser());
+      marketInfo.put("name", market.getName());
       jsonToSendToCrawler.put("type", scraperType);
-      jsonToSendToCrawler.put("options", jsonRefinement(scraper.getOptionsScraper(), scraper.getOptionsScraperClass()));
+      jsonToSendToCrawler.put("options", CommonMethods.jsonRefinement(scraper.getOptionsScraper(), scraper.getOptionsScraperClass()));
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", scraper.getClassName());
       jsonToSendToCrawler.put("parameters", parameters);
-      if (processedId != null && internalId != null) {
-         jsonToSendToCrawler.put("processedId", processedId);
-         jsonToSendToCrawler.put("internalId", internalId);
-      }
-      if (supplierId != null) {
-         jsonToSendToCrawler.put("supplierId", supplierId);
-      }
+
 
       return jsonToSendToCrawler;
 
