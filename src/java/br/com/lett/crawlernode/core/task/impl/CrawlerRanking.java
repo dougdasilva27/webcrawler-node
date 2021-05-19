@@ -467,11 +467,13 @@ public abstract class CrawlerRanking extends Task {
                   .put("sqs_queue", "ws-discoverer");
 
                Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
+
             }
          }
       }
       this.messages.clear();
    }
+
 
    /**
     *
@@ -481,7 +483,8 @@ public abstract class CrawlerRanking extends Task {
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
-      if(GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+      System.err.println(executionParameters.getEnvironment());
+      if(executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
          queueName = QueueName.CORE_DEV.toString();
       }else {
          if (session instanceof EqiRankingDiscoverKeywordsSession) {
@@ -491,6 +494,7 @@ public abstract class CrawlerRanking extends Task {
          }
       }
 
+      queueName = QueueName.CORE_DEV.toString();
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
@@ -509,7 +513,7 @@ public abstract class CrawlerRanking extends Task {
             count++;
          }
 
-         this.log(successResultEntryList.size() + " messages sended.");
+         this.log(successResultEntryList.size() + " messages sended to "+ queueName);
       }
 
    }
