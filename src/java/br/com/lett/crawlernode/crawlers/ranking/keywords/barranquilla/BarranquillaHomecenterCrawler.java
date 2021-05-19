@@ -1,21 +1,20 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.barranquilla;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.HomecenterCrawlerRanking;
 
-public class ColombiaHomecenterCrawler extends HomecenterCrawlerRanking {
-
-   public ColombiaHomecenterCrawler(Session session) {
+public class BarranquillaHomecenterCrawler extends HomecenterCrawlerRanking {
+   public BarranquillaHomecenterCrawler(Session session) {
       super(session);
    }
 
    @Override
    public String getCity() {
-      return null;
+      return "Barranquilla";
    }
 
    @Override
    public String getCityComuna() {
-      return null;
+      return "4";
    }
 }

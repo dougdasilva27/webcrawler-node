@@ -1,21 +1,20 @@
-package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
+package br.com.lett.crawlernode.crawlers.ranking.keywords.cali;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.HomecenterCrawlerRanking;
 
-public class ColombiaHomecenterCrawler extends HomecenterCrawlerRanking {
+public class CaliHomecenterCrawler extends HomecenterCrawlerRanking {
 
-   public ColombiaHomecenterCrawler(Session session) {
+   public CaliHomecenterCrawler(Session session) {
       super(session);
    }
-
    @Override
    public String getCity() {
-      return null;
+      return "Cali";
    }
 
    @Override
    public String getCityComuna() {
-      return null;
+      return "3";
    }
 }
