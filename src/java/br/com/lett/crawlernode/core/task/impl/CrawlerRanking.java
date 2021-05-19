@@ -64,7 +64,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<String, String> mapUrlMessageId = new HashMap<>();
 
-   private Map<String, Map<String, MessageAttributeValue>> messages = new HashMap<>();
+   private List<String> messages = new ArrayList<>();
 
    protected int productsLimit;
    protected int pageLimit;
@@ -460,7 +460,7 @@ public abstract class CrawlerRanking extends Task {
                populateMessagesInToQueue(entries, scraperInformation.isUseBrowser());
                entries.clear();
 
-            JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
+               JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
                   .put("aws_type", "sqs")
                   .put("sqs_queue", "ws-discoverer");
 
@@ -471,19 +471,25 @@ public abstract class CrawlerRanking extends Task {
       this.messages.clear();
    }
 
+
    /**
     *
     *
     * @param entries
     */
-   private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
+   private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
-      if (session instanceof EqiRankingDiscoverKeywordsSession) {
-         queueName = session.getMarket().isUseBrowser() ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
-      } else {
-         queueName = session.getMarket().isUseBrowser() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+      if(GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION)) {
+         queueName = QueueName.CORE_DEV.toString();
+      }else {
+         if (session instanceof EqiRankingDiscoverKeywordsSession) {
+            queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
+         } else {
+            queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+         }
       }
+
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
