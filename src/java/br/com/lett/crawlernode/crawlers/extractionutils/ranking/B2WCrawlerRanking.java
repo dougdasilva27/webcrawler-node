@@ -2,6 +2,8 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.util.MathUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -53,7 +55,7 @@ public abstract class B2WCrawlerRanking extends CrawlerRankingKeywords {
 
       this.currentDoc = Jsoup.parse(B2WCrawler.fetchPage(url, this.dataFetcher, cookies, headers, session));
 
-      Elements products = this.currentDoc.select(".product-grid div[class*=product-] a");
+      Elements products = this.currentDoc.select(".iFeuoP a");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -85,7 +87,7 @@ public abstract class B2WCrawlerRanking extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "#sort-bar div:not(.hidden-xs) > span", true, 0);
+      this.totalProducts = MathUtils.parseInt(currentDoc.select(".jGRTBJ").text());
       this.log("Total da busca: " + this.totalProducts);
    }
 }
