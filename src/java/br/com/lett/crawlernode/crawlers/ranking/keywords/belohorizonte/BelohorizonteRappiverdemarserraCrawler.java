@@ -12,6 +12,7 @@ public class BelohorizonteRappiverdemarserraCrawler extends BrasilRappiCrawlerRa
 
    public BelohorizonteRappiverdemarserraCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    public static final String STORE_ID = "900020342";

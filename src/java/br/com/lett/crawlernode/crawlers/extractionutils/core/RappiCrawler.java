@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +40,7 @@ import models.pricing.Pricing.PricingBuilder;
 
 public abstract class RappiCrawler extends Crawler {
 
-   protected static final Pattern URL_PATTERN = Pattern.compile("^https://www[.]rappi[.]com[.].*/.*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)|/");
+   protected static final Pattern URL_PATH_PATTERN = Pattern.compile(".*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)");
 
    public RappiCrawler(Session session) {
       super(session);
@@ -49,6 +52,10 @@ public abstract class RappiCrawler extends Crawler {
    abstract protected String getHomeDomain();
 
    abstract protected String getImagePrefix();
+
+   abstract protected String getUrlPrefix();
+
+   abstract protected String getHomeCountry();
 
    protected boolean newUnification = false;
 
@@ -62,8 +69,9 @@ public abstract class RappiCrawler extends Crawler {
       String productUrl = session.getOriginalURL();
 
 
-      if(newUnification) {
-         if (!URL_PATTERN.matcher(productUrl).matches()) {
+      if (newUnification) {
+
+         if (!checkUrl(productUrl)) {
             throw new MalformedUrlException("Formato da URL incorreto");
          } else if (!productUrl.contains(storeId)) {
             throw new MalformedUrlException("URL não corresponde ao market");
@@ -96,6 +104,18 @@ public abstract class RappiCrawler extends Crawler {
          }
       }
       return productsInfo;
+   }
+
+   private static boolean checkUrl(String productUrl) {
+      try {
+         URL url = new URL(productUrl);
+         boolean checkHost = url.getHost().contains("www.rappi.com");
+         boolean checkPath = URL_PATH_PATTERN.matcher(url.getPath()).matches();
+
+         return checkHost && checkPath;
+      } catch (MalformedURLException e) {
+         return false;
+      }
    }
 
    protected String fetchProduct(String productId, String storeId, String token) {
@@ -155,9 +175,9 @@ public abstract class RappiCrawler extends Crawler {
 
       JSONObject productJson = JSONUtils.getJSONValue(jsonSku, "product");
 
+
       if (isProductPage(productJson)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-
 
          String internalPid = crawlInternalPid(productJson);
          String internalId = newUnification ? internalPid : crawlInternalId(productJson);
@@ -172,7 +192,7 @@ public abstract class RappiCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
+            .setUrl(getUrl(productJson))
             .setInternalId(internalId)
             .setInternalPid(internalPid)
             .setName(name)
@@ -217,8 +237,8 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    public static Pricing scrapPricing(JSONObject jsonSku) throws MalformedPricingException {
-      Double price = jsonSku.optDouble("price", 0D);
-      Double priceFrom = jsonSku.optDouble("real_price", 0D);
+      Double priceFrom = jsonSku.optDouble("price", 0D);
+      Double price = jsonSku.optDouble("real_price", 0D);
       if (price == 0D || price.equals(priceFrom)) {
          price = priceFrom;
          priceFrom = null;
@@ -289,6 +309,14 @@ public abstract class RappiCrawler extends Crawler {
     * General methods *
     *******************/
 
+   public String getUrl(JSONObject productJson) {
+
+      String idToUrl = productJson.optString("id");
+
+      return idToUrl != null ? getHomeCountry() + getUrlPrefix() + idToUrl : null;
+
+   }
+
    protected String crawlInternalId(JSONObject json) {
       String internalId = null;
 
@@ -311,13 +339,20 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected String crawlName(JSONObject json) {
-      String name = null;
+      StringBuilder nameComplet = new StringBuilder();
 
       if (json.has("name")) {
-         name = json.getString("name");
+         nameComplet.append(json.optString("name")).append(" ");
+      }
+      if (json.has("quantity")) {
+         nameComplet.append(json.optString("quantity")).append(" ");
+         if (json.has("unit_type")) {
+            nameComplet.append(json.optString("unit_type"));
+         }
+
       }
 
-      return name;
+      return nameComplet.toString();
    }
 
    protected boolean crawlAvailability(JSONObject json) {
@@ -325,21 +360,15 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected String crawlPrimaryImage(JSONObject json) {
-      String primaryImage;
+      String primaryImage = null;
 
-      JSONArray images = JSONUtils.getJSONArrayValue(json, "images");
-
-      if (!images.isEmpty()) {
-         if (images.length() > 1) {
-            primaryImage = images.getString(1);
-         } else {
-            primaryImage = images.getString(0);
-         }
-      } else {
-         return null;
+      JSONObject product = json.optJSONObject("product");
+      if (product != null) {
+         String imageId = product.optString("image");
+         primaryImage = CrawlerUtils.completeUrl(imageId, "https://", getImagePrefix());
       }
 
-      return CrawlerUtils.completeUrl(primaryImage, "https", getImagePrefix());
+      return primaryImage;
    }
 
    protected List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {

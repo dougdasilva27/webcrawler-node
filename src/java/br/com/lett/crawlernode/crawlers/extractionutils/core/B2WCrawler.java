@@ -66,7 +66,7 @@ public class B2WCrawler extends Crawler {
 
    public B2WCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
       this.setHeaders();
    }
 
@@ -110,6 +110,7 @@ public class B2WCrawler extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
@@ -127,7 +128,7 @@ public class B2WCrawler extends Crawler {
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
             ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.BUY,
+            ProxyCollection.BUY_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
          content = new FetcherDataFetcher().get(session, request).getBody();
@@ -470,12 +471,11 @@ public class B2WCrawler extends Crawler {
          if (offers.size() > 1) {
             // Sellers page positios is order by price, in this map, price is the value
             Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
-
-            int position = twoPositions ? 3 : 2;
+            int position = 1;
 
             for (Entry<String, Double> entry : sortedMap.entrySet()) {
                for (Offer offer : offers.getOffersList()) {
-                  if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
+                  if (offer.getInternalSellerId().equals(entry.getKey())) {
                      offer.setSellersPagePosition(position);
                      position++;
                   }
@@ -492,7 +492,6 @@ public class B2WCrawler extends Crawler {
 
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
 
-
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
 
@@ -504,7 +503,6 @@ public class B2WCrawler extends Crawler {
          JSONArray sellerInfo = offersJson.getJSONArray(internalId);
          // The Business logic is: if we have more than 1 seller is buy box
          boolean isBuyBox = sellerInfo.length() > 1;
-
          for (int i = 0; i < sellerInfo.length(); i++) {
             JSONObject info = (JSONObject) sellerInfo.get(i);
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
@@ -539,18 +537,17 @@ public class B2WCrawler extends Crawler {
          // Sellers page positios is order by price, in this map, price is the value
          Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
-         int position = twoPositions ? 3 : 2;
+         int position = 1;
 
          for (Entry<String, Double> entry : sortedMap.entrySet()) {
             for (Offer offer : offers.getOffersList()) {
-               if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
+               if (offer.getInternalSellerId().equals(entry.getKey())) {
                   offer.setSellersPagePosition(position);
                   position++;
                }
             }
          }
       }
-
       return offers;
    }
 
@@ -562,7 +559,9 @@ public class B2WCrawler extends Crawler {
       Double spotlightPrice = scrapSpotlightPrice(info, creditCards, offerIndex, newWay);
       BankSlip bt = scrapBankTicket(info);
 
-      if (!newWay || offerIndex != 0) {
+      if (priceFrom != null) {
+         mapOfSellerIdAndPrice.put(internalSellerId, priceFrom);
+      } else {
          mapOfSellerIdAndPrice.put(internalSellerId, spotlightPrice);
       }
 
@@ -596,6 +595,15 @@ public class B2WCrawler extends Crawler {
       Double featuredPrice = null;
 
       if (!newWay || offerIndex == 0) {
+
+         Double spotlightPrice = info.optDouble("spotlightPrice");
+
+         if(spotlightPrice != null && !spotlightPrice.isNaN()){
+            featuredPrice = spotlightPrice;
+
+            return featuredPrice;
+         }
+
          Double price1x = creditCards.getCreditCard(DEFAULT_CARD.toString()).getInstallments().getInstallmentPrice(1);
          Double bankTicket = CrawlerUtils.getDoubleValueFromJSON(info, "bakTicket", true, false);
          Double defaultPrice = CrawlerUtils.getDoubleValueFromJSON(info, "defaultPrice", true, false);

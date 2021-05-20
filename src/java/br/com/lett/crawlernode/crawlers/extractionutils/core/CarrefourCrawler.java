@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +32,8 @@ import models.pricing.BankSlip;
 
 public abstract class CarrefourCrawler extends VTEXNewScraper {
 
-   private static final List<String> SELLERS = Arrays.asList("Carrefour");
+   private static final List<String> SELLERS = Collections.singletonList("Carrefour");
+   private JSONArray crawlerApi;
 
    public CarrefourCrawler(Session session) {
       super(session);
@@ -39,19 +42,8 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    protected abstract String getLocationToken();
 
-   @Override
-   protected String scrapInternalpid(Document doc) {
-      String internalPid = super.scrapInternalpid(doc);
-
-      if (internalPid == null) {
-         JSONObject runTimeJSON = scrapRuntimeJson(doc);
-         JSONObject route = runTimeJSON.optJSONObject("route");
-         JSONObject params = route != null ? route.optJSONObject("params") : new JSONObject();
-
-         internalPid = params.optString("id", null);
-      }
-
-      return internalPid;
+   protected String getCep() {
+      return null;
    }
 
    protected String fetchPage(String url) {
@@ -60,14 +52,17 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
       String token = getLocationToken();
 
+      String userLocationData = getCep();
+      headers.put("accept", "*/*");
+
+      StringBuilder cookiesBuilder = new StringBuilder();
       if (token != null) {
-         headers.put("authority", "mercado.carrefour.com.br");
-         headers.put("accept", "*/*");
-         headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36");
-         headers.put("referer", session.getOriginalURL());
-         headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-         headers.put("cookie", "vtex_segment=" + getLocationToken());
+         cookiesBuilder.append("vtex_segment=").append(token).append(";");
       }
+      if (userLocationData != null) {
+         cookiesBuilder.append("userLocationData=").append(userLocationData).append(";");
+      }
+      headers.put("cookie", cookiesBuilder.toString());
 
       Request request = RequestBuilder.create()
          .setUrl(url)
@@ -91,7 +86,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       return response.getBody();
    }
 
-   Response alternativeFetch(Request request) {
+   protected Response alternativeFetch(Request request) {
       List<DataFetcher> dataFetchers = Arrays.asList(new ApacheDataFetcher(), new JsoupDataFetcher());
 
       Response response = null;
@@ -116,7 +111,18 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    @Override
    protected Object fetch() {
+
       return Jsoup.parse(fetchPage(session.getOriginalURL()));
+   }
+
+   @Override
+   protected String scrapInternalpid(Document doc) {
+      String internalPid = super.scrapInternalpid(doc);
+      if (internalPid == null) {
+         JSONObject json = crawlProductApi(internalPid, null);
+         internalPid = json.optString("productId");
+      }
+      return internalPid;
    }
 
    @Override
@@ -127,11 +133,13 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
       String url = homePage + "api/catalog_system/pub/products/search/" + path;
 
-      String body = fetchPage(url);
-      JSONArray array = CrawlerUtils.stringToJsonArray(body);
+      if (crawlerApi == null) {
+         String body = fetchPage(url);
+         crawlerApi = CrawlerUtils.stringToJsonArray(body);
+      }
 
-      if (!array.isEmpty()) {
-         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      if (!crawlerApi.isEmpty()) {
+         productApi = crawlerApi.optJSONObject(0) == null ? new JSONObject() : crawlerApi.optJSONObject(0);
       }
 
       return productApi;
@@ -157,6 +165,11 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       }
 
       return spotlightPrice;
+   }
+
+   @Override
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      return (JSONUtils.getStringValue(productJson, "description") + "\n" + scrapSpecsDescriptions(productJson)).trim();
    }
 
    @Override

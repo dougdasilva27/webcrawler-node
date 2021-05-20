@@ -12,6 +12,8 @@ public abstract class ArgentinaRappiCrawler extends RappiCrawlerRanking {
 
    public ArgentinaRappiCrawler(Session session) {
       super(session);
+      PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/producto/";
+
    }
 
    public static final String API_DOMAIN = "rappi.com.ar";

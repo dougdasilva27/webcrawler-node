@@ -2,10 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
@@ -25,6 +24,7 @@ import org.jsoup.nodes.Document;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.sql.SQLOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -113,7 +113,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    @Override
    protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0.hqboso .more-offers__Touchable-sc-15yqej3-2[href]", "href");
+      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0 a[aria-current]", "href");
       String offersPageUrl = CrawlerUtils.completeUrl(scrapUrl, "https://", "americanas.com.br");
 
       JSONObject jsonSeller;
@@ -135,17 +135,19 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             Integer.toString(statusCode).charAt(0) != '3'
             && statusCode != 404)) {
             request.setProxyServices(Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR));
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
 
-            content = new FetcherDataFetcher().get(session, request).getBody();
+            content = new JsoupDataFetcher().get(session, request).getBody();
          }
 
          Document offersDoc = Jsoup.parse(content);
 
-         jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
+         jsonSeller = CrawlerUtils.selectJsonFromHtml(offersDoc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
       } else {
          jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+
       }
 
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
@@ -161,6 +163,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
          for (int i = 0; i < sellerInfo.length(); i++) {
             JSONObject info = (JSONObject) sellerInfo.get(i);
+
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
                String internalSellerId = info.get("id").toString();
@@ -168,7 +171,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
                Integer sellersPagePosition = i == 0 ? 1 : null;
 
                if (i > 0 && name.equalsIgnoreCase("b2w")) {
-                  sellersPagePosition = 2;
+                  sellersPagePosition = 1;
                   twoPositions = true;
                }
 
@@ -194,10 +197,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          Map<String, Double> sortedMap = sortMapByValue(mapOfSellerIdAndPrice);
 
          int position = twoPositions ? 3 : 2;
-
          for (Map.Entry<String, Double> entry : sortedMap.entrySet()) {
             for (Offer offer : offers.getOffersList()) {
-               if (offer.getInternalSellerId().equals(entry.getKey()) && offer.getSellersPagePosition() == null) {
+               if (offer.getInternalSellerId().equals(entry.getKey())&& offer.getSellersPagePosition() == null) {
                   offer.setSellersPagePosition(position);
                   position++;
                }

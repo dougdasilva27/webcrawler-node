@@ -45,7 +45,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    private static final String SELLER_NAME = "magalu";
    private static final String SELLER_NAME_1 = "magazine luiza";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-           Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
@@ -84,22 +84,22 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       boolean availableToBuy = !doc.select(".button__buy-product-detail").isEmpty();
       Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
-      RatingsReviews ratingReviews = crawlRatingNew(doc, internalId);
+      RatingsReviews ratingReviews = scrapRatingReviews(doc, internalId);
       String description = crawlDescription(doc, internalId);
 
       // Creating the product
       return ProductBuilder.create()
-              .setUrl(session.getOriginalURL())
-              .setInternalId(internalId)
-              .setInternalPid(internalId)
-              .setName(frontPageName)
-              .setCategories(categories)
-              .setPrimaryImage(primaryImage)
-              .setSecondaryImages(secondaryImages)
-              .setDescription(description)
-              .setOffers(offers)
-              .setRatingReviews(ratingReviews)
-              .build();
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setInternalPid(internalId)
+         .setName(frontPageName)
+         .setCategories(categories)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(secondaryImages)
+         .setDescription(description)
+         .setOffers(offers)
+         .setRatingReviews(ratingReviews)
+         .build();
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
@@ -110,13 +110,13 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
 
       offers.add(OfferBuilder.create()
-              .setUseSlugNameAsInternalSellerId(true)
-              .setSellerFullName(sellerFullName)
-              .setMainPagePosition(1)
-              .setIsBuybox(false)
-              .setIsMainRetailer(isMainRetailer)
-              .setPricing(pricing)
-              .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(sellerFullName)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(isMainRetailer)
+         .setPricing(pricing)
+         .build());
 
       return offers;
    }
@@ -129,11 +129,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       BankSlip bankSlip = scrapBankslip(doc, spotlightPrice);
 
       return PricingBuilder.create()
-              .setPriceFrom(priceFrom)
-              .setSpotlightPrice(spotlightPrice)
-              .setCreditCards(creditCards)
-              .setBankSlip(bankSlip)
-              .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
    private BankSlip scrapBankslip(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -147,9 +147,9 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       }
 
       return BankSlipBuilder.create()
-              .setFinalPrice(bkPrice)
-              .setOnPageDiscount(discount)
-              .build();
+         .setFinalPrice(bkPrice)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    private CreditCards scrapCreditCardsFromProductPage(Document doc, Double spotlightPrice) throws MalformedPricingException {
@@ -158,17 +158,17 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       Installments regularCard = scrapInstallments(doc, ".method-payment__card-box .method-payment__values--general-cards li > p");
       if (regularCard.getInstallments().isEmpty()) {
          regularCard.add(InstallmentBuilder.create()
-                 .setInstallmentNumber(1)
-                 .setInstallmentPrice(spotlightPrice)
-                 .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-                 .setBrand(brand)
-                 .setIsShopCard(false)
-                 .setInstallments(regularCard)
-                 .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(regularCard)
+            .build());
       }
 
       Installments shopCard = scrapInstallments(doc, ".method-payment__card-luiza-box ul[class^=method-payment__values--] li > p");
@@ -178,10 +178,10 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       }
 
       creditCards.add(CreditCardBuilder.create()
-              .setBrand(Card.SHOP_CARD.toString())
-              .setIsShopCard(true)
-              .setInstallments(shopCard)
-              .build());
+         .setBrand(Card.SHOP_CARD.toString())
+         .setIsShopCard(true)
+         .setInstallments(shopCard)
+         .build());
 
       return creditCards;
    }
@@ -199,18 +199,18 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
          if (!pair.isAnyValueNull()) {
             installments.add(InstallmentBuilder.create()
-                    .setInstallmentNumber(pair.getFirst())
-                    .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
-                    .setOnPageDiscount(discount)
-                    .build());
+               .setInstallmentNumber(pair.getFirst())
+               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(pair.getSecond().doubleValue()))
+               .setOnPageDiscount(discount)
+               .build());
          } else if (!e.ownText().contains("x")) {
             Double price = MathUtils.parseDoubleWithComma(e.ownText());
             installments.add(InstallmentBuilder.create()
-                    .setInstallmentNumber(1)
-                    .setInstallmentPrice(price)
-                    .setFinalPrice(price)
-                    .setOnPageDiscount(discount)
-                    .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(price)
+               .setFinalPrice(price)
+               .setOnPageDiscount(discount)
+               .build());
          }
       }
 
@@ -424,65 +424,84 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return skuJson;
    }
 
-   public RatingsReviews crawlRatingNew(Document doc, String internalId) {
-
-      RatingsReviews ratingReviews = crawlRatingReviews(doc, internalId);
-      ratingReviews.setInternalId(internalId);
-
-      return ratingReviews;
-   }
-
-   private RatingsReviews crawlRatingReviews(Document doc, String internalId) {
+   private RatingsReviews scrapRatingReviews(Document doc, String internalId) {
       RatingsReviews ratingReviews = new RatingsReviews();
-
-      ratingReviews.setDate(session.getDate());
-
-      ratingReviews.setTotalRating(getTotalReviewCount(doc));
-      ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
-      ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(internalId));
-
-      return ratingReviews;
-   }
-
-   private JSONObject fetchAdvancedRating(String internalId, int page) {
-      String url = "https://www.magazineluiza.com.br/review/" + internalId + "?page=" + page;
-      Request request = Request.RequestBuilder.create().setUrl(url).build();
-      return JSONUtils.stringToJson(dataFetcher.get(session, request).getBody());
-
-   }
-
-   private AdvancedRatingReview scrapAdvancedRatingReview(String internalId) {
-
-      int totalPages = 0;
-
       Map<Integer, Integer> starsCount = new HashMap<>();
+      int totalPages = 0;
+      int writtenReviewsCount = 0;
 
       for (int page = 1; page <= totalPages || totalPages == 0; ++page) {
          JSONObject ratingJson = fetchAdvancedRating(internalId, page);
-         JSONObject data = JSONUtils.getJSONValue(ratingJson, "data");
 
-         if (totalPages == 0) {
-            totalPages = data.optInt("pages", -1);
-         }
+         if (ratingJson != null && !ratingJson.isEmpty()) {
+            JSONObject data = JSONUtils.getJSONValue(ratingJson, "data");
 
-         JSONArray objects = JSONUtils.getJSONArrayValue(data, "objects");
+            if (page == 1) {
+               totalPages = data.optInt("pages", -1);
+               Object totalReviews = data.optQuery("/ratings/total_review_count");
+               Object avg = data.optQuery("/ratings/average_rating");
 
-         for (Object ratingObject : objects) {
-            if (ratingObject instanceof JSONObject) {
-               int rating = ((JSONObject) ratingObject).optInt("rating");
-               if (rating > 0 && rating <= 5) {
-                  Integer count = starsCount.getOrDefault(rating, 0) + 1;
-                  starsCount.put(rating, count);
-               } else {
-                  Logging.printLogError(logger, session, "rating error: rating star error");
+               ratingReviews.setDate(session.getDate());
+               ratingReviews.setTotalRating(Objects.nonNull(totalReviews) ? (Integer) totalReviews : null);
+               ratingReviews.setAverageOverallRating(Objects.nonNull(avg) ? ((Integer) avg).doubleValue() : null);
+            }
+
+            JSONArray objects = JSONUtils.getJSONArrayValue(data, "objects");
+
+            for (Object ratingObject : objects) {
+               if (ratingObject instanceof JSONObject) {
+                  int rating = ((JSONObject) ratingObject).optInt("rating");
+                  if (rating > 0 && rating <= 5) {
+                     Integer count = starsCount.getOrDefault(rating, 0) + 1;
+                     starsCount.put(rating, count);
+
+                     String writtenReview = ((JSONObject) ratingObject).optString("review_text");
+                     if (writtenReview != null && !writtenReview.equals("")) {
+                        writtenReviewsCount++;
+                     }
+                  } else {
+                     Logging.printLogError(logger, session, "rating error: rating star error");
+                  }
                }
             }
+         } else {
+            //The ratings API is unstable. If the API response is empty, then we catch the information present on html page,
+            //total ratings and average rating
+            ratingReviews = scrapRatingsAlternativeWay(doc);
+            break;
          }
       }
 
-      return new AdvancedRatingReview.Builder()
-              .allStars(starsCount)
-              .build();
+      if (starsCount.size() != 0 && writtenReviewsCount != 0) {
+         ratingReviews.setTotalWrittenReviews(writtenReviewsCount);
+         ratingReviews.setAdvancedRatingReview(new AdvancedRatingReview.Builder()
+            .allStars(starsCount)
+            .build());
+      }
+
+      return ratingReviews;
+   }
+
+
+   private JSONObject fetchAdvancedRating(String internalId, int page) {
+      String url = "https://www.magazineluiza.com.br/review/" + internalId + "/?page=" + page;
+      Request request = Request.RequestBuilder.create().setUrl(url).build();
+      return JSONUtils.stringToJson(dataFetcher.get(session, request).getBody());
+   }
+
+   private RatingsReviews scrapRatingsAlternativeWay(Document doc) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      Element ratingsElement = doc.selectFirst("div.product-review > div.wrapper-review");
+
+      if (ratingsElement != null) {
+         ratingReviews.setDate(session.getDate());
+
+         ratingReviews.setTotalRating(getTotalReviewCount(doc));
+         ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
+      }
+
+      return ratingReviews;
    }
 
    private Integer getTotalReviewCount(Document doc) {

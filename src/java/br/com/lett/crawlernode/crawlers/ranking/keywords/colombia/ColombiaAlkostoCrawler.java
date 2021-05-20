@@ -3,11 +3,10 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.colombia;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
 
@@ -19,19 +18,20 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 30;
+      this.pageSize = 25;
       this.log("Página " + this.currentPage);
 
-      String url = crawlUrl();
+      String url = "https://www.alkosto.com/search/?text=" + this.keywordEncoded + "&page=" + this.currentPage + "&pageSize=25&sort=relevance";
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".products-grid .item");
+
+      Elements products = this.currentDoc.select("ul.product__listing.product__list > li.product__list--item");
 
       if (!products.isEmpty()) {
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.yotpo.bottomLine", "data-product-id");
-            String productUrl = CrawlerUtils.scrapUrl(e, ".amlabel-div a", Arrays.asList("href"), "https", HOME_PAGE);
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "h2.product__information--name > a.js-product-click-datalayer", "data-id");
+            String productUrl = CrawlerUtils.scrapUrl(e, "h2.product__information--name > a.js-product-click-datalayer", Collections.singletonList("href"), "https", HOME_PAGE);
 
             saveDataProduct(null, internalPid, productUrl);
 
@@ -52,24 +52,15 @@ public class ColombiaAlkostoCrawler extends CrawlerRankingKeywords {
          + this.arrayProducts.size() + " produtos crawleados");
    }
 
-
-   private String crawlUrl() {
-      String urlFirstPage = "https://www.alkosto.com/salesperson/result/?q=" + this.keywordEncoded;
-      if (this.currentPage > 1) {
-         Document doc = fetchDocument(urlFirstPage);
-
-         return CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".pages li a", "href").replaceAll("p=2", "p=" + this.currentPage);
-
-      } else {
-
-         return urlFirstPage;
-      }
-
-   }
-
    @Override
    protected boolean hasNextPage() {
-      Element page = this.currentDoc.selectFirst(".pages .next");
-      return page != null;
+      String totalProductsStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(this.currentDoc, "span.js-search-count", "data-count");
+
+      if(totalProductsStr != null){
+         int totalProducts = Integer.parseInt(totalProductsStr);
+         return this.arrayProducts.size() < totalProducts;
+      }
+
+      return false;
    }
 }

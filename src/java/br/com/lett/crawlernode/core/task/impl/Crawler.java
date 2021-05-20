@@ -342,12 +342,14 @@ public abstract class Crawler extends Task {
       String url = handleURLBeforeFetch(session.getOriginalURL());
       session.setOriginalURL(url);
 
-      Object obj = fetch();
 
-
-      session.setProductPageResponse(obj);
 
       try {
+
+         Object obj = fetch();
+
+         session.setProductPageResponse(obj);
+
          if (obj instanceof Document) {
             products = extractInformation((Document) obj);
          } else if (obj instanceof JSONObject) {

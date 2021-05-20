@@ -193,11 +193,13 @@ public class GPACrawler extends Crawler {
       List<String> secondaryImagesArray = new ArrayList<>();
       JSONObject array = JSONUtils.getJSONValue(json, "mapOfImages");
       if (array != null && array.length() > 1) {
-         for (int i = 1; i < array.length(); i++) {
-            JSONObject jsonObject = array.optJSONObject(Integer.toString(i));
-            String image = jsonObject.optString("BIG");
-            String imageUrl = new URIBuilder(homePageHttps).setPath(image).toString();
-            secondaryImagesArray.add(imageUrl);
+         for (String s : array.keySet()) {
+            if(!s.equals("0")) {
+               JSONObject jsonObject = array.optJSONObject(s);
+               String image = jsonObject.optString("BIG");
+               String imageUrl = new URIBuilder(homePageHttps).setPath(image).toString();
+               secondaryImagesArray.add(imageUrl);
+            }
          }
       }
 
@@ -365,6 +367,8 @@ public class GPACrawler extends Crawler {
          Pricing pricing = scrapPricing(data);
          String sales = CrawlerUtils.calculateSales(pricing);
          String sellerName = JSONUtils.getStringValue(data, "name");
+         boolean isMainRetailersMainRetailer = data.optString("sellType","").equals("1P");
+
 
          offers.add(Offer.OfferBuilder.create()
             .setUseSlugNameAsInternalSellerId(true)
@@ -373,7 +377,7 @@ public class GPACrawler extends Crawler {
             .setMainPagePosition(1)
             .setSellersPagePosition(1)
             .setIsBuybox(false)
-            .setIsMainRetailer(true)
+            .setIsMainRetailer(isMainRetailersMainRetailer)
             .setPricing(pricing)
             .build());
       }
