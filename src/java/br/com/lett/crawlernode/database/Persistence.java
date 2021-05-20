@@ -967,8 +967,10 @@ public class Persistence {
    }
 
    public static ScraperInformation fetchScraperInfoToOneMarket(int marketId) {
-
+      Connection conn = null;
+      Statement sta = null;
       ScraperInformation scraperInformation = null;
+
       try {
 
          String query = "WITH market_informations AS (" +
@@ -984,8 +986,8 @@ public class Persistence {
             "WHERE market_informations.\"type\" = 'CORE'";
 
 
-         Connection conn = JdbcConnectionFactory.getInstance().getConnection();
-         Statement sta = conn.createStatement();
+         conn = JdbcConnectionFactory.getInstance().getConnection();
+         sta = conn.createStatement();
          ResultSet rs = sta.executeQuery(query);
 
          while (rs.next()) {
@@ -997,7 +999,9 @@ public class Persistence {
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
-
+      } finally {
+         JdbcConnectionFactory.closeResource(sta);
+         JdbcConnectionFactory.closeResource(conn);
       }
 
       return scraperInformation;
