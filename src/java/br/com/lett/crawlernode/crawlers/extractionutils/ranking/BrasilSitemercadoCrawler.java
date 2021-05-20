@@ -1,20 +1,18 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
@@ -44,7 +42,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    }
 
 
-   protected String ApiSearchUrl(String lojaId) {
+   protected String apiSearchUrl(String lojaId) {
       return API_URL + lojaId + "/product/load_search/";
    }
 
@@ -157,7 +155,7 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
       }
 
 
-      String apiUrl = ApiSearchUrl(lojaId) + this.keywordEncoded;
+      String apiUrl = apiSearchUrl(lojaId) + this.keywordEncoded.replace("+", "%20");
       Request requestApi = RequestBuilder.create()
          .setUrl(apiUrl)
          .setCookies(cookies)
