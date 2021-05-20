@@ -11,13 +11,17 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import enums.QueueName;
 import models.Processed;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.stringToJson;
 
 
 public class Scheduler {
@@ -166,7 +170,7 @@ public class Scheduler {
       marketInfo.put("use_browser", scraper.isUseBrowser());
       marketInfo.put("name", market.getName());
       jsonToSendToCrawler.put("type", scraperType);
-      jsonToSendToCrawler.put("options", CommonMethods.jsonRefinement(scraper.getOptionsScraper(), scraper.getOptionsScraperClass()));
+      jsonToSendToCrawler.put("options", jsonOptionsRefine(scraper.getOptionsScraper(), scraper.getOptionsScraperClass()));
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", scraper.getClassName());
       jsonToSendToCrawler.put("parameters", parameters);
@@ -175,5 +179,32 @@ public class Scheduler {
       return jsonToSendToCrawler;
 
    }
+
+   public static JSONObject jsonOptionsRefine(String optionsScraper, String optionSuperClass) throws JSONException {
+      JSONObject optionsScraperJson = stringToJson(optionsScraper);
+      JSONObject optionsScraperSuperClassJson = stringToJson(optionSuperClass);
+      JSONObject result = new JSONObject();
+      String keyProxies = "proxies";
+
+      for (Iterator<String> it = optionsScraperJson.keys(); it.hasNext(); ) {
+         String key = it.next();
+         Object valueKey = optionsScraperJson.opt(key);
+
+
+         result.put(key, valueKey);
+
+      }
+
+      if (optionsScraperJson.optJSONArray(keyProxies) != null){
+         result.put("proxies", optionsScraperJson.optJSONArray(keyProxies));
+      } else {
+         result.put("proxies", optionsScraperSuperClassJson.optJSONArray(keyProxies));
+
+      }
+
+
+      return result;
+   }
+
 
 }

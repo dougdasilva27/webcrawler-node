@@ -543,31 +543,7 @@ public class CommonMethods {
       return scraperInformation;
    }
 
-   public static JSONObject jsonRefinement(String optionsScraper, String optionSuperClass) throws JSONException {
-      JSONObject optionsScraperJson = stringToJson(optionsScraper);
-      JSONObject optionsScraperSuperClassJson = stringToJson(optionSuperClass);
-      JSONObject result = new JSONObject();
-      String keyProxies = "proxies";
 
-      for (Iterator<String> it = optionsScraperJson.keys(); it.hasNext(); ) {
-         String key = it.next();
-         Object valueKey = optionsScraperJson.opt(key);
-
-
-         result.put(key, valueKey);
-
-      }
-
-      if (optionsScraperJson.optJSONArray(keyProxies) != null){
-         result.put("proxies", optionsScraperJson.optJSONArray(keyProxies));
-      } else {
-         result.put("proxies", optionsScraperSuperClassJson.optJSONArray(keyProxies));
-
-      }
-
-
-      return result;
-   }
 
 
 

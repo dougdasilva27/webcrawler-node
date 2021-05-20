@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.session;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
@@ -123,25 +124,24 @@ public class Session {
       this.options = request.getOptions();
 
       JSONArray proxiesArray = this.options.optJSONArray("proxies");
-      if(proxiesArray!= null &&!proxiesArray.isEmpty()){
-         for (Object o :proxiesArray) {
+      if (proxiesArray != null && !proxiesArray.isEmpty()) {
+         for (Object o : proxiesArray) {
             String proxy = (String) o;
             proxies.add(proxy);
          }
-      }else {
-         proxies = Arrays.asList("buy","luminati_server_br","no_proxy");
+      } else {
+         proxies = Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NO_PROXY);
       }
 
       JSONArray imageProxiesArray = this.options.optJSONArray("proxies");
-      if(imageProxiesArray!= null &&!imageProxiesArray.isEmpty()){
-         for (Object o :imageProxiesArray) {
+      if (imageProxiesArray != null && !imageProxiesArray.isEmpty()) {
+         for (Object o : imageProxiesArray) {
             String proxy = (String) o;
             imageProxies.add(proxy);
          }
-      }else {
-         imageProxies = Arrays.asList("buy","luminati_server_br","no_proxy");
+      } else {
+         imageProxies = Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NO_PROXY);
       }
-
 
 
       if (!(request instanceof CrawlerRankingKeywordsRequest)) {
@@ -311,7 +311,7 @@ public class Session {
       this.proxies = proxies;
    }
 
-public List<String> getProxies(){
+   public List<String> getProxies() {
       return this.proxies;
    }
 
