@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.campinagrande;
 
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BrasilSitemercadoCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
+import org.json.JSONObject;
 
 /**
  * @author gabriel date: 2019-09-24

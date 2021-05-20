@@ -17,7 +17,7 @@ class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
    }
 
    init {
-      fetchMode = FetchMode.JAVANET
+      fetchMode = FetchMode.FETCHER
       pageSize = 25
    }
 
@@ -44,14 +44,14 @@ class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
            },
            "operationName": null
          }""".trimIndent()
-      val headers = mapOf("Content-Type" to "application/json")
+      val headers = mutableMapOf("Content-Type" to "application/json")
 
       val request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies)
          .setPayload(body).setHeaders(headers).build()
 
       val response = dataFetcher.post(session, request)
       val json = CrawlerUtils.stringToJson(response.body)
-      val apiResp = json.optQuery("/data/search") as JSONObject
+      val apiResp = json.optQuery("/data/search") as JSONObject? ?: throw IllegalStateException("Not possible to retrieve searched data")
 
       if (currentPage == 1) {
          totalProducts = apiResp.optInt("total")
