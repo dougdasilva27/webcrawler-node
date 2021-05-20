@@ -2,7 +2,8 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import org.json.JSONObject
+import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 
 class BrasilSodimacCrawler(session: Session?) : CrawlerRankingKeywords(session) {
    
@@ -11,14 +12,15 @@ class BrasilSodimacCrawler(session: Session?) : CrawlerRankingKeywords(session) 
    }
 
    override fun extractProductsFromCurrentPage() {
-      val url = "https://www.sodimac.com.br/s/search/v1/sobr?q=$keywordEncoded&priceGroup=1018&zone=35745&currentpage=$currentPage"
-      val jsonApi = fetchJSONObject(url)
+      val url = "https://www.sodimac.com.br/sodimac-br/search?Ntt=$keywordEncoded&currentpage=$currentPage"
+      val doc = fetchDocument(url)
 
-      jsonApi?.optJSONObject("data")?.optJSONArray("results")?.forEach { elem ->
-         if (elem is JSONObject) {
-            val internal = elem.optString("skuId")
-            val productUrl = "https://www.sodimac.com.br/sodimac-br/product/$internal/${elem.optString("displayName")
-               .replace("""(,)?\s""".toRegex(), "-").replace(",", "")}/$internal"
+      val elements = doc?.select("div.search-results-products-container > div")!!
+
+      for (elem in elements) {
+         if (elem is Element) {
+            val internal = elem.attr("data-key")!!
+            val productUrl = "https://www.sodimac.com.br${elem.selectFirst("a.link-primary")?.attr("href")!!}"
 
             saveDataProduct(internal, null, productUrl)
             log("InternalId: $internal - Url: $productUrl")
