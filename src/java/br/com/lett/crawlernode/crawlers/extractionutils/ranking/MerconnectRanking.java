@@ -15,10 +15,22 @@ import java.util.Map;
 
 public abstract class MerconnectRanking extends CrawlerRankingKeywords {
 
+   /**
+    * Can be found in the request https://www.merconnect.com.br/mapp/v2/markets/by_neighborhood?cep=xxxxx
+    * @return store id for cep
+    */
    protected abstract String getStoreId();
 
+   /**
+    * Can be found in the request https://www.merconnect.com.br/oauth/token
+    * @return client id
+    */
    protected abstract String getClientId();
 
+   /**
+    * Can be found in the request https://www.merconnect.com.br/oauth/token
+    * @return client secret
+    */
    protected abstract String getClientSecret();
 
    protected abstract String getHomePage();
