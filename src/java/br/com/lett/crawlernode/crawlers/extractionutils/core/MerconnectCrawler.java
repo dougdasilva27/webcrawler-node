@@ -22,15 +22,18 @@ import java.util.*;
 
 public abstract class MerconnectCrawler extends Crawler {
 
-   public MerconnectCrawler(Session session) {
+   protected MerconnectCrawler(Session session) {
       super(session);
 
       config.setFetcher(FetchMode.JSOUP);
    }
 
-   protected abstract String getStoreId();
+   //Client ID and Client Secret can be found in token request. If you cannot found this request in browser, open the website in anonymous mode tracking the requests.
    protected abstract String getClientId();
    protected abstract String getClientSecret();
+
+   //The store id can be found in the product json in the key "marketId"
+   protected abstract String getStoreId();
 
    @Override
    protected JSONObject fetch() {
