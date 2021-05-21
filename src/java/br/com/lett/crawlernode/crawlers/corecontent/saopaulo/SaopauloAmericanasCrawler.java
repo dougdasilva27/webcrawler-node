@@ -36,6 +36,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private static final String HOME_PAGE = "https://www.americanas.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "americanas.com";
+   private static final String MAIN_SELLER_NAME_LOWER_FROM_HTML = "Americanas";
    private static final int RATING_API_VERSION = 1;
    private static final String KEY_SHA_256 = "291cd512e18fb8148bb39aa57d389741fd588346b0fd8ce2260a21c3a34b6598";
 
@@ -43,6 +44,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super(session);
       super.subSellers = Arrays.asList("b2w", "lojas americanas", "lojas americanas mg", "lojas americanas rj", "lojas americanas sp", "lojas americanas rs");
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
+      super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
       super.config.setFetcher(FetchMode.JSOUP);
    }
