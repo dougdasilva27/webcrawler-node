@@ -10,6 +10,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -24,16 +25,18 @@ public abstract class MerconnectCrawler extends Crawler {
 
    protected MerconnectCrawler(Session session) {
       super(session);
-
       config.setFetcher(FetchMode.JSOUP);
    }
 
    //Client ID and Client Secret can be found in token request. If you cannot found this request in browser, open the website in anonymous mode tracking the requests.
    protected abstract String getClientId();
+
    protected abstract String getClientSecret();
 
    //The store id can be found in the product json in the key "marketId"
    protected abstract String getStoreId();
+
+   protected abstract String getSellerName();
 
    @Override
    protected JSONObject fetch() {
@@ -92,20 +95,22 @@ public abstract class MerconnectCrawler extends Crawler {
       super.extractInformation(json);
       List<Product> products = new ArrayList<>();
 
-      if (json.has("item")) {
+      JSONObject jsonSku = json.optJSONObject("item");
+
+      if (Objects.nonNull(jsonSku) && !jsonSku.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = scrapInternalId(json);
+         String internalId = scrapInternalId(jsonSku);
          String internalPid = internalId;
-         String name = scrapProductName(json);
-         String primaryImage = scrapPrimaryImage(json);
+         String name = scrapProductName(jsonSku);
+         String primaryImage = scrapPrimaryImage(jsonSku);
 
-         String ean = scrapEan(json);
+         String ean = scrapEan(jsonSku);
          List<String> eans = new ArrayList<>();
          eans.add(ean);
 
-         Integer stock = scrapStock(json);
-         Offers offers = stock > 0 ? scrapOffers(json) : new Offers();
+         Integer stock = scrapStock(jsonSku);
+         Offers offers = stock > 0 ? scrapOffers(jsonSku) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -141,14 +146,8 @@ public abstract class MerconnectCrawler extends Crawler {
    }
 
    protected Integer scrapStock(JSONObject json) {
-      Integer stock = 0;
-      String stockStr = json.optString("stock");
-
-      if (Objects.nonNull(stockStr) && !stockStr.equals("")) {
-         stock = Integer.parseInt(stockStr);
-      }
-
-      return stock;
+      Double stock = json.optDouble("stock");
+      return stock != null ? stock.intValue() : 0;
    }
 
    protected String scrapEan(JSONObject json) {
@@ -162,7 +161,8 @@ public abstract class MerconnectCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
       sales.add(CrawlerUtils.calculateSales(pricing));
 
-      Offer offer = new Offer.OfferBuilder().setSellerFullName("Rappi")
+      Offer offer = new Offer.OfferBuilder()
+         .setSellerFullName(getSellerName())
          .setInternalSellerId(json.optString("market_id", null))
          .setMainPagePosition(1)
          .setIsBuybox(false)
