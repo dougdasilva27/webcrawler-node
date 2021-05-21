@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoOldRappiCrawlerRanking;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoRappiCrawlerRanking;
 
-public class MexicoRappisuperamapueblaCrawler extends MexicoOldRappiCrawlerRanking {
+public class MexicoRappisuperamapueblaCrawler extends MexicoRappiCrawlerRanking {
 
    public static final String STORE_ID = "3894";
 

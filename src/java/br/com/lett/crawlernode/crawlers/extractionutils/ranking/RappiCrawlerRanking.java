@@ -32,7 +32,10 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
    protected abstract String getStoreId();
 
-   protected abstract String getStoreType();
+   @Deprecated
+   protected  String getStoreType(){
+      return "";
+   }
 
    protected abstract String getApiDomain();
 

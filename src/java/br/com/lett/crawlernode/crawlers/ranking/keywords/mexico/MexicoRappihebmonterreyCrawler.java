@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoOldRappiCrawlerRanking;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoRappiCrawlerRanking;
 
 public class MexicoRappihebmonterreyCrawler extends MexicoRappiCrawlerRanking {
@@ -10,6 +9,7 @@ public class MexicoRappihebmonterreyCrawler extends MexicoRappiCrawlerRanking {
 
    public MexicoRappihebmonterreyCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override
