@@ -7,7 +7,7 @@ public class SaopauloRappidrogaraiajardimpaulistanoCrawler extends BrasilRappiCr
 
    private static final String STORE_TYPE = "raia";
    private static final String LOCATION = "lng=-46.6878809&lat=-23.5765562";
-   public static final String STORE_ID = "900004067";
+   public static final String STORE_ID = "900170875";
 
    public SaopauloRappidrogaraiajardimpaulistanoCrawler(Session session) {
       super(session);
