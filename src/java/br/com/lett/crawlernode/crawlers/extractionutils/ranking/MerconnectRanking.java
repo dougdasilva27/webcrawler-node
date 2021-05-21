@@ -5,7 +5,9 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -17,18 +19,21 @@ public abstract class MerconnectRanking extends CrawlerRankingKeywords {
 
    /**
     * Can be found in the request https://www.merconnect.com.br/mapp/v2/markets/by_neighborhood?cep=xxxxx
+    *
     * @return store id for cep
     */
    protected abstract String getStoreId();
 
    /**
     * Can be found in the request https://www.merconnect.com.br/oauth/token
+    *
     * @return client id
     */
    protected abstract String getClientId();
 
    /**
     * Can be found in the request https://www.merconnect.com.br/oauth/token
+    *
     * @return client secret
     */
    protected abstract String getClientSecret();
@@ -99,7 +104,8 @@ public abstract class MerconnectRanking extends CrawlerRankingKeywords {
 
    protected String retrieveUrl(JSONObject product) {
       try {
-         return new URIBuilder(getHomePage()).setPath("produto").setPath(product.optString("id")).toString();
+         return new URIBuilder(getHomePage()).setPath("produto").setPath(product.optString("id"))
+            .setParameter("origin", "highlight").toString();
       } catch (URISyntaxException e) {
          return null;
       }
