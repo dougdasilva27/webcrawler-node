@@ -20,18 +20,16 @@ import org.json.JSONObject;
 
 import java.util.*;
 
-public abstract class BrasilMerconnectCrawler extends Crawler {
+public abstract class MerconnectCrawler extends Crawler {
 
-   public BrasilMerconnectCrawler(Session session) {
+   public MerconnectCrawler(Session session) {
       super(session);
 
       config.setFetcher(FetchMode.JSOUP);
    }
 
    protected abstract String getStoreId();
-
    protected abstract String getClientId();
-
    protected abstract String getClientSecret();
 
    @Override
