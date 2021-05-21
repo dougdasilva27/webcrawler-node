@@ -36,6 +36,8 @@ public abstract class MerconnectCrawler extends Crawler {
    //The store id can be found in the product json in the key "marketId"
    protected abstract String getStoreId();
 
+   protected abstract String getSellerName();
+
    @Override
    protected JSONObject fetch() {
       JSONObject json = new JSONObject();
@@ -159,7 +161,8 @@ public abstract class MerconnectCrawler extends Crawler {
       List<String> sales = new ArrayList<>();
       sales.add(CrawlerUtils.calculateSales(pricing));
 
-      Offer offer = new Offer.OfferBuilder().setSellerFullName("Rappi")
+      Offer offer = new Offer.OfferBuilder()
+         .setSellerFullName(getSellerName())
          .setInternalSellerId(json.optString("market_id", null))
          .setMainPagePosition(1)
          .setIsBuybox(false)
