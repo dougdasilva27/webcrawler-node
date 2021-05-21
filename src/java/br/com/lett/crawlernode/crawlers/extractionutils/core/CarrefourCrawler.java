@@ -40,6 +40,10 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
       super.config.setFetcher(FetchMode.JAVANET);
    }
 
+   /**
+    * Usually it is the "vtex_segment" cookie
+    * @return location token string
+    */
    protected abstract String getLocationToken();
 
    protected String getCep() {
