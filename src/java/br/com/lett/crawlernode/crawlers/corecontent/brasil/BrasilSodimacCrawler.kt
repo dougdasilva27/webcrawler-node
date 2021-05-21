@@ -36,6 +36,7 @@ class BrasilSodimacCrawler(session: Session?) : Crawler(session) {
       val products: MutableList<Product> = ArrayList()
       if (doc.selectFirst(".product-basic-info") != null) {
          val internalPid = doc.selectFirst(".product-cod").text().split(" ")[1]
+         val productName = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.product-title", false)
          val images = doc.select(".product-swatches img").eachAttr("src").map { img ->
             img.replace("wid=70&hei=70", "wid=420&hei=420")
          }.toMutableList()
@@ -48,7 +49,6 @@ class BrasilSodimacCrawler(session: Session?) : Crawler(session) {
 
          for (variant in variants) {
             variant as JSONObject
-            val productName = variant.optString("name")
             val internalId = variant.optString("id")
 
             val isAvailable = doc.selectFirst("div.out-of-stock-text") == null
@@ -96,7 +96,7 @@ class BrasilSodimacCrawler(session: Session?) : Crawler(session) {
 
       offers.add(OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("Sodimac")
+         .setSellerFullName("Sodimac brasil")
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)

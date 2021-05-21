@@ -2,20 +2,40 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import org.jsoup.nodes.Document
+import br.com.lett.crawlernode.util.CommonMethods
 import org.jsoup.nodes.Element
 
+
 class BrasilSodimacCrawler(session: Session?) : CrawlerRankingKeywords(session) {
-   
+
+   private var isCategory = false
+   private var urlCategory: String? = null
+
    init {
       pageSize = 28
    }
 
    override fun extractProductsFromCurrentPage() {
-      val url = "https://www.sodimac.com.br/sodimac-br/search?Ntt=$keywordEncoded&currentpage=$currentPage"
-      val doc = fetchDocument(url)
+      var url = "https://www.sodimac.com.br/sodimac-br/search?Ntt=$keywordEncoded&currentpage=$currentPage"
 
-      val elements = doc?.select("div.search-results-products-container > div")!!
+      if (currentPage > 1 && isCategory) {
+         url = "${urlCategory}&currentpage=$currentPage"
+      }
+
+      this.currentDoc = fetchDocument(url)
+
+      if (this.currentPage == 1) {
+         val redirectUrl = this.session.getRedirectedToURL(url)
+
+         if (redirectUrl != null && !redirectUrl.equals(url)) {
+            isCategory = true
+            this.urlCategory = redirectUrl
+         } else {
+            isCategory = false
+         }
+      }
+
+      val elements = this.currentDoc?.select("div.search-results-products-container > div")!!
 
       for (elem in elements) {
          if (elem is Element) {
@@ -23,12 +43,12 @@ class BrasilSodimacCrawler(session: Session?) : CrawlerRankingKeywords(session) 
             val productUrl = "https://www.sodimac.com.br${elem.selectFirst("a.link-primary")?.attr("href")!!}"
 
             saveDataProduct(internal, null, productUrl)
-            log("InternalId: $internal - Url: $productUrl")
+            log("${this.position} - InternalId: $internal - Url: $productUrl")
          }
       }
    }
 
    override fun checkIfHasNextPage(): Boolean {
-      return (arrayProducts.size % pageSize - currentPage) < 0
+      return this.currentDoc.selectFirst("button[id=bottom-pagination-next-page]") != null
    }
 }
