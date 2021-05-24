@@ -17,7 +17,7 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 60;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.magazineluiza.com.br/busca/" + this.keywordEncoded + "/" + this.currentPage;
+      String url = "https://www.magazineluiza.com.br/busca/" + keywordEncoded + "/" + this.currentPage +"/";
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
