@@ -476,25 +476,18 @@ public abstract class CrawlerRanking extends Task {
 
 
    /**
-    *
-    *
     * @param entries
     */
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
       System.err.println(executionParameters.getEnvironment());
-      if(executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_DEVELOPMENT)) {
-         queueName = QueueName.CORE_DEV.toString();
-      }else {
-         if (session instanceof EqiRankingDiscoverKeywordsSession) {
-            queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
-         } else {
-            queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
-         }
+      if (session instanceof EqiRankingDiscoverKeywordsSession) {
+         queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
+      } else {
+         queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
       }
 
-      queueName = QueueName.CORE_DEV.toString();
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
@@ -513,7 +506,7 @@ public abstract class CrawlerRanking extends Task {
             count++;
          }
 
-         this.log(successResultEntryList.size() + " messages sended to "+ queueName);
+         this.log(successResultEntryList.size() + " messages sended to " + queueName);
       }
 
    }
