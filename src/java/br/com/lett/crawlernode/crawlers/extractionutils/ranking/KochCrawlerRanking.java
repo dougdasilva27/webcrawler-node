@@ -1,23 +1,32 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class KochCrawlerRanking extends CrawlerRankingKeywords {
 
-   protected static final String LOCATION_COOKIE_NAME = "ls.uid_armazem";
-   protected static final String LOCATION_COOKIE_DOMAIN = "www.superkoch.com.br";
-   protected static final String LOCATION_COOKIE_PATH = "/";
 
-   private static final String HOME_PAGE = "https://www.superkoch.com.br/";
+   protected String storeId;
+
+   public String getStoreId() {
+      return storeId;
+   }
+
+   public void setStoreId(String storeId) {
+      this.storeId = storeId;
+   }
+
 
    public KochCrawlerRanking(Session session) {
       super(session);
@@ -25,23 +34,26 @@ public class KochCrawlerRanking extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 30;
+      this.pageSize = 12;
       this.log("Página " + this.currentPage);
-      JSONArray products = fetchProductsApi();
+      this.currentDoc = fetchProducts();
 
-      if (!products.isEmpty()) {
-         for (Object o : products) {
-            JSONObject product = (JSONObject) o;
-            String productUrl = HOME_PAGE + product.optString("str_link_produto");;
-            String internalPid = product.optString("id_produto", null);
+      Elements elements = this.currentDoc.select(".item.product.product-item");
 
-            saveDataProduct(null, internalPid, productUrl);
+      if (!elements.isEmpty()) {
+         for (Element e : elements) {
+
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-info a", "href");
+
+            String internalId = CommonMethods.getLast(productUrl.split("-"));
+
+            saveDataProduct(internalId, null, productUrl);
 
             this.log(
-                  "Position: " + this.position +
-                        " - InternalId: " + null +
-                        " - InternalPid: " + internalPid +
-                        " - Url: " + productUrl);
+               "Position: " + this.position +
+                  " - InternalId: " + internalId +
+                  " - InternalPid: " + null +
+                  " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit)
                break;
@@ -53,46 +65,30 @@ public class KochCrawlerRanking extends CrawlerRankingKeywords {
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-            + this.arrayProducts.size() + " produtos crawleados");
+         + this.arrayProducts.size() + " produtos crawleados");
 
    }
 
    @Override
    protected boolean hasNextPage() {
-      return this.arrayProducts.size() >= this.pageSize
-            && (this.arrayProducts.size() / this.currentPage) >= this.pageSize;
+      return !this.currentDoc.select(".item.pages-item-next").isEmpty();
    }
 
-   private JSONArray fetchProductsApi() {
-      JSONArray products = new JSONArray();
+   private Document fetchProducts() {
 
-      JSONObject payload = new JSONObject();
-      payload.put("descricao", this.keywordWithoutAccents);
-      payload.put("order", "MV");
-      payload.put("pg", this.currentPage);
-      payload.put("marcas", new JSONArray());
-      payload.put("categorias", new JSONArray());
-      payload.put("subcategorias", new JSONArray());
-      payload.put("precoIni", 0);
-      payload.put("precoFim", 0);
-      payload.put("avaliacoes", new JSONArray());
-      payload.put("num_reg_pag", this.pageSize);
-      payload.put("visualizacao", "CARD");
+      String url = "https://www.superkoch.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
+      headers.put("cookie", "form_key=yZug8KVdIDv9KIDJ; mage-banners-cache-storage=%7B%7D; user_allowed_save_cookie=%7B%228%22%3A1%7D; _gcl_au=1.1.1261254508.1621623463; _gid=GA1.3.1696196086.1621623463; _ga=GA1.3.1704467533.1621623463; customer_website=website_lj" + storeId + "; _ga_L35DKV9QJM=GS1.1.1621622690.2.1.1621624514.7");
 
-      Request request = RequestBuilder.create()
-            .setHeaders(headers)
-            .setUrl("https://www.superkoch.com.br/api/busca")
-            .setPayload(payload.toString())
-            .build();
+      Request req = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
 
-      JSONObject api = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
-      if (api.has("Produtos") && api.get("Produtos") instanceof JSONArray) {
-         products = api.getJSONArray("Produtos");
-      }
+      String content = this.dataFetcher.get(session, req).getBody();
 
-      return products;
+
+      return Jsoup.parse(content);
    }
 }
