@@ -8,6 +8,8 @@ import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.ScraperInformation;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -100,11 +102,6 @@ public class Session {
       this.redirectionMap = new HashMap<>();
       requestProxyMap = new HashMap<>();
       maxConnectionAttemptsWebcrawler = 0;
-
-
-      for (String proxy : this.proxies) {
-         maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
-      }
 
    }
 

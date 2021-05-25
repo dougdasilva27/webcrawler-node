@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.session;
 
+import br.com.lett.crawlernode.util.ScraperInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
@@ -53,11 +54,11 @@ public class SessionFactory {
       }
    }
 
-   public static Session createTestSession(String url, Market market) {
-      return new TestCrawlerSession(url, market);
+   public static Session createTestSession(String url, Market market, ScraperInformation scraperInformation) {
+      return new TestCrawlerSession(url, market,scraperInformation);
    }
 
-   public static Session createTestRankingKeywordsSession(String keyword, Market market) {
-      return new TestRankingKeywordsSession(market, keyword);
+   public static Session createTestRankingKeywordsSession(String keyword, Market market , ScraperInformation scraperInformation) {
+      return new TestRankingKeywordsSession(market, keyword ,scraperInformation);
    }
 }

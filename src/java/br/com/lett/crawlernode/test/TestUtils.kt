@@ -50,7 +50,7 @@ class TestUtils {
 
          val scraperInformation = fetchScraperInfoToOneMarket(market.number,currentTest)
 
-         val sessionFunc: (String, Market) -> Session
+         val sessionFunc: (String, Market,ScraperInformation) -> Session
 
          if (currentTest == TestType.KEYWORDS) {
             Test.testType = "keywords"
@@ -65,12 +65,12 @@ class TestUtils {
          return taskProcess(market, parameters, sessionFunc, productsLimit, scraperInformation!!)
       }
 
-      fun taskProcess(market: Market, parameters: List<String>, sessionFunc: (String, Market) -> Session, productsLimit: Int = 0, scraperInformation: ScraperInformation): List<Task> {
+      fun taskProcess(market: Market, parameters: List<String>, sessionFunc: (String, Market,ScraperInformation) -> Session, productsLimit: Int = 0, scraperInformation: ScraperInformation): List<Task> {
 
          val tasks = mutableListOf<Task>()
 
          for (parameter: String in parameters) {
-            val session = sessionFunc(parameter, market)
+            val session = sessionFunc(parameter, market,scraperInformation)
 
             val task = TaskFactory.createTask(session, scraperInformation.className)
 
