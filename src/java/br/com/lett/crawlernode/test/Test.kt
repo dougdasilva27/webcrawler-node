@@ -15,18 +15,13 @@ object Test {
    const val RATING_TEST = "rating"
    const val IMAGES_TEST = "images"
    const val KEYWORDS_TEST = "keywords"
-   const val CATEGORIES_TEST = "categories"
-   private var options: Options? = null
-   private var market: String? = null
-   private var city: String? = null
+
 
    @JvmField
    var pathWrite = System.getenv(EnvironmentVariables.HTML_PATH)
 
    @JvmField
    var testType: String? = null
-   var phantomjsPath: String? = null
-   private val LOGGER = LoggerFactory.getLogger(Test::class.java)
 
    @JvmStatic
    fun main(args: Array<String>) {
