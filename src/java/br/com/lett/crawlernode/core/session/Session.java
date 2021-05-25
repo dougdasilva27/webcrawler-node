@@ -20,8 +20,8 @@ public class Session {
 
    protected static final Logger logger = LoggerFactory.getLogger(Session.class);
 
-   private List<String> proxies = new ArrayList<>();
-   private List<String> imageProxies = new ArrayList<>();
+   protected List<String> proxies = new ArrayList<>();
+   protected List<String> imageProxies = new ArrayList<>();
 
    protected DateTime date = new DateTime(DateUtils.timeZone);
 
@@ -82,7 +82,7 @@ public class Session {
 
    protected long startTime;
 
-   private JSONObject options;
+   protected JSONObject options;
 
    /**
     * Default empty constructor

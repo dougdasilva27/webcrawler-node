@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.models.Market
 import br.com.lett.crawlernode.core.models.RankingProducts
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
+import br.com.lett.crawlernode.database.Persistence
 import br.com.lett.crawlernode.util.CommonMethods
 import org.json.JSONArray
 import org.json.JSONObject

@@ -35,7 +35,7 @@ object NewTest {
          if (testType == DISCOVERY_TEST) {
             LocalDiscovery().discovery(market, listOf(parameters), maxProducts.toInt(), corePollSize.toInt())
          } else {
-            taskProcess(market, listOf(parameters), TestType.valueOf(testType), 0)
+//            taskProcess(market, listOf(parameters), TestType.valueOf(testType), 0)
          }
       }
     }
