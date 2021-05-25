@@ -8,7 +8,7 @@ public class BrasilPrezunicCrawler extends Vipcommerce {
    private static final String HOME_PAGE = "https://www.delivery.prezunic.com.br/";
    private static final String SELLER_FULL_NAME = "Prezunic";
    private static final String DOMAIN = "delivery.prezunic.com.br";
-   private static final String LOCATE_CODE = "1";
+   private static final String LOCATE_CODE = "5";
 
    public BrasilPrezunicCrawler(Session session) {
       super(session);
