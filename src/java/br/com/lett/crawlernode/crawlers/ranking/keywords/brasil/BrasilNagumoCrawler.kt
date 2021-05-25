@@ -47,7 +47,7 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
          }
          headers["sm-token"] = token.toString()
       }
-      val apiUrl = super.ApiSearchUrl(lojaId) + keywordEncoded
+      val apiUrl = super.apiSearchUrl(lojaId) + keywordEncoded
       val requestApi = Request.RequestBuilder.create()
          .setUrl(apiUrl)
          .setCookies(cookies)

@@ -1,19 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -24,11 +12,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -36,15 +21,22 @@ import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
+import models.pricing.*;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
 import models.pricing.Installment.InstallmentBuilder;
-import models.pricing.Installments;
-import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class CNOVANewCrawler extends Crawler {
 
@@ -127,36 +119,11 @@ public abstract class CNOVANewCrawler extends Crawler {
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
             )
-         ).build();
+         )
+         .build();
 
 
-      Response response = new JsoupDataFetcher().get(session, request);
-
-      // int statusCode = response.getLastStatusCode();
-      //
-      // if ((Integer.toString(statusCode).charAt(0) != '2' &&
-      // Integer.toString(statusCode).charAt(0) != '3'
-      // && statusCode != 404)) {
-      //
-      // Request requestNew = RequestBuilder.create()
-      // .setUrl(url)
-      // .setCookies(cookies)
-      // .setFetcheroptions(FetcherOptionsBuilder.create()
-      // .mustUseMovingAverage(false)
-      // .mustRetrieveStatistics(true)
-      // .build())
-      // .setHeaders(headers)
-      // .setProxyservice(
-      // Arrays.asList(
-      // ProxyCollection.INFATICA_RESIDENTIAL_BR,
-      // ProxyCollection.NETNUT_RESIDENTIAL_BR
-      // )
-      // ).build();
-      //
-      // response = new FetcherDataFetcher().get(session, requestNew);
-      // }
-
-      return response;
+      return new FetcherDataFetcher().get(session, request);
    }
 
    @Override
@@ -260,7 +227,7 @@ public abstract class CNOVANewCrawler extends Crawler {
                String name = info.optString("name");
                String internalSellerId = info.optString("id");
 
-               if(internalSellerId != null){
+               if (internalSellerId != null) {
                   sellersIdList.add(internalSellerId);
                }
 
@@ -586,20 +553,20 @@ public abstract class CNOVANewCrawler extends Crawler {
       return new AdvancedRatingReview.Builder().allStars(starsMap).build();
    }
 
-   private Map<String, Double> scrapSallersRating(List<String> sellersIdList){
+   private Map<String, Double> scrapSallersRating(List<String> sellersIdList) {
       Map<String, Double> SellerIdAndSellerRating = new HashMap<>();
       String sellersIds = sellersIdList.toString()
-         .replaceAll("[^0-9 ]","")
+         .replaceAll("[^0-9 ]", "")
          .trim()
-         .replace(" ","%2C");
+         .replace(" ", "%2C");
 
-      String apiUrl =  "https://pdp-api." + getStore() + ".com.br/api/v2/reviews/multiplereviews/source/" + getInitials() + "?sellersId=" + sellersIds;
+      String apiUrl = "https://pdp-api." + getStore() + ".com.br/api/v2/reviews/multiplereviews/source/" + getInitials() + "?sellersId=" + sellersIds;
 
       JSONArray sellersRatingInfo = JSONUtils.stringToJsonArray(fetchPage(apiUrl).getBody());
 
-      if(sellersRatingInfo != null && sellersRatingInfo.length() > 0) {
+      if (sellersRatingInfo != null && sellersRatingInfo.length() > 0) {
 
-         for (int i = 0; i < sellersRatingInfo.length(); i++ ){
+         for (int i = 0; i < sellersRatingInfo.length(); i++) {
             JSONObject ratingInfo = sellersRatingInfo.optJSONObject(i);
             SellerIdAndSellerRating.put(ratingInfo.optString("sellerId"), ratingInfo.optDouble("rating"));
          }

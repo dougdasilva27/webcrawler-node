@@ -111,7 +111,6 @@ public class GPACrawler extends Crawler {
          String internalId = crawlInternalId(jsonSku);
          String internalPid = crawlInternalPid(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
-         String description = jsonSku.optString("description");
          boolean available = data != null && crawlAvailability(data);
          Offers offers = available ? scrapOffers(data) : new Offers();
 
@@ -125,6 +124,21 @@ public class GPACrawler extends Crawler {
             productUrl = redirectedToURL;
          }
 
+         StringBuilder description = new StringBuilder();
+
+         description.append(jsonSku.optString("description"));
+
+         JSONArray attributeGroups = JSONUtils.getValueRecursive(jsonSku,"attributeGroups.0.attributes",JSONArray.class);
+         if (attributeGroups != null) {
+            for (Object o : attributeGroups) {
+               JSONObject attribute = (JSONObject) o;
+               description.append(attribute.opt("label")).append(" ").append(attribute.opt("value"));
+
+            }
+         }
+
+         description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+
          Product product =
             ProductBuilder.create()
                .setUrl(productUrl)
@@ -137,7 +151,7 @@ public class GPACrawler extends Crawler {
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
-               .setDescription(description)
+               .setDescription(description.toString())
                .setRatingReviews(ratingsReviews)
                .build();
 
@@ -194,7 +208,7 @@ public class GPACrawler extends Crawler {
       JSONObject array = JSONUtils.getJSONValue(json, "mapOfImages");
       if (array != null && array.length() > 1) {
          for (String s : array.keySet()) {
-            if(!s.equals("0")) {
+            if (!s.equals("0")) {
                JSONObject jsonObject = array.optJSONObject(s);
                String image = jsonObject.optString("BIG");
                String imageUrl = new URIBuilder(homePageHttps).setPath(image).toString();
@@ -367,7 +381,7 @@ public class GPACrawler extends Crawler {
          Pricing pricing = scrapPricing(data);
          String sales = CrawlerUtils.calculateSales(pricing);
          String sellerName = JSONUtils.getStringValue(data, "name");
-         boolean isMainRetailersMainRetailer = data.optString("sellType","").equals("1P");
+         boolean isMainRetailersMainRetailer = data.optString("sellType", "").equals("1P");
 
 
          offers.add(Offer.OfferBuilder.create()

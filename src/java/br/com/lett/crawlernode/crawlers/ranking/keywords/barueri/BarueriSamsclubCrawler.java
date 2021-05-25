@@ -100,6 +100,7 @@ public class BarueriSamsclubCrawler extends CrawlerRankingKeywords {
 
                if(!hash256.equals("")){
                   returnHash = hash256.replace(delimiter, "");
+                  break;
                }
             }
          }

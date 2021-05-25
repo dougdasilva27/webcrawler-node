@@ -271,7 +271,7 @@ public class MercadolivreNewCrawler {
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title a", false);
 
       if (sellerFullName == null) {
-         sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title", false);
+         sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, "a.ui-pdp-action-modal__link span", false);
 
          if (sellerFullName == null) {
             String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ui-pdp-container__row--seller-info a", "href");
@@ -323,6 +323,7 @@ public class MercadolivreNewCrawler {
 
          int sellersPagePosition = 1;
          boolean mainOfferFound = false;
+         String spotlightSellerName = offers.size() > 0 ? offers.getOffersList().get(0).getSellerFullName() : "";
 
          do {
             Request request = RequestBuilder.create()
@@ -336,7 +337,7 @@ public class MercadolivreNewCrawler {
             if (!offersElements.isEmpty()) {
                for (Element e : offersElements) {
                   String sellerName = CrawlerUtils.scrapStringSimpleInfo(e, ".ui-pdp-action-modal__link", false);
-                  if (hasMainOffer && sellerName != null && !mainOfferFound && offers.containsSeller(sellerName)) {
+                  if (hasMainOffer && sellerName != null && !mainOfferFound && spotlightSellerName.equalsIgnoreCase(sellerName)) {
                      Offer offerMainPage = offers.getSellerByName(sellerName);
                      offerMainPage.setSellersPagePosition(sellersPagePosition);
                      offerMainPage.setIsBuybox(true);
@@ -412,7 +413,7 @@ public class MercadolivreNewCrawler {
    private Double findSpotlightPrice(Element doc) {
       Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-tag meta", "content", false, '.', session);
       if (price == null) {
-         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.price-tag", null, false, ',', session);
+         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.ui-pdp-price span.price-tag-amount", null, false, ',', session);
       }
       return price;
    }

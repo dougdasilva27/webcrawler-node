@@ -64,7 +64,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override

@@ -30,10 +30,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ArgentinaJumboCrawler extends Crawler {
 
@@ -64,6 +61,7 @@ public class ArgentinaJumboCrawler extends Crawler {
          VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
          vtexUtil.setHasBankTicket(false);
          JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
+         Element brandElem = doc.selectFirst(".brandName a");
 
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li > a", true);
@@ -78,6 +76,9 @@ public class ArgentinaJumboCrawler extends Crawler {
             String internalId = vtexUtil.crawlInternalId(jsonSku);
             JSONObject apiJSON = vtexUtil.crawlApi(internalId);
             String name = vtexUtil.crawlName(jsonSku, skuJson);
+            if (Objects.nonNull(brandElem)) {
+               name = brandElem.text() + " " + name;
+            }
             String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
             String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
             Integer stock = vtexUtil.crawlStock(apiJSON);
