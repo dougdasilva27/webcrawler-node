@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
@@ -59,7 +58,7 @@ public class KochCrawler extends Crawler {
    protected Object fetch() {
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", "form_key=yZug8KVdIDv9KIDJ;mage-cache-storage={};mage-cache-storage-section-invalidation={};mage-cache-sessid=true;mage-messages=;recently_viewed_product={};recently_viewed_product_previous={};recently_compared_product={};recently_compared_product_previous={};product_data_storage={};mage-banners-cache-storage={};user_allowed_save_cookie={\"8\":1};_gcl_au=1.1.1261254508.1621623463;_gid=GA1.3.1696196086.1621623463;_ga=GA1.1.1704467533.1621623463;_ga_L35DKV9QJM=GS1.1.1621622690.2.1.1621624368.60;customer_website=website_lj" + storeId);
+      headers.put("cookie", "customer_website=website_lj" + storeId);
 
       Request req = RequestBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -71,7 +70,6 @@ public class KochCrawler extends Crawler {
 
       return Jsoup.parse(content);
    }
-
 
 
    @Override
