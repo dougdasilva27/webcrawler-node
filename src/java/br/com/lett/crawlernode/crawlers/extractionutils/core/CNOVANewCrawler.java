@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -123,7 +126,30 @@ public abstract class CNOVANewCrawler extends Crawler {
          .build();
 
 
-      return new FetcherDataFetcher().get(session, request);
+      return alternativeFetch(request);
+   }
+
+   private Response alternativeFetch(Request request) {
+      List<DataFetcher> httpClients = Arrays.asList(new JsoupDataFetcher(), new FetcherDataFetcher());
+
+      Response response = null;
+
+      for (DataFetcher localDataFetcher : httpClients) {
+         response = localDataFetcher.get(session, request);
+         if (checkResponse(response)) {
+            return response;
+         }
+      }
+
+      return response;
+   }
+
+   boolean checkResponse(Response response) {
+      int statusCode = response.getLastStatusCode();
+
+      return (Integer.toString(statusCode).charAt(0) == '2'
+         || Integer.toString(statusCode).charAt(0) == '3'
+         || statusCode == 404);
    }
 
    @Override
