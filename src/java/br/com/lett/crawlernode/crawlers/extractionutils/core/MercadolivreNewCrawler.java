@@ -268,7 +268,7 @@ public class MercadolivreNewCrawler {
    }
 
    private String scrapSeller(Document doc) {
-      String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title a", false);
+      String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title", false);
 
       if (sellerFullName == null) {
          sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, "a.ui-pdp-action-modal__link span", false);
