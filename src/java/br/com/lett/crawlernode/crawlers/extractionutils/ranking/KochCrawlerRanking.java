@@ -79,7 +79,7 @@ public class KochCrawlerRanking extends CrawlerRankingKeywords {
       String url = "https://www.superkoch.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("cookie", "form_key=yZug8KVdIDv9KIDJ; mage-banners-cache-storage=%7B%7D; user_allowed_save_cookie=%7B%228%22%3A1%7D; _gcl_au=1.1.1261254508.1621623463; _gid=GA1.3.1696196086.1621623463; _ga=GA1.3.1704467533.1621623463; customer_website=website_lj" + storeId + "; _ga_L35DKV9QJM=GS1.1.1621622690.2.1.1621624514.7");
+      headers.put("cookie", "customer_website=website_lj" + storeId);
 
       Request req = RequestBuilder.create()
          .setUrl(url)
