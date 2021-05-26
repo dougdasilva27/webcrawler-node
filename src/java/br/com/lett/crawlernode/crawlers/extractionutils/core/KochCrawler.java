@@ -85,7 +85,7 @@ public class KochCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title span", true);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-placeholder img", "src");
          String description = description(doc);
-         boolean available = !doc.select(".stock.available").isEmpty(); //I didn't find any product unavailable to test
+         boolean available = !doc.select(".stock.available").isEmpty(); 
          Offers offers = available ? scrapOffers(doc) : new Offers();
          List<String> eans = new ArrayList<>();
          eans.add(CrawlerUtils.scrapStringSimpleInfo(doc, "#product-attribute-specs-table > tbody > tr:nth-child(2) > td", true));
@@ -208,60 +208,5 @@ public class KochCrawler extends Crawler {
       return price;
    }
 
-   private RatingsReviews scrapRatingReviews(JSONObject api) {
 
-      RatingsReviews ratingsReviews = new RatingsReviews();
-      JSONArray avaliacoes = api.optJSONArray("Avaliacoes");
-
-      if (avaliacoes != null && !avaliacoes.isEmpty()) {
-
-         int totalReviews = avaliacoes.length();
-         int totalValueReviews = 0;
-         ratingsReviews.setTotalRating(totalReviews);
-         ratingsReviews.setTotalWrittenReviews(totalReviews);
-         for (Object e : avaliacoes) {
-
-            totalValueReviews += ((JSONObject) e).optInt("int_nota_review");
-         }
-         ratingsReviews.setAverageOverallRating((double) totalValueReviews / totalReviews);
-         ratingsReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(avaliacoes));
-      } else {
-         ratingsReviews.setTotalRating(0);
-         ratingsReviews.setTotalWrittenReviews(0);
-         ratingsReviews.setAverageOverallRating(0.0);
-      }
-
-      return ratingsReviews;
-   }
-
-   private AdvancedRatingReview scrapAdvancedRatingReview(JSONArray avaliacoes) {
-
-      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-
-      for (Object e : avaliacoes) {
-
-         int reviewValue = ((JSONObject) e).optInt("int_nota_review");
-
-         switch (reviewValue) {
-            case 1:
-               advancedRatingReview.setTotalStar1(reviewValue);
-               break;
-            case 2:
-               advancedRatingReview.setTotalStar2(reviewValue);
-               break;
-            case 3:
-               advancedRatingReview.setTotalStar3(reviewValue);
-               break;
-            case 4:
-               advancedRatingReview.setTotalStar4(reviewValue);
-               break;
-            case 5:
-               advancedRatingReview.setTotalStar5(reviewValue);
-               break;
-            default:
-         }
-      }
-
-      return advancedRatingReview;
-   }
 }
