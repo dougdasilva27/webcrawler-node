@@ -1,33 +1,33 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import models.AdvancedRatingReview;
-import models.RatingsReviews;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offer.OfferBuilder;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.CreditCard.CreditCardBuilder;
 import models.pricing.CreditCards;
 import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * Date: 09/07/2019
@@ -36,14 +36,19 @@ import models.pricing.Pricing;
  */
 public class KochCrawler extends Crawler {
 
-   protected static final String LOCATION_COOKIE_NAME = "ls.uid_armazem";
-   protected static final String LOCATION_COOKIE_DOMAIN = "www.superkoch.com.br";
-   protected static final String LOCATION_COOKIE_PATH = "/";
+   private String storeId;
+
+   public String getStoreId() {
+      return storeId;
+   }
+
+   public void setStoreId(String storeId) {
+      this.storeId = storeId;
+   }
 
    private static final String SELLER_FULLNAME = "Koch";
-   private static final String PRODUCT_API_URL = "https://www.superkoch.com.br/api/produto?id=";
    private static final List<String> cards = Arrays.asList(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.DINERS.toString(), Card.ELO.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
+      Card.DINERS.toString(), Card.ELO.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
 
    public KochCrawler(Session session) {
       super(session);
@@ -51,270 +56,157 @@ public class KochCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      JSONObject api = new JSONObject();
 
-      if (session.getOriginalURL().contains("produto/")) {
-         String id = CommonMethods.getLast(session.getOriginalURL().split("produto/")).split("/")[0];
+      Map<String, String> headers = new HashMap<>();
+      headers.put("cookie", "customer_website=website_lj" + storeId);
 
-         Request req = RequestBuilder.create()
-               .setUrl(PRODUCT_API_URL + id)
-               .setCookies(cookies)
-               .build();
+      Request req = RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .build();
 
-         api = JSONUtils.stringToJson(this.dataFetcher.get(session, req).getBody());
-      }
+      String content = this.dataFetcher.get(session, req).getBody();
 
-      return api;
+
+      return Jsoup.parse(content);
    }
 
+
    @Override
-   public List<Product> extractInformation(JSONObject api) throws Exception {
-      super.extractInformation(api);
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
 
-      if (api.has("Produtos") && api.optJSONArray("Produtos") != null) {
+      if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = api.optString("id_produto", null);
-         String primaryImage = scrapPrimaryImage(api);
-         String secondaryImages = scrapSecondaryImages(api, primaryImage);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute .value", true);
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-box.price-final_price", "data-product-id");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title span", true);
+         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".gallery-placeholder img", "src");
+         String description = description(doc);
+         boolean available = !doc.select(".stock.available").isEmpty(); 
+         Offers offers = available ? scrapOffers(doc) : new Offers();
+         List<String> eans = new ArrayList<>();
+         eans.add(CrawlerUtils.scrapStringSimpleInfo(doc, "#product-attribute-specs-table > tbody > tr:nth-child(2) > td", true));
 
-         JSONArray productsArray = api.optJSONArray("Produtos");
-         for (Object obj : productsArray) {
-            JSONObject skuJson = (JSONObject) obj;
+         // Creating the product
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .setEans(eans)
+            .build();
 
-            String description = skuJson.optString("str_html_descricao_produto");
-            CategoryCollection categories = scrapCategories(skuJson);
+         products.add(product);
 
-            String name = skuJson.optString("str_nom_produto", null);
-            String internalId = skuJson.optString("id_produto", null);
-            boolean buyable = !skuJson.optBoolean("bit_esgotado", true);
-            Offers offers = buyable ? scrapOffers(skuJson) : new Offers();
-            RatingsReviews ratingsReviews = scrapRatingReviews(api);
-
-            Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setOffers(offers)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setRatingReviews(ratingsReviews)
-                  .build();
-
-            products.add(product);
-         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
-
    }
 
-   private String scrapPrimaryImage(JSONObject api) {
-      String primaryImage = null;
-
-      JSONArray images = api.optJSONArray("Imagens");
-      if (images != null && images.length() > 0) {
-         JSONObject image = images.optJSONObject(0);
-
-         if (image != null) {
-            primaryImage = image.optString("str_img_path_cdn", null);
-
-            if (primaryImage != null && !primaryImage.endsWith(".jpg") && !primaryImage.endsWith(".png")) {
-               primaryImage += "-g.jpg";
-            }
-         }
-      }
-
-      return primaryImage;
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".product-info-main") != null;
    }
 
-   private String scrapSecondaryImages(JSONObject api, String primaryImage) {
-      String secondaryImages = null;
-      JSONArray arrayImages = new JSONArray();
+   private String description(Document doc) {
+      StringBuilder description = new StringBuilder();
+      Elements elements = doc.select("tbody tr");
+      for (Element element : elements) {
+         description.append(CrawlerUtils.scrapStringSimpleInfo(element, ".col.label", true));
+         description.append(": ");
+         description.append(CrawlerUtils.scrapStringSimpleInfo(element, ".col.data", true));
+         description.append(" | ");
 
-      JSONArray images = api.optJSONArray("Imagens");
-      if (images != null) {
-         for (Object o : images) {
-            JSONObject image = o instanceof JSONObject ? (JSONObject) o : new JSONObject();
-
-            String secondaryImage = image.optString("str_img_path_cdn", null);
-
-            if (secondaryImage != null && !secondaryImage.endsWith(".jpg") && !secondaryImage.endsWith(".png")) {
-               secondaryImage += "-g.jpg";
-            }
-
-            if (!secondaryImage.equalsIgnoreCase(primaryImage)) {
-               arrayImages.put(secondaryImage);
-            }
-         }
       }
 
-      if (!arrayImages.isEmpty()) {
-         secondaryImages = arrayImages.toString();
-      }
-
-      return secondaryImages;
+      return description.toString();
    }
 
-   private Offers scrapOffers(JSONObject skuJson) throws MalformedPricingException, OfferException {
+
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-      List<String> sales = scrapSales(skuJson);
-      Pricing pricing = scrapPricing(skuJson);
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing);
+
 
       offers.add(new OfferBuilder()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(SELLER_FULLNAME)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULLNAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
    }
 
-   private List<String> scrapSales(JSONObject skuJson) {
+
+   private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
 
-      Double discount = skuJson.optDouble("mny_perc_desconto", 0d);
-      if (discount > 0d) {
-         sales.add("-" + Integer.toString(discount.intValue()) + "%");
+      String sale = CrawlerUtils.calculateSales(pricing);
+
+      if (sale != null) {
+         sales.add(sale);
       }
 
       return sales;
    }
 
-   private Pricing scrapPricing(JSONObject productJson) throws MalformedPricingException {
-      Double price = productJson.optDouble("mny_vlr_promo_tabela_preco", 0d);
-      Double priceFrom = productJson.optDouble("mny_vlr_produto_tabela_preco", 0d);
 
-      if (priceFrom <= price) {
-         priceFrom = null;
-      }
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double price = getSpotlighPrice(doc);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session);
 
-      CreditCards creditCards = scrapCreditCards(productJson, price);
+      CreditCards creditCards = scrapCreditCards(price);
 
       return Pricing.PricingBuilder.create()
-            .setSpotlightPrice(price)
-            .setPriceFrom(priceFrom)
-            .setCreditCards(creditCards)
-            .build();
+         .setSpotlightPrice(price)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
    }
 
-   private CreditCards scrapCreditCards(JSONObject productJson, Double price) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double price) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(price)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(price)
+         .build());
 
-      Integer qtdParcel = productJson.optInt("int_qtd_parcela");
-      Double valueParcel = productJson.optDouble("mny_vlr_parcela");
-
-      if (qtdParcel > 0 && valueParcel > 0d) {
-         installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(qtdParcel)
-               .setInstallmentPrice(valueParcel)
-               .build());
-      }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
    }
 
-   private CategoryCollection scrapCategories(JSONObject product) {
-      CategoryCollection categories = new CategoryCollection();
+   private Double getSpotlighPrice(Document doc) {
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".special-price .price", null, true, ',', session);
 
-      String cat1 = product.optString("str_categoria", null);
-      if (cat1 != null) {
-         categories.add(cat1);
+      if (price == null) {
+         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-info-price .price", null, true, ',', session);
+
       }
 
-      String cat2 = product.optString("str_subcategoria", null);
-      if (cat2 != null) {
-         categories.add(cat2);
-      }
-
-      String cat3 = product.optString("str_tricategoria", null);
-      if (cat3 != null) {
-         categories.add(cat3);
-      }
-
-      return categories;
+      return price;
    }
 
-   private RatingsReviews scrapRatingReviews(JSONObject api){
 
-      RatingsReviews ratingsReviews = new RatingsReviews();
-      JSONArray avaliacoes = api.optJSONArray("Avaliacoes");
-
-      if(avaliacoes != null && !avaliacoes.isEmpty()){
-
-         int totalReviews = avaliacoes.length();
-         int totalValueReviews = 0;
-         ratingsReviews.setTotalRating(totalReviews);
-         ratingsReviews.setTotalWrittenReviews(totalReviews);
-         for(Object e: avaliacoes){
-
-            totalValueReviews += ((JSONObject) e).optInt("int_nota_review");
-         }
-         ratingsReviews.setAverageOverallRating((double)totalValueReviews/totalReviews);
-         ratingsReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(avaliacoes));
-      } else{
-         ratingsReviews.setTotalRating(0);
-         ratingsReviews.setTotalWrittenReviews(0);
-         ratingsReviews.setAverageOverallRating(0.0);
-      }
-
-      return ratingsReviews;
-   }
-
-   private AdvancedRatingReview scrapAdvancedRatingReview(JSONArray avaliacoes){
-
-      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
-
-      for(Object e: avaliacoes){
-
-         int reviewValue = ((JSONObject) e).optInt("int_nota_review");
-
-         switch (reviewValue){
-            case 1:
-               advancedRatingReview.setTotalStar1(reviewValue);
-               break;
-            case 2:
-               advancedRatingReview.setTotalStar2(reviewValue);
-               break;
-            case 3:
-               advancedRatingReview.setTotalStar3(reviewValue);
-               break;
-            case 4:
-               advancedRatingReview.setTotalStar4(reviewValue);
-               break;
-            case 5:
-               advancedRatingReview.setTotalStar5(reviewValue);
-               break;
-            default:
-         }
-      }
-
-      return advancedRatingReview;
-   }
 }
