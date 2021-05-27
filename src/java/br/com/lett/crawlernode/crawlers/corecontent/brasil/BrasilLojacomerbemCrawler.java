@@ -1,18 +1,19 @@
 
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.Arrays;
-import java.util.List;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import models.RatingsReviews;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+
+import java.util.Collections;
+import java.util.List;
 
 public class BrasilLojacomerbemCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://www.lojacomerbem.com.br/";
-   private static final List<String> SELLERS = Arrays.asList("SYNAPCOM COMERCIO ELETRONICO LTDA");
+   private static final List<String> SELLERS = Collections.singletonList("LOJA COMER BEM");
 
    public BrasilLojacomerbemCrawler(Session session) {
       super(session);
