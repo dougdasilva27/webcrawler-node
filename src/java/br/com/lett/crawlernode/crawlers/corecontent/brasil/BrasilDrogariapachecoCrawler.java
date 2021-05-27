@@ -70,7 +70,7 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
          String description = crawlDescription(doc, internalPid);
-         RatingsReviews ratingReviews = crawlRating(internalPid);
+         RatingsReviews ratingReviews = null;
 
          // sku data in json
          JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -86,10 +86,15 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             String name = vtexUtil.crawlName(jsonSku, skuJson, " ");
             boolean available = jsonSku.optBoolean("available");
             String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
+
+            String secondaryImages = scrapSecondaryImage(vtexUtil, apiJSON);
             Integer stock = jsonSku.optInt("availablequantity");
             String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
             Offers offer = available ? scrapOffers(jsonSku) : new Offers();
+
+            if (available) {
+               ratingReviews = ratingReviews == null ? crawlRating(internalPid) : ratingReviews;
+            }
 
             List<String> eans = new ArrayList<>();
             eans.add(ean);
@@ -120,6 +125,15 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapSecondaryImage(VTEXCrawlersUtils vtexUtil, JSONObject apiJSON) {
+      JSONArray images = new JSONArray(vtexUtil.crawlSecondaryImages(apiJSON));
+      JSONArray array = new JSONArray();
+      for (int i = 0; i < Math.min(images.length(), 3); i++) {
+         array.put(images.get(i));
+      }
+      return array.toString();
    }
 
    private RatingsReviews crawlRating(String internalPid) {
