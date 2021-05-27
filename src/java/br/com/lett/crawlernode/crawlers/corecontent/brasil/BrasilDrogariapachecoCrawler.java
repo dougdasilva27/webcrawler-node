@@ -70,7 +70,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
          String internalPid = vtexUtil.crawlInternalPid(skuJson);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
          String description = crawlDescription(doc, internalPid);
-         RatingsReviews ratingReviews = null;
 
          // sku data in json
          JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -92,10 +91,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
             Offers offer = available ? scrapOffers(jsonSku) : new Offers();
 
-            if (available) {
-               ratingReviews = ratingReviews == null ? crawlRating(internalPid) : ratingReviews;
-            }
-
             List<String> eans = new ArrayList<>();
             eans.add(ean);
 
@@ -113,7 +108,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
                .setDescription(description)
                .setStock(stock)
                .setEans(eans)
-               .setRatingReviews(ratingReviews)
                .setOffers(offer)
                .build();
 
@@ -136,33 +130,11 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
       return array.toString();
    }
 
-   private RatingsReviews crawlRating(String internalPid) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-
-      YourreviewsRatingCrawler yr =
-         new YourreviewsRatingCrawler(session, cookies, logger, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", this.dataFetcher);
-
-      Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", this.dataFetcher);
-
-      Integer totalNumOfEvaluations = getTotalNumOfRatings(docRating);
-      Double avgRating = getTotalAvgRating(docRating, totalNumOfEvaluations);
-      AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
-
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setDate(session.getDate());
-
-      return ratingReviews;
-   }
-
    /**
     * Average is calculate
     *
-    * @param document
-    * @return
     */
-   private Double getTotalAvgRating(Document docRating, Integer totalRating) {
+   private Double getTotalAvgRating(Document docRating) {
       Double avgRating = null;
       Element rating = docRating.select("meta[itemprop=ratingValue]").first();
 
@@ -176,8 +148,6 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
    /**
     * Number of ratings appear in rating page
     *
-    * @param docRating
-    * @return
     */
    private Integer getTotalNumOfRatings(Document doc) {
       Integer totalRating = null;
@@ -220,9 +190,9 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
          String text = elementCategories.get(i).text().trim();
 
          if (text.equalsIgnoreCase("medicamentos")) {
-            description.append("<div class=\"container medicamento-information-component\"><h2>Advertência do Ministério da Saúde</h2><p>" +
-               CrawlerUtils.scrapStringSimpleInfo(doc, ".fn.productName", true)
-               + " É UM MEDICAMENTO. SEU USO PODE TRAZER RISCOS. PROCURE UM MÉDICO OU UM FARMACÊUTICO. LEIA A BULA.</p></div>");
+            description.append("<div class=\"container medicamento-information-component\"><h2>Advertência do Ministério da Saúde</h2><p>")
+               .append(CrawlerUtils.scrapStringSimpleInfo(doc, ".fn.productName", true))
+               .append(" É UM MEDICAMENTO. SEU USO PODE TRAZER RISCOS. PROCURE UM MÉDICO OU UM FARMACÊUTICO. LEIA A BULA.</p></div>");
             break;
          }
       }
@@ -245,11 +215,11 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
             JSONArray infos = product.getJSONArray("Informações");
 
             for (Object o : infos) {
-               description.append("<div> <strong>" + o.toString() + ":</strong>");
+               description.append("<div> <strong>").append(o.toString()).append(":</strong>");
                JSONArray spec = product.getJSONArray(o.toString());
 
                for (Object obj : spec) {
-                  description.append(obj.toString() + "&nbsp");
+                  description.append(obj.toString()).append("&nbsp");
                }
 
                description.append("</div>");
@@ -261,11 +231,11 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
 
             for (Object o : infos) {
                if (!Arrays.asList("Garantia", "Parte do Corpo", "PREÇO VIVA SAÚDE").contains(o.toString())) {
-                  description.append("<div> <strong>" + o.toString() + ":</strong>");
+                  description.append("<div> <strong>").append(o).append(":</strong>");
                   JSONArray spec = product.getJSONArray(o.toString());
 
                   for (Object obj : spec) {
-                     description.append(obj.toString() + "&nbsp");
+                     description.append(obj.toString()).append("&nbsp");
                   }
 
                   description.append("</div>");
