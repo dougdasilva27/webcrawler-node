@@ -365,10 +365,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
             String image = e.attr("src").replace("88x66", "618x463");
 
-            if (!image.equalsIgnoreCase(primaryImage)) {
-               secondaryImagesArray.put(image);
-            }
-
+            //Removed the primary image check. In some cases the primary image appears in secondary images, causing disparities from the website
+            secondaryImagesArray.put(image);
          }
       }
 
