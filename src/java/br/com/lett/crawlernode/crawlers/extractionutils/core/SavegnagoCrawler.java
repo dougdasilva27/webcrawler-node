@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.JSONUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.AdvancedRatingReview;
 import models.Offers;
 import models.RatingsReviews;
 import org.json.JSONObject;
@@ -43,7 +44,22 @@ public abstract class SavegnagoCrawler extends VTEXOldScraper {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      return null;
+      RatingsReviews reviews = new RatingsReviews();
+
+      YourreviewsRatingCrawler yrRC = new YourreviewsRatingCrawler(session, cookies, logger);
+      Document docRating = yrRC.crawlPageRatingsFromYourViews(internalPid, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
+      Integer totalNumOfEvaluations = yrRC.getTotalNumOfRatingsFromYourViews(docRating);
+      Double avgRating = yrRC.getTotalAvgRatingFromYourViews(docRating);
+
+      AdvancedRatingReview adRating = yrRC.getTotalStarsFromEachValue(internalPid);
+
+      reviews.setTotalRating(totalNumOfEvaluations);
+      reviews.setAverageOverallRating(avgRating);
+      reviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      reviews.setAdvancedRatingReview(adRating);
+      reviews.setDate(session.getDate());
+
+      return reviews;
    }
 
    @Override
