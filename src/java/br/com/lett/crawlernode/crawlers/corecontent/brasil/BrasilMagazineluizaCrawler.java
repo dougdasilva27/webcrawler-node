@@ -84,7 +84,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       String secondaryImages = crawlSecondaryImages(doc, primaryImage);
       boolean availableToBuy = !doc.select(".button__buy-product-detail").isEmpty();
       Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
-      RatingsReviews ratingReviews = scrapRatingReviews(doc, internalId);
       String description = crawlDescription(doc, internalId);
 
       // Creating the product
@@ -98,7 +97,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setSecondaryImages(secondaryImages)
          .setDescription(description)
          .setOffers(offers)
-         .setRatingReviews(ratingReviews)
          .build();
    }
 
@@ -424,63 +422,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       return skuJson;
    }
 
-   private RatingsReviews scrapRatingReviews(Document doc, String internalId) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      Map<Integer, Integer> starsCount = new HashMap<>();
-      int totalPages = 0;
-      int writtenReviewsCount = 0;
-
-      for (int page = 1; page <= totalPages || totalPages == 0; ++page) {
-         JSONObject ratingJson = fetchAdvancedRating(internalId, page);
-
-         if (ratingJson != null && !ratingJson.isEmpty()) {
-            JSONObject data = JSONUtils.getJSONValue(ratingJson, "data");
-
-            if (page == 1) {
-               totalPages = data.optInt("pages", -1);
-               Object totalReviews = data.optQuery("/ratings/total_review_count");
-               Object avg = data.optQuery("/ratings/average_rating");
-
-               ratingReviews.setDate(session.getDate());
-               ratingReviews.setTotalRating(Objects.nonNull(totalReviews) ? (Integer) totalReviews : null);
-               ratingReviews.setAverageOverallRating(Objects.nonNull(avg) ? ((Integer) avg).doubleValue() : null);
-            }
-
-            JSONArray objects = JSONUtils.getJSONArrayValue(data, "objects");
-
-            for (Object ratingObject : objects) {
-               if (ratingObject instanceof JSONObject) {
-                  int rating = ((JSONObject) ratingObject).optInt("rating");
-                  if (rating > 0 && rating <= 5) {
-                     Integer count = starsCount.getOrDefault(rating, 0) + 1;
-                     starsCount.put(rating, count);
-
-                     String writtenReview = ((JSONObject) ratingObject).optString("review_text");
-                     if (writtenReview != null && !writtenReview.equals("")) {
-                        writtenReviewsCount++;
-                     }
-                  } else {
-                     Logging.printLogError(logger, session, "rating error: rating star error");
-                  }
-               }
-            }
-         } else {
-            //The ratings API is unstable. If the API response is empty, then we catch the information present on html page,
-            //total ratings and average rating
-            ratingReviews = scrapRatingsAlternativeWay(doc);
-            break;
-         }
-      }
-
-      if (starsCount.size() != 0 && writtenReviewsCount != 0) {
-         ratingReviews.setTotalWrittenReviews(writtenReviewsCount);
-         ratingReviews.setAdvancedRatingReview(new AdvancedRatingReview.Builder()
-            .allStars(starsCount)
-            .build());
-      }
-
-      return ratingReviews;
-   }
 
 
    private JSONObject fetchAdvancedRating(String internalId, int page) {
