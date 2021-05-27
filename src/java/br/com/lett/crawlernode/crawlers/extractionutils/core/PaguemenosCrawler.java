@@ -135,7 +135,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    private JSONObject crawlPageRatings(String internalId) throws UnsupportedEncodingException {
 
       String query = "{\"persistedQuery\":" +
-                       "{\"version\":1,\"sha256Hash\":\"7431b8f262b7a1b65d65ad2c3b5482f17324a34c314c2cb6577cea367b5a2691\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
+                       "{\"version\":1,\"sha256Hash\":\"b2f2e216d6fadc25b01d0386b44fd8ebc55fa10b984439b6143d7aa5860bf86e\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
                         "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
                         "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
 
