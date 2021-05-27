@@ -137,7 +137,7 @@ public class GPACrawler extends Crawler {
             }
          }
 
-         description.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
+         description.append(scrapLaminaHtml(internalId));
 
          Product product =
             ProductBuilder.create()
@@ -162,6 +162,19 @@ public class GPACrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private Document scrapLaminaHtml(String internalId) {
+      int marketId =  session.getMarket().getNumber();
+
+      if(session.getMarket().getName().contains("paodeacucar")){
+         marketId = 4;
+      }
+      else if(session.getMarket().getName().contains("extra")){
+         marketId = 5;
+      }
+
+      return CrawlerUtils.scrapLettHtml(internalId, session,marketId);
    }
 
    private String crawlInternalId(JSONObject json) {
