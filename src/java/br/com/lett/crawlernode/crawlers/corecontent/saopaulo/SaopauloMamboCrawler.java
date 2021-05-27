@@ -101,7 +101,6 @@ public class SaopauloMamboCrawler extends Crawler {
          boolean available = true;
          String primaryImage = crawlPrimaryImage(json);
          List<String> secondaryImages = crawlSecondaryImages(json);
-         RatingsReviews rating = scrapRating(internalPid);
 
          Offers offers = available ? scrapOffers(json) : new Offers();
          String description = crawlDescription(json);
@@ -116,7 +115,6 @@ public class SaopauloMamboCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setRatingReviews(rating)
             .build();
 
          products.add(product);
@@ -127,27 +125,8 @@ public class SaopauloMamboCrawler extends Crawler {
       return products;
    }
 
-   private RatingsReviews scrapRating(String internalId) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "944", logger);
-      return trustVox.extractRatingAndReviews(internalId, new Document(""), dataFetcher);
-   }
-
    private String crawlInternalPid(JSONObject json) {
       return json.has("id") ? json.get("id").toString() : null;
-   }
-
-   private boolean scrapAvailability(String internalPid) {
-      boolean available = false;
-
-      String url = "https://www.mambo.com.br/ccstoreui/v1/stockStatus/" + internalPid;
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      JSONObject stockJson = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
-
-      if (stockJson.has("stockStatus") && !stockJson.isNull("stockStatus")) {
-         available = stockJson.optString("stockStatus").equalsIgnoreCase("IN_STOCK");
-      }
-
-      return available;
    }
 
    private String crawlPrimaryImage(JSONObject json) {
