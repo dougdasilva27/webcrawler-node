@@ -221,7 +221,6 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
             }
          }
       }
-      System.out.println(secondaryImage);
       return  secondaryImage;
    }
 }
