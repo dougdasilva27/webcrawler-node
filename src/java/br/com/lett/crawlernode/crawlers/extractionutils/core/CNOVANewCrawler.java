@@ -181,10 +181,8 @@ public abstract class CNOVANewCrawler extends Crawler {
             List<String> eans = ean.isEmpty() ? new ArrayList<>() : Arrays.asList(ean);
 
             String internalId = internalPid + "-" + skuJson.optString("id");
-            List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(skuJson.optJSONArray("zoomedImages"),
-               "url", null, "https", "www." + getStore() + "-imagens.com.br", session);
+            List<String> images = scrapImages(skuJson);
             String primaryImage = images.isEmpty() ? null : images.remove(0);
-            String secondaryImages = CommonMethods.listToJSONArray(images).toString();
             Offers offers = scrapOffers(skuJson.optString("id"));
 
             // Creating the product
@@ -197,7 +195,7 @@ public abstract class CNOVANewCrawler extends Crawler {
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
+               .setSecondaryImages(images)
                .setDescription(description)
                .setOffers(offers)
                .setRatingReviews(ratingReviews)
@@ -233,6 +231,36 @@ public abstract class CNOVANewCrawler extends Crawler {
       }
 
       return skuJson == null ? new JSONObject() : skuJson;
+   }
+
+   private List<String> scrapImages(JSONObject json) {
+      List<String> imgsList = new ArrayList<>();
+
+      JSONArray imgsJson = json.optJSONArray("zoomedImages");
+
+      JSONArray resultList = new JSONArray();
+
+      for (Object img : imgsJson) {
+         JSONObject imgJson = (JSONObject) img;
+
+         if(resultList.length() == 0 ){
+            resultList.put(imgJson);
+         }
+
+         if (resultList.toString().contains("\"order\":" + imgJson.optString("order"))) {
+            continue;
+         }
+
+         resultList.put(imgJson);
+      }
+
+      resultList.forEach(el -> {
+         if(el instanceof JSONObject){
+            imgsList.add(((JSONObject) el).optString("url"));
+         }
+      });
+
+      return imgsList;
    }
 
    private Offers scrapOffers(String internalId) throws MalformedPricingException, OfferException {
