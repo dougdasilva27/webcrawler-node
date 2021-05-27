@@ -1,24 +1,29 @@
 package br.com.lett.crawlernode.core.session;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.CrawlerRankingKeywordsRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.DateUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.ScraperInformation;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 public class Session {
 
    protected static final Logger logger = LoggerFactory.getLogger(Session.class);
+
+   protected List<String> proxies = new ArrayList<>();
+   protected List<String> imageProxies = new ArrayList<>();
 
    protected DateTime date = new DateTime(DateUtils.timeZone);
 
@@ -26,40 +31,60 @@ public class Session {
 
    protected String taskStaus;
 
-   /** Id of current crawling session. It's the same id of the message from Amazon SQS */
+   /**
+    * Id of current crawling session. It's the same id of the message from Amazon SQS
+    */
    protected String sessionId;
 
-   /** Name of the queue from which the message was retrieved */
+   /**
+    * Name of the queue from which the message was retrieved
+    */
    protected String queueName;
 
-   /** Original URL of the sku being crawled */
+   /**
+    * Original URL of the sku being crawled
+    */
    protected String originalURL;
 
-   /** Association of URL and its final modified version, a redirection for instance */
+   /**
+    * Association of URL and its final modified version, a redirection for instance
+    */
    Map<String, String> redirectionMap;
 
-   /** Association of URL and its proxy */
+   /**
+    * Association of URL and its proxy
+    */
    protected Map<String, LettProxy> requestProxyMap;
 
-   /** Market associated with this session */
+   /**
+    * Market associated with this session
+    */
    protected Market market;
 
-   /** Supplier Id associated with this session */
+   /**
+    * Supplier Id associated with this session
+    */
    protected Long supplierId;
 
-   /** Errors occurred during crawling session */
+   /**
+    * Errors occurred during crawling session
+    */
    protected List<SessionError> crawlerSessionErrors;
 
-   /** The maximum number of connection attempts to be made when crawling normal information */
+   /**
+    * The maximum number of connection attempts to be made when crawling normal information
+    */
    protected int maxConnectionAttemptsWebcrawler;
 
-   /** The maximum number of connection attempts to be made when downloading images */
-   protected int maxConnectionAttemptsImages;
 
-   /** Response when request product page */
+   /**
+    * Response when request product page
+    */
    protected Object productPageResponse;
 
    protected long startTime;
+
+   protected JSONObject options;
 
    /**
     * Default empty constructor
@@ -78,18 +103,9 @@ public class Session {
       requestProxyMap = new HashMap<>();
       maxConnectionAttemptsWebcrawler = 0;
 
-      for (String proxy : market.getProxies()) {
-         maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
-      }
-
-      maxConnectionAttemptsImages = 0;
-      for (String proxy : market.getImageProxies()) {
-         maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
-      }
-
    }
 
-   public Session(Request request, String queueName, Markets markets) {
+   public Session(Request request, String queueName, Market market) {
       taskStaus = Task.STATUS_COMPLETED;
 
       this.startTime = System.currentTimeMillis();
@@ -99,11 +115,34 @@ public class Session {
       redirectionMap = new HashMap<>();
       requestProxyMap = new HashMap<>();
       sessionId = request.getMessageId();
-      market = markets.getMarket(request.getMarketId());
+      this.market = market;
       supplierId = request.getSupplierId();
 
+      this.options = request.getOptions();
+
+      JSONArray proxiesArray = this.options.optJSONArray("proxies");
+      if (proxiesArray != null && !proxiesArray.isEmpty()) {
+         for (Object o : proxiesArray) {
+            String proxy = (String) o;
+            proxies.add(proxy);
+         }
+      } else {
+         proxies = Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NO_PROXY);
+      }
+
+      JSONArray imageProxiesArray = this.options.optJSONArray("proxies");
+      if (imageProxiesArray != null && !imageProxiesArray.isEmpty()) {
+         for (Object o : imageProxiesArray) {
+            String proxy = (String) o;
+            imageProxies.add(proxy);
+         }
+      } else {
+         imageProxies = Arrays.asList(ProxyCollection.BUY, ProxyCollection.LUMINATI_SERVER_BR, ProxyCollection.NO_PROXY);
+      }
+
+
       if (!(request instanceof CrawlerRankingKeywordsRequest)) {
-         originalURL = request.getMessageBody();
+         originalURL = request.getParameter();
       }
 
       maxConnectionAttemptsWebcrawler = 0;
@@ -115,14 +154,9 @@ public class Session {
          // maxConnectionAttemptsWebcrawler++;
          maxConnectionAttemptsWebcrawler = 2;
       } else {
-         for (String proxy : market.getProxies()) {
+         for (String proxy : this.proxies) {
             maxConnectionAttemptsWebcrawler += GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
          }
-      }
-
-      maxConnectionAttemptsImages = 0;
-      for (String proxy : market.getImageProxies()) {
-         maxConnectionAttemptsImages = maxConnectionAttemptsImages + GlobalConfigurations.proxies.getProxyMaxAttempts(proxy);
       }
 
    }
@@ -141,14 +175,6 @@ public class Session {
 
    public void setMaxConnectionAttemptsCrawler(int maxConnectionAttemptsWebcrawler) {
       this.maxConnectionAttemptsWebcrawler = maxConnectionAttemptsWebcrawler;
-   }
-
-   public int getMaxConnectionAttemptsImages() {
-      return this.maxConnectionAttemptsImages;
-   }
-
-   public void setMaxConnectionAttemptsImages(int maxConnectionAttemptsImages) {
-      this.maxConnectionAttemptsImages = maxConnectionAttemptsImages;
    }
 
    public String getInternalId() {
@@ -278,4 +304,27 @@ public class Session {
       return sb.toString();
    }
 
+   public void setProxies(ArrayList<String> proxies) {
+      this.proxies = proxies;
+   }
+
+   public List<String> getProxies() {
+      return this.proxies;
+   }
+
+   public JSONObject getOptions() {
+      return options;
+   }
+
+   public void setOptions(JSONObject options) {
+      this.options = options;
+   }
+
+   public List<String> getImageProxies() {
+      return imageProxies;
+   }
+
+   public void setImageProxies(List<String> imageProxies) {
+      this.imageProxies = imageProxies;
+   }
 }

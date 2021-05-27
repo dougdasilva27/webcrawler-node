@@ -6,10 +6,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.ranking.*;
+import br.com.lett.crawlernode.core.task.Scheduler;
+import br.com.lett.crawlernode.util.ScraperInformation;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -17,7 +18,6 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
@@ -53,6 +53,8 @@ import enums.QueueName;
 import enums.ScrapersTypes;
 import models.Processed;
 
+import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
+
 public abstract class CrawlerRanking extends Task {
 
    protected FetchMode fetchMode;
@@ -64,7 +66,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<String, String> mapUrlMessageId = new HashMap<>();
 
-   private Map<String, Map<String, MessageAttributeValue>> messages = new HashMap<>();
+   private List<String> messages = new ArrayList<>();
 
    protected int productsLimit;
    protected int pageLimit;
@@ -138,7 +140,7 @@ public abstract class CrawlerRanking extends Task {
       // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
       // }
 
-      if(!(session instanceof TestRankingKeywordsSession)) {
+      if (!(session instanceof TestRankingKeywordsSession)) {
          S3Service.uploadCrawlerSessionContentToAmazon(session);
       }
 
@@ -193,9 +195,9 @@ public abstract class CrawlerRanking extends Task {
 
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
             if (session instanceof RankingSession || session instanceof RankingDiscoverSession || session instanceof EqiRankingDiscoverKeywordsSession
-                  && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
+               && executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
 
-               sendMessagesToAmazonAndMongo();
+               sendMessagesToQueue();
             }
 
             // caso cehgue no limite de páginas pré estabelecido, é finalizada a categorie.
@@ -235,7 +237,7 @@ public abstract class CrawlerRanking extends Task {
 
    private void setDataFetcher() {
       if (this.fetchMode == FetchMode.STATIC) {
-         dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+         dataFetcher = executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.APACHE) {
          dataFetcher = new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.JAVANET) {
@@ -251,13 +253,13 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Função checa de 4 formas se existe proxima pagina
-    * 
+    * <p>
     * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit) 2 - Se
     * naquele market foi identificado se há proxima pagina (hasNextPage()) 3 - Se naquele market obteve
     * resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos os
     * produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é
     * identificado que não há próxima página devido algum erro naquele market.
-    * 
+    *
     * @return
     */
    protected boolean checkIfHasNextPage() {
@@ -275,7 +277,8 @@ public abstract class CrawlerRanking extends Task {
    }
 
    // função para setar cookies
-   protected void processBeforeFetch() {}
+   protected void processBeforeFetch() {
+   }
 
    // função que extrai os produtos da página atual
    protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException;
@@ -283,7 +286,7 @@ public abstract class CrawlerRanking extends Task {
    /**
     * função que retorna se há ou não uma próxima página default: total de produtos maior que os
     * produtos pegos até agora
-    * 
+    *
     * @return
     */
    protected boolean hasNextPage() {
@@ -301,7 +304,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
-    * 
+    *
     * @param internalId
     * @param pid
     * @param url
@@ -313,7 +316,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Salva os dados do produto e chama a função que salva a url para mandar pra fila
-    * 
+    *
     * @param internalId
     * @param pid
     * @param url
@@ -385,20 +388,10 @@ public abstract class CrawlerRanking extends Task {
 
 
    /**
-    *
     * @param url
     */
    protected void saveProductUrlToQueue(String url) {
-      Map<String, MessageAttributeValue> attr = new HashMap<>();
-      attr.put(QueueService.MARKET_ID_MESSAGE_ATTR,
-            new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
-
-      String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
-
-      attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-            .withStringValue(String.valueOf(scraperType)));
-
-      this.messages.put(url.trim(), attr);
+      this.messages.add(url);
    }
 
 
@@ -439,7 +432,7 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Create message and call function to send messages
     */
-   protected void sendMessagesToAmazonAndMongo() {
+   protected void sendMessagesToQueue() {
       List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
 
       int counter = 0;
@@ -448,44 +441,53 @@ public abstract class CrawlerRanking extends Task {
 
       long sendMessagesStartTime = System.currentTimeMillis();
 
-      for (Entry<String, Map<String, MessageAttributeValue>> message : this.messages.entrySet()) {
-         SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
-         entry.setId(String.valueOf(counter)); // the id must be unique in the batch
-         entry.setMessageAttributes(message.getValue());
-         entry.setMessageBody(message.getKey());
+      ScraperInformation scraperInformation = Persistence.fetchScraperInfoToOneMarket(session.getMarket().getNumber());
 
-         entries.add(entry);
-         counter++;
+      String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
 
-         if (entries.size() > 9 || this.messages.size() == counter) {
+      if (scraperInformation != null) {
+         for (String menssage : this.messages) {
 
-            // Aqui se envia 10 mensagens para serem enviadas pra amazon e no mongo
-            populateMessagesInMongoAndAmazon(entries);
-            entries.clear();
+            SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+            entry.setId(String.valueOf(counter)); // the id must be unique in the batch
 
-            JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
+            JSONObject jsonToSentToQueue = Scheduler.messageToSendToQueue(menssage, session.getMarket(), scraperInformation, scraperType);
+
+            entry.setMessageBody(jsonToSentToQueue.toString());
+
+            entries.add(entry);
+            counter++;
+
+            if (entries.size() > 9 || this.messages.size() == counter) {
+               populateMessagesInToQueue(entries, scraperInformation.isUseBrowser());
+               entries.clear();
+
+               JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
                   .put("aws_type", "sqs")
                   .put("sqs_queue", "ws-discoverer");
 
-            Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
+               Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
+
+            }
          }
       }
-
       this.messages.clear();
    }
 
+
    /**
-    *
     * @param entries
     */
-   private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
+   private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
+      System.err.println(executionParameters.getEnvironment());
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
-         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
+         queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+         queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
       }
+
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
@@ -495,7 +497,7 @@ public abstract class CrawlerRanking extends Task {
       if (!successResultEntryList.isEmpty()) {
          int count = 0;
          for (SendMessageBatchResultEntry resultEntry : successResultEntryList) { // the successfully
-                                                                                  // sent messages
+            // sent messages
 
             // the _id field in the document will be the message id, which is the session id in the
             // crawler
@@ -504,14 +506,14 @@ public abstract class CrawlerRanking extends Task {
             count++;
          }
 
-         this.log(successResultEntryList.size() + " messages sended.");
+         this.log(successResultEntryList.size() + " messages sended to " + queueName);
       }
 
    }
 
    /**
     * Fetch Document
-    * 
+    *
     * @param url
     * @return
     */
@@ -521,7 +523,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Document eith cookies
-    * 
+    *
     * @param url
     * @param cookies
     * @return
@@ -546,7 +548,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Map of Cookies
-    * 
+    *
     * @param url
     * @return
     */
@@ -556,7 +558,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Map of Cookies
-    * 
+    *
     * @param url
     * @param cookies
     * @return
@@ -573,7 +575,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch jsonObject(deprecated) Use fetchJSONObject(String url, List<Cookie> cookies)
-    * 
+    *
     * @param url
     * @return
     */
@@ -587,7 +589,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Get Request
-    * 
+    *
     * @param url
     * @param cookies
     * @return
@@ -601,7 +603,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch jsonObject
-    * 
+    *
     * @param url
     * @return
     */
@@ -620,7 +622,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch google Json
-    * 
+    *
     * @param url
     * @return
     */
@@ -647,7 +649,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -667,7 +669,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request in FETCHER
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -683,7 +685,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch String with Post Request in FETCHER
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -699,7 +701,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Fetch Cookies with Post Request
-    * 
+    *
     * @param url
     * @param payload
     * @param headers
@@ -715,7 +717,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Inicia o webdriver
-    * 
+    *
     * @param url
     */
    protected CrawlerWebdriver startWebDriver(String url) {
@@ -723,7 +725,7 @@ public abstract class CrawlerRanking extends Task {
          this.session.setOriginalURL(url);
       }
 
-      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,false, session);
+      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY, false, session);
    }
 
    /**
@@ -732,7 +734,7 @@ public abstract class CrawlerRanking extends Task {
     * @param url
     * @param proxy
     */
-   protected CrawlerWebdriver startWebDriver(String url,String proxy) {
+   protected CrawlerWebdriver startWebDriver(String url, String proxy) {
       if (this.currentPage == 1) {
          this.session.setOriginalURL(url);
       }
@@ -742,7 +744,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Conecta url com webdriver
-    * 
+    *
     * @param url
     * @return
     */
@@ -752,12 +754,12 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Conecta url com webdriver
-    * 
+    *
     * @param url
     * @param timeout
     * @return
     */
-   protected Document fetchDocumentWithWebDriver(String url, Integer timeout,String proxy) {
+   protected Document fetchDocumentWithWebDriver(String url, Integer timeout, String proxy) {
       if (this.currentPage == 1) {
          this.session.setOriginalURL(url);
       }
@@ -765,7 +767,7 @@ public abstract class CrawlerRanking extends Task {
       // se o webdriver não estiver iniciado, inicio ele
       if (this.webdriver == null) {
          Document doc = new Document(url);
-         this.webdriver = startWebDriver(url,proxy);
+         this.webdriver = startWebDriver(url, proxy);
 
          if (this.webdriver != null) {
             if (timeout != null) {
@@ -787,7 +789,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    protected Document fetchDocumentWithWebDriver(String url, Integer timeout) {
-      return fetchDocumentWithWebDriver(url,timeout,ProxyCollection.BUY_HAPROXY);
+      return fetchDocumentWithWebDriver(url, timeout, ProxyCollection.BUY_HAPROXY);
    }
 
    protected void takeAScreenshot(String url) {
@@ -800,7 +802,7 @@ public abstract class CrawlerRanking extends Task {
 
    /**
     * Take a screenshot for audit only the first 2 pages
-    * 
+    *
     * @param url
     */
    protected void takeAScreenshot(String url, int page, List<Cookie> cookies) {

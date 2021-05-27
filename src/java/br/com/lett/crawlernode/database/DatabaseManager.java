@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.database;
 
+import br.com.lett.crawlernode.util.ScraperInformation;
+import managers.PgSQL;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -12,6 +14,10 @@ import br.com.lett.crawlernode.util.Logging;
 import credentials.models.DBCredentials;
 import credentials.models.MongoCredentials;
 import managers.MongoDB;
+
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class DatabaseManager {
@@ -73,5 +79,8 @@ public class DatabaseManager {
       Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
     }
   }
+
+
+
 
 }

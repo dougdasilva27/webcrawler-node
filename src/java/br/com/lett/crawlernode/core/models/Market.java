@@ -1,44 +1,40 @@
 package br.com.lett.crawlernode.core.models;
 
-import java.util.List;
-
 public class Market {
 
    private int id;
-   private String city;
    private String name;
    private String fullName;
    private String code;
-   private boolean crawlerWebdriver;
-   private List<String> proxies;
-   private List<String> imageProxies;
    private String firstPartyRegex;
+   private boolean useBrowser = false;
+
+   public Market(int id, String name, String fullName, String code, String firstPartyRegex, boolean useBrowser) {
+      this.id = id;
+      this.name = name;
+      this.fullName = fullName;
+      this.code = code;
+      this.firstPartyRegex = firstPartyRegex;
+      this.useBrowser = useBrowser;
+   }
 
    /**
     * Default constructor used for testing.
-    * 
     * @param marketId
-    * @param marketCity
-    * @param marketName
-    * @param proxies
+    * @param name
+    * @param fullName
+    * @param marketCode
+    * @param firstPartyRegex
     */
    public Market(
-                 int marketId,
-                 String marketCity,
-                 String marketName,
-                 String marketCode,
-                 String marketFullName,
-                 List<String> proxies,
-                 List<String> imageProxies,
-                 String firstPartyRegex) {
+      int marketId,
+      String name, String fullName, String marketCode,
+      String firstPartyRegex) {
 
       this.id = marketId;
-      this.city = marketCity;
-      this.name = marketName;
+      this.name = name;
+      this.fullName = fullName;
       this.code = marketCode;
-      this.fullName = marketFullName;
-      this.proxies = proxies;
-      this.imageProxies = imageProxies;
       this.firstPartyRegex = firstPartyRegex;
    }
 
@@ -50,12 +46,29 @@ public class Market {
       this.id = number;
    }
 
-   public String getCity() {
-      return city;
+   @Override
+   public String toString() {
+      return "Market [id=" + id +
+         ", code=" + code +
+         ", name=" + name +
+         ", regex=" + firstPartyRegex +
+         "]";
    }
 
-   public void setCity(String city) {
-      this.city = city;
+   public String getCode() {
+      return code;
+   }
+
+   public void setCode(String code) {
+      this.code = code;
+   }
+
+   public int getId() {
+      return id;
+   }
+
+   public void setId(int id) {
+      this.id = id;
    }
 
    public String getName() {
@@ -66,63 +79,27 @@ public class Market {
       this.name = name;
    }
 
-   @Override
-   public String toString() {
-      return "Market [id=" + id +
-            ", code=" + code +
-            ", city=" + city +
-            ", fullName=" + fullName +
-            ", name=" + name +
-            ", proxies=" + proxies.toString() +
-            ", mustUseWebdriver=" + crawlerWebdriver +
-            ", image proxies=" + imageProxies.toString();
-   }
-
-   public List<String> getProxies() {
-      return proxies;
-   }
-
-   public void setProxies(List<String> proxies) {
-      this.proxies = proxies;
-   }
-
-   public List<String> getImageProxies() {
-      return imageProxies;
-   }
-
-   public void setImageProxies(List<String> imageProxies) {
-      this.imageProxies = imageProxies;
-   }
-
-   public boolean mustUseCrawlerWebdriver() {
-      return crawlerWebdriver;
-   }
-
-   public void setMustUseCrawlerWebdriver(boolean crawlerWebdriver) {
-      this.crawlerWebdriver = crawlerWebdriver;
-   }
-
-   public String getFullName() {
-      return fullName;
-   }
-
-   public String getCode() {
-      return code;
-   }
-
-   public void setFullName(String fullName) {
-      this.fullName = fullName;
-   }
-
-   public void setCode(String code) {
-      this.code = code;
-   }
-
    public String getFirstPartyRegex() {
       return firstPartyRegex;
    }
 
    public void setFirstPartyRegex(String firstPartyRegex) {
       this.firstPartyRegex = firstPartyRegex;
+   }
+
+   public boolean isUseBrowser() {
+      return useBrowser;
+   }
+
+   public void setUseBrowser(boolean useBrowser) {
+      this.useBrowser = useBrowser;
+   }
+
+   public String getFullName() {
+      return fullName;
+   }
+
+   public void setFullName(String fullName) {
+      this.fullName = fullName;
    }
 }

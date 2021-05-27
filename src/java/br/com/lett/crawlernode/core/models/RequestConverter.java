@@ -5,32 +5,40 @@ import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.exceptions.RequestException;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.security.PrivateKey;
+import java.util.stream.Collectors;
 
 public class RequestConverter {
 
    protected static final Logger logger = LoggerFactory.getLogger(RequestConverter.class);
 
-   private static final String MSG_ATTR_TASK_ID = "taskId";
-   private static final String MSG_ATTR_MARKET_ID = "marketId";
-   private static final String MSG_ATTR_SUPPLIER_ID = "supplierId";
-   private static final String MSG_ATTR_PROCESSED_ID = "processedId";
-   private static final String MSG_ATTR_INTERNAL_ID = "internalId";
-   private static final String MSG_ATTR_IMG_NUMBER = "number";
-   private static final String MSG_ATTR_IMG_TYPE = "type";
-   private static final String MSG_ATTR_SCREENSHOT = "screenshot";
    private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
-   private static final String SQS_NAME_HEADER = "X-aws-sqsd-queue";
-   private static final String MSG_ATTR_HEADER_PREFIX = "X-aws-sqsd-attr-";
-   private static final String MSG_ATTR_SCRAPER_TYPE = "scraperType";
-
+   private static final String BODY_QUEUE = "queue";
+   private static final String BODY_CLASS_NAME = "className";
+   private static final String BODY_OPTIONS = "options";
+   private static final String BODY_INTERNAL_ID = "internalId";
+   private static final String BODY_SUPPLIER_ID = "supplierId";
+   private static final String BODY_MARKET = "market";
+   private static final String BODY_PROCESSED_ID = "processedId" ;
+   private static final String BODY_PARAMETERS = "parameters";
+   private static final String BODY_SEED_TASK_ID ="taskId" ;
+   private static final String BODY_RANKING_SCREENSHOT = "screenshot";
+   private static final String MARKET_ID = "marketId";
+   private static final String MARKET_NAME = "name";
+   private static final String MARKET_FULL_NAME = "fullName";
+   private static final String MARKET_CODE = "code";
+   private static final String MARKET_REGEX= "regex";
+   private static final String MARKET_USE_BROWSER= "use_browser";
 
    private RequestConverter() {
    }
@@ -38,10 +46,13 @@ public class RequestConverter {
    public static Request convert(HttpServletRequest req) {
       Request request;
 
-      String scraperType = req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCRAPER_TYPE);
+
+      JSONObject body = JSONUtils.stringToJson(getRequestBody(req));
+
+      String scraperType = body.optString("type");
       if (scraperType == null) {
          Logging.printLogError(logger, "Request is missing scraper type");
-         throw new RequestException(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCRAPER_TYPE);
+         throw new RequestException("scraperType not found");
       }
 
       if (ScrapersTypes.IMAGES_DOWNLOAD.toString().equals(scraperType)) {
@@ -56,54 +67,63 @@ public class RequestConverter {
       }
 
       request.setRequestMethod(req.getMethod());
-      request.setQueueName(req.getHeader(SQS_NAME_HEADER));
+      request.setQueueName(body.optString(BODY_QUEUE));
       request.setMessageId(req.getHeader(MSG_ID_HEADER));
-      request.setInternalId(req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_INTERNAL_ID));
+      request.setClassName(body.optString(BODY_CLASS_NAME));
 
-      String supplierIdString = req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SUPPLIER_ID);
-
-      if (supplierIdString != null) {
-         request.setSupplierId(Long.parseLong(supplierIdString.trim()));
+      String options = body.optString(BODY_OPTIONS);
+      if(options!=null && !options.isEmpty()) {
+         request.setOptions(JSONUtils.stringToJson(options));
       }
 
-      String marketIdString = req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_MARKET_ID);
-      if (marketIdString != null) {
-         request.setMarketId(Integer.parseInt(marketIdString));
+      request.setInternalId(body.optString(BODY_INTERNAL_ID));
+
+      String supplierIdString = body.optString(BODY_SUPPLIER_ID);
+
+      if (supplierIdString != null && !supplierIdString.isEmpty()) {
+            request.setSupplierId(Long.parseLong(supplierIdString.trim()));
       }
 
-      String processedIdString = req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_PROCESSED_ID);
-      if (processedIdString != null) {
+
+      JSONObject marketObj = body.getJSONObject(BODY_MARKET);
+      if (marketObj != null) {
+         request.setMarket(createMarket(marketObj));
+      }
+
+
+      String processedIdString = body.optString(BODY_PROCESSED_ID);
+      if (processedIdString != null && !processedIdString.isEmpty()) {
          request.setProcessedId(Long.parseLong(processedIdString));
       }
 
-      String body = getRequestBody(req);
+      String parameters = body.optString(BODY_PARAMETERS);
 
-      request.setMessageBody(body);
+      request.setParameter(parameters);
       request.setScraperType(scraperType);
 
-      if (request instanceof ImageCrawlerRequest) {
-         ((ImageCrawlerRequest) request).setImageNumber(Integer.parseInt(req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_NUMBER)));
-         ((ImageCrawlerRequest) request).setImageType(req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_IMG_TYPE));
-      }
+
 
       if (request instanceof CrawlerSeedRequest) {
-         ((CrawlerSeedRequest) request).setTaskId(req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_TASK_ID));
+         ((CrawlerSeedRequest) request).setTaskId(body.optString(BODY_SEED_TASK_ID));
       }
 
       if (request instanceof CrawlerRankingKeywordsRequest) {
-         ((CrawlerRankingKeywordsRequest) request).setLocation(body);
+         ((CrawlerRankingKeywordsRequest) request).setLocation(parameters);
 
-         ((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCREENSHOT) != null
-            && Boolean.parseBoolean(req.getHeader(MSG_ATTR_HEADER_PREFIX + MSG_ATTR_SCREENSHOT)));
+         ((CrawlerRankingKeywordsRequest) request).setTakeAScreenshot(body.optBoolean(BODY_RANKING_SCREENSHOT,false));
 
       }
 
       return request;
    }
 
+   private static Market createMarket(JSONObject marketObj) {
+      return new Market(marketObj.optInt(MARKET_ID), marketObj.optString(MARKET_NAME), marketObj.optString(MARKET_FULL_NAME), marketObj.optString(MARKET_CODE),marketObj.optString(MARKET_REGEX),marketObj.optBoolean(MARKET_USE_BROWSER));
+   }
+
    private static String getRequestBody(HttpServletRequest req) {
-      try (BufferedReader br = req.getReader()) {
-         return br.readLine();
+      try {
+         return req.getReader().lines().collect(Collectors.joining(System.lineSeparator())).trim();
       } catch (IOException e) {
          logger.error("Failed to get body");
          throw new RequestException("Body");

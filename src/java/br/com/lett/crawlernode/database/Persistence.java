@@ -1,15 +1,20 @@
 package br.com.lett.crawlernode.database;
 
-import java.io.File;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import br.com.lett.crawlernode.core.models.Ranking;
+import br.com.lett.crawlernode.core.models.RankingProducts;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
+import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.ScraperInformation;
+import dbmodels.Tables;
+import dbmodels.tables.CrawlerRanking;
+import generation.PostgresJsonBinding;
+import models.Behavior;
+import models.Processed;
+import models.prices.Prices;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jooq.Condition;
@@ -20,22 +25,13 @@ import org.jooq.conf.ParamType;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
-import br.com.lett.crawlernode.core.models.Ranking;
-import br.com.lett.crawlernode.core.models.RankingProducts;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
-import dbmodels.Tables;
-import dbmodels.tables.CrawlerRanking;
-import generation.PostgresJsonBinding;
-import models.Behavior;
-import models.Processed;
-import models.prices.Prices;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.*;
 
 public class Persistence {
    private static final Logger logger = LoggerFactory.getLogger(Persistence.class);
@@ -47,7 +43,6 @@ public class Persistence {
    private static final PostgresJsonBinding CONVERT_STRING_GSON = new PostgresJsonBinding();
 
    /**
-    * 
     * @param newProcessedProduct
     * @param session
     * @return
@@ -152,7 +147,7 @@ public class Persistence {
          Connection conn = null;
          PreparedStatement pstmt = null;
          String query = GlobalConfigurations.dbManager.jooqPostgres.insertInto(processedTable).set(insertMap).returning(processedTable.ID)
-               .getSQL(ParamType.INLINED);
+            .getSQL(ParamType.INLINED);
          try {
             conn = JdbcConnectionFactory.getInstance().getConnection();
             pstmt = conn.prepareStatement(query);
@@ -178,7 +173,7 @@ public class Persistence {
             }
 
             JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-                  .put("query_type", "persist_processed_product");
+               .put("query_type", "persist_processed_product");
 
             Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
          } catch (Exception e) {
@@ -193,9 +188,7 @@ public class Persistence {
             JdbcConnectionFactory.closeResource(conn);
          }
 
-      } else
-
-      {
+      } else {
          Map<Field<?>, Object> updateMap = new HashMap<>();
 
          // Column Value
@@ -300,7 +293,7 @@ public class Persistence {
             pstmt.executeUpdate();
 
             JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-                  .put("query_type", "update_processed_product");
+               .put("query_type", "update_processed_product");
 
             Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
          } catch (Exception e) {
@@ -319,14 +312,13 @@ public class Persistence {
       Logging.printLogDebug(logger, session, "Processed product persisted with success.");
 
 
-
       return persistenceResult;
    }
 
    /**
     * Updates processed Behaviour on processed table. This method is used in active void to include the
     * behavior of void status.
-    * 
+    *
     * @param newBehaviour
     * @param session
     */
@@ -357,14 +349,14 @@ public class Persistence {
       try {
          conn = JdbcConnectionFactory.getInstance().getConnection();
          pstmt = conn.prepareStatement(
-               GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. " + "(InternalId: "
-               + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
+            + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "update_processed_product_behaviour");
+            .put("query_type", "update_processed_product_behaviour");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
@@ -389,10 +381,10 @@ public class Persistence {
     * <li>price = null</li>
     * <li>prices = new Prices() which is an empty prices model</li>
     * </ul>
-    * 
+    *
     * @param processed
     * @param voidValue A boolean indicating whether the processed product void must be set to true or
-    *        false
+    *                  false
     * @param session
     */
    public static void setProcessedVoidTrue(Session session) {
@@ -421,13 +413,13 @@ public class Persistence {
       try {
          conn = JdbcConnectionFactory.getInstance().getConnection();
          pstmt = conn.prepareStatement(
-               GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "update_void_processed_product");
+            .put("query_type", "update_void_processed_product");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
@@ -444,7 +436,7 @@ public class Persistence {
 
    /**
     * Updates processed LastReadTime on processed table.
-    * 
+    *
     * @param nowISO
     * @param session
     */
@@ -465,13 +457,13 @@ public class Persistence {
       try {
          conn = JdbcConnectionFactory.getInstance().getConnection();
          pstmt = conn.prepareStatement(
-               GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "update_processed_product_lrt");
+            .put("query_type", "update_processed_product_lrt");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
@@ -489,7 +481,7 @@ public class Persistence {
 
    /**
     * Updates processed LastModifiedTime on processed table.
-    * 
+    *
     * @param nowISO
     * @param session
     */
@@ -510,13 +502,13 @@ public class Persistence {
       try {
          conn = JdbcConnectionFactory.getInstance().getConnection();
          pstmt = conn.prepareStatement(
-               GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "update_processed_product_lmt");
+            .put("query_type", "update_processed_product_lmt");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
@@ -533,7 +525,7 @@ public class Persistence {
 
    /**
     * Updates processed LastModifiedStatus on processed table.
-    * 
+    *
     * @param nowISO
     * @param session
     */
@@ -554,13 +546,13 @@ public class Persistence {
       try {
          conn = JdbcConnectionFactory.getInstance().getConnection();
          pstmt = conn.prepareStatement(
-               GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
+            GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
          pstmt.executeUpdate();
          Logging.printLogDebug(logger, session, "Processed product LMS updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "update_processed_product_lms");
+            .put("query_type", "update_processed_product_lms");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
@@ -575,37 +567,10 @@ public class Persistence {
 
    }
 
-   /**
-    * 
-    * @param markets
-    */
-   public static void initializeImagesDirectories(Markets markets) {
-      Logging.printLogDebug(logger, "Initializing temp images directory at:" + GlobalConfigurations.executionParameters.getTmpImageFolder() + "...");
-
-      List<Market> marketsList = markets.getMarkets();
-
-      String[] subdirectories = new String[] {
-               "images"
-      };
-
-      int counter = 0;
-
-      // create folder for each market
-      for (Market m : marketsList) {
-         processDirectory(m.getCity(), null, null);
-         processDirectory(m.getCity(), m.getName(), null);
-         for (String folder : subdirectories) {
-            processDirectory(m.getCity(), m.getName(), folder);
-         }
-         counter++;
-      }
-
-      Logging.printLogDebug(logger, "Initialized directory for " + counter + " markets.");
-   }
 
    /**
     * Directory creation.
-    * 
+    *
     * @param city
     * @param name
     * @param folder
@@ -677,7 +642,7 @@ public class Persistence {
          }
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "ranking_fetch_processed_product_with_internalid");
+            .put("query_type", "ranking_fetch_processed_product_with_internalid");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
@@ -734,7 +699,7 @@ public class Persistence {
          }
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "ranking_fetch_processed_product_with_internalpid");
+            .put("query_type", "ranking_fetch_processed_product_with_internalpid");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
@@ -747,7 +712,6 @@ public class Persistence {
 
       return processeds;
    }
-
 
 
    public static List<Long> fetchProcessedIdsWithUrl(String url, int market, Session session) {
@@ -786,7 +750,7 @@ public class Persistence {
          }
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "ranking_fetch_processed_product_with_internalpid");
+            .put("query_type", "ranking_fetch_processed_product_with_internalpid");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
@@ -844,7 +808,7 @@ public class Persistence {
          Logging.printLogDebug(logger, session, "Produtos cadastrados no postgres.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
-               .put("query_type", "persist_products_crawler_ranking");
+            .put("query_type", "persist_products_crawler_ranking");
 
          Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
@@ -858,10 +822,9 @@ public class Persistence {
    }
 
 
-
    /**
     * Update frozen server task
-    * 
+    *
     * @param previousProcessedProduct
     * @param newProcessedProduct
     * @param session
@@ -873,13 +836,13 @@ public class Persistence {
          Document taskDocument = new Document().append("updated", new Date()).append("status", "DONE").append("progress", 100);
 
          Document result = new Document().append("processedId", newProcessedProduct.getId())
-               .append("originalName", newProcessedProduct.getOriginalName()).append("internalId", newProcessedProduct.getInternalId())
-               .append("url", newProcessedProduct.getUrl()).append("status", newProcessedProduct.getStatus());
+            .append("originalName", newProcessedProduct.getOriginalName()).append("internalId", newProcessedProduct.getInternalId())
+            .append("url", newProcessedProduct.getUrl()).append("status", newProcessedProduct.getStatus());
 
          if (previousProcessedProduct != null) {
             result.append("ect", previousProcessedProduct.getEct()).append("lettId", previousProcessedProduct.getLettId())
-                  .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
-                  .append("isNew", false);
+               .append("masterId", previousProcessedProduct.getMasterId()).append("oldName", previousProcessedProduct.getOriginalName())
+               .append("isNew", false);
          } else {
             result.append("ect", new Date()).append("lettId", null).append("masterId", null).append("oldName", null).append("isNew", true);
          }
@@ -890,10 +853,10 @@ public class Persistence {
 
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
-                  MONGO_COLLECTION_SERVER_TASK);
+               MONGO_COLLECTION_SERVER_TASK);
 
             JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
-                  .put("query_type", "update_product_frozen_seed_servertask");
+               .put("query_type", "update_product_frozen_seed_servertask");
 
             Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
@@ -904,7 +867,7 @@ public class Persistence {
 
    /**
     * Update frozen server task
-    * 
+    *
     * @param session
     */
    public static void updateFrozenServerTask(SeedCrawlerSession session) {
@@ -931,10 +894,10 @@ public class Persistence {
 
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
-                  MONGO_COLLECTION_SERVER_TASK);
+               MONGO_COLLECTION_SERVER_TASK);
 
             JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
-                  .put("query_type", "update_error_frozen_seed_servertask");
+               .put("query_type", "update_error_frozen_seed_servertask");
 
             Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
@@ -945,7 +908,7 @@ public class Persistence {
 
    /**
     * Update frozen server task
-    * 
+    *
     * @param session
     */
    public static void updateFrozenServerTask(SeedCrawlerSession session, String msg) {
@@ -964,10 +927,10 @@ public class Persistence {
 
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), new Document("$set", taskDocument),
-                  MONGO_COLLECTION_SERVER_TASK);
+               MONGO_COLLECTION_SERVER_TASK);
 
             JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
-                  .put("query_type", "update_error_frozen_seed_servertask");
+               .put("query_type", "update_error_frozen_seed_servertask");
 
             Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
@@ -978,7 +941,7 @@ public class Persistence {
 
    /**
     * Update frozen server task progress
-    * 
+    *
     * @param session
     * @param progress
     */
@@ -991,10 +954,10 @@ public class Persistence {
          long queryStartTime = System.currentTimeMillis();
          try {
             GlobalConfigurations.dbManager.connectionFrozen.updateOne(new Document("_id", new ObjectId(taskId)), taskDocument,
-                  MONGO_COLLECTION_SERVER_TASK);
+               MONGO_COLLECTION_SERVER_TASK);
 
             JSONObject apacheMetadata = new JSONObject().put("mongo_elapsed_time", System.currentTimeMillis() - queryStartTime)
-                  .put("query_type", "update_progress_frozen_seed_servertask");
+               .put("query_type", "update_progress_frozen_seed_servertask");
 
             Logging.logInfo(logger, session, apacheMetadata, "MONGO TIMING INFO");
          } catch (Exception e) {
@@ -1002,4 +965,46 @@ public class Persistence {
          }
       }
    }
+
+   public static ScraperInformation fetchScraperInfoToOneMarket(int marketId) {
+      Connection conn = null;
+      Statement sta = null;
+      ScraperInformation scraperInformation = null;
+
+      try {
+
+         String query = "WITH market_informations AS (" +
+            "SELECT scraper.market_id, scraper.\"options\" , scraper.scraper_class_id, scraper.\"type\", " +
+            "scraper.use_browser, market.fullname, market.first_party_regex, market.code, market.name " +
+            "FROM market JOIN scraper ON (market.id = scraper.market_id) " +
+            "AND market.id = '" + marketId + "') " +
+            "SELECT market_informations.\"options\" as options_scraper, scraper_class.\"options\", " +
+            "public.scraper_class.\"class\", market_informations.market_id, market_informations.use_browser, " +
+            "market_informations.first_party_regex, market_informations.code, market_informations.fullname, market_informations.name " +
+            "FROM market_informations JOIN scraper_class " +
+            "ON (market_informations.scraper_class_id = scraper_class.id) " +
+            "WHERE market_informations.\"type\" = 'CORE'";
+
+
+         conn = JdbcConnectionFactory.getInstance().getConnection();
+         sta = conn.createStatement();
+         ResultSet rs = sta.executeQuery(query);
+
+         while (rs.next()) {
+
+            scraperInformation = CommonMethods.getScraperInformation(rs);
+
+
+         }
+
+      } catch (Exception e) {
+         Logging.printLogError(logger, CommonMethods.getStackTraceString(e));
+      } finally {
+         JdbcConnectionFactory.closeResource(sta);
+         JdbcConnectionFactory.closeResource(conn);
+      }
+
+      return scraperInformation;
+   }
+
 }

@@ -9,18 +9,24 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.*;
 import java.net.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.stringToJson;
 
 
 /**
@@ -528,6 +534,19 @@ public class CommonMethods {
       }
       return result;
    }
+
+   public static ScraperInformation getScraperInformation(ResultSet resultSet) throws SQLException {
+      ScraperInformation scraperInformation = new ScraperInformation(  resultSet.getString("options_scraper"), resultSet.getString("options"), resultSet.getString("class"), resultSet.getString("name"), resultSet.getBoolean("use_browser") );
+
+
+
+      return scraperInformation;
+   }
+
+
+
+
+
 
 
 }

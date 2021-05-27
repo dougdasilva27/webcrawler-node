@@ -6,11 +6,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.conf.ParamType;
-import org.json.JSONArray;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.database.JdbcConnectionFactory;
 import dbmodels.Tables;
@@ -49,34 +49,15 @@ public class Markets {
 
          Result<Record> records = db.jooqPostgres.fetch(rs);
          for (Record r : records) {
-            ArrayList<String> proxies = new ArrayList<>();
-            ArrayList<String> imageProxies = new ArrayList<>();
 
-            // get the array of proxies from postgres, as a json array
-            JSONArray proxiesJSONArray = new JSONArray(r.get(marketTable.PROXIES));
-
-            // populate the proxies array list
-            for (int i = 0; i < proxiesJSONArray.length(); i++) {
-               proxies.add(proxiesJSONArray.getString(i));
-            }
-
-            // get the array of image proxies from postgres
-            JSONArray imageProxiesJSONArray = new JSONArray(r.get(marketTable.PROXIES_IMAGES));
-            for (int i = 0; i < imageProxiesJSONArray.length(); i++) {
-               imageProxies.add(imageProxiesJSONArray.getString(i));
-            }
 
             Market market = new Market(
-                  r.get(marketTable.ID).intValue(),
-                  r.get(marketTable.CITY),
-                  r.get(marketTable.NAME),
-                  r.get(marketTable.CODE),
-                  r.get(marketTable.FULLNAME),
-                  proxies,
-                  imageProxies,
-                  r.get(marketTable.FIRST_PARTY_REGEX));
+               r.get(marketTable.ID).intValue(),
+               r.get(marketTable.NAME),
+               r.get(marketTable.FULLNAME),
+               r.get(marketTable.CODE),
+               r.get(marketTable.FIRST_PARTY_REGEX));
 
-            market.setMustUseCrawlerWebdriver(r.get(marketTable.CRAWLER_WEBDRIVER));
 
             marketsList.add(market);
          }
@@ -89,22 +70,6 @@ public class Markets {
       }
    }
 
-   /**
-    * Search for a market in the markets array.
-    * 
-    * @param city
-    * @param name
-    * @return the desired market. If none is found, the method returns null.
-    */
-   public Market getMarket(String city, String name) {
-      for (Market m : marketsList) {
-         if (m.getCity().equals(city) && m.getName().equals(name)) {
-            return m;
-         }
-      }
-
-      return null;
-   }
 
    public Market getMarket(int marketId) {
       for (Market m : marketsList) {

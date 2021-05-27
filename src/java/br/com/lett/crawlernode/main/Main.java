@@ -52,8 +52,6 @@ public class Main {
 
       // Check resources
       Logging.printLogInfo(LOGGER, "Checking files...");
-      // Initialize temporary folder for images download
-      Persistence.initializeImagesDirectories(GlobalConfigurations.markets);
 
       // Create a queue handler that will contain an Amazon SQS instance
       queueHandler = new QueueHandler();

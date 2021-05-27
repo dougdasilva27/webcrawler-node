@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.core.session;
 
+import br.com.lett.crawlernode.util.ScraperInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.session.crawler.EqiCrawlerSession;
@@ -26,38 +26,39 @@ public class SessionFactory {
 
    private static final Logger logger = LoggerFactory.getLogger(SessionFactory.class);
 
-   public static Session createSession(Request request, Markets markets) {
+   public static Session createSession(Request request, Market market) {
       String scraperType = request.getScraperType();
 
+
       if (ScrapersTypes.CORE.toString().equals(scraperType)) {
-         return new InsightsCrawlerSession(request, scraperType, markets);
+         return new InsightsCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.SEED.toString())) {
-         return new SeedCrawlerSession(request, scraperType, markets);
+         return new SeedCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.DISCOVERER.toString())) {
-         return new DiscoveryCrawlerSession(request, scraperType, markets);
+         return new DiscoveryCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.RATING.toString())) {
-         return new RatingReviewsCrawlerSession(request, scraperType, markets);
+         return new RatingReviewsCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.IMAGES_DOWNLOAD.toString())) {
-         return new ImageCrawlerSession(request, scraperType, markets);
+         return new ImageCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.RANKING_BY_KEYWORDS.toString())) {
-         return new RankingKeywordsSession(request, scraperType, markets);
+         return new RankingKeywordsSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.DISCOVERER_BY_KEYWORDS.toString())) {
-         return new RankingDiscoverKeywordsSession(request, scraperType, markets);
+         return new RankingDiscoverKeywordsSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.EQI.toString())) {
-         return new EqiCrawlerSession(request, scraperType, markets);
+         return new EqiCrawlerSession(request, scraperType, market);
       } else if (scraperType.equals(ScrapersTypes.EQI_DISCOVERER.toString())) {
-         return new EqiRankingDiscoverKeywordsSession(request, scraperType, markets);
+         return new EqiRankingDiscoverKeywordsSession(request, scraperType, market);
       } else {
          Logging.printLogDebug(logger, "Scraper type not recognized." + "[" + scraperType + "]");
          return null;
       }
    }
 
-   public static Session createTestSession(String url, Market market) {
-      return new TestCrawlerSession(url, market);
+   public static Session createTestSession(String url, Market market, ScraperInformation scraperInformation) {
+      return new TestCrawlerSession(url, market,scraperInformation);
    }
 
-   public static Session createTestRankingKeywordsSession(String keyword, Market market) {
-      return new TestRankingKeywordsSession(market, keyword);
+   public static Session createTestRankingKeywordsSession(String keyword, Market market , ScraperInformation scraperInformation) {
+      return new TestRankingKeywordsSession(market, keyword ,scraperInformation);
    }
 }

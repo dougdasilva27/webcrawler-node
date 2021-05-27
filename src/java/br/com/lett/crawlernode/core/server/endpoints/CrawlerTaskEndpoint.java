@@ -8,11 +8,12 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.test.TestUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,11 +59,11 @@ public class CrawlerTaskEndpoint extends HttpServlet {
       String response;
 
       Logging.printLogDebug(logger, "Creating session....");
-      Session session = SessionFactory.createSession(request, GlobalConfigurations.markets);
+      Session session = SessionFactory.createSession(request,request.getMarket());
 
       // create the task
       Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
-      Task task = TaskFactory.createTask(session);
+      Task task = TaskFactory.createTask(session,request.getClassName());
 
       // perform the task
       Logging.printLogDebug(logger, session, "Processing task ...");
