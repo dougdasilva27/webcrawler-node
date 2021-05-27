@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class SaopauloDrogariasaopauloCrawler extends Crawler {
 
@@ -57,7 +58,7 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
          String description = crawlDescription(doc, internalPid);
          String primaryImage = null;
-         String secondaryImages = null;
+         List<String> secondaryImages = null;
 
          // sku data in json
          JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -76,13 +77,12 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
             Marketplace marketplace = CrawlerUtils.assembleMarketplaceFromMap(marketplaceMap, dpspSellers, Arrays.asList(Card.VISA), session);
             boolean available = CrawlerUtils.getAvailabilityFromMarketplaceMap(marketplaceMap, dpspSellers);
             primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image-main", Arrays.asList("src"), "http://", "https://drogariasp.vteximg.com.br/");
-            secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".thumbs li a", Arrays.asList("rel"), "http://", "https://drogariasp.vteximg.com.br/", primaryImage);
+            secondaryImages = scrapSecondaryImages(doc, primaryImage);
             Prices prices = CrawlerUtils.getPrices(marketplaceMap, dpspSellers);
             Float price = vtexUtil.crawlMainPagePrice(prices);
             Integer stock = vtexUtil.crawlStock(apiJSON);
             String descriptionV = description + CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber());
             String ean = i < arrayEan.length() ? arrayEan.getString(i) : null;
-            RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalPid);
             List<String> eans = new ArrayList<>();
             eans.add(ean);
 
@@ -92,7 +92,6 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setRatingReviews(ratingsReviews)
                .setPrice(price)
                .setPrices(prices)
                .setAvailable(available)
@@ -206,23 +205,22 @@ public class SaopauloDrogariasaopauloCrawler extends Crawler {
       return description.toString();
    }
 
-   protected RatingsReviews scrapRatingAndReviews(Document document, String internalPid) {
-      RatingsReviews ratingReviews = new RatingsReviews();
-      ratingReviews.setDate(session.getDate());
 
-      YourreviewsRatingCrawler yr = new YourreviewsRatingCrawler(session, cookies, logger, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", dataFetcher);
-      Document docRating = yr.crawlPageRatingsFromYourViews(internalPid, "87b2aa32-fdcb-4f1d-a0b9-fd6748df725a", dataFetcher);
-      Integer totalNumOfEvaluations = yr.getTotalNumOfRatingsFromYourViews(docRating);
-      Double avgRating = yr.getTotalAvgRatingFromYourViews(docRating);
+   private List<String> scrapSecondaryImages(Document doc, String primaryImage){
+      List<String> secondaryImage = new ArrayList<>();
 
-      AdvancedRatingReview advancedRatingReview = yr.getTotalStarsFromEachValue(internalPid);
+      Elements elements = doc.select(".thumbs li a");
 
-      ratingReviews.setAdvancedRatingReview(advancedRatingReview);
-      ratingReviews.setTotalRating(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating);
-      ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
+      for(Element e: elements){
+         String secondary =  e.attr("rel");
 
-      return ratingReviews;
+         if(!secondary.equals(primaryImage)) {
+            secondaryImage.add(secondary);
+            if (secondaryImage.size() == 3) { // Isso é necessario porque esse market só mostra as 4 primeiras imagens.
+               break;
+            }
+         }
+      }
+      return  secondaryImage;
    }
-
 }
