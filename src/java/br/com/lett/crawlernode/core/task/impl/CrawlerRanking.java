@@ -481,7 +481,7 @@ public abstract class CrawlerRanking extends Task {
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
-      System.err.println(executionParameters.getEnvironment());
+      
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
