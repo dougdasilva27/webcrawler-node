@@ -32,21 +32,22 @@ class MexicoJustoCrawler(session: Session?) : CrawlerRankingKeywords(session) {
       val offset = if (currentPage == 1) null else (currentPage - 1) * pageSize
       val body = """
          {
-           "query": "query searchProducts(  ${"$"}query: String!  ${"$"}first: Int  ${"$"}offset: Int  ${"$"}orderOptions: String  ${"$"}filter: ProductFilterInput) {  search(query: ${"$"}query) {    products(first: ${"$"}first, offset: ${"$"}offset, orderOptions: ${"$"}orderOptions, filter: ${"$"}filter) {      edges {        node {          id          name          isAvailable          url          action          sku          category{            id            name          }          maxQuantityAllowed          useWeightPicker          availability{            lineMaturationOptions            quantityOnCheckout            variantOnCheckout            priceRange{              start {                gross {                  amount                }                }                stop {                gross {                  amount                }              }            }            priceRangeUndiscounted{              start {                gross {                  amount                }              }              stop {                gross {                  amount                }              }            }          }          thumbnail{              url          }          price{              amount              currency          }          variants{              id              name              stockQuantity              weightUnit              isPiece              maturationOptions          }          shoppingList{              id              name          }        }      }    }    pages    total  }}",
+           "query": "query searchProducts(\n  ${'$'}query: String!\n  ${'$'}first: Int\n  ${'$'}offset: Int\n  ${'$'}orderOptions: String\n  ${'$'}filter: ProductFilterInput\n) {\n  search(query: ${'$'}query) {\n    products(first: ${'$'}first, offset: ${'$'}offset, orderOptions: ${'$'}orderOptions, filter: ${'$'}filter) {\n      edges {\n        node {\n          id\n          name\n          isAvailable\n          url\n          action\n          sku\n          category{\n            id\n            name\n          }\n          maxQuantityAllowed\n          useWeightPicker\n          availability{\n            lineMaturationOptions\n            quantityOnCheckout\n            variantOnCheckout\n            priceRange{\n              start {\n                gross {\n                  amount\n                }\n                }\n                stop {\n                gross {\n                  amount\n                }\n              }\n            }\n            priceRangeUndiscounted{\n              start {\n                gross {\n                  amount\n                }\n              }\n              stop {\n                gross {\n                  amount\n                }\n              }\n            }\n          }\n          thumbnail{\n              url\n          }\n          price{\n              amount\n              currency\n          }\n          variants{\n              id\n              name\n              stockQuantity\n              weightUnit\n              isPiece\n              maturationOptions {\n                description\n                name\n                type\n              }\n          }\n          shoppingList{\n              id\n              name\n          }\n        }\n      }\n    }\n    pages\n    total\n  }\n}",
            "variables": {
              "query": "$location",
              "first": $pageSize,
              "offset": $offset,
-             "orderOptions": "name",
              "filter": {
                "postalCode": "$POSTAL_CODE"
              }
            },
            "operationName": null
-         }""".trimIndent()
+         }
+         """.trimIndent()
       val headers = mutableMapOf("Content-Type" to "application/json")
 
       val request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies)
+         .mustSendContentEncoding(false)
          .setPayload(body).setHeaders(headers).build()
 
       val response = dataFetcher.post(session, request)
