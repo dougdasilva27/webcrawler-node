@@ -496,6 +496,10 @@ public class B2WCrawler extends Crawler {
 
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
 
+      if(jsonSeller.isEmpty()){
+         jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+      }
+
       JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
 
