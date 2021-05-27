@@ -116,7 +116,7 @@ public class GPACrawler extends Crawler {
 
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
-         RatingsReviews ratingsReviews = extractRatingAndReviews(internalId);
+         RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace")? extractRatingAndReviews(internalId):null;
          List<String> secondaryImages = crawlSecondaryImages(jsonSku);
 
          String redirectedToURL = session.getRedirectedToURL(productUrl);
