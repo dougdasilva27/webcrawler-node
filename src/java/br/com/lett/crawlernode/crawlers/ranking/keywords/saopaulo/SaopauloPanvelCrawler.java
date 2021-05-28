@@ -1,5 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -8,78 +12,49 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 
+import java.time.LocalDate;
+
 public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
    public SaopauloPanvelCrawler(Session session) {
       super(session);
+      fetchMode = FetchMode.FETCHER;
+      cookies.add(new BasicClientCookie("stc112189", String.valueOf(LocalDate.now().toEpochDay())));
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      // número de produtos por página do market
-      this.pageSize = 15;
+      this.pageSize = 16;
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
-      String url = "https://www.panvel.com/panvel/buscarProduto.do?paginaAtual=" + this.currentPage
-            + "&termoPesquisa=" + this.keywordWithoutAccents.replace(" ", "+");
+      String url = "https://www.panvel.com/panvel/buscarProduto.do?termoPesquisa=" + keywordEncoded + "&paginaAtual=" + currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = crawlProductsInfo(url);
-      Elements products = this.currentDoc.select(".box-produto a");
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url)
+         .mustSendContentEncoding(false)
+         .setSendUserAgent(false)
+         .build();
+      Response response = dataFetcher.get(session, request);
 
-      if (!products.isEmpty()) {
-         for (Element e : products) {
-            String urlProduct = crawlProductUrl(e);
-            String internalId = crawlInternalId(urlProduct);
+      currentDoc = Jsoup.parse(response.getBody());
+      Elements products = this.currentDoc.select("li.search-item");
 
-            saveDataProduct(internalId, null, urlProduct);
+      for (Element e : products) {
+         String urlProduct = "https://www.panvel.com" + e.selectFirst(".details").attr("href");
+         String internalId = CommonMethods.getLast(urlProduct.split("-"));
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
-                  + null + " - Url: " + urlProduct);
-            if (this.arrayProducts.size() == productsLimit)
-               break;
-         }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
+         saveDataProduct(internalId, null, urlProduct);
+
+         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: "
+            + null + " - Url: " + urlProduct);
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-            + this.arrayProducts.size() + " produtos crawleados");
+         + this.arrayProducts.size() + " produtos crawleados");
    }
 
    @Override
    protected boolean hasNextPage() {
-      Element item = this.currentDoc.select(".pagination__item a").last();
-      return item != null && !item.hasClass("pagination__arrow--disabled");
-   }
-
-   private String crawlInternalId(String url) {
-      return CommonMethods.getLast(url.split("-"));
-   }
-
-   private String crawlProductUrl(Element e) {
-      String productUrl = e.attr("href");
-
-      if (!productUrl.startsWith("https://www.panvel.com")) {
-         productUrl = "https://www.panvel.com" + productUrl;
-      }
-
-      return productUrl;
-   }
-
-   private Document crawlProductsInfo(String url) {
-      String response = fetchPostFetcher(url, null, null, null);
-
-      if (response != null && !response.isEmpty()) {
-
-         return Jsoup.parse(response);
-
-      } else {
-
-         return fetchDocument(url);
-
-      }
+      return (arrayProducts.size() % pageSize - currentPage) < 0;
    }
 }
