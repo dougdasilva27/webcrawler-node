@@ -44,7 +44,6 @@ import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -451,7 +450,7 @@ public abstract class CrawlerRanking extends Task {
             SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
             entry.setId(String.valueOf(counter)); // the id must be unique in the batch
 
-            JSONObject jsonToSentToQueue = Scheduler.messageToSendToQueue(menssage, session.getMarket(), scraperInformation, scraperType);
+            JSONObject jsonToSentToQueue = Scheduler.mountMessageToSendToQueue(menssage, session.getMarket(), scraperInformation, scraperType);
 
             entry.setMessageBody(jsonToSentToQueue.toString());
 
