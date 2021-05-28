@@ -34,6 +34,13 @@ public abstract class VtexRankingKeywordsNew extends CrawlerRankingKeywords {
          String internalPid = product.optString("productId");
 
          saveDataProduct(null, internalPid, productUrl);
+
+         this.log("Position: " + this.position + " - InternalId: " + null  + " - InternalPid: " + internalPid
+            + " - Url: " + productUrl);
+
+         if (this.arrayProducts.size() == productsLimit) {
+            break;
+         }
       }
    }
 
