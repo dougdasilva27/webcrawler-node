@@ -8,7 +8,7 @@ export ECR_IMAGE_URL=868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capt
 
 
 if [ "$ENVIROMENT_DEPLOY" == "prod-small" ];
-    then npx json -I -f Dockerrun.aws.json -e "this.containerDefinitions[0].memoryReservation"='1500'
+    then npx json -I -f Dockerrun.aws.json -e "this.containerDefinitions[0].memoryReservation"='1700'
 else
     npx json -I -f Dockerrun.aws.json -e "this.containerDefinitions[0].memoryReservation"='700'
 fi
