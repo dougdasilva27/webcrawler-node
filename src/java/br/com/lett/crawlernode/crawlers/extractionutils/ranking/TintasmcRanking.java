@@ -32,11 +32,9 @@ public abstract class TintasmcRanking extends CrawlerRankingKeywords {
       String protocolApi = "https://www.obrazul.com.br/api/search/products-v2/?user_location=";
 
       String locationJson = setJsonLocation();
-
       String locationString = CommonMethods.encondeStringURLToISO8859(locationJson, logger, session);
-      String slug = session.getOriginalURL().split("produtos/")[1];
 
-      return protocolApi + locationString + "&slug=" + slug;
+      return protocolApi + locationString + "&search=" + this.keywordEncoded;
    }
 
    private JSONArray fetch() {
