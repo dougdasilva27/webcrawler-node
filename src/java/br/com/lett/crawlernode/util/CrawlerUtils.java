@@ -1010,17 +1010,17 @@ public class CrawlerUtils {
 
    public static JSONObject stringToJson(String str) {
       JSONObject json = new JSONObject();
-
-      if (str.trim().startsWith("{") && str.trim().endsWith("}")) {
-         try {
-            // We use gson to parse because this library treats "\n" and duplicate keys
-            JsonObject gson = ((JsonObject) new JsonParser().parse(str.trim()));
-            json = new JSONObject(gson.toString());
-         } catch (Exception e1) {
-            Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
+      if (str != null) {
+         if (str.trim().startsWith("{") && str.trim().endsWith("}")) {
+            try {
+               // We use gson to parse because this library treats "\n" and duplicate keys
+               JsonObject gson = ((JsonObject) new JsonParser().parse(str.trim()));
+               json = new JSONObject(gson.toString());
+            } catch (Exception e1) {
+               Logging.printLogWarn(LOGGER, CommonMethods.getStackTrace(e1));
+            }
          }
       }
-
       return json;
    }
 
