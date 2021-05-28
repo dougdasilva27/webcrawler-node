@@ -122,10 +122,15 @@ public class BrasilDrogariapachecoCrawler extends Crawler {
    }
 
    private String scrapSecondaryImage(VTEXCrawlersUtils vtexUtil, JSONObject apiJSON) {
-      JSONArray images = new JSONArray(vtexUtil.crawlSecondaryImages(apiJSON));
       JSONArray array = new JSONArray();
-      for (int i = 0; i < Math.min(images.length(), 3); i++) {
-         array.put(images.get(i));
+      if(vtexUtil != null && apiJSON != null) {
+         String secondary = vtexUtil.crawlSecondaryImages(apiJSON);
+         if(secondary!= null) {
+            JSONArray images = new JSONArray(secondary);
+            for (int i = 0; i < Math.min(images.length(), 3); i++) {
+               array.put(images.get(i));
+            }
+         }
       }
       return array.toString();
    }
