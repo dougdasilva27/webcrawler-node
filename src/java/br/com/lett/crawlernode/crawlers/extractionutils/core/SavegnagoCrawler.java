@@ -46,7 +46,7 @@ public abstract class SavegnagoCrawler extends VTEXOldScraper {
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       RatingsReviews reviews = new RatingsReviews();
 
-      YourreviewsRatingCrawler yrRC = new YourreviewsRatingCrawler(session, cookies, logger);
+      YourreviewsRatingCrawler yrRC = new YourreviewsRatingCrawler(session, cookies, logger,"d23c4a07-61d5-43d3-97da-32c0680a32b8",dataFetcher);
       Document docRating = yrRC.crawlPageRatingsFromYourViews(internalPid, "d23c4a07-61d5-43d3-97da-32c0680a32b8", dataFetcher);
       Integer totalNumOfEvaluations = yrRC.getTotalNumOfRatingsFromYourViews(docRating);
       Double avgRating = yrRC.getTotalAvgRatingFromYourViews(docRating);
