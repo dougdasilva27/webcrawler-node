@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -14,65 +14,44 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/**
- * BrasiltintasmcCrawler
- */
-public class BrasilTintasmcCrawler extends Crawler {
+import java.util.*;
+
+public abstract class Tintasmc extends Crawler {
 
    private static final String SELLER_FULL_NAME = "TintasMC Brasil";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-   public BrasilTintasmcCrawler(final Session session) {
+   protected Tintasmc(final Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
    }
 
-   private String buildURLToRequest() {
-      String urlToRequest = "";
+   /**
+    * Can be found after insert address on the website. Request: 'https://www.obrazul.com.br/api/search/products-v2'
+    *
+    * Format:
+    * {"address":{"country":"BR","_country":"Brasil","address":"","city":"","_state":"","neighborhood":"","state":"","postal_code":""},"lng":"","full_address":"","lat":"","place_id":""}
+    *
+    * @return location data in json format
+    */
+   protected abstract String setJsonLocation();
 
+   private String buildURLToRequest() {
       String protocolApi = "https://www.obrazul.com.br/api/search/products-v2/?user_location=";
 
-      JSONObject location = new JSONObject();
-      JSONObject address = new JSONObject();
+      String locationJson = setJsonLocation();
 
-      location.put("lat", "-23.551418");
-      location.put("lng", "-46.72117410000001");
-      location.put("full_address", "Av. das Nações Unidas - Alto de Pinheiros, São Paulo - SP, 05466, Brasil");
-      location.put("address", address);
-      location
-         .put("place_id", "EktBdi4gZGFzIE5hw6fDtWVzIFVuaWRhcyAtIEFsdG8gZGUgUGluaGVpcm9zLCBTw6NvIFBhdWxvIC0gU1AsIDA1NDY2LCBCcmF6aWwiLiosChQKEgm_RA79OlbOlBHcB5b-x2OnrhIUChIJs5ptPTFWzpQRdU3tPpsXy-I");
-
-      address.put("address", "Avenida das Nações Unidas");
-      address.put("neighborhood", "Alto de Pinheiros");
-      address.put("city", "São Paulo");
-      address.put("state", "SP");
-      address.put("_state", "São Paulo");
-      address.put("country", "BR");
-      address.put("_country", "Brasil");
-      address.put("postal_code", "05466");
-
-      String locationString = CommonMethods.encondeStringURLToISO8859(location.toString(), logger, session);
+      String locationString = CommonMethods.encondeStringURLToISO8859(locationJson, logger, session);
       String slug = session.getOriginalURL().split("produtos/")[1];
-      urlToRequest = protocolApi + locationString + "&slug=" + slug;
 
-      return urlToRequest;
+      return protocolApi + locationString + "&slug=" + slug;
    }
 
    @Override
@@ -197,6 +176,4 @@ public class BrasilTintasmcCrawler extends Crawler {
 
       return creditCards;
    }
-
-
 }
