@@ -11,6 +11,7 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import enums.QueueName;
 import models.Processed;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -159,7 +160,7 @@ public class Scheduler {
    }
 
 
-   public static JSONObject messageToSendToQueue(String parameters, Market market , ScraperInformation scraper, String scraperType) {
+   public static JSONObject mountMessageToSendToQueue(String parameters, Market market , ScraperInformation scraper, String scraperType) {
 
       JSONObject jsonToSendToCrawler = new JSONObject();
       JSONObject marketInfo = new JSONObject();
@@ -170,7 +171,7 @@ public class Scheduler {
       marketInfo.put("use_browser", scraper.isUseBrowser());
       marketInfo.put("name", market.getName());
       jsonToSendToCrawler.put("type", scraperType);
-      jsonToSendToCrawler.put("options", jsonOptionsRefine(scraper.getOptionsScraper(), scraper.getOptionsScraperClass()));
+      jsonToSendToCrawler.put("options", jsonOptionsRefine(scraper.getOptionsScraper(), scraper.getOptionsScraperClass(), scraper.getProxiesMarket()));
       jsonToSendToCrawler.put("market", marketInfo);
       jsonToSendToCrawler.put("className", scraper.getClassName());
       jsonToSendToCrawler.put("parameters", parameters);
@@ -180,7 +181,7 @@ public class Scheduler {
 
    }
 
-   public static JSONObject jsonOptionsRefine(String optionsScraper, String optionSuperClass) throws JSONException {
+   public static JSONObject jsonOptionsRefine(String optionsScraper, String optionSuperClass, String proxiesMarket) throws JSONException {
       JSONObject optionsScraperJson = stringToJson(optionsScraper);
       JSONObject optionsScraperSuperClassJson = stringToJson(optionSuperClass);
       JSONObject result = new JSONObject();
@@ -197,11 +198,12 @@ public class Scheduler {
 
       if (optionsScraperJson.optJSONArray(keyProxies) != null){
          result.put("proxies", optionsScraperJson.optJSONArray(keyProxies));
-      } else {
+      } else if (optionsScraperSuperClassJson.optJSONArray(keyProxies) != null) {
          result.put("proxies", optionsScraperSuperClassJson.optJSONArray(keyProxies));
 
+      }else {
+         result.put(keyProxies, new JSONArray(proxiesMarket));
       }
-
 
       return result;
    }
