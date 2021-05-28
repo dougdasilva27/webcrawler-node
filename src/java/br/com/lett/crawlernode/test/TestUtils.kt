@@ -137,12 +137,12 @@ class TestUtils {
          try {
             val query = "WITH market_informations AS (" +
                "SELECT scraper.market_id, scraper.\"options\" , scraper.scraper_class_id, scraper.\"type\", " +
-               "scraper.use_browser, market.fullname, market.first_party_regex, market.code, market.name " +
+               "scraper.use_browser, market.fullname, market.first_party_regex, market.code, market.name, market.proxies " +
                "FROM market JOIN scraper ON (market.id = scraper.market_id) " +
                "AND market.id = '" + marketId + "') " +
                "SELECT market_informations.\"options\" as options_scraper, scraper_class.\"options\", " +
                "public.scraper_class.\"class\", market_informations.market_id, market_informations.use_browser, " +
-               "market_informations.first_party_regex, market_informations.code, market_informations.fullname, market_informations.name " +
+               "market_informations.first_party_regex, market_informations.code, market_informations.fullname, market_informations.proxies, market_informations.name " +
                "FROM market_informations JOIN scraper_class " +
                "ON (market_informations.scraper_class_id = scraper_class.id) " +
                "WHERE market_informations.\"type\" = '"+ type +"'"
