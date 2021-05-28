@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -28,7 +29,7 @@ public abstract class MartinsKeywords extends CrawlerRankingKeywords {
   protected void processBeforeFetch() {
     try {
       this.webdriver = DynamicDataFetcher
-          .fetchPageWebdriver("https://www.martinsatacado.com.br/login", session);
+          .fetchPageWebdriver("https://www.martinsatacado.com.br/login", ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
       this.webdriver.waitLoad(10000);
 
       WebElement email = this.webdriver.driver.findElement(By.cssSelector("#js_username_login"));
