@@ -59,7 +59,7 @@ public class B2WCrawler extends Crawler {
    private static final String MAIN_B2W_NAME_LOWER = "b2w";
    private static final Card DEFAULT_CARD = Card.VISA;
    protected String sellerNameLower;
-   protected String sellerNameLowerFromHTML; // Americanas
+   protected String sellerNameLowerFromHTML; // Americanas // Submarino
    protected List<String> subSellers;
    protected String homePage;
    protected Set<String> cards = Sets.newHashSet(DEFAULT_CARD.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
