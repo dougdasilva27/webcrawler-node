@@ -1907,7 +1907,7 @@ public class CrawlerUtils {
             StringBuilder descriptionUrl = new StringBuilder();
             descriptionUrl.append("https://www.standout.com.br/");
             descriptionUrl.append(e.attr("i")).append("/");
-            descriptionUrl.append("p/").append("WmZEhtkrUJQ,/");
+            descriptionUrl.append("p/").append("qVVOGMBht90,/");
             descriptionUrl.append(e.attr("x")).append("/");
             descriptionUrl.append(e.attr("y"));
 
