@@ -92,8 +92,8 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
       var price = json.optDouble("originalPrice")
       var priceFrom: Double? = null
       val discount = (json.optQuery("/discount/percentage") as Int?)
-      if (discount != 0) {
-         price *= (1 - (json.optQuery("/discount/percentage") as Int).toDouble() / 100)
+      if (discount != 0 && discount != null) {
+         price = json.optQuery("/discount/dealPrice") as Double
          priceFrom = json.optDouble("originalPrice")
       }
       val bankSlip = price.toBankSlip()
