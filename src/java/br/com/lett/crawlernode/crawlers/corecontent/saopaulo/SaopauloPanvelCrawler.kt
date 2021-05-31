@@ -59,12 +59,8 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
       if (""".*p-\d*""".toRegex().matches(session.originalURL)) {
          val internalId = URL(session.originalURL).path.substringAfterLast("-")
 
-         val json = doc.selectFirst("#serverApp-state").data()
-            .replace("&q;", "\"")
-            .replace("&s;", "'")
-            .replace("&g;", ">")
-            .replace("&l;", "<")
-            .toJson().optJSONObject("api/v1/item/$internalId")
+         val json = unescapeHtml(doc.selectFirst("#serverApp-state").data()).toJson()
+            .optJSONObject("api/v1/item/$internalId")
 
          val categories = json.optJSONArray("categories").map { (it as JSONObject).optString("description") }
          val jsonImages = json.optJSONArray("images").sortedBy { (it as JSONObject).optInt("number") }.toMutableList()
@@ -78,6 +74,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
             .setInternalId(internalId)
             .setName(name)
             .setOffers(offers)
+            .setDescription(json.optString("description"))
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
@@ -87,6 +84,40 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
       return products
    }
+
+   private fun unescapeHtml(str: String): String {
+      return str.replace("&a;Ccedil;", "Ç")
+         .replace("&a;ccedil;", "ç")
+         .replace("&a;Aacute;", "Á")
+         .replace("&a;Acirc;", "Â")
+         .replace("&a;Atilde;", "Ã")
+         .replace("&a;Eacute;", "É")
+         .replace("&a;Ecirc;", "Ê")
+         .replace("&a;Iacute;", "Í")
+         .replace("&a;Ocirc;", "Ô")
+         .replace("&a;Otilde;", "Õ")
+         .replace("&a;Oacute;", "Ó")
+         .replace("&a;Uacute;", "Ú")
+         .replace("&a;aacute;", "á")
+         .replace("&a;acirc;", "â")
+         .replace("&a;atilde;", "ã")
+         .replace("&a;eacute;", "é")
+         .replace("&a;ecirc;", "ê")
+         .replace("&a;iacute;", "í")
+         .replace("&a;ocirc;", "ô")
+         .replace("&a;otilde;", "õ")
+         .replace("&a;oacute;", "ó")
+         .replace("&a;uacute;", "ú")
+         .replace("&a;nbsp;", " ")
+         .replace("&q;", "\"")
+         .replace("&s;", "'")
+         .replace("&g;", ">")
+         .replace("&l;", "<")
+         .replace("&a;reg;", "®")
+   }
+
+   fun indexesOf(str: String, pat: String): List<Int> =
+      pat.toRegex().findAll(str).map { it.range.first }.toList()
 
    private fun scrapOffers(json: JSONObject): Offers {
       var price = json.optDouble("originalPrice")
