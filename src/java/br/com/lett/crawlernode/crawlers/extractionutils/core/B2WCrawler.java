@@ -158,7 +158,7 @@ public class B2WCrawler extends Crawler {
          CategoryCollection categories = crawlCategories(infoProductJson);
          String primaryImage = this.crawlPrimaryImage(infoProductJson);
          List<String> secondaryImages = this.crawlSecondaryImages(infoProductJson);
-         String description = this.crawlDescription(internalPid, doc);
+         String description = this.crawlDescription(apolloJson, doc, internalPid);
          RatingsReviews ratingReviews = crawlRatingReviews(frontPageJson, internalPid);
          List<String> eans = crawlEan(infoProductJson);
 
@@ -892,7 +892,7 @@ public class B2WCrawler extends Crawler {
       return categories;
    }
 
-   private String crawlDescription(String internalPid, Document doc) {
+   protected String crawlDescription(JSONObject apolloJson, Document doc, String internalPid) {
       StringBuilder description = new StringBuilder();
 
       boolean alreadyCapturedHtmlSlide = false;
@@ -931,6 +931,12 @@ public class B2WCrawler extends Crawler {
          if (elementProductDetails != null) {
             elementProductDetails.select(".info-section-header.hidden-md.hidden-lg").remove();
             description.append(elementProductDetails.html());
+         }
+      }
+      if (description.length() == 0) {
+         Object apolloDescription = apolloJson.optQuery("/ROOT_QUERY/product({\"productId\":\"" + internalPid + "\"})/description/content");
+         if (apolloDescription != null) {
+            description.append((String) apolloDescription);
          }
       }
 
