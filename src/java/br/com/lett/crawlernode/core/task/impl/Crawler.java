@@ -501,8 +501,6 @@ public abstract class Crawler extends Task {
       if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
          Product p = ProductDTO.convertProductToKinesisFormat(product, session);
 
-         Logging.printLogInfo(logger, session, "Sending data to Kinesis ...");
-
          long productStartTime = System.currentTimeMillis();
 
          KPLProducer.getInstance().put(p, session);
@@ -655,7 +653,6 @@ public abstract class Crawler extends Task {
             Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
             session.setTaskStatus(Task.STATUS_FAILED);
          } else {
-            Logging.printLogInfo(logger, session, "Task completed.");
             session.setTaskStatus(Task.STATUS_COMPLETED);
          }
 
