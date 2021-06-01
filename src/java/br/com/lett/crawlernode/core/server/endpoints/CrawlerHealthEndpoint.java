@@ -26,8 +26,6 @@ public class CrawlerHealthEndpoint extends HttpServlet {
    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
       res.setStatus(HttpServletResponse.SC_OK);
 
-      Logging.printLogDebug(logger, "Received a request on " + ServerCrawler.ENDPOINT_HEALTH_CHECK);
-      Logging.printLogDebug(logger, "Health: " + ServerCrawler.MSG_SERVER_HEALTH_OK);
       res.getWriter().println(ServerCrawler.MSG_SERVER_HEALTH_OK);
 
   }

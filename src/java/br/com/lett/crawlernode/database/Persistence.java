@@ -48,7 +48,6 @@ public class Persistence {
     * @return
     */
    public static PersistenceResult persistProcessedProduct(Processed newProcessedProduct, Session session) {
-      Logging.printLogInfo(logger, session, "Persisting processed product...");
 
       PersistenceResult persistenceResult = new ProcessedModelPersistenceResult();
       Long id;

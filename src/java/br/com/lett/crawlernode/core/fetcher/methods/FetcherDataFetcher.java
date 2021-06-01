@@ -180,8 +180,7 @@ public class FetcherDataFetcher implements DataFetcher {
 
             if (statistics.has("request_id")) {
                requestId = statistics.get("request_id").toString();
-               Logging.printLogInfo(logger, session, "Request Fetcher Id: " + requestId);
-            }
+               }
          }
 
          response = responseBuilder(responseJson);

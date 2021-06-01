@@ -33,8 +33,6 @@ public class CrawlerTaskEndpoint extends HttpServlet {
    @Override
    protected void doPost(HttpServletRequest req, HttpServletResponse res) {
       String response;
-      Logging.printLogInfo(logger, "Received a request on " + ServerCrawler.ENDPOINT_TASK);
-
       Request request = RequestConverter.convert(req);
 
       if (CrawlerTaskRequestChecker.checkRequest(request)) {
@@ -58,22 +56,16 @@ public class CrawlerTaskEndpoint extends HttpServlet {
    public static String perform(HttpServletResponse res, Request request) {
       String response;
 
-      Logging.printLogDebug(logger, "Creating session....");
       Session session = SessionFactory.createSession(request,request.getMarket());
 
-      // create the task
       Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
       Task task = TaskFactory.createTask(session,request.getClassName());
 
-      // perform the task
-      Logging.printLogDebug(logger, session, "Processing task ...");
       task.process();
 
-      // check final task status
       if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
          response = ServerCrawler.MSG_TASK_COMPLETED;
          res.setStatus(ServerCrawler.HTTP_STATUS_CODE_OK);
-         Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + ServerCrawler.HTTP_STATUS_CODE_OK);
          Main.server.incrementSucceededTasks();
       } else {
          response = ServerCrawler.MSG_TASK_FAILED;

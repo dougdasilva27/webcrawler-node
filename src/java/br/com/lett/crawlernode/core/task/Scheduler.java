@@ -81,7 +81,6 @@ public class Scheduler {
             entries.clear();
          }
 
-         Logging.printLogInfo(LOGGER, session, counter + " tasks scheduled.");
       } catch (Exception e) {
          Logging.printLogError(LOGGER, "Error during sqs query execution.");
          Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
