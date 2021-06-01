@@ -1,55 +1,37 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.portugal;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Arrays;
-
 public class PortugalAuchanCrawler extends CrawlerRankingKeywords {
+
+   private static final String HOME_PAGE = "https://www.auchan.pt/Frontoffice/";
+
 
    public PortugalAuchanCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
-   }
-
-   @Override
-   protected void processBeforeFetch() {
-      super.processBeforeFetch();
-      Logging.printLogDebug(logger, session, "Adding cookie...");
-
-      this.cookies = CrawlerUtils
-         .fetchCookiesFromAPage("https://www.auchan.pt/Frontoffice/", Arrays.asList("ASP.NET_SessionId", "AuchanSessionCookie", "AUCHANCOOKIE"), "www.auchan.pt", "/", cookies, session, null,
-            dataFetcher);
-   }
-
-   public Document fetch(String url) {
-      String doc = "";
-      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url).build();
-      doc = this.dataFetcher.get(session, request).getBody();
-
-      return Jsoup.parse(doc);
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
 
-      this.pageSize = 30;
+      this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
-      String url = "https://www.auchan.pt/Frontoffice/search/" + this.keywordWithoutAccents.replace(" ", "%20");
-
+      String urlFirstPage = "https://www.auchan.pt/pt/pesquisa?q=" + this.keywordEncoded + "&search-button=&lang=pt_PT";
+      String url = "https://www.auchan.pt/on/demandware.store/Sites-AuchanPT-Site/pt_PT/Search-UpdateGrid?q=" + this.keywordEncoded + "&prefn1=soldInStores&prefv1=000&start=" + (this.currentPage - 1) * 24 + "&sz=24&selectedUrl=https%3A%2F%2Fwww.auchan.pt%2Fon%2Fdemandware.store%2FSites-AuchanPT-Site%2Fpt_PT%2FSearch-UpdateGrid%3Fq%3D" + this.keywordEncoded + "%26prefn1%3DsoldInStores%26prefv1%3D000%26start%3D" + (this.currentPage - 1) * 24 + "%26sz%3D24";
       this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetch(url);
-      Elements products = this.currentDoc.select(".product-item");
 
+      if (this.currentPage != 1) {
+         this.currentDoc = fetchDocument(url);
+      } else {
+         this.currentDoc = fetchDocument(urlFirstPage);
+      }
+
+      Elements products = this.currentDoc.select(".auc-product");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -57,8 +39,8 @@ public class PortugalAuchanCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalId = e.attr("data-product-id");
-            String productUrl = "https://www.auchan.pt" + CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-item-header a", "href");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product", "data-pid");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".image-container  a", "href", "https", "www.auchan.pt");
             saveDataProduct(internalId, null, productUrl);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
@@ -75,9 +57,10 @@ public class PortugalAuchanCrawler extends CrawlerRankingKeywords {
 
    }
 
+
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, "#page .col-sm-9 h3", false, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".search-result-count", true, 0);
 
       this.log("Total de produtos: " + this.totalProducts);
    }
