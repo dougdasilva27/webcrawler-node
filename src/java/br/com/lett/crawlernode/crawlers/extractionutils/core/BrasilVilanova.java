@@ -48,10 +48,6 @@ public abstract class BrasilVilanova extends Crawler {
    public static final String HOME_PAGE = "https://www.vilanova.com.br/";
    private static final String IMAGES_HOST = "i2-vilanova.a8e.net.br";
 
-   private static final String LOGIN_URL = "https://www.vilanova.com.br/Cliente/Logar";
-   private final String CNPJ = getCnpj();
-   private final String PASSWORD = getPassword();
-
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -65,36 +61,6 @@ public abstract class BrasilVilanova extends Crawler {
    public abstract String getPassword();
 
    public abstract String getSellerFullname();
-
-   private String cookiePHPSESSID = null;
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-//      Map<String, String> headers = new HashMap<>();
-//      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
-//      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-//      headers.put("X-Requested-With", "XMLHttpRequest");
-//
-//      StringBuilder payload = new StringBuilder();
-//      payload.append("usuario_cnpj=").append(CNPJ);
-//      payload.append("&usuario_senha=").append(PASSWORD);
-//
-//      Request requestHome = RequestBuilder.create()
-//         .setUrl(LOGIN_URL)
-//         .setHeaders(headers)
-//         .setPayload(payload.toString())
-//         .build();
-//      Response response = this.dataFetcher.post(session, requestHome);
-//
-//      String cookieStr = response.getHeaders().getOrDefault("set-cookie", "");
-//      if (!cookieStr.equals("")) {
-//         cookiePHPSESSID = cookieStr.substring(10, cookieStr.indexOf(';'));
-//      }
-
-
-   }
-
-
 
    @Override
    protected Object fetch() {
@@ -227,36 +193,6 @@ public abstract class BrasilVilanova extends Crawler {
       }
 
       return categories;
-   }
-
-   private JSONObject getSkusList(Document doc) {
-      String ean =
-         CrawlerUtils.scrapStringSimpleInfoByAttribute(
-            doc, ".variacao-container", "data-produtoean");
-      if (ean == null) {
-         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var dataLayer = [", "];",
-            false, true).optJSONObject("productData");
-         JSONObject jsonObject = new JSONObject();
-
-         jsonObject.put("productData", new JSONObject()
-            .put("Nome", json.optString("productName"))
-            .put("Id", json.optString("productID"))
-            .put("PrecoPor", json.opt("productDiscountPrice"))
-            .put("PrecoPorSemPromocao", json.opt("productOldPrice")));
-
-         return jsonObject;
-      }
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
-
-      Response response =
-         dataFetcher.get(session,
-            RequestBuilder.create()
-               .setUrl("https://www.vilanova.com.br/Produto/Variacoes/" + ean)
-               .setHeaders(headers)
-               .build());
-
-      return JSONUtils.stringToJson(response.getBody());
    }
 
    private Offers scrapOffers(JSONObject product) throws MalformedPricingException, OfferException {
