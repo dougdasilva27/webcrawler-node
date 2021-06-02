@@ -58,7 +58,7 @@ class PortoalegreTreichelCrawler(session: Session) : Crawler(session) {
               val name = elem.optString("str_nom_produto")
               val eans = listOf(elem.optString("str_cod_barras_produto"))
               val stock = elem.optInt("int_qtd_estoque_produto")
-              val description = elem.optString("str_meta_description_ecom_produto")
+              val description = elem.optString("str_html_descricao_produto")
               val ratingsReviews = scrapRatingReviews(internalId)
 
               products += ProductBuilder.create()
