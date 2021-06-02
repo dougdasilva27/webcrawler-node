@@ -1,6 +1,11 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -15,7 +20,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -38,9 +42,49 @@ public class BrasilBifarmaCrawler extends Crawler {
    }
 
    @Override
+   protected Object fetch() {
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .mustSendContentEncoding(false)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("script[src*=Incapsula]")
+               .build()
+         ).setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+            )
+         ).build();
+
+      Response response = new JsoupDataFetcher().get(session, request);
+      String content = response.getBody();
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+         request.setProxyServices(Arrays.asList(
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR));
+
+         content = new FetcherDataFetcher().get(session, request).getBody();
+      }
+
+      return Jsoup.parse(content);
+   }
+
+   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
-
 
       if (doc.selectFirst(".main_body") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -49,13 +93,12 @@ public class BrasilBifarmaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_content h1", false);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".slider_clip .slide .thumb img",Arrays.asList("src"), "https:", "cdn-bifarma3.stoom.com.br", primaryImage);
-         System.err.println(secondaryImages);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".slider_clip .slide .thumb img",
+            Collections.singletonList("src"), "https:", "cdn-bifarma3.stoom.com.br", primaryImage);
          String description = crawlDescription(doc, internalId);
          boolean available = doc.selectFirst(".btn.click.product_btn") != null;
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -129,7 +172,6 @@ public class BrasilBifarmaCrawler extends Crawler {
       return description.toString();
    }
 
-
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
@@ -198,5 +240,3 @@ public class BrasilBifarmaCrawler extends Crawler {
       return creditCards;
    }
 }
-
-
