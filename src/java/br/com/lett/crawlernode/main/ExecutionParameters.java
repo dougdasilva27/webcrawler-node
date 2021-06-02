@@ -154,7 +154,7 @@ public class ExecutionParameters {
    }
 
    private String getEnvKinesisStream() {
-      return System.getenv(EnvironmentVariables.KINESIS_STREAM);
+      return "crawler-sku-core";
    }
 
    private boolean getEnvUseFetcher() {
