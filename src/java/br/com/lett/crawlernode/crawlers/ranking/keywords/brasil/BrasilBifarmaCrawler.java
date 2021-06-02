@@ -1,19 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import org.apache.http.cookie.Cookie;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +22,6 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
 
    public BrasilBifarmaCrawler(Session session) {
       super(session);
-//      fetchMode = FetchMode.FETCHER;
    }
 
    @Override
@@ -34,7 +32,6 @@ public class BrasilBifarmaCrawler extends CrawlerRankingKeywords {
          .setUrl(url)
          .setCookies(cookies)
          .mustSendContentEncoding(false)
-         // .setHeaders(headers)
          .setFetcheroptions(
             FetcherOptions.FetcherOptionsBuilder.create()
                .mustUseMovingAverage(false)
