@@ -174,7 +174,7 @@ public class Persistence {
             JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
                .put("query_type", "persist_processed_product");
 
-            Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+            Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -294,7 +294,7 @@ public class Persistence {
             JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
                .put("query_type", "update_processed_product");
 
-            Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+            Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
          } catch (Exception e) {
             Logging.printLogError(logger, session, "Error updating processed product on query: " + query);
             Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
@@ -357,7 +357,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "update_processed_product_behaviour");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product behaviour.");
@@ -420,7 +420,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "update_void_processed_product");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product void.");
          Logging.printLogError(logger, session, "InternalId: " + session.getInternalId() + " Market: " + session.getMarket().getNumber());
@@ -464,7 +464,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "update_processed_product_lrt");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product LRT.");
@@ -509,7 +509,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "update_processed_product_lmt");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product LMT.");
          Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -553,7 +553,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "update_processed_product_lms");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, "Error updating processed product LMS.");
          Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
@@ -643,7 +643,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "ranking_fetch_processed_product_with_internalid");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
       } finally {
@@ -700,7 +700,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "ranking_fetch_processed_product_with_internalpid");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
       } finally {
@@ -751,7 +751,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "ranking_fetch_processed_product_with_internalpid");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
 
       } catch (Exception e) {
          Logging.printLogError(logger, CommonMethods.getStackTrace(e));
@@ -809,7 +809,7 @@ public class Persistence {
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
             .put("query_type", "persist_products_crawler_ranking");
 
-         Logging.logInfo(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
+         Logging.logDebug(logger, session, apacheMetadata, "POSTGRES TIMING INFO");
       } catch (Exception e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
