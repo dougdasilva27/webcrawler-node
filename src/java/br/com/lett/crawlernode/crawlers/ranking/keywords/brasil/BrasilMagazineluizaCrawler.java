@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -30,7 +32,10 @@ public class BrasilMagazineluizaCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
 
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[itemprop='productID']", "content");
+            String jsonString = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a[data-product]", "data-product");
+            JSONObject productJson = CrawlerUtils.stringToJson(jsonString);
+
+            String internalId = productJson.optString("basketId");
             String urlProduct = CrawlerUtils.scrapUrl(e, ".product a", "href", "https", "www.magazineluiza.com.br");
 
             saveDataProduct(internalId, null, urlProduct);
