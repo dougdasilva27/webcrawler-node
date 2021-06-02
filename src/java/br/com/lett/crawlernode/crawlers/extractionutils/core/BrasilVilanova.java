@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -14,6 +15,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -31,6 +33,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
 
@@ -41,10 +48,6 @@ public abstract class BrasilVilanova extends Crawler {
    public static final String HOME_PAGE = "https://www.vilanova.com.br/";
    private static final String IMAGES_HOST = "i2-vilanova.a8e.net.br";
 
-   private static final String LOGIN_URL = "https://www.vilanova.com.br/Cliente/Logar";
-   private final String CNPJ = getCnpj();
-   private final String PASSWORD = getPassword();
-
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -54,45 +57,67 @@ public abstract class BrasilVilanova extends Crawler {
    }
 
    public abstract String getCnpj();
+
    public abstract String getPassword();
+
    public abstract String getSellerFullname();
-
-   private String cookiePHPSESSID = null;
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36");
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
-      headers.put("X-Requested-With", "XMLHttpRequest");
-
-      StringBuilder payload = new StringBuilder();
-      payload.append("usuario_cnpj=").append(CNPJ);
-      payload.append("&usuario_senha=").append(PASSWORD);
-
-      Request requestHome = RequestBuilder.create()
-         .setUrl(LOGIN_URL)
-         .setHeaders(headers)
-         .setPayload(payload.toString())
-         .build();
-      Response response = this.dataFetcher.post(session, requestHome);
-
-      String cookieStr = response.getHeaders().getOrDefault("set-cookie", "");
-      if (!cookieStr.equals("")) {
-         cookiePHPSESSID = cookieStr.substring(10, cookieStr.indexOf(';'));
-      }
-   }
 
    @Override
    protected Object fetch() {
-      Map<String, String> headers = new HashMap<>();
-      if (getCnpj() != null && getPassword() != null) {
-         headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
+
+      try {
+         Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
+
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+         Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+         if(doc.selectFirst("button.btn-politicas-cookies") != null){
+            webdriver.findAndClick("button.btn-politicas-cookies", 2000);
+            webdriver.findAndClick("a.cc-ALLOW", 2000);
+         }
+
+         webdriver.findAndClick("button.open-login", 2000);
+         webdriver.waitLoad(2000);
+         webdriver.findAndClick("button[id=fazer-login]", 2000);
+
+         Logging.printLogDebug(logger, session, "Sending credentials...");
+
+         webdriver.waitLoad(2000);
+         waitForElement(webdriver.driver, "#usuarioCnpj");
+         WebElement username = webdriver.driver.findElement(By.cssSelector("#usuarioCnpj"));
+         username.sendKeys(getCnpj());
+
+         webdriver.waitLoad(2000);
+         waitForElement(webdriver.driver, "#usuarioSenha");
+         WebElement pass = webdriver.driver.findElement(By.cssSelector("#usuarioSenha"));
+         pass.sendKeys(getPassword());
+
+         Logging.printLogDebug(logger, session, "awaiting login button");
+         webdriver.waitLoad(4000);
+
+         waitForElement(webdriver.driver, "#realizar-login");
+         WebElement login = webdriver.driver.findElement(By.cssSelector("#realizar-login"));
+         webdriver.clickOnElementViaJavascript(login);
+
+         Logging.printLogDebug(logger, session, "awaiting product page");
+         webdriver.waitLoad(25000);
+
+         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+
+         if (!isProductPage(doc)) {
+            doc = (Document) super.fetch();
+         }
+
+         return doc;
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+         return super.fetch();
       }
+   }
 
-      Request request = RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).build();
-
-      return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 20);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
    @Override
@@ -101,50 +126,48 @@ public abstract class BrasilVilanova extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(
-            logger, session, "Product page identified: " + this.session.getOriginalURL());
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONArray json = CrawlerUtils.selectJsonArrayFromHtml(doc, "script", "var dataLayer = ", ";", false, true);
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer = window.dataLayer || []; window.dataLayer.push(", ");", false, true);
 
          if (json != null && !json.isEmpty()) {
-            JSONObject jsonProduct = json.optJSONObject(0);
-            String internalPid = JSONUtils.getValueRecursive(jsonProduct, "productData.productSKU", String.class);
+            JSONObject jsonProduct = json.optJSONObject("productData");
+
+            String internalPid = jsonProduct.optString("productSKU");
             List<String> eans = singletonList(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".variacao-container", "data-produtoean"));
             CategoryCollection categories = scrapCategories(jsonProduct);
             String description = CrawlerUtils.scrapElementsDescription(doc, singletonList("#info-abas-mobile"));
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#imagem-produto #elevateImg", Arrays.asList("data-zoom-image", "href", "src"), "https", IMAGES_HOST);
             //cannot find any secondary image
 
-            JSONObject productsJson = getSkusList(doc);
-            for (String key : productsJson.keySet()) {
-               JSONObject skuJson = productsJson.optJSONObject(key);
-               String name = skuJson.optString("Nome");
-               String internalId = skuJson.optString("Id");
+            JSONArray skuArray = jsonProduct.optJSONArray("productSKUList");
 
-               if (skuJson.optString("Picking", null) != null) {
-                  name += " " + skuJson.optString("Picking") + "un";
+            for (Object sku : skuArray) {
+               if (sku instanceof JSONObject) {
+                  JSONObject skuJson = (JSONObject) sku;
+                  String name = skuJson.optString("name");
+                  String internalId = skuJson.optString("id");
+
+                  int stock = skuJson.optInt("stock");
+
+                  boolean isAvailable = stock != 0 || !skuJson.optString("available").equals("no");
+                  Offers offers = isAvailable ? scrapOffers(skuJson) : new Offers();
+
+                  Product product = ProductBuilder.create()
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setOffers(offers)
+                     .setCategories(categories)
+                     .setPrimaryImage(primaryImage)
+                     .setDescription(description)
+                     .setEans(eans)
+                     .setStock(stock)
+                     .build();
+
+                  products.add(product);
                }
-
-               String stockStr = JSONUtils.getValueRecursive(skuJson, "Estoque.Disponivel", String.class);
-               int stock = stockStr != null ? Integer.parseInt(JSONUtils.getValueRecursive(skuJson, "Estoque.Disponivel", String.class)) : 0;
-
-               boolean isAvailable = stock != 0;
-               Offers offers = isAvailable ? scrapOffers(skuJson) : new Offers();
-
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setOffers(offers)
-                  .setCategories(categories)
-                  .setPrimaryImage(primaryImage)
-                  .setDescription(description)
-                  .setEans(eans)
-                  .setStock(stock)
-                  .build();
-
-               products.add(product);
             }
          }
       } else {
@@ -155,51 +178,21 @@ public abstract class BrasilVilanova extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".container #detalhes-container").isEmpty();
+      return !doc.select("div.product-row").isEmpty();
    }
 
-   private CategoryCollection scrapCategories(JSONObject json){
+   private CategoryCollection scrapCategories(JSONObject json) {
       CategoryCollection categories = new CategoryCollection();
-      String categoriesStr = JSONUtils.getValueRecursive(json, "productData.categoryTree", String.class);
+      String categoriesStr = json.optString("categoryTree");
 
-      if(categoriesStr != null){
+      if (categoriesStr != null) {
          String[] categorieList = categoriesStr.split("/");
-         if(categorieList.length != 0){
+         if (categorieList.length != 0) {
             categories.addAll(Arrays.asList(categorieList));
          }
       }
 
       return categories;
-   }
-
-   private JSONObject getSkusList(Document doc) {
-      String ean =
-         CrawlerUtils.scrapStringSimpleInfoByAttribute(
-            doc, ".variacao-container", "data-produtoean");
-      if (ean == null) {
-         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "var dataLayer = [", "];",
-            false, true).optJSONObject("productData");
-         JSONObject jsonObject = new JSONObject();
-
-         jsonObject.put("productData", new JSONObject()
-            .put("Nome", json.optString("productName"))
-            .put("Id", json.optString("productID"))
-            .put("PrecoPor", json.opt("productDiscountPrice"))
-            .put("PrecoPorSemPromocao", json.opt("productOldPrice")));
-
-         return jsonObject;
-      }
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", "PHPSESSID=" + cookiePHPSESSID);
-
-      Response response =
-         dataFetcher.get(session,
-            RequestBuilder.create()
-               .setUrl("https://www.vilanova.com.br/Produto/Variacoes/" + ean)
-               .setHeaders(headers)
-               .build());
-
-      return JSONUtils.stringToJson(response.getBody());
    }
 
    private Offers scrapOffers(JSONObject product) throws MalformedPricingException, OfferException {
@@ -222,15 +215,15 @@ public abstract class BrasilVilanova extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "PrecoDe", true);
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "PrecoPor", true);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(product, "old_price", false);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "price", false);
 
-      if (priceFrom.equals(spotlightPrice)) {
+      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
          priceFrom = null;
       }
 
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(JSONUtils.getDoubleValueFromJSON(product, "precoBoleto", false), null);
-      CreditCards creditCards = scrapCreditcards(spotlightPrice);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, 0d);
+      CreditCards creditCards = scrapCreditcards(product, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -240,14 +233,23 @@ public abstract class BrasilVilanova extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditcards(Double installmentPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditcards(JSONObject product, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-
       Installments installments = new Installments();
-      installments.add(Installment.InstallmentBuilder.create()
-         .setInstallmentNumber(1)
-         .setInstallmentPrice(installmentPrice)
-         .build());
+
+      JSONObject installmentsJson = product.optJSONObject("installment");
+
+      if (installmentsJson != null && !installmentsJson.isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installmentsJson.optInt("count"))
+            .setInstallmentPrice(installmentsJson.optDouble("price"))
+            .build());
+      } else {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
