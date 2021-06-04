@@ -33,7 +33,7 @@
         {
             "essential": true,
             "privileged": true,
-            "image": "team-devops/cadvisor:latest",
+            "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/cadivsor:latest",
             "name": "cadvisor",
             "memory": 100,
             "mountPoints": [
@@ -67,7 +67,7 @@
         },
         {
             "essential": true,
-            "image": "team-devops/node-exporter:latest",
+            "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/node-exporter:latest",
             "name": "nodeexporter",
             "memory": 100,
             "mountPoints": [
