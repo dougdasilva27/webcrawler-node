@@ -33,7 +33,7 @@
         {
             "essential": true,
             "privileged": true,
-            "image": "gcr.io/google-containers/cadvisor:v0.36.0",
+            "image": "team-devops/cadvisor:latest",
             "name": "cadvisor",
             "memory": 100,
             "mountPoints": [
@@ -67,7 +67,7 @@
         },
         {
             "essential": true,
-            "image": "prom/node-exporter:v1.0.1",
+            "image": "team-devops/node-exporter:latest",
             "name": "nodeexporter",
             "memory": 100,
             "mountPoints": [
