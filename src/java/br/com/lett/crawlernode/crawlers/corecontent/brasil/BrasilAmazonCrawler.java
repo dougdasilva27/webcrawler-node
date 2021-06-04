@@ -421,10 +421,13 @@ public class BrasilAmazonCrawler extends Crawler {
       Element internalIdElement = doc.select("input[name^=ASIN]").first();
       Element internalIdElementSpecial = doc.select("input.askAsin").first();
 
+
       if (internalIdElement != null) {
          internalId = internalIdElement.val();
       } else if (internalIdElementSpecial != null) {
          internalId = internalIdElementSpecial.val();
+      } else {
+         internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#all-offers-display-params", "data-qid");
       }
 
       return internalId;
