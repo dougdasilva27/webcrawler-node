@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.apache.kafka.common.protocol.types.Field;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
@@ -11,7 +13,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private static final String LACOMER_TIENDA_ID = "14";
+   private final String succId = session.getOptions().optString("succId");
 
    @Override
    protected void extractProductsFromCurrentPage() {
@@ -22,7 +24,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
 
       // monta a url com a keyword e a página
       // primeira página começa em 0 e assim vai.
-      String url = "https://lacomer.buscador.amarello.com.mx/searchArtPrior?col=lacomer_2&npagel=20&p=" + this.currentPage + "&pasilloId=false&s=" + this.keywordEncoded + "&succId=" + LACOMER_TIENDA_ID;
+      String url = "https://lacomer.buscador.amarello.com.mx/searchArtPrior?col=lacomer_2&npagel=20&p=" + this.currentPage + "&pasilloId=false&s=" + this.keywordEncoded + "&succId=" + succId;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -49,7 +51,7 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
             String internalId = crawlInternalId(product);
 
             // Url do produto
-            String productUrl = crawlProductUrl(internalId);
+            String productUrl = crawlProductUrl(product);
 
             saveDataProduct(internalId, internalPid, productUrl);
 
@@ -97,8 +99,9 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
       return null;
    }
 
-   private String crawlProductUrl(String internalId) {
-      return "http://www.lacomer.com.mx/lacomer/doHome.action?succId=14&pasId=63&artEan=" + internalId
-            + "&ver=detallearticulo&opcion=detarticulo";
+   private String crawlProductUrl(JSONObject product) {
+      String ean = product.optString("artEan");
+      String gruid = product.optString("agruId");
+      return "https://www.lacomer.com.mx/lacomer/#!/detarticulo/"+ean+"/0/"+gruid+"/1///"+gruid+"?succId="+succId+"&succFmt=100";
    }
 }
