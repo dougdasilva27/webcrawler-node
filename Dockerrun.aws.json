@@ -33,7 +33,7 @@
         {
             "essential": true,
             "privileged": true,
-            "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/cadivsor:latest",
+            "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/cadvisor:latest",
             "name": "cadvisor",
             "memory": 100,
             "mountPoints": [
