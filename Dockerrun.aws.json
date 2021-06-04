@@ -31,7 +31,7 @@
             ]
         },
         {
-            "essential": true,
+            "essential": false,
             "privileged": true,
             "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/cadvisor:latest",
             "name": "cadvisor",
@@ -66,7 +66,7 @@
             ]
         },
         {
-            "essential": true,
+            "essential": false,
             "image": "868884350453.dkr.ecr.us-east-1.amazonaws.com/team-devops/node-exporter:latest",
             "name": "nodeexporter",
             "memory": 100,
