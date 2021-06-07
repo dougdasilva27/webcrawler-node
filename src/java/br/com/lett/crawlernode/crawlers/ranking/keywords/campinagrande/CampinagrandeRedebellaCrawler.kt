@@ -1,57 +1,68 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.campinagrande
 
+import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
+import br.com.lett.crawlernode.util.JSONUtils
+import org.json.JSONArray
+import org.json.JSONObject
 import org.jsoup.nodes.Element
 
 class CampinagrandeRedebellaCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
-    private val BASE_URL: String = "redebella.com.br"
+   private val BASE_URL: String = "redebella.com.br"
 
-    override fun extractProductsFromCurrentPage() {
-        pageSize = 25
-        log("Página $currentPage")
+   override fun extractProductsFromCurrentPage() {
+      pageSize = 25
+      log("Página $currentPage")
 
-        val url = "https://redebella.com.br/buscar?search=$keywordEncoded&page=$currentPage"
-        log("Link onde são feitos os crawlers: $url")
+      val url = "https://www.redebella.com.br/" + keywordEncoded + "?_q=" + keywordEncoded + "&map=ft&__pickRuntime=queryData"
+      log("Link onde são feitos os crawlers: $url")
 
-        currentDoc = fetchDocument(url)
 
-        val products = currentDoc.select(".product-layout")
+      var products: JSONArray? = crawProducts(url)
 
-        if (!products.isEmpty()) {
-            if (totalProducts == 0) {
-                setTotalProducts()
+
+      if (products != null && !products.isEmpty) {
+         if (totalProducts == 0) {
+            setTotalProducts()
+         }
+         for (product in products) {
+
+            val internalId = JSONUtils.getStringValue(product as JSONObject?, "productId")
+            val internalPid = internalId
+            val url: String = JSONUtils.getStringValue(product, "link")
+            val productUrl = CrawlerUtils.completeUrl(url, "https", "www.redebella.com.br")
+
+            saveDataProduct(internalId, internalPid, productUrl)
+
+            log("Position: $position - InternalId: $internalId - InternalPid: $internalPid - Url: $productUrl")
+            if (arrayProducts.size == productsLimit) {
+               break
             }
-            for (product in products) {
+         }
+      } else {
+         result = false
+         log("Keyword sem resultado!")
+      }
+      log("Finalizando Crawler de produtos da página $currentPage até agora ${arrayProducts.size} produtos crawleados")
+   }
 
-                val internalId = extractInternalId(product)
-                val internalPid = internalId
-                val productUrl: String = CrawlerUtils.scrapUrl(product, ".image > a", "href", "https:", BASE_URL)
-                saveDataProduct(internalId, internalPid, productUrl)
+   private fun crawProducts(url: String): JSONArray? {
+      val request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .build()
+      val response = dataFetcher[session, request].body
+      val jsonResponse = CrawlerUtils.stringToJson(response)
+      val data = JSONUtils.getValueRecursive(jsonResponse, "queryData.0.data", String::class.java);
+      val jsonData = CrawlerUtils.stringToJson(data)
+      return JSONUtils.getValueRecursive(jsonData, "productSearch.products", JSONArray::class.java)
+   }
 
-                log("Position: $position - InternalId: $internalId - InternalPid: $internalPid - Url: $productUrl")
-                if (arrayProducts.size == productsLimit) {
-                    break
-                }
-            }
-        } else {
-            result = false
-            log("Keyword sem resultado!")
-        }
-        log("Finalizando Crawler de produtos da página $currentPage até agora ${arrayProducts.size} produtos crawleados")
-    }
 
-    override fun setTotalProducts() {
-        val fullText = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".row .text-left", true) ?: ""
-        val split: List<String?> = fullText.split("de", "(")
-        totalProducts = split.getOrNull(split.lastIndex - 1)?.trim()?.toInt() ?: 0
-        log("Total da busca: $totalProducts")
-    }
-
-    private fun extractInternalId(product: Element): String? {
-        val fullText = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".list-block .addToCart", "onclick")
-        return fullText.split("'").getOrNull(1)
-    }
+   private fun extractInternalId(product: Element): String? {
+      val fullText = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".list-block .addToCart", "onclick")
+      return fullText.split("'").getOrNull(1)
+   }
 }
