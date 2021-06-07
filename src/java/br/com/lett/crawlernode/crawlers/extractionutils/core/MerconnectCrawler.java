@@ -159,7 +159,10 @@ public abstract class MerconnectCrawler extends Crawler {
 
       Pricing pricing = scrapPricing(json);
       List<String> sales = new ArrayList<>();
-      sales.add(CrawlerUtils.calculateSales(pricing));
+      String salesStr = CrawlerUtils.calculateSales(pricing);
+      if (salesStr != null) {
+         sales.add(salesStr);
+      }
 
       Offer offer = new Offer.OfferBuilder()
          .setSellerFullName(getSellerName())
