@@ -96,11 +96,9 @@ public abstract class BrasilVilanova extends Crawler {
          webdriver.waitLoad(4000);
 
          waitForElement(webdriver.driver, "#realizar-login");
-         WebElement login = webdriver.driver.findElement(By.cssSelector("#realizar-login"));
-         webdriver.clickOnElementViaJavascript(login);
+         webdriver.findAndClick("#realizar-login", 30000);
 
          Logging.printLogDebug(logger, session, "awaiting product page");
-         webdriver.waitLoad(25000);
 
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
