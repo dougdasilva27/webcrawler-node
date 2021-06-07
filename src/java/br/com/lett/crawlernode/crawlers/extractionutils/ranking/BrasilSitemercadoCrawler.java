@@ -14,7 +14,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
+public class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
 
    public BrasilSitemercadoCrawler(Session session) {
       super(session);
@@ -24,7 +24,9 @@ public abstract class BrasilSitemercadoCrawler extends CrawlerRankingKeywords {
    private String homePage = getHomePage();
    private String loadPayload = getLoadPayload();
 
-   protected abstract String getHomePage();
+   protected String getHomePage() {
+      return session.getOptions().optString("url");
+   }
 
    protected String getApiUrl(){
       return "https://www.sitemercado.com.br/api/v1/b2c/";
