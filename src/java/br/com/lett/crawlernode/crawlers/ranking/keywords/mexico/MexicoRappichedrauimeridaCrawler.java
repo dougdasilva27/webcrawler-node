@@ -9,6 +9,7 @@ public class MexicoRappichedrauimeridaCrawler extends MexicoRappiCrawlerRanking 
 
    public MexicoRappichedrauimeridaCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    @Override
@@ -16,8 +17,4 @@ public class MexicoRappichedrauimeridaCrawler extends MexicoRappiCrawlerRanking 
       return STORE_ID;
    }
 
-   @Override
-   protected String getStoreType() {
-      return "chedraui";
-   }
 }
