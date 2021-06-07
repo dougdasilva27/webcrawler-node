@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
 import br.com.lett.crawlernode.core.fetcher.models.Request
@@ -116,7 +115,13 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
 
       val body: String = alternativeFetch(request).body
 
-      return body.toJson()
+      if (body.startsWith("{")){
+         return body.toJson()
+
+      }
+
+      return JSONObject()
+
    }
 
    private fun alternativeFetch(request: Request): Response {
