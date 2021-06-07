@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.salvador
 
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
+import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.toInt
 
 class SalvadorHiperidealCrawler(session: Session) : CrawlerRankingKeywords(session) {
@@ -13,7 +14,7 @@ class SalvadorHiperidealCrawler(session: Session) : CrawlerRankingKeywords(sessi
    private val token: String by lazy {
       val doc = fetchDocument("https://www.hiperideal.com.br/$keywordEncoded")
       totalProducts = doc.selectFirst(".resultado-busca-numero .value")?.toInt() ?: 0
-      doc.selectFirst("li[layout]")?.attr("layout") ?: throw KotlinNullPointerException()
+      CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"li[layout]","layout")
    }
 
    override fun extractProductsFromCurrentPage() {
