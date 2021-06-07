@@ -21,97 +21,90 @@ import java.util.*
 class PortugalContinenteCrawler(session: Session) : Crawler(session) {
 
    init {
-      super.config.fetcher = FetchMode.FETCHER;
+      super.config.fetcher = FetchMode.FETCHER
    }
 
+   override fun fetch(): Document {
 
-   override fun fetch() : Document {
-
-      val headers =  mutableMapOf<String, String?>()
+      val headers = mutableMapOf<String, String?>()
 
       // this will work for a short time, we need another solution!!
-      headers.put("cookie", "GCLB=CP_3z4bM6M2_8gE; rbzid=N9FmHzzU0zn3RmiaPjnOOXDuHpqeByEPuJd93/SiszJphdTgJ4euaLjGs2a4atQ/0J9xtoSGH90klfcO/FpciJ5/1" +
-         "y4Q5IGnjuWrtyDCM6mcVeSvYGFbxxPYooSFt2RxxvG5VjaJgeBvlfqU+8HtyNrue+DFUey9sgM18iPmxoZhBC/Ezm7EGSRLvqM+NWhQdmHmR6CiNfwgqxbpPhLjTqZ8OLkorqK+Y9HID/D4ZtaR" +
-         "CIjngexd0RstEiYIN13HTPyNYi9XjbBG+PNdyJMHNQ==; rbzsessionid=4673fa3d131c1edbc4908b0872b47060");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36");
+      headers.put(
+         "cookie", "GCLB=CP_3z4bM6M2_8gE; rbzid=N9FmHzzU0zn3RmiaPjnOOXDuHpqeByEPuJd93/SiszJphdTgJ4euaLjGs2a4atQ/0J9xtoSGH90klfcO/FpciJ5/1" +
+            "y4Q5IGnjuWrtyDCM6mcVeSvYGFbxxPYooSFt2RxxvG5VjaJgeBvlfqU+8HtyNrue+DFUey9sgM18iPmxoZhBC/Ezm7EGSRLvqM+NWhQdmHmR6CiNfwgqxbpPhLjTqZ8OLkorqK+Y9HID/D4ZtaR" +
+            "CIjngexd0RstEiYIN13HTPyNYi9XjbBG+PNdyJMHNQ==; rbzsessionid=4673fa3d131c1edbc4908b0872b47060"
+      )
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36")
 
       val request = RequestBuilder.create()
          .setHeaders(headers)
-         .setUrl(session.getOriginalURL())
-         .setProxyservice(Arrays.asList(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
-         .build();
-      val response = ApacheDataFetcher().get(session, request);
+         .setUrl(session.originalURL)
+         .setProxyservice(listOf(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
+         .build()
+      val response = ApacheDataFetcher().get(session, request)
 
-      return Jsoup.parse(response.getBody());
+      return response.body.toDoc() ?: throw IllegalStateException("Could not retrieve html")
    }
-	
-  override fun extractInformation(document: Document): MutableList<Product> {
-    val products = mutableListOf<Product>()
 
-    if (document.selectFirst(".productInfoArea") != null) {
+   override fun extractInformation(document: Document): MutableList<Product> {
+      val products = mutableListOf<Product>()
 
-      val name = scrapName(document)
-      val internalId = document.selectFirst(".ecsf_advertising_banner")?.attr("pid")
-      val description = document.selectFirst(".productDetailArea .productDetailSubArea")?.html()
+      if (document.selectFirst(".product-wrapper") != null) {
 
-      val offers = scrapOffers(document)
+         val name = scrapName(document)
+         val internalId = document.selectFirst(".add-to-cart")?.attr("data-pid")
+         val description = document.selectFirst(".description-and-detail")?.text()
 
-      val primaryImg = document.selectFirst("#bigProduct")?.attr("href")
+         val offers = scrapOffers(document)
 
-      products += ProductBuilder.create()
-        .setUrl(session.originalURL)
-        .setInternalId(internalId)
-        .setName(name)
-        .setPrimaryImage(primaryImg)
-        .setDescription(description)
-        .setOffers(offers)
-        .build()
+         val primaryImg = document.selectFirst(".ct-product-image")?.attr("src")
 
-    } else {
-            Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
-    return products
-  }
-	
-	fun scrapName(doc: Document): String? {
-		val name = StringBuilder();
-		
-		name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".productTitle", true));
-		
-		if(name.isNotEmpty()) {
-			name.append(" ");
-			name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".productSubtitle", true));
-			name.append(" ");
-			name.append(CrawlerUtils.scrapStringSimpleInfo(doc, ".productSubsubtitle", true));
-		}
-		
-		return name.toString().trim();
-	}
+         products += ProductBuilder.create()
+            .setUrl(session.originalURL)
+            .setInternalId(internalId)
+            .setName(name)
+            .setPrimaryImage(primaryImg)
+            .setDescription(description)
+            .setOffers(offers)
+            .build()
 
-  fun scrapOffers(doc: Document): Offers {
-    val offers = Offers()
+      }
+      return products
+   }
 
-    val price = doc.selectFirst(".updListPrice")?.toDoubleComma()
-    val priceFrom = doc.selectFirst(".priceWas .pricePerUnit")?.toDoubleComma()
+   fun scrapName(doc: Document): String {
+      val name = StringBuilder()
+      name.append(doc.selectFirst(".product-name")?.text() ?: "")
+      name.append(" ")
+      name.append(doc.selectFirst(".ct-pdp--brand")?.text() ?: "")
+      name.append(" ")
+      name.append(doc.selectFirst(".ct-pdp--unit")?.text() ?: "")
 
-	  CommonMethods.saveDataToAFile(doc, Test.pathWrite + "CONTINENTE.html");
-	  
-    val bankSlip = price?.toBankSlip()
-    val pricing = PricingBuilder.create()
-      .setSpotlightPrice(price)
-      .setPriceFrom(priceFrom)
-      .setBankSlip(bankSlip)
-      .build()
+      return name.toString().trim()
+   }
 
-    offers.add(
-       OfferBuilder.create()
-          .setIsBuybox(false)
-          .setIsMainRetailer(true)
-          .setPricing(pricing)
-          .setUseSlugNameAsInternalSellerId(true)
-          .setSellerFullName("Continente")
-          .build()
-    )
-    return offers
-  }
+   fun scrapOffers(doc: Document): Offers {
+      val offers = Offers()
+
+      val price = doc.selectFirst(".ct-price-formatted")?.toDoubleComma()
+      val priceFrom = doc.selectFirst(".ct-tile--price-dashed")?.toDoubleComma()
+
+      val bankSlip = price?.toBankSlip()
+      val pricing = PricingBuilder.create()
+         .setSpotlightPrice(price)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(bankSlip)
+         .build()
+
+      offers.add(
+         OfferBuilder.create()
+            .setIsBuybox(false)
+            .setIsMainRetailer(true)
+            .setPricing(pricing)
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName("Continente Portugal")
+            .build()
+      )
+      return offers
+   }
 }
