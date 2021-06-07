@@ -33,7 +33,7 @@ import java.util.*;
 /**
  * @author gabriel date: 2019-09-24
  */
-public abstract class BrasilSitemercadoCrawler extends Crawler {
+public class BrasilSitemercadoCrawler extends Crawler {
 
    public BrasilSitemercadoCrawler(Session session) {
       super(session);
@@ -49,7 +49,10 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
    private String loadPayload = getLoadPayload();
    private Map<String, Integer> lojaInfo = getLojaInfo();
 
-   protected abstract String getHomePage();
+   protected String getHomePage() {
+      return session.getOptions().optString("url");
+   }
+
    protected String getApiUrl(){
       return "https://www.sitemercado.com.br/api/b2c/";
    }
@@ -57,7 +60,12 @@ public abstract class BrasilSitemercadoCrawler extends Crawler {
       return "https://www.sitemercado.com.br/api/v1/b2c/";
    }
 
-   protected abstract Map<String, Integer> getLojaInfo();
+   protected Map<String, Integer> getLojaInfo() {
+      Map<String, Integer> storeMap = new HashMap<>();
+      storeMap.put("IdLoja", session.getOptions().optInt("idLoja"));
+      storeMap.put("IdRede", session.getOptions().optInt("idRede"));
+      return storeMap;
+   }
 
    protected String getLoadPayload() {
       JSONObject payload = new JSONObject();
