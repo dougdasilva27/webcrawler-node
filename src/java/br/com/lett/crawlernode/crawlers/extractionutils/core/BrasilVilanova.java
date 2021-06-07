@@ -72,13 +72,16 @@ public abstract class BrasilVilanova extends Crawler {
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
          if(doc.selectFirst("button.btn-politicas-cookies") != null){
-            webdriver.findAndClick("button.btn-politicas-cookies", 2000);
-            webdriver.findAndClick("a.cc-ALLOW", 2000);
+            waitForElement(webdriver.driver, "button.btn-politicas-cookies");
+            webdriver.findAndClick("button.btn-politicas-cookies", 0);
+            waitForElement(webdriver.driver, "a.cc-ALLOW");
+            webdriver.findAndClick("a.cc-ALLOW", 0);
          }
 
-         webdriver.findAndClick("button.open-login", 2000);
-         webdriver.waitLoad(2000);
-         webdriver.findAndClick("button[id=fazer-login]", 2000);
+         waitForElement(webdriver.driver, "button.open-login");
+         webdriver.findAndClick("button.open-login", 0);
+         waitForElement(webdriver.driver, "button[id=fazer-login]");
+         webdriver.findAndClick("button[id=fazer-login]", 0);
 
          Logging.printLogDebug(logger, session, "Sending credentials...");
 
@@ -96,14 +99,21 @@ public abstract class BrasilVilanova extends Crawler {
          webdriver.waitLoad(4000);
 
          waitForElement(webdriver.driver, "#realizar-login");
-         webdriver.findAndClick("#realizar-login", 30000);
+         webdriver.findAndClick("#realizar-login", 15000);
 
+         waitForElement(webdriver.driver, "button.input-btn-append");
          Logging.printLogDebug(logger, session, "awaiting product page");
 
-         doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         boolean logged = false;
+         while(!logged){
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer = window.dataLayer || []; window.dataLayer.push(", ");", false, true);
 
-         if (!isProductPage(doc)) {
-            doc = (Document) super.fetch();
+            if(json.has("userId")){
+               logged = true;
+            }else{
+               webdriver.waitLoad(5000);
+            }
          }
 
          return doc;
