@@ -28,7 +28,6 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -119,7 +118,10 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".infos .right .descricao", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".tt-product-name", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
-         String primaryImage = scrapImage(doc);
+
+         List<String> images = scrapImage(doc);
+         String primaryImage = !images.isEmpty()? images.remove(0) : null;
+
          String description = scrapDescription(doc);
          boolean available = !doc.select(".add-to-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -136,6 +138,7 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
+               .setSecondaryImages(images)
                .setOffers(offers)
                .setDescription(description)
                .build();
@@ -174,18 +177,15 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
 
    }
 
-   private String scrapImage(Document doc){
-
-      Element selector = doc.selectFirst(".zoomWindowContainer div");
-
-      String selectorString = selector.toString();
-      if (selectorString != null){
-         String primaryImageSmall = CrawlerUtils.getStringBetween(selectorString, "url\\(&quot;", "&quot;\\);");
-       String primaryImage = primaryImageSmall !=  null ? primaryImageSmall.replace("/0/", "/360/") : null;
-         return primaryImage != null ? "https://www.mrestoque.com.br" + primaryImage : null;
+   private List<String> scrapImage(Document doc){
+      List<String> images = new ArrayList<>();
+      Elements imagesElements = doc.select(".product-images li");
+      for (Element element : imagesElements) {
+         String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element,"img","src");
+         String url = CrawlerUtils.completeUrl(imageUrl,"https","www.mrestoque.com.br");
+         images.add(url);
       }
-
-    return null;
+    return images;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
