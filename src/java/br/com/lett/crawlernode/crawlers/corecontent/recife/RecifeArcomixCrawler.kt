@@ -7,116 +7,167 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.JSONUtils
-import br.com.lett.crawlernode.util.Logging
-import br.com.lett.crawlernode.util.addNonNull
+import br.com.lett.crawlernode.util.*
 import models.AdvancedRatingReview
+import models.Offer
+import models.Offers
 import models.RatingsReviews
-import models.prices.Prices
+import models.pricing.Pricing
 import org.json.JSONArray
 import org.json.JSONObject
 
 
 class RecifeArcomixCrawler(session: Session?) : Crawler(session) {
 
-    val homePage = "https://arcomix.com.br/"
+   private val idArmazem = session!!.options.optString("id_armazem")
 
-    override fun fetch(): Any {
-        val skuId =
-            """(?<word>produto[/].*/)""".toRegex().find(session.originalURL)?.value
-                ?.trim()?.split("/")?.get(1)
-        val request = RequestBuilder().setUrl("https://arcomix.com.br/api/produto?id=$skuId").build()
-        return JSONUtils.stringToJson(dataFetcher.get(session, request).body)
-    }
+   companion object {
+      const val SELLER_NAME: String = "Arco mix"
+   }
 
-    override fun shouldVisit(): Boolean {
-        val href = session.originalURL.toLowerCase()
-        return !FILTERS.matcher(href)
-            .matches() && href.startsWith(homePage)
-    }
+   val homePage = "https://arcomix.com.br/"
 
-    override fun extractInformation(json: JSONObject?): MutableList<Product> {
-        val products = mutableListOf<Product>()
-        val modelos = json?.optJSONArray("Modelos")
-        val productJson = JSONUtils.stringToJson(json?.optJSONArray("Produtos")?.opt(0)?.toString())?: JSONObject()
-        if (modelos != null) {
-            for (model in modelos) {
-                if (model is JSONObject) {
-                    val internalId = productJson.opt("id_produto").toString()
-                    val price = model.optFloat("mny_vlr_promo_tabela_preco")
-                    val prices = scrapPrices(model, price)
+   override fun fetch(): Any {
 
-                    val categories = mutableListOf<String>()
-                    categories addNonNull productJson.optString("str_categoria", null)
-                    categories addNonNull productJson.optString("str_subcategoria", null)
-                    categories addNonNull productJson.optString("str_tricategoria", null)
+      val headers: MutableMap<String, String> = HashMap()
+      headers["Cookie"] = "ls.uid_armazem=$idArmazem"
 
-                   val description = productJson.optString("str_meta_description_ecom_produto")
+      val skuId =
+         """(?<word>produto[/].*/)""".toRegex().find(session.originalURL)?.value
+            ?.trim()?.split("/")?.get(1)
+      val request = RequestBuilder().setUrl("https://arcomix.com.br/api/produto?id=$skuId").setHeaders(headers).build()
+      return JSONUtils.stringToJson(dataFetcher.get(session, request).body)
+   }
 
-                    val name =
-                        "${productJson.optString("str_nom_produto", "")} ${model
-                            .optString("str_nom_produto_modelo", "")}".trim()
+   override fun shouldVisit(): Boolean {
+      val href = session.originalURL.toLowerCase()
+      return !FILTERS.matcher(href)
+         .matches() && href.startsWith(homePage)
+   }
 
-                   val arrayOfImages = CrawlerUtils.scrapImagesListFromJSONArray(json.optJSONArray("Imagens"), "str_img_path", null, "https", "arcomixstr.blob.core.windows.net", session)
-                   val primaryImage = arrayOfImages.removeAt(0)
+   override fun extractInformation(json: JSONObject?): MutableList<Product> {
+      val products = mutableListOf<Product>()
+      val modelos = json?.optJSONArray("Modelos")
+      val productJson = JSONUtils.stringToJson(json?.optJSONArray("Produtos")?.opt(0)?.toString()) ?: JSONObject()
+      if (modelos != null) {
+         for (model in modelos) {
+            if (model is JSONObject) {
+               val internalId = productJson.opt("id_produto").toString()
+               val offers: Offers = scrapOffers(model)
 
-                   var secondaryImages: MutableList<String> = mutableListOf<String>()
+               val categories = mutableListOf<String>()
+               categories addNonNull productJson.optString("str_categoria", null)
+               categories addNonNull productJson.optString("str_subcategoria", null)
+               categories addNonNull productJson.optString("str_tricategoria", null)
 
-                     for (secondary in arrayOfImages){
-                         val s = "$secondary-g.jpg"
-                        secondaryImages.add(s)
-                     }
+               val description = productJson.optString("str_meta_description_ecom_produto")
 
-                   val ratingsReviews = scrapRatingReviews(internalId)
+               val name =
+                  "${productJson.optString("str_nom_produto", "")} ${
+                     model
+                        .optString("str_nom_produto_modelo", "")
+                  }".trim()
 
+               val arrayOfImages = CrawlerUtils.scrapImagesListFromJSONArray(json.optJSONArray("Imagens"), "str_img_path", null, "https", "arcomixstr.blob.core.windows.net", session)
+               val primaryImage = arrayOfImages.removeAt(0)
+               val secondaryImages: MutableList<String> = mutableListOf()
+               for (secondary in arrayOfImages) {
+                  val s = "$secondary-g.jpg"
+                  secondaryImages.add(s)
+               }
 
+               val ratingsReviews = scrapRatingReviews(internalId)
 
-                    products += ProductBuilder.create()
-                        .setUrl(session.originalURL)
-                        .setInternalId(internalId)
-                        .setInternalPid(model.opt("id_produto_modelo")?.toString())
-                        .setName(name)
-                        .setPrice(price)
-                        .setPrices(prices)
-                        .setAvailable(!model.optBoolean("bit_esgotado"))
-                        .setCategories(categories)
-                        .setDescription(description)
-                        .setPrimaryImage("${primaryImage}-g.jpg")
-                       .setSecondaryImages(secondaryImages)
-                        .setStock(productJson.optInt("int_qtd_estoque_produto"))
-                        .setEans(mutableListOf<String>().also { list ->
-                           list.addNonNull(productJson.optString("str_cod_barras_produto"))
-                        })
-                       .setRatingReviews(ratingsReviews)
-                        .build()
-                }
+               products += ProductBuilder.create()
+                  .setUrl(session.originalURL)
+                  .setInternalId(internalId)
+                  .setInternalPid(model.opt("id_produto_modelo")?.toString())
+                  .setName(name)
+                  .setOffers(offers)
+                  .setCategories(categories)
+                  .setDescription(description)
+                  .setPrimaryImage("${primaryImage}-g.jpg")
+                  .setSecondaryImages(secondaryImages)
+                  .setStock(productJson.optInt("int_qtd_estoque_produto"))
+                  .setEans(mutableListOf<String>().also { list ->
+                     list.addNonNull(productJson.optString("str_cod_barras_produto"))
+                  })
+                  .setRatingReviews(ratingsReviews)
+                  .build()
             }
-        }
-        if (products.isEmpty()) {
-            Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
-        }
+         }
+      }
+      if (products.isEmpty()) {
+         Logging.printLogDebug(logger, session, "Not a product page " + session.originalURL)
+      }
 
-        return products
-    }
+      return products
+   }
 
-    private fun scrapPrices(model: JSONObject, priceHighlight: Float?): Prices {
-        val prices = Prices()
-        if (priceHighlight != null) {
-            prices.apply {
-                val price = model.optDouble("mny_vlr_produto_tabela_preco")
-                bankTicketPrice = priceHighlight.toBigDecimal().setScale(2).toDouble()
-                priceFrom = if (!priceHighlight.equals(price.toBigDecimal().setScale(2).toFloat())) price else null
-                val installmentPriceMap = mutableMapOf<Int, Float>()
-                installmentPriceMap[1] = priceHighlight
-                insertCardInstallment(Card.VISA.toString(), installmentPriceMap)
-                insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap)
-                insertCardInstallment(Card.DINERS.toString(), installmentPriceMap)
-                insertCardInstallment(Card.ELO.toString(), installmentPriceMap)
-            }
-        }
-        return prices
-    }
+   private fun scrapOffers(model: JSONObject): Offers {
+
+      val offers = Offers()
+      val sale = JSONUtils.getDoubleValueFromJSON(model, "mny_perc_desconto", true)
+      val sales: MutableList<String> = ArrayList()
+      if (sale != null){
+         sales.add(sale.toString())
+
+      }
+
+      val notAvailable = model.optBoolean("bit_esgotado")
+
+      if (notAvailable) {
+         return offers
+      }
+
+      val spotlightPrice = JSONUtils.getDoubleValueFromJSON(model, "mny_vlr_promo_tabela_preco", true)
+      var priceFrom = JSONUtils.getDoubleValueFromJSON(model, "mny_vlr_produto_tabela_preco", true)
+
+      if (priceFrom == spotlightPrice) {
+         priceFrom = null
+      }
+
+      val bankSlip = spotlightPrice.toBankSlip()
+
+      val creditCards = listOf(
+         Card.MASTERCARD,
+         Card.VISA,
+         Card.DINERS,
+         Card.CABAL,
+         Card.NATIVA,
+         Card.NARANJA,
+         Card.AMEX,
+      ).toCreditCards(spotlightPrice)
+
+      offers.add(
+         Offer.OfferBuilder.create()
+            .setPricing(
+               Pricing.PricingBuilder.create()
+                  .setSpotlightPrice(spotlightPrice)
+                  .setPriceFrom(priceFrom)
+                  .setCreditCards(creditCards)
+                  .setBankSlip(bankSlip)
+                  .build()
+            )
+            .setIsMainRetailer(true)
+            .setIsBuybox(false)
+            .setUseSlugNameAsInternalSellerId(true)
+            .setSellerFullName(SELLER_NAME)
+            .setSales(listOf())
+            .build()
+      )
+
+      return offers
+   }
+
+   private fun scrapSales(pricing: Pricing): List<String>? {
+      val sales: MutableList<String> = ArrayList()
+      val saleDiscount = CrawlerUtils.calculateSales(pricing)
+      if (saleDiscount != null) {
+         sales.add(saleDiscount)
+      }
+      return sales
+   }
 
    private fun fetchRating(internalId: String): JSONObject {
       val apiUrl = "https://arcomix.com.br/api/produto/GetAvaliacoesClienteProduto?id=$internalId&pag=undefined"

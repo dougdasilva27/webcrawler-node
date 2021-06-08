@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.recife
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
@@ -10,7 +11,13 @@ import org.json.JSONObject
 
 class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) {
 
-    override fun extractProductsFromCurrentPage() {
+   init {
+      super.fetchMode = FetchMode.FETCHER
+   }
+
+   private val idArmazem = session!!.options.optString("id_armazem")
+
+   override fun extractProductsFromCurrentPage() {
         pageSize = 30
        val url = "https://arcomix.com.br/api/busca"
        val payload = """
@@ -28,11 +35,17 @@ class RecifeArcomixCrawler(session: Session?) : CrawlerRankingKeywords(session) 
           "visualizacao": "CARD"
           }
           """.trimIndent()
-        val headers = mutableMapOf(CONTENT_TYPE to "application/json")
+
+       val headers: MutableMap<String, String> = HashMap()
+       headers["Cookie"] = "ls.uid_armazem=$idArmazem"
+       headers["Content-Type"] = "application/json;charset=UTF-8"
+
         val request = RequestBuilder.create().setUrl(url).setPayload(payload).setHeaders(headers)
-            .mustSendContentEncoding(false)
             .build()
-        val productsJson = JSONUtils.stringToJson(dataFetcher.post(session, request).body)?.optJSONArray("Produtos")?: JSONArray()
+
+        val json = dataFetcher.post(session, request).body
+
+        val productsJson = JSONUtils.stringToJson(json)?.optJSONArray("Produtos")?: JSONArray()
 
         for (productJson in productsJson) {
             if (productJson is JSONObject) {
