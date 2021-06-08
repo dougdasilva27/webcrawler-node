@@ -4,7 +4,7 @@ import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CrawlerUtils
 
-class VivaCor(session: Session?) : CrawlerRankingKeywords(session) {
+class VivaCor(session: Session) : CrawlerRankingKeywords(session) {
    override fun extractProductsFromCurrentPage() {
       pageSize = 24
       val url = "https://www.vivacortintas.com/busca?search=$keywordEncoded&page=$currentPage"

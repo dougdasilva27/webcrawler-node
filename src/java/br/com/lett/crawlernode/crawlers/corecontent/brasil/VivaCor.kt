@@ -20,6 +20,7 @@ class VivaCor(session: Session) : Crawler(session) {
       var p = mutableListOf<Product>()
       val internalPid = document.selectFirst("input[name=product_id]").attr("value")
       val name = "${document.selectFirst("#details-product .title").text()} ${document.selectFirst(".text_manufacturer_name a").text()}"
+      val offers = if (document.selectFirst("#notify") == null) scrapOffers(document) else Offers()
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)
@@ -29,7 +30,7 @@ class VivaCor(session: Session) : Crawler(session) {
          .setCategories(document.select(".breadcrumb li").eachText(arrayOf(0)))
          .setPrimaryImage(document.selectFirst("#preview").attr("data-zoom-image"))
          .setDescription(document.selectFirst("#box-description").text())
-         .setOffers(scrapOffers(document))
+         .setOffers(offers)
          .build()
 
       p.add(product)
@@ -49,7 +50,7 @@ class VivaCor(session: Session) : Crawler(session) {
          product.internalId = variation.attr("data-product-option-value-id")
          val optionPrice = if (product.internalId == product.internalPid) "0" else
             variation.attr("data-content").substringAfter("|").substringBefore(".")
-         product.offers.get(0).pricing = scrapVariationPricing(product.internalPid, optionPrice)
+         product.offers?.offersList?.firstOrNull()?.pricing = scrapVariationPricing(product.internalPid, optionPrice)
          product
       }.toMutableList()
    }
