@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -46,7 +47,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
 
@@ -145,6 +146,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       Request request = Request.RequestBuilder.create().setUrl(offersPageURL).setProxyservice(
          Arrays.asList(
             ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.INFATICA_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          )
