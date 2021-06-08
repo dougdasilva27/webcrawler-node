@@ -201,3 +201,11 @@ fun Element.installment(selector: String, itOwnText: Boolean = false): Installme
       .setInstallmentNumber(inst.first)
       .build()
 }
+
+fun kotlin.Pair<Int, Double?>.installment(): Installment {
+   return Installment.InstallmentBuilder
+      .create()
+      .setInstallmentPrice(second?.round())
+      .setInstallmentNumber(first)
+      .build()
+}
