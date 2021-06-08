@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -29,17 +30,13 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
    public BrasilFarmadeliveryCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.FETCHER);
+
    }
 
    @Override
    protected Object fetch() {
-      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL())
-         .setProxyservice(
-            Arrays.asList(ProxyCollection.BUY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
-            ))
-         .build();
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
       Response response = dataFetcher.get(session, request);
 
       return Jsoup.parse(response.getBody());
