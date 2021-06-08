@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
@@ -42,6 +43,8 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
+      super.config.setFetcher(FetchMode.FETCHER);
+
    }
 
    @Override
