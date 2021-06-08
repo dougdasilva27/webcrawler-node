@@ -88,8 +88,8 @@ public class MexicoLacomerCrawler extends CrawlerRankingKeywords {
    private String crawlInternalId(JSONObject product) {
       String internalId = null;
 
-      if (product.has("artEan")) {
-         internalId = product.getString("artEan");
+      if (product.has("artCod")) {
+         internalId = String.valueOf(product.getInt("artCod"));
       }
 
       return internalId;
