@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public abstract class CornershopCrawler extends Crawler {
+public class CornershopCrawler extends Crawler {
 
    public CornershopCrawler(Session session) {
       super(session);
@@ -36,12 +36,14 @@ public abstract class CornershopCrawler extends Crawler {
    }
 
    private String storeId = getStoreId();
+   private final String SELLER_FULL_NAME = getSellerName();
 
-   protected abstract String getStoreId();
+   protected String getStoreId(){
+      return session.getOptions().optString("STORE_ID");
+   }
 
    private static final String HOME_PAGE = "https://web.cornershopapp.com";
    private static final String PRODUCTS_API_URL = "https://cornershopapp.com/api/v1/branches/";
-   private final String SELLER_FULL_NAME = getSellerName();
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
       Card.DINERS.toString(), Card.SHOP_CARD.toString());
 
@@ -52,7 +54,7 @@ public abstract class CornershopCrawler extends Crawler {
    }
 
    protected String getSellerName() {
-      return SELLER_FULL_NAME;
+      return session.getOptions().optString("SELLER_FULL_NAME");
    }
 
    @Override
