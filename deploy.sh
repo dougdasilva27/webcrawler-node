@@ -6,8 +6,7 @@ $(aws ecr get-login --no-include-email)
 export ENVIROMENT_DEPLOY=$1
 export ECR_IMAGE_URL=868884350453.dkr.ecr.us-east-1.amazonaws.com/team-data-capture/webcrawler:$1
 
-
-if [ "$ENVIROMENT_DEPLOY" == "prod-small" ];
+if [[ "$ENVIROMENT_DEPLOY" == *"small"* ]];
     then npx json -I -f Dockerrun.aws.json -e "this.containerDefinitions[0].memoryReservation"='1700'
 else
     npx json -I -f Dockerrun.aws.json -e "this.containerDefinitions[0].memoryReservation"='700'
