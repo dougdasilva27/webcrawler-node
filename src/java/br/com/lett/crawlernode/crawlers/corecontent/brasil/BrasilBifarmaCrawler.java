@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
@@ -44,42 +46,47 @@ public class BrasilBifarmaCrawler extends Crawler {
    @Override
    protected Object fetch() {
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setCookies(cookies)
-         .mustSendContentEncoding(false)
-         .setFetcheroptions(
-            FetcherOptions.FetcherOptionsBuilder.create()
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true)
-               .setForbiddenCssSelector("script[src*=Incapsula]")
-               .build()
-         ).setProxyservice(
-            Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-            )
-         ).build();
 
-      Response response = new JsoupDataFetcher().get(session, request);
-      String content = response.getBody();
+      webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,false, session);
 
-      int statusCode = response.getLastStatusCode();
+      return  Jsoup.parse(webdriver.getCurrentPageSource());
+//      Request request = Request.RequestBuilder.create()
+//         .setUrl(session.getOriginalURL())
+//         .setCookies(cookies)
+//         .mustSendContentEncoding(false)
+//         .setFetcheroptions(
+//            FetcherOptions.FetcherOptionsBuilder.create()
+//               .mustUseMovingAverage(false)
+//               .mustRetrieveStatistics(true)
+//               .setForbiddenCssSelector("script[src*=incapsula]")
+//               .build()
+//         ).setProxyservice(
+//            Arrays.asList(
+//               ProxyCollection.BUY_HAPROXY,
+//               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+//               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+//               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+//               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY
+//            )
+//         ).build();
+//
+//      Response response = new JsoupDataFetcher().get(session, request);
+//      String content = response.getBody();
+//
+//      int statusCode = response.getLastStatusCode();
+//
+//      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+//         Integer.toString(statusCode).charAt(0) != '3'
+//         && statusCode != 404)) {
+//         request.setProxyServices(Arrays.asList(
+//            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+//            ProxyCollection.BUY_HAPROXY,
+//            ProxyCollection.NETNUT_RESIDENTIAL_BR));
+//
+//         content = new ApacheDataFetcher().get(session, request).getBody();
+//      }
 
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-         request.setProxyServices(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR));
-
-         content = new FetcherDataFetcher().get(session, request).getBody();
-      }
-
-      return Jsoup.parse(content);
+//      return Jsoup.parse(content);
    }
 
    @Override
