@@ -31,7 +31,7 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 
-public abstract class SupermercadonowCrawler extends Crawler {
+public class SupermercadonowCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://supermercadonow.com/";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -39,9 +39,13 @@ public abstract class SupermercadonowCrawler extends Crawler {
    protected String loadUrl = getLoadUrl();
    protected String sellerFullName = getSellerFullName();
 
-   protected abstract String getLoadUrl();
+   protected String getLoadUrl(){
+      return session.getOptions().optString("getLoadUrl");
+   }
 
-   protected abstract String getSellerFullName();
+   protected String getSellerFullName(){
+      return session.getOptions().optString("getSellerFullName");
+   }
 
    private Map<String, String> headers = new HashMap<>();
 
