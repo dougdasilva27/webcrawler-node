@@ -1,9 +1,6 @@
 package br.com.lett.crawlernode.core.fetcher;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import org.apache.commons.io.FileUtils;
@@ -162,9 +159,6 @@ public class CrawlerWebdriver {
       try {
          driver.close();
          driver.quit();
-         if (!(session instanceof TestCrawlerSession) && !(session instanceof TestRankingSession)) {
-            Main.server.decrementWebdriverInstances();
-         }
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
@@ -195,23 +189,6 @@ public class CrawlerWebdriver {
          FileUtils.copyFile(screenshot, new File(path));
       } catch (Exception ex) {
          Logging.printLogWarn(logger, session, "Error saving screenshot! [" + ex.getMessage() + "]");
-      }
-   }
-
-   /**
-    * Get a screenshot from the current loaded webpage and save the file.
-    *
-    * @param url
-    * @param path the path where the screenshot will be saved
-    */
-   public void takeScreenshotFromCurrentLoadedPage(String path) {
-      Augmenter augmenter = new Augmenter();
-      File screenshot = ((TakesScreenshot) augmenter.augment(driver)).getScreenshotAs(OutputType.FILE);
-      // File screenshot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-      try {
-         FileUtils.copyFile(screenshot, new File(path));
-      } catch (Exception ex) {
-         Logging.printLogWarn(logger, "Error saving screenshot! [" + ex.getMessage() + "]");
       }
    }
 

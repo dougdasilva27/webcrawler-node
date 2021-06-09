@@ -3,10 +3,7 @@ package br.com.lett.crawlernode.core.fetcher;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -75,10 +72,6 @@ public class DynamicDataFetcher {
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
          webdriver = new CrawlerWebdriver(chromeOptions, session);
-
-         if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
-            Main.server.incrementWebdriverInstances();
-         }
 
          webdriver.loadUrl(url);
 

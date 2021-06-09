@@ -27,7 +27,7 @@
         <logback.version>1.2.3</logback.version>
         <jodatime.version>2.10.10</jodatime.version>
         <json.version>20190722</json.version>
-        <hikaricp.version>3.3.0</hikaricp.version>
+        <hikaricp.version>4.0.3</hikaricp.version>
         <surefire-plugin-version>2.22.0</surefire-plugin-version>
         <discord-webhooks.version>0.5.4</discord-webhooks.version>
         <kotlin.version>1.5.10</kotlin.version>
@@ -296,6 +296,12 @@
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-kotlin</artifactId>
             <version>6.2.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>1.7.0</version>
         </dependency>
 
     </dependencies>

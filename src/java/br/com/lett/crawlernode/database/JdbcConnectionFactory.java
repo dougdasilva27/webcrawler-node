@@ -5,6 +5,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
+import br.com.lett.crawlernode.core.MicrometerExporter;
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
+import com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.zaxxer.hikari.HikariConfig;
@@ -54,8 +58,9 @@ public class JdbcConnectionFactory {
     config.setValidationTimeout(GlobalConfigurations.executionParameters.getHikariCpValidationTimeout());
     config.setConnectionTimeout(GlobalConfigurations.executionParameters.getHikariCpConnectionTimeout());
     config.setIdleTimeout(GlobalConfigurations.executionParameters.getHikariCpIDLETimeout());
+    config.setMetricsTrackerFactory(new MicrometerMetricsTrackerFactory(MicrometerExporter.getInstance().getRegistry()));
 
-    try {
+     try {
       ds = new HikariDataSource(config);
       Logging.printLogDebug(LOGGER, "Pool of PostgreSQL connections started successfully!");
     } catch (Exception e) {
