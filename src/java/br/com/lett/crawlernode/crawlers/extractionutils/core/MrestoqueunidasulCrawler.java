@@ -125,8 +125,6 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
          String description = scrapDescription(doc);
          boolean available = !doc.select(".add-to-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
-         Logging.printLogDebug(logger, session, "Available" + available);
-         Logging.printLogDebug(logger, session, "Offers" + offers.getOffersList().get(0).toJSON().toString());
 
          // Creating the product
          Product product =
