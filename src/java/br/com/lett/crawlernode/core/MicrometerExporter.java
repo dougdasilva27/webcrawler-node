@@ -17,6 +17,8 @@ public class MicrometerExporter {
    private static final MicrometerExporter INSTANCE = new MicrometerExporter();
 
    private MicrometerExporter() {
+      registry.config().commonTags("application", System.getenv("BASE_HOST"));
+
       new MicrometerMetricsTrackerFactory(registry);
       new ClassLoaderMetrics().bindTo(registry);
       new JvmMemoryMetrics().bindTo(registry);
