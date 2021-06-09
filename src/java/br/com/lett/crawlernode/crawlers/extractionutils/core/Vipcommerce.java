@@ -26,7 +26,7 @@ import java.util.*;
  * @author Matheus Bussolotti
  */
 
-public abstract class Vipcommerce extends Crawler {
+public class Vipcommerce extends Crawler {
 
 
    private final String HOME_PAGE = getHomePage();
@@ -40,11 +40,17 @@ public abstract class Vipcommerce extends Crawler {
       super(session);
    }
 
-   protected abstract String getHomePage();
+   protected String getHomePage(){
+      return session.getOptions().optString("homePage");
+   }
 
-   protected abstract String getSellerFullName();
+   protected String getSellerFullName(){
+      return session.getOptions().optString("sellerFullname");
+   }
 
-   protected abstract String getDomain();
+   protected String getDomain(){
+      return session.getOptions().optString("domain");
+   }
 
    protected String getLocateCode() {
       return "1";
