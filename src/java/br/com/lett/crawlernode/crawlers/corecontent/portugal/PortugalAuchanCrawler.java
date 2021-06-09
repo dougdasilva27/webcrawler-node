@@ -117,7 +117,7 @@ public class PortugalAuchanCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-old-price", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sales .value", null, true, '.', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sales .value", null, true, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return PricingBuilder.create()
