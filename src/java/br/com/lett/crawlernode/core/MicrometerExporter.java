@@ -42,7 +42,7 @@ public class MicrometerExporter {
          public DistributionStatisticConfig configure(Meter.Id id, DistributionStatisticConfig config) {
             if (id.getName().startsWith(MicrometerMetricsTracker.HIKARI_METRIC_NAME_PREFIX)) {
                return DistributionStatisticConfig.builder()
-                  .percentiles(1, 5, 10, 15)
+                  .percentiles(0.95, 1)
                   .build()
                   .merge(config);
             }
