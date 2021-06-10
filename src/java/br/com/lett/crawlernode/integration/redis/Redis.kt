@@ -23,19 +23,11 @@ object Redis {
          null
       }
    }
-
-   fun shutdown() {
-      client?.shutdown()
-   }
 }
 
 object CacheFactory {
 
-   fun <T> createCache(): RedisCommands<String, T?>? {
-      return Redis.client?.connect(JsonCodec<T>())?.sync()
+   fun <T> createCache(clazz: Class<T>): RedisCommands<String, T?>? {
+      return Redis.client?.connect(JsonCodec(clazz))?.sync()
    }
-}
-
-enum class CacheType {
-   CRAWLER, RANKING
 }

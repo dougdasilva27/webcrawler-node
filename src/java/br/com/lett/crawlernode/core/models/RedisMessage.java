@@ -11,9 +11,7 @@ public class RedisMessage {
    private String sessionId;
    private String internalId;
    private String status;
-
    private String productStatus;
-
 
    public String getProductStatus() {
       return productStatus;
@@ -22,8 +20,6 @@ public class RedisMessage {
    public void setProductStatus(String productStatus) {
       this.productStatus = productStatus;
    }
-
-
 
    public Long getMarketId() {
       return marketId;
@@ -65,12 +61,12 @@ public class RedisMessage {
       this.status = status;
    }
 
-   public static RedisMessage build(Session session,Object obj) {
+   public static RedisMessage build(Session session) {
       RedisMessage message = new RedisMessage();
 
       message.setTaskFinish(LocalDateTime.now());
       message.setInternalId(session.getInternalId());
-      message.setMarketId(session.getMarket().getId());
+      message.setMarketId((long) session.getMarket().getId());
       message.setStatus("DONE");
       message.setSessionId(session.getSessionId());
       return message;

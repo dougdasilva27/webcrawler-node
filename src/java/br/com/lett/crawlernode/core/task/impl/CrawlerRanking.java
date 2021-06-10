@@ -51,37 +51,15 @@ import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.integration.redis.Cache;
-import br.com.lett.crawlernode.integration.redis.CacheType;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import enums.QueueName;
 import enums.ScrapersTypes;
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import models.Processed;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
@@ -120,7 +98,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
-   private static final Cache cacheClient = new Cache(CacheType.RANKING);
+   private static final Cache cacheClient = new Cache();
 
    // variável que identifica se há resultados na página
    protected boolean result;

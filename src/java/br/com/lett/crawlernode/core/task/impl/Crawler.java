@@ -24,7 +24,6 @@ import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.integration.redis.Cache;
-import br.com.lett.crawlernode.integration.redis.CacheType;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;

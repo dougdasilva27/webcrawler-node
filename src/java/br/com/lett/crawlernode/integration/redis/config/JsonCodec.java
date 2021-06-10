@@ -1,17 +1,22 @@
 package br.com.lett.crawlernode.integration.redis.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.lettuce.core.codec.RedisCodec;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 public class JsonCodec<T> implements RedisCodec<String, T> {
 
-   private final ObjectMapper objectMapper = new ObjectMapper();
+   private final Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter().nullSafe()).create();
+
+   private final Class<T> clazz;
+
+   public JsonCodec(Class<T> clazz) {
+      this.clazz = clazz;
+   }
 
    @Override
    public String decodeKey(ByteBuffer bytes) {
@@ -20,12 +25,8 @@ public class JsonCodec<T> implements RedisCodec<String, T> {
 
    @Override
    public T decodeValue(ByteBuffer bytes) {
-      try {
-         return objectMapper.readValue(bytes.array(), new TypeReference<T>() {
-         });
-      } catch (IOException exception) {
-         throw new IllegalStateException(exception);
-      }
+      String data = StandardCharsets.UTF_8.decode(bytes).toString();
+      return gson.fromJson(data, clazz);
    }
 
    @Override
@@ -35,10 +36,6 @@ public class JsonCodec<T> implements RedisCodec<String, T> {
 
    @Override
    public ByteBuffer encodeValue(T value) {
-      try {
-         return ByteBuffer.wrap(objectMapper.writeValueAsBytes(value));
-      } catch (JsonProcessingException e) {
-         throw new IllegalStateException(e);
-      }
+      return ByteBuffer.wrap(gson.toJson(value).getBytes(StandardCharsets.UTF_8));
    }
 }

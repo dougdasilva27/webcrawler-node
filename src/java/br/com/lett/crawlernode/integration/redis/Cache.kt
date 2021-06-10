@@ -18,7 +18,7 @@ import java.util.function.Function
 class Cache {
 
    private val mapCache: RedisCommands<String, Any?>? by lazy {
-      CacheFactory.createCache()
+      CacheFactory.createCache(Any::class.java)
    }
 
    private val defaultTimeSecs: Long = 7200
