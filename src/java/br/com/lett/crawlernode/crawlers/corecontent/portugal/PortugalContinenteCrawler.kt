@@ -3,20 +3,18 @@ package br.com.lett.crawlernode.crawlers.corecontent.portugal
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.test.Test
-import br.com.lett.crawlernode.util.*
+import br.com.lett.crawlernode.util.toBankSlip
+import br.com.lett.crawlernode.util.toDoc
+import br.com.lett.crawlernode.util.toDoubleComma
 import models.Offer.OfferBuilder
 import models.Offers
 import models.pricing.Pricing.PricingBuilder
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import java.util.*
 
 class PortugalContinenteCrawler(session: Session) : Crawler(session) {
 
@@ -31,8 +29,8 @@ class PortugalContinenteCrawler(session: Session) : Crawler(session) {
       // this will work for a short time, we need another solution!!
       headers.put(
          "cookie", "GCLB=CP_3z4bM6M2_8gE; rbzid=N9FmHzzU0zn3RmiaPjnOOXDuHpqeByEPuJd93/SiszJphdTgJ4euaLjGs2a4atQ/0J9xtoSGH90klfcO/FpciJ5/1" +
-            "y4Q5IGnjuWrtyDCM6mcVeSvYGFbxxPYooSFt2RxxvG5VjaJgeBvlfqU+8HtyNrue+DFUey9sgM18iPmxoZhBC/Ezm7EGSRLvqM+NWhQdmHmR6CiNfwgqxbpPhLjTqZ8OLkorqK+Y9HID/D4ZtaR" +
-            "CIjngexd0RstEiYIN13HTPyNYi9XjbBG+PNdyJMHNQ==; rbzsessionid=4673fa3d131c1edbc4908b0872b47060"
+         "y4Q5IGnjuWrtyDCM6mcVeSvYGFbxxPYooSFt2RxxvG5VjaJgeBvlfqU+8HtyNrue+DFUey9sgM18iPmxoZhBC/Ezm7EGSRLvqM+NWhQdmHmR6CiNfwgqxbpPhLjTqZ8OLkorqK+Y9HID/D4ZtaR" +
+         "CIjngexd0RstEiYIN13HTPyNYi9XjbBG+PNdyJMHNQ==; rbzsessionid=4673fa3d131c1edbc4908b0872b47060"
       )
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36")
 
