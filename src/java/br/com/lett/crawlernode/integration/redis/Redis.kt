@@ -5,7 +5,9 @@ import com.google.gson.GsonBuilder
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
 import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.api.sync.RedisCommands
 import io.lettuce.core.codec.RedisCodec
+import io.lettuce.core.protocol.RedisCommand
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.Duration
@@ -37,8 +39,8 @@ object Redis {
 }
 
 object CacheFactory {
-   fun <T> createCache(): StatefulRedisConnection<String, T?>? {
-      return Redis.client?.connect(JsonCodec<T>())
+   fun <T> createCache(): RedisCommands<String, T?>? {
+      return Redis.client?.connect(JsonCodec<T>())?.sync()
    }
 }
 
