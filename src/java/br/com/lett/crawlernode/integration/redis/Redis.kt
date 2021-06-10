@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.integration.redis
 
+import br.com.lett.crawlernode.integration.redis.config.JsonCodec
 import br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI

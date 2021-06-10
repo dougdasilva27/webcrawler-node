@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.integration.redis;
+package br.com.lett.crawlernode.integration.redis.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-class JsonCodec<T> implements RedisCodec<String, T> {
+public class JsonCodec<T> implements RedisCodec<String, T> {
 
    private final ObjectMapper objectMapper = new ObjectMapper();
 
