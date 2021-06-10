@@ -46,7 +46,7 @@ public class CrawlerWebdriver {
       try {
          SEMAPHORE.acquire();
       } catch (InterruptedException e) {
-         e.printStackTrace();
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          Thread.currentThread().interrupt();
       }
    }
@@ -79,7 +79,7 @@ public class CrawlerWebdriver {
       try {
          Thread.sleep(time);
       } catch (InterruptedException e) {
-         e.printStackTrace();
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          Thread.currentThread().interrupt();
       }
    }
