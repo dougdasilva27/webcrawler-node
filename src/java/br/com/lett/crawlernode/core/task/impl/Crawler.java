@@ -78,7 +78,7 @@ public abstract class Crawler extends Task {
 
    protected CrawlerWebdriver webdriver;
 
-   private static final Cache cacheClient = new Cache(CacheType.CRAWLER);
+   private static final Cache cacheClient = new Cache();
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */

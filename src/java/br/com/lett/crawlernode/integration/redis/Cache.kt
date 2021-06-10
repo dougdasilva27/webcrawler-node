@@ -8,31 +8,28 @@ import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException
-import org.redisson.api.RMapCache
-import java.util.concurrent.TimeUnit
+import io.lettuce.core.api.sync.RedisCommands
 import java.util.function.Function
 
 /**
  * Interface to interact with Redis.
  *
- * @see Redis
- * @see RMapCache
  */
-class Cache(private val cacheType: CacheType) {
+class Cache {
 
-   private val mapCache: RMapCache<String, Any?>? by lazy {
-      CacheFactory.createCache(cacheType)
+   private val mapCache: RedisCommands<String, Any?>? by lazy {
+      CacheFactory.createCache()
    }
 
-   private val defaultTimeSecs = 7200
+   private val defaultTimeSecs: Long = 7200
 
    fun <T> get(key: String): T? {
       val value: Any? = mapCache?.get(key)
       return if (value != null) value as T? else null
    }
 
-   fun <T> put(key: String, value: T, seconds: Int) {
-      mapCache?.put(key, value, seconds.toLong(), TimeUnit.SECONDS)
+   fun <T> put(key: String, value: T, seconds: Long) {
+      mapCache?.setex(key, seconds, value)
    }
 
    /**
@@ -47,7 +44,7 @@ class Cache(private val cacheType: CacheType) {
    @JvmOverloads
    fun <T> getPutCache(
       key: String,
-      ttl: Int = defaultTimeSecs,
+      ttl: Long = defaultTimeSecs,
       requestMethod: RequestMethod,
       request: Request,
       function: Function<Response, T>,
