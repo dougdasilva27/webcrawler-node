@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -15,13 +16,15 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilBifarmaCrawler extends Crawler {
 
@@ -38,9 +41,15 @@ public class BrasilBifarmaCrawler extends Crawler {
    }
 
    @Override
+   protected Object fetch() {
+      webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+
+      return Jsoup.parse(webdriver.getCurrentPageSource());
+   }
+
+   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
-
 
       if (doc.selectFirst(".main_body") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
@@ -49,13 +58,12 @@ public class BrasilBifarmaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_content h1", false);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = crawlPrimaryImage(doc);
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".slider_clip .slide .thumb img",Arrays.asList("src"), "https:", "cdn-bifarma3.stoom.com.br", primaryImage);
-         System.err.println(secondaryImages);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".slider_clip .slide .thumb img",
+            Collections.singletonList("src"), "https:", "cdn-bifarma3.stoom.com.br", primaryImage);
          String description = crawlDescription(doc, internalId);
          boolean available = doc.selectFirst(".btn.click.product_btn") != null;
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
-         // Creating the product
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
@@ -129,7 +137,6 @@ public class BrasilBifarmaCrawler extends Crawler {
       return description.toString();
    }
 
-
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
@@ -198,5 +205,3 @@ public class BrasilBifarmaCrawler extends Crawler {
       return creditCards;
    }
 }
-
-

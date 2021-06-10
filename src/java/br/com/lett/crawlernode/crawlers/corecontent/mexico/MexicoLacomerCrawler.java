@@ -45,6 +45,7 @@ public class MexicoLacomerCrawler extends Crawler {
 
    private static final String HOME_PAGE = "http://www.lacomer.com.mx/";
    private static final String SELLER_FULL_NAME = "Lacomer";
+   private final String succId = session.getOptions().optString("succId");
 
    public MexicoLacomerCrawler(Session session) {
       super(session);
@@ -61,7 +62,7 @@ public class MexicoLacomerCrawler extends Crawler {
    @Override
    protected Object fetch() {
       String ean = scrapEan();
-      String url = "https://www.lacomer.com.mx/lacomer-api/api/v1/public/articulopasillo/detalleArticulo?artEan=" + ean + "&noPagina=1&succId=287";
+      String url = "https://www.lacomer.com.mx/lacomer-api/api/v1/public/articulopasillo/detalleArticulo?artEan=" + ean + "&noPagina=1&succId="+succId;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -130,7 +131,7 @@ public class MexicoLacomerCrawler extends Crawler {
 
    private String scrapEan() {
       String[] eanSplit = session.getOriginalURL().split("detarticulo/");
-      if (eanSplit.length > 0) {
+      if (eanSplit.length > 1) {
          return eanSplit[1].split("/")[0];
       }
       return null;

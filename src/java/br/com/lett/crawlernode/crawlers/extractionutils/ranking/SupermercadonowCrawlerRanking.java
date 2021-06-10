@@ -12,7 +12,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public abstract class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
+public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
 
    public SupermercadonowCrawlerRanking(Session session) {
       super(session);
@@ -21,7 +21,9 @@ public abstract class SupermercadonowCrawlerRanking extends CrawlerRankingKeywor
 
    protected String loadUrl = getLoadUrl();
 
-   protected abstract String getLoadUrl();
+   protected String getLoadUrl(){
+      return session.getOptions().optString("getLoadUrl");
+   }
 
    protected String host = getHost();
    private final String homePage = "https://" + host + "/produtos/" + loadUrl + "/";

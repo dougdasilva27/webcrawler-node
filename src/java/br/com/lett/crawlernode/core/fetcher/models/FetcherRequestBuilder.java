@@ -17,6 +17,7 @@ public class FetcherRequestBuilder {
    private List<Integer> statusCodesToIgnore = new ArrayList<>();
    private FetcherRequestsParameters parameters;
    private FetcherRequestForcedProxies forcedProxies;
+   private String session;
 
    public static FetcherRequestBuilder create() {
       return new FetcherRequestBuilder();
@@ -81,6 +82,11 @@ public class FetcherRequestBuilder {
       return this;
    }
 
+   public FetcherRequestBuilder setSession(String session) {
+      this.session = session;
+      return this;
+   }
+
    public FetcherRequestBuilder setForbiddenCssSelector(String forbiddenCssSelector) {
       this.forbiddenCssSelector = forbiddenCssSelector;
       return this;
@@ -100,6 +106,7 @@ public class FetcherRequestBuilder {
       fetcher.setStatusCodesToIgnore(this.statusCodesToIgnore);
       fetcher.setRequiredCssSelector(this.requiredCssSelector);
       fetcher.setForbiddenCssSelector(this.forbiddenCssSelector);
+      fetcher.setSession(this.session);
 
       return fetcher;
    }

@@ -23,6 +23,16 @@ public abstract class ArgentinaRappiCrawler extends RappiCrawler {
    }
 
    @Override
+   protected String getUrlPrefix() {
+      return "producto/";
+   }
+   @Override
+   protected String getHomeCountry() {
+      return "https://www.rappi.com.ar/";
+   }
+
+
+   @Override
    public boolean shouldVisit() {
       String href = this.session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));

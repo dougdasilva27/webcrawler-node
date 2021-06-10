@@ -23,6 +23,7 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.cookie.Cookie;
@@ -49,7 +51,7 @@ import org.slf4j.LoggerFactory;
 public class FetcherDataFetcher implements DataFetcher {
 
    private static final String FETCHER_CONTENT_TYPE = "application/json";
-   public static final String FETCHER_HOST = "https://api-fetcher.lett.global/";
+   public static final String FETCHER_HOST = GlobalConfigurations.executionParameters.getFetcherUrl();
    private static final Logger logger = LoggerFactory.getLogger(FetcherDataFetcher.class);
 
    @Override
@@ -178,8 +180,7 @@ public class FetcherDataFetcher implements DataFetcher {
 
             if (statistics.has("request_id")) {
                requestId = statistics.get("request_id").toString();
-               Logging.printLogInfo(logger, session, "Request Fetcher Id: " + requestId);
-            }
+               }
          }
 
          response = responseBuilder(responseJson);
@@ -425,49 +426,37 @@ public class FetcherDataFetcher implements DataFetcher {
       } else {
          proxies = proxiesTemp;
       }
+      FetcherRequestBuilder requestBuilder = FetcherRequestBuilder.create()
+         .setUrl(url)
+         .setForcedProxies(
+            new FetcherRequestForcedProxies()
+               .setAny(proxies)
+               .setSpecific(request.getProxy())
+         )
+         .setParameters(
+            new FetcherRequestsParameters().setHeaders(finalHeaders)
+               .setPayload(request.getPayload())
+               .setMustFollowRedirects(request.isFollowRedirects())
+         )
+         .setIgnoreStatusCode(request.mustIgnoreStatusCode())
+         .setBodyIsRequired(request.bodyIsRequired())
+         .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
+         .setSession(session.getSessionId());
 
       if (options != null) {
-         payload = FetcherRequestBuilder.create()
-            .setUrl(url)
+         payload =  requestBuilder
             .setMustUseMovingAverage(options.isMustUseMovingAverage())
             .setRequestType(method)
             .setRetrieveStatistics(options.isRetrieveStatistics())
             .setRetrieveByteArray(options.isRetrieveByteArray())
             .setForbiddenCssSelector(options.getForbiddenCssSelector())
             .setRequiredCssSelector(options.getRequiredCssSelector())
-            .setForcedProxies(
-               new FetcherRequestForcedProxies()
-                  .setAny(proxies)
-                  .setSpecific(request.getProxy())
-            )
-            .setParameters(
-               new FetcherRequestsParameters().setHeaders(finalHeaders)
-                  .setPayload(request.getPayload())
-                  .setMustFollowRedirects(request.isFollowRedirects())
-            )
-            .setIgnoreStatusCode(request.mustIgnoreStatusCode())
-            .setBodyIsRequired(request.bodyIsRequired())
-            .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
             .build();
       } else {
-         payload = FetcherRequestBuilder.create()
-            .setUrl(url)
+         payload = requestBuilder
             .setMustUseMovingAverage(true)
             .setRetrieveStatistics(true)
             .setRequestType(method)
-            .setForcedProxies(
-               new FetcherRequestForcedProxies()
-                  .setAny(proxies)
-                  .setSpecific(request.getProxy())
-            )
-            .setParameters(
-               new FetcherRequestsParameters().setHeaders(finalHeaders)
-                  .setPayload(request.getPayload())
-                  .setMustFollowRedirects(request.isFollowRedirects())
-            )
-            .setIgnoreStatusCode(request.mustIgnoreStatusCode())
-            .setBodyIsRequired(request.bodyIsRequired())
-            .setStatusCodesToIgnore(request.getStatusCodesToIgnore())
             .build();
       }
 

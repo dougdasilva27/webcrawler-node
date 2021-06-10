@@ -1,16 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.text.Normalizer;
-import java.util.HashMap;
-import java.util.Map;
-
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.Logging;
+import org.json.JSONObject;
 
 public abstract class MexicoRappiCrawler extends RappiCrawler {
 
@@ -24,6 +17,16 @@ public abstract class MexicoRappiCrawler extends RappiCrawler {
    @Override
    protected String getImagePrefix() {
       return "images.rappi.com.mx/products";
+   }
+
+   @Override
+   protected String getUrlPrefix() {
+      return "producto/";
+   }
+
+   @Override
+   protected String getHomeCountry() {
+      return HOME_PAGE;
    }
 
    public MexicoRappiCrawler(Session session) {

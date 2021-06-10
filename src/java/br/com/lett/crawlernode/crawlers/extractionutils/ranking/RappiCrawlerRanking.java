@@ -3,6 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.DiscoveryCrawlerSession;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.json.JSONArray;
@@ -15,12 +16,11 @@ import java.util.Map;
  * Date: 05/11/20
  *
  * @author Fellype Layunne
- *
  */
 public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
-   private final String PRODUCTS_API_URL = "https://services."+getApiDomain()+"/api/es-proxy/search/v2/products?page=";
-   protected String PRODUCT_BASE_URL = "https://www."+getProductDomain()+"/product/";
+   private final String PRODUCTS_API_URL = "https://services." + getApiDomain() + "/api/cpgs/search/v2/store/";
+   protected String PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/product/";
    private final String STORE_ID = getStoreId();
    private final String STORE_TYPE = getStoreType();
 
@@ -32,7 +32,10 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
    protected abstract String getStoreId();
 
-   protected abstract String getStoreType();
+   @Deprecated
+   protected  String getStoreType(){
+      return "";
+   }
 
    protected abstract String getApiDomain();
 
@@ -41,7 +44,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    @Override
    public void extractProductsFromCurrentPage() {
 
-      this.pageSize = 20;
+      this.pageSize = 40;
       this.log("Página " + this.currentPage);
 
       JSONObject search;
@@ -49,19 +52,19 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       search = fetchProductsFromAPI(STORE_ID, STORE_TYPE, this.location, this.currentPage);
 
       // se obter 1 ou mais links de produtos e essa página tiver resultado
-      if (search.has("hits") && search.getJSONArray("hits").length() > 0) {
-         JSONArray products = search.getJSONArray("hits");
+      if (search.has("products") && search.getJSONArray("products").length() > 0) {
+         JSONArray products = search.getJSONArray("products");
 
-         // se o total de busca não foi setado ainda, chama a função para
-         if (this.totalProducts == 0) {
-            setTotalProducts(search);
-         }
+//         // se o total de busca não foi setado ainda, chama a função para
+//         if (this.totalProducts == 0) {
+//            setTotalProducts(search);
+//         }
 
          for (int i = 0; i < products.length(); i++) {
             JSONObject product = products.getJSONObject(i);
 
             String internalPid = crawlInternalPid(product);
-            String internalId =  newUnification? internalPid : crawlInternalId(product);
+            String internalId = newUnification ? internalPid : crawlInternalId(product);
             String productUrl = crawlProductUrl(product, internalId);
 
             saveDataProduct(internalId, internalPid, productUrl);
@@ -119,11 +122,18 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    private JSONObject fetchProductsFromAPI(String storeId, String storeType, String query, int page) {
+      int startPage;
 
-      String payload = "{\"query\":\""+ query +"\",\"stores\":["+storeId+"],\"page\": "+ page+
-         ",\"store_type\":\""+storeType+"\",\"size\":40,\"options\":{},\"helpers\":{\"home_type\":\"by_categories\",\"store_type_group\":\"market\",\"type\":\"by_categories\"}}";
+      if (currentPage == 1) {
+         startPage = 0;
+      } else {
+         startPage = pageSize * (currentPage - 1);
+      }
 
-      String url = PRODUCTS_API_URL + page;
+
+      String payload = "{\"from\":" + startPage + " ,\"query\":\"" + this.keywordWithoutAccents + "\",\"size\":" + pageSize + "}";
+
+      String url = PRODUCTS_API_URL + storeId + "/products";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json");
@@ -131,5 +141,15 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
       Request request = RequestBuilder.create().setUrl(url).setHeaders(headers).setPayload(payload).mustSendContentEncoding(false).build();
       return CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      if (session instanceof DiscoveryCrawlerSession) {
+         return true;
+      } else {
+         return false;
+      }
+
    }
 }

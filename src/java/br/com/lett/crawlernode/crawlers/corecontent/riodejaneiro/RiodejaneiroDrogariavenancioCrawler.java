@@ -215,6 +215,8 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
 
       descriptionBuilder.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
 
+      descriptionBuilder.append(CrawlerUtils.scrapStandoutDescription("drogariavenancio", session, cookies, dataFetcher));
+      
       return descriptionBuilder.toString();
    }
 }

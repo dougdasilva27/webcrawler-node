@@ -6,17 +6,23 @@ import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.ScraperInformation;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import enums.QueueName;
 import models.Processed;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+
+import static br.com.lett.crawlernode.util.CrawlerUtils.stringToJson;
 
 
 public class Scheduler {
@@ -39,7 +45,7 @@ public class Scheduler {
 
          // assemble the primary image message
          if (primaryPic != null && !primaryPic.isEmpty()) {
-            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, url, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR);
+            JSONObject attrPrimary = assembleImageMessageAttributes(internalId, processedId, url, market, QueueService.PRIMARY_IMAGE_TYPE_MESSAGE_ATTR,session);
 
             String body = removesUselessCharacters(attrPrimary.toString());
 
@@ -75,7 +81,6 @@ public class Scheduler {
             entries.clear();
          }
 
-         Logging.printLogInfo(LOGGER, session, counter + " tasks scheduled.");
       } catch (Exception e) {
          Logging.printLogError(LOGGER, "Error during sqs query execution.");
          Logging.printLogError(LOGGER, CommonMethods.getStackTraceString(e));
@@ -109,7 +114,7 @@ public class Scheduler {
 }
    */
 
-   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, String url, Market market, String type) {
+   private static JSONObject assembleImageMessageAttributes(String internalId, Long processedId, String url, Market market, String type,Session session) {
 
       String market_code = market.getCode();
 
@@ -118,7 +123,7 @@ public class Scheduler {
       headers.put("Accept", "*");
 
       download_config.put("headers", headers);
-      download_config.put("proxies", market.getProxies());
+      download_config.put("proxies", session.getImageProxies());
 
       JSONObject body = new JSONObject();
       body.put("processed_id", processedId);
@@ -152,5 +157,55 @@ public class Scheduler {
       }
       return imagesArr;
    }
+
+
+   public static JSONObject mountMessageToSendToQueue(String parameters, Market market , ScraperInformation scraper, String scraperType) {
+
+      JSONObject jsonToSendToCrawler = new JSONObject();
+      JSONObject marketInfo = new JSONObject();
+      marketInfo.put("code", market.getCode());
+      marketInfo.put("regex", market.getFirstPartyRegex());
+      marketInfo.put("fullName", market.getFullName());
+      marketInfo.put("marketId", market.getId());
+      marketInfo.put("use_browser", scraper.isUseBrowser());
+      marketInfo.put("name", market.getName());
+      jsonToSendToCrawler.put("type", scraperType);
+      jsonToSendToCrawler.put("options", jsonOptionsRefine(scraper.getOptionsScraper(), scraper.getOptionsScraperClass(), scraper.getProxiesMarket()));
+      jsonToSendToCrawler.put("market", marketInfo);
+      jsonToSendToCrawler.put("className", scraper.getClassName());
+      jsonToSendToCrawler.put("parameters", parameters);
+
+
+      return jsonToSendToCrawler;
+
+   }
+
+   public static JSONObject jsonOptionsRefine(String optionsScraper, String optionSuperClass, String proxiesMarket) throws JSONException {
+      JSONObject optionsScraperJson = stringToJson(optionsScraper);
+      JSONObject optionsScraperSuperClassJson = stringToJson(optionSuperClass);
+      JSONObject result = new JSONObject();
+      String keyProxies = "proxies";
+
+      for (Iterator<String> it = optionsScraperJson.keys(); it.hasNext(); ) {
+         String key = it.next();
+         Object valueKey = optionsScraperJson.opt(key);
+
+
+         result.put(key, valueKey);
+
+      }
+
+      if (optionsScraperJson.optJSONArray(keyProxies) != null){
+         result.put("proxies", optionsScraperJson.optJSONArray(keyProxies));
+      } else if (optionsScraperSuperClassJson.optJSONArray(keyProxies) != null) {
+         result.put("proxies", optionsScraperSuperClassJson.optJSONArray(keyProxies));
+
+      }else {
+         result.put(keyProxies, new JSONArray(proxiesMarket));
+      }
+
+      return result;
+   }
+
 
 }

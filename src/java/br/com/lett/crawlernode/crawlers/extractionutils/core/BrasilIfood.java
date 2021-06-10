@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
@@ -53,11 +54,12 @@ public abstract class BrasilIfood extends Crawler {
 
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    @Override
    protected JSONObject fetch() {
       String storeCode = CommonMethods.getLast(session.getOriginalURL().split("/")).split("\\?")[0];
+      String prato = CommonMethods.getLast(session.getOriginalURL().split("prato="));
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.ACCEPT, "application/json, text/plain, */*");
@@ -68,23 +70,23 @@ public abstract class BrasilIfood extends Crawler {
       headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
 
       Request request = RequestBuilder.create()
-            .setUrl("https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + storeCode + "/menu")
-            .setCookies(this.cookies)
-            .setHeaders(headers)
-            .mustSendContentEncoding(false)
-            .setFetcheroptions(
-                  FetcherOptionsBuilder.create()
-                        .mustUseMovingAverage(false)
-                        .mustRetrieveStatistics(true)
-                        .setForbiddenCssSelector("#px-captcha")
-                        .build()
-            ).setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.BUY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR
-                  )
-            ).build();
+         .setUrl("https://wsloja.ifood.com.br/ifood-ws-v3/restaurants/" + storeCode + "/menuitem/" + prato)
+         .setCookies(this.cookies)
+         .setHeaders(headers)
+         .mustSendContentEncoding(false)
+         .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         ).setProxyservice(
+            Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR
+            )
+         ).build();
 
       String content = this.dataFetcher.get(session, request).getBody();
 
@@ -103,52 +105,39 @@ public abstract class BrasilIfood extends Crawler {
 
       if (!apiJson.isEmpty()) {
 
-         JSONObject data = JSONUtils.getJSONValue(apiJson, "data");
-         JSONArray menu = JSONUtils.getJSONArrayValue(data, "menu");
 
-         if (menu != null && !menu.isEmpty() && session.getOriginalURL().contains("prato=")) {
+         JSONObject item = JSONUtils.getValueRecursive(apiJson, "data.menu.0.itens.0", JSONObject.class);
+
+         if (item != null && !item.isEmpty() && session.getOriginalURL().contains("prato=")) {
             String productId = CommonMethods.getLast(session.getOriginalURL().split("prato="));
+            String internalId = item.optString("code");
 
-            for (Object menuArr : menu) {
+            if (internalId.equals(productId)) {
 
-               JSONObject menuObject = (JSONObject) menuArr;
-               JSONArray itens = JSONUtils.getJSONArrayValue(menuObject, "itens");
+               String name = item.optString("description");
+               String available = item.optString("availability");
+               boolean availableToBuy = available.equalsIgnoreCase("AVAILABLE");
+               String url = "https://static-images.ifood.com.br/image/upload/t_medium/pratos/";
+               String primaryImage = url + item.optString("logoUrl");
+               String description = item.optString("details");
+               Offers offers = availableToBuy ? scrapOffer(item) : new Offers();
 
-               for (Object itensArr : itens) {
+               // Creating the product
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalId)
+                  .setName(name)
+                  .setPrimaryImage(primaryImage)
+                  .setDescription(description)
+                  .setOffers(offers)
+                  .build();
 
-                  JSONObject itensObject = (JSONObject) itensArr;
+               products.add(product);
 
-                  String internalId = itensObject.optString("code");
-
-                  if (internalId.equals(productId)) {
-
-                     String name = itensObject.optString("description");
-                     String available = itensObject.optString("availability");
-                     boolean availableToBuy = available.equalsIgnoreCase("AVAILABLE");
-                     String url = "https://static-images.ifood.com.br/image/upload/t_medium/pratos/";
-                     String primaryImage = url + itensObject.optString("logoUrl");
-                     String description = itensObject.optString("details");
-                     Offers offers = availableToBuy ? scrapOffer(itensObject) : new Offers();
-
-                     // Creating the product
-                     Product product = ProductBuilder.create()
-                           .setUrl(session.getOriginalURL())
-                           .setInternalId(internalId)
-                           .setInternalPid(internalId)
-                           .setName(name)
-                           .setPrimaryImage(primaryImage)
-                           .setDescription(description)
-                           .setOffers(offers)
-                           .build();
-
-                     products.add(product);
-
-                     Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-                  }
-               }
+               Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
             }
          }
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -157,21 +146,20 @@ public abstract class BrasilIfood extends Crawler {
    }
 
 
-
    private Offers scrapOffer(JSONObject jsonOffers) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(jsonOffers);
       List<String> sales = new ArrayList<>();
 
       offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(seller_full_name)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(seller_full_name)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       return offers;
 
@@ -184,10 +172,10 @@ public abstract class BrasilIfood extends Crawler {
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setPriceFrom(priceFrom)
-            .setCreditCards(creditCards)
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
 
 
    }
@@ -198,17 +186,17 @@ public abstract class BrasilIfood extends Crawler {
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;

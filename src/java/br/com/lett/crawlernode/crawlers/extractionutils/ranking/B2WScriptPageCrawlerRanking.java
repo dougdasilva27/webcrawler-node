@@ -159,6 +159,7 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
             JSONObject valueContent = pages.optJSONObject(currentKey);
             if (valueContent != null && valueContent.has("queries")) {
                search = JSONUtils.getValueRecursive(valueContent, "queries.pageSearch.result.search", JSONObject.class);
+               break;
             }
          }
       }

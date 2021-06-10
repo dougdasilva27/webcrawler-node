@@ -1,5 +1,23 @@
+
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -10,23 +28,14 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
-import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -40,13 +49,6 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 /**
  * Date: 08/10/2018
@@ -202,13 +204,47 @@ public class MercadolivreCrawler extends Crawler {
 
             }
          }
-      } else {
-         Mercadolivre3pCrawler meli = new Mercadolivre3pCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
-         products = meli.extractInformation(doc);
+      } else if (isProductPageNewSite(doc)) {
+         MercadolivreNewCrawler meli = new MercadolivreNewCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
+         Product product = meli.extractInformation(doc, null);
+
+         if (product != null) {
+            if (doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").isEmpty() || !doc.select("input[name=variation]").isEmpty()
+                  || session.getOriginalURL().contains("www.mercadolivre.com.br")) {
+
+               products.add(product);
+            } else {
+
+               doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").parallelStream()
+                     .map(element -> {
+                        Request request = RequestBuilder.create()
+                              .setUrl("https://produto.mercadolivre.com.br" + element.attr("href"))
+                              .setCookies(cookies)
+                              .build();
+                        return new Pair<>(dataFetcher.get(session, request).getBody(), element.attr("title"));
+                     })
+                     .forEach(responsePair -> {
+                        try {
+                           Product p = meli.extractInformation(Jsoup.parse(responsePair.getFirst()), product.getRatingReviews());
+
+                           if (p != null) {
+                              products.add(p);
+                           }
+                        } catch (OfferException | MalformedPricingException | MalformedProductException e) {
+                           throw new IllegalStateException(e);
+                        }
+                     });
+            }
+         }
       }
 
       return products;
    }
+
+   private boolean isProductPageNewSite(Document doc) {
+      return !doc.select("h1.ui-pdp-title").isEmpty();
+   }
+
 
    private boolean isProductPage(Document doc) {
       return !doc.select(".vip-nav-bounds .layout-main").isEmpty();

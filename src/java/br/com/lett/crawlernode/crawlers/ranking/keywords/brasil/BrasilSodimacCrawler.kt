@@ -2,31 +2,53 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import org.json.JSONObject
+import br.com.lett.crawlernode.util.CommonMethods
+import org.jsoup.nodes.Element
+
 
 class BrasilSodimacCrawler(session: Session?) : CrawlerRankingKeywords(session) {
-   
+
+   private var isCategory = false
+   private var urlCategory: String? = null
+
    init {
       pageSize = 28
    }
 
    override fun extractProductsFromCurrentPage() {
-      val url = "https://www.sodimac.com.br/s/search/v1/sobr?q=$keywordEncoded&priceGroup=1018&zone=35745&currentpage=$currentPage"
-      val jsonApi = fetchJSONObject(url)
+      var url = "https://www.sodimac.com.br/sodimac-br/search?Ntt=$keywordEncoded&currentpage=$currentPage"
 
-      jsonApi?.optJSONObject("data")?.optJSONArray("results")?.forEach { elem ->
-         if (elem is JSONObject) {
-            val internal = elem.optString("skuId")
-            val productUrl = "https://www.sodimac.com.br/sodimac-br/product/$internal/${elem.optString("displayName")
-               .replace("""(,)?\s""".toRegex(), "-").replace(",", "")}/$internal"
+      if (currentPage > 1 && isCategory) {
+         url = "${urlCategory}&currentpage=$currentPage"
+      }
+
+      this.currentDoc = fetchDocument(url)
+
+      if (this.currentPage == 1) {
+         val redirectUrl = this.session.getRedirectedToURL(url)
+
+         if (redirectUrl != null && !redirectUrl.equals(url)) {
+            isCategory = true
+            this.urlCategory = redirectUrl
+         } else {
+            isCategory = false
+         }
+      }
+
+      val elements = this.currentDoc?.select("div.search-results-products-container > div")!!
+
+      for (elem in elements) {
+         if (elem is Element) {
+            val internal = elem.attr("data-key")!!
+            val productUrl = "https://www.sodimac.com.br${elem.selectFirst("a.link-primary")?.attr("href")!!}"
 
             saveDataProduct(internal, null, productUrl)
-            log("InternalId: $internal - Url: $productUrl")
+            log("${this.position} - InternalId: $internal - Url: $productUrl")
          }
       }
    }
 
    override fun checkIfHasNextPage(): Boolean {
-      return (arrayProducts.size % pageSize - currentPage) < 0
+      return this.currentDoc.selectFirst("button[id=bottom-pagination-next-page]") != null
    }
 }

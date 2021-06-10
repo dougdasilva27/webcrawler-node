@@ -1,12 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoOldRappiCrawlerRanking;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoRappiCrawlerRanking;
 
 public class MexicoRappisorianaguadalajaraCrawler extends MexicoRappiCrawlerRanking {
 
-   public static final String STORE_ID = "990007282";
+   public static final String STORE_ID = "160194933";
 
    public MexicoRappisorianaguadalajaraCrawler(Session session) {
       super(session);
@@ -18,8 +17,4 @@ public class MexicoRappisorianaguadalajaraCrawler extends MexicoRappiCrawlerRank
       return STORE_ID;
    }
 
-   @Override
-   protected String getStoreType() {
-      return "soriana";
-   }
 }

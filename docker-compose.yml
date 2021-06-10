@@ -1,6 +1,18 @@
-version: '3.8'
-
+version: "3.7"
 services:
+    webcrawler:
+        container_name: web-scraper
+        restart: unless-stopped
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - 5000:5000
+        volumes:
+            - ~/.aws:/root/.aws:ro
+        env_file:
+            - .env
+
   redis:
     image: redis:alpine
     container_name: redis-crawler

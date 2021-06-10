@@ -12,9 +12,11 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -45,7 +48,6 @@ import org.jsoup.select.Elements;
  * Date: 15/11/2017
  *
  * @author Gabriel Dornelas
- *
  */
 public class BrasilAmazonCrawler extends Crawler {
 
@@ -60,7 +62,7 @@ public class BrasilAmazonCrawler extends Crawler {
    private static final String IMAGES_PROTOCOL = "https";
 
    protected Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
-         Card.MASTERCARD.toString(), Card.ELO.toString());
+      Card.MASTERCARD.toString(), Card.ELO.toString());
 
    public BrasilAmazonCrawler(Session session) {
       super(session);
@@ -120,21 +122,21 @@ public class BrasilAmazonCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setEans(eans)
-               .setRatingReviews(ratingReviews)
-               .setOffers(offers)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setEans(eans)
+            .setRatingReviews(ratingReviews)
+            .setOffers(offers)
+            .build();
 
          products.add(product);
 
@@ -173,13 +175,13 @@ public class BrasilAmazonCrawler extends Crawler {
          }
 
          return OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(seller)
-               .setMainPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(isMainRetailer)
-               .setPricing(pricing)
-               .build();
+            .setInternalSellerId(sellerId)
+            .setSellerFullName(seller)
+            .setMainPagePosition(1)
+            .setIsBuybox(false)
+            .setIsMainRetailer(isMainRetailer)
+            .setPricing(pricing)
+            .build();
       }
 
       return null;
@@ -209,23 +211,29 @@ public class BrasilAmazonCrawler extends Crawler {
          if (spotlightPrice == null) {
             spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#soldByThirdParty span", null, false, ',', session);
          }
+         if (spotlightPrice == null) {
+            spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=price]", null, false, ',', session);
+         }
       }
 
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
       Double savings = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#dealprice_savings .priceBlockSavingsString",
-            null, false, ',', session);
+         null, false, ',', session);
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#buyBoxInner .a-list-item span:nth-child(2n)", null, false, ',', session);
       if (savings != null) {
          priceFrom = spotlightPrice + savings;
       }
+      if (priceFrom == null) {
+         priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span[id=listPrice]", null, false, ',', session);
+      }
 
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setPriceFrom(priceFrom)
-            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+         .build();
    }
 
    private String scrapSellerName(Element oferta) {
@@ -272,13 +280,13 @@ public class BrasilAmazonCrawler extends Crawler {
                }
 
                offers.add(OfferBuilder.create()
-                     .setInternalSellerId(sellerId)
-                     .setSellerFullName(name)
-                     .setSellersPagePosition(pos)
-                     .setIsBuybox(false)
-                     .setIsMainRetailer(isMainRetailer)
-                     .setPricing(pricing)
-                     .build());
+                  .setInternalSellerId(sellerId)
+                  .setSellerFullName(name)
+                  .setSellersPagePosition(pos)
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(isMainRetailer)
+                  .setPricing(pricing)
+                  .build());
 
                pos++;
             }
@@ -296,10 +304,10 @@ public class BrasilAmazonCrawler extends Crawler {
       CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
 
       return PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
-            .build();
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+         .build();
    }
 
    private CreditCards scrapCreditCardsFromSellersPage(Element doc, Double spotlightPrice) throws MalformedPricingException {
@@ -308,16 +316,16 @@ public class BrasilAmazonCrawler extends Crawler {
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(1)
-            .setInstallmentPrice(spotlightPrice)
-            .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
 
       for (String brand : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(brand)
-               .setIsShopCard(false)
-               .setInstallments(installments)
-               .build());
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
       }
 
       return creditCards;
@@ -333,7 +341,7 @@ public class BrasilAmazonCrawler extends Crawler {
 
          if (internalId != null) {
             Integer totalNumOfEvaluations = CrawlerUtils.scrapIntegerFromHtml(document,
-                  "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
+               "#acrCustomerReviewText, #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last > span:not([class])", true, 0);
             Double avgRating = getTotalAvgRating(document);
 
             ratingReviews.setInternalId(internalId);
@@ -375,15 +383,14 @@ public class BrasilAmazonCrawler extends Crawler {
       }
 
 
-
       return new AdvancedRatingReview.Builder().totalStar1(star1).totalStar2(star2).totalStar3(star3).totalStar4(star4).totalStar5(star5).build();
    }
 
    private Double getTotalAvgRating(Document doc) {
       Double avgRating = 0d;
       Element reviews =
-            doc.select("#reviewsMedley [data-hook=rating-out-of-text], #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt")
-                  .first();
+         doc.select("#reviewsMedley [data-hook=rating-out-of-text], #reviews-medley-cmps-expand-head > #dp-cmps-expand-header-last span.a-icon-alt")
+            .first();
 
       String text;
 
@@ -414,10 +421,13 @@ public class BrasilAmazonCrawler extends Crawler {
       Element internalIdElement = doc.select("input[name^=ASIN]").first();
       Element internalIdElementSpecial = doc.select("input.askAsin").first();
 
+
       if (internalIdElement != null) {
          internalId = internalIdElement.val();
       } else if (internalIdElementSpecial != null) {
          internalId = internalIdElementSpecial.val();
+      } else {
+         internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#all-offers-display-params", "data-qid");
       }
 
       return internalId;
@@ -521,7 +531,7 @@ public class BrasilAmazonCrawler extends Crawler {
       Element prodInfoElement = doc.selectFirst("#prodDetails");
 
       Elements elementsDescription =
-            doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
+         doc.select("#detail-bullets_feature_div, #detail_bullets_id, #feature-bullets, #bookDescription_feature_div, #aplus_feature_div");
 
       for (Element e : elementsDescription) {
          description.append(e.html().replace("noscript", "div"));

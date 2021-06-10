@@ -8,14 +8,4 @@ public class BrasilVilanovamondelezCrawler extends BrasilVilanova {
   public BrasilVilanovamondelezCrawler(Session session) {
     super(session);
   }
-
-  @Override
-  protected String getCnpj() {
-    return "33033028004090";
-  }
-
-  @Override
-  protected String getPassword() {
-    return "521542";
-  }
 }

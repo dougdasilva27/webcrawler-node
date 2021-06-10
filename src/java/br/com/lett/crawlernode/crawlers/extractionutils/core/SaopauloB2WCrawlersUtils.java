@@ -300,6 +300,25 @@ public class SaopauloB2WCrawlersUtils {
          String jsonPath = internalPid + ".offers.result";
 
          offersJsonArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
+
+         if (offersJsonArray == null){
+            jsonPath = internalPid + ".skus";
+
+            JSONArray skusArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
+
+            if(skusArray != null) {
+
+               if (!skusArray.isEmpty() && skusArray.length() > 0) {
+
+                  JSONObject jsonObject = skusArray.getJSONObject(0);
+                  jsonPath = "offers.result";
+                  offersJsonArray = JSONUtils.getValueRecursive(jsonObject, jsonPath, JSONArray.class);
+
+               }
+            }
+
+         }
+
       }
 
       if (offersJsonArray != null && offersJsonArray.length() > 0) {
@@ -316,7 +335,14 @@ public class SaopauloB2WCrawlersUtils {
             if (idProduct != null) {
                manageEmbedded(jsonOffer, jsonSeller);
 
-               if (jsonOffer.has("paymentOptions")) {
+               if (jsonOffer.has("bestPaymentOption")) {
+                  JSONObject payment = jsonOffer.optJSONObject("bestPaymentOption");
+
+                  setBoleto(payment, jsonSeller);
+                  setCard(payment, jsonSeller, moreQuantityOfInstallments);
+                  setSpotlightPriceForSellers(payment,jsonSeller);
+
+               } else if(jsonOffer.has("paymentOptions")) {
                   JSONObject payment = jsonOffer.optJSONObject("paymentOptions");
 
                   setBoleto(payment, jsonSeller);
@@ -398,14 +424,28 @@ public class SaopauloB2WCrawlersUtils {
    }
 
    private static void setBoleto(JSONObject payment, JSONObject jsonSeller) {
-      if (payment.has("BOLETO")) {
-         JSONObject boleto = payment.optJSONObject("BOLETO");
+      if (payment.has("boleto")) {
+         JSONObject boleto = payment.optJSONObject("boleto");
 
          if (boleto.has("price")) {
             jsonSeller.put("bankSlip", boleto.getDouble("price"));
 
             JSONObject discountJson = boleto.optJSONObject("discount");
             jsonSeller.put("bankSlipDiscount", discountJson != null ? discountJson.optDouble("rate", 0d) / 100d : 0d);
+         }
+      }
+   }
+
+   private static void setSpotlightPriceForSellers(JSONObject payment, JSONObject jsonSeller){
+      if(payment.has("minQuantity")){
+         JSONArray minQuantity = payment.optJSONArray("minQuantity");
+         for(Object o : minQuantity){
+            if( o instanceof JSONObject) {
+               JSONObject paymentInfo = (JSONObject) o;
+               Double setSpotlighPrice = paymentInfo.optDouble("total");
+
+               jsonSeller.put("spotlightPrice", setSpotlighPrice);
+            }
          }
       }
    }
@@ -561,15 +601,15 @@ public class SaopauloB2WCrawlersUtils {
                JSONObject productJSON = rootQuery.optJSONObject(key);
                Object obj = productJSON.optQuery("/offers/result");
 
-                  if (obj instanceof JSONArray) {
-                     JSONArray offerResult = (JSONArray) obj;
+               if (obj instanceof JSONArray) {
+                  JSONArray offerResult = (JSONArray) obj;
 
-                     for (Object o : offerResult) {
-                        JSONObject offerObj = (JSONObject) o;
+                  for (Object o : offerResult) {
+                     JSONObject offerObj = (JSONObject) o;
 
-                        extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
-                     }
+                     extractOffer(apoloJson, offerObj.optString("__ref"), offersJson);
                   }
+               }
             }
          }
       }

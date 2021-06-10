@@ -4,6 +4,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXScraper;
+import br.com.lett.crawlernode.util.JSONUtils;
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -40,6 +45,35 @@ public class BrasilConsulCrawler extends VTEXOldScraper {
    @Override
    protected List<String> getMainSellersNames() {
       return SELLERS;
+   }
+
+   @Override
+   protected String scrapInternalpid(Document doc){
+      String internalPid = "";
+
+      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=application/ld+json]", null, null, true, false);
+
+      if(json != null && !json.isEmpty()){
+         internalPid = json.optString("sku");
+      }
+
+      return internalPid;
+   }
+
+   @Override
+   protected JSONObject crawlProductApi(String internalPid, String parameters) {
+      JSONObject productApi = new JSONObject();
+
+      String url = homePage + "api/catalog_system/pub/products/search?fq=skuId:" + internalPid + "&_from=0&_to=";
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+
+      if (!array.isEmpty()) {
+         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
+      }
+
+      return productApi;
    }
 
    @Override

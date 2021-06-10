@@ -30,10 +30,10 @@ public class ServerCrawler {
    public static final int HTTP_STATUS_CODE_BAD_REQUEST = 400;
 
    public static final String ENDPOINT_TASK = "/task";
-   public static final String ENDPOINT_HEALTH_CHECK = "/health-check";
+   public static final String ENDPOINT_HEALTH_CHECK = "/status";
 
    private static final int SERVER_PORT = 5000;
-   private static final String SERVER_HOST = "localhost";
+   private static final String SERVER_HOST = "0.0.0.0";
 
 
    private Server server;

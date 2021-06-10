@@ -12,22 +12,18 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 
 public class BrasilHavanCrawler extends Crawler {
@@ -60,10 +56,10 @@ public class BrasilHavanCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", false);
          boolean available = doc.selectFirst("#product-addtocart-button") != null;
 
-         JSONArray ImageArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-         String primaryImage = CrawlerUtils.scrapPrimaryImageMagento(ImageArray);
-         String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(ImageArray, primaryImage);
-
+         JSONArray imageArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
+         System.err.println(imageArray);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,".fotorama__stage .fotorama__stage__frame", Arrays.asList("href"),  "https", "https://www.havan.com.br/");
+         String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(imageArray, primaryImage);
          RatingsReviews ratingReviews = scrapRatingReviews(doc, internalPid);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
          String description =

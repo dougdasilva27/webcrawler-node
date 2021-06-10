@@ -12,6 +12,7 @@ public class SaopauloRappimamboexpressvilaromanaCrawler extends BrasilRappiCrawl
 
    public SaopauloRappimamboexpressvilaromanaCrawler(Session session) {
       super(session);
+      newUnification = true;
    }
 
    public static final String STORE_ID = "900136785";

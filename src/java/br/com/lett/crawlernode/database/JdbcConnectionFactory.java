@@ -88,9 +88,6 @@ public class JdbcConnectionFactory {
       try {
         r.close();
 
-        if (r instanceof Connection) {
-          Logging.printLogInfo(LOGGER, "Connection has been closed");
-        }
       } catch (Exception e) {
         Logging.printLogError(LOGGER, CommonMethods.getStackTrace(e));
       }

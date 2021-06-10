@@ -11,7 +11,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
+public class VipcommerceRanking extends CrawlerRankingKeywords {
 
    private final String DOMAIN = getDomain();
    private final String LOCADE_CODE = getLocateCode();
@@ -20,7 +20,10 @@ public abstract class VipcommerceRanking extends CrawlerRankingKeywords {
       super(session);
    }
 
-   protected abstract String getDomain();
+   protected String getDomain(){
+      return session.getOptions().optString("domain");
+   }
+
    protected String getLocateCode(){
     return "1";
    }

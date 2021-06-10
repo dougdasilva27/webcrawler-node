@@ -16,10 +16,8 @@ import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
 import br.com.lett.crawlernode.exceptions.ResponseCodeException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -32,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -285,6 +284,14 @@ public class ApacheDataFetcher implements DataFetcher {
             if (session instanceof TestCrawlerSession) {
                Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
             }
+         } finally {
+            if (closeableHttpResponse != null) {
+               try {
+                  closeableHttpResponse.close();
+               } catch (IOException e) {
+                  Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+               }
+            }
          }
 
          attempt++;
@@ -308,7 +315,7 @@ public class ApacheDataFetcher implements DataFetcher {
 
       long requestsStartTime = System.currentTimeMillis();
 
-      while (attempt <= session.getMaxConnectionAttemptsImages() && localFile == null) {
+      while (attempt <= session.getMaxConnectionAttemptsCrawler() && localFile == null) {
          LettProxy randProxy = null;
          String url = request.getUrl();
          Map<String, String> headers = request.getHeaders();

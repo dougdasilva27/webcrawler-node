@@ -1,21 +1,9 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -27,11 +15,8 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.*;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -39,15 +24,22 @@ import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.BankSlip;
+import models.pricing.*;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
 import models.pricing.Installment.InstallmentBuilder;
-import models.pricing.Installments;
-import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class CNOVANewCrawler extends Crawler {
 
@@ -56,7 +48,7 @@ public abstract class CNOVANewCrawler extends Crawler {
    protected String homePage;
 
    protected Set<String> cards = Sets.newHashSet(DEFAULT_CARD.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(),
-         Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public CNOVANewCrawler(Session session) {
       super(session);
@@ -117,49 +109,47 @@ public abstract class CNOVANewCrawler extends Crawler {
 
 
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .setFetcheroptions(FetcherOptionsBuilder.create()
-                  .mustUseMovingAverage(false)
-                  .mustRetrieveStatistics(true)
-                  .build())
-            .setHeaders(headers)
-            .setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
-                  )
-            ).build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustUseMovingAverage(false)
+            .mustRetrieveStatistics(true)
+            .build())
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
+            )
+         )
+         .build();
 
 
-      Response response = new JsoupDataFetcher().get(session, request);
+      return alternativeFetch(request);
+   }
 
-      // int statusCode = response.getLastStatusCode();
-      //
-      // if ((Integer.toString(statusCode).charAt(0) != '2' &&
-      // Integer.toString(statusCode).charAt(0) != '3'
-      // && statusCode != 404)) {
-      //
-      // Request requestNew = RequestBuilder.create()
-      // .setUrl(url)
-      // .setCookies(cookies)
-      // .setFetcheroptions(FetcherOptionsBuilder.create()
-      // .mustUseMovingAverage(false)
-      // .mustRetrieveStatistics(true)
-      // .build())
-      // .setHeaders(headers)
-      // .setProxyservice(
-      // Arrays.asList(
-      // ProxyCollection.INFATICA_RESIDENTIAL_BR,
-      // ProxyCollection.NETNUT_RESIDENTIAL_BR
-      // )
-      // ).build();
-      //
-      // response = new FetcherDataFetcher().get(session, requestNew);
-      // }
+   private Response alternativeFetch(Request request) {
+      List<DataFetcher> httpClients = Arrays.asList(new JsoupDataFetcher(), new FetcherDataFetcher());
+
+      Response response = null;
+
+      for (DataFetcher localDataFetcher : httpClients) {
+         response = localDataFetcher.get(session, request);
+         if (checkResponse(response)) {
+            return response;
+         }
+      }
 
       return response;
+   }
+
+   boolean checkResponse(Response response) {
+      int statusCode = response.getLastStatusCode();
+
+      return (Integer.toString(statusCode).charAt(0) == '2'
+         || Integer.toString(statusCode).charAt(0) == '3'
+         || statusCode == 404);
    }
 
    @Override
@@ -191,28 +181,26 @@ public abstract class CNOVANewCrawler extends Crawler {
             List<String> eans = ean.isEmpty() ? new ArrayList<>() : Arrays.asList(ean);
 
             String internalId = internalPid + "-" + skuJson.optString("id");
-            List<String> images = CrawlerUtils.scrapImagesListFromJSONArray(skuJson.optJSONArray("zoomedImages"),
-                  "url", null, "https", "www." + getStore() + "-imagens.com.br", session);
+            List<String> images = scrapImages(skuJson);
             String primaryImage = images.isEmpty() ? null : images.remove(0);
-            String secondaryImages = CommonMethods.listToJSONArray(images).toString();
             Offers offers = scrapOffers(skuJson.optString("id"));
 
             // Creating the product
             Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setOffers(offers)
-                  .setRatingReviews(ratingReviews)
-                  .setEans(eans)
-                  .build();
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(images)
+               .setDescription(description)
+               .setOffers(offers)
+               .setRatingReviews(ratingReviews)
+               .setEans(eans)
+               .build();
 
             products.add(product);
          }
@@ -245,11 +233,40 @@ public abstract class CNOVANewCrawler extends Crawler {
       return skuJson == null ? new JSONObject() : skuJson;
    }
 
+   private List<String> scrapImages(JSONObject json) {
+      List<String> imgsList = new ArrayList<>();
+
+      JSONArray imgsJson = json.optJSONArray("zoomedImages");
+
+      JSONArray resultList = new JSONArray();
+
+      for (Object img : imgsJson) {
+         JSONObject imgJson = (JSONObject) img;
+
+         if(resultList.length() == 0 ){
+            resultList.put(imgJson);
+         }
+
+         if (resultList.toString().contains("\"order\":" + imgJson.optString("order"))) {
+            continue;
+         }
+
+         resultList.put(imgJson);
+      }
+
+      resultList.forEach(el -> {
+         if(el instanceof JSONObject){
+            imgsList.add(((JSONObject) el).optString("url"));
+         }
+      });
+
+      return imgsList;
+   }
+
    private Offers scrapOffers(String internalId) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
-
-      String url = "https://pdp-api." + getStore() + ".com.br/api/v2/sku/" + internalId + "/price/source/" + getInitials();
-
+      List<String> sellersIdList = new ArrayList<>();
+      String url = "https://pdp-api." + getStore() + ".com.br/api/v2/sku/" + internalId + "/price/source/" + getInitials() + "?&take=all";
       JSONObject offersJson = JSONUtils.stringToJson(fetchPage(url).getBody());
       JSONArray sellerInfo = offersJson.optJSONArray("sellers");
 
@@ -263,6 +280,11 @@ public abstract class CNOVANewCrawler extends Crawler {
             if (info.has("name") && !info.isNull("name") && info.has("id") && !info.isNull("id")) {
                String name = info.optString("name");
                String internalSellerId = info.optString("id");
+
+               if (internalSellerId != null) {
+                  sellersIdList.add(internalSellerId);
+               }
+
                Integer mainPagePosition = (i + 1) <= 3 ? i + 1 : null;
                Integer sellersPagePosition = i + 1;
 
@@ -281,17 +303,28 @@ public abstract class CNOVANewCrawler extends Crawler {
 
                if (pricing != null) {
                   Offer offer = OfferBuilder.create()
-                        .setInternalSellerId(internalSellerId)
-                        .setSellerFullName(name)
-                        .setMainPagePosition(mainPagePosition)
-                        .setSellersPagePosition(sellersPagePosition)
-                        .setPricing(pricing)
-                        .setIsBuybox(isBuyBox)
-                        .setIsMainRetailer(isMainRetailer)
-                        .setSales(salesList)
-                        .build();
+                     .setInternalSellerId(internalSellerId)
+                     .setSellerFullName(name)
+                     .setMainPagePosition(mainPagePosition)
+                     .setSellersPagePosition(sellersPagePosition)
+                     .setPricing(pricing)
+                     .setIsBuybox(isBuyBox)
+                     .setIsMainRetailer(isMainRetailer)
+                     .setSales(salesList)
+                     .build();
 
                   offers.add(offer);
+               }
+            }
+         }
+         Map<String, Double> scrapSallersIdAndRating = scrapSallersRating(sellersIdList);
+
+         int position = 1;
+         for (Map.Entry<String, Double> entry : scrapSallersIdAndRating.entrySet()) {
+            for (Offer offer : offers.getOffersList()) {
+               if (offer.getInternalSellerId().equals(entry.getKey())) {
+                  offer.setSellersPagePosition(position);
+                  position++;
                }
             }
          }
@@ -316,7 +349,7 @@ public abstract class CNOVANewCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject offersJson, JSONObject info, boolean principalSeller)
-         throws MalformedPricingException {
+      throws MalformedPricingException {
 
       if (principalSeller) {
          JSONObject sellPrice = offersJson.optJSONObject("sellPrice");
@@ -329,11 +362,11 @@ public abstract class CNOVANewCrawler extends Crawler {
             BankSlip bt = scrapBankTicket(offersJson, spotlightPrice);
 
             return PricingBuilder.create()
-                  .setPriceFrom(priceFrom != null && priceFrom > 0d ? priceFrom : null)
-                  .setSpotlightPrice(spotlightPrice)
-                  .setCreditCards(creditCards)
-                  .setBankSlip(bt)
-                  .build();
+               .setPriceFrom(priceFrom != null && priceFrom > 0d ? priceFrom : null)
+               .setSpotlightPrice(spotlightPrice)
+               .setCreditCards(creditCards)
+               .setBankSlip(bt)
+               .build();
          }
       } else {
          Double price = info.optDouble("sellPrice", 0d);
@@ -341,24 +374,24 @@ public abstract class CNOVANewCrawler extends Crawler {
          if (price > 0d) {
             Installments installments = new Installments();
             installments.add(InstallmentBuilder.create()
-                  .setInstallmentNumber(1)
-                  .setInstallmentPrice(price)
-                  .build());
+               .setInstallmentNumber(1)
+               .setInstallmentPrice(price)
+               .build());
 
             CreditCards creditCards = new CreditCards();
             for (String flag : cards) {
                creditCards.add(CreditCardBuilder.create()
-                     .setBrand(flag)
-                     .setIsShopCard(false)
-                     .setInstallments(installments)
-                     .build());
+                  .setBrand(flag)
+                  .setIsShopCard(false)
+                  .setInstallments(installments)
+                  .build());
             }
 
             return PricingBuilder.create()
-                  .setSpotlightPrice(price)
-                  .setCreditCards(creditCards)
-                  .setBankSlip(CrawlerUtils.setBankSlipOffers(price, null))
-                  .build();
+               .setSpotlightPrice(price)
+               .setCreditCards(creditCards)
+               .setBankSlip(CrawlerUtils.setBankSlipOffers(price, null))
+               .build();
          }
       }
 
@@ -374,7 +407,7 @@ public abstract class CNOVANewCrawler extends Crawler {
 
          if (discountOptions.contains(option)) {
             discount = MathUtils.normalizeTwoDecimalPlaces(MathUtils.parseDoubleWithComma(discountJson.optString("discount")
-                  .replace("%", "")) / 100d);
+               .replace("%", "")) / 100d);
          }
       }
 
@@ -396,9 +429,9 @@ public abstract class CNOVANewCrawler extends Crawler {
       }
 
       return BankSlipBuilder.create()
-            .setFinalPrice(bankPrice)
-            .setOnPageDiscount(discount)
-            .build();
+         .setFinalPrice(bankPrice)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    private CreditCards scrapCreditCards(JSONObject offersJson) throws MalformedPricingException {
@@ -425,17 +458,17 @@ public abstract class CNOVANewCrawler extends Crawler {
                if (!installmentOption.optString("type").equalsIgnoreCase("Bandeira")) {
                   for (String flag : cards) {
                      creditCards.add(CreditCardBuilder.create()
-                           .setBrand(flag)
-                           .setIsShopCard(false)
-                           .setInstallments(installments)
-                           .build());
+                        .setBrand(flag)
+                        .setIsShopCard(false)
+                        .setInstallments(installments)
+                        .build());
                   }
                } else {
                   creditCards.add(CreditCardBuilder.create()
-                        .setBrand(Card.SHOP_CARD.toString())
-                        .setIsShopCard(true)
-                        .setInstallments(installments)
-                        .build());
+                     .setBrand(Card.SHOP_CARD.toString())
+                     .setIsShopCard(true)
+                     .setInstallments(installments)
+                     .build());
                }
             }
          }
@@ -455,12 +488,12 @@ public abstract class CNOVANewCrawler extends Crawler {
       Double discount = scrapSpecialDiscount(offersJson, quantity + "x no Cartão");
 
       return InstallmentBuilder.create()
-            .setInstallmentNumber(quantity)
-            .setInstallmentPrice(value)
-            .setFinalPrice(finalPrice)
-            .setAmOnPageInterests(interest)
-            .setOnPageDiscount(discount)
-            .build();
+         .setInstallmentNumber(quantity)
+         .setInstallmentPrice(value)
+         .setFinalPrice(finalPrice)
+         .setAmOnPageInterests(interest)
+         .setOnPageDiscount(discount)
+         .build();
    }
 
    /**
@@ -573,4 +606,30 @@ public abstract class CNOVANewCrawler extends Crawler {
 
       return new AdvancedRatingReview.Builder().allStars(starsMap).build();
    }
+
+   private Map<String, Double> scrapSallersRating(List<String> sellersIdList) {
+      Map<String, Double> SellerIdAndSellerRating = new HashMap<>();
+      String sellersIds = sellersIdList.toString()
+         .replaceAll("[^0-9 ]", "")
+         .trim()
+         .replace(" ", "%2C");
+
+      String apiUrl = "https://pdp-api." + getStore() + ".com.br/api/v2/reviews/multiplereviews/source/" + getInitials() + "?sellersId=" + sellersIds;
+
+      JSONArray sellersRatingInfo = JSONUtils.stringToJsonArray(fetchPage(apiUrl).getBody());
+
+      if (sellersRatingInfo != null && sellersRatingInfo.length() > 0) {
+
+         for (int i = 0; i < sellersRatingInfo.length(); i++) {
+            JSONObject ratingInfo = sellersRatingInfo.optJSONObject(i);
+            SellerIdAndSellerRating.put(ratingInfo.optString("sellerId"), ratingInfo.optDouble("rating"));
+         }
+      }
+
+      return SellerIdAndSellerRating.entrySet()
+         .stream()
+         .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, LinkedHashMap::new));
+   }
+
 }

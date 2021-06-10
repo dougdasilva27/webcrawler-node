@@ -1,5 +1,29 @@
 package br.com.lett.crawlernode.core.task.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.session.ranking.*;
+import br.com.lett.crawlernode.core.task.Scheduler;
+import br.com.lett.crawlernode.util.ScraperInformation;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
+import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
@@ -29,7 +53,6 @@ import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.integration.redis.Cache;
 import br.com.lett.crawlernode.integration.redis.CacheType;
 import br.com.lett.crawlernode.main.ExecutionParameters;
-import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
@@ -60,6 +83,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 
+import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
+
 public abstract class CrawlerRanking extends Task {
 
    protected FetchMode fetchMode;
@@ -71,7 +96,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<String, String> mapUrlMessageId = new HashMap<>();
 
-   private Map<String, Map<String, MessageAttributeValue>> messages = new HashMap<>();
+   private List<String> messages = new ArrayList<>();
 
    protected int productsLimit;
    protected int pageLimit;
@@ -197,9 +222,9 @@ public abstract class CrawlerRanking extends Task {
 
             // mandando possíveis urls de produtos não descobertos pra amazon e pro mongo
             if (session instanceof RankingSession || session instanceof RankingDiscoverSession || session instanceof EqiRankingDiscoverKeywordsSession
-               && GlobalConfigurations.executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
+               && executionParameters.getEnvironment().equals(ExecutionParameters.ENVIRONMENT_PRODUCTION) && (session instanceof TestRankingKeywordsSession)) {
 
-               sendMessagesToAmazonAndMongo();
+               sendMessagesToQueue();
             }
 
             // caso cehgue no limite de páginas pré estabelecido, é finalizada a categorie.
@@ -239,7 +264,7 @@ public abstract class CrawlerRanking extends Task {
 
    private void setDataFetcher() {
       if (this.fetchMode == FetchMode.STATIC) {
-         dataFetcher = GlobalConfigurations.executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
+         dataFetcher = executionParameters.getUseFetcher() ? new FetcherDataFetcher() : new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.APACHE) {
          dataFetcher = new ApacheDataFetcher();
       } else if (this.fetchMode == FetchMode.JAVANET) {
@@ -266,9 +291,11 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Função checa de 4 formas se existe proxima pagina
     * <p>
-    * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit) 2 - Se naquele market foi identificado se há proxima pagina (hasNextPage()) 3 - Se naquele market obteve
-    * resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos os produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é identificado
-    * que não há próxima página devido algum erro naquele market.
+    * 1 - Se o limite de produtos não foi atingido (this.arrayProducts.size() < productsLimit) 2 - Se
+    * naquele market foi identificado se há proxima pagina (hasNextPage()) 3 - Se naquele market obteve
+    * resultado para aquela location (this.result) 4 - A variável doubleCheck armazena todos os
+    * produtos pegos até aquela página, caso na próxima página o número de produtos se manter, é
+    * identificado que não há próxima página devido algum erro naquele market.
     *
     * @return
     */
@@ -294,7 +321,8 @@ public abstract class CrawlerRanking extends Task {
    protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException;
 
    /**
-    * função que retorna se há ou não uma próxima página default: total de produtos maior que os produtos pegos até agora
+    * função que retorna se há ou não uma próxima página default: total de produtos maior que os
+    * produtos pegos até agora
     *
     * @return
     */
@@ -399,16 +427,7 @@ public abstract class CrawlerRanking extends Task {
     * @param url
     */
    protected void saveProductUrlToQueue(String url) {
-      Map<String, MessageAttributeValue> attr = new HashMap<>();
-      attr.put(QueueService.MARKET_ID_MESSAGE_ATTR,
-         new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING).withStringValue(String.valueOf(this.marketId)));
-
-      String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
-
-      attr.put(QueueService.SCRAPER_TYPE_MESSAGE_ATTR, new MessageAttributeValue().withDataType(QueueService.QUEUE_DATA_TYPE_STRING)
-         .withStringValue(String.valueOf(scraperType)));
-
-      this.messages.put(url.trim(), attr);
+      this.messages.add(url);
    }
 
 
@@ -449,7 +468,7 @@ public abstract class CrawlerRanking extends Task {
    /**
     * Create message and call function to send messages
     */
-   protected void sendMessagesToAmazonAndMongo() {
+   protected void sendMessagesToQueue() {
       List<SendMessageBatchRequestEntry> entries = new ArrayList<>();
 
       int counter = 0;
@@ -458,43 +477,53 @@ public abstract class CrawlerRanking extends Task {
 
       long sendMessagesStartTime = System.currentTimeMillis();
 
-      for (Entry<String, Map<String, MessageAttributeValue>> message : this.messages.entrySet()) {
-         SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
-         entry.setId(String.valueOf(counter)); // the id must be unique in the batch
-         entry.setMessageAttributes(message.getValue());
-         entry.setMessageBody(message.getKey());
+      ScraperInformation scraperInformation = Persistence.fetchScraperInfoToOneMarket(session.getMarket().getNumber());
 
-         entries.add(entry);
-         counter++;
+      String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
 
-         if (entries.size() > 9 || this.messages.size() == counter) {
+      if (scraperInformation != null) {
+         for (String menssage : this.messages) {
 
-            // Aqui se envia 10 mensagens para serem enviadas pra amazon e no mongo
-            populateMessagesInMongoAndAmazon(entries);
-            entries.clear();
+            SendMessageBatchRequestEntry entry = new SendMessageBatchRequestEntry();
+            entry.setId(String.valueOf(counter)); // the id must be unique in the batch
 
-            JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
-               .put("aws_type", "sqs")
-               .put("sqs_queue", "ws-discoverer");
+            JSONObject jsonToSentToQueue = Scheduler.mountMessageToSendToQueue(menssage, session.getMarket(), scraperInformation, scraperType);
 
-            Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
+            entry.setMessageBody(jsonToSentToQueue.toString());
+
+            entries.add(entry);
+            counter++;
+
+            if (entries.size() > 9 || this.messages.size() == counter) {
+               populateMessagesInToQueue(entries, scraperInformation.isUseBrowser());
+               entries.clear();
+
+               JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
+                  .put("aws_type", "sqs")
+                  .put("sqs_queue", "ws-discoverer");
+
+               Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
+
+            }
          }
       }
-
       this.messages.clear();
    }
+
 
    /**
     * @param entries
     */
-   private void populateMessagesInMongoAndAmazon(List<SendMessageBatchRequestEntry> entries) {
+   private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
+      
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
-         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
+         queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = session.getMarket().mustUseCrawlerWebdriver() ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+         queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
       }
+
 
       SendMessageBatchResult messagesResult = QueueService.sendBatchMessages(Main.queueHandler.getSqs(), queueName, entries);
 
@@ -513,7 +542,7 @@ public abstract class CrawlerRanking extends Task {
             count++;
          }
 
-         this.log(successResultEntryList.size() + " messages sended.");
+         this.log(successResultEntryList.size() + " messages sended to " + queueName);
       }
 
    }

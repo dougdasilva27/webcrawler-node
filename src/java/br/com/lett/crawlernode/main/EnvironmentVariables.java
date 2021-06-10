@@ -1,6 +1,9 @@
 package br.com.lett.crawlernode.main;
 
 public class EnvironmentVariables {
+
+   //Database connection variables are located in the model project
+
    public static final String ENV_CORE_THREADS = "CRAWLER_CORE_THREADS";
    public static final String ENV_DEBUG = "DEBUG";
    public static final String ENV_ENVIRONMENT = "ENVIRONMENT";
@@ -14,7 +17,6 @@ public class EnvironmentVariables {
    public static final String HIKARI_CP_VALIDATION_TIMEOUT = "HIKARI_CP_VALIDATION_TIMEOUT";
    public static final String IMAGES_BUCKET_NAME = "IMAGES_BUCKET_NAME";
    public static final String IMAGES_BUCKET_NAME_NEW = "IMAGES_BUCKET_NAME_NEW";
-   public static final String KINESIS_RATING_STREAM = "KINESIS_RATING_STREAM";
    public static final String KINESIS_STREAM = "KINESIS_STREAM";
    public static final String LOGS_BUCKET_NAME = "LOGS_BUCKET_NAME";
    public static final String QUEUE_URL_FIRST_PART = "QUEUE_URL_FIRST_PART";

@@ -29,7 +29,7 @@ public class BrasilLojacolgateCrawler extends Crawler {
 
    public BrasilLojacolgateCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override

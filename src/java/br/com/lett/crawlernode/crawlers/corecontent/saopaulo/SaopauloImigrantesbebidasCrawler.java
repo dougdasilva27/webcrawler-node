@@ -15,6 +15,8 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -37,11 +39,11 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       if (isProductPage(doc)) {
          JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "head > script:nth-of-type(6)", null, "}", false, true);
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".skuId", true);
+         String internalId = productJson.optString("sku");
          String internalPId = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productPage__name", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".productGallery__nav__item > img", Collections.singletonList("src"), "https", BASE_URL);
-         String secondaryImage = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".productGallery__nav__item > img", Collections.singletonList("src"), "https", BASE_URL, primaryImage);
+         List<String> images = scrapImages(doc);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".tabs"));
          boolean availability = doc.selectFirst(".out-of-stock") == null;
          Offers offers = availability ? scrapOffers(doc) : new Offers();
@@ -54,7 +56,7 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
             .setInternalPid(internalPId)
             .setName(name)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImage)
+            .setSecondaryImages(images)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
@@ -72,6 +74,18 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".productPage") != null;
+   }
+
+   private List<String> scrapImages (Document doc){
+      List<String> imgList = new ArrayList<>();
+
+      Elements el = doc.select("div.slider.productGallery__slider > picture");
+
+      if(el != null){
+         el.forEach(img -> imgList.add("https://www.imigrantesbebidas.com.br" + img.attr("rel")));
+      }
+
+      return imgList;
    }
 
    private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {

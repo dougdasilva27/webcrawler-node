@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
-import br.com.lett.crawlernode.core.models.Market;
-import br.com.lett.crawlernode.core.models.Markets;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.Interval;
@@ -47,35 +47,22 @@ public class ProxyCollection {
 
    public static final int MAX_ATTEMPTS_PER_PROXY = 2;
 
-   /**
-    * Intervals used to select proxy service when running normal information extraction
-    */
-   protected Map<Integer, List<Interval<Integer>>> intervalsMarketsMapWebcrawler = new HashMap<>();
-   /**
-    * Intervals used to select proxy service when downloading images
-    */
-   protected Map<Integer, List<Interval<Integer>>> intervalsMarketsMapImages = new HashMap<>();
 
-   protected Map<String, List<LettProxy>> proxyMap = new HashMap<>();
+   protected Map<String, List<LettProxy>> proxyMap;
 
 
-   public ProxyCollection(Markets markets, DatabaseManager databaseManager) {
+   public ProxyCollection(DatabaseManager databaseManager) {
       DatabaseDataFetcher dbFetcher = new DatabaseDataFetcher(databaseManager);
       Logging.printLogDebug(logger, "Fetching proxies in Mongo Fetcher...");
       proxyMap = dbFetcher.fetchProxiesFromMongoFetcher();
       Logging.printLogDebug(logger, proxyMap.size() + " proxies services returned from Mongo Fetcher.");
-      proxyMap.put(NO_PROXY, new ArrayList<LettProxy>());
-
-
-      assembleIntervalsWebcrawler(markets);
-      assembleIntervalsImages(markets);
+      proxyMap.put(NO_PROXY, new ArrayList<>());
    }
 
    /**
     * Get the array of proxy units corresponding to a proxy service name.
     *
     * @param serviceName the name of the proxy service
-    * @param session the crawler session. Used for logging purposes.
     * @return an ArrayList containing all the proxy units for a service. Returns an empty array if the
     *         service name was not found.
     */
@@ -100,35 +87,6 @@ public class ProxyCollection {
       return MAX_ATTEMPTS_PER_PROXY;
    }
 
-   private void assembleIntervalsWebcrawler(Markets markets) {
-      List<Market> marketList = markets.getMarkets();
-      for (Market m : marketList) {
-         List<Interval<Integer>> intervals = new ArrayList<>();
-         List<String> proxies = m.getProxies();
-         int index = 1;
-         for (int i = 0; i < proxies.size(); i++) {
-            intervals.add(new Interval<Integer>(proxies.get(i), index, index + MAX_ATTEMPTS_PER_PROXY - 1));
-            index = index + MAX_ATTEMPTS_PER_PROXY;
-         }
-         this.intervalsMarketsMapWebcrawler.put(m.getNumber(), intervals);
-      }
-   }
-
-   private void assembleIntervalsImages(Markets markets) {
-      List<Market> marketList = markets.getMarkets();
-      for (Market m : marketList) {
-         List<Interval<Integer>> intervals = new ArrayList<>();
-         List<String> proxies = m.getImageProxies();
-         int index = 1;
-         for (int i = 0; i < proxies.size(); i++) {
-            intervals.add(new Interval<Integer>(proxies.get(i), index, index + MAX_ATTEMPTS_PER_PROXY - 1));
-            index = index + MAX_ATTEMPTS_PER_PROXY;
-         }
-         this.intervalsMarketsMapImages.put(m.getNumber(), intervals);
-      }
-   }
-
-
    /**
     * Select a proxy service to be used, given the number of attempt. To solve this, we create a list
     * of intervals from the maximmum number of attempts per proxy. The list contains all intervals
@@ -137,19 +95,22 @@ public class ProxyCollection {
     * <p>
     * e.g: buy[1, 1] bonanza[2, 3] attempt = 1 result = buy
     *
-    * @param market
     * @param webcrawler true if we must select a proxy from the normal crawling proxies, or false if we
     *        want to select proxies for image download.
     * @param attempt
     * @return a String representing the name of the proxy service.
     */
-   public String selectProxy(Market market, boolean webcrawler, int attempt) {
-      List<Interval<Integer>> intervals = null;
-      if (webcrawler) {
-         intervals = this.intervalsMarketsMapWebcrawler.get(market.getNumber());
-      } else {
-         intervals = this.intervalsMarketsMapImages.get(market.getNumber());
+   public String selectProxy(Session session, boolean webcrawler, int attempt) {
+
+
+      List<Interval<Integer>> intervals = new ArrayList<>();
+      List<String> proxies = session.getProxies();
+      int index = 1;
+      for (String proxy : proxies) {
+         intervals.add(new Interval<>(proxy, index, index + MAX_ATTEMPTS_PER_PROXY - 1));
+         index = index + MAX_ATTEMPTS_PER_PROXY;
       }
+
       Interval<Integer> interval = MathUtils.findInterval(intervals, attempt);
       if (interval != null) {
          return interval.getName();

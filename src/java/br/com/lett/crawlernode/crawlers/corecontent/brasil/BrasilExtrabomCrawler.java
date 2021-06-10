@@ -57,7 +57,7 @@ public class BrasilExtrabomCrawler extends Crawler {
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".detalhe-produto__img", Arrays.asList("src"), "https:",
                "www.extrabom.com.br/");
             List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".detalhe-produto__thumbs-table tbody tr td a", Arrays.asList("data-img"), "https", "www.extrabom.com.br/", primaryImage);
-            boolean available = !doc.select(".dados-produto .cod").isEmpty();
+            boolean available = !doc.select(".dados-produto__buttons .carousel__buttons .bt-item.bt-comprar").isEmpty();
             Offers offers = available ? scrapOffers(doc) : new Offers();
 
             // Creating the product

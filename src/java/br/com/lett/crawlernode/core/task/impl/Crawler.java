@@ -342,11 +342,14 @@ public abstract class Crawler extends Task {
       String url = handleURLBeforeFetch(session.getOriginalURL());
       session.setOriginalURL(url);
 
-      Object obj = fetch();
 
-      session.setProductPageResponse(obj);
 
       try {
+
+         Object obj = fetch();
+
+         session.setProductPageResponse(obj);
+
          if (obj instanceof Document) {
             products = extractInformation((Document) obj);
          } else if (obj instanceof JSONObject) {
@@ -494,8 +497,6 @@ public abstract class Crawler extends Task {
    private void sendToKinesis(Product product) {
       if (GlobalConfigurations.executionParameters.mustSendToKinesis() && (!product.isVoid() || session instanceof InsightsCrawlerSession)) {
          Product p = ProductDTO.convertProductToKinesisFormat(product, session);
-
-         Logging.printLogInfo(logger, session, "Sending data to Kinesis ...");
 
          long productStartTime = System.currentTimeMillis();
 
@@ -649,7 +650,6 @@ public abstract class Crawler extends Task {
             Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
             session.setTaskStatus(Task.STATUS_FAILED);
          } else {
-            Logging.printLogInfo(logger, session, "Task completed.");
             session.setTaskStatus(Task.STATUS_COMPLETED);
          }
 

@@ -223,7 +223,7 @@ public abstract class VTEXScraper extends Crawler {
 
                   String sellerId = offerJson.optString("sellerId", null);
                   boolean isBuyBox = sellers.length() > 1;
-                  boolean isMainRetailer = isMainRetailer(sellerFullName, mainSellersNames);
+                  boolean isMainRetailer = isMainRetailer(sellerFullName);
 
                   Pricing pricing = scrapPricing(doc, internalId, commertialOffer, discounts);
                   List<String> sales = isDefaultSeller ? scrapSales(doc, offerJson, internalId, internalPid, pricing) : new ArrayList<>();
@@ -251,17 +251,8 @@ public abstract class VTEXScraper extends Crawler {
       return new ArrayList<>();
    }
 
-   private boolean isMainRetailer(String sellerName, List<String> mainSellerNames) {
-      boolean isMainRetailer = false;
-
-      for (String seller : mainSellerNames) {
-         if (seller.toLowerCase().startsWith(sellerName.toLowerCase())) {
-            isMainRetailer = true;
-            break;
-         }
-      }
-
-      return isMainRetailer;
+   protected boolean isMainRetailer(String sellerName) {
+      return mainSellersNames.stream().anyMatch(seller -> seller.toLowerCase().startsWith(sellerName.toLowerCase()));
    }
 
    protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {

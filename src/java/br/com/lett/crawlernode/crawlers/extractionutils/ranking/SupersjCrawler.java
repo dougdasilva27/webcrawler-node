@@ -1,23 +1,20 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.util.*;
+import br.com.lett.crawlernode.util.Logging;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 abstract public class SupersjCrawler extends CrawlerRankingKeywords {
 
-   private static final String PRODUCT_PAGE = "www.supersj.com.br/produto";
-   private static final String API = "https://www.supersj.com.br/api/busca";
-   private int totalPages;
-   private static final List<Cookie> COOKIES = new ArrayList<>();
+   private int LAST_PRODUCT_INDEX = 0;
 
    public SupersjCrawler(Session session) {
       super(session);
@@ -25,62 +22,45 @@ abstract public class SupersjCrawler extends CrawlerRankingKeywords {
 
    protected abstract String getLocationId();
 
-   private JSONObject fetchAPI(){
+   private Document fetchNextPage(){
+      Logging.printLogDebug(logger, session, "fetching next page...");
+      WebElement button = webdriver.driver.findElement(By.cssSelector("button.loja-btn-cor-secundaria"));
+      webdriver.clickOnElementViaJavascript(button);
+      webdriver.waitLoad(8000);
 
-      JSONObject payload = new JSONObject();
-      payload.put("descricao", this.keywordEncoded);
-      payload.put("order", "MV");
-      payload.put("pg", this.currentPage);
-      payload.put("marcas", Arrays.asList());
-      payload.put("categorias", Arrays.asList());
-      payload.put("subcategorias", Arrays.asList());
-      payload.put("precoIni", 0);
-      payload.put("precoFim", 0);
-      payload.put("avaliacoes", Arrays.asList());
-      payload.put("num_reg_pag", pageSize);
-      payload.put("visualizacao", "CARD");
-
-      BasicClientCookie cookie = new BasicClientCookie("ls.uid_armazem", getLocationId());
-      cookie.setDomain("www.supersj.com.br");
-      cookie.setPath("/");
-      COOKIES.add(cookie);
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put("accept", "application/json");
-      headers.put("content-type", "application/json");
-
-      Request request = Request.RequestBuilder.create().setUrl(API).setHeaders(headers).setCookies(COOKIES).setPayload(payload.toString())
-         .build();
-
-      return JSONUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
+      return Jsoup.parse(webdriver.getCurrentPageSource());
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-
       this.log("Página " + this.currentPage);
-      JSONObject apiResponse = fetchAPI();
-      JSONArray productsArray = apiResponse.optJSONArray("Produtos");
 
-      if (productsArray != null && !productsArray.isEmpty()) {
-         for (int i = 0; i< productsArray.length(); i++) {
+      String url = "https://www.supersj.com.br/?busca=" + this.keywordEncoded;
 
-            JSONObject product = productsArray.getJSONObject(i);
-            String internalId = String.valueOf(product.optInt("id_produto"));
-            String productUrl = CrawlerUtils.completeUrl(product.optString("str_link_produto"), "https", PRODUCT_PAGE);
+      if(LAST_PRODUCT_INDEX == 0){
+         this.currentDoc = fetchDocumentWithWebDriver(url, 20000, ProxyCollection.BUY_HAPROXY);
+      }else{
+         this.currentDoc = fetchNextPage();
+      }
 
-            if(i==0){
-               this.totalPages = product.optInt("ult_pag");
-            }
+      Elements products = this.currentDoc.select(".product-item-wrapper");
+
+      if (products != null && !products.isEmpty()) {
+         for (int i = LAST_PRODUCT_INDEX; i < products.size(); i++) {
+            Element product = products.get(i);
+            String internalId = CrawlerUtils.scrapStringSimpleInfo(product, "div.product-cdg a", true);
+            String productName = CrawlerUtils.scrapStringSimpleInfo(product, "div.product-text-dt h5", true);
+            String productUrl = "https://www.supersj.com.br/?busca=" + productName.replace(" ", "%20");
 
             saveDataProduct(internalId, null, productUrl);
+            LAST_PRODUCT_INDEX++;
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
          }
-      } else {
+      }else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
@@ -88,6 +68,8 @@ abstract public class SupersjCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage(){
-      return this.currentPage != this.totalPages;
+      return this.currentDoc.selectFirst("button.loja-btn-cor-secundaria") != null;
    }
+
+
 }

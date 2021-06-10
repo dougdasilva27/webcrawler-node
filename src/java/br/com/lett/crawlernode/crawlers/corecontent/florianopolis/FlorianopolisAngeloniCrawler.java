@@ -62,7 +62,7 @@ public class FlorianopolisAngeloniCrawler extends Crawler {
          Float price = available ? crawlPrice(internalId, internalPid) : null;
          String defaultImage = CrawlerUtils.scrapUrl(doc, "meta[property=\"og:image\"]", "content", "https", "img.angeloni.com.br");
          String host = defaultImage != null ? new java.net.URI(defaultImage).getHost() : "img.angeloni.com.br";
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".box-galeria img", Arrays.asList("data-zoom-image", "src"), "https", host);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".container__body-detalhe-produto .p-relative .zoom", Arrays.asList("data-zoom-image", "src"), "https", host);
          String secondaryImages = crawlSecondaryImages(doc, host, primaryImage);
          Integer stock = null;
          Marketplace marketplace = new Marketplace();
