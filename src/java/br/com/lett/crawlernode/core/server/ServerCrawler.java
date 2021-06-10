@@ -44,14 +44,11 @@ public class ServerCrawler {
    private long succeededTasks;
    private long failedTasksCount;
 
-   private final Object webdriverInstancesCounterLock = new Object();
-   private int webdriverInstances;
 
    public ServerCrawler() throws Exception {
       Logging.printLogDebug(logger, "Initializing values...");
       succeededTasks = 0;
       failedTasksCount = 0;
-      webdriverInstances = 0;
 
       Logging.printLogDebug(logger, "Creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]...");
       createServer();
@@ -60,6 +57,7 @@ public class ServerCrawler {
 
    /**
     * Create server, maximum 100 threads, min from env 'CRAWLER_CORE_THREADS'.
+    *
     * @throws Exception error instantiating server
     */
    private void createServer() throws Exception {
@@ -124,19 +122,4 @@ public class ServerCrawler {
    public int getActiveThreads() {
       return server.getThreadPool().getThreads();
    }
-
-   public void incrementWebdriverInstances() {
-      synchronized (webdriverInstancesCounterLock) {
-         Logging.printLogDebug(logger, "Incrementing webdriver instances.");
-         webdriverInstances++;
-      }
-   }
-
-   public void decrementWebdriverInstances() {
-      synchronized (webdriverInstancesCounterLock) {
-         Logging.printLogDebug(logger, "Decrementing webdriver instances.");
-         webdriverInstances--;
-      }
-   }
-
 }

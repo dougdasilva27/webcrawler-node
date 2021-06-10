@@ -3,10 +3,7 @@ package br.com.lett.crawlernode.core.fetcher;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -23,13 +20,13 @@ import java.util.List;
 
 public class DynamicDataFetcher {
 
-   protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
+   private DynamicDataFetcher() {
+   }
+
+   private static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
    /**
-    * @param url
-    * @param session
-    * @return
-    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
+    * @deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
     */
    @Deprecated
    public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
@@ -46,8 +43,6 @@ public class DynamicDataFetcher {
    /**
     * Use the webdriver to fetch a page.
     *
-    * @param url
-    * @param session
     * @return a webdriver instance with the page already loaded
     */
    public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
@@ -75,10 +70,6 @@ public class DynamicDataFetcher {
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
          webdriver = new CrawlerWebdriver(chromeOptions, session);
-
-         if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
-            Main.server.incrementWebdriverInstances();
-         }
 
          webdriver.loadUrl(url);
 
