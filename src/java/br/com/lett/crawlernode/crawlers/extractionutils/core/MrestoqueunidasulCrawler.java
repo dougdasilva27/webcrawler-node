@@ -79,14 +79,14 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
          pass.sendKeys(password);
 
          Logging.printLogDebug(logger, session, "awaiting login button");
-         webdriver.waitLoad(1000);
+         webdriver.waitLoad(7000);
 
          waitForElement(webdriver.driver, ".btn.btn-login-ajax");
          WebElement finishLogin = webdriver.driver.findElement(By.cssSelector(".btn.btn-login-ajax"));
          webdriver.clickOnElementViaJavascript(finishLogin);
 
          Logging.printLogDebug(logger, session, "waiting product page");
-         webdriver.waitLoad(2000);
+         webdriver.waitLoad(7000);
 
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -125,7 +125,6 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
          String description = scrapDescription(doc);
          boolean available = !doc.select(".add-to-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
-
 
          // Creating the product
          Product product =
