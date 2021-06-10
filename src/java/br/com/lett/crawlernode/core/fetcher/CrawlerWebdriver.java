@@ -42,6 +42,15 @@ public class CrawlerWebdriver {
       this.session = session;
    }
 
+   public void acquireLock() {
+      try {
+         SEMAPHORE.acquire();
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+         Thread.currentThread().interrupt();
+      }
+   }
+
    public WebElement findElementByCssSelector(String selector) {
       return driver.findElement(By.cssSelector(selector));
    }
@@ -64,19 +73,6 @@ public class CrawlerWebdriver {
       driver.get(url);
 
       return driver.getPageSource();
-   }
-
-   public void acquireLock() {
-      try {
-         SEMAPHORE.acquire();
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-         Thread.currentThread().interrupt();
-      }
-   }
-
-   public void releaseLock() {
-      SEMAPHORE.release();
    }
 
    public void waitLoad(int time) {
@@ -122,6 +118,10 @@ public class CrawlerWebdriver {
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
       }
+   }
+
+   public void releaseLock() {
+      SEMAPHORE.release();
    }
 
    /**
