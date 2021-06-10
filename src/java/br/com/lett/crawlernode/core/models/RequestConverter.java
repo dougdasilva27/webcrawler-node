@@ -22,7 +22,7 @@ public class RequestConverter {
 
    protected static final Logger logger = LoggerFactory.getLogger(RequestConverter.class);
 
-   private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
+   private static final String MSG_ID_HEADER = "sessionId";
    private static final String BODY_QUEUE = "queue";
    private static final String BODY_CLASS_NAME = "className";
    private static final String BODY_OPTIONS = "options";
@@ -68,7 +68,7 @@ public class RequestConverter {
 
       request.setRequestMethod(req.getMethod());
       request.setQueueName(body.optString(BODY_QUEUE));
-      request.setMessageId(req.getHeader(MSG_ID_HEADER));
+      request.setMessageId(body.optString(MSG_ID_HEADER));
       request.setClassName(body.optString(BODY_CLASS_NAME));
 
       String options = body.optString(BODY_OPTIONS);

@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.test.TestUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 import java.io.IOException;
