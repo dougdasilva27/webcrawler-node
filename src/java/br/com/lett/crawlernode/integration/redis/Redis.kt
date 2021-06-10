@@ -1,11 +1,15 @@
 package br.com.lett.crawlernode.integration.redis
 
 import br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters
-import org.redisson.Redisson
-import org.redisson.api.RMapCache
-import org.redisson.api.RedissonClient
-import org.redisson.client.RedisConnectionException
-import org.redisson.config.Config
+import com.google.gson.GsonBuilder
+import io.lettuce.core.RedisClient
+import io.lettuce.core.RedisURI
+import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.codec.RedisCodec
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+import java.time.Duration
+
 
 /**
  * Singleton synchronous redis client. It is lazily evaluated, won't connect to Redis until being used.
@@ -16,14 +20,13 @@ import org.redisson.config.Config
  */
 object Redis {
 
-   internal val client: RedissonClient? by lazy {
-      val config = Config()
-      config.useSingleServer()
-         .setAddress("redis://${executionParameters.redisHost}:${executionParameters.redisPort}")
-         .timeout = 10000
+   internal val client: RedisClient? by lazy {
+      val redisUri = RedisURI.Builder.redis(executionParameters.redisHost, executionParameters.redisPort)
+         .withTimeout(Duration.ofSeconds(10)).build()
+
       try {
-         Redisson.create(config)
-      } catch (e: RedisConnectionException) {
+         RedisClient.create(redisUri)
+      } catch (e: Exception) {
          null
       }
    }
@@ -34,11 +37,34 @@ object Redis {
 }
 
 object CacheFactory {
-   fun createCache(type: CacheType): RMapCache<String, Any?>? {
-      return Redis.client?.getMapCache(type.name)
+   fun <T> createCache(): StatefulRedisConnection<String, T?>? {
+      return Redis.client?.connect(JsonCodec<T>())
    }
 }
 
 enum class CacheType {
    CRAWLER, RANKING
+}
+
+class JsonCodec<T> : RedisCodec<String, T> {
+
+   private val charset = Charset.forName("UTF-8")
+   private val gson = GsonBuilder().create()
+
+   override fun decodeKey(bytes: ByteBuffer?): String {
+      return charset.decode(bytes).toString()
+   }
+
+   override fun decodeValue(bytes: ByteBuffer?): T {
+      TODO("Not yet implemented")
+   }
+
+   override fun encodeKey(key: String): ByteBuffer {
+      TODO("Not yet implemented")
+   }
+
+   override fun encodeValue(value: T): ByteBuffer {
+      TODO("Not yet implemented")
+   }
+
 }
