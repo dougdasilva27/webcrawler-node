@@ -58,7 +58,7 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       webdriver.sendToInput(".access-login input[name=senha]", password, 2000)
 
       log("submit login")
-      webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 10000)
+      webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
 
       cookies = webdriver.driver.manage().cookies.map {
          BasicClientCookie(it.name, it.value)
