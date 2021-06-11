@@ -113,6 +113,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          .replace("&s;", "'")
          .replace("&g;", ">")
          .replace("&l;", "<")
+         .replace("&a;", "&")
          .replace("&a;reg;", "®")
    }
 
