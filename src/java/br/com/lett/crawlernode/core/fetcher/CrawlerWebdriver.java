@@ -44,9 +44,7 @@ public class CrawlerWebdriver {
 
    public void acquireLock() {
       try {
-         logger.debug("Lock acquire request!!");
          SEMAPHORE.acquire();
-         logger.debug("Lock acquire!!");
       } catch (InterruptedException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          Thread.currentThread().interrupt();
@@ -77,9 +75,9 @@ public class CrawlerWebdriver {
       return driver.getPageSource();
    }
 
-   public void waitLoad(int time) {
+   public void waitLoad(int timeInMs) {
       try {
-         Thread.sleep(time);
+         Thread.sleep(timeInMs);
       } catch (InterruptedException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          Thread.currentThread().interrupt();
@@ -123,24 +121,7 @@ public class CrawlerWebdriver {
    }
 
    public void releaseLock() {
-      logger.debug("Lock release request!!");
       SEMAPHORE.release();
-      logger.debug("Lock release!!");
-   }
-
-   /**
-    * Get a screenshot from a webpage and save the file.
-    *
-    * @param path the path where the screenshot will be saved
-    */
-   public void takeScreenshot(String url, String path) {
-      driver.get(url);
-      File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-      try {
-         FileUtils.copyFile(screenshot, new File(path));
-      } catch (Exception ex) {
-         Logging.printLogWarn(logger, session, "Error saving screenshot! [" + ex.getMessage() + "]");
-      }
    }
 
    public void sendToInput(String selector, String inputText, int waitTime) {

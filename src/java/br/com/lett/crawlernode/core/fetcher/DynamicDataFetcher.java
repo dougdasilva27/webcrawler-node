@@ -36,16 +36,12 @@ public class DynamicDataFetcher {
       return fetchPageWebdriver(url, proxyString, session);
    }
 
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
-      return fetchPageWebdriver(url, proxyString, true, session);
-   }
-
    /**
     * Use the webdriver to fetch a page.
     *
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -61,7 +57,7 @@ public class DynamicDataFetcher {
 
          ChromeOptions chromeOptions = new ChromeOptions();
          chromeOptions.setProxy(proxySel);
-         chromeOptions.setHeadless(headless);
+         chromeOptions.setHeadless(true);
 
          chromeOptions.setCapability("browserName", "chrome");
          chromeOptions.addArguments("--user-agent=" + userAgent);
