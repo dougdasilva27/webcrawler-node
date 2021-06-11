@@ -44,7 +44,9 @@ public class CrawlerWebdriver {
 
    public void acquireLock() {
       try {
+         logger.debug("Lock acquire request!!");
          SEMAPHORE.acquire();
+         logger.debug("Lock acquire!!");
       } catch (InterruptedException e) {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          Thread.currentThread().interrupt();
@@ -121,7 +123,9 @@ public class CrawlerWebdriver {
    }
 
    public void releaseLock() {
+      logger.debug("Lock release request!!");
       SEMAPHORE.release();
+      logger.debug("Lock release!!");
    }
 
    /**
