@@ -41,7 +41,7 @@ public class ChileJumboCrawler extends VTEXNewScraper {
    }
 
    protected String getCodeLocate() {
-      return CODE_LOCATE;
+      return session.getOptions().optString("code_locale");
    }
 
    private String getUrl() {
