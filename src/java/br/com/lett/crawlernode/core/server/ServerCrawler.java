@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.core.server;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
-import br.com.lett.crawlernode.core.server.endpoints.MetricsEndpoint;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
@@ -33,7 +32,6 @@ public class ServerCrawler {
 
    public static final String ENDPOINT_TASK = "/task";
    public static final String ENDPOINT_HEALTH_CHECK = "/status";
-   public static final String ENDPOINT_METRICS = "/metrics";
 
    private static final int SERVER_PORT = 5000;
    private static final String SERVER_HOST = "0.0.0.0";
@@ -71,7 +69,6 @@ public class ServerCrawler {
          server.setHandler(handler);
          handler.addServletWithMapping(CrawlerTaskEndpoint.class, ENDPOINT_TASK);
          handler.addServletWithMapping(CrawlerHealthEndpoint.class, ENDPOINT_HEALTH_CHECK);
-         handler.addServletWithMapping(MetricsEndpoint.class, ENDPOINT_METRICS);
 
          statisticsHandler.setHandler(server.getHandler());
          server.setHandler(statisticsHandler);
