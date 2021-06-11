@@ -65,7 +65,8 @@ public class DynamicDataFetcher {
 
          chromeOptions.setCapability("browserName", "chrome");
          chromeOptions.addArguments("--user-agent=" + userAgent);
-         chromeOptions.addArguments("window-size=1024,768", "--no-sandbox");
+         chromeOptions.addArguments("--window-size=1024,768", "--no-sandbox");
+         chromeOptions.addArguments("--disable-dev-shm-usage", "--disable-gpu");
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
