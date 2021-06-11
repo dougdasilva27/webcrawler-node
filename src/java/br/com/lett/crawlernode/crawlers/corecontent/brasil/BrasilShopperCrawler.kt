@@ -47,11 +47,11 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       log("waiting home page")
 
-      webdriver.waitForElement("button.login", 10)
+      webdriver.waitForElement("button.login", 30)
 
       webdriver.clickOnElementViaJavascript("button.login", 10000)
 
-      webdriver.waitForElement(".access-login input[name=email]", 10)
+      webdriver.waitForElement(".access-login input[name=email]", 30)
 
       webdriver.sendToInput(".access-login input[name=email]", login, 2000)
 
