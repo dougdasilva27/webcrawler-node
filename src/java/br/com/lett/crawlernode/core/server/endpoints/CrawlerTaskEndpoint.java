@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
 import br.com.lett.crawlernode.main.Main;
-import br.com.lett.crawlernode.test.TestUtils;
 import br.com.lett.crawlernode.util.Logging;
 
 import java.io.IOException;
@@ -66,12 +65,10 @@ public class CrawlerTaskEndpoint extends HttpServlet {
       if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
          response = ServerCrawler.MSG_TASK_COMPLETED;
          res.setStatus(ServerCrawler.HTTP_STATUS_CODE_OK);
-         Main.server.incrementSucceededTasks();
       } else {
          response = ServerCrawler.MSG_TASK_FAILED;
          res.setStatus(ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
          Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
-         Main.server.incrementFailedTasks();
       }
 
       return response;
