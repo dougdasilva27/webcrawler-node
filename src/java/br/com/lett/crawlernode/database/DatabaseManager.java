@@ -1,14 +1,11 @@
 package br.com.lett.crawlernode.database;
 
-import br.com.lett.crawlernode.core.MicrometerExporter;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import com.mongodb.ReplicaSetStatus;
 import com.mongodb.ServerAddress;
 import credentials.models.DBCredentials;
 import credentials.models.MongoCredentials;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.binder.db.MetricsDSLContext;
 import managers.MongoDB;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -23,7 +20,7 @@ public class DatabaseManager {
 
    public MongoDB connectionFrozen;
    public MongoDB connectionFetcher;
-   public final DSLContext jooqPostgres = MetricsDSLContext.withMetrics(DSL.using(SQLDialect.POSTGRES), MicrometerExporter.getInstance().getRegistry(), Tags.empty());
+   public DSLContext jooqPostgres = DSL.using(SQLDialect.POSTGRES);
 
    public DatabaseManager(DBCredentials credentials) {
       setMongoFrozen(credentials);
