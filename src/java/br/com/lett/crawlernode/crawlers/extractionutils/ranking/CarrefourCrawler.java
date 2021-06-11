@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,30 +55,23 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String homePage = getHomePage();
-      String url = homePage + "api/catalog_system/pub/products/search/" + keywordEncoded.replace("+", "%20") + "?_from=" + ((currentPage - 1) * pageSize) +
-         "&_to=" + ((currentPage) * pageSize);
+      String url = homePage + keywordEncoded.replace("+", "%20") + "?q_=" +
+         keywordEncoded.replace("+", "%20") + "&__pickRuntime=page,queryData&map=ft&page=" + currentPage;
 
-      String body = fetchPage(url);
-      JSONArray products = CrawlerUtils.stringToJsonArray(body);
+      JSONArray products = fetchProducts(url);
 
-      if (products.length() > 0) {
-         for (Object object : products) {
+      for (Object object : products) {
 
-            JSONObject product = (JSONObject) object;
-            String productUrl = product.optString("link");
-            String internalPid = product.optString("productId");
+         JSONObject product = (JSONObject) object;
+         String productUrl = homePage + product.optString("linkText") + "/p";
+         String internalPid = product.optString("productId");
 
-            saveDataProduct(null, internalPid, productUrl);
-            this.log("Position: " + this.position + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-         }
+         saveDataProduct(null, internalPid, productUrl);
+         this.log("Position: " + this.position + " - InternalPid: " + internalPid + " - Url: " + productUrl);
       }
    }
 
-   protected String fetchPage(String url) {
+   protected JSONArray fetchProducts(String url) {
 
       Map<String, String> headers = new HashMap<>();
 
@@ -114,8 +108,10 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
          .build();
 
       Response response = dataFetcher.get(session, request);
-
-      return response.getBody();
+      JSONObject jsonResponse = CrawlerUtils.stringToJson(response.getBody());
+      String data = JSONUtils.getValueRecursive(jsonResponse, "queryData.0.data", String.class);
+      JSONObject jsonData = CrawlerUtils.stringToJson(data);
+      return JSONUtils.getValueRecursive(jsonData, "productSearch.products", JSONArray.class);
    }
 
    @Override
