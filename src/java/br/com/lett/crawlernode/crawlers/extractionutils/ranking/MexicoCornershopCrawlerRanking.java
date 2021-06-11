@@ -8,14 +8,18 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
-public abstract class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
+public class MexicoCornershopCrawlerRanking extends CrawlerRankingKeywords {
 
    private final String STORE_ID = getStoreId();
    private final String PRODUCT_STORE_ID = getProductStoreId();
 
-   protected abstract String getStoreId();
+   protected String getStoreId(){
+      return session.getOptions().optString("STORE_ID");
+   }
 
-   protected abstract String getProductStoreId();
+   protected String getProductStoreId(){
+      return session.getOptions().optString("PRODUCT_STORE_ID");
+   }
 
    public MexicoCornershopCrawlerRanking(Session session) {
       super(session);
