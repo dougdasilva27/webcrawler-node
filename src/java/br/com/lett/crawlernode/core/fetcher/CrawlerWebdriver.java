@@ -115,9 +115,10 @@ public class CrawlerWebdriver {
       try {
          driver.close();
          driver.quit();
-         releaseLock();
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+      } finally {
+         releaseLock();
       }
    }
 
