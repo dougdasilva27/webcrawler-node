@@ -20,13 +20,13 @@ import java.util.List;
 
 public class DynamicDataFetcher {
 
-   protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
+   private DynamicDataFetcher() {
+   }
+
+   private static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
    /**
-    * @param url
-    * @param session
-    * @return
-    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
+    * @deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
     */
    @Deprecated
    public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
@@ -36,18 +36,12 @@ public class DynamicDataFetcher {
       return fetchPageWebdriver(url, proxyString, session);
    }
 
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
-      return fetchPageWebdriver(url, proxyString, true, session);
-   }
-
    /**
     * Use the webdriver to fetch a page.
     *
-    * @param url
-    * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -63,11 +57,12 @@ public class DynamicDataFetcher {
 
          ChromeOptions chromeOptions = new ChromeOptions();
          chromeOptions.setProxy(proxySel);
-         chromeOptions.setHeadless(headless);
+         chromeOptions.setHeadless(true);
 
          chromeOptions.setCapability("browserName", "chrome");
          chromeOptions.addArguments("--user-agent=" + userAgent);
-         chromeOptions.addArguments("window-size=1024,768", "--no-sandbox");
+         chromeOptions.addArguments("--window-size=1024,768", "--no-sandbox");
+         chromeOptions.addArguments("--disable-dev-shm-usage", "--disable-gpu");
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 

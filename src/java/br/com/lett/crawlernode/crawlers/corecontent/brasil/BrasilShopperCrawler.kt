@@ -47,18 +47,18 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       log("waiting home page")
 
-      webdriver.waitForElement("button.login", 40)
+      webdriver.waitForElement("button.login", 30)
 
-      webdriver.clickOnElementViaJavascript("button.login", 2000)
+      webdriver.clickOnElementViaJavascript("button.login", 10000)
 
-      webdriver.waitForElement(".access-login input[name=email]", 40)
+      webdriver.waitForElement(".access-login input[name=email]", 30)
 
-      webdriver.sendToInput(".access-login input[name=email]", login, 100)
+      webdriver.sendToInput(".access-login input[name=email]", login, 2000)
 
-      webdriver.sendToInput(".access-login input[name=senha]", password, 100)
+      webdriver.sendToInput(".access-login input[name=senha]", password, 2000)
 
       log("submit login")
-      webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 2000)
+      webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
 
       cookies = webdriver.driver.manage().cookies.map {
          BasicClientCookie(it.name, it.value)
@@ -73,18 +73,10 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       val headers: MutableMap<String, String> = HashMap()
 
-      headers["authority"] = "shopper.com.br"
       headers["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
-      headers["sec-fetch-dest"] = "document"
-      headers["referer"] = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
-//      headers["cookie"] = "sessionid=okawtmk320xtcg6w3f879pnl3oaueclw;"
-      headers["cookie"] = cookies.filter {
-         it.name == "sessionid" || it.name == "csrftoken"
-      }.joinToString(";") {
-         "${it.name}=${it.value}"
-      }
+      headers["cookie"] = cookies.joinToString(";") { "${it.name}=${it.value}" }
 
-      val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
+      val request = Request.RequestBuilder.create().setFollowRedirects(false).setUrl(url).setHeaders(headers).build()
 
       return Jsoup.parse(dataFetcher[session, request].body)
    }
@@ -187,6 +179,6 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
       val nameFromURL = productNameByURL()
 
-      return nameFromHtml.toLowerCase() == nameFromURL.toLowerCase()
+      return nameFromHtml.equals(nameFromURL, ignoreCase = true)
    }
 }

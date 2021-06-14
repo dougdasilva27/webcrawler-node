@@ -3,19 +3,19 @@ package br.com.lett.crawlernode.core.fetcher;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import org.apache.commons.io.FileUtils;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,48 +29,28 @@ public class CrawlerWebdriver {
 
    protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
 
+   private static final Semaphore SEMAPHORE = new Semaphore(2, true);
+
    public WebDriver driver;
 
    private final Session session;
 
    public CrawlerWebdriver(ChromeOptions caps, Session session) {
+      acquireLock();
       driver = new ChromeDriver(caps);
       driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
       driver.manage().window().maximize();
       this.session = session;
    }
 
-   // public void addHeaders(Map<String, String> headers) {
-   // driver.get("chrome-extension://idgpnmonknjnojddfkpgkljpfnnfcklj/icon.png");
-   //
-   // StringBuilder headersOptions = new StringBuilder();
-   // for (Entry<String, String> entry : headers.entrySet()) {
-   // headersOptions.append(" {enabled: true, name: '" + entry.getKey() + "', value: '" +
-   // entry.getValue() + "', comment: ''}, ");
-   // }
-   //
-   // ((JavascriptExecutor)driver).executeScript(
-   // "localStorage.setItem('profiles', JSON.stringify([{ " +
-   // " title: 'Selenium', hideComment: true, appendMode: '', " +
-   // " headers: [ " +
-   // headersOptions.toString() +
-   // " ], " +
-   // " respHeaders: [], " +
-   // " filters: [] " +
-   // "}]));");
-   //
-   // }
-
-   // public void addCookie(String url) {
-   // try {
-   // URI uri = new URI(url);
-   // Cookie c = new Cookie("x-a", "xulambis", "." + uri.getHost(), "/", null);
-   // driver.manage().addCookie(c);
-   // } catch (Exception e) {
-   // Logging.printLogError(logger, session, "Cookie could not be set.");
-   // Logging.printLogError(logger, session, CommonMethods.getStackTraceString(e));
-   // }
-   // }
+   public void acquireLock() {
+      try {
+         SEMAPHORE.acquire();
+      } catch (InterruptedException e) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+         Thread.currentThread().interrupt();
+      }
+   }
 
    public WebElement findElementByCssSelector(String selector) {
       return driver.findElement(By.cssSelector(selector));
@@ -82,8 +62,6 @@ public class CrawlerWebdriver {
 
    /**
     * Get the html source of the current page loaded in the webdriver.
-    *
-    * @return
     */
    public String getCurrentPageSource() {
       return driver.getPageSource();
@@ -91,9 +69,6 @@ public class CrawlerWebdriver {
 
    /**
     * Loads a webpage without any explicit wait.
-    *
-    * @param url
-    * @return
     */
    public String loadUrl(String url) {
       driver.get(url);
@@ -101,30 +76,13 @@ public class CrawlerWebdriver {
       return driver.getPageSource();
    }
 
-   /**
-    * Loads a webpage and wait for some time.
-    *
-    * @param url
-    * @param waitTime
-    * @return A String containing the page html
-    */
-   public String loadUrl(String url, int waitTime) {
-      this.driver.get(url);
-      this.waitLoad(waitTime);
-
-      return this.driver.getPageSource();
-   }
-
-   public void waitLoad(int time) {
+   public void waitLoad(int timeInMs) {
       try {
-         Thread.sleep(time);
+         Thread.sleep(timeInMs);
       } catch (InterruptedException e) {
-         e.printStackTrace();
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+         Thread.currentThread().interrupt();
       }
-   }
-
-   public Actions getActionsBuilder() {
-      return new Actions(driver);
    }
 
    public WebElement executeJavascript(String javascript) {
@@ -145,8 +103,6 @@ public class CrawlerWebdriver {
 
    /**
     * Get the current loaded page on the webdriver instance.
-    *
-    * @return
     */
    public String getCurURL() {
       return driver.getCurrentUrl();
@@ -161,35 +117,13 @@ public class CrawlerWebdriver {
          driver.quit();
       } catch (Exception e) {
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
+      } finally {
+         releaseLock();
       }
    }
 
-   /**
-    * Get a screenshot from a webpage.
-    *
-    * @param url
-    * @return
-    */
-   public File takeScreenshot(String url) {
-      driver.get(url);
-      File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-      return screenshot;
-   }
-
-   /**
-    * Get a screenshot from a webpage and save the file.
-    *
-    * @param url
-    * @param path the path where the screenshot will be saved
-    */
-   public void takeScreenshot(String url, String path) {
-      driver.get(url);
-      File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-      try {
-         FileUtils.copyFile(screenshot, new File(path));
-      } catch (Exception ex) {
-         Logging.printLogWarn(logger, session, "Error saving screenshot! [" + ex.getMessage() + "]");
-      }
+   public void releaseLock() {
+      SEMAPHORE.release();
    }
 
    public void sendToInput(String selector, String inputText, int waitTime) {
@@ -210,5 +144,4 @@ public class CrawlerWebdriver {
       WebDriverWait wait = new WebDriverWait(driver, timeOutInSeconds);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
-
 }
