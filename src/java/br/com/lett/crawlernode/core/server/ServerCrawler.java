@@ -40,15 +40,8 @@ public class ServerCrawler {
 
    private final StatisticsHandler statisticsHandler = new StatisticsHandler();
 
-   private final Object lock = new Object();
-   private long succeededTasks;
-   private long failedTasksCount;
-
-
    public ServerCrawler() throws Exception {
       Logging.printLogDebug(logger, "Initializing values...");
-      succeededTasks = 0;
-      failedTasksCount = 0;
 
       Logging.printLogDebug(logger, "Creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]...");
       createServer();
@@ -63,7 +56,7 @@ public class ServerCrawler {
    private void createServer() throws Exception {
       try {
          QueuedThreadPool threadPool = new QueuedThreadPool(100, GlobalConfigurations.executionParameters.getThreads());
-         this.server = new Server(threadPool);
+         server = new Server(threadPool);
 
          ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory());
          ServletHandler handler = new ServletHandler();
@@ -89,34 +82,6 @@ public class ServerCrawler {
          CommonMethods.getStackTraceString(ex);
       }
 
-   }
-
-   public int getActiveTasks() {
-      return statisticsHandler.getRequestsActive();
-   }
-
-   public void incrementSucceededTasks() {
-      synchronized (lock) {
-         succeededTasks++;
-      }
-   }
-
-   public void incrementFailedTasks() {
-      synchronized (lock) {
-         failedTasksCount++;
-      }
-   }
-
-   public long getSucceededTasks() {
-      return succeededTasks;
-   }
-
-   public long getFailedTasksCount() {
-      return failedTasksCount;
-   }
-
-   public int getTaskQueueSize() {
-      return statisticsHandler.getAsyncRequestsWaiting();
    }
 
    public int getActiveThreads() {

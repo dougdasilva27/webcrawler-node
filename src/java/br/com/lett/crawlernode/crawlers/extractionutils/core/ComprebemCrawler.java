@@ -140,21 +140,21 @@ public abstract class ComprebemCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal", null, false, ',', this.session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal span:nth-child(4)", null, false, ',', this.session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal span:nth-child(2)", null, false, ',', this.session);
 
-      if (spotlightPrice != null) {
-         Double priceFrom = null;
-         CreditCards creditCards = scrapCreditCards(spotlightPrice);
-
-         return Pricing.PricingBuilder.create()
-            .setSpotlightPrice(spotlightPrice)
-            .setPriceFrom(priceFrom)
-            .setCreditCards(creditCards)
-            .setBankSlip(BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build())
-            .build();
+      if(spotlightPrice == null){
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".principal span:nth-child(2)", null, false, ',', this.session);
+         priceFrom = null;
       }
 
-      return null;
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build())
+         .build();
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {

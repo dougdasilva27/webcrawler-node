@@ -114,7 +114,6 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
          .build();
 
       Response response = dataFetcher.get(session, request);
-
       return response.getBody();
    }
 

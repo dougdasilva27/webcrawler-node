@@ -98,7 +98,7 @@ public class ChileJumboCrawler extends CrawlerRankingKeywords {
    }
 
    protected String getStoreCode() {
-      return storeCode;
+      return session.getOptions().optString("code_locale");
    }
 
    private String crawlProductUrl(JSONObject product) {
