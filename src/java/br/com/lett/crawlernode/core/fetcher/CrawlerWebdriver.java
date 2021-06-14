@@ -29,7 +29,7 @@ public class CrawlerWebdriver {
 
    protected static final Logger logger = LoggerFactory.getLogger(CrawlerWebdriver.class);
 
-   private static final Semaphore SEMAPHORE = new Semaphore(2, true);
+   private static final Semaphore SEMAPHORE = new Semaphore(3, true);
 
    public WebDriver driver;
 
