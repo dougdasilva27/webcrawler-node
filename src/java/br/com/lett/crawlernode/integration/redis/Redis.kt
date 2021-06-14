@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.integration.redis
 
 import br.com.lett.crawlernode.integration.redis.config.JsonCodec
+import br.com.lett.crawlernode.integration.redis.config.RedisDb
 import br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
@@ -27,7 +28,9 @@ object Redis {
 
 object CacheFactory {
 
-   fun <T> createCache(clazz: Class<T>): RedisCommands<String, T?>? {
-      return Redis.client?.connect(JsonCodec(clazz))?.sync()
+   fun <T> createCache(clazz: Class<T>, db: RedisDb): RedisCommands<String, T?>? {
+      return Redis.client?.connect(JsonCodec(clazz))
+         ?.sync()
+         ?.also { it.select(db.number) }
    }
 }

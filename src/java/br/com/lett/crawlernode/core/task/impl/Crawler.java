@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.database.ProcessedModelPersistenceResult;
 import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.integration.redis.Cache;
+import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.processor.Processor;
@@ -77,7 +78,7 @@ public abstract class Crawler extends Task {
 
    protected CrawlerWebdriver webdriver;
 
-   private static final Cache cacheClient = new Cache();
+   private static final Cache cacheClient = new Cache(RedisDb.CRAWLER);
    /**
     * Cookies that must be used to fetch the sku page this attribute is set by the handleCookiesBeforeFetch method.
     */

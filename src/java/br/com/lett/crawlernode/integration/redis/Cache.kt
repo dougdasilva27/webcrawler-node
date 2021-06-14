@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException
+import br.com.lett.crawlernode.integration.redis.config.RedisDb
 import io.lettuce.core.api.sync.RedisCommands
 import java.util.function.Function
 
@@ -15,10 +16,10 @@ import java.util.function.Function
  * Interface to interact with Redis.
  *
  */
-class Cache {
+class Cache(db: RedisDb) {
 
    private val mapCache: RedisCommands<String, Any?>? by lazy {
-      CacheFactory.createCache(Any::class.java)
+      CacheFactory.createCache(Any::class.java, db)
    }
 
    private val defaultTimeSecs: Long = 7200
@@ -53,13 +54,21 @@ class Cache {
    ): T? {
       var value: Any? = get(key)
       if (value == null) {
-         value = when (requestMethod) {
-            RequestMethod.GET -> function.apply(dataFetcher.get(session, request))
-            RequestMethod.POST -> function.apply(dataFetcher.post(session, request))
+         val resp = when (requestMethod) {
+            RequestMethod.GET -> dataFetcher.get(session, request)
+            RequestMethod.POST -> dataFetcher.post(session, request)
             else -> throw RequestMethodNotFoundException(requestMethod.name)
          }
-         put(key, value as Any, ttl)
+         if (isSuccess(resp)) {
+            value = function.apply(resp)
+            put(key, value as Any, ttl)
+         }
       }
       return value as T?
+   }
+
+   private fun isSuccess(resp: Response): Boolean {
+      val firstChar = resp.lastStatusCode.toString()[0].toString()
+      return firstChar in arrayOf("2", "3")
    }
 }

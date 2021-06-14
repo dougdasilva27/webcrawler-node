@@ -10,6 +10,7 @@ import java.util.Map;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.ranking.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
+import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
@@ -98,7 +99,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
-   private static final Cache cacheClient = new Cache();
+   private static final Cache cacheClient = new Cache(RedisDb.RANKING);
 
    // variável que identifica se há resultados na página
    protected boolean result;
