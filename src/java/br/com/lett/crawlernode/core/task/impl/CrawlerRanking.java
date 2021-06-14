@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.session.ranking.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.util.ScraperInformation;
@@ -30,7 +29,6 @@ import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -255,12 +253,12 @@ public abstract class CrawlerRanking extends Task {
 
    protected <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cacheClient.getPutCache(component, ttl, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.update(component, ttl, requestMethod, request, function, dataFetcher, session);
    }
 
    protected <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cacheClient.getPutCache(component, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.update(component, requestMethod, request, function, dataFetcher, session);
    }
 
    public void setProductsLimit(int productsLimit) {

@@ -29,7 +29,7 @@ class Cache(db: RedisDb) {
       return if (value != null) value as T? else null
    }
 
-   fun <T> put(key: String, value: T, seconds: Long) {
+   fun <T> set(key: String, value: T, seconds: Long) {
       mapCache?.setex(key, seconds, value)
    }
 
@@ -43,7 +43,7 @@ class Cache(db: RedisDb) {
     * @param session session data
     */
    @JvmOverloads
-   fun <T> getPutCache(
+   fun <T> update(
       key: String,
       ttl: Long = defaultTimeSecs,
       requestMethod: RequestMethod,
@@ -61,7 +61,7 @@ class Cache(db: RedisDb) {
          }
          if (isSuccess(resp)) {
             value = function.apply(resp)
-            put(key, value as Any, ttl)
+            set(key, value as Any, ttl)
          }
       }
       return value as T?
