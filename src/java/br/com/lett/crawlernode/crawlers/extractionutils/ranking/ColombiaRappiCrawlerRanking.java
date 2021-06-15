@@ -7,9 +7,9 @@ import br.com.lett.crawlernode.core.session.Session;
  *
  * @author Fellype Layunne
  */
-public abstract class ColombiaRappiCrawlerRanking extends RappiCrawlerRanking {
+public class ColombiaRappiCrawlerRanking extends RappiCrawlerRanking {
 
-   protected ColombiaRappiCrawlerRanking(Session session) {
+   public ColombiaRappiCrawlerRanking(Session session) {
       super(session);
       PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/producto/";
 

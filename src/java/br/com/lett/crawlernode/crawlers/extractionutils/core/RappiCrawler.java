@@ -38,6 +38,8 @@ import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 
+
+//essa classe não deve ser criada na scraper class
 public abstract class RappiCrawler extends Crawler {
 
    protected static final Pattern URL_PATH_PATTERN = Pattern.compile(".*/([0-9][^a-zA-Z]*)_([0-9][^a-zA-Z]*)");
@@ -47,7 +49,9 @@ public abstract class RappiCrawler extends Crawler {
       this.config.setFetcher(FetchMode.APACHE);
    }
 
-   abstract protected String getStoreId();
+   protected String getStoreId(){
+      return session.getOptions().optString("storeId");
+   }
 
    abstract protected String getHomeDomain();
 
@@ -57,7 +61,7 @@ public abstract class RappiCrawler extends Crawler {
 
    abstract protected String getHomeCountry();
 
-   protected boolean newUnification = false;
+   protected boolean newUnification = session.getOptions().optBoolean("newUnification",false);
 
 
    @Override

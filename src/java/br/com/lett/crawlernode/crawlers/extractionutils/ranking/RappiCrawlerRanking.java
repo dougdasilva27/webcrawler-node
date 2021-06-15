@@ -22,15 +22,16 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    private final String PRODUCTS_API_URL = "https://services." + getApiDomain() + "/api/cpgs/search/v2/store/";
    protected String PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/product/";
    private final String STORE_ID = getStoreId();
-   private final String STORE_TYPE = getStoreType();
 
-   protected boolean newUnification = false;
+   protected boolean newUnification = session.getOptions().optBoolean("newUnification",false);
 
    public RappiCrawlerRanking(Session session) {
       super(session);
    }
 
-   protected abstract String getStoreId();
+   protected String getStoreId(){
+      return session.getOptions().optString("storeId");
+   }
 
    @Deprecated
    protected  String getStoreType(){
@@ -49,7 +50,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
       JSONObject search;
 
-      search = fetchProductsFromAPI(STORE_ID, STORE_TYPE, this.location, this.currentPage);
+      search = fetchProductsFromAPI(STORE_ID);
 
       // se obter 1 ou mais links de produtos e essa página tiver resultado
       if (search.has("products") && search.getJSONArray("products").length() > 0) {
@@ -65,7 +66,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
             String internalPid = crawlInternalPid(product);
             String internalId = newUnification ? internalPid : crawlInternalId(product);
-            String productUrl = crawlProductUrl(product, internalId);
+            String productUrl = crawlProductUrl(product);
 
             saveDataProduct(internalId, internalPid, productUrl);
 
@@ -110,7 +111,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       return internalPid;
    }
 
-   private String crawlProductUrl(JSONObject product, String internalId) {
+   private String crawlProductUrl(JSONObject product) {
       String productUrl = null;
 
       if (product.has("id")) {
@@ -121,7 +122,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       return productUrl;
    }
 
-   private JSONObject fetchProductsFromAPI(String storeId, String storeType, String query, int page) {
+   private JSONObject fetchProductsFromAPI(String storeId) {
       int startPage;
 
       if (currentPage == 1) {

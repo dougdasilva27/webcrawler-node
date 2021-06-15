@@ -3,7 +3,7 @@ package br.com.lett.crawlernode.crawlers.extractionutils.core;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 
-public abstract class BrasilRappiCrawler extends RappiCrawler {
+public class BrasilRappiCrawler extends RappiCrawler {
 
    private static final String HOME_PAGE = "https://www.rappi.com";
 

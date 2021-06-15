@@ -5,7 +5,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import org.json.JSONObject;
 
-public abstract class MexicoRappiCrawler extends RappiCrawler {
+public class MexicoRappiCrawler extends RappiCrawler {
 
    private static final String HOME_PAGE = "https://www.rappi.com.mx/";
 
