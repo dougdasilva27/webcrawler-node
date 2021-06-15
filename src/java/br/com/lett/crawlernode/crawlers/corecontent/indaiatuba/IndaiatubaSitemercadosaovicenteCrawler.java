@@ -13,9 +13,9 @@ public class IndaiatubaSitemercadosaovicenteCrawler extends BrasilSitemercadoCra
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadossaovicente/indaiatuba-loja-sao-vicente-kioto-jardim-kioto-i-av-francisco-de-paula-leite";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadossaovicente/indaiatuba-sao-vicente-indaiatuba-morada-do-sol-jardim-morada-do-sol-r-joao-martini";
 
-   public static final int IDLOJA = 5826;
+   public static final int IDLOJA = 7059;
    public static final int IDREDE = 2663;
 
    @Override
