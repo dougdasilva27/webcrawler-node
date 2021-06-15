@@ -15,11 +15,9 @@ import java.util.*;
 
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Marketplace;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -41,9 +39,6 @@ import org.jsoup.select.Elements;
  *
  */
 public class SaopauloOnofreCrawler extends Crawler {
-
-   private static final String HOME_PAGE = "https://www.onofre.com.br";
-   private static final String HOME_PAGE_HTTP = "http://www.onofre.com.br/";
 
    private static final List<String> cards = Arrays.asList(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.DINERS.toString(), Card.ELO.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
@@ -77,14 +72,13 @@ public class SaopauloOnofreCrawler extends Crawler {
          for (Object obj : skus) {
             if (obj instanceof String) {
                String internalId = (String) obj;
-               String internalPid = internalId;
                RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
 
                // Creating the product
                Product product = ProductBuilder.create()
                      .setUrl(session.getOriginalURL())
                      .setInternalId(internalId)
-                     .setInternalPid(internalPid)
+                     .setInternalPid(internalId)
                      .setName(name)
                      .setOffers(offers)
                      .setCategory1(categories.getCategory(0))
