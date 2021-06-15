@@ -1,12 +1,13 @@
 package br.com.lett.crawlernode.integration.redis.config;
 
+import java.util.Locale;
+
 public enum RedisDb {
 
-   CRAWLER(1), RANKING(2), CATALOG(3);
+   CRAWLER, RANKING, CATALOG;
 
-   public final Integer number;
-
-   RedisDb(Integer number) {
-      this.number = number;
+   @Override
+   public String toString() {
+      return name().toLowerCase(Locale.ROOT);
    }
 }

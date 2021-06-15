@@ -1,12 +1,17 @@
 package br.com.lett.crawlernode.integration.redis
 
-import br.com.lett.crawlernode.integration.redis.config.JsonCodec
 import br.com.lett.crawlernode.integration.redis.config.RedisDb
 import br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters
-import io.lettuce.core.RedisClient
-import io.lettuce.core.RedisURI
-import io.lettuce.core.api.sync.RedisCommands
-import java.time.Duration
+import org.redisson.Redisson
+import org.redisson.api.RMapCache
+import org.redisson.api.RedissonClient
+import org.redisson.config.Config
+import org.redisson.jcache.configuration.RedissonConfiguration
+import javax.cache.Cache
+import javax.cache.CacheManager
+import javax.cache.Caching
+import javax.cache.configuration.MutableConfiguration
+
 
 /**
  * Singleton synchronous redis client. It is lazily evaluated, won't connect to Redis until being used.
@@ -14,12 +19,13 @@ import java.time.Duration
  */
 object Redis {
 
-   internal val client: RedisClient? by lazy {
-      val redisUri = RedisURI.Builder.redis(executionParameters.redisHost, executionParameters.redisPort)
-         .withTimeout(Duration.ofSeconds(10)).build()
+   internal val client: RedissonClient? by lazy {
+      val config = Config()
+      config.useSingleServer().setAddress("redis://${executionParameters.redisHost}:${executionParameters.redisPort}")
+         .setTimeout(10000)
 
       try {
-         RedisClient.create(redisUri)
+         Redisson.create(config)
       } catch (e: Exception) {
          null
       }
@@ -28,9 +34,7 @@ object Redis {
 
 object CacheFactory {
 
-   fun <T> createCache(clazz: Class<T>, db: RedisDb): RedisCommands<String, T?>? {
-      return Redis.client?.connect(JsonCodec(clazz))
-         ?.sync()
-         ?.also { it.select(db.number) }
+   fun <T> createCache(db: RedisDb): RMapCache<String, T?>? {
+      return Redis.client?.getMapCache<String,T>(db.toString())
    }
 }

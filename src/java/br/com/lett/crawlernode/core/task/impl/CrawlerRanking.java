@@ -49,7 +49,7 @@ import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
 import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.integration.redis.Cache;
+import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -97,7 +97,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Map<Integer, String> screenshotsAddress = new HashMap<>();
 
-   private static final Cache cacheClient = new Cache(RedisDb.RANKING);
+   private static final CrawlerCache cacheClient = new CrawlerCache(RedisDb.RANKING);
 
    // variável que identifica se há resultados na página
    protected boolean result;

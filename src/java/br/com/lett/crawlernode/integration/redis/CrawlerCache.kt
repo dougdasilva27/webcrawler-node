@@ -9,17 +9,18 @@ import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException
 import br.com.lett.crawlernode.integration.redis.config.RedisDb
-import io.lettuce.core.api.sync.RedisCommands
+import org.redisson.api.RMapCache
+import java.util.concurrent.TimeUnit
 import java.util.function.Function
 
 /**
  * Interface to interact with Redis.
  *
  */
-class Cache(db: RedisDb) {
+class CrawlerCache(db: RedisDb) {
 
-   private val mapCache: RedisCommands<String, Any?>? by lazy {
-      CacheFactory.createCache(Any::class.java, db)
+   private val mapCache: RMapCache<String, Any?>? by lazy {
+      CacheFactory.createCache(db)
    }
 
    private val defaultTimeSecs: Long = 7200
@@ -30,7 +31,7 @@ class Cache(db: RedisDb) {
    }
 
    fun <T> set(key: String, value: T, seconds: Long) {
-      mapCache?.setex(key, seconds, value)
+      mapCache?.put(key, value, seconds, TimeUnit.SECONDS)
    }
 
    /**
