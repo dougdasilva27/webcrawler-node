@@ -57,7 +57,7 @@ public abstract class TottusCrawler extends Crawler {
          if (secondaryImages.first() != null) {
             secondaryImages.remove(0);
          }
-         String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".react-tabs__tab-panel tbody tr"));
+         String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".description-content"));
          Offers offers = doc.selectFirst(".column-right-content .price.medium") != null ? scrapOffer(doc) : new Offers();
 
          // Creating the product
