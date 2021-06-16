@@ -10,14 +10,15 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawl
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import models.Marketplace;
+
+import java.util.*;
+
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -39,17 +40,11 @@ import org.jsoup.select.Elements;
  */
 public class SaopauloOnofreCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.onofre.com.br";
-   private static final String HOME_PAGE_HTTP = "http://www.onofre.com.br/";
+   private static final List<String> cards = Arrays.asList(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.DINERS.toString(), Card.ELO.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
 
    public SaopauloOnofreCrawler(Session session) {
       super(session);
-   }
-
-   @Override
-   public boolean shouldVisit() {
-      String href = this.session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE) || href.startsWith(HOME_PAGE_HTTP));
    }
 
    @Override
@@ -64,40 +59,34 @@ public class SaopauloOnofreCrawler extends Crawler {
          JSONArray skus = JSONUtils.getJSONArrayValue(jsonInfo, "sku");
 
          String name = crawlName(doc, jsonInfo);
-         Float price = crawlPrice(jsonInfo);
-         Prices prices = crawlPrices(price, doc);
-         boolean available = crawlAvailability(jsonInfo);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home):not(.product) a");
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-short-description", "#details"));
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img#image-main",
-               Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br");
-         String secondaryImages = scrapSecondaryImages(doc, primaryImage);
-         Marketplace marketplace = new Marketplace();
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img#image-main", Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br");
+         List<String> secondaryImages = scrapSecondaryImages(doc, primaryImage);
          String ean = JSONUtils.getStringValue(jsonInfo, "gtin13");
-         List<String> eans = ean != null ? Arrays.asList(ean) : null;
+         List<String> eans = ean != null ? Collections.singletonList(ean) : null;
+
+         boolean available = crawlAvailability(jsonInfo);
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          for (Object obj : skus) {
             if (obj instanceof String) {
                String internalId = (String) obj;
-               String internalPid = internalId;
                RatingsReviews ratingReviews = crawlRating(doc, internalId, primaryImage);
 
                // Creating the product
                Product product = ProductBuilder.create()
                      .setUrl(session.getOriginalURL())
                      .setInternalId(internalId)
-                     .setInternalPid(internalPid)
+                     .setInternalPid(internalId)
                      .setName(name)
-                     .setPrice(price)
-                     .setPrices(prices)
-                     .setAvailable(available)
+                     .setOffers(offers)
                      .setCategory1(categories.getCategory(0))
                      .setCategory2(categories.getCategory(1))
                      .setCategory3(categories.getCategory(2))
                      .setPrimaryImage(primaryImage)
                      .setSecondaryImages(secondaryImages)
                      .setDescription(description)
-                     .setMarketplace(marketplace)
                      .setEans(eans)
                      .setRatingReviews(ratingReviews)
                      .build();
@@ -113,22 +102,16 @@ public class SaopauloOnofreCrawler extends Crawler {
 
    }
 
-   private String scrapSecondaryImages(Document doc, String primaryImage) {
-      String secondaryImages = null;
-
-      JSONArray secondaryImagesArray = new JSONArray();
+   private List<String> scrapSecondaryImages(Document doc, String primaryImage) {
+      List<String> secondaryImages = new ArrayList<>();
 
       Elements images = doc.select(".product-image-gallery img:not(#image-main)");
       for (Element e : images) {
          String image = CrawlerUtils.sanitizeUrl(e, Arrays.asList("data-zoom-image", "src"), "https", "img.onofre.com.br");
 
          if ((primaryImage == null || !primaryImage.split("\\?")[0].equals(image.split("\\?")[0])) && image != null) {
-            secondaryImagesArray.put(image);
+            secondaryImages.add(image);
          }
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
       }
 
       return secondaryImages;
@@ -154,59 +137,74 @@ public class SaopauloOnofreCrawler extends Crawler {
       return doc.selectFirst(".product-view") != null;
    }
 
-   private Float crawlPrice(JSONObject json) {
-      Float price = null;
-
-      if (json.has("offers") && !json.isNull("offers")) {
-         JSONObject value = json.getJSONObject("offers");
-         if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer")) {
-            price = JSONUtils.getFloatValueFromJSON(value, "price", true);
-         }
-      }
-
-      return price;
-   }
-
    private boolean crawlAvailability(JSONObject json) {
       boolean availability = false;
 
       if (json.has("offers") && !json.isNull("offers")) {
-         JSONObject value = json.getJSONObject("offers");
-         if (value.has("@type") && value.get("@type").toString().equalsIgnoreCase("offer") && value.has("availability") &&
-               !value.isNull("availability")) {
-
-            availability = value.get("availability").toString().toLowerCase().endsWith("instock");
+         JSONObject value = json.optJSONObject("offers");
+         if (value.has("availability")) {
+            availability = value.optString("availability").contains("InStock");
          }
       }
 
       return availability;
    }
 
-   /**
-    * In product page has only one price, but in footer has informations of payment methods
-    *
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, Document doc) {
-      Prices prices = new Prices();
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-         prices.setBankTicketPrice(price);
-         prices.setPriceFrom(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-shop .live_price .old-price .price", null, true, ',', session));
+      offers.add(new Offer.OfferBuilder()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName("onofre sao paulo")
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AURA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
+      return offers;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.product-shop .price-box .special-price .price", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.product-shop .price-box .old-price .price", null, true, ',', session);
+
+      if(spotlightPrice == null){
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.product-shop .price-box .price", null, true, ',', session);
+      } else if(spotlightPrice.equals(priceFrom)){
+         priceFrom = null;
       }
 
-      return prices;
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double price) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(price)
+         .build());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
    }
 
    private RatingsReviews crawlRating(Document doc, String internalId, String primaryImage) {
