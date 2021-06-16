@@ -12,8 +12,8 @@ class SalvadorHiperidealCrawler(session: Session) : CrawlerRankingKeywords(sessi
    }
 
    private val token: String by lazy {
-      val doc = fetchDocument("https://www.hiperideal.com.br/$keywordEncoded")
-      totalProducts = doc.selectFirst(".resultado-busca-numero .value")?.toInt() ?: 0
+      val doc = fetchDocument("https://www.hiperideal.com.br/${keywordEncoded.replace("+","%20")}")
+      totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc,".resultado-busca-numero .value",true,0)
       CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"li[layout]","layout")
    }
 
