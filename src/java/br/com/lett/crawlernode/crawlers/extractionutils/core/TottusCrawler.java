@@ -57,7 +57,7 @@ public abstract class TottusCrawler extends Crawler {
          if (secondaryImages.first() != null) {
             secondaryImages.remove(0);
          }
-         String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".description-content"));
+         String description = scrapDescription(doc);
          Offers offers = doc.selectFirst(".column-right-content .price.medium") != null ? scrapOffer(doc) : new Offers();
 
          // Creating the product
@@ -78,6 +78,14 @@ public abstract class TottusCrawler extends Crawler {
 
       return products;
 
+   }
+
+   private String scrapDescription(Document doc) {
+      List<String> selectors = new ArrayList<>();
+      selectors.add(".description-content");
+      selectors.add("div.tabs-container");
+
+      return CrawlerUtils.scrapElementsDescription(doc, selectors);
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
