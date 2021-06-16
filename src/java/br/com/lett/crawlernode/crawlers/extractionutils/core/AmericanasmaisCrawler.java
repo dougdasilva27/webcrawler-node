@@ -158,8 +158,6 @@ public abstract class AmericanasmaisCrawler extends Crawler {
             break;
          }
       }
-
-
       return jsonObject;
    }
 
