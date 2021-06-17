@@ -5,16 +5,15 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.UnsupportedEncodingException;
+import java.util.*;
 
 
 /**
@@ -84,6 +83,11 @@ public class RiodejaneiroZonasulCrawler extends VTEXNewScraper {
    @Override
    protected List<String> getMainSellersNames() {
       return Arrays.asList(SELLER_NAME);
+   }
+
+   @Override
+   protected String scrapDescription(Document doc, JSONObject productJson) throws UnsupportedEncodingException {
+      return CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("div.vtex-tab-layout-0-x-container--information .vtex-tab-layout-0-x-contentContainer"));
    }
 
    @Override
