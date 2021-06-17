@@ -164,9 +164,8 @@ public class B2WCrawler extends Crawler {
 
 
          JSONArray skuOptions = this.crawlSkuOptions(infoProductJson);
-
-         for (Object obj : skuOptions) {
-            JSONObject skuJson = (JSONObject) obj;
+         for (int i = 0 ; i < skuOptions.length();  i ++) {
+            JSONObject skuJson = skuOptions.optJSONObject(i);
             String internalId = skuJson.optString("id");
             String name = skuJson.optString("name");
             Offers offers;
@@ -174,8 +173,7 @@ public class B2WCrawler extends Crawler {
             if (!offersJSON.isEmpty()) {
                offers = scrapOffersnewWay(skuJson, offersJSON, internalId);
             } else {
-               offers = scrapOffers(doc, internalId, internalPid);
-
+               offers = scrapOffers(doc, internalId, internalPid, i);
             }
 
             setMainRetailer(offers);
@@ -491,7 +489,7 @@ public class B2WCrawler extends Crawler {
       return offers;
    }
 
-   protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
+   protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
 
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
@@ -500,7 +498,7 @@ public class B2WCrawler extends Crawler {
          jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
       }
 
-      JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller, internalPid);
+      JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller, internalPid, arrayPosition);
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
 
 

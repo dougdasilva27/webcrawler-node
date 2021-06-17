@@ -74,7 +74,7 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
    }
 
    @Override
-   protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
+   protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
 
@@ -85,7 +85,7 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       if(offersDoc.select(".src__Background-rlbmr6-1 .src__Card-rlbmr6-3 > div").isEmpty()){
 
          JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
-         JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller,internalPid);
+         JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid,arrayPosition);
 
          setOffersForMainPageSeller(offers, offersJson, internalId);
       }

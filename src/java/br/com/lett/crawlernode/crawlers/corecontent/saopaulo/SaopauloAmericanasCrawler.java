@@ -116,41 +116,16 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
    }
 
-   private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid) throws OfferException, MalformedPricingException {
+   private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
-      JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller,internalPid);
+      JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid, arrayPosition);
       setOffersForMainPageSeller(offers, offersJson, internalId);
    }
 
    @Override
-   protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
+   protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
-
-      String scrapPageSellersUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0 a[aria-current]", "href");
-
-      if (scrapPageSellersUrl == null) {
-
-         /*
-             se o scrapPageOffersUrl for nulo significa que esse
-             produto não possui pagina de sellers e nesse caso
-             devemos capturar apenas as informações da página principal
-          */
-
-         scrapAndSetInfoForMainPage(doc,offers,internalId,internalPid);
-
-      } else {
-
-         /* caso scrapPageOffersUrl não seja nulo significa que
-          existe uma pagina de sellers e nesse caso
-          devemos capturar todas as informações dos sellers
-
-          SellerName
-          SellerId
-          PriceFrom
-          SpotilightPrice
-
-          */
 
          String offersPageUrl = "https://www.americanas.com.br/parceiros/"+ internalPid +"?productSku=" + internalId;
 
@@ -158,19 +133,19 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
 
          if (sellersFromHTML.isEmpty()){
-
                /*
                caso sellersFromHTML seja vazio significa que fomos bloqueados
                durante a tentativa de capturar as informações na pagina de sellers
-               Nesse caso devemos capturar apenas as informações da pagina princial.
+               ou que o produto em questão não possui pagina de sellers.
+               Nesse caso devemos capturar apenas as informações da pagina principal.
                */
 
-            scrapAndSetInfoForMainPage(doc,offers,internalId,internalPid);
+            scrapAndSetInfoForMainPage(doc,offers,internalId,internalPid, arrayPosition);
          } else {
 
             setOffersForSellersPage(offers, sellersFromHTML);
          }
-      }
+
       return offers;
    }
 
@@ -178,8 +153,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       Request request = Request.RequestBuilder.create().setUrl(offersPageURL).setProxyservice(
          Arrays.asList(
             ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+
 
          )
       ).build();
@@ -192,9 +168,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
-             ProxyCollection.BUY_HAPROXY,
-             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-             ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
+
 
 
          content = new JsoupDataFetcher().get(session, request).getBody();
