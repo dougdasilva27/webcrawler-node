@@ -263,6 +263,90 @@ public class SaopauloB2WCrawlersUtils {
       return jsonImages;
    }
 
+   public static JSONObject newWayToExtractJsonOffers(JSONObject initialJson, String internalPid, int arrayPosition) {
+      JSONObject jsonPrices = new JSONObject();
+
+      JSONArray offersJsonArray = new JSONArray();
+      if (initialJson.has("offers") && initialJson.get("offers") instanceof JSONObject) {
+         JSONObject offerJson = initialJson.optJSONObject("offers");
+
+         if (offerJson.has("result")) {
+            offersJsonArray = offerJson.optJSONArray("result");
+         }
+
+      } else if (initialJson.has("products") && initialJson.get("products") instanceof JSONObject) {
+         JSONObject products = initialJson.optJSONObject("products");
+         String jsonPath = internalPid + ".offers.result";
+
+         offersJsonArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
+
+         if (offersJsonArray == null) {
+            jsonPath = internalPid + ".skus";
+
+            JSONArray skusArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
+
+            if (skusArray != null) {
+
+               if (!skusArray.isEmpty() && skusArray.length() > 0) {
+
+                  JSONObject jsonObject = skusArray.optJSONObject(arrayPosition);
+                  jsonPath = "offers.result";
+                  offersJsonArray = JSONUtils.getValueRecursive(jsonObject, jsonPath, JSONArray.class);
+
+               }
+            }
+
+         }
+
+      }
+
+      if (offersJsonArray != null && offersJsonArray.length() > 0) {
+         JSONArray moreQuantityOfInstallments = new JSONArray();
+
+         for (int i = 0; i < offersJsonArray.length(); i++) {
+            JSONObject jsonOffer = offersJsonArray.optJSONObject(i);
+            JSONObject jsonSeller = new JSONObject();
+
+            String idProduct = crawlIdProduct(jsonOffer);
+
+            jsonSeller.put("priceFrom", jsonOffer.optDouble("salesPrice", 0d));
+
+            if (idProduct != null) {
+               manageEmbedded(jsonOffer, jsonSeller);
+
+               if (jsonOffer.has("bestPaymentOption")) {
+                  JSONObject payment = jsonOffer.optJSONObject("bestPaymentOption");
+
+                  setBoleto(payment, jsonSeller);
+                  setCard(payment, jsonSeller, moreQuantityOfInstallments);
+                  setSpotlightPriceForSellers(payment, jsonSeller);
+
+               } else if (jsonOffer.has("paymentOptions")) {
+                  JSONObject payment = jsonOffer.optJSONObject("paymentOptions");
+
+                  setBoleto(payment, jsonSeller);
+                  setCard(payment, jsonSeller, moreQuantityOfInstallments);
+               }
+
+               if (jsonPrices.has(idProduct)) {
+                  JSONArray installments = jsonPrices.optJSONArray(idProduct);
+                  installments.put(jsonSeller);
+
+                  jsonPrices.put(idProduct, installments);
+               } else {
+                  JSONArray installments = new JSONArray();
+                  installments.put(jsonSeller);
+
+                  jsonPrices.put(idProduct, installments);
+               }
+            }
+         }
+
+         jsonPrices.put("moreQuantityOfInstallments", moreQuantityOfInstallments);
+      }
+      return jsonPrices;
+   }
+
    public static JSONObject extractJsonOffers(JSONObject initialJson, String internalPid) {
       JSONObject jsonPrices = new JSONObject();
 
@@ -293,30 +377,6 @@ public class SaopauloB2WCrawlersUtils {
 
          if (offerJson.has("result")) {
             offersJsonArray = offerJson.optJSONArray("result");
-         }
-
-      } else if (initialJson.has("products") && initialJson.get("products") instanceof  JSONObject){
-         JSONObject products = initialJson.optJSONObject("products");
-         String jsonPath = internalPid + ".offers.result";
-
-         offersJsonArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
-
-         if (offersJsonArray == null){
-            jsonPath = internalPid + ".skus";
-
-            JSONArray skusArray = JSONUtils.getValueRecursive(products, jsonPath, JSONArray.class);
-
-            if(skusArray != null) {
-
-               if (!skusArray.isEmpty() && skusArray.length() > 0) {
-
-                  JSONObject jsonObject = skusArray.getJSONObject(0);
-                  jsonPath = "offers.result";
-                  offersJsonArray = JSONUtils.getValueRecursive(jsonObject, jsonPath, JSONArray.class);
-
-               }
-            }
-
          }
 
       }
