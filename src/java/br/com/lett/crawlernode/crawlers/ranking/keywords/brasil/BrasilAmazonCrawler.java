@@ -3,6 +3,9 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RequestMethod;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -20,13 +23,14 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.APACHE;
    }
 
-   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
+   private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    @Override
    protected void processBeforeFetch() {
       super.processBeforeFetch();
 
-      this.cookies = this.amazonScraperUtils.handleCookiesBeforeFetch("https://www.amazon.com.br/", cookies, dataFetcher);
+      Request request = this.amazonScraperUtils.getRequestCookies("https://www.amazon.com.br/", cookies, dataFetcher);
+      this.cookies = cache("cookie", RequestMethod.GET, request, Response::getCookies);
    }
 
    @Override

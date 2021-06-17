@@ -37,36 +37,37 @@ public class AmazonScraperUtils {
    }
 
    public List<Cookie> handleCookiesBeforeFetch(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
-      Request request;
+      Request request = getRequestCookies(url, cookies, dataFetcher);
+      return CrawlerUtils.fetchCookiesFromAPage(request, "www.amazon.com.br", "/", null, session, dataFetcher);
+   }
+
+   public Request getRequestCookies(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
+      RequestBuilder request = RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies);
 
       if (dataFetcher instanceof FetcherDataFetcher) {
          Map<String, String> headers = new HashMap<>();
          headers.put("Accept-Encoding", "no");
 
-         request = RequestBuilder.create().setUrl(url)
-               .setCookies(cookies)
-               .setHeaders(headers)
-               .setProxyservice(
-                     Arrays.asList(
-                           ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                           ProxyCollection.NETNUT_RESIDENTIAL_BR))
-               .mustSendContentEncoding(false)
-               .setFetcheroptions(FetcherOptionsBuilder.create()
-                     .mustRetrieveStatistics(true)
-                     .setForbiddenCssSelector("#captchacharacters")
-                     .build())
-               .build();
+         request = request
+            .setHeaders(headers)
+            .setProxyservice(
+               Arrays.asList(
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR))
+            .mustSendContentEncoding(false)
+            .setFetcheroptions(FetcherOptionsBuilder.create()
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#captchacharacters")
+               .build());
       } else {
-         request = RequestBuilder.create()
-               .setUrl(url)
-               .setCookies(cookies)
-               .setFetcheroptions(FetcherOptionsBuilder.create()
-                     .mustRetrieveStatistics(true)
-                     .setForbiddenCssSelector("#captchacharacters").build())
-               .build();
+         request.setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustRetrieveStatistics(true)
+            .setForbiddenCssSelector("#captchacharacters").build());
       }
 
-      return CrawlerUtils.fetchCookiesFromAPage(request, "www.amazon.com.br", "/", null, session, dataFetcher);
+      return request.build();
    }
 
    public Document fetchProductPage(List<Cookie> cookies, DataFetcher dataFetcher) {
@@ -75,7 +76,7 @@ public class AmazonScraperUtils {
 
    /**
     * Fetch html from amazon
-    * 
+    *
     * @param url
     * @param headers
     * @param cookies
@@ -132,7 +133,7 @@ public class AmazonScraperUtils {
    }
 
    /**
-    * 
+    *
     * @param images - array present on html
     * @param doc - html
     * @param host - host of image url ex: www.amazon.com or www.amazon.com.br or www.amazon.com.mx
@@ -170,7 +171,7 @@ public class AmazonScraperUtils {
 
 
    /**
-    * 
+    *
     * @param images - array present on html
     * @param host - host of image url ex: www.amazon.com or www.amazon.com.br or www.amazon.com.mx
     * @param protocol - http or https
@@ -213,7 +214,7 @@ public class AmazonScraperUtils {
 
    /**
     * Get json of images inside html
-    * 
+    *
     * @param doc
     * @return
     */
