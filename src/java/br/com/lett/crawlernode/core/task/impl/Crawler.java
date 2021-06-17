@@ -511,13 +511,18 @@ public abstract class Crawler extends Task {
    }
 
    protected <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
-      String component = getClass().getSimpleName() + ":" + key;
+      String component = getClass().getCanonicalName() + ":" + key;
       return cacheClient.update(component, ttl, requestMethod, request, function, dataFetcher, session);
    }
 
    protected <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
-      String component = getClass().getSimpleName() + ":" + key;
+      String component = getClass().getCanonicalName() + ":" + key;
       return cacheClient.update(component, requestMethod, request, function, dataFetcher, session);
+   }
+
+   protected List<Cookie> cacheCookies(String key, RequestMethod requestMethod, Request request) {
+      String component = getClass().getCanonicalName() + ":" + key;
+      return cacheClient.update(component, requestMethod, request, Response::getCookies, dataFetcher, session);
    }
 
    /**
