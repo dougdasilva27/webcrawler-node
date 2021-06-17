@@ -41,8 +41,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .setUrl(HOME_PAGE)
          .build();
 
-
-      this.cookies = cache("cookie", RequestMethod.GET, request, Response::getCookies);
+      this.cookies = cacheCookies("cookie", RequestMethod.GET, request);
    }
 
    @Override
