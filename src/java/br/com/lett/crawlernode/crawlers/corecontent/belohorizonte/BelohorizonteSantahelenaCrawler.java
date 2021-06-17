@@ -1,114 +1,149 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belohorizonte;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.jsoup.nodes.Document;
+
+import java.util.*;
 
 public class BelohorizonteSantahelenaCrawler extends Crawler {
-	
-	private final String HOME_PAGE = "https://www.santahelenacenter.com.br/principal/";
 
-	public BelohorizonteSantahelenaCrawler(Session session) {
-		super(session);
-	}	
+   private static final String SELLER_FULL_NAME = "Santa Helena";
+   protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString());
 
-	@Override
-	public boolean shouldVisit() {
-		String href = this.session.getOriginalURL().toLowerCase();
-		return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-	}
+   public BelohorizonteSantahelenaCrawler(Session session) {
+      super(session);
+   }
 
-	@Override
-	public List<Product> extractInformation(Document doc) throws Exception {
-		super.extractInformation(doc);
-		List<Product> products = new ArrayList<Product>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-		if ( isProductPage(this.session.getOriginalURL()) ) {
-			Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-			// Id interno
-			String id = this.session.getOriginalURL().split("/")[7];
-			String internalId = Integer.toString(Integer.parseInt(id));
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "button.single_add_to_cart_button.button.alt", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku_wrapper .sku", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".images a", Arrays.asList("href"), "https", "santahelenacenter.com.br");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".woocommerce-breadcrumb span a", true);
+         boolean available = !doc.select(".stock.in-stock").isEmpty();
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
-			// Nome
-			Elements elementName = doc.select("#titulo-ofertas strong");
-			String name = elementName.text().replace("'", "").trim();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setCategories(categories)
+            .setOffers(offers)
+            .build();
 
-			// Preço
-			Elements elementPrice = doc.select(".preco");
-			Float price = Float.parseFloat(elementPrice.last().text().replaceAll("[^0-9,]+", "").replaceAll("\\.", "").replaceAll(",", "."));
+         products.add(product);
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
+      }
 
-			String category1;
-			String category2;
-			String category3;
-			category1 = null;
-			category2 = null;
-			category3 = null;
+      return products;
+   }
 
-			// Imagem primária
-			Element elementPrimaryImage = doc.select(".produto-detalhe-img").first();
-			String primaryImage = null;
-			if (elementPrimaryImage != null) {
-				primaryImage = elementPrimaryImage.attr("src").trim();
-			}
-			if (primaryImage.contains("produto_sem_foto"))
-				primaryImage = "";
+   private boolean isProductPage(Document doc) {
+      return doc.selectFirst(".paged.product-template-default") != null;
+   }
 
-			// Imagens secundárias
-			String secondaryImages = null;
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing);
 
-			// Descrição
-			Elements elementDescription = doc.select(".thumb-pruduto-detalhes-titulo-nome");
-			String description = elementDescription.html().replace("'", "\"").trim();
 
-			// Marketplace
-			Marketplace marketplace = new Marketplace();
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setSales(sales)
+         .setPricing(pricing)
+         .build());
 
-			// Disponibilidade
-			boolean available = true;
+      return offers;
 
-			// Estoque
-			Integer stock = null;
+   }
 
-			Product product = new Product();
-			product.setUrl(this.session.getOriginalURL());
-			product.setInternalId(internalId);
-			product.setName(name);
-			product.setPrice(price);
-			product.setCategory1(category1);
-			product.setCategory2(category2);
-			product.setCategory3(category3);
-			product.setPrimaryImage(primaryImage);
-			product.setSecondaryImages(secondaryImages);
-			product.setDescription(description);
-			product.setStock(stock);
-			product.setMarketplace(marketplace);
-			product.setAvailable(available);
-			
-			products.add(product);
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Map<String, Double> prices = getPrice(doc);
+      Double spotlightPrice = prices.get("spotlightPrice");
+      Double priceFrom = prices.get("priceFrom");
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
-		} else {
-			Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-		}
-		
-		return products;
-	}
-	
-	/*******************************
-	 * Product page identification *
-	 *******************************/
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .build();
+   }
 
-	private boolean isProductPage(String url) {
-		return url.startsWith("https://www.santahelenacenter.com.br/principal/index.php/produto");
-	}
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   private Map<String, Double> getPrice(Document doc) {
+      Map<String, Double> prices = new HashMap<>();
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price ins bdi", null, false, ',', session);
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price del bdi", null, true, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price .woocommerce-Price-amount  bdi", null, true, ',', session);
+         price = null;
+      }
+      prices.put("spotlightPrice", spotlightPrice);
+      prices.put("priceFrom", price);
+
+      return prices;
+   }
+
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+
+      String saleDiscount = CrawlerUtils.calculateSales(pricing);
+
+      if (saleDiscount != null) {
+         sales.add(saleDiscount);
+      }
+
+      return sales;
+   }
+
 }
