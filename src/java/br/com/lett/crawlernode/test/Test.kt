@@ -2,6 +2,7 @@
 package br.com.lett.crawlernode.test
 
 import br.com.lett.crawlernode.database.Persistence
+import br.com.lett.crawlernode.integration.redis.Redis
 import br.com.lett.crawlernode.main.EnvironmentVariables
 import io.github.cdimascio.dotenv.dotenv
 import org.apache.commons.cli.*
@@ -53,5 +54,6 @@ object Test {
             TestUtils.taskProcess(market, listOf(parameters), TestType.valueOf(testType), 0)
          }
       }
+      Redis.client?.shutdown()
    }
 }
