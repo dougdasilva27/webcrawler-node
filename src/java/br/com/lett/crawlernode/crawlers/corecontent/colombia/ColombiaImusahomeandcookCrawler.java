@@ -42,6 +42,7 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "h4", false);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.titulo-producto", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagen.hide-for-small-only img", Arrays.asList("src"), "http", "cdn.coordiutil.com");
+         List<String> secondaryImage = CrawlerUtils.scrapSecondaryImages(doc, ".splide__slide.thumbnails img", Arrays.asList("src"), "https", "cdn.coordiutil.com", primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripcion-corta", false);
          boolean available = !doc.select(".button.comprar-button").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
@@ -53,6 +54,7 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImage)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -90,8 +92,8 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio-normal span", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio-antes strike", null, true, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio-normal span", null, true, '.', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precio-antes strike", null, true, '.', session);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
