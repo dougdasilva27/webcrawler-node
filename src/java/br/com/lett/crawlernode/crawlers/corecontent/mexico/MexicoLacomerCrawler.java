@@ -97,8 +97,8 @@ public class MexicoLacomerCrawler extends Crawler {
             String internalId = JSONUtils.getIntegerValueFromJSON(data, "artCod", 0).toString();
             String name = JSONUtils.getStringValue(data, "art_des_com");
             CategoryCollection categories = crawlCategories(data);
-            List<String> images = images(json);
-            String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+            List<String> images = scrapImages(json);
+            String primaryImage = scrapPrimaryImage(images);
             String description = JSONUtils.getStringValue(data, "artDes");
             List<String> eans = new ArrayList<>();
             eans.add(scrapEan());
@@ -145,19 +145,30 @@ public class MexicoLacomerCrawler extends Crawler {
       return categories;
    }
 
-   private List<String> images(JSONObject json) {
+   private List<String> scrapImages(JSONObject json) {
       List<String> listImages = new ArrayList<>();
 
       JSONObject images = JSONUtils.getJSONValue(json, "estrucArtiImg");
       if (images != null) {
-         for (
-            Iterator<String> iter = images.keys(); iter.hasNext(); ) {
+         for (Iterator<String> iter = images.keys(); iter.hasNext(); ) {
             String key = iter.next();
             listImages.add(images.optString(key));
          }
       }
       return listImages;
+   }
 
+   private String scrapPrimaryImage(List<String> imgList) {
+      String primaryImage = "";
+
+      //The primary image always ends with 3
+      for (String img : imgList) {
+         if(img.endsWith("_3.jpg")){
+            primaryImage = img;
+         }
+      }
+
+      return primaryImage;
    }
 
    private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
