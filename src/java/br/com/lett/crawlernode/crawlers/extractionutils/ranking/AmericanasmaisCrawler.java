@@ -35,8 +35,9 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
 
    private Document fetchPage() {
 
-      String url = HOME_PAGE + storeId + "/pick-up?ordenacao=relevance&conteudo=" + this.keywordEncoded + "&limite=24&offset=" + (this.currentPage - 1) * pageSize + "&ordenacao=relevance";
-      this.log("Link onde são feitos os crawlers: " + url);
+      String url = HOME_PAGE + storeId + "/pick-up?ordenacao=relevance&conteudo=" +
+         this.keywordEncoded.replace("+", "%20") +
+         "&limite=24&offset=" + (this.currentPage - 1) * pageSize + "&ordenacao=relevance";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
