@@ -80,7 +80,7 @@ public class SupermercadonowCrawler extends Crawler {
 
       List<Product> products = new ArrayList<>();
 
-      if (jsonSku.length() > 0) {
+      if (jsonSku.length() > 0 && !jsonSku.has("errors")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalId = crawlInternalId(jsonSku);
