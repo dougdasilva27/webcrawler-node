@@ -24,6 +24,7 @@ import br.com.lett.crawlernode.dto.ProductDTO;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.processor.Processor;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -176,6 +177,7 @@ public abstract class Crawler extends Task {
             productionRun();
          }
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          if (session instanceof SeedCrawlerSession) {
             Persistence.updateFrozenServerTask(((SeedCrawlerSession) session), e.getMessage());
          }
@@ -362,6 +364,7 @@ public abstract class Crawler extends Task {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }

@@ -2,11 +2,10 @@ package br.com.lett.crawlernode.core.server;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
-import br.com.lett.crawlernode.core.server.endpoints.MetricsEndpoint;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
-import io.prometheus.client.jetty.JettyStatisticsCollector;
+import io.prometheus.client.exporter.MetricsServlet;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -71,9 +70,8 @@ public class ServerCrawler {
          server.setHandler(handler);
          handler.addServletWithMapping(CrawlerTaskEndpoint.class, ENDPOINT_TASK);
          handler.addServletWithMapping(CrawlerHealthEndpoint.class, ENDPOINT_HEALTH_CHECK);
-         handler.addServletWithMapping(MetricsEndpoint.class, "/metrics");
+         handler.addServletWithMapping(new ServletHolder(new MetricsServlet()), "/metrics");
 
-         new JettyStatisticsCollector(statisticsHandler).register();
          statisticsHandler.setHandler(server.getHandler());
 
          server.setHandler(statisticsHandler);
