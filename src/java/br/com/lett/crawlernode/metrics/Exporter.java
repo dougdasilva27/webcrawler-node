@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Exporter {
-   private static final Gauge GAUGE = Gauge.build()
+   private static final Gauge ERROR_GAUGE = Gauge.build()
       .name("error_market").help("Errors by market")
       .labelNames("error_name", "market")
       .register();
@@ -15,7 +15,7 @@ public class Exporter {
 
    public static void collectError(Exception e, Session session) {
       logger.debug("Exception collected");
-      GAUGE.labels(e.getClass().getSimpleName(), session.getMarket().getName()).inc();
+      ERROR_GAUGE.labels(e.getClass().getSimpleName(), session.getMarket().getName()).inc();
    }
 }
 

@@ -612,6 +612,7 @@ public abstract class Crawler extends Task {
          Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
             "\nregex_status: " + status);
       } catch (MalformedProductException e) {
+         Exporter.collectError(e, session);
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
    }
@@ -665,6 +666,7 @@ public abstract class Crawler extends Task {
          }
 
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
          session.setTaskStatus(Task.STATUS_FAILED);
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
