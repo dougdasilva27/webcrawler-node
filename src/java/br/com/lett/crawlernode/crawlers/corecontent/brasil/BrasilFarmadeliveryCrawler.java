@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -11,9 +11,6 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-
-import java.util.*;
-
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
@@ -24,22 +21,44 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.*;
+
 public class BrasilFarmadeliveryCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.farmadelivery.com.br/";
 
    public BrasilFarmadeliveryCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
-
    }
 
    @Override
    protected Object fetch() {
-      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
-      Response response = dataFetcher.get(session, request);
+      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setProxyservice(
+         Arrays.asList(
+            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
 
-      return Jsoup.parse(response.getBody());
+         )
+      ).build();
+
+      Response response = dataFetcher.get(session, request);
+      String content = response.getBody();
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+         request.setProxyServices(Arrays.asList(
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
+
+         content = new JsoupDataFetcher().get(session, request).getBody();
+      }
+
+      return Jsoup.parse(content);
    }
 
    @Override
