@@ -29,14 +29,13 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
 
    public BrasilFarmadeliveryCrawler(Session session) {
       super(session);
+
    }
 
    @Override
    protected Object fetch() {
       Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setProxyservice(
          Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
 
          )
@@ -52,8 +51,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
             ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY));
 
          content = new JsoupDataFetcher().get(session, request).getBody();
       }
