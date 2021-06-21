@@ -31,13 +31,11 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
       cookie.setPath("/");
       this.cookies.add(cookie);
 
-      Logging.printLogDebug(logger, session, "Adding cookies...");
       this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Comprar/Home.aspx", null, "www.disco.com.ar", "/", cookies, session, new HashMap<>(), dataFetcher));
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.log("Página " + this.currentPage);
 
       JSONObject jsonSearch = crawlProductsApi(CommonMethods.encondeStringURLToISO8859(this.location, logger, session));
       JSONArray products = new JSONArray();
@@ -68,14 +66,7 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
             saveDataProduct(internalId, internalPid, urlProduct);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-
          }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
       }
 
       // número de produtos por página do market
