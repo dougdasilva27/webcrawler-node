@@ -2,14 +2,17 @@ package br.com.lett.crawlernode.core.server;
 
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerHealthEndpoint;
 import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
+import br.com.lett.crawlernode.core.server.endpoints.MetricsEndpoint;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import io.prometheus.client.jetty.JettyStatisticsCollector;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,8 +71,11 @@ public class ServerCrawler {
          server.setHandler(handler);
          handler.addServletWithMapping(CrawlerTaskEndpoint.class, ENDPOINT_TASK);
          handler.addServletWithMapping(CrawlerHealthEndpoint.class, ENDPOINT_HEALTH_CHECK);
+         handler.addServletWithMapping(MetricsEndpoint.class, "/metrics");
 
+         new JettyStatisticsCollector(statisticsHandler).register();
          statisticsHandler.setHandler(server.getHandler());
+
          server.setHandler(statisticsHandler);
 
          server.start();
