@@ -270,7 +270,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
    private JSONObject crawlProductOldApi(String url) {
       Map<String, String> headers = new HashMap<>();
       headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
-      headers.put("Content-Type", "application/json; charset=UTF-8");
+      headers.put("Content-Type", "application/json");
       headers.put("X-Requested-With", "XMLHttpRequest");
 
       // Nome do produto na busca
