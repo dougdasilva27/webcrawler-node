@@ -486,7 +486,7 @@ public abstract class CrawlerRanking extends Task {
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = "web-scraper-product-dev";
+         queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
       }
 
 
