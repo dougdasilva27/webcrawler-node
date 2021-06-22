@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.metrics;
 
+import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.model.SqlOperation;
 import io.prometheus.client.Counter;
@@ -19,12 +20,13 @@ public class Exporter {
       .register();
 
    static final Histogram POSTGRES_TIMING = Histogram.build()
-      .name("database_latency_seconds").help("Database latency in seconds.")
+      .name("database_latency").help("Database latency in seconds.")
       .labelNames("operation")
       .register();
 
    static final Histogram ENDPOINT_TIMING = Histogram.build()
-      .name("requests_latency_seconds").help("Request latency in seconds.")
+      .name("request_latency").help("Request latency in seconds.")
+      .labelNames("market")
       .register();
 
    public static void collectError(Exception e, Session session) {
@@ -37,8 +39,9 @@ public class Exporter {
          .time(callable);
    }
 
-   public static <E> E collectEndpoint(Callable<E> callable) {
-      return ENDPOINT_TIMING.time(callable);
+   public static void collectEndpoint(String market, Runnable callable) {
+      ENDPOINT_TIMING.labels(market)
+         .time(callable);
    }
 }
 

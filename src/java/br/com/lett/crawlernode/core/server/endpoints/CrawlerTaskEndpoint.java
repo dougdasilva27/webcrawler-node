@@ -37,7 +37,7 @@ public class CrawlerTaskEndpoint extends HttpServlet {
 
          Logging.printLogDebug(logger, request.toString());
 
-         response = Exporter.collectEndpoint(() -> perform(res, request));
+         response = perform(res, request);
 
       } else {
          response = ServerCrawler.MSG_BAD_REQUEST;
@@ -59,7 +59,7 @@ public class CrawlerTaskEndpoint extends HttpServlet {
       Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
       Task task = TaskFactory.createTask(session, request.getClassName());
 
-      task.process();
+      Exporter.collectEndpoint(request.getMarket().getName(), task::process);
 
       if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
          response = ServerCrawler.MSG_TASK_COMPLETED;
