@@ -374,6 +374,7 @@ public abstract class CrawlerRanking extends Task {
 
                if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
                   saveProductUrlToQueue(url);
+                  Logging.printLogDebug(logger, session, "Processed " + p.getId() + " this product has not been read for more than a month");
                }
 
                if (url != null && p.getId() == null) {
