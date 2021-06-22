@@ -21,11 +21,13 @@ public class Exporter {
 
    static final Histogram POSTGRES_TIMING = Histogram.build()
       .name("database_latency").help("Database latency in seconds.")
+      .buckets(1, 5, 10, 30)
       .labelNames("operation")
       .register();
 
    static final Histogram ENDPOINT_TIMING = Histogram.build()
       .name("request_latency").help("Request latency in seconds.")
+      .buckets(1, 5, 10, 30)
       .labelNames("market")
       .register();
 
