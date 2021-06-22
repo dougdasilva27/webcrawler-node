@@ -444,7 +444,6 @@ public abstract class CrawlerRanking extends Task {
       long sendMessagesStartTime = System.currentTimeMillis();
 
       ScraperInformation scraperInformation = Persistence.fetchScraperInfoToOneMarket(session.getMarket().getNumber());
-
       String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
 
       if (scraperInformation != null) {
