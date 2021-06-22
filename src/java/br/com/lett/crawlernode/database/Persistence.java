@@ -5,7 +5,9 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
+import br.com.lett.crawlernode.database.model.SqlOperation;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
@@ -151,7 +153,7 @@ public class Persistence {
             conn = JdbcConnectionFactory.getInstance().getConnection();
             pstmt = conn.prepareStatement(query);
             ResultSet rs = pstmt.executeQuery();
-            Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
+            Result<Record> records = Exporter.collectQuery(SqlOperation.SELECT, () -> GlobalConfigurations.dbManager.jooqPostgres.fetch(rs));
 
             if (!records.isEmpty()) {
                Record r = records.get(0);
@@ -289,7 +291,7 @@ public class Persistence {
             conn = JdbcConnectionFactory.getInstance().getConnection();
             pstmt = conn.prepareStatement(query);
 
-            pstmt.executeUpdate();
+            Exporter.collectQuery(SqlOperation.UPDATE, pstmt::executeUpdate);
 
             JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
                .put("query_type", "update_processed_product");
@@ -350,7 +352,8 @@ public class Persistence {
          pstmt = conn.prepareStatement(
             GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
-         pstmt.executeUpdate();
+         Exporter.collectQuery(SqlOperation.UPDATE, pstmt::executeUpdate);
+
          Logging.printLogDebug(logger, session, "Processed product with id " + id + " behaviour updated with success. " + "(InternalId: "
             + session.getInternalId() + " - Market: " + session.getMarket().getNumber() + ")");
 
@@ -415,6 +418,7 @@ public class Persistence {
             GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
          pstmt.executeUpdate();
+         Exporter.collectQuery(SqlOperation.UPDATE, pstmt::executeUpdate);
          Logging.printLogDebug(logger, session, "Processed product void value updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
@@ -458,7 +462,7 @@ public class Persistence {
          pstmt = conn.prepareStatement(
             GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
-         pstmt.executeUpdate();
+         Exporter.collectQuery(SqlOperation.UPDATE, pstmt::executeUpdate);
          Logging.printLogDebug(logger, session, "Processed product LRT updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
@@ -503,7 +507,7 @@ public class Persistence {
          pstmt = conn.prepareStatement(
             GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
-         pstmt.executeUpdate();
+         Exporter.collectQuery(SqlOperation.UPDATE, pstmt::executeUpdate);
          Logging.printLogDebug(logger, session, "Processed product LMT updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
@@ -547,7 +551,7 @@ public class Persistence {
          pstmt = conn.prepareStatement(
             GlobalConfigurations.dbManager.jooqPostgres.update(processedTable).set(updateSets).where(conditions).getSQL(ParamType.INLINED));
 
-         pstmt.executeUpdate();
+         Exporter.collectQuery(SqlOperation.UPDATE, pstmt::executeUpdate);
          Logging.printLogDebug(logger, session, "Processed product LMS updated with success.");
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
@@ -623,7 +627,9 @@ public class Persistence {
          sta = conn.createStatement();
          rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED));
 
-         Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
+
+         ResultSet finalRs = rs;
+         Result<Record> records = Exporter.collectQuery(SqlOperation.SELECT, () -> GlobalConfigurations.dbManager.jooqPostgres.fetch(finalRs));
 
          for (Record record : records) {
             Processed p = new Processed();
@@ -680,7 +686,9 @@ public class Persistence {
          sta = conn.createStatement();
          rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED));
 
-         Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
+
+         ResultSet finalRs = rs;
+         Result<Record> records = Exporter.collectQuery(SqlOperation.SELECT, () -> GlobalConfigurations.dbManager.jooqPostgres.fetch(finalRs));
 
          for (Record record : records) {
             Processed p = new Processed();
@@ -736,7 +744,8 @@ public class Persistence {
          sta = conn.createStatement();
          rs = sta.executeQuery(GlobalConfigurations.dbManager.jooqPostgres.select(fields).from(processed).where(conditions).getSQL(ParamType.INLINED));
 
-         Result<Record> records = GlobalConfigurations.dbManager.jooqPostgres.fetch(rs);
+         ResultSet finalRs = rs;
+         Result<Record> records = Exporter.collectQuery(SqlOperation.SELECT, () -> GlobalConfigurations.dbManager.jooqPostgres.fetch(finalRs));
 
          for (Record record : records) {
             Long masterId = record.get(processed.MASTER_ID);

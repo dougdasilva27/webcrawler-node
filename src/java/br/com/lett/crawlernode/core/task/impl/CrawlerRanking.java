@@ -10,6 +10,7 @@ import java.util.Map;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.ranking.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
+import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.ScraperInformation;
 import org.apache.http.cookie.Cookie;
 import org.joda.time.DateTime;
@@ -228,6 +229,7 @@ public abstract class CrawlerRanking extends Task {
             // persistDiscoverData();
          }
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
          session.registerError(error);

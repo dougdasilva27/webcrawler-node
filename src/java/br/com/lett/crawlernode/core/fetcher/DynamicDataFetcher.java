@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
+import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -75,6 +76,7 @@ public class DynamicDataFetcher {
 
          return webdriver;
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
 
          // close the webdriver
