@@ -29,7 +29,6 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void extractProductsFromCurrentPage() {
-//      cookies = fetchCookies("https://www.cotodigital3.com.ar/sitios/cdigi/home");
       this.log("Página " + this.currentPage);
       if (currentPage == 1) {
          JSONObject jsonObject = fetchUrl();
@@ -62,7 +61,7 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
          }
       }
-      nextUrl = "https://www.cotodigital3.com.ar/" + currentDoc.selectFirst("#atg_store_pagination li:nth-child(" + (currentPage + 1) + ") a").attr("href");
+      nextUrl = "https://www.cotodigital3.com.ar" + currentDoc.selectFirst("#atg_store_pagination li:nth-child(" + (currentPage + 1) + ") a").attr("href");
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
@@ -74,13 +73,17 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
       String url = "https://www.cotodigital3.com.ar/sitios/cdigi/assembler?format=json&Dy=1&assemblerContentCollection=/content/Shared/Auto-Suggest%20Panels&Ntt=" + keywordEncoded;
       Request request = RequestBuilder.create().setCookies(cookies).setHeaders(headers).setUrl(url).build();
       Response response = new ApacheDataFetcher().get(session, request);
-
+      cookies = response.getCookies();
       return CrawlerUtils.stringToJson(response.getBody());
    }
 
    @Override
    protected boolean hasNextPage() {
-      return this.arrayProducts.size() < this.totalProducts;
+      Element element = currentDoc.selectFirst("#atg_store_pagination li:nth-child(" + (currentPage + 2) + ") a");
+      if (element != null) {
+         return element.attr("href") != null;
+      }
+      return false;
    }
 
    @Override
