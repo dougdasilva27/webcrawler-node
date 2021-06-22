@@ -12,14 +12,12 @@ import java.util.concurrent.Callable;
 
 public class Exporter {
 
-   private static final Logger logger = LoggerFactory.getLogger(Exporter.class);
-
    private static final Counter ERROR_COUNTER = Counter.build()
       .name("error_market").help("Errors by market")
       .labelNames("error_name", "market")
       .register();
 
-   static final Histogram POSTGRES_TIMING = Histogram.build()
+   private static final Histogram POSTGRES_TIMING = Histogram.build()
       .name("database_latency").help("Database latency in seconds.")
       .buckets(1, 5, 10, 30)
       .labelNames("operation")
@@ -32,7 +30,6 @@ public class Exporter {
       .register();
 
    public static void collectError(Exception e, Session session) {
-      logger.debug("Exception collected");
       ERROR_COUNTER.labels(e.getClass().getSimpleName(), session.getMarket().getName()).inc();
    }
 
