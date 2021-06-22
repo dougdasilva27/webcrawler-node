@@ -1,34 +1,11 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.session.ranking.*;
-import br.com.lett.crawlernode.core.task.Scheduler;
-import br.com.lett.crawlernode.util.ScraperInformation;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -41,6 +18,8 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.ranking.*;
+import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
@@ -48,9 +27,29 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.ScraperInformation;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
+import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import enums.QueueName;
 import enums.ScrapersTypes;
 import models.Processed;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
@@ -350,13 +349,15 @@ public abstract class CrawlerRanking extends Task {
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
          List<Processed> processeds = new ArrayList<>();
+         List<Long> specificSuppliers = Arrays.asList(11l, 143l, 125l);
+
          if (internalId != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId, session);
          } else if (pid != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId, session);
          } else if (url != null) {
             Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
-            processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
+            processeds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
          }
 
 
@@ -368,12 +369,20 @@ public abstract class CrawlerRanking extends Task {
                   saveProductUrlToQueue(url);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
                }
+
+               LocalDate date = LocalDate.parse(p.getLrt().split(" ")[0], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+               if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
+                  saveProductUrlToQueue(url);
+               }
+
+               if (url != null && p.getId() == null) {
+                  saveProductUrlToQueue(url);
+               }
+
             }
          }
 
-         if (url != null && processedIds.isEmpty()) {
-            saveProductUrlToQueue(url);
-         }
 
          rankingProducts.setProcessedIds(processedIds);
       }
@@ -381,6 +390,7 @@ public abstract class CrawlerRanking extends Task {
       if (url != null && session instanceof EqiRankingDiscoverKeywordsSession) {
          saveProductUrlToQueue(url);
       }
+
 
       this.arrayProducts.add(rankingProducts);
    }
@@ -480,7 +490,7 @@ public abstract class CrawlerRanking extends Task {
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
-      
+
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
