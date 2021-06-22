@@ -70,7 +70,7 @@ public class ServerCrawler {
          server.setHandler(handler);
          handler.addServletWithMapping(CrawlerTaskEndpoint.class, ENDPOINT_TASK);
          handler.addServletWithMapping(CrawlerHealthEndpoint.class, ENDPOINT_HEALTH_CHECK);
-         handler.addServletWithMapping(new ServletHolder(new MetricsServlet()), "/metrics");
+         handler.addServletWithMapping(MetricsServlet.class, "/metrics");
 
          statisticsHandler.setHandler(server.getHandler());
 

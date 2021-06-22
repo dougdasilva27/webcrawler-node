@@ -143,12 +143,6 @@
             <artifactId>simpleclient</artifactId>
             <version>0.10.0</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.prometheus/simpleclient_jetty -->
-        <dependency>
-            <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient_jetty</artifactId>
-            <version>0.11.0</version>
-        </dependency>
 
         <!-- https://mvnrepository.com/artifact/io.prometheus/simpleclient_servlet -->
         <dependency>
