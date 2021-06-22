@@ -69,7 +69,7 @@ class CrawlerCache(db: RedisDb) {
    }
 
    private fun isSuccess(resp: Response): Boolean {
-      val firstChar = resp.lastStatusCode.toString()[0].toString()
-      return firstChar in arrayOf("2", "3")
+      val firstChar = resp.lastStatusCode.toString()[0]
+      return firstChar in arrayOf('2', '3')
    }
 }
