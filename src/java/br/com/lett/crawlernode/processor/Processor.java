@@ -783,7 +783,7 @@ public class Processor {
                      .put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
                      .put("query_type", "fetch_previous_processed");
 
-               Logging.logInfo(logger, session, postgresMetadata, "POSTGRES TIMING INFO");
+               Logging.logDebug(logger, session, postgresMetadata, "POSTGRES TIMING INFO");
 
                /*
                 * Create the Processed model
