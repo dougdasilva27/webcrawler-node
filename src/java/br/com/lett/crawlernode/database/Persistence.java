@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
+import br.com.lett.crawlernode.database.model.SqlOperation;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.CommonMethods;

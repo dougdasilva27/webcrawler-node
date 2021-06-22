@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.metrics;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.database.SqlOperation;
+import br.com.lett.crawlernode.database.model.SqlOperation;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Histogram;
 import org.slf4j.Logger;
@@ -19,10 +19,13 @@ public class Exporter {
       .register();
 
    static final Histogram POSTGRES_TIMING = Histogram.build()
-      .name("requests_latency_seconds").help("Request latency in seconds.")
+      .name("database_latency_seconds").help("Database latency in seconds.")
       .labelNames("operation")
       .register();
 
+   static final Histogram ENDPOINT_TIMING = Histogram.build()
+      .name("requests_latency_seconds").help("Request latency in seconds.")
+      .register();
 
    public static void collectError(Exception e, Session session) {
       logger.debug("Exception collected");
@@ -32,6 +35,10 @@ public class Exporter {
    public static <E> E collectQuery(SqlOperation operation, Callable<E> callable) {
       return POSTGRES_TIMING.labels(operation.toString())
          .time(callable);
+   }
+
+   public static <E> E collectEndpoint(Callable<E> callable) {
+      return ENDPOINT_TIMING.time(callable);
    }
 }
 

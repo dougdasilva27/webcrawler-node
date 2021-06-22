@@ -1,9 +1,9 @@
-package br.com.lett.crawlernode.database;
+package br.com.lett.crawlernode.database.model;
 
 import java.util.Locale;
 
 public enum SqlOperation {
-   SELECT, UPDATE, DELETE;
+   SELECT, UPDATE;
 
    @Override
    public String toString() {
