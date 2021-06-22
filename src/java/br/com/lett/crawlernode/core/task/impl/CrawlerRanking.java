@@ -360,30 +360,23 @@ public abstract class CrawlerRanking extends Task {
             processeds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
          }
 
-
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
+               LocalDate date = LocalDate.parse(p.getLrt().split(" ")[0], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
                if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
                   saveProductUrlToQueue(url);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
-               }
-
-               LocalDate date = LocalDate.parse(p.getLrt().split(" ")[0], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-               if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
+               } else if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
                   saveProductUrlToQueue(url);
                   Logging.printLogDebug(logger, session, "Processed " + p.getId() + " this product has not been read for more than a month");
-               }
-
-               if (url != null && p.getId() == null) {
+               } else if (url != null && p.getId() == null) {
                   saveProductUrlToQueue(url);
                }
 
             }
          }
-
 
          rankingProducts.setProcessedIds(processedIds);
       }
@@ -391,7 +384,6 @@ public abstract class CrawlerRanking extends Task {
       if (url != null && session instanceof EqiRankingDiscoverKeywordsSession) {
          saveProductUrlToQueue(url);
       }
-
 
       this.arrayProducts.add(rankingProducts);
    }
@@ -495,7 +487,7 @@ public abstract class CrawlerRanking extends Task {
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+         queueName = "web-scraper-product-dev";
       }
 
 
