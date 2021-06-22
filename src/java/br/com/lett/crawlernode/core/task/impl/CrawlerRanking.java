@@ -474,7 +474,7 @@ public abstract class CrawlerRanking extends Task {
 
                JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
                   .put("aws_type", "sqs")
-                  .put("sqs_queue", "ws-discoverer");
+                  .put("sqs_queue", "web-scraper-product-dev");
 
                Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
 
