@@ -18,6 +18,7 @@ import org.jsoup.nodes.Document
 
 class BodegamixCrawler(session: Session) : Crawler(session) {
    init {
+      // some reason it only gets price when it uses fetcher
       config.fetcher = FetchMode.FETCHER
    }
 
