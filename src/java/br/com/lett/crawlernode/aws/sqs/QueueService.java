@@ -64,7 +64,6 @@ public class QueueService {
 
       queueURLMap.put(QueueName.CORE_DEV.toString(),QUEUE_URL+QueueName.CORE_DEV.toString());
 
-
    }
 
    /**

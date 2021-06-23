@@ -371,11 +371,14 @@ public abstract class CrawlerRanking extends Task {
                } else if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
                   saveProductUrlToQueue(url);
                   Logging.printLogDebug(logger, session, "Processed " + p.getId() + " this product has not been read for more than a month");
-               } else if (url != null && p.getId() == null) {
-                  saveProductUrlToQueue(url);
                }
 
             }
+
+            if (url != null && processedIds.isEmpty()) {
+               saveProductUrlToQueue(url);
+            }
+
          }
 
          rankingProducts.setProcessedIds(processedIds);
