@@ -64,16 +64,11 @@ class CrawlerCache(db: RedisDb) {
             RequestMethod.POST -> dataFetcher.post(session, request)
             else -> throw RequestMethodNotFoundException(requestMethod.name)
          }
-         if (isSuccess(resp)) {
+         if (resp.isSuccess) {
             value = function.apply(resp)
             set(key, value as Any, ttl)
          }
       }
       return value as T?
-   }
-
-   private fun isSuccess(resp: Response): Boolean {
-      val firstChar = resp.lastStatusCode.toString()[0]
-      return firstChar in arrayOf('2', '3')
    }
 }
