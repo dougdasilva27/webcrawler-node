@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>webcrawler-node</groupId>
     <artifactId>webcrawler-node</artifactId>
-    <version>${maven.build.timestamp}</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -23,7 +23,7 @@
         <kinesis.version>0.14.6</kinesis.version>
         <db.version>8.0.0</db.version>
         <jsoup.version>1.13.1</jsoup.version>
-        <models.version>2.7.17</models.version>
+        <models.version>2.7.12</models.version>
         <logback.version>1.2.3</logback.version>
         <jodatime.version>2.10.10</jodatime.version>
         <json.version>20190722</json.version>

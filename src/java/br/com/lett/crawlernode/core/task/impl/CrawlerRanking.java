@@ -465,7 +465,7 @@ public abstract class CrawlerRanking extends Task {
 
                JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
                   .put("aws_type", "sqs")
-                  .put("sqs_queue", "web-scraper-product-dev");
+                  .put("sqs_queue", "ws-discoverer");
 
                Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
 
@@ -486,7 +486,7 @@ public abstract class CrawlerRanking extends Task {
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
+         queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
       }
 
 
