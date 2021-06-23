@@ -17,22 +17,16 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.JSONUtils;
 
 
-public abstract class BrasilIfood extends CrawlerRankingKeywords {
+public class BrasilIfood extends CrawlerRankingKeywords {
 
    public BrasilIfood(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   protected String region = getRegion();
-   protected String storeName = getStoreName();
-   protected String storeId = getStoreId();
-
-   protected abstract String getRegion();
-
-   protected abstract String getStoreName();
-
-   protected abstract String getStoreId();
+   protected String region = session.getOptions().getString("region");
+   protected String storeName = session.getOptions().getString("store_name");
+   protected String storeId = session.getOptions().getString("store_id");
 
    @Override
    protected void extractProductsFromCurrentPage() {
@@ -56,7 +50,7 @@ public abstract class BrasilIfood extends CrawlerRankingKeywords {
 
                   String internalId = itensObject.optString("code");
                   String internalPid = internalId;
-                  String productUrl = url + "?prato=" + internalId;
+                  String productUrl = url + "?item=" + internalId;
 
                   saveDataProduct(internalId, internalPid, productUrl);
 
