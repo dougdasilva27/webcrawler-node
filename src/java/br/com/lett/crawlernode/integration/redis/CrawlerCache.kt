@@ -46,14 +46,18 @@ class CrawlerCache(db: RedisDb) {
    @JvmOverloads
    fun <T> update(
       key: String,
-      ttl: Long = defaultTimeSecs,
-      requestMethod: RequestMethod,
       request: Request,
-      function: Function<Response, T>,
+      requestMethod: RequestMethod,
+      session: Session,
       dataFetcher: DataFetcher,
-      session: Session
+      mustUpdate: Boolean = false,
+      ttl: Long = defaultTimeSecs,
+      function: Function<Response, T>
    ): T? {
-      var value: Any? = get(key)
+      var value: Any? = null
+      if (!mustUpdate) {
+         value = get(key)
+      }
       if (value == null) {
          val resp = when (requestMethod) {
             RequestMethod.GET -> dataFetcher.get(session, request)
