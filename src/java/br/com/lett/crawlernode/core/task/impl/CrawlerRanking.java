@@ -322,8 +322,6 @@ public abstract class CrawlerRanking extends Task {
    protected void saveDataProduct(String internalId, String pid, String url, int position) {
       RankingProducts rankingProducts = new RankingProducts();
 
-      List<Long> processedIds = new ArrayList<>();
-
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
       rankingProducts.setPosition(position);
@@ -349,6 +347,8 @@ public abstract class CrawlerRanking extends Task {
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
          List<Processed> processeds = new ArrayList<>();
+         List<Long> processedIds = new ArrayList<>();
+
          List<Long> specificSuppliers = Arrays.asList(11l, 143l, 125l);
 
          if (internalId != null) {
@@ -370,15 +370,12 @@ public abstract class CrawlerRanking extends Task {
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
                } else if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
                   saveProductUrlToQueue(url);
-                  Logging.printLogDebug(logger, session, "Processed " + p.getId() + " this product has not been read for more than a month");
                }
 
             }
 
-            if (url != null && processedIds.isEmpty()) {
-               saveProductUrlToQueue(url);
-            }
-
+         } else if (url != null) {
+            saveProductUrlToQueue(url);
          }
 
          rankingProducts.setProcessedIds(processedIds);
@@ -468,7 +465,7 @@ public abstract class CrawlerRanking extends Task {
 
                JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
                   .put("aws_type", "sqs")
-                  .put("sqs_queue", "ws-discoverer");
+                  .put("sqs_queue", "web-scraper-discoverer");
 
                Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
 
@@ -489,7 +486,7 @@ public abstract class CrawlerRanking extends Task {
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+         queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
       }
 
 
