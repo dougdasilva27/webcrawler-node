@@ -251,14 +251,14 @@ public abstract class CrawlerRanking extends Task {
       }
    }
 
-   protected <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+   protected final <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cacheClient.update(component, ttl, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.update(component, request, requestMethod, session, dataFetcher, false, ttl, function);
    }
 
-   protected <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+   protected final <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
       String component = getClass().getSimpleName() + ":" + key;
-      return cacheClient.update(component, requestMethod, request, function, dataFetcher, session);
+      return cacheClient.update(component, request, requestMethod, session, dataFetcher, function);
    }
 
    public void setProductsLimit(int productsLimit) {

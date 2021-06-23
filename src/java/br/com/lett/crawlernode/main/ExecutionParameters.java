@@ -75,11 +75,18 @@ public class ExecutionParameters {
       setUseFetcher(getEnvUseFetcher());
       setReplicatorUrl(getEnvReplicatorUrl());
       setChromePath();
-      redisHost = System.getenv(EnvironmentVariables.REDIS_HOST);
-      redisPort = Integer.parseInt(System.getenv(EnvironmentVariables.REDIS_PORT));
       version = DEFAULT_CRAWLER_VERSION;
-
+      setRedisHost();
+      setRedisPort();
       Logging.printLogDebug(logger, this.toString());
+   }
+
+   public void setRedisHost() {
+      redisHost = System.getenv(EnvironmentVariables.REDIS_HOST);
+   }
+
+   public void setRedisPort() {
+      redisPort = Integer.parseInt(System.getenv(EnvironmentVariables.REDIS_PORT));
    }
 
    public void setChromePath() {
