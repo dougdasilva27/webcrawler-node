@@ -43,7 +43,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
 
    }
 
@@ -120,7 +120,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
 
-         content = new JsoupDataFetcher().get(session, request).getBody();
+         content = new FetcherDataFetcher().get(session, request).getBody();
       }
 
       return Jsoup.parse(content);

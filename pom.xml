@@ -23,7 +23,7 @@
         <kinesis.version>0.14.6</kinesis.version>
         <db.version>8.0.0</db.version>
         <jsoup.version>1.13.1</jsoup.version>
-        <models.version>2.7.12</models.version>
+        <models.version>2.7.18</models.version>
         <logback.version>1.2.3</logback.version>
         <jodatime.version>2.10.10</jodatime.version>
         <json.version>20190722</json.version>
@@ -138,6 +138,18 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient</artifactId>
+            <version>0.11.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.prometheus/simpleclient_servlet -->
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_servlet</artifactId>
+            <version>0.11.0</version>
+        </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server -->
         <dependency>

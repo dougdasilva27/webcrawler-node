@@ -18,13 +18,13 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import models.Marketplace;
 import models.prices.Prices;
 
-import javax.swing.plaf.synth.SynthOptionPaneUI;
-
 public class ColombiaMerqueoCrawler extends Crawler {
 
    public ColombiaMerqueoCrawler(Session session) {
       super(session);
    }
+
+   private String zoneId = session.getOptions().optString("zoneId");//32
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -209,6 +209,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       StringBuilder apiUrl = new StringBuilder();
       apiUrl.append("https://merqueo.com/api/2.0/stores/63/find?");
+      //https://merqueo.com/api/2.0/stores/63/find?department_slug=carnes-frias-y-embutidos&shelf_slug=salchichas&product_slug=salchicha-berlinesa-casablanca-270-gr&limit=7&zoneId=137&adq=1
 
       if(slugs.size() == 3) {
          apiUrl.append("department_slug=").append(slugs.get(0));
@@ -220,13 +221,21 @@ public class ColombiaMerqueoCrawler extends Crawler {
          apiUrl.append("&product_slug=").append(slugs.get(3));
       }
 
-      apiUrl.append("&limit=7&zoneId=32&adq=1");
+      apiUrl.append("&limit=7&zoneId=");
+      apiUrl.append(zoneId);
+      apiUrl.append("&adq=1");
+
+      //https://merqueo.com/api/2.0/stores/63/find?department_slug=carnes-frias-y-embutidos&shelf_slug=salchichas&product_slug=salchicha-berlinesa-casablanca-270-gr&limit=7&zoneId=137&adq=1
+      //https://merqueo.com/api/2.0/stores/63/find?department_slug=carnes-frias-y-embutidos&shelf_slug=delicatessen&product_slug=tocino-ahumado-casablanca-150-gr&limit=7&zoneId=214&adq=1
 
       Request request = RequestBuilder
          .create()
          .setUrl(apiUrl.toString())
          .mustSendContentEncoding(false)
          .build();
+
+      //https://merqueo.com/api/2.0/stores/63/find?department_slug=ofertas&shelf_slug=alimentos&product_slug=max-canino-cachorro-premium-especial-pollo-2-kg-2-kg&limit=7&zoneId=32&adq=1
+      //https://merqueo.com/api/2.0/stores/176/find?department_slug=ofertas&shelf_slug=alimentos&product_slug=max-canino-cachorro-premium-especial-pollo-2-kg-2-kg&limit=7&zoneId=214&adq=1
 
       return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
    }
