@@ -17,9 +17,10 @@ import models.pricing.Pricing
 import org.jsoup.nodes.Document
 
 class BodegamixCrawler(session: Session) : Crawler(session) {
-init {
-    config.fetcher = FetchMode.FETCHER
-}
+   init {
+      config.fetcher = FetchMode.FETCHER
+   }
+
    private fun getUser(): String? {
       return session.options.optString("user")
    }
@@ -29,17 +30,20 @@ init {
    }
 
    override fun handleCookiesBeforeFetch() {
-      val headers = mapOf("Content-Type" to "application/x-www-form-urlencoded")
-      val request = RequestBuilder.create().setUrl("https://bodegamix.com.br/login")
-         .setPayload("Username=${getUser()}&Password=${getPass()}&RememberMe=true&RememberMe=false")
-         .setHeaders(headers)
-         .setIgnoreStatusCode(true)
-         .setFollowRedirects(false)
-         .setBodyIsRequired(false)
-         .build()
+      if (getUser() != null && getPass() != null) {
 
-      val cookie = dataFetcher.post(session, request).cookies.firstOrNull { it.name == "NOPCOMMERCE.AUTH" }
-      this.cookies.add(cookie)
+         val headers = mapOf("Content-Type" to "application/x-www-form-urlencoded")
+         val request = RequestBuilder.create().setUrl("https://bodegamix.com.br/login")
+            .setPayload("Username=${getUser()}&Password=${getPass()}&RememberMe=true&RememberMe=false")
+            .setHeaders(headers)
+            .setIgnoreStatusCode(true)
+            .setFollowRedirects(false)
+            .setBodyIsRequired(false)
+            .build()
+
+         val cookie = dataFetcher.post(session, request).cookies.firstOrNull { it.name == "NOPCOMMERCE.AUTH" }
+         this.cookies.add(cookie)
+      }
    }
 
    override fun extractInformation(doc: Document): MutableList<Product> {
