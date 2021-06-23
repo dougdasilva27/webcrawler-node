@@ -30,6 +30,10 @@ object Redis {
          null
       }
    }
+
+   fun shutdown() {
+      client?.shutdown()
+   }
 }
 
 object CacheFactory {
