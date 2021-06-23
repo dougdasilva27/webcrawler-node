@@ -53,7 +53,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
       if (isProductPage(data)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = data.getString("id");
+         String internalId = String.valueOf(data.optInt("id"));
          String name = crawlName(data);
          boolean available = data.optBoolean("availability");
 
@@ -238,7 +238,15 @@ public class ColombiaMerqueoCrawler extends Crawler {
    private Pricing crawlpricing(JSONObject data) throws MalformedPricingException {
 
       Double spotLightprice = (double) data.optInt("specialPrice",0);
-      Double priceFrom = (double) data.optInt("specialPrice",0);
+      spotLightprice = spotLightprice == 0d? null:spotLightprice;
+      Double priceFrom = (double) data.optInt("price",0);
+      priceFrom = priceFrom == 0d? null:priceFrom;
+
+      if (spotLightprice == null && priceFrom != null) {
+         spotLightprice = priceFrom;
+         priceFrom = null;
+      }
+
 
 
 
@@ -255,6 +263,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
          creditCards.add(CreditCard.CreditCardBuilder.create()
             .setInstallments(installments)
             .setBrand(s)
+            .setIsShopCard(false)
             .build());
       }
 
