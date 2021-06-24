@@ -38,6 +38,8 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AMEX.toString());
+   private static final String SELLER_FULL_NAME = "Merqueo Colombia";
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -99,10 +101,10 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("Mer")
+         .setSellerFullName(SELLER_FULL_NAME)
          .setMainPagePosition(1)
          .setIsBuybox(false)
-         .setIsMainRetailer(data.optBoolean("isMarketplace", false))
+         .setIsMainRetailer(!data.optBoolean("isMarketplace", true))
          .setPricing(pricing)
          .build());
 
@@ -162,7 +164,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
       String image = null;
 
       if (jsonObjImg.has("imageLargeUrl") && !jsonObjImg.isNull("imageLargeUrl")) {
-         image =  jsonObjImg.getString("imageLargeUrl");
+         image = jsonObjImg.getString("imageLargeUrl");
 
       } else if (jsonObjImg.has("imageMediumUrl") && !jsonObjImg.isNull("imageMediumUrl")) {
          image = jsonObjImg.getString("imageMediumUrl");
@@ -172,7 +174,6 @@ public class ColombiaMerqueoCrawler extends Crawler {
       }
       return image;
    }
-
 
 
    private String crawlName(JSONObject data) {
@@ -237,17 +238,15 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    private Pricing crawlpricing(JSONObject data) throws MalformedPricingException {
 
-      Double spotLightprice = (double) data.optInt("specialPrice",0);
-      spotLightprice = spotLightprice == 0d? null:spotLightprice;
-      Double priceFrom = (double) data.optInt("price",0);
-      priceFrom = priceFrom == 0d? null:priceFrom;
+      Double spotLightprice = (double) data.optInt("specialPrice", 0);
+      spotLightprice = spotLightprice == 0d ? null : spotLightprice;
+      Double priceFrom = (double) data.optInt("price", 0);
+      priceFrom = priceFrom == 0d ? null : priceFrom;
 
       if (spotLightprice == null && priceFrom != null) {
          spotLightprice = priceFrom;
          priceFrom = null;
       }
-
-
 
 
       Installments installments = new Installments();
