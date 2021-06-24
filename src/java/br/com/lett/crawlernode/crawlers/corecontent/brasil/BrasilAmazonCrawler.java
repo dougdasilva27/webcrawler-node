@@ -57,6 +57,9 @@ public class BrasilAmazonCrawler extends Crawler {
    public BrasilAmazonCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+
+      cacheConfig.setRequest(this.amazonScraperUtils.getRequestCookies("https://www.amazon.com.br/", cookies, dataFetcher));
+      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override
@@ -66,12 +69,6 @@ public class BrasilAmazonCrawler extends Crawler {
    }
 
    private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Request request = this.amazonScraperUtils.getRequestCookies("https://www.amazon.com.br/", cookies, dataFetcher);
-      this.cookies = cacheCookies("cookies", RequestMethod.GET, request);
-   }
 
    @Override
    protected Document fetch() {
