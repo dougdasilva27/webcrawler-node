@@ -1,19 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-
-import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.RequestMethod;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.HashMap;
 
 public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
 
@@ -28,8 +25,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
    protected void processBeforeFetch() {
       super.processBeforeFetch();
 
-      Request request = this.amazonScraperUtils.getRequestCookies("https://www.amazon.com.br/", cookies, dataFetcher);
-      this.cookies = cache("cookie", RequestMethod.GET, request, Response::getCookies);
+      cookies = this.amazonScraperUtils.handleCookiesBeforeFetch("https://www.amazon.com.br/", cookies, dataFetcher);
    }
 
    @Override
@@ -38,7 +34,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       String url = "https://www.amazon.com.br/s/ref=sr_pg_" + this.currentPage + "?page=" + this.currentPage +
-            "&keywords=" + this.keywordEncoded + "&ie=UTF8";
+         "&keywords=" + this.keywordEncoded + "&ie=UTF8";
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = Jsoup.parse(amazonScraperUtils.fetchPage(url, new HashMap<>(), cookies, dataFetcher));

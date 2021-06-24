@@ -1,34 +1,11 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.task.Scheduler;
-import br.com.lett.crawlernode.integration.redis.config.RedisDb;
-import br.com.lett.crawlernode.util.ScraperInformation;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -39,26 +16,41 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Ranking;
 import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
-import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
-import br.com.lett.crawlernode.core.session.ranking.EqiRankingDiscoverKeywordsSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingDiscoverSession;
-import br.com.lett.crawlernode.core.session.ranking.RankingSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingKeywordsSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
+import br.com.lett.crawlernode.core.session.ranking.*;
+import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
-import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.ScraperInformation;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
+import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import enums.QueueName;
 import enums.ScrapersTypes;
-import java.util.function.Function;
 import models.Processed;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
@@ -96,8 +88,6 @@ public abstract class CrawlerRanking extends Task {
    private Integer doubleCheck;
 
    private Map<Integer, String> screenshotsAddress = new HashMap<>();
-
-   private static final CrawlerCache cacheClient = new CrawlerCache(RedisDb.RANKING);
 
    // variável que identifica se há resultados na página
    protected boolean result;
@@ -249,16 +239,6 @@ public abstract class CrawlerRanking extends Task {
       } else if (this.fetchMode == FetchMode.FETCHER) {
          dataFetcher = new FetcherDataFetcher();
       }
-   }
-
-   protected final <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
-      String component = getClass().getSimpleName() + ":" + key;
-      return cacheClient.update(component, request, requestMethod, session, dataFetcher, false, ttl, function);
-   }
-
-   protected final <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
-      String component = getClass().getSimpleName() + ":" + key;
-      return cacheClient.update(component, request, requestMethod, session, dataFetcher, function);
    }
 
    public void setProductsLimit(int productsLimit) {

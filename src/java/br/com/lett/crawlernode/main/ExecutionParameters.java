@@ -75,12 +75,10 @@ public class ExecutionParameters {
       setUseFetcher(getEnvUseFetcher());
       setReplicatorUrl(getEnvReplicatorUrl());
       setChromePath();
-      redisHost = "redis-crawler-prod.2k0spf.0001.use1.cache.amazonaws.com";
-      redisPort = 6379;
 
       version = DEFAULT_CRAWLER_VERSION;
-//      setRedisHost();
-//      setRedisPort();
+      setRedisHost();
+      setRedisPort();
       Logging.printLogDebug(logger, this.toString());
    }
 
