@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import static br.com.lett.crawlernode.core.fetcher.models.Response.*;
+
 /**
  * The Crawler superclass. All crawler tasks must extend this class to override both the shouldVisit and extract methods.
  *
@@ -352,7 +354,13 @@ public abstract class Crawler extends Task {
       session.setOriginalURL(url);
 
       try {
-         Object obj = fetch();
+         Object obj;
+         if (cacheConfig.isActive()) {
+            obj = fetchWithCacheCookie();
+         } else {
+            obj = fetch();
+         }
+
          session.setProductPageResponse(obj);
 
          if (obj instanceof Document) {
@@ -380,6 +388,20 @@ public abstract class Crawler extends Task {
    }
 
    /**
+    * Fetch with cache cookie retry logic.
+    */
+   private Object fetchWithCacheCookie() {
+      handleCacheableCookiesBeforeFetch(false);
+      Response response = fetchResponse();
+
+      if (!response.isSuccess()) {
+         handleCacheableCookiesBeforeFetch(true);
+         response = dataFetcher.get(session, cacheConfig.getRequest());
+      }
+      return Jsoup.parse(response.getBody());
+   }
+
+   /**
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
     * otherwise we use the DynamicDataFetcher.
     * <p>
@@ -391,8 +413,6 @@ public abstract class Crawler extends Task {
     */
    protected Object fetch() {
       String html = "";
-      handleCacheableCookiesBeforeFetch(false);
-
       if (config.getFetcher() == FetchMode.WEBDRIVER) {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
@@ -403,15 +423,28 @@ public abstract class Crawler extends Task {
          Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
          Response response = dataFetcher.get(session, request);
 
-         if (!response.isSuccess()) {
-            handleCacheableCookiesBeforeFetch(true);
-            response = dataFetcher.get(session, request);
-         }
          html = response.getBody();
+      }
+      return Jsoup.parse(html);
+   }
 
+   /**
+    * fetch doc as in {@link Crawler#fetch()}, but returns response instead of the body.
+    */
+   protected Response fetchResponse() {
+      Response resp = null;
+
+      if (config.getFetcher() == FetchMode.WEBDRIVER) {
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+
+         if (webdriver != null) {
+            resp = ResponseBuilder.create().setBody(webdriver.getCurrentPageSource()).build();
+         }
+      } else {
+         resp = dataFetcher.get(session, RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build());
       }
 
-      return Jsoup.parse(html);
+      return resp;
    }
 
    /**

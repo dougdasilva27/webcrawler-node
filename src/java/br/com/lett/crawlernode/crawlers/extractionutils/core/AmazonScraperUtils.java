@@ -74,6 +74,10 @@ public class AmazonScraperUtils {
       return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher));
    }
 
+   public Response fetchProductPageResponse(List<Cookie> cookies, DataFetcher dataFetcher) {
+      return fetchResponse(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher);
+   }
+
    /**
     * Fetch html from amazon
     *
@@ -85,51 +89,52 @@ public class AmazonScraperUtils {
     * @return
     */
    public String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
-      String content;
+      return fetchResponse(url, headers, cookies, dataFetcher).getBody();
+   }
 
+   private Response fetchResponse(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
       Request requestApache = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
-            .build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
+         .build();
 
       Map<String, String> headersClone = new HashMap<>(headers);
       headersClone.put("Accept-Encoding", "no");
 
       Request requestFetcher = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .setProxyservice(
-                  Arrays.asList(
-                        ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                        ProxyCollection.BUY,
-                        ProxyCollection.NETNUT_RESIDENTIAL_BR))
-            .setFetcheroptions(FetcherOptionsBuilder.create()
-                  .mustRetrieveStatistics(true)
-                  .setForbiddenCssSelector("#captchacharacters").build())
-            .build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR))
+         .setFetcheroptions(FetcherOptionsBuilder.create()
+            .mustRetrieveStatistics(true)
+            .setForbiddenCssSelector("#captchacharacters").build())
+         .build();
 
       Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
 
       Response response = dataFetcher.get(session, request);
-      content = response.getBody();
 
       int statusCode = response.getLastStatusCode();
 
       if ((Integer.toString(statusCode).charAt(0) != '2' &&
-            Integer.toString(statusCode).charAt(0) != '3'
-            && statusCode != 404)) {
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
 
          if (dataFetcher instanceof FetcherDataFetcher) {
-            content = new ApacheDataFetcher().get(session, requestApache).getBody();
+            response = new ApacheDataFetcher().get(session, requestApache);
          } else {
             headers.put("Accept-Encoding", "no");
-            content = new FetcherDataFetcher().get(session, requestFetcher).getBody();
+            response = new FetcherDataFetcher().get(session, requestFetcher);
          }
       }
 
-      return content;
+      return response;
    }
 
    /**

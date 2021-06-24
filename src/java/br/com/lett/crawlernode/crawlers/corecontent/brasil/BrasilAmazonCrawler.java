@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -71,8 +72,8 @@ public class BrasilAmazonCrawler extends Crawler {
    private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    @Override
-   protected Document fetch() {
-      return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
+   protected Response fetchResponse() {
+      return amazonScraperUtils.fetchProductPageResponse(cookies, dataFetcher);
    }
 
    @Override

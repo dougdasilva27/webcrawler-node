@@ -26,4 +26,8 @@ public class CacheConfig {
    public void setRequest(Request request) {
       this.request = request;
    }
+
+   public boolean isActive() {
+      return request != null && requestMethod != null;
+   }
 }
