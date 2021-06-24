@@ -31,7 +31,6 @@
         <surefire-plugin-version>2.22.0</surefire-plugin-version>
         <discord-webhooks.version>0.5.4</discord-webhooks.version>
         <kotlin.version>1.5.10</kotlin.version>
-        <lettuce.version>6.1.2.RELEASE</lettuce.version>
     </properties>
 
     <build>

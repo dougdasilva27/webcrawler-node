@@ -30,11 +30,15 @@ object Redis {
          null
       }
    }
+
+   fun shutdown() {
+      client?.shutdown()
+   }
 }
 
 object CacheFactory {
 
    fun <T> createCache(db: RedisDb): RMapCache<String, T?>? {
-      return Redis.client?.getMapCache<String,T>(db.toString())
+      return Redis.client?.getMapCache<String, T>(db.toString())
    }
 }

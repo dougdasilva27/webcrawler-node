@@ -33,15 +33,10 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
-   }
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Request request = Request.RequestBuilder.create()
+      cacheConfig.setRequest(Request.RequestBuilder.create()
          .setUrl(HOME_PAGE)
-         .build();
-
-      this.cookies = cacheCookies("cookie", RequestMethod.GET, request);
+         .build());
+      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override

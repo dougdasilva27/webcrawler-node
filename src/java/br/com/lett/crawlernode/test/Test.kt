@@ -1,12 +1,8 @@
-
 package br.com.lett.crawlernode.test
 
-import br.com.lett.crawlernode.database.Persistence
 import br.com.lett.crawlernode.integration.redis.Redis
 import br.com.lett.crawlernode.main.EnvironmentVariables
 import io.github.cdimascio.dotenv.dotenv
-import org.apache.commons.cli.*
-import org.slf4j.LoggerFactory
 
 /**
  *
@@ -41,7 +37,6 @@ object Test {
       val parameters = dotenv.get("PARAMETERS")
       val maxProducts = dotenv.get("MAX_PRODUCTS")
       val corePollSize = dotenv.get("CORE_POOL_SIZE")
-
 
 
       val market = TestUtils.fetchMarket(city, marketName, marketId?.toLong() ?: 0)

@@ -84,6 +84,7 @@ public abstract class Crawler extends Task {
     */
    protected List<Cookie> cookies;
 
+   protected final CacheConfig cacheConfig = new CacheConfig();
 
    protected Crawler(Session session) {
       this.session = session;
@@ -116,6 +117,14 @@ public abstract class Crawler extends Task {
     */
    public void handleCookiesBeforeFetch() {
       /* subclasses must implement */
+   }
+
+   private void handleCacheableCookiesBeforeFetch(Boolean force) {
+      if (cacheConfig.getRequest() != null && cacheConfig.getRequestMethod() != null) {
+         Request request = cacheConfig.getRequest();
+         RequestMethod requestMethod = cacheConfig.getRequestMethod();
+         cookies = cacheCookies("cookie", requestMethod, request, force);
+      }
    }
 
    /**
@@ -342,12 +351,8 @@ public abstract class Crawler extends Task {
       String url = handleURLBeforeFetch(session.getOriginalURL());
       session.setOriginalURL(url);
 
-
-
       try {
-
          Object obj = fetch();
-
          session.setProductPageResponse(obj);
 
          if (obj instanceof Document) {
@@ -386,6 +391,8 @@ public abstract class Crawler extends Task {
     */
    protected Object fetch() {
       String html = "";
+      handleCacheableCookiesBeforeFetch(false);
+
       if (config.getFetcher() == FetchMode.WEBDRIVER) {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
@@ -396,7 +403,12 @@ public abstract class Crawler extends Task {
          Request request = RequestBuilder.create().setCookies(cookies).setUrl(session.getOriginalURL()).build();
          Response response = dataFetcher.get(session, request);
 
+         if (!response.isSuccess()) {
+            handleCacheableCookiesBeforeFetch(true);
+            response = dataFetcher.get(session, request);
+         }
          html = response.getBody();
+
       }
 
       return Jsoup.parse(html);
@@ -510,19 +522,19 @@ public abstract class Crawler extends Task {
       }
    }
 
-   protected <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
-      String component = getClass().getCanonicalName() + ":" + key;
-      return cacheClient.update(component, ttl, requestMethod, request, function, dataFetcher, session);
+   protected final <T> T cache(String key, int ttl, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+      String component = getClass().getSimpleName() + ":" + key;
+      return cacheClient.update(component, request, requestMethod, session, dataFetcher, false, ttl, function);
    }
 
-   protected <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
-      String component = getClass().getCanonicalName() + ":" + key;
-      return cacheClient.update(component, requestMethod, request, function, dataFetcher, session);
+   protected final <T> T cache(String key, RequestMethod requestMethod, Request request, Function<Response, T> function) {
+      String component = getClass().getSimpleName() + ":" + key;
+      return cacheClient.update(component, request, requestMethod, session, dataFetcher, function);
    }
 
-   protected List<Cookie> cacheCookies(String key, RequestMethod requestMethod, Request request) {
-      String component = getClass().getCanonicalName() + ":" + key;
-      return cacheClient.update(component, requestMethod, request, Response::getCookies, dataFetcher, session);
+   protected final List<Cookie> cacheCookies(String key, RequestMethod requestMethod, Request request, Boolean force) {
+      String component = getClass().getSimpleName() + ":" + key;
+      return cacheClient.update(component, request, requestMethod, session, dataFetcher, force, Response::getCookies);
    }
 
    /**

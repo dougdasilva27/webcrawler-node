@@ -4,7 +4,7 @@ import java.util.Locale;
 
 public enum RedisDb {
 
-   CRAWLER, RANKING, CATALOG;
+   CRAWLER, RANKING;
 
    @Override
    public String toString() {
