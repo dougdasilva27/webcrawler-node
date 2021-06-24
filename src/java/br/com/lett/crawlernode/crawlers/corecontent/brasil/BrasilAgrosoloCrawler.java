@@ -39,7 +39,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       if (isProductPage(doc) && !json.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = json.optString("sku");
+         String internalPid = json.optString("sku");
          String name = json.optString("name");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.bread > ol > li > a > span", true);
          List<String> images = scrapImages(json);
@@ -51,7 +51,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
          for (Object variant : variants) {
             if (variant instanceof JSONObject) {
                JSONObject variantJson = (JSONObject) variant;
-               String internalPid = variantJson.optString("sku");
+               String internalId = variantJson.optString("sku");
                List<String> eans = Collections.singletonList(variantJson.optString("gtin14"));
                boolean available = variantJson.optString("availability").contains("InStock");
                Offers offers = available ? scrapOffers(doc, variantJson) : new Offers();
