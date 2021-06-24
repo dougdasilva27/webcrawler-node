@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.belohorizonte;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.InternalIdNotFound;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -24,22 +25,15 @@ public class BelohorizonteSantahelenaCrawler extends CrawlerRankingKeywords {
       this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".products.columns-4 li");
-      if (products.size() >= 1) {
 
-         for (Element e : products) {
-            String productUrl = CrawlerUtils.scrapUrl(e, ".container-inner a", "href", "https", "santahelenacenter.com.br");
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "form.cart", "action").replaceAll("[^0-9]", "").trim();
+      for (Element e : products) {
+         String productUrl = CrawlerUtils.scrapUrl(e, ".container-inner a", "href", "https", "santahelenacenter.com.br");
+         String internalId = e.classNames().stream().filter(s -> s.matches("post-[0-9^]*")).findFirst()
+            .map(s -> s.replaceAll("[^0-9]", ""))
+            .orElseThrow(InternalIdNotFound::new);
 
-            saveDataProduct(internalId, null, productUrl);
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-         }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
+         saveDataProduct(internalId, null, productUrl);
+         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
       }
    }
 

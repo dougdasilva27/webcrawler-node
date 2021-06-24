@@ -36,10 +36,12 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "button.single_add_to_cart_button.button.alt", "value");
+         String internalId = doc.selectFirst(".product.type-product").attr("id");
+         internalId = internalId.substring(internalId.indexOf('-'));
+
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku_wrapper .sku", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".images a", Arrays.asList("href"), "https", "santahelenacenter.com.br");
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".images a", Collections.singletonList("href"), "https", "santahelenacenter.com.br");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".woocommerce-breadcrumb span a", true);
          boolean available = !doc.select(".stock.in-stock").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
