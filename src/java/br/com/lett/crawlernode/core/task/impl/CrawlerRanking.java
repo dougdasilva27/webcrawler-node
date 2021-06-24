@@ -1,35 +1,11 @@
 package br.com.lett.crawlernode.core.task.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.session.ranking.*;
-import br.com.lett.crawlernode.core.task.Scheduler;
-import br.com.lett.crawlernode.metrics.Exporter;
-import br.com.lett.crawlernode.util.ScraperInformation;
-import org.apache.http.cookie.Cookie;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -42,6 +18,8 @@ import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
+import br.com.lett.crawlernode.core.session.ranking.*;
+import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
 import br.com.lett.crawlernode.main.ExecutionParameters;
@@ -49,9 +27,29 @@ import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.ScraperInformation;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
+import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import enums.QueueName;
 import enums.ScrapersTypes;
 import models.Processed;
+import org.apache.http.cookie.Cookie;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
@@ -229,7 +227,6 @@ public abstract class CrawlerRanking extends Task {
             // persistDiscoverData();
          }
       } catch (Exception e) {
-         Exporter.collectError(e, session);
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          SessionError error = new SessionError(SessionError.EXCEPTION, CommonMethods.getStackTrace(e));
          session.registerError(error);
@@ -325,8 +322,6 @@ public abstract class CrawlerRanking extends Task {
    protected void saveDataProduct(String internalId, String pid, String url, int position) {
       RankingProducts rankingProducts = new RankingProducts();
 
-      List<Long> processedIds = new ArrayList<>();
-
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
       rankingProducts.setPosition(position);
@@ -352,28 +347,34 @@ public abstract class CrawlerRanking extends Task {
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
          List<Processed> processeds = new ArrayList<>();
+         List<Long> processedIds = new ArrayList<>();
+
+         List<Long> specificSuppliers = Arrays.asList(11l, 143l, 125l);
+
          if (internalId != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId, session);
          } else if (pid != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId, session);
          } else if (url != null) {
             Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
-            processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
+            processeds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
          }
-
 
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
+               LocalDate date = LocalDate.parse(p.getLrt().split(" ")[0], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
                if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
                   saveProductUrlToQueue(url);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
+               } else if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
+                  saveProductUrlToQueue(url);
                }
-            }
-         }
 
-         if (url != null && processedIds.isEmpty()) {
+            }
+
+         } else if (url != null) {
             saveProductUrlToQueue(url);
          }
 
@@ -443,7 +444,6 @@ public abstract class CrawlerRanking extends Task {
       long sendMessagesStartTime = System.currentTimeMillis();
 
       ScraperInformation scraperInformation = Persistence.fetchScraperInfoToOneMarket(session.getMarket().getNumber());
-
       String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
 
       if (scraperInformation != null) {
@@ -465,7 +465,7 @@ public abstract class CrawlerRanking extends Task {
 
                JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
                   .put("aws_type", "sqs")
-                  .put("sqs_queue", "ws-discoverer");
+                  .put("sqs_queue", "web-scraper-discoverer");
 
                Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
 
@@ -482,7 +482,7 @@ public abstract class CrawlerRanking extends Task {
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
-      
+
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
