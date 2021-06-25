@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.belgium
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
+import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.models.CategoryCollection
 import br.com.lett.crawlernode.core.models.Product
@@ -10,6 +10,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
 import exceptions.MalformedPricesException
 import org.json.JSONObject
+import org.jsoup.Jsoup
 import java.util.*
 
 abstract class ColruytCrawler(session: Session) : Crawler(session) {
@@ -84,7 +85,7 @@ abstract class ColruytCrawler(session: Session) : Crawler(session) {
             url = session.originalURL
             categories = scrapCategories(jsonObject)
             name = "${jsonObject.optString("brand")} ${jsonObject.optString("name")} ${jsonObject.optString("content")}".trim()
-            description = jsonObject.optString("description")
+            description = getDescripton(jsonObject)
             primaryImage = jsonObject.optString("fullImage")
             internalId = jsonObject.optString("commercialArticleNumber")
             internalPid = jsonObject.optString("productId")
@@ -109,6 +110,28 @@ abstract class ColruytCrawler(session: Session) : Crawler(session) {
       }
       return products
    }
+
+       private fun fetcherPage(json: JSONObject) : org.jsoup.nodes.Document? {
+
+          val url = json.optString("ficUrl")
+          val request = Request.RequestBuilder.create()
+             .setUrl(url)
+             .setProxyservice(Arrays.asList( ProxyCollection.LUMINATI_SERVER_BR,
+                ProxyCollection.BONANZA_BELGIUM,
+                ProxyCollection.NETNUT_RESIDENTIAL_ES))
+             .build()
+
+          return Jsoup.parse(dataFetcher.get(session, request).body)
+
+   }
+
+   private fun getDescripton(json: JSONObject) : String {
+      val doc = fetcherPage(json)
+      return CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".row .col-xs-12.col-sm-12.col-md-12.col-lg-12 p"))
+   }
+
+
+
 
    fun scrapCategories(json: JSONObject): CategoryCollection {
 
