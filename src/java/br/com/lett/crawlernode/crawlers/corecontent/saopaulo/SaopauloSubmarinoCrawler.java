@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -78,24 +80,22 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
 
       Offers offers = new Offers();
 
-      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-fiox0-0 a[aria-current]", "href");
+      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
 
-      if (scrapUrl == null) {
+      //offerId é responsavel por definir qual sellers vai aparecer na primeira posição da pagina de sellers.
+      String offerId = JSONUtils.getValueRecursive(jsonSeller,"products."+ internalPid+".offers.result.0.id", String.class);
+      String offersPageUrl = " https://www.submarino.com.br/parceiros/" + internalPid + "?offerId=" + offerId + "&productSku=" + internalId;
 
-         JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+      Document sellersDoc = acessOffersPage(offersPageUrl);
+
+      if (sellersDoc.select(".src__Background-qslyla-1 .src__Card-qslyla-3 > div").isEmpty()){
          JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid, arrayPosition);
-
          setOffersForMainPageSeller(offers, offersJson, internalId);
-
       } else {
-
-         String offersPageUrl = " https://www.submarino.com.br/parceiros/"+ internalPid +"?productSku=" + internalId;
-
-         Document offersDoc = acessOffersPage(offersPageUrl);
-         Elements offersFromHTML = offersDoc.select(".src__Background-qslyla-1 .src__Card-qslyla-3 > div");
+         Elements offersFromHTML = sellersDoc.select(".src__Background-qslyla-1 .src__Card-qslyla-3 > div");
          setOffersForSellersPage(offers, offersFromHTML);
-
       }
+
       return offers;
    }
 
@@ -141,8 +141,8 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
             if (info.has("sellerName") && !info.isNull("sellerName") && info.has("id") && !info.isNull("id")) {
                String name = info.get("sellerName").toString();
                String internalSellerId = info.get("id").toString();
-               Integer mainPagePosition = i == 0 ? 1 : null;
-               Integer sellersPagePosition = i == 0 ? 1 : null;
+               Integer mainPagePosition = i == 0 ? 1: null;
+               Integer sellersPagePosition = i + 1;
 
                if (i > 0 && name.equalsIgnoreCase("b2w")) {
                   sellersPagePosition = 1;
