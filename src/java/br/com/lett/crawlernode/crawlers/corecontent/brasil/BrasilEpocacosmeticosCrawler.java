@@ -19,7 +19,7 @@ public class BrasilEpocacosmeticosCrawler extends VTEXOldScraper {
 
    public BrasilEpocacosmeticosCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
+      config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
