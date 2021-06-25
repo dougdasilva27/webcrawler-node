@@ -119,7 +119,7 @@ public class B2WCrawler extends Crawler {
          ).build();
 
 
-      Response response = new FetcherDataFetcher().get(session,request);
+      Response response = df.get(session,request);
       String content = response.getBody();
 
       int statusCode = response.getLastStatusCode();
