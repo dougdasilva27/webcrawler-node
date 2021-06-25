@@ -36,8 +36,7 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = doc.selectFirst(".product.type-product").attr("id");
-         internalId = internalId.substring(internalId.indexOf('-'));
+         String internalId = doc.selectFirst(".product.type-product").attr("id").replaceAll("[^0-9]", "");
 
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".sku_wrapper .sku", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
