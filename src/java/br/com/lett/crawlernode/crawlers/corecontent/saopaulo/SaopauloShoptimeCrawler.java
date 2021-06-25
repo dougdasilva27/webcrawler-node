@@ -1,14 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -17,6 +11,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -29,7 +24,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.xml.bind.SchemaOutputResolver;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SaopauloShoptimeCrawler extends B2WCrawler {
 
@@ -78,21 +76,21 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
 
       Offers offers = new Offers();
 
-      String offersPageUrl = "https://www.shoptime.com.br/parceiros/"+ internalPid +"?productSku=" + internalId;
+      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
+
+      //offerId é responsavel por definir qual sellers vai aparecer na primeira posição da pagina de sellers.
+      String offerId = JSONUtils.getValueRecursive(jsonSeller,"entities.offers."+ internalPid+".0.id",String.class);
+      String offersPageUrl = "https://www.shoptime.com.br/parceiros/" + internalPid + "?offerId=" + offerId + "&productSku=" + internalId;
 
       Document offersDoc = acessOffersPage(offersPageUrl);
 
       if(offersDoc.select(".src__Background-rlbmr6-1 .src__Card-rlbmr6-3 > div").isEmpty()){
-
-         JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
          JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid,arrayPosition);
-
          setOffersForMainPageSeller(offers, offersJson, internalId);
+      } else {
+         Elements offersFromHTML = offersDoc.select(".src__Background-rlbmr6-1 .src__Card-rlbmr6-3 > div");
+         setOffersForSellersPage(offers, offersFromHTML);
       }
-
-      Elements offersFromHTML = offersDoc.select(".src__Background-rlbmr6-1 .src__Card-rlbmr6-3 > div");
-      setOffersForSellersPage(offers, offersFromHTML);
-
       return offers;
    }
 
