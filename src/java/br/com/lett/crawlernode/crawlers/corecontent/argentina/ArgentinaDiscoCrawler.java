@@ -15,12 +15,6 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import models.Offer.OfferBuilder;
 import models.Offers;
 import models.pricing.CreditCard.CreditCardBuilder;
@@ -34,6 +28,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+
+import java.util.*;
 
 public class ArgentinaDiscoCrawler extends Crawler {
 
@@ -50,7 +46,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
    @Override
    public void handleCookiesBeforeFetch() {
       Logging.printLogDebug(logger, session, "Adding cookie...");
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Login/PreHome.aspx", Arrays.asList("ASP.NET_SessionId"), "www.disco.com.ar", "/",
+      this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Login/PreHome.aspx", Collections.singletonList("ASP.NET_SessionId"), "www.disco.com.ar", "/",
             cookies, session, new HashMap<>(), dataFetcher);
 
       BasicClientCookie cookie = new BasicClientCookie("noLocalizar", "true");
@@ -269,9 +265,7 @@ public class ArgentinaDiscoCrawler extends Crawler {
     */
    private JSONObject crawlProductOldApi(String url) {
       Map<String, String> headers = new HashMap<>();
-      headers.put("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
       headers.put("Content-Type", "application/json");
-      headers.put("X-Requested-With", "XMLHttpRequest");
 
       // Nome do produto na busca
       String[] tokens = url.split("=");
