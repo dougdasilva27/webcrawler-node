@@ -363,13 +363,13 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               LocalDate date = LocalDate.parse(p.getLrt().split(" ")[0], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+               LocalDate date = LocalDate.parse(p.getLrt().trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
                if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
                   saveProductUrlToQueue(url);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
                } else if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
-                  saveProductUrlToQueue(url);
+                  //saveProductUrlToQueue(url);
                }
 
             }
