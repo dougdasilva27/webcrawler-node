@@ -25,32 +25,15 @@ import java.time.LocalDate
 class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
    init {
-      config.fetcher = FetchMode.FETCHER
+      config.fetcher = FetchMode.APACHE
       cookies.add(BasicClientCookie("stc112189", LocalDate.now().toEpochDay().toString()))
    }
 
    override fun fetch(): Any? {
       val request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.originalURL).build()
-      var doc: Document? = null
 
-      for (i in 1..3) {
-         val response = dataFetcher[session, request]
-         if (checkResponse(response)) {
-            doc = Jsoup.parse(response.body)
-            break
-         }
-      }
-      return doc
-   }
-
-   override fun handleCookiesBeforeFetch() {
-      val request = Request.RequestBuilder.create().setCookies(cookies).setUrl("https://www.panvel.com/panvel/main.do").build()
-      cookies.addAll(dataFetcher[session, request].cookies)
-   }
-
-   private fun checkResponse(response: Response): Boolean {
-      val statusCode = response.lastStatusCode.toString()
-      return statusCode[0] == '2' || statusCode[0] == '3' || statusCode == "404"
+      val response = dataFetcher[session, request]
+      return Jsoup.parse(response.body)
    }
 
    override fun extractInformation(doc: Document): List<Product> {
