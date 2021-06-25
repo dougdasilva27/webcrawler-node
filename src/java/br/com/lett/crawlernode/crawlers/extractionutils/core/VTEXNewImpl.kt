@@ -8,9 +8,17 @@ import org.jsoup.nodes.Document
 
 class VTEXNewImpl(session: Session) : VTEXNewScraper(session) {
 
+
    override fun handleCookiesBeforeFetch() {
       session.options?.optJSONObject("cookies")?.toMap()
-         ?.forEach { (key: String?, value: Any) -> cookies.add(BasicClientCookie(key, value.toString())) }
+         ?.forEach { (key: String?, value: Any) ->
+            val cookie = BasicClientCookie(key, value.toString())
+
+            if(key == "vtex_segment")
+               cookie.domain = if(getHomePage().endsWith("/")) getHomePage().substringAfter("https://").replace("/", "") else getHomePage().substringAfter("https://")
+
+            cookies.add(cookie)
+         }
    }
 
    override fun getHomePage(): String {

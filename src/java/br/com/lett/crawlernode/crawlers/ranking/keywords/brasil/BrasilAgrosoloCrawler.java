@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -12,6 +13,7 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
 
   public BrasilAgrosoloCrawler(Session session) {
     super(session);
+    dataFetcher = new JsoupDataFetcher();
   }
 
   @Override
@@ -19,11 +21,11 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
     this.pageSize = 24;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.agrosolo.com.br/produtos?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage;
+    String url = "https://www.agrosolo.com.br/busca?busca=" + this.keywordEncoded + "&pagina=" + this.currentPage;
     
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".products-list > .product");
+    Elements products = this.currentDoc.select("div.produtos div.fbits-item-lista-spot ");
 
     if (!products.isEmpty()) {
       if(this.totalProducts == 0) {
@@ -31,8 +33,8 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
       }
       
       for (Element e : products) {
-        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[idgrade]", "idgrade");
-        String productUrl = CrawlerUtils.scrapUrl(e, ".product-inner > .img-container", "href", "https", HOME_PAGE);
+        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id").replace("produto-spot-item-", "");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".spot div.spotContent > a", "href", "https", HOME_PAGE);
 
         saveDataProduct(null, internalPid, productUrl);
 
