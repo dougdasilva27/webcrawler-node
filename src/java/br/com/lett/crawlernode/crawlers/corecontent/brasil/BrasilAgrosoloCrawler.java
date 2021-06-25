@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -27,6 +28,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
    public BrasilAgrosoloCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
