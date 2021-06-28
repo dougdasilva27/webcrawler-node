@@ -47,8 +47,6 @@ import org.slf4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
@@ -363,15 +361,11 @@ public abstract class CrawlerRanking extends Task {
          if (!processeds.isEmpty()) {
             for (Processed p : processeds) {
                processedIds.add(p.getId());
-               LocalDate date = LocalDate.parse(p.getLrt().trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
                if (p.isVoid() && url != null && !p.getUrl().equals(url)) {
                   saveProductUrlToQueue(url);
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
-               } else if (date.isBefore(LocalDate.now().minusMonths(1)) && specificSuppliers.contains(session.getSupplierId())) {
-                  //saveProductUrlToQueue(url);
                }
-
             }
 
          } else if (url != null) {
