@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
@@ -59,6 +60,7 @@ public class DynamicDataFetcher {
          ChromeOptions chromeOptions = new ChromeOptions();
          chromeOptions.setProxy(proxySel);
          chromeOptions.setHeadless(true);
+         chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
 
          chromeOptions.setCapability("browserName", "chrome");
          chromeOptions.addArguments("--user-agent=" + userAgent);
