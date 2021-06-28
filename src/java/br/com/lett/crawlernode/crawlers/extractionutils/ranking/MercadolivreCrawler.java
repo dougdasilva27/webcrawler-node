@@ -90,14 +90,11 @@ public class MercadolivreCrawler extends CrawlerRankingKeywords {
 
    private Document fetch(String url) {
       // This user agent is used because some of ours user agents doesn't work on this market
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
 
       Request request = RequestBuilder.create()
             .setCookies(cookies)
             .setUrl(url)
-            .setHeaders(headers)
-            .setFollowRedirects(false)
+            .setFollowRedirects(true)
             .build();
 
       Response response = dataFetcher.get(session, request);
