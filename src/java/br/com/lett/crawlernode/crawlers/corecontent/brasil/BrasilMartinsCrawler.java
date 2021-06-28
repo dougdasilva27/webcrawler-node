@@ -66,11 +66,11 @@ public class BrasilMartinsCrawler extends Crawler {
          return super.fetch();
       }
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
          Logging.printLogDebug(logger, session, "awaiting product page without login");
 
-         webdriver.waitLoad(25000);
+         webdriver.waitLoad(20000);
          webdriver.executeJavascript("$('#go-login').mouseover()");
 
          webdriver.waitLoad(2000);
