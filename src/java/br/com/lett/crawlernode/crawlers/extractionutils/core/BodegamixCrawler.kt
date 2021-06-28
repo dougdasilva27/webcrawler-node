@@ -1,19 +1,20 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.eachText
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
-import br.com.lett.crawlernode.util.toDoubleComma
+import br.com.lett.crawlernode.util.*
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
+import org.apache.http.cookie.Cookie
 import org.jsoup.nodes.Document
 
 class BodegamixCrawler(session: Session) : Crawler(session) {
@@ -33,17 +34,22 @@ class BodegamixCrawler(session: Session) : Crawler(session) {
    override fun handleCookiesBeforeFetch() {
       if (getUser() != null && getPass() != null) {
 
-         val headers = mapOf("Content-Type" to "application/x-www-form-urlencoded")
+         val headers = mutableMapOf("Content-Type" to "application/x-www-form-urlencoded")
          val request = RequestBuilder.create().setUrl("https://bodegamix.com.br/login")
-            .setPayload("Username=${getUser()}&Password=${getPass()}&RememberMe=true&RememberMe=false")
+            .setPayload("Username=${getUser()}&Password=${getPass()}")
             .setHeaders(headers)
             .setIgnoreStatusCode(true)
             .setFollowRedirects(false)
-            .setBodyIsRequired(false)
             .build()
 
-         val cookie = dataFetcher.post(session, request).cookies.firstOrNull { it.name == "NOPCOMMERCE.AUTH" }
-         this.cookies.add(cookie)
+
+         val func: (Cookie) -> Boolean = { it.name == "NOPCOMMERCE.AUTH" }
+
+         var cookie = dataFetcher.post(session, request).cookies.firstOrNull(func)
+         if (cookie == null) {
+            cookie = JsoupDataFetcher().post(session, request).cookies.firstOrNull(func)
+         }
+         this.cookies addNonNull cookie
       }
    }
 
@@ -85,7 +91,7 @@ class BodegamixCrawler(session: Session) : Crawler(session) {
 
       val offers = Offers()
 
-      if (doc.selectFirst(".stock span[class=value]")?.text() != "Em estoque") {
+      if (doc.selectFirst("span[itemprop=price]")?.text().isNullOrEmpty()) {
          return offers
       }
 
