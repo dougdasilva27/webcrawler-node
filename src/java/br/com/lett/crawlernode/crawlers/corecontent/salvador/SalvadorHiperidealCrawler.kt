@@ -15,7 +15,7 @@ class SalvadorHiperidealCrawler(session: Session) : VTEXOldScraper(session) {
   }
 
   override fun getMainSellersNames(): MutableList<String> {
-    return mutableListOf("Hiper Ideal")
+    return mutableListOf("HiperIdeal")
   }
 
   override fun scrapRating(internalId: String?, internalPid: String?, doc: Document?, jsonSku: JSONObject?): RatingsReviews {
