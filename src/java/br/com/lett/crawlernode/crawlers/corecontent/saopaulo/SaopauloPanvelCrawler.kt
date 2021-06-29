@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
+import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.round
@@ -27,6 +28,8 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
    init {
       config.fetcher = FetchMode.FETCHER
       cookies.add(BasicClientCookie("stc112189", LocalDate.now().toEpochDay().toString()))
+      cacheConfig.request = Request.RequestBuilder.create().setCookies(cookies).setUrl("https://www.panvel.com/panvel/main.do").build()
+      cacheConfig.requestMethod = RequestMethod.GET
    }
 
    override fun fetch(): Any? {
@@ -41,11 +44,6 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          }
       }
       return doc
-   }
-
-   override fun handleCookiesBeforeFetch() {
-      val request = Request.RequestBuilder.create().setCookies(cookies).setUrl("https://www.panvel.com/panvel/main.do").build()
-      cookies.addAll(dataFetcher[session, request].cookies)
    }
 
    private fun checkResponse(response: Response): Boolean {
