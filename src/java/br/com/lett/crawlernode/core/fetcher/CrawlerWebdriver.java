@@ -9,6 +9,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
@@ -88,6 +89,12 @@ public class CrawlerWebdriver {
    public WebElement executeJavascript(String javascript) {
       JavascriptExecutor jse = (JavascriptExecutor) driver;
       return (WebElement) jse.executeScript(javascript);
+   }
+
+   public void mouseOver(String cssSelector) {
+      Actions action = new Actions(driver);
+      WebElement we = driver.findElement(By.cssSelector(cssSelector));
+      action.moveToElement(we).build().perform();
    }
 
    public void clickOnElementViaJavascript(WebElement element) {

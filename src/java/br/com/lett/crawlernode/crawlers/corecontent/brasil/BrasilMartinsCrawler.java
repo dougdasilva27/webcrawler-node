@@ -70,8 +70,8 @@ public class BrasilMartinsCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "awaiting product page without login");
 
-         webdriver.waitLoad(20000);
-         webdriver.executeJavascript("$('#go-login').mouseover()");
+         webdriver.waitLoad(25000);
+         webdriver.mouseOver("#go-login");
 
          webdriver.waitLoad(2000);
          waitForElement(webdriver.driver, "#j_username");
@@ -89,14 +89,14 @@ public class BrasilMartinsCrawler extends Crawler {
          pass.sendKeys(password);
 
          Logging.printLogDebug(logger, session, "awaiting login button");
-         webdriver.waitLoad(10000);
+         webdriver.waitLoad(20000);
 
          waitForElement(webdriver.driver, ".pt-btn-login");
          WebElement login = webdriver.driver.findElement(By.cssSelector(".pt-btn-login"));
          webdriver.clickOnElementViaJavascript(login);
 
          Logging.printLogDebug(logger, session, "awaiting product page");
-         webdriver.waitLoad(6000);
+         webdriver.waitLoad(10000);
 
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
