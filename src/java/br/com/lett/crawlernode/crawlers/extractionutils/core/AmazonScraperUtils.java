@@ -28,8 +28,8 @@ import br.com.lett.crawlernode.util.Logging;
 
 public class AmazonScraperUtils {
 
-   private Logger logger;
-   private Session session;
+   private final Logger logger;
+   private final Session session;
 
    public AmazonScraperUtils(Logger logger, Session session) {
       this.logger = logger;
@@ -70,10 +70,6 @@ public class AmazonScraperUtils {
       return request.build();
    }
 
-   public Document fetchProductPage(List<Cookie> cookies, DataFetcher dataFetcher) {
-      return Jsoup.parse(fetchPage(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher));
-   }
-
    public Response fetchProductPageResponse(List<Cookie> cookies, DataFetcher dataFetcher) {
       return fetchResponse(session.getOriginalURL(), new HashMap<>(), cookies, dataFetcher);
    }
@@ -81,12 +77,6 @@ public class AmazonScraperUtils {
    /**
     * Fetch html from amazon
     *
-    * @param url
-    * @param headers
-    * @param cookies
-    * @param session
-    * @param dataFetcher
-    * @return
     */
    public String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
       return fetchResponse(url, headers, cookies, dataFetcher).getBody();

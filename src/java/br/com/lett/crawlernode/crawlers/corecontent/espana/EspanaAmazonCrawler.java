@@ -1,11 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.espana;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
@@ -67,10 +64,13 @@ public class EspanaAmazonCrawler extends Crawler {
 
    protected Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
          Card.MASTERCARD.toString(), Card.ELO.toString());
+   private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    public EspanaAmazonCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
+      cacheConfig.setRequest(this.amazonScraperUtils.getRequestCookies(HOME_PAGE, cookies, dataFetcher));
+      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override
@@ -79,16 +79,9 @@ public class EspanaAmazonCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
-
    @Override
-   public void handleCookiesBeforeFetch() {
-      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
-   }
-
-   @Override
-   protected Document fetch() {
-      return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
+   protected Response fetchResponse() {
+      return amazonScraperUtils.fetchProductPageResponse(cookies, dataFetcher);
    }
 
    @Override
