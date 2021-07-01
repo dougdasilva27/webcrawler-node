@@ -12,6 +12,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
+import br.com.lett.crawlernode.core.models.Parser;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
@@ -401,7 +402,8 @@ public abstract class Crawler extends Task {
          handleCacheableCookiesBeforeFetch(true);
          response = fetchResponse();
       }
-      return Jsoup.parse(response.getBody());
+      Parser parser = cacheConfig.getParser();
+      return parser.parse(response.getBody());
    }
 
    /**
