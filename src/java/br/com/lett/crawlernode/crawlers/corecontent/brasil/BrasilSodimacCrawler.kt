@@ -51,7 +51,7 @@ class BrasilSodimacCrawler(session: Session?) : Crawler(session) {
             variant as JSONObject
             val internalId = variant.optString("id")
 
-            val isAvailable = doc.selectFirst("div.out-of-stock-text") == null
+            val isAvailable = doc.selectFirst(".out-of-stock-text") == null
             val offers = if (isAvailable) scrapOffers(doc, variant) else Offers()
             val ratings = crawlRatingReviews(internalPid)
 

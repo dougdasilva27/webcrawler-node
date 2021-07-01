@@ -13,7 +13,7 @@ public class AmericanaSitemercadosaovicenteavcilloCrawler extends BrasilSitemerc
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadossaovicente/americana-loja-sao-vicente-av-cillos-jardim-sao-jose-av-de-cillo";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadossaovicente/americana-loja-sao-vicente-av-cillos-bosque-dos-ipes-avenida-de-cillo";
 
    public static final int IDLOJA = 5818;
    public static final int IDREDE = 2663;

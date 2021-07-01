@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import com.google.common.collect.Sets;
-import com.google.common.net.HttpHeaders;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
@@ -25,27 +14,23 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import com.google.common.net.HttpHeaders;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
+import org.json.JSONObject;
 
-public abstract class BrasilIfood extends Crawler {
+import java.util.*;
 
-   protected String region = getRegion();
-   protected String store_name = getStore_name();
-   protected String seller_full_name = getSellerFullName();
+public class BrasilIfood extends Crawler {
 
-   protected abstract String getRegion();
 
-   protected abstract String getStore_name();
-
-   protected abstract String getSellerFullName();
+   protected String region = session.getOptions().getString("region");
+   protected String store_name = session.getOptions().getString("store_name");
+   protected String seller_full_name = session.getOptions().getString("seller");
 
    public BrasilIfood(Session session) {
       super(session);
@@ -59,7 +44,7 @@ public abstract class BrasilIfood extends Crawler {
    @Override
    protected JSONObject fetch() {
       String storeCode = CommonMethods.getLast(session.getOriginalURL().split("/")).split("\\?")[0];
-      String prato = CommonMethods.getLast(session.getOriginalURL().split("prato="));
+      String prato = CommonMethods.getLast(session.getOriginalURL().split("item="));
 
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.ACCEPT, "application/json, text/plain, */*");
@@ -108,8 +93,8 @@ public abstract class BrasilIfood extends Crawler {
 
          JSONObject item = JSONUtils.getValueRecursive(apiJson, "data.menu.0.itens.0", JSONObject.class);
 
-         if (item != null && !item.isEmpty() && session.getOriginalURL().contains("prato=")) {
-            String productId = CommonMethods.getLast(session.getOriginalURL().split("prato="));
+         if (item != null && !item.isEmpty() && session.getOriginalURL().contains("item")) {
+            String productId = CommonMethods.getLast(session.getOriginalURL().split("item="));
             String internalId = item.optString("code");
 
             if (internalId.equals(productId)) {

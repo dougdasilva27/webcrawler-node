@@ -48,7 +48,7 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
 
    @Override
    public void extractProductsFromCurrentPage() {
-      this.pageSize = 0;
+      this.pageSize = 50;
 
       this.log("Página " + this.currentPage);
       JSONObject search = crawlSearchApi();
@@ -75,7 +75,9 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
                break;
             }
          }
-      } else {
+      } else if(currentPage!=1){
+         this.result = false;
+      }else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
@@ -126,18 +128,15 @@ public class SupermercadonowCrawlerRanking extends CrawlerRankingKeywords {
    }
 
    private JSONObject crawlSearchApi() {
-      JSONObject searchApi = new JSONObject();
-
-      String url = "https://supermercadonow.com/api/v2/stores/" + loadUrl + "/search/" + this.keywordWithoutAccents.replace(" ", "%20");
+      String url = "https://api.supermercadonow.com/search/v1/bulksearch?query=" + this.keywordWithoutAccents.replace(" ", "%20")+"&stores="+loadUrl+"&size="+this.pageSize+"&page="+this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
       Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).setHeaders(headers).build();
 
-      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
+      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+   }
 
-      if (array.length() > 0) {
-         searchApi = array.getJSONObject(0);
-      }
-
-      return searchApi;
+   @Override
+   protected boolean hasNextPage() {
+      return true;
    }
 }

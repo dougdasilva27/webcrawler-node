@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
-import java.util.*;
-
-import br.com.lett.crawlernode.util.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -15,16 +9,37 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import models.Marketplace;
-import models.prices.Prices;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 
-import javax.swing.plaf.synth.SynthOptionPaneUI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class ColombiaMerqueoCrawler extends Crawler {
 
    public ColombiaMerqueoCrawler(Session session) {
       super(session);
    }
+
+   private final String zoneId = session.getOptions().optString("zoneId");
+
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AMEX.toString());
+   private static final String SELLER_FULL_NAME = "Merqueo Colombia";
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -40,16 +55,17 @@ public class ColombiaMerqueoCrawler extends Crawler {
       if (isProductPage(data)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = crawlInternalId(data);
+         String internalId = String.valueOf(data.optInt("id"));
          String name = crawlName(data);
-         Float price = crawlPrice(data);
-         boolean available = crawlAvailable(data);
+         boolean available = data.optBoolean("availability");
 
          CategoryCollection categories = crawlCategories(data);
-         Prices prices = crawlPrices(price);
+
+         Offers offers = available ? crawlOffers(data) : new Offers();
+
          String primaryImage = crawlPrimaryImage(data);
-         String secondaryImages = crawlSecondaryImage(data);
-         String description = crawlDescription(data);
+         List<String> secondaryImages = crawlSecondaryImage(data);
+         String description = data.optString("description");
          Integer stock = crawlStock(data);
 
          // Creating the product
@@ -57,16 +73,13 @@ public class ColombiaMerqueoCrawler extends Crawler {
             .setUrl(session.getOriginalURL())
             .setInternalId(internalId)
             .setName(name)
-            .setPrice(price)
-            .setPrices(prices)
-            .setAvailable(available)
+            .setOffers(offers)
             .setCategory1(categories.getCategory(0))
             .setCategory2(categories.getCategory(1))
             .setCategory3(categories.getCategory(2))
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            .setMarketplace(new Marketplace())
             .setStock(stock)
             .build();
 
@@ -80,49 +93,48 @@ public class ColombiaMerqueoCrawler extends Crawler {
 
    }
 
+   private Offers crawlOffers(JSONObject data) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+
+      Pricing pricing = crawlpricing(data);
+
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(!data.optBoolean("isMarketplace", true))
+         .setPricing(pricing)
+         .build());
+
+
+      return offers;
+   }
+
    private Integer crawlStock(JSONObject data) {
-      Integer stock = null;
-
-      if (data.has("quantity")) {
-         stock = MathUtils.parseInt(data.get("quantity").toString());
-      }
-
-      return stock;
+      return data.optInt("quantity", 0);
    }
 
    private CategoryCollection crawlCategories(JSONObject data) {
       CategoryCollection categories = new CategoryCollection();
-      JSONObject shelf = new JSONObject();
+      JSONObject shelf = data.getJSONObject("shelf");
 
-      if (data.has("shelf") && !data.isNull("shelf")) {
-         shelf = data.getJSONObject("shelf");
-         if (shelf.has("name") && !shelf.isNull("name")) {
-            categories.add(shelf.getString("name"));
-         }
+      if (shelf != null && shelf.has("name")) {
+         categories.add(shelf.optString("name"));
       }
+      shelf = data.getJSONObject("department");
 
-      if (data.has("department") && !data.isNull("department")) {
-         shelf = data.getJSONObject("department");
-         if (shelf.has("name") && !shelf.isNull("name")) {
-            categories.add(shelf.getString("name"));
-         }
+      if (shelf != null && shelf.has("name")) {
+         categories.add(shelf.optString("name"));
       }
 
       return categories;
    }
 
-   private String crawlDescription(JSONObject data) {
-      String description = null;
-
-      if (data.has("description") && !data.isNull("description")) {
-         description = data.getString("description");
-      }
-
-      return description;
-   }
 
    private String crawlPrimaryImage(JSONObject data) {
-      String primaryImage = null;
+      String primaryImage;
 
       JSONArray jsonArrImg = JSONUtils.getJSONArrayValue(data, "images");
       if (jsonArrImg.length() > 0) {
@@ -134,22 +146,18 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return primaryImage;
    }
 
-   private String crawlSecondaryImage(JSONObject data) {
-      String secondaryImagesString = null;
+   private List<String> crawlSecondaryImage(JSONObject data) {
       JSONArray jsonArrImg = JSONUtils.getJSONArrayValue(data, "images");
 
-      JSONArray secondaryImages = new JSONArray();
+      List<String> secondaryImages = new ArrayList<>();
 
       for (int i = 1; i < jsonArrImg.length(); i++) {
          JSONObject jsonObjImg = jsonArrImg.get(i) instanceof JSONObject ? jsonArrImg.getJSONObject(i) : new JSONObject();
-         secondaryImages.put(getLargestImage(jsonObjImg));
+         secondaryImages.add(getLargestImage(jsonObjImg));
       }
 
-      if (secondaryImages.length() > 0) {
-         secondaryImagesString = secondaryImages.toString();
-      }
 
-      return secondaryImagesString;
+      return secondaryImages;
    }
 
    private String getLargestImage(JSONObject jsonObjImg) {
@@ -167,39 +175,12 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return image;
    }
 
-   private boolean crawlAvailable(JSONObject data) {
-      boolean availability = false;
-
-      if (data.has("availability") && !data.isNull("availability")) {
-         availability = data.getBoolean("availability");
-      }
-
-      return availability;
-   }
-
-   private Float crawlPrice(JSONObject data) {
-      Float price = null;
-      if (data.has("specialPrice") && !data.isNull("specialPrice")) {
-         price = CrawlerUtils.getFloatValueFromJSON(data, "specialPrice");
-      } else if (data.has("price") && !data.isNull("price")) {
-         price = CrawlerUtils.getFloatValueFromJSON(data, "price");
-      }
-
-      return price;
-   }
 
    private String crawlName(JSONObject data) {
       StringBuilder name = new StringBuilder();
-
-      if (data.has("name") && !data.isNull("name")) {
-         name.append(data.getString("name") + " ");
-      }
-      if (data.has("quantity") && !data.isNull("quantity")) {
-         name.append(data.getString("quantity") + " ");
-      }
-      if (data.has("unit") && !data.isNull("unit")) {
-         name.append(data.getString("unit"));
-      }
+      name.append(data.optString("name")).append(" ");
+      name.append(data.optString("quantity")).append(" ");
+      name.append(data.optString("unit"));
 
       return name.toString();
    }
@@ -210,7 +191,7 @@ public class ColombiaMerqueoCrawler extends Crawler {
       StringBuilder apiUrl = new StringBuilder();
       apiUrl.append("https://merqueo.com/api/2.0/stores/63/find?");
 
-      if(slugs.size() == 3) {
+      if (slugs.size() == 3) {
          apiUrl.append("department_slug=").append(slugs.get(0));
          apiUrl.append("&shelf_slug=").append(slugs.get(1));
          apiUrl.append("&product_slug=").append(slugs.get(2));
@@ -220,13 +201,16 @@ public class ColombiaMerqueoCrawler extends Crawler {
          apiUrl.append("&product_slug=").append(slugs.get(3));
       }
 
-      apiUrl.append("&limit=7&zoneId=32&adq=1");
+      apiUrl.append("&limit=7&zoneId=");
+      apiUrl.append(zoneId);
+      apiUrl.append("&adq=1");
 
       Request request = RequestBuilder
          .create()
          .setUrl(apiUrl.toString())
          .mustSendContentEncoding(false)
          .build();
+
 
       return CrawlerUtils.stringToJson(new FetcherDataFetcher().get(session, request).getBody());
    }
@@ -239,9 +223,9 @@ public class ColombiaMerqueoCrawler extends Crawler {
    private List<String> scrapSlugs(String originalURL) {
       List<String> slugs = new ArrayList<>();
       String slugString = CommonMethods.getLast(originalURL.split("bogota/"));
-      String[] slug = slugString.contains("/")?slugString.split("/"):null;
+      String[] slug = slugString.contains("/") ? slugString.split("/") : null;
 
-      if(slug != null) {
+      if (slug != null) {
          Collections.addAll(slugs, slug);
       }
       return slugs;
@@ -251,31 +235,46 @@ public class ColombiaMerqueoCrawler extends Crawler {
       return data.has("id");
    }
 
-   private String crawlInternalId(JSONObject data) {
-      String internalId = null;
 
-      if (data.has("id") && !data.isNull("id")) {
-         internalId = data.get("id").toString();
+   private Pricing crawlpricing(JSONObject data) throws MalformedPricingException {
+
+      Double spotLightprice = (double) data.optInt("specialPrice", 0);
+      spotLightprice = spotLightprice == 0d ? null : spotLightprice;
+      Double priceFrom = (double) data.optInt("price", 0);
+      priceFrom = priceFrom == 0d ? null : priceFrom;
+
+      if (spotLightprice == null && priceFrom != null) {
+         spotLightprice = priceFrom;
+         priceFrom = null;
       }
 
-      return internalId;
-   }
 
-   /**
-    * In the time when this crawler was made, this market hasn't installments informations
-    *
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price) {
-      Prices prices = new Prices();
+      Installments installments = new Installments();
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
-         installmentPriceMapShop.put(1, price);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMapShop);
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotLightprice)
+         .build());
+
+
+      CreditCards creditCards = new CreditCards();
+      for (String s : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setInstallments(installments)
+            .setBrand(s)
+            .setIsShopCard(false)
+            .build());
       }
 
-      return prices;
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotLightprice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlip.BankSlipBuilder.create()
+            .setFinalPrice(spotLightprice)
+            .build())
+         .build();
+
    }
 }

@@ -8,18 +8,14 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.Logging
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
+import br.com.lett.crawlernode.util.*
 import models.Offer
 import models.Offers
 import models.pricing.Pricing
 import okhttp3.HttpUrl
 import org.apache.http.impl.cookie.BasicClientCookie
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import org.json.JSONObject
 
 /**
  * Date: 28/09/20
@@ -31,102 +27,95 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
    companion object {
       const val SELLER_NAME: String = "Shopper"
+      var token: String = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjdXN0b21lcklkIjoyOTIyNjAsImRldmljZVVVSUQiOiIzYTc1YjdkNy1mMDhmLTQ4ZmEtOGM5Mi04OTliZjNkZmE1Y2IiLCJpYXQiOjE2MjQ2MjMzODl9.KXv2rXCKSkwERiGywoP6sI5HB_mSgp_sdsjN79qq338";
    }
 
    private val login: String = "kennedybarcelos@lett.digital"
    private val password: String = "K99168938690"
 
-   override fun fetch(): Document {
-      val name = productNameByURL().toLowerCase()
+   override fun fetch(): JSONObject? {
+      val name = productIdByURL().toLowerCase()
 
-      if (name.isEmpty()) {
-         return Document(session.originalURL)
-      }
-
-      webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
-
-      log("waiting home page")
-
-      webdriver.waitForElement("button.login", 40)
-
-      webdriver.clickOnElementViaJavascript("button.login", 2000)
-
-      webdriver.waitForElement(".access-login input[name=email]", 40)
-
-      webdriver.sendToInput(".access-login input[name=email]", login, 100)
-
-      webdriver.sendToInput(".access-login input[name=senha]", password, 100)
-
-      log("submit login")
-      webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 2000)
-
-      cookies = webdriver.driver.manage().cookies.map {
-         BasicClientCookie(it.name, it.value)
-      }
+      uptadeToken();
 
       return requestProduct()
    }
 
-   private fun requestProduct(): Document {
+   private fun uptadeToken() {
+      try {
 
-      val url = session.originalURL
+         webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
+
+
+         log("waiting home page")
+
+         webdriver.waitForElement("button.login", 30)
+
+         webdriver.clickOnElementViaJavascript("button.login", 5000)
+
+         webdriver.waitForElement(".access-login input[name=email]", 30)
+
+         webdriver.sendToInput(".access-login input[name=email]", login, 2000)
+
+         webdriver.sendToInput(".access-login input[name=senha]", password, 2000)
+
+         log("submit login")
+         webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
+
+
+         webdriver.waitForElement("#home", 240)
+
+         cookies = webdriver.driver.manage().cookies.map {
+            BasicClientCookie(it.name, it.value)
+         }
+
+         var tokenShopper = this.cookies.first { it.name == "shopper_token" }.value
+
+         if (tokenShopper.isEmpty()) {
+            token = tokenShopper
+         }
+      } catch (e: Exception) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e))
+         Logging.printLogWarn(logger, "login não realizado")
+      }
+   }
+
+   private fun requestProduct(): JSONObject? {
+
+      val url = "https://siteapi.shopper.com.br/catalog/products/${productIdByURL()}"
 
       val headers: MutableMap<String, String> = HashMap()
 
-      headers["authority"] = "shopper.com.br"
-      headers["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
-      headers["sec-fetch-dest"] = "document"
-      headers["referer"] = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
-//      headers["cookie"] = "sessionid=okawtmk320xtcg6w3f879pnl3oaueclw;"
-      headers["cookie"] = cookies.filter {
-         it.name == "sessionid" || it.name == "csrftoken"
-      }.joinToString(";") {
-         "${it.name}=${it.value}"
-      }
+      headers["authorization"] = "Bearer $token"
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
-      return Jsoup.parse(dataFetcher[session, request].body)
+
+
+      return CrawlerUtils.stringToJSONObject(dataFetcher[session, request].body)
    }
 
    //pattern: https://shopper.com.br/shop/busca?q=ENCODED%20NAME
-   private fun productNameByURL(): String {
-      return HttpUrl.parse(session.originalURL)?.queryParameter("q") ?: ""
+   private fun productIdByURL(): String {
+      return HttpUrl.parse(session.originalURL)?.queryParameter("id") ?: ""
    }
 
-   private fun scrapProductDiv(doc: Document): Element? {
-      val products = doc.select(".prod-item")
 
-      for (productDiv in products) {
-         val name = productDiv?.selectFirst(".prod-name")?.text() ?: ""
+   override fun extractInformation(json: JSONObject?): MutableList<Product> {
 
-         if (isProductPage(name)) {
-            return productDiv
-         }
-      }
-      return null
-   }
 
-   override fun extractInformation(doc: Document): MutableList<Product> {
-
-      log("scrap product")
-
-      val productDetails = scrapProductDiv(doc)
-
-      if (productDetails == null) {
+      if (json == null) {
          log("Not a product page " + session.originalURL)
          return mutableListOf()
       }
 
-      val name = productDetails.selectFirst(".prod-name")?.text() ?: ""
+      val name = json.optString("name")
 
-      val internalId = productDetails.selectFirst(".prod-item[data-produto]")?.attr("data-produto")
+      val internalId = json.getInt("id").toString()
 
-      val primaryImage = productDetails.selectFirst(".prod-photo img")?.attr("data-src")
+      val primaryImage = json.optString("image")
 
-      val available = productDetails.selectFirst(".prod-buttons .add-text") != null
-
-      val offers = if (available) scrapOffers(doc) else Offers()
+      val offers = scrapOffers(json)
 
       val product = ProductBuilder()
          .setUrl(session.originalURL)
@@ -140,10 +129,10 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       return mutableListOf(product)
    }
 
-   private fun scrapOffers(doc: Document): Offers {
+   private fun scrapOffers(json: JSONObject): Offers {
       val offers = Offers()
 
-      val price = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".prod-prices p", null, false, ',', session)
+      val price: Double = CrawlerUtils.getDoubleValueFromJSON(json, "price", true, true)
 
       val bankSlip = price.toBankSlip()
 
@@ -183,10 +172,4 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       Logging.printLogDebug(logger, session, message)
    }
 
-   private fun isProductPage(nameFromHtml: String): Boolean {
-
-      val nameFromURL = productNameByURL()
-
-      return nameFromHtml.toLowerCase() == nameFromURL.toLowerCase()
-   }
 }

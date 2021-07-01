@@ -6,8 +6,12 @@ import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.CommonMethods
+import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.Logging
+import com.google.gson.JsonObject
 import org.apache.http.impl.cookie.BasicClientCookie
+import org.eclipse.jetty.util.ajax.JSON
+import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.net.URLEncoder
@@ -22,74 +26,76 @@ class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
    private val login: String = "kennedybarcelos@lett.digital"
    private val password: String = "K99168938690"
+   private var token: String = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjdXN0b21lcklkIjoyOTIyNjAsImRldmljZVVVSUQiOiIzYTc1YjdkNy1mMDhmLTQ4ZmEtOGM5Mi04OTliZjNkZmE1Y2IiLCJpYXQiOjE2MjQ2MjMzODl9.KXv2rXCKSkwERiGywoP6sI5HB_mSgp_sdsjN79qq338";
 
    override fun processBeforeFetch() {
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
 
+
          log("waiting home page")
 
-         webdriver.waitForElement("button.login", 40)
+         webdriver.waitForElement("button.login", 30)
 
-         webdriver.clickOnElementViaJavascript("button.login", 2000)
+         webdriver.clickOnElementViaJavascript("button.login", 5000)
 
-         webdriver.waitForElement(".access-login input[name=email]", 40)
+         webdriver.waitForElement(".access-login input[name=email]", 30)
 
-         webdriver.sendToInput(".access-login input[name=email]", login, 100)
+         webdriver.sendToInput(".access-login input[name=email]", login, 2000)
 
-         webdriver.sendToInput(".access-login input[name=senha]", password, 100)
+         webdriver.sendToInput(".access-login input[name=senha]", password, 2000)
 
          log("submit login")
-         webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 2000)
+         webdriver.clickOnElementViaJavascript(".access-login button[type=submit]", 20000)
+
+
+         webdriver.waitForElement("#home", 240)
 
          cookies = webdriver.driver.manage().cookies.map {
             BasicClientCookie(it.name, it.value)
          }
 
+
+         var tokenShopper = this.cookies.first { it.name == "shopper_token" }.value
+
+         if (!tokenShopper.isEmpty()) {
+            token = tokenShopper
+         }
+
       } catch (e: Exception) {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e))
+         Logging.printLogWarn(logger,"login não realizado")
       }
    }
 
-   private fun requestProducts(): Document {
+   private fun requestProducts(): JSONObject {
 
-      val url = "https://shopper.com.br/shop/busca?q=${keywordEncoded}"
+      val url = "https://siteapi.shopper.com.br/catalog/search?query=${keywordEncoded}"
 
       val headers: MutableMap<String, String> = HashMap()
 
-      headers["authority"] = "shopper.com.br"
-      headers["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
-      headers["sec-fetch-dest"] = "document"
-      headers["referer"] = "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
-//      headers["cookie"] = "sessionid=okawtmk320xtcg6w3f879pnl3oaueclw;"
-      headers["cookie"] = cookies.filter {
-         it.name == "sessionid" || it.name == "csrftoken"
-      }.joinToString(";") {
-         "${it.name}=${it.value}"
-      }
+      headers["authorization"] = "Bearer $token"
+      headers["accept"] = "application/json, text/plain, */*"
 
       val request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build()
 
-      return Jsoup.parse(dataFetcher[session, request].body)
+      return  CrawlerUtils.stringToJSONObject(dataFetcher[session, request].body)
    }
 
    override fun extractProductsFromCurrentPage() {
 
-      currentDoc = requestProducts()
+      val productsApi = requestProducts()
 
-      val products = currentDoc.select(".prod-item[data-produto]")
+      val products = productsApi.optJSONArray("products")
 
-      for (product in products) {
+      for (p in products) {
+         val product = p as JSONObject
+         val internalId = product.optInt("id").toString()
 
-         val internalId = product.attr("data-produto")
+         val productUrl = "https://shopper.com.br/?id="+internalId
 
-         val name = product.selectFirst(".prod-name")?.text() ?: ""
-
-         if (internalId.isNotEmpty()) {
-            val productUrl = "https://shopper.com.br/shop/busca?q=${URLEncoder.encode(name, "UTF-8")}"
             saveDataProduct(internalId, internalId, productUrl)
-            log(">>> productId: $internalId - url: $productUrl - name: $name")
-         }
+         this.log("internalId: $internalId - internalPid: $internalId - url: $productUrl")
       }
    }
 

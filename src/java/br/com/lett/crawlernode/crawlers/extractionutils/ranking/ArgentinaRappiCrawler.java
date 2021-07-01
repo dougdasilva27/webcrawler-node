@@ -8,7 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
  * @author Fellype Layunne
  *
  */
-public abstract class ArgentinaRappiCrawler extends RappiCrawlerRanking {
+public class ArgentinaRappiCrawler extends RappiCrawlerRanking {
 
    public ArgentinaRappiCrawler(Session session) {
       super(session);

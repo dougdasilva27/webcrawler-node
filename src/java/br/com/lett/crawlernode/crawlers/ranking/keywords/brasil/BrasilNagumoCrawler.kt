@@ -40,14 +40,14 @@ class BrasilNagumoCrawler(session: Session) : BrasilSitemercadoCrawler(session) 
          lojaId = Integer.toString(JSONUtils.getIntegerValueFromJSON(token, "IdLoja", 0))
          if (lojaId == "0") {
             val body = JSONObject(response.body)
-            lojaId = Integer.toString(JSONUtils.getValueRecursive(body, "sale.id", Int::class.java))
-            lojaRede = Integer.toString(JSONUtils.getValueRecursive(body, "sale.idRede", Int::class.java))
+            lojaId = (body.optQuery("/sale/id") as Int).toString()
+            lojaRede =(body.optQuery("/sale/idRede") as Int).toString()
             token.put("IdLoja", lojaId)
             token.put("IdRede", lojaRede)
          }
          headers["sm-token"] = token.toString()
       }
-      val apiUrl = super.apiSearchUrl(lojaId) + keywordEncoded
+      val apiUrl = "${apiSearchUrl(lojaId)}?phrase=$keywordEncoded"
       val requestApi = Request.RequestBuilder.create()
          .setUrl(apiUrl)
          .setCookies(cookies)

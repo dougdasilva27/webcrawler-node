@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.zaxxer.hikari.HikariConfig;
@@ -55,7 +56,7 @@ public class JdbcConnectionFactory {
     config.setConnectionTimeout(GlobalConfigurations.executionParameters.getHikariCpConnectionTimeout());
     config.setIdleTimeout(GlobalConfigurations.executionParameters.getHikariCpIDLETimeout());
 
-    try {
+     try {
       ds = new HikariDataSource(config);
       Logging.printLogDebug(LOGGER, "Pool of PostgreSQL connections started successfully!");
     } catch (Exception e) {

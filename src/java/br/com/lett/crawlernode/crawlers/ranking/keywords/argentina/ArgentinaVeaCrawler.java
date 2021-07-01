@@ -29,7 +29,6 @@ public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
       cookie.setPath("/");
       this.cookies.add(cookie);
 
-      Logging.printLogDebug(logger, session, "Adding cookies...");
       this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Comprar/Home.aspx", null, "www.veadigital.com.ar", "/", cookies, session, new HashMap<>(), dataFetcher));
    }
 

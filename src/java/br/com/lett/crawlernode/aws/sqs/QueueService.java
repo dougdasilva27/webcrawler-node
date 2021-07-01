@@ -64,6 +64,13 @@ public class QueueService {
 
       queueURLMap.put(QueueName.CORE_DEV.toString(),QUEUE_URL+QueueName.CORE_DEV.toString());
 
+
+      //New queues
+
+      queueURLMap.put(QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString(),QUEUE_URL+QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString());
+      queueURLMap.put(QueueName.WEB_SCRAPER_DISCOVERER.toString(),QUEUE_URL+QueueName.WEB_SCRAPER_DISCOVERER.toString());
+
+
    }
 
    /**

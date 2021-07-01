@@ -2,11 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
-import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
-import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.round
@@ -22,11 +20,12 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.net.URL
 import java.time.LocalDate
+import br.com.lett.crawlernode.core.models.RequestMethod
 
 class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
    init {
-      config.fetcher = FetchMode.FETCHER
+      config.fetcher = FetchMode.APACHE
       cookies.add(BasicClientCookie("stc112189", LocalDate.now().toEpochDay().toString()))
       cacheConfig.request = Request.RequestBuilder.create().setCookies(cookies).setUrl("https://www.panvel.com/panvel/main.do").build()
       cacheConfig.requestMethod = RequestMethod.GET
@@ -34,21 +33,9 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
    override fun fetch(): Any? {
       val request = Request.RequestBuilder.create().setCookies(cookies).setUrl(session.originalURL).build()
-      var doc: Document? = null
 
-      for (i in 1..3) {
-         val response = dataFetcher[session, request]
-         if (checkResponse(response)) {
-            doc = Jsoup.parse(response.body)
-            break
-         }
-      }
-      return doc
-   }
-
-   private fun checkResponse(response: Response): Boolean {
-      val statusCode = response.lastStatusCode.toString()
-      return statusCode[0] == '2' || statusCode[0] == '3' || statusCode == "404"
+      val response = dataFetcher[session, request]
+      return Jsoup.parse(response.body)
    }
 
    override fun extractInformation(doc: Document): List<Product> {
@@ -111,6 +98,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          .replace("&s;", "'")
          .replace("&g;", ">")
          .replace("&l;", "<")
+         .replace("&a;", "&")
          .replace("&a;reg;", "®")
    }
 

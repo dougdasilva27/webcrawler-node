@@ -230,7 +230,7 @@ public abstract class BrasilVilanova extends Crawler {
          priceFrom = null;
       }
 
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, 0d);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditcards(product, spotlightPrice);
 
       return Pricing.PricingBuilder.create()

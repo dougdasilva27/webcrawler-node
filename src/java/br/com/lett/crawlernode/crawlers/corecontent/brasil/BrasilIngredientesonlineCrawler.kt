@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
@@ -32,6 +33,10 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
 
    companion object {
       const val SELLER_NAME: String = "Ingredientes Online"
+   }
+
+   init {
+      config.fetcher = FetchMode.FETCHER
    }
 
    override fun fetch(): Any? {

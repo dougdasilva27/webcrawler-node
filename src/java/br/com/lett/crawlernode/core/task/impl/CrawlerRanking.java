@@ -47,10 +47,7 @@ import org.slf4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
@@ -116,7 +113,8 @@ public abstract class CrawlerRanking extends Task {
    }
 
    /**
-    * Overrides the run method that will perform a task within a thread. The actual thread performs it's computation controlled by an Executor, from Java's Executors Framework.
+    * Overrides the run method that will perform a task within a thread. The actual thread performs
+    * it's computation controlled by an Executor, from Java's Executors Framework.
     */
    @Override
    public void processTask() {
@@ -133,11 +131,14 @@ public abstract class CrawlerRanking extends Task {
    @Override
    protected void onFinish() {
       super.onFinish();
+      // if (session instanceof RankingSession) {
+      // // Identify anomalies
+      // anomalyDetector(this.location, this.session.getMarket(), this.rankType);
+      // }
 
       if (!(session instanceof TestRankingKeywordsSession)) {
          S3Service.uploadCrawlerSessionContentToAmazon(session);
       }
-
 
       // close the webdriver
       if (webdriver != null) {
@@ -159,6 +160,7 @@ public abstract class CrawlerRanking extends Task {
 
          session.setTaskStatus(Task.STATUS_FAILED);
       }
+
 
       // and if we are not testing, because when testing there is no message processing
       else if (session instanceof RankingSession || session instanceof RankingDiscoverSession) {
@@ -318,8 +320,6 @@ public abstract class CrawlerRanking extends Task {
    protected void saveDataProduct(String internalId, String pid, String url, int position) {
       RankingProducts rankingProducts = new RankingProducts();
 
-      List<Long> processedIds = new ArrayList<>();
-
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
       rankingProducts.setPosition(position);
@@ -345,13 +345,17 @@ public abstract class CrawlerRanking extends Task {
 
       if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
          List<Processed> processeds = new ArrayList<>();
+         List<Long> processedIds = new ArrayList<>();
+
+         List<Long> specificSuppliers = Arrays.asList(11l, 143l, 125l);
+
          if (internalId != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId, session);
          } else if (pid != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId, session);
          } else if (url != null) {
             Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
-            processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
+            processeds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
          }
 
          if (!processeds.isEmpty()) {
@@ -363,9 +367,8 @@ public abstract class CrawlerRanking extends Task {
                   Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + url);
                }
             }
-         }
 
-         if (url != null && processedIds.isEmpty()) {
+         } else if (url != null) {
             saveProductUrlToQueue(url);
          }
 
@@ -435,7 +438,6 @@ public abstract class CrawlerRanking extends Task {
       long sendMessagesStartTime = System.currentTimeMillis();
 
       ScraperInformation scraperInformation = Persistence.fetchScraperInfoToOneMarket(session.getMarket().getNumber());
-
       String scraperType = session instanceof EqiRankingDiscoverKeywordsSession ? ScrapersTypes.EQI.toString() : ScrapersTypes.DISCOVERER.toString();
 
       if (scraperInformation != null) {
@@ -457,7 +459,7 @@ public abstract class CrawlerRanking extends Task {
 
                JSONObject apacheMetadata = new JSONObject().put("aws_elapsed_time", System.currentTimeMillis() - sendMessagesStartTime)
                   .put("aws_type", "sqs")
-                  .put("sqs_queue", "ws-discoverer");
+                  .put("sqs_queue", "web-scraper-discoverer");
 
                Logging.logInfo(logger, session, apacheMetadata, "AWS TIMING INFO");
 
@@ -474,11 +476,11 @@ public abstract class CrawlerRanking extends Task {
    private void populateMessagesInToQueue(List<SendMessageBatchRequestEntry> entries, boolean isWebDrive) {
       String queueName;
 
-      
+
       if (session instanceof EqiRankingDiscoverKeywordsSession) {
          queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
       } else {
-         queueName = isWebDrive ? QueueName.DISCOVERER_WEBDRIVER.toString() : QueueName.DISCOVERER.toString();
+         queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
       }
 
 
@@ -718,7 +720,7 @@ public abstract class CrawlerRanking extends Task {
          this.session.setOriginalURL(url);
       }
 
-      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY, false, session);
+      return DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY, session);
    }
 
    /**

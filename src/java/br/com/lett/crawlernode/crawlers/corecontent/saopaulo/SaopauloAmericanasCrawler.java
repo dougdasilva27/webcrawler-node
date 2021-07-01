@@ -3,7 +3,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
@@ -12,7 +11,6 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlers
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -28,7 +26,6 @@ import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.sql.SQLOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +44,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.sellerNameLower = MAIN_SELLER_NAME_LOWER;
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.homePage = HOME_PAGE;
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
 
@@ -116,29 +113,36 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
    }
 
+   private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
+      JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
+      JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid, arrayPosition);
+      setOffersForMainPageSeller(offers, offersJson, internalId);
+   }
+
    @Override
-   protected Offers scrapOffers(Document doc, String internalId, String internalPid) throws MalformedPricingException, OfferException {
+   protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
 
-      String scrapUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".offers-box__Wrapper-sc-189v1x3-0 a[aria-current]", "href");
-
-      if (scrapUrl == null) {
-
-         JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
-         JSONObject offersJson = SaopauloB2WCrawlersUtils.extractJsonOffers(jsonSeller,internalPid);
-
-         setOffersForMainPageSeller(offers, offersJson, internalId);
-
-      } else {
-
          String offersPageUrl = "https://www.americanas.com.br/parceiros/"+ internalPid +"?productSku=" + internalId;
 
-         Document offersDoc = acessOffersPage(offersPageUrl);
-         Elements offersFromHTML = offersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
-         setOffersForSellersPage(offers, offersFromHTML);
+         Document sellersDoc = acessOffersPage(offersPageUrl);
+         Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
 
-      }
+         if (sellersFromHTML.isEmpty()){
+               /*
+               caso sellersFromHTML seja vazio significa que fomos bloqueados
+               durante a tentativa de capturar as informações na pagina de sellers
+               ou que o produto em questão não possui pagina de sellers.
+               Nesse caso devemos capturar apenas as informações da pagina principal.
+               */
+
+            scrapAndSetInfoForMainPage(doc,offers,internalId,internalPid, arrayPosition);
+         } else {
+
+            setOffersForSellersPage(offers, sellersFromHTML);
+         }
+
       return offers;
    }
 
@@ -146,9 +150,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       Request request = Request.RequestBuilder.create().setUrl(offersPageURL).setProxyservice(
          Arrays.asList(
             ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
+
+
          )
       ).build();
       Response response = this.dataFetcher.get(session, request);
@@ -164,7 +169,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
 
-         content = new JsoupDataFetcher().get(session, request).getBody();
+
+
+         content = new FetcherDataFetcher().get(session, request).getBody();
       }
 
       return Jsoup.parse(content);

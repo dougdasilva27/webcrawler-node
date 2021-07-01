@@ -270,10 +270,10 @@ public class MercadolivreNewCrawler {
    private String scrapSeller(Document doc) {
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title", false);
 
-      if (sellerFullName == null || sellerFullName.equalsIgnoreCase("Vendido por")) {
+      if (sellerFullName == null || sellerFullName.equalsIgnoreCase("Vendido por") || sellerFullName.equalsIgnoreCase("Loja oficial")) {
          sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, "a.ui-pdp-action-modal__link span", false);
 
-         if (sellerFullName == null) {
+         if (sellerFullName == null || sellerFullName.contains("sem juros")) {
             String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".ui-pdp-container__row--seller-info a", "href");
 
             if (url != null) {

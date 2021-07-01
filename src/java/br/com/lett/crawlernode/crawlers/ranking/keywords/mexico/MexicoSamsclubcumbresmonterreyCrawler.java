@@ -5,7 +5,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.MexicoSamsclubCr
 
 public class MexicoSamsclubcumbresmonterreyCrawler extends MexicoSamsclubCrawler {
 
-   private static final String STORE_ID = "storeId=0000006229";
+   private static final String STORE_ID = "storeId=0000006392";
 
    public MexicoSamsclubcumbresmonterreyCrawler(Session session) {
       super(session);

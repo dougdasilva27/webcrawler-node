@@ -8,17 +8,15 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.Logging;
-
-import java.io.IOException;
-
+import br.com.lett.crawlernode.metrics.Exporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 public class CrawlerTaskEndpoint extends HttpServlet {
 
@@ -26,8 +24,9 @@ public class CrawlerTaskEndpoint extends HttpServlet {
 
    /**
     * Main route
+    *
     * @param req http request with data
-    * @param res http response 
+    * @param res http response
     */
    @Override
    protected void doPost(HttpServletRequest req, HttpServletResponse res) {
@@ -55,22 +54,20 @@ public class CrawlerTaskEndpoint extends HttpServlet {
    public static String perform(HttpServletResponse res, Request request) {
       String response;
 
-      Session session = SessionFactory.createSession(request,request.getMarket());
+      Session session = SessionFactory.createSession(request, request.getMarket());
 
       Logging.printLogDebug(logger, session, "Creating task for " + session.getOriginalURL());
-      Task task = TaskFactory.createTask(session,request.getClassName());
+      Task task = TaskFactory.createTask(session, request.getClassName());
 
-      task.process();
+      Exporter.collectEndpoint(request.getMarket().getName(), task::process);
 
       if (Task.STATUS_COMPLETED.equals(session.getTaskStatus())) {
          response = ServerCrawler.MSG_TASK_COMPLETED;
          res.setStatus(ServerCrawler.HTTP_STATUS_CODE_OK);
-         Main.server.incrementSucceededTasks();
       } else {
          response = ServerCrawler.MSG_TASK_FAILED;
          res.setStatus(ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
          Logging.printLogDebug(logger, "TASK RESPONSE STATUS: " + ServerCrawler.HTTP_STATUS_CODE_SERVER_ERROR);
-         Main.server.incrementFailedTasks();
       }
 
       return response;

@@ -9,8 +9,6 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -19,7 +17,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.Arrays;
 
 public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
@@ -38,8 +35,9 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
 
    private Document fetchPage() {
 
-      String url = HOME_PAGE + storeId + "/pick-up?ordenacao=relevance&conteudo=" + this.keywordEncoded + "&limite=24&offset=" + (this.currentPage - 1) * pageSize + "&ordenacao=relevance";
-      this.log("Link onde são feitos os crawlers: " + url);
+      String url = HOME_PAGE + storeId + "/pick-up?ordenacao=relevance&conteudo=" +
+         this.keywordEncoded.replace("+", "%20") +
+         "&limite=24&offset=" + (this.currentPage - 1) * pageSize + "&ordenacao=relevance";
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -87,44 +85,28 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
 
       JSONObject json = selectJsonFromHtml(doc);
 
-      JSONArray products = JSONUtils.getValueRecursive(json, "productGrid.items", JSONArray.class);
+      JSONObject products = json.optJSONObject("products");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
             setTotalProducts(json);
          }
-         for (Object e : products) {
-            if (e instanceof JSONObject) {
-               JSONObject id = (JSONObject) e;
+         for (String internalId : products.toMap().keySet()) {
+            String productUrl = HOME_PAGE + storeId + "/ship?ordenacao=relevance&conteudo=" + internalId;
 
-               String internalId = id.optString("id");
-               String productUrl = HOME_PAGE + storeId + "/ship?ordenacao=relevance&conteudo=" + internalId;
+            saveDataProduct(internalId, null, productUrl);
 
-               saveDataProduct(internalId, null, productUrl);
-
-               this.log(
-                  "Position: " + this.position +
-                     " - InternalId: " + internalId +
-                     " - InternalPid: " + null +
-                     " - Url: " + productUrl);
-
-               if (this.arrayProducts.size() == productsLimit) {
-                  break;
-               }
-            }
-
-
+            this.log(
+               "Position: " + this.position +
+                  " - InternalId: " + internalId +
+                  " - Url: " + productUrl);
          }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
       }
 
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
          + this.arrayProducts.size() + " produtos crawleados");
 
    }
-
 
    public JSONObject selectJsonFromHtml(Document doc) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException, UnsupportedEncodingException {
       JSONObject jsonObject = new JSONObject();
@@ -133,20 +115,18 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
       for (Element e : scripts) {
          String script = e.html();
          if (script.contains("window.__PRELOADED_STATE__ =")) {
-            String decode = URLDecoder.decode(script, "UTF-8");
-            String split = CrawlerUtils.extractSpecificStringFromScript(decode, "window.__PRELOADED_STATE__ = \"", true, "\";", true);
+            String split = CrawlerUtils.extractSpecificStringFromScript(script, "window.__PRELOADED_STATE__ = \"", true, "}", true)
+               .replace("undefined", "\"undefined\"")
+               .replace("\"\"undefined\"\"", "undefined") + "}";
             jsonObject = CrawlerUtils.stringToJson(split);
             break;
          }
       }
-
-
       return jsonObject;
    }
 
-
    private void setTotalProducts(JSONObject json) {
-      this.totalProducts = JSONUtils.getValueRecursive(json, "pagination.total", Integer.class);
+      this.totalProducts = (Integer) json.optQuery("/pages/undefined/queries/getStoreOffersDesktopAcom/result/search/total");
       this.log("Total da busca: " + this.totalProducts);
    }
 }

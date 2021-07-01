@@ -18,7 +18,7 @@ public class SaopauloPanvelCrawler extends CrawlerRankingKeywords {
 
    public SaopauloPanvelCrawler(Session session) {
       super(session);
-      fetchMode = FetchMode.FETCHER;
+      fetchMode = FetchMode.APACHE;
       cookies.add(new BasicClientCookie("stc112189", String.valueOf(LocalDate.now().toEpochDay())));
    }
 

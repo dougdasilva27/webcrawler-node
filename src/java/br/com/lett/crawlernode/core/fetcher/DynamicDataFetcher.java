@@ -3,16 +3,15 @@ package br.com.lett.crawlernode.core.fetcher;
 import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession;
-import br.com.lett.crawlernode.core.session.ranking.TestRankingSession;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
-import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
@@ -23,13 +22,13 @@ import java.util.List;
 
 public class DynamicDataFetcher {
 
-   protected static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
+   private DynamicDataFetcher() {
+   }
+
+   private static final Logger logger = LoggerFactory.getLogger(DynamicDataFetcher.class);
 
    /**
-    * @param url
-    * @param session
-    * @return
-    * @Deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
+    * @deprecated Use fetchPageWebdriver(String url, String proxyString, Session session)
     */
    @Deprecated
    public static CrawlerWebdriver fetchPageWebdriver(String url, Session session) {
@@ -39,18 +38,12 @@ public class DynamicDataFetcher {
       return fetchPageWebdriver(url, proxyString, session);
    }
 
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
-      return fetchPageWebdriver(url, proxyString, true, session);
-   }
-
    /**
     * Use the webdriver to fetch a page.
     *
-    * @param url
-    * @param session
     * @return a webdriver instance with the page already loaded
     */
-   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, boolean headless, Session session) {
+   public static CrawlerWebdriver fetchPageWebdriver(String url, String proxyString, Session session) {
       Logging.printLogDebug(logger, session, "Fetching " + url + " using webdriver...");
       String requestHash = FetchUtilities.generateRequestHash(session);
 
@@ -66,19 +59,17 @@ public class DynamicDataFetcher {
 
          ChromeOptions chromeOptions = new ChromeOptions();
          chromeOptions.setProxy(proxySel);
-         chromeOptions.setHeadless(headless);
+         chromeOptions.setHeadless(true);
+         chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
 
          chromeOptions.setCapability("browserName", "chrome");
          chromeOptions.addArguments("--user-agent=" + userAgent);
-         chromeOptions.addArguments("window-size=1024,768", "--no-sandbox");
+         chromeOptions.addArguments("--window-size=1024,768", "--no-sandbox");
+         chromeOptions.addArguments("--disable-dev-shm-usage", "--disable-gpu");
 
          sendRequestInfoLogWebdriver(url, FetchUtilities.GET_REQUEST, proxy, userAgent, session, requestHash);
 
          webdriver = new CrawlerWebdriver(chromeOptions, session);
-
-         if (!(session instanceof TestCrawlerSession || session instanceof TestRankingSession)) {
-            Main.server.incrementWebdriverInstances();
-         }
 
          webdriver.loadUrl(url);
 
@@ -87,6 +78,7 @@ public class DynamicDataFetcher {
 
          return webdriver;
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          Logging.printLogWarn(logger, session, CommonMethods.getStackTrace(e));
 
          // close the webdriver

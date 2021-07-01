@@ -1,36 +1,46 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import com.google.common.collect.Maps;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.Map;
+
+import static br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+
 public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
+
+   private String nextUrl;
 
    public ArgentinaCotoCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
+      this.pageSize = 48;
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      //número de produtos por página do market
-      this.pageSize = 12;
-
       this.log("Página " + this.currentPage);
+      if (currentPage == 1) {
+         JSONObject jsonObject = fetchUrl();
+         String urlDoc = "https://www.cotodigital3.com.ar/sitios/cdigi/browse" + jsonObject.optQuery("/canonicalLink/navigationState");
+         this.currentDoc = fetchDocument(urlDoc);
+      }
 
-      //monta a url com a keyword e a página
-      String url = "https://www.cotodigital3.com.ar/sitios/cdigi/browse?_dyncharset=utf-8"
-         + "&Ntt=" + this.keywordEncoded + "+%7C1004&Ntk=All%7Cproduct.sDisp_091&No=" + this.arrayProducts.size();
-
-      this.log("Link onde são feitos os crawlers: " + url);
-
-      //chama função de pegar a url
-      this.currentDoc = fetchDocument(url);
+      if (null != nextUrl) {
+         this.currentDoc = fetchDocument(nextUrl);
+      }
       Elements products = this.currentDoc.select("#products > li");
-
+      pageSize = products.size();
       //se obter 1 ou mais links de produtos e essa página tiver resultado faça:
       if (products.size() >= 1) {
          //se o total de busca não foi setado ainda, chama a função para setar
@@ -49,22 +59,31 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
             saveDataProduct(internalId, internalPid, productUrl);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-            if (this.arrayProducts.size() == productsLimit) break;
-
          }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
       }
-
+      nextUrl = "https://www.cotodigital3.com.ar" + currentDoc.selectFirst("#atg_store_pagination li:nth-child(" + (currentPage + 1) + ") a").attr("href");
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   private JSONObject fetchUrl() {
+      Map<String, String> headers = Maps.newHashMap();
+      headers.put("Content-Type", "application/x-www-form-urlencoded");
+      headers.put("Accept", " application/json");
+      headers.put("Accept-Encoding", " gzip, deflate, br");
+      String url = "https://www.cotodigital3.com.ar/sitios/cdigi/assembler?format=json&Dy=1&assemblerContentCollection=/content/Shared/Auto-Suggest%20Panels&Ntt=" + keywordEncoded;
+      Request request = RequestBuilder.create().setCookies(cookies).setHeaders(headers).setUrl(url).build();
+      Response response = new ApacheDataFetcher().get(session, request);
+      cookies = response.getCookies();
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    @Override
    protected boolean hasNextPage() {
-      //se  elemeno page obtiver algum resultado
-      //tem próxima página
-      return this.arrayProducts.size() < this.totalProducts;
+      Element element = currentDoc.selectFirst("#atg_store_pagination li:nth-child(" + (currentPage + 2) + ") a");
+      if (element != null) {
+         return element.attr("href") != null;
+      }
+      return false;
    }
 
    @Override
@@ -95,9 +114,8 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
    }
 
    private String crawlInternalPid(Element e) {
-      String internalPid = e.attr("id").replaceAll("[^0-9]", "").trim();
 
-      return internalPid;
+      return e.attr("id").replaceAll("[^0-9]", "").trim();
    }
 
    private String crawlProductUrl(Element e) {

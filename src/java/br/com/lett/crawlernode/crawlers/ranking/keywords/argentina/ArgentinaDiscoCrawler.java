@@ -1,11 +1,5 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -13,7 +7,13 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.HttpHeaders;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
 
@@ -31,13 +31,11 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
       cookie.setPath("/");
       this.cookies.add(cookie);
 
-      Logging.printLogDebug(logger, session, "Adding cookies...");
       this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Comprar/Home.aspx", null, "www.disco.com.ar", "/", cookies, session, new HashMap<>(), dataFetcher));
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.log("Página " + this.currentPage);
 
       JSONObject jsonSearch = crawlProductsApi(CommonMethods.encondeStringURLToISO8859(this.location, logger, session));
       JSONArray products = new JSONArray();
@@ -56,26 +54,16 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
          for (int i = 0; i < products.length(); i++) {
             JSONObject product = products.getJSONObject(i);
 
-            // InternalPid
-            String internalPid = crawlInternalPid(product);
-
             // InternalId
             String internalId = crawlInternalId(product);
 
             // Url do produto
             String urlProduct = crawlProductUrl(product);
 
-            saveDataProduct(internalId, internalPid, urlProduct);
+            saveDataProduct(internalId, null, urlProduct);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
-            }
-
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - Url: " + urlProduct);
          }
-      } else {
-         this.result = false;
-         this.log("Keyword sem resultado!");
       }
 
       // número de produtos por página do market
@@ -100,12 +88,6 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
       return internalId;
    }
 
-   private String crawlInternalPid(JSONObject product) {
-      String internalPid = null;
-
-      return internalPid;
-   }
-
    private String crawlProductUrl(JSONObject product) {
       String productUrl = null;
 
@@ -121,20 +103,15 @@ public class ArgentinaDiscoCrawler extends CrawlerRankingKeywords {
    /**
     * Crawl api of search when probably has only one product
     * 
-    * @param url
-    * @return
     */
    private JSONObject crawlProductsApi(String keyword) {
       JSONObject json = new JSONObject();
 
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8");
+      headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
 
       String urlSearch = "https://www.disco.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
       String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\"," + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
-
-      this.log("Payload: " + payload);
-      this.log("Cookies: " + this.cookies);
 
       Request request = RequestBuilder.create().setUrl(urlSearch).setPayload(payload).setCookies(cookies).setHeaders(headers).build();
       String jsonString = this.dataFetcher.post(session, request).getBody();

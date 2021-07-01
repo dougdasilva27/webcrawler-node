@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.extractionutils
 
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
 import br.com.lett.crawlernode.core.fetcher.models.Request
@@ -65,7 +64,7 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
                }
 
 
-            } else if(internalPid != null || productUrl != null) {
+            } else if (internalPid != null || productUrl != null) {
                saveDataProduct(null, internalPid, productUrl)
                log("Position: $position - InternalId: null - InternalPid: $internalPid - Url: $productUrl")
             }
@@ -97,15 +96,18 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
       headers["sec-fetch-site"] = "none"
       headers["sec-fetch-user"] = "?1"
       headers["upgrade-insecure-requests"] = "1"
-      headers["ak_bmsc"] = "DBC817405614D3D751F263F55B55A1228A7AC44DAC2100000AD4C05F24FBCD05~plWrjWUWgdXlFj2JvlQi2GxrJoTrHhd3KXQ7P6HmMQRj0r2higFJ+DGPeDauPrO9Pi+RivzTJiZ+GmcnKdY3P+Tx1ymEReA+p2mZ44U1c/plxcRhABRroUwMpWVYMQGzQJEGt9se0Tf6wuGi4RLAvV7MTRGi7qYMyVpn9G3p7zEVrGbvRY0Em6A5ZhSk/65b/8xkQEwz2tHjQIxHhdB+ZAUPu3Dw/rr5Hxog53uGYgmAk="
+      headers["ak_bmsc"] =
+         "DBC817405614D3D751F263F55B55A1228A7AC44DAC2100000AD4C05F24FBCD05~plWrjWUWgdXlFj2JvlQi2GxrJoTrHhd3KXQ7P6HmMQRj0r2higFJ+DGPeDauPrO9Pi+RivzTJiZ+GmcnKdY3P+Tx1ymEReA+p2mZ44U1c/plxcRhABRroUwMpWVYMQGzQJEGt9se0Tf6wuGi4RLAvV7MTRGi7qYMyVpn9G3p7zEVrGbvRY0Em6A5ZhSk/65b/8xkQEwz2tHjQIxHhdB+ZAUPu3Dw/rr5Hxog53uGYgmAk="
 
       val request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setFetcheroptions(FetcherOptionsBuilder.create()
-            .mustUseMovingAverage(false)
-            .mustRetrieveStatistics(true)
-            .build())
+         .setFetcheroptions(
+            FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .build()
+         )
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
@@ -114,9 +116,17 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
             )
          ).build()
 
-      val body: String = alternativeFetch(request).body
+      try {
 
-      return body.toJson()
+         val body: String = alternativeFetch(request).body
+         return body.toJson()
+
+      } catch (e: Exception) {
+         e.printStackTrace()
+         this.logError(e.message + " Erro ao parsear json")
+      }
+
+      return JSONObject()
    }
 
    private fun alternativeFetch(request: Request): Response {
@@ -128,7 +138,7 @@ abstract class CNOVACrawlerRanking(session: Session?) : CrawlerRankingKeywords(s
       if (statusCode.toString()[0] != '2' && statusCode.toString()[0] != '3' && statusCode != 404) {
          response = ApacheDataFetcher().get(session, request)
       }
-     
+
       return response
    }
 }

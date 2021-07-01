@@ -1,16 +1,35 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
+import java.util.Iterator;
+
 public class BrasilLojacomerbemCrawler extends CrawlerRankingKeywords {
 
    public BrasilLojacomerbemCrawler(Session session) {
       super(session);
    }
+
+   @Override
+   protected void processBeforeFetch() {
+      JSONObject cookieJson = session.getOptions().optJSONObject("cookies");
+      if (cookieJson != null) {
+         for (
+            Iterator<String> iter = cookieJson.keys(); iter.hasNext(); ) {
+            String key = iter.next();
+            BasicClientCookie cookie = new BasicClientCookie(key, cookieJson.optString(key));
+            this.cookies.add(cookie);
+         }
+
+      }
+   }
+
 
    @Override
    protected void extractProductsFromCurrentPage() {

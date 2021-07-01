@@ -5,11 +5,13 @@ import br.com.lett.crawlernode.core.server.endpoints.CrawlerTaskEndpoint;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
+import io.prometheus.client.exporter.MetricsServlet;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,18 +42,8 @@ public class ServerCrawler {
 
    private final StatisticsHandler statisticsHandler = new StatisticsHandler();
 
-   private final Object lock = new Object();
-   private long succeededTasks;
-   private long failedTasksCount;
-
-   private final Object webdriverInstancesCounterLock = new Object();
-   private int webdriverInstances;
-
    public ServerCrawler() throws Exception {
       Logging.printLogDebug(logger, "Initializing values...");
-      succeededTasks = 0;
-      failedTasksCount = 0;
-      webdriverInstances = 0;
 
       Logging.printLogDebug(logger, "Creating server [" + SERVER_HOST + "][" + SERVER_PORT + "]...");
       createServer();
@@ -60,12 +52,13 @@ public class ServerCrawler {
 
    /**
     * Create server, maximum 100 threads, min from env 'CRAWLER_CORE_THREADS'.
+    *
     * @throws Exception error instantiating server
     */
    private void createServer() throws Exception {
       try {
          QueuedThreadPool threadPool = new QueuedThreadPool(100, GlobalConfigurations.executionParameters.getThreads());
-         this.server = new Server(threadPool);
+         server = new Server(threadPool);
 
          ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory());
          ServletHandler handler = new ServletHandler();
@@ -77,8 +70,10 @@ public class ServerCrawler {
          server.setHandler(handler);
          handler.addServletWithMapping(CrawlerTaskEndpoint.class, ENDPOINT_TASK);
          handler.addServletWithMapping(CrawlerHealthEndpoint.class, ENDPOINT_HEALTH_CHECK);
+         handler.addServletWithMapping(MetricsServlet.class, "/metrics");
 
          statisticsHandler.setHandler(server.getHandler());
+
          server.setHandler(statisticsHandler);
 
          server.start();
@@ -93,50 +88,7 @@ public class ServerCrawler {
 
    }
 
-   public int getActiveTasks() {
-      return statisticsHandler.getRequestsActive();
-   }
-
-   public void incrementSucceededTasks() {
-      synchronized (lock) {
-         succeededTasks++;
-      }
-   }
-
-   public void incrementFailedTasks() {
-      synchronized (lock) {
-         failedTasksCount++;
-      }
-   }
-
-   public long getSucceededTasks() {
-      return succeededTasks;
-   }
-
-   public long getFailedTasksCount() {
-      return failedTasksCount;
-   }
-
-   public int getTaskQueueSize() {
-      return statisticsHandler.getAsyncRequestsWaiting();
-   }
-
    public int getActiveThreads() {
       return server.getThreadPool().getThreads();
    }
-
-   public void incrementWebdriverInstances() {
-      synchronized (webdriverInstancesCounterLock) {
-         Logging.printLogDebug(logger, "Incrementing webdriver instances.");
-         webdriverInstances++;
-      }
-   }
-
-   public void decrementWebdriverInstances() {
-      synchronized (webdriverInstancesCounterLock) {
-         Logging.printLogDebug(logger, "Decrementing webdriver instances.");
-         webdriverInstances--;
-      }
-   }
-
 }

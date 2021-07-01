@@ -107,21 +107,17 @@ public abstract class AmericanasmaisCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = getProductId();
-         JSONObject data = JSONUtils.getValueRecursive(json, "products.refs", JSONObject.class);
-         JSONObject productData = data != null ? data.optJSONObject(internalId) : null;
+         JSONObject productData = (JSONObject) json.optQuery("/products/" + internalId);
 
          if (productData != null) {
-            String internalPid = internalId;
             String name = productData.optString("name");
             Collection<String> categories = categories(json); //Has only one category
             JSONArray imageJson = productData.optJSONArray("images");
             List<String> images = imageJson != null ? CrawlerUtils.scrapImagesListFromJSONArray(imageJson, "extraLarge", null, "https", "images-americanas.b2w.io/", session) : null;
             String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
             String description = getDescription(productData);
-            JSONObject dataOffers = JSONUtils.getValueRecursive(productData, "offers.0", JSONObject.class);
-            Integer stock = dataOffers != null ? JSONUtils.getValueRecursive(dataOffers, "availability._embedded.stock.quantity", Integer.class) : null;
-            boolean available = stock != null && stock > 0; //I didn't find any product unavailable to test
-            Offers offers = available ? scrapOffers(dataOffers, doc) : new Offers();
+            JSONObject dataOffers = (JSONObject) productData.query("/offers/result/0");
+            Offers offers = dataOffers != null ? scrapOffers(dataOffers, doc) : new Offers();
             RatingsReviews rating = scrapRating(productData);
 
 
@@ -129,13 +125,12 @@ public abstract class AmericanasmaisCrawler extends Crawler {
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
-               .setInternalPid(internalPid)
+               .setInternalPid(internalId)
                .setName(name)
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(images)
                .setDescription(description)
-               .setStock(stock)
                .setRatingReviews(rating)
                .setOffers(offers)
                .build();
@@ -156,14 +151,13 @@ public abstract class AmericanasmaisCrawler extends Crawler {
       for (Element e : scripts) {
          String script = e.html();
          if (script.contains("window.__PRELOADED_STATE__ =")) {
-            String decode = URLDecoder.decode(script, "UTF-8");
-            String split = CrawlerUtils.extractSpecificStringFromScript(decode, "window.__PRELOADED_STATE__ = \"", true, "\";", true);
+            String split = CrawlerUtils.extractSpecificStringFromScript(script, "window.__PRELOADED_STATE__ = \"", true, "}", true)
+               .replace("undefined", "\"undefined\"")
+               .replace("\"\"undefined\"\"", "undefined") + "}";
             jsonObject = CrawlerUtils.stringToJson(split);
             break;
          }
       }
-
-
       return jsonObject;
    }
 

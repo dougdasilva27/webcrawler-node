@@ -38,7 +38,7 @@ public abstract class SupernicoliniCrawler extends CrawlerRankingKeywords {
             String internalPid = null;
 
             // InternalId
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".add-to-cart-button a", "data-product_id");
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".button.ajax_add_to_cart.add_to_cart_button", "data-product_id");
 
             // Url do produto
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".image-fade_in_back a", "href");

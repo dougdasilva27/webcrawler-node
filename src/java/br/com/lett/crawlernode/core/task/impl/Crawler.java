@@ -27,6 +27,7 @@ import br.com.lett.crawlernode.integration.redis.CrawlerCache;
 import br.com.lett.crawlernode.integration.redis.config.RedisDb;
 import br.com.lett.crawlernode.main.GlobalConfigurations;
 import br.com.lett.crawlernode.main.Main;
+import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.processor.Processor;
 import br.com.lett.crawlernode.test.Test;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -188,6 +189,7 @@ public abstract class Crawler extends Task {
             productionRun();
          }
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          if (session instanceof SeedCrawlerSession) {
             Persistence.updateFrozenServerTask(((SeedCrawlerSession) session), e.getMessage());
          }
@@ -375,6 +377,7 @@ public abstract class Crawler extends Task {
             processedProducts.add(ProductDTO.processCaptureData(p, session));
          }
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          if (session instanceof TestCrawlerSession) {
             ((TestCrawlerSession) session).setLastError(CommonMethods.getStackTrace(e));
          }
@@ -656,6 +659,7 @@ public abstract class Crawler extends Task {
          Logging.printLogInfo(logger, session, "Crawled information: " + "\nmarketId: " + session.getMarket().getNumber() + product.toString() +
             "\nregex_status: " + status);
       } catch (MalformedProductException e) {
+         Exporter.collectError(e, session);
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
    }
@@ -709,6 +713,7 @@ public abstract class Crawler extends Task {
          }
 
       } catch (Exception e) {
+         Exporter.collectError(e, session);
          Logging.printLogWarn(logger, session, "Task failed [" + session.getOriginalURL() + "]");
          session.setTaskStatus(Task.STATUS_FAILED);
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
