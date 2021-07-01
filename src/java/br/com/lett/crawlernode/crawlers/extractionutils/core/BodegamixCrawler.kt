@@ -99,27 +99,31 @@ class BodegamixCrawler(session: Session) : Crawler(session) {
 
       val price = doc.selectFirst("span[itemprop=price]").toDoubleComma()
 
-      val bankSlip = price?.toBankSlip()!!
+      if (price != 0.0) {
+         val bankSlip = price?.toBankSlip()!!
 
-      val creditCards = listOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(price)
+         val creditCards = listOf(Card.VISA, Card.MASTERCARD, Card.ELO, Card.AMEX).toCreditCards(price)
 
-      offers.add(
-         Offer.OfferBuilder.create()
-            .setPricing(
-               Pricing.PricingBuilder.create()
-                  .setCreditCards(creditCards)
-                  .setSpotlightPrice(price)
-                  .setPriceFrom(priceFrom)
-                  .setBankSlip(bankSlip)
-                  .build()
-            )
-            .setIsMainRetailer(true)
-            .setIsBuybox(false)
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName("Bodegamix")
-            .build()
-      )
+         offers.add(
+            Offer.OfferBuilder.create()
+               .setPricing(
+                  Pricing.PricingBuilder.create()
+                     .setCreditCards(creditCards)
+                     .setSpotlightPrice(price)
+                     .setPriceFrom(priceFrom)
+                     .setBankSlip(bankSlip)
+                     .build()
+               )
+               .setIsMainRetailer(true)
+               .setIsBuybox(false)
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName("Bodegamix")
+               .build()
+         )
 
-      return offers
+         return offers
+      }
+
+      return Offers()
    }
 }
