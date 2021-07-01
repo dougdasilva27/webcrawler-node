@@ -11,16 +11,16 @@ import java.util.*
 class CampinasPetcampCrawler(session: Session) : VTEXOldScraper(session) {
 
    companion object {
-      val HOME_PAGE = "https://www.petcamp.com.br/";
-      val SELLER_FULL_NAME = Arrays.asList("pc paulinia comercio de produtos agropecuarios ltda.");
+      const val HOME_PAGE = "https://www.petcamp.com.br/"
+      val SELLER_FULL_NAME = mutableListOf("PetCamp")
    }
 
    override fun getHomePage(): String {
-      return HOME_PAGE;
+      return HOME_PAGE
    }
 
    override fun getMainSellersNames(): MutableList<String> {
-      return SELLER_FULL_NAME;
+      return SELLER_FULL_NAME
    }
 
    override fun scrapRating(internalId: String?, internalPid: String?, doc: Document?, jsonSku: JSONObject?): RatingsReviews {
