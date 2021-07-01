@@ -31,7 +31,7 @@ public class SaopauloUltrafarmaCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String productUrl = CrawlerUtils.scrapUrl(e, "a.product-item-link", "href", "https", "www.ultrafarma.com.br");
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "meta[itemprop=productId]", "content");
+        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-wrapper-container", "data-product-id");
 
         saveDataProduct(internalId, null, productUrl);
 
