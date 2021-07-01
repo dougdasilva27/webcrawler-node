@@ -347,15 +347,13 @@ public abstract class CrawlerRanking extends Task {
          List<Processed> processeds = new ArrayList<>();
          List<Long> processedIds = new ArrayList<>();
 
-         List<Long> specificSuppliers = Arrays.asList(11l, 143l, 125l);
-
          if (internalId != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalId(internalId.trim(), this.marketId, session);
          } else if (pid != null) {
             processeds = Persistence.fetchProcessedIdsWithInternalPid(pid, this.marketId, session);
          } else if (url != null) {
             Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
-            processeds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
+            processedIds = Persistence.fetchProcessedIdsWithUrl(url, this.marketId, session);
          }
 
          if (!processeds.isEmpty()) {
@@ -368,7 +366,7 @@ public abstract class CrawlerRanking extends Task {
                }
             }
 
-         } else if (url != null) {
+         } else if (url != null && processedIds.isEmpty()) {
             saveProductUrlToQueue(url);
          }
 
