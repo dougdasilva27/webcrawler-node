@@ -399,7 +399,7 @@ public abstract class Crawler extends Task {
 
       if (!response.isSuccess()) {
          handleCacheableCookiesBeforeFetch(true);
-         response = dataFetcher.get(session, cacheConfig.getRequest());
+         response = fetchResponse();
       }
       return Jsoup.parse(response.getBody());
    }
