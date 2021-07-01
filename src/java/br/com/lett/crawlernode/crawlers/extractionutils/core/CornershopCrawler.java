@@ -190,7 +190,7 @@ public class CornershopCrawler extends Crawler {
 
 
    private boolean crawlAvailability(JSONObject json) {
-      return json.has("availability_status") && json.get("availability_status").toString().equalsIgnoreCase("available");
+      return json.has("availability_status") && !json.get("availability_status").toString().equalsIgnoreCase("OUT_OF_STOCK");
    }
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
