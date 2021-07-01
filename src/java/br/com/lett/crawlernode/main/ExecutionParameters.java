@@ -84,10 +84,18 @@ public class ExecutionParameters {
 
    public void setRedisHost() {
       redisHost = System.getenv(EnvironmentVariables.REDIS_HOST);
+      if (redisHost == null) {
+         redisHost = "redis-crawler-prod.2k0spf.0001.use1.cache.amazonaws.com";
+      }
    }
 
    public void setRedisPort() {
-      redisPort = Integer.parseInt(System.getenv(EnvironmentVariables.REDIS_PORT));
+      String redisPortEnv = System.getenv(EnvironmentVariables.REDIS_PORT);
+      if (redisPortEnv != null) {
+         redisPort = Integer.parseInt(redisPortEnv);
+      } else {
+         redisPort = 6379;
+      }
    }
 
    public void setChromePath() {
