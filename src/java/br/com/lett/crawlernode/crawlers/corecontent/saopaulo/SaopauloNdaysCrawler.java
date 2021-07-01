@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -7,7 +8,6 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -15,10 +15,8 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
-import javax.print.Doc;
 import java.util.*;
 
 public class SaopauloNdaysCrawler extends Crawler {
@@ -27,6 +25,7 @@ public class SaopauloNdaysCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Ndays";
    public SaopauloNdaysCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.JSOUP);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -72,7 +71,7 @@ public class SaopauloNdaysCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc){
-      return doc.select("#product") != null;
+      return doc.selectFirst("#product") != null;
    }
 
    private String getSeller(Document doc){
