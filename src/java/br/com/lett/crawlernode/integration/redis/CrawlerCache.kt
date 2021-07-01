@@ -31,7 +31,7 @@ class CrawlerCache(db: RedisDb) {
    }
 
    fun <T> set(key: String, value: T, seconds: Long) {
-      mapCache?.put(key, value, seconds, TimeUnit.SECONDS)
+      mapCache?.fastPut(key, value, seconds, TimeUnit.SECONDS)
    }
 
    /**
