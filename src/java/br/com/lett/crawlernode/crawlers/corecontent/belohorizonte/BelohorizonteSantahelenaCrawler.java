@@ -42,7 +42,7 @@ public class BelohorizonteSantahelenaCrawler extends Crawler {
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".images a", Collections.singletonList("href"), "https", "santahelenacenter.com.br");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".woocommerce-breadcrumb span a", true);
-         boolean available = !doc.select(".stock.in-stock").isEmpty();
+         boolean available = doc.select(".stock .out-of-stock").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
 
          Product product = ProductBuilder.create()
