@@ -1,16 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
@@ -21,14 +10,24 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
 import models.AdvancedRatingReview;
-import models.Marketplace;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.*;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
- *
  * @author gabriel date: 2018-05-25
  */
 public class BrasilDrogalCrawler extends Crawler {
@@ -38,6 +37,9 @@ public class BrasilDrogalCrawler extends Crawler {
    }
 
    private static final String HOME_PAGE = "https://www.drogal.com.br/";
+   private static final String SELLER = "Drogal";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    @Override
    public boolean shouldVisit() {
@@ -57,33 +59,29 @@ public class BrasilDrogalCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#content_product [data-sku]", "data-sku");
          String name = crawlName(doc);
-         Float price = crawlMainPagePrice(doc);
-         boolean available = price != null;
          CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = crawlPrimaryImage(doc);
-         String secondaryImages = crawlSecondaryImages(doc);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".big-image a img", Arrays.asList("src"), "https", "io2.convertiez.com.br");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#sly_carousel li:not(.active) a", Arrays.asList("big_img"), "https", "io2.convertiez.com.br", primaryImage);
          String description = crawlDescription(doc);
-         Prices prices = crawlPrices(price, doc);
          RatingsReviews ratingsReviews = scrapRatingAndReviews(doc, internalId);
+         boolean available = doc.selectFirst(".box-buttons .bt-big.bt-checkout") != null;
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setRatingReviews(ratingsReviews)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(new Marketplace())
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setRatingReviews(ratingsReviews)
+            .setName(name)
+            .setOffers(offers)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .build();
 
          products.add(product);
 
@@ -107,11 +105,11 @@ public class BrasilDrogalCrawler extends Crawler {
 
    /**
     * We extract internalId on script like this:
-    *
+    * <p>
     * Key: productId
-    *
+    * <p>
     * In that case below, internalId will be "kityenzahshleave"
-    *
+    * <p>
     * ;var dataLayer=dataLayer||[];dataLayer.push({device:"d"})
     * dataLayer.push({pageName:"product",productId:"kityenzahshleave",productName:"Kit Yenzah Sou+
     * Cachos Shampoo Lowpoo 240ml + Leave In Suave
@@ -164,53 +162,6 @@ public class BrasilDrogalCrawler extends Crawler {
       return name;
    }
 
-   private Float crawlMainPagePrice(Document document) {
-      Float price = null;
-      Element mainPagePriceElement = document.select(".sale_price").first();
-
-      if (mainPagePriceElement != null) {
-         price = MathUtils.parseFloatWithComma(mainPagePriceElement.text());
-      }
-
-      return price;
-   }
-
-   private String crawlPrimaryImage(Document document) {
-      String primaryImage = null;
-      Element primaryImageElement = document.select(".big-image a").first();
-
-      if (primaryImageElement != null) {
-         primaryImage = primaryImageElement.attr("href");
-
-         if (!primaryImage.startsWith("http")) {
-            primaryImage = "https:" + primaryImage;
-         }
-      }
-
-      return primaryImage;
-   }
-
-   private String crawlSecondaryImages(Document document) {
-      String secondaryImages = null;
-      JSONArray secondaryImagesArray = new JSONArray();
-
-      Elements images = document.select("#sly_carousel li:not(.active) a");
-      for (Element e : images) {
-         String image = e.attr("big_img");
-
-         if (!image.startsWith("http")) {
-            image = "https:" + image;
-         }
-
-         secondaryImagesArray.put(image);
-      }
-
-      if (secondaryImagesArray.length() > 0) {
-         secondaryImages = secondaryImagesArray.toString();
-      }
-
-      return secondaryImages;
-   }
 
    private CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
@@ -243,38 +194,80 @@ public class BrasilDrogalCrawler extends Crawler {
       return description.toString();
    }
 
-   private Prices crawlPrices(Float price, Document doc) {
-      Prices prices = new Prices();
+   private Offers scrapOffers(Document doc) throws MalformedPricingException, OfferException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = scrapSales(pricing, doc);
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new HashMap<>();
-         installmentPriceMap.put(1, price);
-         prices.setBankTicketPrice(price);
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-         Element priceFrom = doc.select(".unit_price").first();
-         if (priceFrom != null) {
-            prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
-         }
+      return offers;
+   }
 
-         Elements installments = doc.select(".get_installments > span strong");
-
-         if (installments.size() > 1) {
-            String number = installments.get(0).ownText().replaceAll("[^0-9]", "").trim();
-            Float value = MathUtils.parseFloatWithComma(installments.get(1).ownText());
-
-            if (!number.isEmpty() && value != null) {
-               installmentPriceMap.put(Integer.parseInt(number), value);
-            }
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-
+   private List<String> scrapSales(Pricing pricing, Document doc) {
+      List<String> sales = new ArrayList<>();
+      String sale = CrawlerUtils.calculateSales(pricing);
+      if (sale != null) {
+         sales.add(sale);
       }
 
-      return prices;
+      return sales;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price_off span", null, false, ',', session);
+      Double priceCard = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale .sale_price", null, false, ',', session);
+      CreditCards creditCards = scrapCreditCards(priceCard, doc);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-boleto.get_price_boleto", null, false, ',', session);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+
+   private CreditCards scrapCreditCards(Double priceCard, Document doc) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+      Integer installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".get_min_installments", true, 0);
+      Double value = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".get_card_price", null, true, ',', session);
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(priceCard)
+         .build());
+
+      if (installment != 0 && value != null) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installment)
+            .setInstallmentPrice(value)
+            .build());
+      }
+
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
    }
 
    private RatingsReviews scrapRatingAndReviews(Document document, String internalId) {
@@ -334,7 +327,8 @@ public class BrasilDrogalCrawler extends Crawler {
       if (paginationExists != null) {
          Elements ratingElementsPage = document.select(".pagination>ul>li:not([class])");
          totalPages = ratingElementsPage.size();
-      } ;
+      }
+      ;
 
 
       Map<Integer, Integer> starsCount = new HashMap<>();
@@ -362,8 +356,8 @@ public class BrasilDrogalCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .allStars(starsCount)
-            .build();
+         .allStars(starsCount)
+         .build();
    }
 
    /**
