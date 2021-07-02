@@ -69,7 +69,6 @@ public class BrasilPetloveCrawler extends Crawler {
 
          JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataLayer.push(", ");", false, false);
          JSONObject productJson = JSONUtils.getJSONValue(json, "info");
-         String internalPid = crawlInternalPid(productJson);
          CategoryCollection categories = crawlCategories(doc);
          String description = crawlDescription(doc);
          Integer stock = null;
@@ -94,7 +93,7 @@ public class BrasilPetloveCrawler extends Crawler {
                      .setUrl(session.getOriginalURL())
                      .setRatingReviews(ratingReviews)
                      .setInternalId(internalId)
-                     .setInternalPid(internalPid)
+                     .setInternalPid(internalId)
                      .setName(name)
                      .setCategory1(categories.getCategory(0))
                      .setCategory2(categories.getCategory(1))
@@ -121,19 +120,6 @@ public class BrasilPetloveCrawler extends Crawler {
       return doc.selectFirst("#product .review-stars") != null;
    }
 
-   private String crawlInternalPid(JSONObject json) {
-      String internalPid = null;
-
-      if (json.has("master") && json.get("master") instanceof JSONObject) {
-         JSONObject master = json.getJSONObject("master");
-
-         if (master.has("product_sku") && master.get("product_sku") instanceof String) {
-            internalPid = master.getString("product_sku");
-         }
-      }
-
-      return internalPid;
-   }
 
    private RatingsReviews crawlRating(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();

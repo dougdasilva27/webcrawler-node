@@ -37,12 +37,11 @@ public class BrasilPetloveCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
             String internalId = scrapInternalId(e);
-            String internalPid = crawlInternalPid(e);
             String productUrl = crawlProductUrl(e);
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            saveDataProduct(internalId, internalId, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalId + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
