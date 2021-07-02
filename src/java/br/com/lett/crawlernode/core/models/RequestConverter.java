@@ -36,6 +36,7 @@ public class RequestConverter {
    private static final String MARKET_CODE = "code";
    private static final String MARKET_REGEX= "regex";
    private static final String MARKET_USE_BROWSER= "use_browser";
+   private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
 
    private RequestConverter() {
    }
@@ -65,6 +66,7 @@ public class RequestConverter {
 
       request.setRequestMethod(req.getMethod());
       request.setQueueName(body.optString(BODY_QUEUE));
+      request.setMessageId(req.getHeader(MSG_ID_HEADER));
       request.setClassName(body.optString(BODY_CLASS_NAME));
 
       String options = body.optString(BODY_OPTIONS);
