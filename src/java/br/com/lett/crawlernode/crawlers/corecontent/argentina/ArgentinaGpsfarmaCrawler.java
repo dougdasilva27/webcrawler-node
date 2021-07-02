@@ -12,6 +12,8 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.GpsfarmaCrawler;
  */
 public class ArgentinaGpsfarmaCrawler extends GpsfarmaCrawler {
 
+   private static final String SELLER_FULLNAME = "gpsfarma argentina - caba san nicolas";
+
   public ArgentinaGpsfarmaCrawler(Session session) {
     super(session);
   }
@@ -38,5 +40,10 @@ public class ArgentinaGpsfarmaCrawler extends GpsfarmaCrawler {
     this.cookies.add(cookie3);
 
   }
+
+   @Override
+   protected String getSellerFullName() {
+      return SELLER_FULLNAME;
+   }
 
 }
