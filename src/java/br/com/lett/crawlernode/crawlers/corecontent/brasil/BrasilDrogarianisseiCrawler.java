@@ -3,10 +3,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -36,17 +33,10 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
       super(session);
       super.config.setFetcher(FetchMode.FETCHER);
-   }
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Request request = Request.RequestBuilder.create()
+      cacheConfig.setRequest(Request.RequestBuilder.create()
          .setUrl(HOME_PAGE)
-         .build();
-
-
-      Response response = dataFetcher.get(session, request);
-      this.cookies = response.getCookies();
+         .build());
+      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override

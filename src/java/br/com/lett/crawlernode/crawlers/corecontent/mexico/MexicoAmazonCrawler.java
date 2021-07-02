@@ -1,10 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
@@ -53,12 +50,15 @@ public class MexicoAmazonCrawler extends Crawler {
 
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
+   private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    protected Set<String> cards = Sets.newHashSet(Card.DINERS.toString(), Card.VISA.toString(),
       Card.MASTERCARD.toString(), Card.ELO.toString());
 
    public MexicoAmazonCrawler(Session session) {
       super(session);
+      cacheConfig.setRequest(this.amazonScraperUtils.getRequestCookies(HOME_PAGE, cookies, dataFetcher));
+      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override
@@ -67,16 +67,10 @@ public class MexicoAmazonCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    @Override
-   public void handleCookiesBeforeFetch() {
-      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
-   }
-
-   @Override
-   protected Document fetch() {
-      return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
+   protected Response fetchResponse() {
+      return amazonScraperUtils.fetchProductPageResponse(cookies, dataFetcher);
    }
 
    @Override

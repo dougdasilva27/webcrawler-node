@@ -14,6 +14,7 @@ import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptions
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
@@ -47,32 +48,33 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.homePage = HOME_PAGE;
       super.config.setFetcher(FetchMode.JSOUP);
 
+      cacheConfig.setRequestMethod(RequestMethod.GET);
+      cacheConfig.setRequest(getCookieRequest());
+
    }
 
-   @Override
-   public void handleCookiesBeforeFetch() {
+   private Request getCookieRequest() {
       Request request;
-
       if (dataFetcher instanceof FetcherDataFetcher) {
          request = RequestBuilder.create().setUrl(HOME_PAGE)
-               .setCookies(cookies)
-               .setProxyservice(
-                     Arrays.asList(
-                           ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                           ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                           ProxyCollection.BUY
-                     )
-               ).mustSendContentEncoding(false)
-               .setFetcheroptions(FetcherOptionsBuilder.create()
-                     .setForbiddenCssSelector("#px-captcha")
-                     .mustUseMovingAverage(false)
-                     .mustRetrieveStatistics(true).build())
-               .build();
+            .setCookies(cookies)
+            .setProxyservice(
+               Arrays.asList(
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
+                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
+                  ProxyCollection.BUY
+               )
+            ).mustSendContentEncoding(false)
+            .setFetcheroptions(FetcherOptionsBuilder.create()
+               .setForbiddenCssSelector("#px-captcha")
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true).build())
+            .build();
       } else {
          request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
       }
 
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.submarino.com.br", "/", null, session, dataFetcher);
+      return request;
    }
 
    @Override
@@ -127,7 +129,7 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
    }
 
 
-   private void setOffersForMainPageSeller (Offers offers ,JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
+   private void setOffersForMainPageSeller(Offers offers, JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       boolean twoPositions = false;
 
@@ -169,15 +171,15 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
 
    private void setOffersForSellersPage(Offers offers, Elements sellers) throws MalformedPricingException, OfferException {
 
-      if(sellers.size() > 0){
+      if (sellers.size() > 0) {
 
-         for(int i = 0; i < sellers.size(); i++){
+         for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
             boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo,".seller-card__SellerInfo-zjlv7o-2 p:nth-child(2)",false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo,".seller-card__ButtonBox-zjlv7o-4 a","href");
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".seller-card__SellerInfo-zjlv7o-2 p:nth-child(2)", false);
+            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonBox-zjlv7o-4 a", "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
-            Integer mainPagePosition = i == 0 ? 1: null;
+            Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
@@ -196,10 +198,10 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       }
    }
 
-   private String scrapSellerIdFromURL(String rawSellerId){
+   private String scrapSellerIdFromURL(String rawSellerId) {
       String sellerId = "";
-      if(rawSellerId != null){
-         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]","").trim();
+      if (rawSellerId != null) {
+         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]", "").trim();
       }
       return sellerId;
    }
@@ -207,10 +209,10 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
    private Pricing scrapPricingForOffersPage(Element sellerInfo)
       throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".best-discount__ListPrice-sc-1xaobkm-1",null,false,',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo,".src__BestPrice-sc-1jnodg3-4",null,false,',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".best-discount__ListPrice-sc-1xaobkm-1", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jnodg3-4", null, false, ',', session);
       BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo,spotlightPrice);
+      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
