@@ -22,7 +22,7 @@ object Redis {
          .setTimeout(10000)
 
       try {
-         Redisson.create(config).also {
+         Redisson.create(config)?.also {
             logger.info("Connection cache success")
          }
       } catch (e: Exception) {
