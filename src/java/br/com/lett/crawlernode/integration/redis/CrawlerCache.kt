@@ -7,9 +7,11 @@ import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
+import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.exceptions.RequestMethodNotFoundException
 import br.com.lett.crawlernode.integration.redis.config.RedisDb
 import org.redisson.api.RMapCache
+import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 import java.util.function.Function
 
@@ -19,6 +21,8 @@ import java.util.function.Function
  */
 class CrawlerCache(db: RedisDb) {
 
+   private val logger = LoggerFactory.getLogger(CrawlerCache::class.java)
+
    private val mapCache: RMapCache<String, Any?>? by lazy {
       CacheFactory.createCache(db)
    }
@@ -26,12 +30,16 @@ class CrawlerCache(db: RedisDb) {
    private val defaultTimeSecs: Long = 7200
 
    fun <T> get(key: String): T? {
+      val started = System.currentTimeMillis()
       val value: Any? = mapCache?.get(key)
+      logger.debug("[Redis timing] Get {}", System.currentTimeMillis() - started)
       return if (value != null) value as T? else null
    }
 
    fun <T> set(key: String, value: T, seconds: Long) {
+      val started = System.currentTimeMillis()
       mapCache?.fastPut(key, value, seconds, TimeUnit.SECONDS)
+      logger.debug("[Redis timing] Put {}", System.currentTimeMillis() - started)
    }
 
    /**
