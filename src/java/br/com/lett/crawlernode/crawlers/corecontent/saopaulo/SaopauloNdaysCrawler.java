@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import javax.print.Doc;
+import java.net.URLDecoder;
 import java.util.*;
 
 public class SaopauloNdaysCrawler extends Crawler {
@@ -45,7 +46,8 @@ public class SaopauloNdaysCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product .modal-content input[name=\"product_id\"]", "value");
 
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".modal-content ul.breadcrumb li", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#product .modal-content .modal-body .det-prod-img img", Collections.singletonList("src"), "https", HOME_PAGE);
+         String image = CrawlerUtils.scrapSimplePrimaryImage(doc, "#product .modal-content .modal-body .det-prod-img img", Arrays.asList("src"), "https", HOME_PAGE);
+         String primaryImage = image != null ? URLDecoder.decode(image, "utf-8") : null;
          boolean available = doc.select("#product .modal-content .modal-body #button-cart").first() != null;
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".modal-body .det-prod-selo", false);
          Integer stock = CrawlerUtils.scrapIntegerFromHtml(doc, ".modal-body .det-prod-fields-form p span", false, 0);
