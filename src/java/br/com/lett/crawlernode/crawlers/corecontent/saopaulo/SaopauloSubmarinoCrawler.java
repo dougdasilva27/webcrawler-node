@@ -48,12 +48,10 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
       super.homePage = HOME_PAGE;
       super.config.setFetcher(FetchMode.JSOUP);
 
-      cacheConfig.setRequestMethod(RequestMethod.GET);
-      cacheConfig.setRequest(getCookieRequest());
-
    }
 
-   private Request getCookieRequest() {
+   @Override
+   public void handleCookiesBeforeFetch() {
       Request request;
       if (dataFetcher instanceof FetcherDataFetcher) {
          request = RequestBuilder.create().setUrl(HOME_PAGE)
@@ -74,8 +72,9 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
          request = RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
       }
 
-      return request;
+      this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.submarino.com.br", "/", null, session, dataFetcher);
    }
+
 
    @Override
    protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
