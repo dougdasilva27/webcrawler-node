@@ -6,11 +6,7 @@ import org.redisson.Redisson
 import org.redisson.api.RMapCache
 import org.redisson.api.RedissonClient
 import org.redisson.config.Config
-import org.redisson.jcache.configuration.RedissonConfiguration
-import javax.cache.Cache
-import javax.cache.CacheManager
-import javax.cache.Caching
-import javax.cache.configuration.MutableConfiguration
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -18,6 +14,7 @@ import javax.cache.configuration.MutableConfiguration
  *
  */
 object Redis {
+   private val logger = LoggerFactory.getLogger(Redis::class.java)
 
    internal val client: RedissonClient? by lazy {
       val config = Config()
@@ -25,14 +22,13 @@ object Redis {
          .setTimeout(10000)
 
       try {
-         Redisson.create(config)
+         Redisson.create(config).also {
+            logger.info("Connection cache success")
+         }
       } catch (e: Exception) {
+         logger.error("Connection cache error", e)
          null
       }
-   }
-
-   fun shutdown() {
-      client?.shutdown()
    }
 }
 
