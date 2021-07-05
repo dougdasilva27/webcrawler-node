@@ -11,3 +11,4 @@
 *.iml
 src/resources/null.tar.gz
 src/java/br/com/lett/crawlernode/test/test.env
+redis-data/

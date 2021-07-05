@@ -1,7 +1,10 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
+import br.com.lett.crawlernode.exceptions.InternalIdNotFound
+import org.jsoup.nodes.Element
 
 /**
  * Date: 21/07/20
@@ -11,32 +14,45 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
  */
 class BrasilIngredientesonlineCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
-    init {
-        pageSize = 18
-    }
+   init {
+      pageSize = 18
+      fetchMode = FetchMode.FETCHER
+   }
 
-    override fun extractProductsFromCurrentPage() {
+   override fun extractProductsFromCurrentPage() {
 
-        currentDoc = fetchDocument(
-                "https://www.ingredientesonline.com.br/catalogsearch/result/" +
-                        "?q=$keywordEncoded" +
-                        "&p=$currentPage"
-        )
+      currentDoc = fetchDocument(
+         "https://www.ingredientesonline.com.br/catalogsearch/result/" +
+            "?q=${location.replace(" ", "+")}" +
+            "&p=$currentPage"
+      )
 
-        val items = currentDoc.select(".item .suporte")
+      val items = currentDoc.select(".item .suporte")
 
-        for (it in items) {
+      for (element in items) {
 
-            val productUrl = it.selectFirst(".product-image-wrapper a")?.attr("href")
-            val internalId = it.selectFirst(".bt-add button")?.attr("data-id")
+         val productUrl = element.selectFirst(".product-image-wrapper a")?.attr("href")
+         val internalId = scrapInternal(element)
 
-            saveDataProduct(internalId, internalId, productUrl)
-            log(">>> ✅ productId: $internalId")
-        }
-    }
+         saveDataProduct(internalId, internalId, productUrl)
+         log(">>> productId: $internalId | productUrl: $productUrl")
+      }
+   }
 
-    override fun hasNextPage(): Boolean {
+   private fun scrapInternal(doc: Element): String {
+      val element = doc.selectFirst(".bt-add button")
 
-        return currentDoc.select(".pager li .i-next").isNotEmpty()
-    }
+      var internalId = element?.attr("data-id") ?: ""
+
+      if (internalId.isEmpty()){
+         internalId = element?.attr("onclick")?.substringAfter("showOptions")?.substringBefore("',")
+            ?.replace("[^0-9]".toRegex(), "") ?: ""
+      }
+      return internalId
+   }
+
+   override fun hasNextPage(): Boolean {
+
+      return currentDoc.select(".pager li .i-next").isNotEmpty()
+   }
 }

@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
 import br.com.lett.crawlernode.core.fetcher.models.Request
-import br.com.lett.crawlernode.core.fetcher.models.Response
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
@@ -21,12 +20,15 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.net.URL
 import java.time.LocalDate
+import br.com.lett.crawlernode.core.models.RequestMethod
 
 class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
    init {
       config.fetcher = FetchMode.APACHE
       cookies.add(BasicClientCookie("stc112189", LocalDate.now().toEpochDay().toString()))
+      cacheConfig.request = Request.RequestBuilder.create().setCookies(cookies).setUrl("https://www.panvel.com/panvel/main.do").build()
+      cacheConfig.requestMethod = RequestMethod.GET
    }
 
    override fun fetch(): Any? {

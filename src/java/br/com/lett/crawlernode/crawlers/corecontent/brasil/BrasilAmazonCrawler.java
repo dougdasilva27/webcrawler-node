@@ -1,31 +1,18 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -43,6 +30,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.*;
 
 /**
  * Date: 15/11/2017
@@ -67,6 +58,9 @@ public class BrasilAmazonCrawler extends Crawler {
    public BrasilAmazonCrawler(Session session) {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
+
+      cacheConfig.setRequest(this.amazonScraperUtils.getRequestCookies("https://www.amazon.com.br/", cookies, dataFetcher));
+      cacheConfig.setRequestMethod(RequestMethod.GET);
    }
 
    @Override
@@ -75,16 +69,11 @@ public class BrasilAmazonCrawler extends Crawler {
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
 
-   private AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
+   private final AmazonScraperUtils amazonScraperUtils = new AmazonScraperUtils(logger, session);
 
    @Override
-   public void handleCookiesBeforeFetch() {
-      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
-   }
-
-   @Override
-   protected Document fetch() {
-      return amazonScraperUtils.fetchProductPage(cookies, dataFetcher);
+   protected Response fetchResponse() {
+      return amazonScraperUtils.fetchProductPageResponse(cookies, dataFetcher);
    }
 
    @Override
@@ -472,7 +461,6 @@ public class BrasilAmazonCrawler extends Crawler {
    /**
     * Fetch pages when have marketplace info
     *
-    * @param id
     * @return documents
     */
    private List<Document> fetchDocumentsOffers(Document doc, String internalId) {
