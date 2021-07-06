@@ -208,8 +208,8 @@ public class SaopauloSubmarinoCrawler extends B2WCrawler {
    private Pricing scrapPricingForOffersPage(Element sellerInfo)
       throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".best-discount__ListPrice-sc-1xaobkm-1", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jnodg3-4", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPriceWrapper-sc-1jnodg3-1 span", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jnodg3-5", null, false, ',', session);
       BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
       CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
 
