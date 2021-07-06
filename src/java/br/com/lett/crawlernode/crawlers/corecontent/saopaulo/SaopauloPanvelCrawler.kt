@@ -5,6 +5,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.models.Card
 import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
+import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.round
@@ -20,7 +21,6 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.net.URL
 import java.time.LocalDate
-import br.com.lett.crawlernode.core.models.RequestMethod
 
 class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
@@ -41,7 +41,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
    override fun extractInformation(doc: Document): List<Product> {
       super.extractInformation(doc)
       val products: MutableList<Product> = ArrayList()
-      if (""".*p-\d*""".toRegex().matches(session.originalURL)) {
+      if (isProductPage(doc) && """.*p-\d*""".toRegex().matches(session.originalURL)) {
          val internalId = URL(session.originalURL).path.substringAfterLast("-")
 
          val json = unescapeHtml(doc.selectFirst("#serverApp-state").data()).toJson()
@@ -69,6 +69,11 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
       return products
    }
+
+   private fun isProductPage(doc: Document): Boolean {
+      return doc.select(".produto-nome").first() != null
+   }
+
 
    private fun unescapeHtml(str: String): String {
       return str.replace("&a;Ccedil;", "Ç")
