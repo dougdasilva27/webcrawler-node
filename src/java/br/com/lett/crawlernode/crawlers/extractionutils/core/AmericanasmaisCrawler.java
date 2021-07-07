@@ -113,7 +113,7 @@ public abstract class AmericanasmaisCrawler extends Crawler {
             String name = productData.optString("name");
             Collection<String> categories = categories(json); //Has only one category
             JSONArray imageJson = productData.optJSONArray("images");
-            List<String> images = imageJson != null ? CrawlerUtils.scrapImagesListFromJSONArray(imageJson, "extraLarge", null, "https", "images-americanas.b2w.io/", session) : null;
+            List<String> images = getImages(imageJson);
             String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
             String description = getDescription(productData);
             JSONObject dataOffers = (JSONObject) productData.query("/offers/result/0");
@@ -161,6 +161,21 @@ public abstract class AmericanasmaisCrawler extends Crawler {
       return jsonObject;
    }
 
+   private List<String> getImages(JSONArray imageJson) {
+     List<String> images = new ArrayList<>();
+      imageJson.forEach(obj -> {
+         if (obj instanceof JSONObject) {
+            JSONObject imageObj = (JSONObject) obj;
+            if (imageObj.has("extraLarge")) {
+              images.add(imageObj.optString("extraLarge"));
+            } else if (imageObj.has("large")) {
+               images.add(imageObj.optString("large"));
+
+            }
+         }
+      });
+      return images;
+   }
 
    private String getProductId() {
       String[] extractId = session.getOriginalURL().split("&conteudo=");
