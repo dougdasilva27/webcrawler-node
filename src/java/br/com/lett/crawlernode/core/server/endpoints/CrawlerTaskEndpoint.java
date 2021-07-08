@@ -8,8 +8,8 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionFactory;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.core.task.base.TaskFactory;
-import br.com.lett.crawlernode.metrics.Exporter;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.metrics.Exporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

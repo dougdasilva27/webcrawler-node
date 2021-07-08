@@ -5,7 +5,6 @@ import br.com.lett.crawlernode.core.server.request.CrawlerSeedRequest;
 import br.com.lett.crawlernode.core.server.request.ImageCrawlerRequest;
 import br.com.lett.crawlernode.core.server.request.Request;
 import br.com.lett.crawlernode.exceptions.RequestException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import enums.ScrapersTypes;
@@ -15,14 +14,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.security.PrivateKey;
 import java.util.stream.Collectors;
 
 public class RequestConverter {
 
    protected static final Logger logger = LoggerFactory.getLogger(RequestConverter.class);
 
-   private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
    private static final String BODY_QUEUE = "queue";
    private static final String BODY_CLASS_NAME = "className";
    private static final String BODY_OPTIONS = "options";
@@ -39,6 +36,7 @@ public class RequestConverter {
    private static final String MARKET_CODE = "code";
    private static final String MARKET_REGEX= "regex";
    private static final String MARKET_USE_BROWSER= "use_browser";
+   private static final String MSG_ID_HEADER = "X-aws-sqsd-msgid";
 
    private RequestConverter() {
    }

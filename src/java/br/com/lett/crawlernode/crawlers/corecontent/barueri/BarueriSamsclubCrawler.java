@@ -12,7 +12,7 @@ import java.util.List;
 public class BarueriSamsclubCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.samsclub.com.br/";
-   private static final List<String> MAIN_SELLERS = Collections.singletonList("samsclub");
+   private static final List<String> MAIN_SELLERS = Collections.singletonList("WMB SUPERMERCADOS DO BRASIL LTDA.");
 
    public BarueriSamsclubCrawler(Session session) {
       super(session);

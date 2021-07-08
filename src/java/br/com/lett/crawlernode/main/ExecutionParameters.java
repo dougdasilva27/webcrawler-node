@@ -11,8 +11,7 @@ public class ExecutionParameters {
    public static final String DEFAULT_CRAWLER_VERSION = "-1";
    private static final Logger logger = LoggerFactory.getLogger(ExecutionParameters.class);
    /**
-    * In case we want to force image update on Amazon bucket, when downloading images In some cases the
-    * crawler must update the redimensioned versions of images, and we must use this option in case we
+    * In case we want to force image update on Amazon bucket, when downloading images In some cases the crawler must update the redimensioned versions of images, and we must use this option in case we
     * want to force this, even if the image on market didn't changed.
     */
    private boolean forceImageUpdate;
@@ -44,6 +43,9 @@ public class ExecutionParameters {
    private String s3BatchUser;
    private String s3BatchPass;
 
+   private String redisHost;
+   private Integer redisPort;
+
    public ExecutionParameters() {
       debug = null;
    }
@@ -73,9 +75,27 @@ public class ExecutionParameters {
       setUseFetcher(getEnvUseFetcher());
       setReplicatorUrl(getEnvReplicatorUrl());
       setChromePath();
-      version = DEFAULT_CRAWLER_VERSION;
 
+      version = DEFAULT_CRAWLER_VERSION;
+      setRedisHost();
+      setRedisPort();
       Logging.printLogDebug(logger, this.toString());
+   }
+
+   public void setRedisHost() {
+      redisHost = System.getenv(EnvironmentVariables.REDIS_HOST);
+      if (redisHost == null) {
+         redisHost = "redis-crawler-prod.2k0spf.0001.use1.cache.amazonaws.com";
+      }
+   }
+
+   public void setRedisPort() {
+      String redisPortEnv = System.getenv(EnvironmentVariables.REDIS_PORT);
+      if (redisPortEnv != null) {
+         redisPort = Integer.parseInt(redisPortEnv);
+      } else {
+         redisPort = 6379;
+      }
    }
 
    public void setChromePath() {
@@ -336,5 +356,13 @@ public class ExecutionParameters {
 
    public String getS3BatchPass() {
       return s3BatchPass;
+   }
+
+   public String getRedisHost() {
+      return redisHost;
+   }
+
+   public Integer getRedisPort() {
+      return redisPort;
    }
 }

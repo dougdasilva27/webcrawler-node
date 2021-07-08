@@ -9,97 +9,68 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class GpsfarmaCrawler extends CrawlerRankingKeywords {
 
-  public GpsfarmaCrawler(Session session) {
-    super(session);
-  }
+   public GpsfarmaCrawler(Session session) {
+      super(session);
+   }
 
-  private String categoryUrl;
+   private String categoryUrl;
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 16;
-    this.log("Página " + this.currentPage);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 10;
+      this.log("Página " + this.currentPage);
 
-    String url = "https://www.gpsfarma.com/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      String url = "https://gpsfarma.com/index.php/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
-    if (this.currentPage > 1 && this.categoryUrl != null) {
-      url = this.categoryUrl + "?p=" + this.currentPage;
-    }
-
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".products-grid .item");
-
-    if (this.currentPage == 1) {
-      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
-
-      if (!url.equals(redirectUrl)) {
-        this.categoryUrl = redirectUrl;
+      if (this.currentPage > 1 && this.categoryUrl != null) {
+         url = this.categoryUrl + "?p=" + this.currentPage;
       }
-    }
 
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select("ol.products.list.items > li");
+
+      if (this.currentPage == 1) {
+         String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
+
+         if (!url.equals(redirectUrl)) {
+            this.categoryUrl = redirectUrl;
+         }
       }
-      for (Element e : products) {
 
-        String internalId = crawlInternalId(e);
-        String productUrl = crawlProductUrl(e);
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
+         for (Element e : products) {
 
-        saveDataProduct(internalId, null, productUrl);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.price-box.price-final_price", "data-product-id");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "form[data-role=tocart-form]", "data-product-sku");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.product-item-link", "href");
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+            saveDataProduct(internalId, internalPid, productUrl);
 
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select(".count-container .amount").first();
+   @Override
+   protected void setTotalProducts() {
+      Element totalSearchElement = this.currentDoc.selectFirst("p.toolbar-amount :last-child");
 
-    if (totalElement != null) {
-      String text = totalElement.ownText();
-
-      if (text.contains("de")) {
-        String totalText = CommonMethods.getLast(text.split("de")).replaceAll("[^0-9]", "").trim();
-
-        if (!totalText.isEmpty()) {
-          this.totalProducts = Integer.parseInt(totalText);
-        }
+      if(totalSearchElement != null) {
+         this.totalProducts = Integer.parseInt(totalSearchElement.text());
       }
 
       this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-
-    String text = e.attr("id");
-    if (text.contains("-")) {
-      internalId = CommonMethods.getLast(text.split("-")).trim();
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-    Element eUrl = e.select(".product-name > a").first();
-
-    if (eUrl != null) {
-      productUrl = eUrl.attr("href");
-    }
-
-    return productUrl;
-  }
+   }
 }

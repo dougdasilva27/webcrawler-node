@@ -158,6 +158,9 @@ public abstract class FalabellaCrawler extends Crawler {
       if (imgCodes != null) {
          for (Object obj : imgCodes) {
             String value = JSONUtils.getValueRecursive(obj, "s.n", String.class);
+            if (value == null){
+               value = JSONUtils.getValueRecursive(obj, "i.n", String.class);
+            }
             String size = JSONUtils.getValueRecursive(obj, "dx", String.class);
             String url = "https://falabella.scene7.com/is/image/" + value + "?wid=" + size;
             images.add(url);

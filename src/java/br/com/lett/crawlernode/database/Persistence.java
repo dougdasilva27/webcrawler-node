@@ -673,8 +673,6 @@ public class Persistence {
       fields.add(processed.MASTER_ID);
       fields.add(processed.STATUS);
       fields.add(processed.URL);
-      fields.add(processed.LRT);
-
 
       List<Condition> conditions = new ArrayList<>();
       conditions.add(processed.MARKET.equal(market));
@@ -699,7 +697,6 @@ public class Persistence {
             Long masterId = record.get(processed.MASTER_ID);
             p.setVoid(record.get(processed.STATUS).equalsIgnoreCase("void"));
             p.setUrl(record.get(processed.URL));
-            p.setLrt(record.get(processed.LRT));
 
             if (masterId != null) {
                p.setId(masterId);
@@ -726,16 +723,13 @@ public class Persistence {
    }
 
 
-   public static List<Processed> fetchProcessedIdsWithUrl(String url, int market, Session session) {
-      List<Processed> processeds = new ArrayList<>();
-
+   public static List<Long> fetchProcessedIdsWithUrl(String url, int market, Session session) {
+      List<Long> processedIds = new ArrayList<>();
       dbmodels.tables.Processed processed = Tables.PROCESSED;
 
       List<Field<?>> fields = new ArrayList<>();
       fields.add(processed.ID);
       fields.add(processed.MASTER_ID);
-      fields.add(processed.LRT);
-
 
       List<Condition> conditions = new ArrayList<>();
       conditions.add(processed.MARKET.equal(market));
@@ -756,17 +750,13 @@ public class Persistence {
 
          for (Record record : records) {
             Long masterId = record.get(processed.MASTER_ID);
-            Processed p = new Processed();
-            p.setLrt(record.get(processed.LRT));
 
 
             if (masterId != null) {
-               p.setId(masterId);
+               processedIds.add(record.get(processed.MASTER_ID));
             } else {
-               p.setId(record.get(processed.ID));
+               processedIds.add(record.get(processed.ID));
             }
-
-            processeds.add(p);
          }
 
          JSONObject apacheMetadata = new JSONObject().put("postgres_elapsed_time", System.currentTimeMillis() - queryStartTime)
@@ -782,7 +772,7 @@ public class Persistence {
          JdbcConnectionFactory.closeResource(conn);
       }
 
-      return processeds;
+      return processedIds;
    }
 
 

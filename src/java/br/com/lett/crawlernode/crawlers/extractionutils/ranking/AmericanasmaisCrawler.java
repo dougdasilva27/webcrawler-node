@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -18,6 +19,7 @@ import org.jsoup.select.Elements;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Iterator;
 
 public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
 
@@ -126,7 +128,11 @@ public abstract class AmericanasmaisCrawler extends CrawlerRankingKeywords {
    }
 
    private void setTotalProducts(JSONObject json) {
-      this.totalProducts = (Integer) json.optQuery("/pages/undefined/queries/getStoreOffersDesktopAcom/result/search/total");
+      JSONObject jsonObject = json.optJSONObject("pages");
+      String key = jsonObject.keys().next();
+      JSONObject jsonObjectWithKey = jsonObject.optJSONObject(key);
+
+      this.totalProducts = JSONUtils.getValueRecursive(jsonObjectWithKey, "queries.getStoreOffersAcom.result.search.total", Integer.class);;
       this.log("Total da busca: " + this.totalProducts);
    }
 }

@@ -72,6 +72,12 @@ public class Response {
       this.lastStatusCode = lastStatusCode;
    }
 
+   public boolean isSuccess() {
+      String statusCode = String.valueOf(lastStatusCode);
+      char firstChar = statusCode.charAt(0);
+      return firstChar == '2' || firstChar =='3';
+   }
+
    public static class ResponseBuilder {
       private String body;
       private String redirectUrl;
