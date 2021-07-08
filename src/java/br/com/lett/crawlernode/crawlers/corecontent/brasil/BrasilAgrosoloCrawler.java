@@ -41,7 +41,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       if (isProductPage(doc) && !json.isEmpty()) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = json.optString("sku");
+         String internalPid = scrapInternalPid();
          String name = json.optString("name");
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.bread > ol > li > a > span", true);
          List<String> images = scrapImages(json);
@@ -83,6 +83,17 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("div.content.produto") != null;
+   }
+
+   private String scrapInternalPid(){
+      String internalPid = "";
+      String[] splitUrl = session.getOriginalURL().split("-");
+
+      if(splitUrl.length > 0){
+         return CommonMethods.getLast(splitUrl);
+      }
+
+      return internalPid;
    }
 
    private List<String> scrapImages(JSONObject json) {
