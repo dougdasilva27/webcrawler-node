@@ -33,7 +33,7 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id").replace("produto-spot-item-", "") + "-0";
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".spot", "id").replace("produto-spot-item-", "");
             String productUrl = CrawlerUtils.scrapUrl(e, ".spot div.spotContent > a", "href", "https", HOME_PAGE);
 
             saveDataProduct(internalId, null, productUrl);
