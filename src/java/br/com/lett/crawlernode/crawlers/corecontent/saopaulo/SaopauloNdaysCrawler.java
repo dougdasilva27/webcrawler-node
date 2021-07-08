@@ -17,12 +17,17 @@ import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
 
-import java.util.*;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class SaopauloNdaysCrawler extends Crawler {
 
    private static final String HOME_PAGE = "www.ndays.com.br";
    private static final String SELLER_FULL_NAME = "Ndays";
+
    public SaopauloNdaysCrawler(Session session) {
       super(session);
       config.setFetcher(FetchMode.JSOUP);
@@ -40,11 +45,12 @@ public class SaopauloNdaysCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#product .modal-content .product-title",false);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#product .modal-content .product-title", false);
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product .modal-content input[name=\"product_id\"]", "value");
 
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".modal-content ul.breadcrumb li", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#product .modal-content .modal-body .det-prod-img img", Collections.singletonList("src"), "https", HOME_PAGE);
+         String image = CrawlerUtils.scrapSimplePrimaryImage(doc, "#product .modal-content .modal-body .det-prod-img img", Arrays.asList("src"), "https", HOME_PAGE);
+         String primaryImage = image != null ? URLDecoder.decode(image, "utf-8") : null;
          boolean available = doc.select("#product .modal-content .modal-body #button-cart").first() != null;
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".modal-body .det-prod-selo", false);
          Integer stock = CrawlerUtils.scrapIntegerFromHtml(doc, ".modal-body .det-prod-fields-form p span", false, 0);
@@ -70,11 +76,11 @@ public class SaopauloNdaysCrawler extends Crawler {
       return products;
    }
 
-   private boolean isProductPage(Document doc){
+   private boolean isProductPage(Document doc) {
       return doc.selectFirst("#product") != null;
    }
 
-   private String getSeller(Document doc){
+   private String getSeller(Document doc) {
       return CrawlerUtils.scrapStringSimpleInfo(doc, ".modal-body .linha-vendido .list-lojas-cont h2", false);
    }
 
@@ -97,10 +103,10 @@ public class SaopauloNdaysCrawler extends Crawler {
       return offers;
    }
 
-   private List<String> scrapSales(Document doc){
+   private List<String> scrapSales(Document doc) {
       List<String> sales = new ArrayList<>();
       String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-econ strong", true);
-      if (sale != null){
+      if (sale != null) {
          sales.add(sale);
       }
 
@@ -134,7 +140,7 @@ public class SaopauloNdaysCrawler extends Crawler {
          .build());
 
 
-      for(String card:cards){
+      for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
             .setBrand(card)
             .setInstallments(installments)
