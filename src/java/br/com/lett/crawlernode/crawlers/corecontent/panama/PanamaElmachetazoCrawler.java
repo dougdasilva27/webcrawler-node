@@ -23,12 +23,12 @@ import java.util.Set;
 
 public class PanamaElmachetazoCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME = "El Machetazo";
+   private static final String SELLER_FULL_NAME = "elmachetazo";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
-   protected PanamaElmachetazoCrawler(Session session) {super(session);}
+   public PanamaElmachetazoCrawler(Session session) {super(session);}
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -38,9 +38,10 @@ public class PanamaElmachetazoCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-info-price div[data-product-id]", false);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "..page-title .base", false);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fotorama__stage__frame.fotorama__active  img", Arrays.asList("src"),"http", "elmachetazo.com");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form input[name=\"product\"]", "value");
+
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", false);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".gallery-placeholder._block-content-loading img", Arrays.asList("src"),"http", "elmachetazo.com");
          // Quando esse scraper foi feito o site não possuia imagem secundaria.
          boolean availableToBuy = doc.selectFirst(".stock.available") != null;
          Offers offers = availableToBuy ? scrapOffer(doc, internalId) : new Offers();
