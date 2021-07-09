@@ -1,6 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -8,6 +7,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -15,8 +15,11 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
+import javax.print.Doc;
+import java.net.URLDecoder;
 import java.util.*;
 
 public class SaopauloNdaysCrawler extends Crawler {
@@ -25,7 +28,6 @@ public class SaopauloNdaysCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Ndays";
    public SaopauloNdaysCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.JSOUP);
    }
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -44,7 +46,8 @@ public class SaopauloNdaysCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#product .modal-content input[name=\"product_id\"]", "value");
 
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".modal-content ul.breadcrumb li", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#product .modal-content .modal-body .det-prod-img img", Collections.singletonList("src"), "https", HOME_PAGE);
+         String image = CrawlerUtils.scrapSimplePrimaryImage(doc, "#product .modal-content .modal-body .det-prod-img img", Arrays.asList("src"), "https", HOME_PAGE);
+         String primaryImage = image != null ? URLDecoder.decode(image, "utf-8") : null;
          boolean available = doc.select("#product .modal-content .modal-body #button-cart").first() != null;
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".modal-body .det-prod-selo", false);
          Integer stock = CrawlerUtils.scrapIntegerFromHtml(doc, ".modal-body .det-prod-fields-form p span", false, 0);
@@ -71,7 +74,7 @@ public class SaopauloNdaysCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc){
-      return doc.selectFirst("#product") != null;
+      return doc.select("#product") != null;
    }
 
    private String getSeller(Document doc){

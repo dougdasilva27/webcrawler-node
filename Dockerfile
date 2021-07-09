@@ -1,7 +1,6 @@
-FROM openjdk:8-jre-slim
+FROM adoptopenjdk/openjdk11:alpine-jre
 
-RUN apt-get update
-RUN apt-get --no-install-recommends install chromium-driver -y
+RUN apk add --no-cache chromium chromium-chromedriver
 
 COPY target/deployment/webcrawler.jar /app/webcrawler.jar
 
