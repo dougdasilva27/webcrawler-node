@@ -35,7 +35,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    }
 
    @Override
-   protected JSONObject fetch() {
+   protected JSONArray fetch() {
       String internalPid = getProductPid();
       String API = "https://www.automercado.cr/algoliaSearch";
 
@@ -53,10 +53,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          .post(session, request)
          .getBody();
 
-      JSONArray jsonArray = CrawlerUtils.stringToJsonArray(content);
-
-
-      return jsonArray != null ? (JSONObject) jsonArray.get(0) : null;
+      return CrawlerUtils.stringToJsonArray(content);
    }
 
 
@@ -71,33 +68,35 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject json) throws Exception {
-      super.extractInformation(json);
+   public List<Product> extractInformation(JSONArray jsonArray) throws Exception {
+      super.extractInformation(jsonArray);
       List<Product> products = new ArrayList<>();
+      if (!jsonArray.isEmpty()) {
+         JSONObject json = (JSONObject) jsonArray.get(0);
 
-      if (!json.isEmpty()) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         if (!json.isEmpty()) {
+            Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = json.optString("productID");
-         String internalPid = getProductPid();
-         String name = json.optString("ecomDescription");
-         String primaryImage = json.optString("imageUrl");
-         String description = json.optString("ecomDescription");
-         boolean available = json.optBoolean("productAvailable");
-         Offers offers = available ? scrapOffers(json) : new Offers();
+            String internalId = json.optString("productID");
+            String internalPid = getProductPid();
+            String name = json.optString("ecomDescription");
+            String primaryImage = json.optString("imageUrl");
+            String description = json.optString("ecomDescription");
+            boolean available = json.optBoolean("productAvailable");
+            Offers offers = available ? scrapOffers(json) : new Offers();
 
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrimaryImage(primaryImage)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setOffers(offers)
+               .build();
 
-         products.add(product);
-
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -139,7 +138,6 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-
       Installments installments = new Installments();
       installments.add(Installment.InstallmentBuilder.create()
          .setInstallmentNumber(1)
