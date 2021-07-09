@@ -53,7 +53,6 @@ public class GuatemalaSelecciondelchefCrawler extends CrawlerRankingKeywords {
 
 
       if (items.length() >= 1) {
-         if (this.totalProducts == 0) setTotalProducts();
          for (Object e : selectedItems) {
 
             JSONObject product = (JSONObject) e;
