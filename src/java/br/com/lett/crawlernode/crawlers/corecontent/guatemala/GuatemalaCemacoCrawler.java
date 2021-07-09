@@ -35,7 +35,7 @@ public class GuatemalaCemacoCrawler extends Crawler {
    }
 
    @Override
-   protected JSONObject fetch() {
+   protected JSONArray fetch() {
       String id = getProductId();
       String API = "https://www.cemaco.com/produto/sku/" + id;
 
@@ -46,9 +46,7 @@ public class GuatemalaCemacoCrawler extends Crawler {
          .get(session, request)
          .getBody();
 
-      JSONArray jsonArray = CrawlerUtils.stringToJsonArray(content);
-
-      return (JSONObject) jsonArray.get(0);
+      return CrawlerUtils.stringToJsonArray(content);
    }
 
 
@@ -63,37 +61,39 @@ public class GuatemalaCemacoCrawler extends Crawler {
    }
 
    @Override
-   public List<Product> extractInformation(JSONObject json) throws Exception {
-      super.extractInformation(json);
+   public List<Product> extractInformation(JSONArray jsonArray) throws Exception {
+      super.extractInformation(jsonArray);
       List<Product> products = new ArrayList<>();
+      if (jsonArray.length() >= 0) {
+         JSONObject json = (JSONObject) jsonArray.get(0);
 
-      if (!json.isEmpty()) {
-         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         if (!json.isEmpty()) {
 
-         String internalId = getProductId();
-         String internalPid = json.optString("IdProduct");
-         String name = json.optString("Name");
-         JSONArray imageArray = json.optJSONArray("Images");
-         List<String> images = getImages(imageArray);
-         String primaryImage = images != null && !images.isEmpty() ? images.remove(0) : null;
-         String description = JSONUtils.getValueRecursive(json, "0.x_caracteristicasHtml", String.class);
-         boolean available = json.optBoolean("Availability");
-         Offers offers = available ? scrapOffers(json) : new Offers();
+            Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         // Creating the product
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalPid)
-            .setName(name)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
+            String internalId = getProductId();
+            String internalPid = json.optString("IdProduct");
+            String name = json.optString("Name");
+            List<String> images = getImages(json);
+            String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+            String description = JSONUtils.getValueRecursive(json, "0.x_caracteristicasHtml", String.class);
+            boolean available = json.optBoolean("Availability");
+            Offers offers = available ? scrapOffers(json) : new Offers();
 
-         products.add(product);
+            // Creating the product
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(images)
+               .setDescription(description)
+               .setOffers(offers)
+               .build();
 
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -101,7 +101,8 @@ public class GuatemalaCemacoCrawler extends Crawler {
       return products;
    }
 
-   private List<String> getImages(JSONArray imageArray) {
+   private List<String> getImages(JSONObject json) {
+      JSONArray imageArray = json.optJSONArray("Images");
       List<String> listImages = new ArrayList<>();
       if (imageArray != null) {
 
