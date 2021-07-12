@@ -19,5 +19,10 @@ public class RibeiraopretoSavegnagoCrawler extends SavegnagoCrawler {
       return "1";
    }
 
+   @Override
+   protected String getSalesChannel() {
+      return "18";
+   }
+
 
 }

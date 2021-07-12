@@ -16,4 +16,9 @@ public class RibeiraopretoSavegnagoCrawler extends SavegnagoRanking {
       return STORE_ID;
    }
 
+   @Override
+   public String getSalesChannel() {
+      return "18";
+   }
+
 }
