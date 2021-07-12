@@ -9,11 +9,6 @@ public class BrasilSavegnagobebedouroCrawler extends SavegnagoCrawler {
    }
 
    @Override
-   protected String getCEP() {
-      return "14700500";
-   }
-
-   @Override
    protected String getCityCode() {
       return "9";
    }

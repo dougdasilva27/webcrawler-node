@@ -10,11 +10,6 @@ public class RibeiraopretoSavegnagolojaoitoCrawler extends SavegnagoCrawler {
    }
 
    @Override
-   protected String getCEP() {
-      return "14030250";
-   }
-
-   @Override
    protected String getCityCode() {
       return "2";
    }

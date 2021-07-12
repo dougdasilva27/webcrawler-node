@@ -29,20 +29,12 @@ public abstract class SavegnagoCrawler extends Crawler {
 
    private final String HOME_PAGE = "https://www.savegnago.com.br/";
    private final String SELLER_NAME = "Savegnago Supermercados";
-   private final String SALES_CHANNEL = getSalesChannel();
    private final String CITY_CODE = getCityCode();
-   private final String CEP = getCEP();
 
    //This token never changes. BUT, if necessary, we can get the token using the 'getAppToken' method
    protected String APP_TOKEN = "DWEYGZH2K4M5N7Q8R9TBUCVEXFYG2J3K4N6P7Q8SATBUDWEXFZH2J3M5N6";
 
-   protected abstract String getCEP();
-
    protected abstract String getCityCode();
-
-   protected String getSalesChannel(){
-      return "";
-   }
 
    public SavegnagoCrawler(Session session) {
       super(session);
@@ -79,7 +71,7 @@ public abstract class SavegnagoCrawler extends Crawler {
 
       String internalId = CommonMethods.getLast(session.getOriginalURL().split("/"));
 
-      String url = "https://api.savegnago.com.br/product?productId=" + internalId + "&salesChannel=" + SALES_CHANNEL + "&wareHouseId=" + SALES_CHANNEL;
+      String url = "https://api.savegnago.com.br/product?productId=" + internalId + "&salesChannel=" + CITY_CODE + "&wareHouseId=" + CITY_CODE;
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
