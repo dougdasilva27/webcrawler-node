@@ -2,28 +2,32 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import org.apache.http.impl.cookie.BasicClientCookie;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SavegnagoRanking extends CrawlerRankingKeywords {
 
    private static final String BASE_URL = "www.savegnago.com.br";
    private String urlModel;
    private final String storeId = getStoreId();
+   private final String salesChannel = getSalesChannel();
 
+   //This token never changes. BUT, if necessary, we can get the token using the 'getAppToken' method
+   protected String APP_TOKEN = "DWEYGZH2K4M5N7Q8R9TBUCVEXFYG2J3K4N6P7Q8SATBUDWEXFZH2J3M5N6";
+
+   public String getSalesChannel() {
+      return salesChannel;
+   }
 
    public String getStoreId() {
       return storeId;
@@ -34,154 +38,88 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   @Override
-   protected void processBeforeFetch() {
-      super.processBeforeFetch();
+   //If the app token changes, we can use this method to get it
+   protected void getAppToken() {
+      String url = "https://savegnago.com.br/_next/static/chunks/950816df62fa2d85fc3ac8e13cd05335a6db61c7.1e900a1ca2420496572b.js";
 
-      Logging.printLogDebug(logger, session, "Adding cookie...");
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .build();
 
-      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + storeId);
-      cookie.setDomain(".savegnago.com.br");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
+      String jsResponse = this.dataFetcher.get(session, request).getBody();
+      Pattern regexAppToken = Pattern.compile("APP_TOKEN:\\\"(.*?)\\\"");
 
-   }
+      Matcher matcher = regexAppToken.matcher(jsResponse);
 
-
-   private String buildUrl() {
-      String host = "http://";
-      if (urlModel == null) {
-         String urlFirst = "https://" + BASE_URL + "/" + this.keywordEncoded;
-
-         this.currentDoc = getHtml(urlFirst);
-         Element element = this.currentDoc.selectFirst(".vitrine script[type='text/javascript']");
-
-         if (element != null) {
-            String script = element.toString();
-            String[] firstSplit = script.split("load\\('");
-            if (firstSplit.length > 0) {
-               String url = firstSplit[1].split("' \\+ pageclickednumber")[0];
-               urlModel = BASE_URL + url;
-               return host + urlModel + this.currentPage;
-            }
-         } else {
-            return null;
-         }
-      } else {
-         return host + urlModel + this.currentPage;
+      if (matcher.find()) {
+         APP_TOKEN = matcher.group(1);
       }
-      return null;
    }
 
-   private Document getHtml(String url) {
-      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      Response response = dataFetcher.get(session, request);
+   @Override
+   protected JSONObject fetchJSONObject(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("app-token", APP_TOKEN);
+      headers.put("app-key", "betaappkey-savegnago-desktop");
 
-      return Jsoup.parse(response.getBody());
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setCookies(cookies)
+         .build();
 
+      String json = this.dataFetcher.get(session, request).getBody();
+
+      return JSONUtils.stringToJson(json);
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      this.pageSize = 16;
+      this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = buildUrl();
+      String url = "https://api.savegnago.com.br/search?input=" + this.keywordEncoded + "&page=" + this.currentPage + "&salesChannel=" + salesChannel;
 
-      if (url != null) {
-         extract(url);
-      } else {
-         JSONObject json = loadJson();
-         if (json.has("products")) {
-            extractJson(json);
-         } else {
-            result = false;
-            log("Keyword sem resultado!");
-         }
-
-      }
-
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora "
-         + this.arrayProducts.size() + " produtos crawleados");
-
-   }
-
-   private void extract(String url) {
-      this.currentDoc = fetchDocument(url);
-
-      if (currentDoc.selectFirst(".product-card") != null) {
-         //Get from the html
-         this.log("Link onde são feitos os crawlers: " + url);
-         Elements products = this.currentDoc.select(".n4colunas li[layout]");
-
-         if (products != null && !products.isEmpty()) {
-            if (totalProducts == 0) {
-               setTotalProducts();
-            }
-            for (Element product : products) {
-               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".product-card", "item");
-               String internalPid = internalId;
-               String productUrl = CrawlerUtils.scrapUrl(product, ".prod-acc > a", "href", "https", BASE_URL);
-               saveDataProduct(internalId, internalPid, productUrl);
-
-               log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-               if (arrayProducts.size() == productsLimit) {
-                  break;
-               }
-            }
-         }
-      }
-   }
-
-   private void extractJson(JSONObject json) {
-
+      JSONObject json = fetchJSONObject(url);
       JSONArray products = json.optJSONArray("products");
 
-      if (products != null && !products.isEmpty()) {
+      if (!products.isEmpty()) {
          if (totalProducts == 0) {
             setTotalProducts(json);
          }
+
          for (Object obj : products) {
             if (obj instanceof JSONObject) {
                JSONObject product = (JSONObject) obj;
-               String internalId = product.optString("id");
-               String internalPid = internalId;
-               String url = product.optString("url");
-               String productUrl = url != null ? "http:" + url : null;
-               saveDataProduct(internalId, internalPid, productUrl);
+               String internalPid = product.optString("id");
+               String name = product.optString("name");
+               String productUrl = buildUrl(name, internalPid);
+               saveDataProduct(null, internalPid, productUrl);
 
-               log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
                if (arrayProducts.size() == productsLimit) {
                   break;
                }
             }
          }
       }
-   }
 
-   private JSONObject loadJson() {
-      String url = "https://api.linximpulse.com/engage/search/v3/search/?salesChannel=" + storeId + "&apiKey=savegnago&terms=" + this.keywordEncoded + "&resultsPerPage=32&page=" + this.currentPage;
-      this.log("Link onde são feitos os crawlers: " + url);
-      Map<String, String> headers = new HashMap<>();
-      headers.put("origin", "https://www.savegnago.com.br");
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
-      Request request = Request.RequestBuilder.create().setUrl(url)
-         .setHeaders(headers)
-         .build();
-      Response response = this.dataFetcher.get(session, request);
-      return CrawlerUtils.stringToJson(response.getBody());
-
-   }
-
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".resultado-busca-numero .value", true, 0);
-      this.log("Total de produtos: " + this.totalProducts);
    }
 
    protected void setTotalProducts(JSONObject json) {
-      this.totalProducts = json.optInt("size");
+      JSONObject paginationArray = json.optJSONObject("pagination");
+      this.totalProducts = paginationArray.optInt("size");
       this.log("Total de produtos: " + this.totalProducts);
+   }
+
+   protected String buildUrl(String name, String internalPid){
+      String url = "https://savegnago.com.br/produto/";
+      url += StringUtils.stripAccents(name.toLowerCase()).replace(" ", "-");
+      url += "/" + internalPid;
+      return CommonMethods.sanitizeUrl(url);
    }
 
 }
