@@ -1,89 +1,86 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import org.jsoup.Jsoup;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilFarmaciaindianaCrawler extends CrawlerRankingKeywords {
 
-  public BrasilFarmaciaindianaCrawler(Session session) {
-    super(session);
-  }
+   private static final String HOME_PAGE = "http://www.farmaciaindiana.com.br/";
+   private static final String VTEX_SEGMENT = "vtex_segment=eyJjYW1wYWlnbnMiOm51bGwsImNoYW5uZWwiOiIxIiwicHJpY2VUYWJsZXMiOm51bGwsInJlZ2lvbklkIjpudWxsLCJ1dG1fY2FtcGFpZ24iOm51bGwsInV0bV9zb3VyY2UiOm51bGwsInV0bWlfY2FtcGFpZ24iOm51bGwsImN1cnJlbmN5Q29kZSI6IkJSTCIsImN1cnJlbmN5U3ltYm9sIjoiUiQiLCJjb3VudHJ5Q29kZSI6IkJSQSIsImN1bHR1cmVJbmZvIjoicHQtQlIiLCJjaGFubmVsUHJpdmFjeSI6InB1YmxpYyJ9";
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 16;
+   public BrasilFarmaciaindianaCrawler(Session session) {
+      super(session);
+   }
 
-    this.log("Página " + this.currentPage);
+   @Override
+   protected void processBeforeFetch() {
+      BasicClientCookie cookie = new BasicClientCookie("vtex_segment", VTEX_SEGMENT);
+      cookie.setDomain(HOME_PAGE);
+      cookie.setPath("/");
+      cookies.add(cookie);
+   }
 
-    String url = "https://www.farmaciaindiana.com.br/" + this.keywordEncoded + "?PageNumber=" + this.currentPage;
+   @Override
+   protected JSONObject fetchJSONObject(String url){
+      Map<String, String> headers = new HashMap<>();
+      headers.put("origin", "https://www.farmaciaindiana.com.br");
 
-    this.log("Link onde são feitos os crawlers: " + url);
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .build();
 
-    this.currentDoc = fetchDocument(url);
+      Response response = dataFetcher.get(session,request);
 
-    Elements id = this.currentDoc.select("div.prateleira div.prateleira > ul > li[layout]");
+      return JSONUtils.stringToJson(response.getBody());
+   }
 
-    if (id.size() >= 1) {
-      if (this.totalProducts == 0)
-        setTotalProducts();
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 16;
 
-      for (Element e : id) {
+      this.log("Página " + this.currentPage);
 
-        String internalId = crawlInternalId(e);
-        String urlProduct = crawlProductUrl(e);
+      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=farmaciaindiana&page=" + this.currentPage + "&resultsPerPage=24&terms=" + this.keywordEncoded + "&sortBy=relevance";
 
-        saveDataProduct(internalId, null, urlProduct);
+      this.log("Link onde são feitos os crawlers: " + url);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + urlProduct);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
+      JSONObject json = fetchJSONObject(url);
+
+      JSONArray products = json.optJSONArray("products");
+
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            this.totalProducts = json.optInt("size");
+         }
+
+         for (Object e : products) {
+            JSONObject product = (JSONObject)e;
+            String internalPid = product.optString("id");
+            String urlProduct = "https:" + product.optString("url");
+
+            saveDataProduct(null, internalPid, urlProduct);
+
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.select("span.resultado-busca-numero span.value").first();
-
-    if (totalElement != null) {
-      try {
-        this.totalProducts = Integer.parseInt(totalElement.text());
-      } catch (Exception e) {
-        this.logError(e.getMessage());
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlInternalId(Element e) {
-    String internalId = null;
-    Element id = e.selectFirst(".qd_cpProdId");
-
-    if (id != null) {
-      internalId = id.attr("value");
-    }
-
-    return internalId;
-  }
-
-
-  private String crawlProductUrl(Element e) {
-    String url = null;
-    Element input = e.selectFirst(".qd_cpUri");
-
-    if (input != null) {
-      url = input.attr("value");
-    }
-
-    return url;
-  }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 }
