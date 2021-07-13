@@ -17,17 +17,10 @@ import java.util.regex.Pattern;
 
 public class SavegnagoRanking extends CrawlerRankingKeywords {
 
-   private static final String BASE_URL = "www.savegnago.com.br";
-   private String urlModel;
    private final String storeId = getStoreId();
-   private final String salesChannel = getSalesChannel();
 
    //This token never changes. BUT, if necessary, we can get the token using the 'getAppToken' method
    protected String APP_TOKEN = "DWEYGZH2K4M5N7Q8R9TBUCVEXFYG2J3K4N6P7Q8SATBUDWEXFZH2J3M5N6";
-
-   public String getSalesChannel() {
-      return salesChannel;
-   }
 
    public String getStoreId() {
       return storeId;
@@ -79,7 +72,7 @@ public class SavegnagoRanking extends CrawlerRankingKeywords {
       this.pageSize = 30;
       this.log("Página " + this.currentPage);
 
-      String url = "https://api.savegnago.com.br/search?input=" + this.keywordEncoded + "&page=" + this.currentPage + "&salesChannel=" + salesChannel;
+      String url = "https://api.savegnago.com.br/search?input=" + this.keywordEncoded + "&page=" + this.currentPage + "&salesChannel=" + storeId;
 
       JSONObject json = fetchJSONObject(url);
       JSONArray products = json.optJSONArray("products");

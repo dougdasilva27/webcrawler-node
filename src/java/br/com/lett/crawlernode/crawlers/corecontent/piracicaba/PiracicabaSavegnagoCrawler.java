@@ -10,11 +10,6 @@ public class PiracicabaSavegnagoCrawler extends SavegnagoCrawler {
    }
 
    @Override
-   protected String getCEP() {
-      return "13417670";
-   }
-
-   @Override
    protected String getCityCode() {
       return "14";
    }
