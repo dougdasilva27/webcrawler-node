@@ -22,7 +22,6 @@ import models.pricing.Pricing.PricingBuilder;
  * date: 27/03/2018
  *
  * @author gabriel
- *
  */
 
 public class BrasilCassolCrawler extends VTEXNewScraper {
@@ -77,7 +76,6 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
 
    protected CreditCards scrapCreditCardsCassol(JSONObject comertial) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      String creditCardControl = null;
       Installments installments = new Installments();
 
       JSONArray cardsArray = comertial.optJSONArray("Installments");
@@ -85,58 +83,27 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
          for (Object o : cardsArray) {
             JSONObject cardJson = (JSONObject) o;
 
-            String paymentName = cardJson.optString("PaymentSystemName");
-
             Integer installmentNumber = cardJson.optInt("NumberOfInstallments");
             Double value = cardJson.optDouble("Value");
             Double interest = cardJson.optDouble("InterestRate");
-
-
-            String cardBrand = null;
-            for (Card card : Card.values()) {
-               if (card.toString().toLowerCase().contains(paymentName.toLowerCase())) {
-                  cardBrand = card.toString();
-                  break;
-               }
+            if (installments.getInstallmentPrice(1) != null && installments.getInstallmentPrice(1).equals(value)) {
+               break;
             }
+            installments.add(setInstallment(installmentNumber, value, interest, null, null));
+         }
 
-            boolean isShopCard = false;
-            if (cardBrand == null) {
-               for (String sellerName : mainSellersNames) {
-                  if ((storeCard != null && paymentName.equalsIgnoreCase(storeCard)) ||
-                     paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
-                     isShopCard = true;
-                     cardBrand = paymentName;
-                     break;
-                  }
-               }
-            }
-
-            if (cardBrand != null){
-               if (creditCardControl == null || creditCardControl.equals(paymentName)){
-                  installments.add(setInstallment(installmentNumber, value, interest, null, null));
-                  creditCardControl = paymentName;
-
-               } else {
-                  cardBrand = cardBrand.equalsIgnoreCase(storeCard) ? cardBrand : creditCardControl;
-                  creditCards.add(CreditCardBuilder.create()
-                     .setBrand(cardBrand)
-                     .setInstallments(installments)
-                     .setIsShopCard(isShopCard)
-                     .build());
-
-                  creditCardControl = paymentName;
-
-                  installments.add(setInstallment(installmentNumber, value, interest, null, null));
-
-               }
-            }
-
+         for (String card : cards) {
+            creditCards.add(CreditCard.CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
 
          }
       }
 
       return creditCards;
+
    }
 
    @Override
