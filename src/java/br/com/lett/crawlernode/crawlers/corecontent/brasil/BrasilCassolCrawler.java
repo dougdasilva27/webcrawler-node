@@ -51,6 +51,11 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
       return null;
    }
 
+   /**
+    * As requested by the customer, this store captures the price per square meter
+    * https://app.clickup.com/t/5v8vra
+    */
+
    @Override
    protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
       Double spotlightPrice = comertial.optDouble("Price");
