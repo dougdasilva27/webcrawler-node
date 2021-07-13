@@ -8,19 +8,21 @@ import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.util.round
-import br.com.lett.crawlernode.util.toBankSlip
-import br.com.lett.crawlernode.util.toCreditCards
-import br.com.lett.crawlernode.util.toJson
+import br.com.lett.crawlernode.util.*
+import models.AdvancedRatingReview
 import models.Offer
 import models.Offers
+import models.RatingsReviews
 import models.pricing.Pricing
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.select.Elements
 import java.net.URL
 import java.time.LocalDate
+import java.util.HashMap
+import kotlin.math.roundToInt
 
 class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
@@ -53,6 +55,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          val secondaryImages = jsonImages.map { (it as JSONObject).optString("url") }
          val name = json.optString("name")
          val offers = scrapOffers(json)
+         val rating = scrapRating(doc)
 
          val product = ProductBuilder.create()
             .setUrl(session.originalURL)
@@ -63,6 +66,7 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
+            .setRatingReviews(rating)
             .build()
          products.add(product)
       }
@@ -107,9 +111,6 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          .replace("&a;reg;", "®")
    }
 
-   fun indexesOf(str: String, pat: String): List<Int> =
-      pat.toRegex().findAll(str).map { it.range.first }.toList()
-
    private fun scrapOffers(json: JSONObject): Offers {
       var price = json.optDouble("originalPrice")
       var priceFrom: Double? = null
@@ -137,5 +138,23 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          .build()
 
       return Offers(listOf(offer))
+   }
+
+   private fun scrapRating(doc: Document): RatingsReviews {
+      var rating = RatingsReviews()
+
+
+      val s = doc.select(".rating .material-icons.star-on").size
+
+      val average = MathUtils.parseDoubleWithComma(s.toString())
+
+      val count = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating span:not(.material-icons)", false, 0);
+
+      rating.setAverageOverallRating(average)
+      rating.setTotalRating(count);
+      rating.setTotalWrittenReviews(count);
+
+
+      return rating;
    }
 }
