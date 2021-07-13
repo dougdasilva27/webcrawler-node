@@ -3,24 +3,24 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+
+import com.google.common.collect.Sets;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import exceptions.MalformedPricingException;
 import models.RatingsReviews;
 import models.pricing.CreditCard.CreditCardBuilder;
-import models.pricing.CreditCards;
-import models.pricing.Installments;
-import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
 
 /**
  * date: 27/03/2018
- * 
+ *
  * @author gabriel
  *
  */
@@ -29,6 +29,8 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://www.cassol.com.br/";
    private static final String STORE_CARD = "Cartão Cassol";
+   private Set<String> cards = Sets.newHashSet(Card.VISA.toString(),
+      Card.MASTERCARD.toString(), Card.DINERS.toString(), Card.HIPERCARD.toString(), Card.ELO.toString());
 
    public BrasilCassolCrawler(Session session) {
       super(session);
@@ -52,38 +54,43 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
 
    @Override
    protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
-      Pricing pricing = super.scrapPricing(doc, internalId, comertial, discountsJson);
+      Double spotlightPrice = comertial.optDouble("Price");
+      Double priceFrom = comertial.optDouble("ListPrice");
+      CreditCards creditCards = scrapCreditCardsCassol(comertial);
 
-      // when the product price is < 100, this site don't use the normal installments json
-      if (pricing.getSpotlightPrice() < 100d) {
-         pricing = PricingBuilder.create()
-               .setSpotlightPrice(pricing.getSpotlightPrice())
-               .setPriceFrom(pricing.getPriceFrom())
-               .setBankSlip(CrawlerUtils.setBankSlipOffers(pricing.getSpotlightPrice(), null))
-               .setCreditCards(scrapCreditCardsCassol(comertial))
-               .build();
+
+      BankSlip bankSlipPrice = BankSlip.BankSlipBuilder.create().setFinalPrice(spotlightPrice).build();
+
+      if (priceFrom != null && spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
       }
 
-      return pricing;
+      return PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(bankSlipPrice)
+         .setCreditCards(creditCards)
+         .build();
+
+
    }
 
    protected CreditCards scrapCreditCardsCassol(JSONObject comertial) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
+      String creditCardControl = null;
+      Installments installments = new Installments();
 
       JSONArray cardsArray = comertial.optJSONArray("Installments");
       if (cardsArray != null) {
          for (Object o : cardsArray) {
             JSONObject cardJson = (JSONObject) o;
 
-            Installments installments = new Installments();
-
             String paymentName = cardJson.optString("PaymentSystemName");
 
             Integer installmentNumber = cardJson.optInt("NumberOfInstallments");
-            Double value = cardJson.optDouble("TotalValuePlusInterestRate");
+            Double value = cardJson.optDouble("Value");
             Double interest = cardJson.optDouble("InterestRate");
 
-            installments.add(setInstallment(installmentNumber, value, interest, null, null));
 
             String cardBrand = null;
             for (Card card : Card.values()) {
@@ -97,7 +104,7 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
             if (cardBrand == null) {
                for (String sellerName : mainSellersNames) {
                   if ((storeCard != null && paymentName.equalsIgnoreCase(storeCard)) ||
-                        paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
+                     paymentName.toLowerCase().contains(sellerName.toLowerCase())) {
                      isShopCard = true;
                      cardBrand = paymentName;
                      break;
@@ -105,13 +112,27 @@ public class BrasilCassolCrawler extends VTEXNewScraper {
                }
             }
 
-            if (cardBrand != null) {
-               creditCards.add(CreditCardBuilder.create()
+            if (cardBrand != null){
+               if (creditCardControl == null || creditCardControl.equals(paymentName)){
+                  installments.add(setInstallment(installmentNumber, value, interest, null, null));
+                  creditCardControl = paymentName;
+
+               } else {
+                  cardBrand = cardBrand.equalsIgnoreCase(storeCard) ? cardBrand : creditCardControl;
+                  creditCards.add(CreditCardBuilder.create()
                      .setBrand(cardBrand)
                      .setInstallments(installments)
                      .setIsShopCard(isShopCard)
                      .build());
+
+                  creditCardControl = paymentName;
+
+                  installments.add(setInstallment(installmentNumber, value, interest, null, null));
+
+               }
             }
+
+
          }
       }
 
