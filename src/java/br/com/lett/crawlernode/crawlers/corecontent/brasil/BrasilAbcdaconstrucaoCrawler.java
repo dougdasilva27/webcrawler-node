@@ -62,7 +62,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, "#galeria .fbits-produto-imagensMinicarrossel-item a", Arrays.asList("data-zoom-image", "data-image"),
             "https:", "abcdaconstrucao.fbitsstatic.net/", primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".paddingbox", false);
-         boolean available = doc.selectFirst(".fbits-preco .precoPor.com-precoDe") != null;
+         boolean available = doc.selectFirst(".fbits-preco") != null;
          Offers offers = available ? scrapOffer(doc) : new Offers();
 
          // Creating the product
