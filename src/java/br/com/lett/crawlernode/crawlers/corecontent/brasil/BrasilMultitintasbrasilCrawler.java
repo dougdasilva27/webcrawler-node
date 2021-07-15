@@ -15,6 +15,8 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,25 +41,52 @@ public class BrasilMultitintasbrasilCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CommonMethods.getLast(session.getOriginalURL().split("id="));
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-page-title", true);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".thumbnail.thumbnail-first img", Arrays.asList("src"), "http", "multitintasbrasil.com");
          String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tab-content #tab-description"));
          boolean available = !doc.select("#product #button-cart").isEmpty();
          Offers offers = available ? scrapOffers(doc) : new Offers();
+         Elements variations = doc.select(".form-control.select-price option:not(:first-child)");
 
-         // Creating the product
-         Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalId)
-            .setName(name)
-            .setPrimaryImage(primaryImage)
-            .setDescription(description)
-            .setOffers(offers)
-            .build();
+         if (variations.isEmpty()) {
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name='product_id']", "value");
+            String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-page-title", true);
 
-         products.add(product);
+            // Creating the product
+            Product product = ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setInternalId(internalId)
+               .setInternalPid(internalId)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setDescription(description)
+               .setOffers(offers)
+               .build();
+
+            products.add(product);
+
+         } else {
+            for (Element el : variations) {
+               String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(el, null, "value");
+               String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name='product_id']", "value");
+               String name = getName(doc, el);
+
+               // Creating the product
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPrimaryImage(primaryImage)
+                  .setDescription(description)
+                  .setOffers(offers)
+                  .build();
+
+               products.add(product);
+
+            }
+         }
+
+
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -67,6 +96,22 @@ public class BrasilMultitintasbrasilCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst("#product") != null;
+   }
+
+   private String getName(Document doc, Element element) {
+      StringBuilder nameProduct = new StringBuilder();
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-page-title", true);
+      String color = CrawlerUtils.scrapStringSimpleInfo(element, null, true);
+
+      if (name != null) {
+         nameProduct.append(name).append(" - ");
+      }
+      if (color != null) {
+         nameProduct.append(color);
+      }
+
+      return nameProduct.toString();
+
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
