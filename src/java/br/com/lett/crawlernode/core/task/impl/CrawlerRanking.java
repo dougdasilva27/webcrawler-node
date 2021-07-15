@@ -47,7 +47,10 @@ import org.slf4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static br.com.lett.crawlernode.main.GlobalConfigurations.executionParameters;
 
@@ -475,10 +478,14 @@ public abstract class CrawlerRanking extends Task {
       String queueName;
 
 
-      if (session instanceof EqiRankingDiscoverKeywordsSession) {
-         queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
+      if (executionParameters.getEnvironment().equals(executionParameters.ENVIRONMENT_DEVELOPMENT)) {
+         queueName = QueueName.WEB_SCRAPER_PRODUCT_DEV.toString();
       } else {
-         queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
+         if (session instanceof EqiRankingDiscoverKeywordsSession) {
+            queueName = isWebDrive ? QueueName.CORE_EQI_WEBDRIVER.toString() : QueueName.CORE_EQI.toString();
+         } else {
+            queueName = isWebDrive ? QueueName.WEB_SCRAPER_DISCOVERER_WEBDRIVER.toString() : QueueName.WEB_SCRAPER_DISCOVERER.toString();
+         }
       }
 
 
