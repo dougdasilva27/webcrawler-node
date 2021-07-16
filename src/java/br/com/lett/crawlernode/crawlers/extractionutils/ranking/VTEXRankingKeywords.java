@@ -36,7 +36,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
-   private String keySHA256 = "";
+   private String keySHA256 = "7ebc11bc7b0b6a33043102ea1f0a454d556efb88153a3ab7800a979d069ce789";
 
    @Override
    protected void processBeforeFetch() {
@@ -96,7 +96,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       return body;
    }
 
-   private Document fetchDocument(){
+   private Document fetchDocument() {
 
       StringBuilder searchPage = new StringBuilder();
 
@@ -113,28 +113,28 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       return Jsoup.parse(fetchPage(apiUrl));
    }
 
-   private void scrapHashCode(){
+   private void scrapHashCode() {
       JSONObject runtimeJson = new JSONObject();
 
       Element nonFormattedJson = this.currentDoc.selectFirst("template[data-varname=__STATE__] script");
 
-      if(nonFormattedJson != null){
+      if (nonFormattedJson != null) {
          runtimeJson = CrawlerUtils.stringToJson(nonFormattedJson.html());
       }
 
-      if(runtimeJson != null){
+      if (runtimeJson != null) {
 
-         for(String e: runtimeJson.keySet()){
+         for (String e : runtimeJson.keySet()) {
 
-            if(e.contains("$ROOT_QUERY.productSearch")){
+            if (e.contains("$ROOT_QUERY.productSearch")) {
 
                String[] splited = e.split("hash\\\":\\\"");
 
-               if(splited.length > 0){
+               if (splited.length > 0) {
 
                   String[] result = splited[1].split("\\\"");
 
-                  if(result.length > 0){
+                  if (result.length > 0) {
                      this.keySHA256 = result[0];
                   }
                }
@@ -152,13 +152,13 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
       this.pageSize = 50;
 
-      if(this.currentPage == 1){
+      if (this.currentPage == 1) {
          this.currentDoc = fetchDocument();
          scrapHashCode();
       }
 
       JSONObject searchApi = fetchSearchApi();
-      JSONArray products = JSONUtils.getJSONArrayValue(searchApi,"products");
+      JSONArray products = JSONUtils.getJSONArrayValue(searchApi, "products");
 
       if (products.length() > 0) {
 
@@ -197,11 +197,10 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    /**
     * This function request a api with a JSON encoded on BASE64
     *
-    *
     * @return
     */
    private JSONObject fetchSearchApi() {
-      JSONObject searchApi = new JSONObject();
+      JSONObject searchApi;
       StringBuilder url = new StringBuilder();
       url.append(getHomePage() + "_v/segment/graphql/v1?");
 
@@ -255,7 +254,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       search.put("productOriginVtex", false);
       search.put("map", "ft");
       search.put("query", keywordEncoded);
-      search.put("orderBy", "OrderByScoreDESC");
+      search.put("orderBy", "");
       search.put("from", this.arrayProducts.size());
       search.put("to", this.arrayProducts.size() + (this.pageSize - 1));
 
