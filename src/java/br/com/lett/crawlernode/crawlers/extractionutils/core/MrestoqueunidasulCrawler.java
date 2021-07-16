@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.AuthenticationException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -90,8 +91,8 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
 
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
-         if (!isProductPage(doc)) {
-            doc = (Document) super.fetch();
+         if (doc.selectFirst("ul.errors") != null) {
+            throw new AuthenticationException("Failed to login - " + CrawlerUtils.scrapStringSimpleInfo(doc, "ul.errors", false));
          }
 
          return doc;
@@ -100,6 +101,8 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
          return super.fetch();
       }
    }
+
+   //a.btn-login
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
       WebDriverWait wait = new WebDriverWait(driver, 20);
