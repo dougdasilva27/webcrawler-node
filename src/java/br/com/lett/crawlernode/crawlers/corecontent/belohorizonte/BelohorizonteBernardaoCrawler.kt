@@ -11,7 +11,6 @@ import models.AdvancedRatingReview
 import models.Offer.OfferBuilder
 import models.Offers
 import models.RatingsReviews
-import models.pricing.BankSlip.BankSlipBuilder
 import models.pricing.CreditCard.CreditCardBuilder
 import models.pricing.CreditCards
 import models.pricing.Installment.InstallmentBuilder
@@ -19,8 +18,6 @@ import models.pricing.Installments
 import models.pricing.Pricing
 import models.pricing.Pricing.PricingBuilder
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
 
 class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
 
@@ -41,10 +38,14 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
          val internalId = internalPid
          val name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true)
          val categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li > :not(span)", true)
-         val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,
-            ".rsImg[href]", listOf("href", "content", "src"), "https://", BASE_URL)
-         val secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
-            ".rsImg[href]", listOf("href", "content", "src"), "https://", BASE_URL, primaryImage)
+         val primaryImage = CrawlerUtils.scrapSimplePrimaryImage(
+            doc,
+            ".rsImg[href]", listOf("href", "content", "src"), "https://", BASE_URL
+         )
+         val secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(
+            doc,
+            ".rsImg[href]", listOf("href", "content", "src"), "https://", BASE_URL, primaryImage
+         )
          val description = CrawlerUtils.scrapSimpleDescription(doc, listOf(".std", "#product-attribute-specs-table"))
          val availability = scrapAvailability(doc)
 
@@ -87,20 +88,22 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
       val pricing = scrapPricing(doc)
 
       if (pricing != null) {
-         offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(MAIN_SELLER_NAME)
-            .setSellersPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(true)
-            .setPricing(pricing)
-            .build())
+         offers.add(
+            OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(MAIN_SELLER_NAME)
+               .setSellersPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(true)
+               .setPricing(pricing)
+               .build()
+         )
       }
       return offers
    }
 
    private fun scrapPricing(doc: Document): Pricing? {
-      val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old-price .price", null, true, ',', session);
+      val priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-view-info .price-box .old-price .price", null, true, ',', session);
       var spotlightPrice = 0.0
 
       if (priceFrom != null) {
@@ -125,14 +128,16 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
             InstallmentBuilder.create()
                .setInstallmentNumber(1)
                .setInstallmentPrice(spotlightPrice)
-               .build())
+               .build()
+         )
       }
       for (card in cards) {
          creditCards.add(
             CreditCardBuilder.create()
                .setBrand(card)
                .setInstallments(installments)
-               .setIsShopCard(false).build())
+               .setIsShopCard(false).build()
+         )
       }
       return creditCards
    }
@@ -143,11 +148,12 @@ class BelohorizonteBernardaoCrawler(session: Session?) : Crawler(session) {
          InstallmentBuilder.create()
             .setInstallmentNumber(1)
             .setInstallmentPrice(spotlightPrice)
-            .build())
+            .build()
+      )
       return installments
    }
 
-   private fun scrapRatingReviews(doc: Document) : RatingsReviews {
+   private fun scrapRatingReviews(doc: Document): RatingsReviews {
 
       // In the moment that this function was done, there wasn't any reviews in the market.
       val ratingsReviews = RatingsReviews()
