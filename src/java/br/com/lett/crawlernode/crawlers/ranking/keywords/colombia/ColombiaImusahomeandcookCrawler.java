@@ -29,7 +29,7 @@ public class ColombiaImusahomeandcookCrawler extends CrawlerRankingKeywords {
          for (Element e : products) {
 
             String productUrl = CrawlerUtils.scrapUrl(e, ".caja-tags", "href", "https", "www.imusahomeandcook.com");
-            String internalId = CommonMethods.getLast(productUrl.split("-"));
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".agregar", "data-codigo_producto");
 
             saveDataProduct(internalId, null, productUrl);
 
