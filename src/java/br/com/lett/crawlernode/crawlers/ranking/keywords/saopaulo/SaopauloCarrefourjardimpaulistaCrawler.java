@@ -16,6 +16,7 @@ public class SaopauloCarrefourjardimpaulistaCrawler extends BrasilCarrefourCrawl
 
    private static final String HOME_PAGE = br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloCarrefourjardimpaulistaCrawler.HOME_PAGE;
    public static final String LOCATION = br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloCarrefourjardimpaulistaCrawler.LOCATION;
+   public static final String LOCATION_TOKEN = br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloCarrefourjardimpaulistaCrawler.LOCATION_TOKEN;
 
    @Override
    protected String getHomePage() {
@@ -23,7 +24,12 @@ public class SaopauloCarrefourjardimpaulistaCrawler extends BrasilCarrefourCrawl
    }
 
    @Override
-   protected String getLocation() {
+   protected String getCep() {
       return LOCATION;
+   }
+
+   @Override
+   protected String getLocation() {
+      return LOCATION_TOKEN;
    }
 }

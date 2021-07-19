@@ -17,6 +17,7 @@ public class CuritibaCarrefourCrawler extends BrasilCarrefourCrawler {
 
    private static final String HOME_PAGE = br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourCrawler.HOME_PAGE;
    public static final String LOCATION = br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourCrawler.LOCATION;
+   public static final String LOCATION_TOKEN = br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourCrawler.LOCATION_TOKEN;
 
    @Override
    protected String getHomePage() {
@@ -24,7 +25,12 @@ public class CuritibaCarrefourCrawler extends BrasilCarrefourCrawler {
    }
 
    @Override
-   protected String getLocation() {
+   protected String getCep() {
       return LOCATION;
+   }
+
+   @Override
+   protected String getLocation() {
+      return LOCATION_TOKEN;
    }
 }
