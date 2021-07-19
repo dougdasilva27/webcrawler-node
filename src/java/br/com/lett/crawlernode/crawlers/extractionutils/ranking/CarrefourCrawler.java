@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -20,7 +20,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
 
    public CarrefourCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
+      dataFetcher = new JsoupDataFetcher();
       this.pageSize = 12;
    }
 
