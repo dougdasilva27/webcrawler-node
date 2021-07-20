@@ -267,7 +267,7 @@ public class MercadolivreNewCrawler {
 
    }
 
-   private String scrapSeller(Document doc) {
+   public String scrapSeller(Document doc) {
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title", false);
 
       if (sellerFullName == null || sellerFullName.equalsIgnoreCase("Vendido por") || sellerFullName.equalsIgnoreCase("Loja oficial")) {
@@ -303,7 +303,7 @@ public class MercadolivreNewCrawler {
                .setSellerFullName(sellerFullName)
                .setMainPagePosition(1)
                .setIsBuybox(false)
-               .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
+               .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName) || mainSellerNameLower.contains((sellerFullName)))
                .setPricing(pricing)
                .setSales(sales)
                .build());
