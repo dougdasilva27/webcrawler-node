@@ -55,18 +55,20 @@ import models.pricing.Pricing.PricingBuilder;
 public class MercadolivreNewCrawler {
 
    private String mainSellerNameLower;
+   List<String> sellersVariations;
    private Session session;
    private DataFetcher dataFetcher;
    private Logger logger;
    protected boolean allow3PSellers;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
 
-   protected MercadolivreNewCrawler(Session session, DataFetcher dataFetcher, String mainSellerNameLower, boolean allow3PSellers, Logger logger) {
+   protected MercadolivreNewCrawler(Session session, DataFetcher dataFetcher, String mainSellerNameLower, boolean allow3PSellers, Logger logger, List<String> sellersVariations) {
       this.session = session;
       this.dataFetcher = dataFetcher;
       this.mainSellerNameLower = mainSellerNameLower;
       this.logger = logger;
       this.allow3PSellers = allow3PSellers;
+      this.sellersVariations = sellersVariations;
    }
 
    public Product extractInformation(Document doc,
@@ -267,7 +269,7 @@ public class MercadolivreNewCrawler {
 
    }
 
-   private String scrapSeller(Document doc) {
+   public String scrapSeller(Document doc) {
       String sellerFullName = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-seller__header__title", false);
 
       if (sellerFullName == null || sellerFullName.equalsIgnoreCase("Vendido por") || sellerFullName.equalsIgnoreCase("Loja oficial")) {
@@ -293,6 +295,15 @@ public class MercadolivreNewCrawler {
       String sellerFullName = scrapSeller(doc);
 
       boolean hasMainOffer = false;
+      boolean isMainRetailer;
+
+
+      if (sellersVariations == null){
+         isMainRetailer = mainSellerNameLower.equalsIgnoreCase(sellerFullName);
+      } else {
+         isMainRetailer = isMainRetaler(sellerFullName);
+
+      }
 
       if (sellerFullName != null && !sellerFullName.isEmpty()) {
          Pricing pricing = scrapPricing(doc);
@@ -303,7 +314,7 @@ public class MercadolivreNewCrawler {
                .setSellerFullName(sellerFullName)
                .setMainPagePosition(1)
                .setIsBuybox(false)
-               .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
+               .setIsMainRetailer(isMainRetailer)
                .setPricing(pricing)
                .setSales(sales)
                .build());
@@ -311,9 +322,22 @@ public class MercadolivreNewCrawler {
          hasMainOffer = true;
       }
 
+
+
       scrapSellersPage(offers, doc, hasMainOffer);
 
       return offers;
+   }
+
+   private boolean isMainRetaler(String sellerFullName){
+      boolean isMainRetailer = false;
+
+      for (String sellerName : sellersVariations) {
+         if (sellerName.equalsIgnoreCase(sellerFullName)) {
+            isMainRetailer = true;
+         }
+      }
+      return isMainRetailer;
    }
 
    private void scrapSellersPage(Offers offers, Document doc, boolean hasMainOffer) throws OfferException, MalformedPricingException {

@@ -4,7 +4,7 @@ import br.com.lett.crawlernode.core.session.Session;
 
 public class MercadolivreRankingNewImpl extends MercadolivreCrawler{
 
-   private final String URL = "https://lista.mercadolivre.com.br/" + this.keywordWithoutAccents.replace(" ", "-") + session.getOptions().optString("id");
+   private final String URL = session.getOptions().optString("homePage") + this.keywordWithoutAccents.replace(" ", "-") + session.getOptions().optString("id");
 
    public MercadolivreRankingNewImpl(Session session) {
       super(session);
