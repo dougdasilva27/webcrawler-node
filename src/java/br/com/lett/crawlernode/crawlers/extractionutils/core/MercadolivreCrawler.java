@@ -61,6 +61,7 @@ public class MercadolivreCrawler extends Crawler {
    private String mainSellerNameLower;
    protected boolean allow3PSellers = false;
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString());
+   private List<String> sellerVariations;
 
    protected MercadolivreCrawler(Session session) {
       super(session);
@@ -72,6 +73,10 @@ public class MercadolivreCrawler extends Crawler {
 
    public void setMainSellerNameLower(String mainSellerNameLower) {
       this.mainSellerNameLower = mainSellerNameLower;
+   }
+
+   public void setSellerVariations(List<String> sellerVariations) {
+      this.sellerVariations = sellerVariations;
    }
 
    @Override
@@ -205,7 +210,7 @@ public class MercadolivreCrawler extends Crawler {
             }
          }
       } else if (isProductPageNewSite(doc)) {
-         MercadolivreNewCrawler meli = new MercadolivreNewCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger);
+         MercadolivreNewCrawler meli = new MercadolivreNewCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger, sellerVariations);
          Product product = meli.extractInformation(doc, null);
 
          if (product != null) {
