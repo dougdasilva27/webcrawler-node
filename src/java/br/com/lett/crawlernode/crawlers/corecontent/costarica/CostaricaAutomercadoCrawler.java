@@ -79,7 +79,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
             String internalId = json.optString("productID");
             String internalPid = getProductPid();
-            String name = json.optString("ecomDescription");
+            String name = getName(json);
             String primaryImage = json.optString("imageUrl");
             String description = json.optString("ecomDescription");
             boolean available = json.optBoolean("productAvailable");
@@ -107,6 +107,8 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    private Offers scrapOffers(JSONObject productInfo) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(productInfo);
+      List<String> sales = scrapSales(pricing);
+
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -114,16 +116,27 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          .setIsBuybox(false)
          .setIsMainRetailer(true)
          .setPricing(pricing)
+         .setSales(sales)
          .build());
 
       return offers;
 
    }
 
+   // when product are unavailable the name is the brand
+   private String getName(JSONObject json) {
+      String name = json.optString("ecomDescription");
+      if (name.isEmpty()) {
+         name = json.optString("marca");
+      }
+
+      return name;
+   }
 
    private Pricing scrapPricing(JSONObject productInfo) throws MalformedPricingException {
 
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "uomPrice", true);
+      Double spotlightPrice = getSpotlightPrice(productInfo);
+      Double priceFrom = getPriceFrom(productInfo, spotlightPrice);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
@@ -131,10 +144,22 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
    }
+
+   private List<String> scrapSales(Pricing pricing) {
+      List<String> sales = new ArrayList<>();
+      String sale = CrawlerUtils.calculateSales(pricing);
+
+      if (sale != null) {
+         sales.add(sale);
+      }
+      return sales;
+   }
+
 
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
@@ -154,5 +179,27 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
       return creditCards;
    }
+
+   private Double getSpotlightPrice(JSONObject productInfo) {
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "amount", true);
+      if (spotlightPrice == null) {
+         spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "uomPrice", true);
+      }
+
+      return spotlightPrice;
+
+   }
+
+   private Double getPriceFrom(JSONObject productInfo, Double spotlightPrice) {
+      Double priceFrom = null;
+      Double discount = JSONUtils.getDoubleValueFromJSON(productInfo, "productDiscount", true);
+      if (discount != null && discount > 0) {
+         priceFrom = spotlightPrice + discount;
+      }
+
+      return priceFrom;
+
+   }
+
 
 }
