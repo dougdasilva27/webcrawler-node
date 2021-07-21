@@ -98,11 +98,11 @@ public abstract class GpsfarmaCrawler extends Crawler {
    private String getName(Document doc) {
       StringBuilder buildName = new StringBuilder();
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title", false);
-      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute div", true);
+      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.product-item-brand", true);
       if (name != null) {
-         buildName.append(name).append(" - ");
+         buildName.append(name);
          if (brand != null) {
-            buildName.append(brand);
+            buildName.append(" - ").append(brand);
          }
       }
 
