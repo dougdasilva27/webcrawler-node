@@ -22,7 +22,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 22/06/2018
@@ -53,7 +56,7 @@ public abstract class GpsfarmaCrawler extends Crawler {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input[name=product]", "value");
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "tr td.data", true);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title", false);
+         String name = getName(doc);
          CategoryCollection categories = crawlCategories(doc);
          List<String> images = crawlImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : "";
@@ -90,6 +93,20 @@ public abstract class GpsfarmaCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.select("input[name=\"product\"]").first() != null;
+   }
+
+   private String getName(Document doc) {
+      StringBuilder buildName = new StringBuilder();
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.page-title", false);
+      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, ".product.attribute div", true);
+      if (name != null) {
+         buildName.append(name).append(" - ");
+         if (brand != null) {
+            buildName.append(brand);
+         }
+      }
+
+      return buildName.toString();
    }
 
    private CategoryCollection crawlCategories(Document doc) {
@@ -173,7 +190,7 @@ public abstract class GpsfarmaCrawler extends Crawler {
          .build());
 
 
-      for(String card:cards){
+      for (String card : cards) {
          creditCards.add(CreditCard.CreditCardBuilder.create()
             .setBrand(card)
             .setInstallments(installments)
