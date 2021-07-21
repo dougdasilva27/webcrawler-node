@@ -60,7 +60,7 @@ public class BrasilAgrosoloCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, ".total-items .number", null, "iten", false, true, 0);
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(this.currentDoc, "span.fbits-qtd-produtos-pagina", null, null, false, true, 0);
       this.log("Total da busca: " + this.totalProducts);
    }
 }
