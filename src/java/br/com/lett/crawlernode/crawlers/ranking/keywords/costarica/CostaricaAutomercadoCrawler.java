@@ -41,7 +41,7 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
             String internalId = product.optString("productID");
             String internalPid = product.optString("productNumber");
-            String url = getUrl(internalId, internalPid);
+            String url = getUrl(internalId, product);
 
             saveDataProduct(internalId, internalPid, url);
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + url);
@@ -56,15 +56,24 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
    }
 
-   private String getUrl(String internalId, String internalPid) {
+   private String getUrl(String internalId, JSONObject product) {
       String url = null;
-      if (internalId != null && internalPid != null) {
-         url = "https://www.automercado.cr/shop/" + internalPid + "?objectID=" + internalId;
+      String name = product.optString("ecomDescription");
+      String nameEncoded;
+      if (name != null && !name.isEmpty()){
+          nameEncoded = name.replace(" ", "%20");
+      } else {
+         nameEncoded = "%20";
+      }
+      if (internalId != null) {
+         url = "https://www.automercado.cr/p/" + nameEncoded + "/id/" + internalId;
 
       }
       return url;
 
    }
+
+  // https://www.automercado.cr/p/CAPSULA%20CAFE%20SKINY%20CAPUCCINO%20NESCAFE%20caja%20161%20g/id/21624147-03a4-4050-989a-cf207998f055CAPSULA%20CAFE%20SKINY%20CAPUCCINO%20NESCAFE%20caja%20161%20g/id/21624147-03a4-4050-989a-cf207998f055
 
    private JSONObject fetchProducts() {
 
