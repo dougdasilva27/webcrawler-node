@@ -15,7 +15,6 @@ import java.util.Map;
 
 public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
-
    public CostaricaAutomercadoCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
@@ -26,9 +25,7 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
       this.pageSize = 30;
 
-
       JSONObject apiJson = fetchProducts();
-
 
       if (apiJson != null && !apiJson.isEmpty()) {
          JSONObject result = JSONUtils.getValueRecursive(apiJson, "results.0", JSONObject.class);
@@ -41,30 +38,36 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
             String internalId = product.optString("productID");
             String internalPid = product.optString("productNumber");
-            String url = getUrl(internalId, internalPid);
+            String url = getUrl(internalId, product);
 
             saveDataProduct(internalId, internalPid, url);
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + url);
 
          }
 
-
       } else {
          log("keyword sem resultado");
       }
 
-
    }
 
-   private String getUrl(String internalId, String internalPid) {
+   private String getUrl(String internalId, JSONObject product) {
       String url = null;
-      if (internalId != null && internalPid != null) {
-         url = "https://www.automercado.cr/shop/" + internalPid + "?objectID=" + internalId;
+      String name = product.optString("ecomDescription");
+      String nameEncoded;
+      if (name != null && !name.isEmpty()){
+          nameEncoded = name.replace(" ", "%20");
+      } else {
+         nameEncoded = "%20";
+      }
+      if (internalId != null) {
+         url = "https://www.automercado.cr/p/" + nameEncoded + "/id/" + internalId;
 
       }
       return url;
 
    }
+
 
    private JSONObject fetchProducts() {
 

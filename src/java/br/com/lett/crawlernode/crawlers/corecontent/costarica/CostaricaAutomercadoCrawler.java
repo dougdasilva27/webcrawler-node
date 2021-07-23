@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -16,12 +17,9 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CostaricaAutomercadoCrawler extends Crawler {
 
@@ -35,14 +33,15 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    }
 
    @Override
-   protected JSONArray fetch() {
-      String internalPid = getProductPid();
-      String API = "https://www.automercado.cr/algoliaSearch";
+   protected JSONObject fetch() {
+      String internalId = getProductId();
+      String API = "https://www.automercado.cr/prod-front/product/detail";
 
-      String payload = "{\"facetFilters\":[[\"productNumber:" + internalPid + "\"],[\"storeid:03\"]]}";
+      String payload = "{\"productid\":\"" + internalId + "\"}";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("Content-Type", "application/json;charset=UTF-8");
+      headers.put("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlVTVUFSSU8gSU5WSVRBRE8iLCJzdWIiOiJjNjY5MDc0MS01Mjk2LWViMTEtYjFhYy0wMDBkM2EzNzY4MGIiLCJlbWFpbCI6Imludml0YWRvQGF1dG9tZXJjYWRvLmJpeiIsImlhdCI6MTYyNjM1ODQ3OX0.sR8zc4wIdfITf8WvKR26wPz8M79Xn_I4UKd-VXJXD9o");
       Request request = Request.RequestBuilder.create()
          .setUrl(API)
          .setPayload(payload)
@@ -53,55 +52,66 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          .post(session, request)
          .getBody();
 
-      return CrawlerUtils.stringToJsonArray(content);
+      return CrawlerUtils.stringToJson(content);
    }
 
+   private String getProductId() {
 
-   private String getProductPid() {
-      String url = null;
-      Pattern pattern = Pattern.compile("\\/([0-9]*)\\?");
-      Matcher matcher = pattern.matcher(session.getOriginalURL());
-      if (matcher.find()) {
-         url = matcher.group(1);
-      }
-      return url;
+      return CommonMethods.getLast(session.getOriginalURL().split("id/"));
    }
 
    @Override
-   public List<Product> extractInformation(JSONArray jsonArray) throws Exception {
-      super.extractInformation(jsonArray);
+   public List<Product> extractInformation(JSONObject json) throws Exception {
+      super.extractInformation(json);
       List<Product> products = new ArrayList<>();
-      if (!jsonArray.isEmpty()) {
-         JSONObject json = (JSONObject) jsonArray.get(0);
+      JSONObject data = json.optJSONObject("data");
 
-         if (!json.isEmpty()) {
-            Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      if (data != null && !data.isEmpty()) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-            String internalId = json.optString("productID");
-            String internalPid = getProductPid();
-            String name = getName(json);
-            String primaryImage = json.optString("imageUrl");
-            String description = json.optString("ecomDescription");
-            boolean available = json.optBoolean("productAvailable");
-            Offers offers = available ? scrapOffers(json) : new Offers();
+         String internalId = getProductId();
+         String internalPid = data.optString("productNumber");
+         boolean available = data.optBoolean("inStock");
+         String name = getName(data, available);
+         String primaryImage = JSONUtils.getValueRecursive(data, "gallery.0", String.class);
+         String description = data.optString("description");
+         Offers offers = available ? scrapOffers(data) : new Offers();
 
-            Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrimaryImage(primaryImage)
-               .setDescription(description)
-               .setOffers(offers)
-               .build();
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
-            products.add(product);
-         }
+         products.add(product);
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
       return products;
+   }
+
+   private String getName(JSONObject data, boolean available) {
+      StringBuilder buildName = new StringBuilder();
+      String name = data.optString("name");
+      if (name != null && available) {
+         buildName.append(name);
+         String brand = data.optString("brand");
+         if (brand != null) {
+            buildName.append(" - ").append(brand);
+         }
+      } else {
+         name = data.optString("presentation");
+         if (name != null){
+            buildName.append(name);
+         }
+      }
+
+      return buildName.toString();
    }
 
    private Offers scrapOffers(JSONObject productInfo) throws OfferException, MalformedPricingException {
@@ -123,20 +133,10 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
    }
 
-   // when product are unavailable the name is the brand
-   private String getName(JSONObject json) {
-      String name = json.optString("ecomDescription");
-      if (name.isEmpty()) {
-         name = json.optString("marca");
-      }
-
-      return name;
-   }
-
    private Pricing scrapPricing(JSONObject productInfo) throws MalformedPricingException {
 
-      Double spotlightPrice = getSpotlightPrice(productInfo);
-      Double priceFrom = getPriceFrom(productInfo, spotlightPrice);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "price", true);
+      Double priceFrom = JSONUtils.getValueRecursive(productInfo, "discount.textValue", Double.class);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
@@ -160,7 +160,6 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       return sales;
    }
 
-
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
@@ -179,27 +178,5 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
       return creditCards;
    }
-
-   private Double getSpotlightPrice(JSONObject productInfo) {
-      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "amount", true);
-      if (spotlightPrice == null) {
-         spotlightPrice = JSONUtils.getDoubleValueFromJSON(productInfo, "uomPrice", true);
-      }
-
-      return spotlightPrice;
-
-   }
-
-   private Double getPriceFrom(JSONObject productInfo, Double spotlightPrice) {
-      Double priceFrom = null;
-      Double discount = JSONUtils.getDoubleValueFromJSON(productInfo, "productDiscount", true);
-      if (discount != null && discount > 0) {
-         priceFrom = spotlightPrice + discount;
-      }
-
-      return priceFrom;
-
-   }
-
 
 }
