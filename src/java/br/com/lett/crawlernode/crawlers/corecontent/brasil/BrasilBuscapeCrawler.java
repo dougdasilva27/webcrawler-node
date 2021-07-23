@@ -1,18 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -22,21 +9,24 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
 import models.AdvancedRatingReview;
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * Date: 26/03/2019
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class BrasilBuscapeCrawler extends Crawler {
 
@@ -134,18 +124,18 @@ public class BrasilBuscapeCrawler extends Crawler {
       RatingsReviews ratingAndReviews = scrapRatingAndReviewsV2(internalId, productGeneral);
 
       Product product = ProductBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setName(name)
-            .setPrices(new Prices())
-            .setAvailable(false)
-            .setCategories(categories)
-            .setPrimaryImage(primaryImage)
-            .setSecondaryImages(images)
-            .setRatingReviews(ratingAndReviews)
-            .setDescription(description)
-            .setMarketplace(marketplace)
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setInternalId(internalId)
+         .setName(name)
+         .setPrices(new Prices())
+         .setAvailable(false)
+         .setCategories(categories)
+         .setPrimaryImage(primaryImage)
+         .setSecondaryImages(images)
+         .setRatingReviews(ratingAndReviews)
+         .setDescription(description)
+         .setMarketplace(marketplace)
+         .build();
 
       products.add(product);
 
@@ -157,12 +147,12 @@ public class BrasilBuscapeCrawler extends Crawler {
 
       JSONArray mediaImages = JSONUtils.getJSONArrayValue(productGeneral, "mediaImages");
 
-      for (Object mediaImageObj: mediaImages) {
+      for (Object mediaImageObj : mediaImages) {
          if (mediaImageObj instanceof JSONObject) {
             JSONObject mediaImage = (JSONObject) mediaImageObj;
             if (mediaImage.optString("type").equals("PRODUCT_ZOOM")) {
                String image = mediaImage.optString("url");
-               if (!image.isEmpty()){
+               if (!image.isEmpty()) {
                   images.add(image);
                }
             }
@@ -184,15 +174,15 @@ public class BrasilBuscapeCrawler extends Crawler {
 
          while (offersNumber > offersNumberCount) {
             String offerUrl = "https://www.buscape.com.br/ajax/product_desk?__pAct_=getmoreoffers"
-                  + "&prodid=" + internalId
-                  + "&pagenumber=" + currentPage
-                  + "&highlightedItemID=0"
-                  + "&resultorder=7";
+               + "&prodid=" + internalId
+               + "&pagenumber=" + currentPage
+               + "&highlightedItemID=0"
+               + "&resultorder=7";
 
             Request request = RequestBuilder.create()
-                  .setUrl(offerUrl)
-                  .setCookies(cookies)
-                  .build();
+               .setUrl(offerUrl)
+               .setCookies(cookies)
+               .build();
 
             Document offersDoc = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
             Elements offersElements = offersDoc.select(".offers-list__offer");
@@ -238,9 +228,9 @@ public class BrasilBuscapeCrawler extends Crawler {
       String url = "https://api-v1.zoom.com.br/esfiha/product/" + internalId + "?order=DEFAULT&page=1&pageSize=100";
 
       Request request = RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .build();
+         .setUrl(url)
+         .setCookies(cookies)
+         .build();
 
       JSONObject jsonStore = JSONUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
@@ -395,13 +385,31 @@ public class BrasilBuscapeCrawler extends Crawler {
       ratingReviews.setInternalId(internalId);
 
       Integer totalNumOfEvaluations = productJson.optInt("countOfComments");
-      Double avgRating = JSONUtils.getValueRecursive(productJson, "product.rating", Double.class);
+      Double avgRating = getAvgRating(productJson);
       ratingReviews.setTotalRating(totalNumOfEvaluations);
       ratingReviews.setTotalWrittenReviews(totalNumOfEvaluations);
-      ratingReviews.setAverageOverallRating(avgRating != null ? avgRating : 0D);
+      ratingReviews.setAverageOverallRating(avgRating);
       ratingReviews.setAdvancedRatingReview(getAdvancedRatingV2(productJson));
 
       return ratingReviews;
+   }
+
+   private Double getAvgRating(JSONObject productJson) {
+      Double avgRating = JSONUtils.getValueRecursive(productJson, "product.rating", Double.class);
+
+      if (avgRating == null) {
+         JSONArray comments = JSONUtils.getJSONArrayValue(productJson, "comments");
+         double sum = 0;
+         for (Object comment : comments) {
+            if (comment instanceof JSONObject) {
+               double star = ((JSONObject) comment).optDouble("rating");
+               sum += star;
+            }
+         }
+         avgRating = sum / comments.length();
+      }
+
+      return avgRating;
    }
 
    private AdvancedRatingReview getAdvancedRatingV2(JSONObject productJson) {
@@ -432,16 +440,16 @@ public class BrasilBuscapeCrawler extends Crawler {
       Document document = null;
       do {
          String url = new StringBuilder()
-               .append(session.getOriginalURL()).append("?")
-               .append("__pAct_=getmoreprodcomments")
-               .append("&productid=").append(internalId)
-               .append("&commentsorder=RELEVANCE")
-               .append("&&pagenumber=").append(pageNumber).toString();
+            .append(session.getOriginalURL()).append("?")
+            .append("__pAct_=getmoreprodcomments")
+            .append("&productid=").append(internalId)
+            .append("&commentsorder=RELEVANCE")
+            .append("&&pagenumber=").append(pageNumber).toString();
 
          Request request = RequestBuilder.create()
-               .setUrl(url)
-               .setCookies(cookies)
-               .build();
+            .setUrl(url)
+            .setCookies(cookies)
+            .build();
          response = this.dataFetcher.get(session, request).getBody();
 
          if (!response.isEmpty()) {
