@@ -60,7 +60,6 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       return CommonMethods.getLast(session.getOriginalURL().split("id/"));
    }
 
-
    @Override
    public List<Product> extractInformation(JSONObject json) throws Exception {
       super.extractInformation(json);
@@ -161,7 +160,6 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       return sales;
    }
 
-
    private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
@@ -180,6 +178,5 @@ public class CostaricaAutomercadoCrawler extends Crawler {
 
       return creditCards;
    }
-
 
 }

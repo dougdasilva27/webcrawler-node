@@ -15,7 +15,6 @@ import java.util.Map;
 
 public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
-
    public CostaricaAutomercadoCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
@@ -26,9 +25,7 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
       this.pageSize = 30;
 
-
       JSONObject apiJson = fetchProducts();
-
 
       if (apiJson != null && !apiJson.isEmpty()) {
          JSONObject result = JSONUtils.getValueRecursive(apiJson, "results.0", JSONObject.class);
@@ -48,11 +45,9 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
          }
 
-
       } else {
          log("keyword sem resultado");
       }
-
 
    }
 
@@ -73,7 +68,6 @@ public class CostaricaAutomercadoCrawler extends CrawlerRankingKeywords {
 
    }
 
-  // https://www.automercado.cr/p/CAPSULA%20CAFE%20SKINY%20CAPUCCINO%20NESCAFE%20caja%20161%20g/id/21624147-03a4-4050-989a-cf207998f055CAPSULA%20CAFE%20SKINY%20CAPUCCINO%20NESCAFE%20caja%20161%20g/id/21624147-03a4-4050-989a-cf207998f055
 
    private JSONObject fetchProducts() {
 
