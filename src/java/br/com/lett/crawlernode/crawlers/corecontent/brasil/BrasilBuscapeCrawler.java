@@ -399,17 +399,19 @@ public class BrasilBuscapeCrawler extends Crawler {
 
       if (avgRating == null) {
          JSONArray comments = JSONUtils.getJSONArrayValue(productJson, "comments");
-         double sum = 0;
-         for (Object comment : comments) {
-            if (comment instanceof JSONObject) {
-               double star = ((JSONObject) comment).optDouble("rating");
-               sum += star;
+         if (comments != null && !comments.isEmpty()) {
+            double sum = 0;
+            for (Object comment : comments) {
+               if (comment instanceof JSONObject) {
+                  double star = ((JSONObject) comment).optDouble("rating");
+                  sum += star;
+               }
             }
+            avgRating = sum / comments.length();
          }
-         avgRating = sum / comments.length();
       }
 
-      return avgRating;
+      return avgRating != null ? avgRating : 0;
    }
 
    private AdvancedRatingReview getAdvancedRatingV2(JSONObject productJson) {
