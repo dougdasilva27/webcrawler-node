@@ -37,10 +37,18 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
    private String keySHA256 = "7ebc11bc7b0b6a33043102ea1f0a454d556efb88153a3ab7800a979d069ce789";
+   private String vtex_segment = getVtexSegment();
 
    @Override
    protected void processBeforeFetch() {
       super.processBeforeFetch();
+
+      if(!vtex_segment.equals("")){
+         BasicClientCookie cookie = new BasicClientCookie("vtex_segment", vtex_segment);
+         cookie.setDomain(getHomePage().replace("https://", "").replace("/", ""));
+         cookie.setPath("/");
+         this.cookies.add(cookie);
+      }
 
       BasicClientCookie cookie = new BasicClientCookie("userLocationData", getLocation());
       cookie.setDomain(getHomePage().replace("https://", "").replace("/", ""));
@@ -146,6 +154,10 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    protected abstract String getHomePage();
 
    protected abstract String getLocation();
+
+   protected String getVtexSegment(){
+      return "";
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() {
