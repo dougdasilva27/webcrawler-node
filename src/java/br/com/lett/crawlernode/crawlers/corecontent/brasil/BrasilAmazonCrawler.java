@@ -59,8 +59,11 @@ public class BrasilAmazonCrawler extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
 
-      cacheConfig.setRequest(this.amazonScraperUtils.getRequestCookies("https://www.amazon.com.br/", cookies, dataFetcher));
-      cacheConfig.setRequestMethod(RequestMethod.GET);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
    }
 
    @Override
@@ -446,6 +449,8 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
 
+
+
       int maxAttempt = 3;
       int attempt = 1;
 
@@ -476,6 +481,10 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (marketplaceUrl == null) {
          marketplaceUrl = doc.selectFirst(".a-box-inner .olp-text-box");
+      }
+
+      if (marketplaceUrl == null) {
+         marketplaceUrl = doc.selectFirst("#buybox-see-all-buying-choices a");
       }
 
       if (marketplaceUrl != null) {
