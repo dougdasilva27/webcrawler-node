@@ -5,7 +5,7 @@
             "essential": true,
             "image": "",
             "name": "web-scraper",
-            "memoryReservation": 0,
+            "memoryReservation": 1700,
             "logConfiguration": {
                 "logDriver": "json-file",
                 "options": {
