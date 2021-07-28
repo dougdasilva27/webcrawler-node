@@ -39,7 +39,7 @@ public class PanamaElmachetazoCrawler extends Crawler {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent","Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36");
-      headers.put("cookie","cf_clearance=1727fe3d3cfb53cbaaf8cc331109eb2889d5d991-1627498271-0-150;");
+      headers.put("cookie","cf_clearance=27767dd1d813c1c782def2851ff86fece5ecccc5-1627501885-0-150;"); //Thu Jul 28 2022 17:51:25 GMT-0300 (Brasilia Standard Time)
 
       Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).setProxyservice(
          Arrays.asList(
