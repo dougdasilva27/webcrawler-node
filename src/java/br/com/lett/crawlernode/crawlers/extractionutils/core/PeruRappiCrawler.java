@@ -8,12 +8,12 @@ public class PeruRappiCrawler extends RappiCrawler {
 
    public PeruRappiCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
    protected String getHomeDomain() {
-      return "rappi.com.pe";
+      return "rappi.pe";
    }
 
    @Override
