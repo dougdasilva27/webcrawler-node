@@ -29,7 +29,7 @@ public class PanamaSuperunicoCrawler extends CrawlerRankingKeywords {
 
             String productId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".woodmart-add-btn a", "data-product_id");
             String productPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".woodmart-add-btn a", "data-product_sku");
-            String productUrl = CrawlerUtils.scrapUrl(this.currentDoc, ".product-element-top a", Arrays.asList("href"), "https", "superunico.com");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".product-element-top a", Arrays.asList("href"), "https", "superunico.com");
 
             saveDataProduct(productId, productPid, productUrl);
 
