@@ -126,11 +126,6 @@ public abstract class RappiCrawler extends Crawler {
    protected String fetchProduct(String productId, String storeId, String token) {
       String url = "https://services." + getHomeDomain() + "/api/dynamic/context/content";
 
-//      if(url.contains(".pe")){
-//         url = url.replace(".com", "");
-//         dataFetcher = new JsoupDataFetcher();
-//      }
-
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("language", "pt");
@@ -151,10 +146,6 @@ public abstract class RappiCrawler extends Crawler {
 
    protected String fetchToken() {
       String url = "https://services." + getHomeDomain() + "/api/auth/guest_access_token";
-
-//      if(url.contains(".pe")){
-//         url = url.replace(".com", "");
-//      }
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
