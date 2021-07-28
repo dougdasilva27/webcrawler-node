@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -123,7 +124,6 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected String fetchProduct(String productId, String storeId, String token) {
-
       String url = "https://services." + getHomeDomain() + "/api/dynamic/context/content";
 
       Map<String, String> headers = new HashMap<>();
@@ -146,6 +146,7 @@ public abstract class RappiCrawler extends Crawler {
 
    protected String fetchToken() {
       String url = "https://services." + getHomeDomain() + "/api/auth/guest_access_token";
+
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
       headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36");
