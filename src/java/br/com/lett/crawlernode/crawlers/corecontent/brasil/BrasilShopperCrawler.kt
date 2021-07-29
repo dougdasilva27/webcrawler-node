@@ -132,7 +132,11 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
    private fun scrapOffers(json: JSONObject): Offers {
       val offers = Offers()
 
-      val price: Double = CrawlerUtils.getDoubleValueFromJSON(json, "price", true, true)
+      print(json)
+
+      val stringPrice = json.optString("price")
+
+      val price: Double = MathUtils.parseDoubleWithComma(stringPrice)
 
       val bankSlip = price.toBankSlip()
 
