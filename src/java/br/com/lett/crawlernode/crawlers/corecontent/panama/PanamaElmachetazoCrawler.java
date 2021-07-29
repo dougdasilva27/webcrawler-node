@@ -29,6 +29,7 @@ public class PanamaElmachetazoCrawler extends Crawler {
 
    public PanamaElmachetazoCrawler(Session session) {
       super(session);
+      // super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -36,19 +37,22 @@ public class PanamaElmachetazoCrawler extends Crawler {
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36");
-      headers.put("cookie", "cf_clearance=27767dd1d813c1c782def2851ff86fece5ecccc5-1627501885-0-150;"); //Thu Jul 28 2022 17:51:25 GMT-0300 (Brasilia Standard Time)
+      headers.put("authority", "elmachetazo.com");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7");
+      headers.put("content-type", "application/x-www-form-urlencoded");
+      headers.put("cookie", "PHPSESSID=fe0b97929478d40eefb5327ea5cb180b; _fbp=fb.1.1627501894875.1990086009; _hjid=a95ffbb1-27ad-41bd-9a3b-714c82840faf; form_key=p6lv7tmeASbWTXUO; mage-cache-storage=%7B%7D; mage-cache-storage-section-invalidation=%7B%7D; mage-cache-sessid=true; _gid=GA1.2.762555409.1627501896; mage-messages=; recently_viewed_product=%7B%7D; recently_viewed_product_previous=%7B%7D; recently_compared_product=%7B%7D; recently_compared_product_previous=%7B%7D; product_data_storage=%7B%7D; cf_clearance=3d34c651cb75924f9b055fc9fb61f440ec4b17b0-1627569451-0-150; _hjAbsoluteSessionInProgress=0; __cf_bm=d845d9074ffbe00ed0a54581d5eeb53a249818d3-1627583007-1800-AQm8H0VsuhqeNNb/Zl/06dwIkgPFAOUW8mexoAGF/wBhiiwMixMIK5t6U9hjpFeSrTXNo4cfzE8cxtZxkHgC0tpwLfWQmFWhaDkFZGohHLhYz7ao8LxGrdrXO4roDfNMEg==; _ga_GBF02SP5FB=GS1.1.1627583007.9.1.1627583008.0; _ga=GA1.2.278493691.1627501895"); //Thu Jul 28 2022 17:51:25 GMT-0300 (Brasilia Standard Time)
 
       Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setHeaders(headers).setProxyservice(
          Arrays.asList(
-            ProxyCollection.NO_PROXY
+            ProxyCollection.NO_PROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
          )
       ).build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
 
-
-   @Override
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
@@ -85,7 +89,7 @@ public class PanamaElmachetazoCrawler extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return doc.selectFirst(".columns .product-info-main") != null;
+      return doc.selectFirst(".product-info-main") != null;
    }
 
    private Offers scrapOffer(Document doc, String internalId) throws OfferException, MalformedPricingException {
