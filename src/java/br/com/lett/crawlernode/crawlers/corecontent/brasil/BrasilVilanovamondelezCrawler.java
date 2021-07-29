@@ -16,12 +16,12 @@ public class BrasilVilanovamondelezCrawler extends BrasilVilanova {
 
    @Override
    public String getCnpj() {
-      return "33033028004090";
+      return "40.374.650/0001-11";
    }
 
    @Override
    public String getPassword() {
-      return "521542";
+      return "Paty@3001";
    }
 
    @Override
