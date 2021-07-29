@@ -38,7 +38,7 @@ public class PanamaSuperunicoCrawler extends Crawler {
 
       if (isProductPage(document)) {
 
-         String name = CrawlerUtils.scrapStringSimpleInfo(document, "h1.product_title.entry-title", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(document, "h1.product_title", true);
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(document, ".sku_wrapper .sku", true);
          String internalId = getInternalId(document);
          CategoryCollection categories = CrawlerUtils.crawlCategories(document, ".yoast-breadcrumb span a", true);
