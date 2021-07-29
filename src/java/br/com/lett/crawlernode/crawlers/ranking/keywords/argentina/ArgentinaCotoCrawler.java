@@ -24,7 +24,7 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
    public ArgentinaCotoCrawler(Session session) {
       super(session);
       super.fetchMode = FetchMode.FETCHER;
-      this.pageSize = 48;
+      this.pageSize = 60;
    }
 
    @Override
@@ -61,7 +61,6 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
          }
       }
-      nextUrl = "https://www.cotodigital3.com.ar" + currentDoc.selectFirst("#atg_store_pagination li:nth-child(" + (currentPage + 1) + ") a").attr("href");
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
@@ -75,15 +74,6 @@ public class ArgentinaCotoCrawler extends CrawlerRankingKeywords {
       Response response = new ApacheDataFetcher().get(session, request);
       cookies = response.getCookies();
       return CrawlerUtils.stringToJson(response.getBody());
-   }
-
-   @Override
-   protected boolean hasNextPage() {
-      Element element = currentDoc.selectFirst("#atg_store_pagination li:nth-child(" + (currentPage + 2) + ") a");
-      if (element != null) {
-         return element.attr("href") != null;
-      }
-      return false;
    }
 
    @Override
