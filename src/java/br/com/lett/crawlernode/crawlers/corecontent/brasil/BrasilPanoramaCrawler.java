@@ -43,7 +43,7 @@ public class BrasilPanoramaCrawler extends Crawler {
       if (isProductPage(document)) {
 
          String name = CrawlerUtils.scrapStringSimpleInfo(document, ".product-summary h1", true);
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(document, ".sku-and-brand .sku", true);
+         String internalId = getInternalId(document);
          String internalPid = internalId;
          CategoryCollection categories = CrawlerUtils.crawlCategories(document, ".breadcrumb li:not(:last-child) a span", false);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(document, "#main-image", Arrays.asList("data-src"), "https", "www.panoramamoveis.com.br");
@@ -77,6 +77,17 @@ public class BrasilPanoramaCrawler extends Crawler {
 
    private boolean isProductPage(Document document) {
       return !document.select(".product-summary").isEmpty();
+   }
+
+   private String getInternalId(Document document){
+      String internalId = null;
+      String internalIdWithCode = CrawlerUtils.scrapStringSimpleInfo(document, ".sku-and-brand .sku", true);
+      if (internalIdWithCode != null){
+         internalId = internalIdWithCode.replace("Código: ", "");
+      }
+
+      return internalId;
+
    }
 
    private Offers scrapOffers(Document document) throws OfferException, MalformedPricingException {
