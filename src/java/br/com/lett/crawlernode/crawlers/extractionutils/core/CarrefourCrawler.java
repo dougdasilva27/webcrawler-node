@@ -144,6 +144,8 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
       if (!crawlerApi.isEmpty()) {
          productApi = crawlerApi.optJSONObject(0) == null ? new JSONObject() : crawlerApi.optJSONObject(0);
+      } else {
+         productApi = super.crawlProductApi(internalPid, parameters);
       }
 
       return productApi;
