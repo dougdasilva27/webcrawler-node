@@ -52,11 +52,11 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
                JSONObject product = (JSONObject) obj;
 
                String productUrl = getUrl(product);
-               String productId = product.optString("id");
+               String productPid = product.optString("id");
 
-               saveDataProduct(productId, null, productUrl);
+               saveDataProduct(null, productPid, productUrl);
 
-               this.log("Position: " + this.position + " - InternalId: " + productId + " - InternalPid: " + null + " - Url: " + productUrl);
+               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + productPid + " - Url: " + productUrl);
                if (this.arrayProducts.size() == productsLimit)
                   break;
 
