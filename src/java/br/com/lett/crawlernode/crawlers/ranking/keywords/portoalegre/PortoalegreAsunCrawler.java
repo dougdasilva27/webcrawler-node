@@ -69,7 +69,6 @@ public class PortoalegreAsunCrawler extends CrawlerRankingKeywords {
       webdriver.clickOnElementViaJavascript(delivery);
       webdriver.waitLoad(5000);
       Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
-      webdriver.driver.close();
 
       return doc;
 
