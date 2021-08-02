@@ -54,11 +54,14 @@ public class ElsalvadorSuperselectosCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (Boolean.TRUE.equals(isProductPage(doc))) {
+
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.productFrame.full button.add-producto", "data-cod");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div.productFrame.full p.desc", true);
 
          List<String> images = scrapImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : "";
+         List<String> secondaryImages = images;
+
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, "p.fulldesc", true);
 
          //No unavailable products were found
@@ -72,6 +75,7 @@ public class ElsalvadorSuperselectosCrawler extends Crawler {
             .setInternalPid(internalId)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .build();
