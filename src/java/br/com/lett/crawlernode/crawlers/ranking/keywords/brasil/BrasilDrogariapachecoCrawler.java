@@ -1,15 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
 
@@ -17,19 +17,21 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   private JSONArray extractJsonFromApi() {
+   private JSONObject extractJsonFromApi() {
 
-      String url = "https://www.drogariaspacheco.com.br/api/catalog_system/pub/products/search/?ft="
-         + this.keywordWithoutAccents.replace(" ", "%20")
+      Map<String, String> headers = new HashMap<>();
+      headers.put("origin", "https://www.drogariaspacheco.com.br");
+
+      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=drogariaspacheco&productFormat=complete&resultsPerPage=48&page="
+         + this.currentPage
          + "&_from="
-         + this.arrayProducts.size()
-         + "&_to=" + (this.arrayProducts.size() + this.pageSize)
-         + "&O=OrderByReleaseDateDESC";
+         + "&terms="
+         + this.keywordEncoded;
 
-      Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
+      Request request = RequestBuilder.create().setUrl(url).setHeaders(headers).build();
       String body = this.dataFetcher.get(session, request).getBody();
 
-      return JSONUtils.stringToJsonArray(body);
+      return JSONUtils.stringToJson(body);
 
    }
 
@@ -39,22 +41,29 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
 
       this.log("Página" + this.currentPage);
 
-      JSONArray products = extractJsonFromApi();
+      JSONObject json = extractJsonFromApi();
+      JSONArray productsArray = json.optJSONArray("products");
 
-      if (products.length() > 0) {
-         for (int i = 0; i < products.length(); i++) {
-            JSONObject product = products.getJSONObject(i);
+      if (productsArray != null && !productsArray.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts(json);
+         }
+         for (Object obj : productsArray) {
+            if (obj instanceof JSONObject) {
+               JSONObject product = (JSONObject) obj;
 
-            String productUrl = crawlProductUrl(product);
-            String internalPid = crawlInternalPid(product);
+               String productUrl = getUrl(product);
+               String internalPid = product.optString("id");
+               String internalId = internalPid;
 
-            saveDataProduct(null, internalPid, productUrl);
+               saveDataProduct(null, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
 
-            if (this.arrayProducts.size() == productsLimit) {
-               break;
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
             }
          }
       }
@@ -63,28 +72,18 @@ public class BrasilDrogariapachecoCrawler extends CrawlerRankingKeywords {
 
    }
 
-   private String crawlInternalPid(JSONObject product) {
-      String internalPid = null;
-
-      if (product.has("productId")) {
-         internalPid = product.getString("productId");
+   private String getUrl(JSONObject product) {
+      String productUrl = null;
+      String incompleteUrl = product.optString("url");
+      if (incompleteUrl != null) {
+         productUrl = "https://" + incompleteUrl;
       }
 
-      return internalPid;
+      return productUrl;
    }
 
-   private String crawlProductUrl(JSONObject product) {
-      String urlProduct = null;
 
-      if (product.has("link")) {
-         urlProduct = product.getString("link");
-      }
-
-      return urlProduct;
-   }
-
-   @Override
-   protected boolean hasNextPage() {
-      return (this.arrayProducts.size() / this.currentPage) >= this.pageSize;
+   protected void setTotalProducts(JSONObject json) {
+      this.totalProducts = json.optInt("size");
    }
 }
