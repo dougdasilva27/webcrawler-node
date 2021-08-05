@@ -104,7 +104,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       return body;
    }
 
-   private Document fetchDocument() {
+   protected Document fetchDocument() {
 
       StringBuilder searchPage = new StringBuilder();
 
@@ -116,7 +116,6 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
 
       String apiUrl = searchPage.toString().replace("+", "%20");
 
-      //Request request = Request.RequestBuilder.create().setUrl(apiUrl).setCookies(this.cookies).build();
 
       return Jsoup.parse(fetchPage(apiUrl));
    }
