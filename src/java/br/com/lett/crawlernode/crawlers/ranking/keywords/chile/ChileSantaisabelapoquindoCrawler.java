@@ -32,7 +32,7 @@ public class ChileSantaisabelapoquindoCrawler extends CrawlerRankingKeywords {
 
       JSONArray products = JSONUtils.getValueRecursive(searchedJson, "products", JSONArray.class);
 
-      if (products.length() > 0) {
+      if (products != null && products.length() > 0) {
 
          if (this.totalProducts == 0) {
 
