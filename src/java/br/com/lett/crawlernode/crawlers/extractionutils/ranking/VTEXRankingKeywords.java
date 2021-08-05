@@ -115,8 +115,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
          .append(this.currentPage);
 
       String apiUrl = searchPage.toString().replace("+", "%20");
-      //https://www.paguemenos.com.br/vitamina?_q=vitamina&map=ft&page=2
-      //Request request = Request.RequestBuilder.create().setUrl(apiUrl).setCookies(this.cookies).build();
+
 
       return Jsoup.parse(fetchPage(apiUrl));
    }
