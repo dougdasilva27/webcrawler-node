@@ -1,6 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
@@ -12,46 +12,82 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
 public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
 
-   private static String token = null;
-
    public BrasilKalungaCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.APACHE;
    }
+
+   public JSONObject crawlApi(String url) {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/x-www-form-urlencoded, application/json");
+
+      String payload = null;
+      try {
+         payload = URLEncoder.encode("{\"termo\":\"" + this.keywordEncoded + "\",\"pagina\":" + this.currentPage + ",\"ordenacao\":1,\"fitroBusca\":[[]],\"classificacao\":null,\"grupo\":null}", "UTF-8");
+         payload = "json_str=" + payload;
+      } catch (UnsupportedEncodingException e) {
+         e.printStackTrace();
+      }
+
+      Request request = RequestBuilder.create()
+         .setUrl(url)
+         .setHeaders(headers)
+         .setPayload(payload)
+         .build();
+
+      String content = this.dataFetcher
+         .post(session, request)
+         .getBody();
+
+      return CrawlerUtils.stringToJson(content);
+
+   }
+
+   private Document getHtml(String templateProdutos) {
+      Document html = null;
+      if (templateProdutos != null) {
+
+         html = Jsoup.parse(templateProdutos.replace("\"", ""));
+      }
+
+      return html;
+   }
+
 
    @Override
    protected void extractProductsFromCurrentPage() {
 
       this.log("Página " + this.currentPage);
 
-      // monta a url com a keyword e a página
-      String url = "https://www.kalunga.com.br/busca/" + this.keywordWithoutAccents.replace(" ", "-") + "/1";
+      String url = "https://www.kalunga.com.br/api/getBusca";
 
-      this.currentDoc = fetchDocument(url);
-      Elements products = this.currentDoc.select(".blocoproduto .col-4 a:not(.small):first-child");
+      JSONObject json = crawlApi(url);
 
-      if (!products.isEmpty()) {
+      String templateProdutos = json.optString("templateProdutos");
+
+      this.currentDoc = templateProdutos != null ? getHtml(templateProdutos) : null;
+      Elements products = this.currentDoc != null ? this.currentDoc.select(".blocoproduto__row") : null;
+
+      if (products != null && !products.isEmpty()) {
          if (this.totalProducts == 0)
-            setTotalProducts();
+            setTotalProducts(json);
 
          for (Element e : products) {
-            // InternalPid
-            String internalPid = crawlInternalPid(e);
-
-            // InternalId
-            String internalId = internalPid;
-
-            // monta a url
             String productUrl = crawlProductUrl(e);
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            String internalId = CommonMethods.getLast(productUrl.split("/"));
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+            saveDataProduct(internalId, null, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
@@ -66,54 +102,18 @@ public class BrasilKalungaCrawler extends CrawlerRankingKeywords {
    }
 
 
-   protected void setTotalBusca(JSONObject apiSearch) {
-      if (apiSearch.has("quantidade")) {
-         try {
-            this.totalProducts = Integer.parseInt(apiSearch.getString("quantidade"));
-         } catch (Exception e) {
-            this.logError(CommonMethods.getStackTraceString(e));
-         }
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-   }
-
-
-   private String crawlInternalPid(Element e) {
-      String internalPid;
-
-      String[] tokens = e.attr("href").split("/");
-      internalPid = tokens[tokens.length - 1].split("\\?")[0].replaceAll("[^0-9]", "");
-
-      return internalPid;
-   }
-
    private String crawlProductUrl(Element e) {
-      String productUrl;
-      productUrl = e.attr("href");
+      String href = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".blocoproduto__link", "href");
 
-      if (!productUrl.contains("kalunga")) {
-         productUrl = ("https://www.kalunga.com.br/" + productUrl).replace("br//", "br/");
-      }
+      return CrawlerUtils.completeUrl(href, "https", "www.kalunga.com.br");
 
-      if (productUrl.contains("?")) {
-         productUrl = productUrl.split("\\?")[0];
-      }
-
-      return productUrl;
    }
 
-   @Override
-   protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.selectFirst(".text-primary.spnQtdeRegistros");
 
-      try {
-         if (totalElement != null)
-            this.totalProducts = Integer.parseInt(totalElement.text());
-      } catch (Exception e) {
-         this.logError(e.getMessage());
-      }
+   protected void setTotalProducts(JSONObject json) {
 
+      this.totalProducts = json.optInt("quantidadeRegistros");
       this.log("Total da busca: " + this.totalProducts);
    }
+
 }
