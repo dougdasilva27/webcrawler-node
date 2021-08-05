@@ -37,7 +37,7 @@ public class ColombiaLarebajaCrawler extends CrawlerRankingKeywords {
 
       for (Element e : products) {
         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-producto]", "data-producto");
-        String productUrl = CrawlerUtils.scrapUrl(e, ".content_product a", "href", "https:", "larebajavirtual.com");
+        String productUrl = CrawlerUtils.scrapUrl(e, ".img-list-products a", "href", "https:", "larebajavirtual.com");
         saveDataProduct(internalId, null, productUrl);
 
         this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
