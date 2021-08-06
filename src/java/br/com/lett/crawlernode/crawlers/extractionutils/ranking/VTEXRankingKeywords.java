@@ -183,9 +183,9 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
                getHomePage().replace("https://", "").replace("/", ""));
             String internalPid = product.optString("productId");
 
-            saveDataProduct(null, internalPid, productUrl);
+            saveDataProduct(internalPid, internalPid, productUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            this.log("Position: " + this.position + " - InternalId: " + internalPid + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
