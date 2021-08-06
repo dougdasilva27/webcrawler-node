@@ -1,12 +1,15 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Locale;
 
 public class BrasilKabumCrawler extends CrawlerRankingKeywords {
 
@@ -14,45 +17,44 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   @Override
-   protected void processBeforeFetch() {
-      super.processBeforeFetch();
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage("https://www.kabum.com.br/", null, ".kabum.com.br", "/", cookies, session, null, dataFetcher);
-   }
 
-   private String baseUrl;
-   private boolean isCategory = false;
+   public JSONObject crawlApi(String url) {
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .build();
+      String content = this.dataFetcher
+         .get(session, request)
+         .getBody();
+
+      return CrawlerUtils.stringToJson(content);
+
+   }
 
    @Override
    protected void extractProductsFromCurrentPage() {
       this.log("Página " + this.currentPage);
-      this.pageSize = 30;
+      this.pageSize = 20;
 
-      String url;
-      if (!isCategory) {
-         url = "https://www.kabum.com.br/cgi-local/site/listagem/listagem.cgi?string=" + this.keywordEncoded + "&pagina=" + this.currentPage;
-      } else {
-         url = this.baseUrl + "?pagina=" + this.currentPage;
-      }
+      String url = "https://servicespub.prod.api.aws.grupokabum.com.br/catalog/v1/products?query=" + this.keywordEncoded + "&page_number=" + this.currentPage + "&page_size=" + this.productsLimit + "&facet_filters=&sort=most_searched&include=gift";
 
       this.log("Link onde são feitos os crawlers: " + url);
-      this.currentDoc = fetchDocument(url);
+      JSONObject jsonObject = crawlApi(url);
 
-      if (this.currentPage == 1) {
-         this.baseUrl = CrawlerUtils.completeUrl(this.session.getRedirectedToURL(url), "https", "www.kabum.com.br");
-         this.isCategory = this.baseUrl != null && !url.equalsIgnoreCase(baseUrl);
-      }
+      JSONArray jsonArray = jsonObject.optJSONArray("data");
 
-      JSONArray arr = scrapArray();
+      if (!jsonArray.isEmpty()) {
+         for (Object obj : jsonArray) {
 
-      if (!arr.isEmpty()) {
-         for (Object jsonObject : arr) {
+            JSONObject json = (JSONObject) obj;
 
-            JSONObject json = (JSONObject) jsonObject;
-
-            String incompleteUrl = JSONUtils.getStringValue(json, "link_descricao");
-            String internalId = incompleteUrl.split("/")[2];
-            String urlProduct = CrawlerUtils.completeUrl(incompleteUrl, "https://", "www.kabum.com.br");
+            String internalId = json.optString("id");
+            String urlProduct = null;
+            try {
+               urlProduct = CrawlerUtils.completeUrl(internalId + getSlug(json), "https://", "kabum.com.br/produto");
+            } catch (UnsupportedEncodingException e) {
+               e.printStackTrace();
+            }
 
             saveDataProduct(internalId, null, urlProduct);
 
@@ -69,22 +71,10 @@ public class BrasilKabumCrawler extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
+   private String getSlug(JSONObject data) throws UnsupportedEncodingException {
 
-   private JSONArray scrapArray() {
-      JSONArray json = new JSONArray();
-      Elements scripts = this.currentDoc.select("body script[type=\"text/javascript\"]");
-      String script = scripts.html().replaceAll(" ", "");
+      String name = JSONUtils.getValueRecursive(data, "attributes.title", String.class);
+      return "/" + name.replaceAll("[^0-9a-zA-Z]+", "-").toLowerCase(Locale.ROOT);
 
-      if (script.contains("constlistagemDados")) {
-
-         String jsonString = CrawlerUtils.extractSpecificStringFromScript(script, "constlistagemDados=", false, "\nconstlistagemCount", false);
-         json = CrawlerUtils.stringToJsonArray(jsonString);
-      }
-      return json;
-   }
-
-   @Override
-   protected boolean checkIfHasNextPage() {
-      return (arrayProducts.size() % pageSize - currentPage) < 0;
    }
 }
