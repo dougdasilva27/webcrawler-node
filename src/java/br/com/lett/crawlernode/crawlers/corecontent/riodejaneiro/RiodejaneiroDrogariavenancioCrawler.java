@@ -3,22 +3,20 @@ package br.com.lett.crawlernode.crawlers.corecontent.riodejaneiro;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import models.Marketplace;
-import models.RatingsReviews;
 import models.prices.Prices;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
    private static final String HOME_PAGE = "https://www.drogariavenancio.com.br/";
@@ -64,28 +62,26 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
             Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
             Float price = vtexUtil.crawlMainPagePrice(prices);
             Integer stock = vtexUtil.crawlStock(apiJSON);
-            RatingsReviews ratingReviews = crawlRating(doc, internalId);
             List<String> eans = VTEXCrawlersUtils.scrapEanFromProductAPI(apiJSON);
 
             // Creating the product
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setPrice(price)
-                  .setPrices(prices)
-                  .setAvailable(available)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setRatingReviews(ratingReviews)
-                  .setMarketplace(marketplace)
-                  .setEans(eans)
-                  .build();
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrice(price)
+               .setPrices(prices)
+               .setAvailable(available)
+               .setCategory1(categories.getCategory(0))
+               .setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2))
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setMarketplace(marketplace)
+               .setEans(eans)
+               .build();
 
             products.add(product);
          }
@@ -107,14 +103,6 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
       return name;
    }
 
-   private RatingsReviews crawlRating(Document doc, String id) {
-      RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-
-      TrustvoxRatingCrawler r = new TrustvoxRatingCrawler(session, "105530", logger);
-      ratingReviewsCollection = r.extractRatingAndReviewsForVtex(doc, dataFetcher);
-
-      return ratingReviewsCollection.getRatingReviews(id);
-   }
 
    private boolean isProductPage(Document document) {
       return document.select(".productName").first() != null;
@@ -216,7 +204,7 @@ public class RiodejaneiroDrogariavenancioCrawler extends Crawler {
       descriptionBuilder.append(CrawlerUtils.scrapLettHtml(internalId, session, session.getMarket().getNumber()));
 
       descriptionBuilder.append(CrawlerUtils.scrapStandoutDescription("drogariavenancio", session, cookies, dataFetcher));
-      
+
       return descriptionBuilder.toString();
    }
 }
