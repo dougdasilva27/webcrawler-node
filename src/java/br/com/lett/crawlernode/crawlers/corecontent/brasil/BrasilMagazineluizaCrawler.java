@@ -85,6 +85,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
       boolean availableToBuy = !doc.select(".button__buy-product-detail").isEmpty();
       Offers offers = availableToBuy ? scrapOffers(doc) : new Offers();
       String description = crawlDescription(doc, internalId);
+      RatingsReviews ratingsReviews = scrapRatingsAlternativeWay(doc);
 
       // Creating the product
       return ProductBuilder.create()
@@ -96,6 +97,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          .setPrimaryImage(primaryImage)
          .setSecondaryImages(secondaryImages)
          .setDescription(description)
+         .setRatingReviews(ratingsReviews)
          .setOffers(offers)
          .build();
    }
@@ -421,7 +423,6 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    }
 
 
-
    private JSONObject fetchAdvancedRating(String internalId, int page) {
       String url = "https://www.magazineluiza.com.br/review/" + internalId + "/?page=" + page;
       Request request = Request.RequestBuilder.create().setUrl(url).build();
@@ -431,37 +432,22 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    private RatingsReviews scrapRatingsAlternativeWay(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
-      Element ratingsElement = doc.selectFirst("div.product-review > div.wrapper-review");
+      ratingReviews.setDate(session.getDate());
 
-      if (ratingsElement != null) {
-         ratingReviews.setDate(session.getDate());
+      ratingReviews.setTotalRating(getTotalReviewCount(doc));
+      ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
 
-         ratingReviews.setTotalRating(getTotalReviewCount(doc));
-         ratingReviews.setAverageOverallRating(getAverageOverallRating(doc));
-      }
 
       return ratingReviews;
    }
 
    private Integer getTotalReviewCount(Document doc) {
-      Integer totalReviewCount = null;
-      Element total = doc.select(".interaction-client__rating-info > span").last();
 
-      if (total != null) {
-         totalReviewCount = Integer.parseInt(total.ownText().replaceAll("[^0-9]", ""));
-      }
-
-      return totalReviewCount;
+      return CrawlerUtils.scrapIntegerFromHtml(doc, ".interaction-client__rating-info > span", true, 0);
    }
 
    private Double getAverageOverallRating(Document doc) {
-      Double avgOverallRating = null;
-      Element avg = doc.select(".interaction-client__rating-info > span").first();
 
-      if (avg != null) {
-         avgOverallRating = Double.parseDouble(avg.ownText().replaceAll("[^0-9,]", "").replace(",", "."));
-      }
-
-      return avgOverallRating;
+      return CrawlerUtils.scrapDoublePriceFromHtml(doc, ".interaction-client__rating-info > span", null, true, ',', session);
    }
 }
