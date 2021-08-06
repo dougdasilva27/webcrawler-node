@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.guatemala;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -17,6 +18,8 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +79,7 @@ public class GuatemalaCemacoCrawler extends Crawler {
             String name = json.optString("Name");
             List<String> images = getImages(json);
             String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-            String description = JSONUtils.getValueRecursive(json, "0.x_caracteristicasHtml", String.class);
+            String description = scrapDescription(json);
             boolean available = json.optBoolean("Availability");
             Offers offers = available ? scrapOffers(json) : new Offers();
 
@@ -115,6 +118,22 @@ public class GuatemalaCemacoCrawler extends Crawler {
       }
 
       return listImages;
+   }
+
+   private String scrapDescription(JSONObject json) {
+      String description = JSONUtils.getValueRecursive(json, "0.x_caracteristicasHtml", String.class);
+
+      if(description == null){
+         Request request = Request.RequestBuilder.create()
+            .setUrl(this.session.getOriginalURL())
+            .build();
+
+         Response response = this.dataFetcher.get(session, request);
+         Document doc = Jsoup.parse(response.getBody());
+         description = doc.selectFirst("tr.even").html();
+      }
+
+      return description;
    }
 
 
