@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -88,6 +89,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
       variables.put("productId", internalId);
       variables.put("offset", 5);
+      variables.put("filters", "null");
+      variables.put("sort", "Helpfulness:desc");
 
       persistedQuery.put("version", RATING_API_VERSION);
       persistedQuery.put("sha256Hash", KEY_SHA_256);
@@ -98,6 +101,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       payload.append("operationName=productReviews");
       payload.append("&device=desktop");
       payload.append("&oneDayDelivery=undefined");
+      payload.append("&opn=undefined");
+
       try {
          payload.append("&variables=" + URLEncoder.encode(variables.toString(), "UTF-8"));
          payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
@@ -110,7 +115,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          .setUrl(url.toString())
          .build();
 
-      return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      //For some reason, the Jsoup data fetcher stop working for this request.
+      Response response = new ApacheDataFetcher().get(session, request);
+
+      return CrawlerUtils.stringToJson(response.getBody());
    }
 
    private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
