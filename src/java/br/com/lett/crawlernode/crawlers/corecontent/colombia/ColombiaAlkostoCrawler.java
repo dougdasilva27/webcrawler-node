@@ -11,20 +11,17 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class ColombiaAlkostoCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "Alkosto";
@@ -82,12 +79,12 @@ public class ColombiaAlkostoCrawler extends Crawler {
       return doc.selectFirst(".product-main-info") != null;
    }
 
-   private List<String> scrapImages(Document doc){
+   private List<String> scrapImages(Document doc) {
       List<String> imagesList = new ArrayList<>();
 
       Elements el = doc.select("div.image-gallery__image img.js-zoom-desktop");
 
-      if(el != null && !el.isEmpty()){
+      if (el != null && !el.isEmpty()) {
          el.forEach(img -> imagesList.add("https://www.alkosto.com" + img.attr("data-zoom-image")));
       }
 
@@ -184,26 +181,8 @@ public class ColombiaAlkostoCrawler extends Crawler {
          + this.session.getOriginalURL() + "\",\"skip_average_score\":false,\"main_widget_pid\":\"" + internalPid + "\",\"index\":1,\"element_id\":2}}]";
    }
 
-   /**
-    * Method to fetch App Key of Yotpo API.
-    */
+
    private String fetchAppKey(Document doc) {
-      String key = null;
-      Elements scripts = doc.select("head script[type='text/javascript']");
-      for (Element e : scripts) {
-         String script = e.toString();
-         if (script.contains("https://staticw2.yotpo.com") && script.contains("/widget.js")) {
-            String[] split = script.split("staticw2.yotpo.com");
-            if (split.length > 0) {
-               String[] fistIndex = split[1].split("/widget.js");
-               key = fistIndex[0];
-            }
-
-            return key;
-         }
-      }
-
-
-      return null;
+      return CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#yotpoTotalReviews", "data-appkey");
    }
 }
