@@ -43,7 +43,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    protected void processBeforeFetch() {
       super.processBeforeFetch();
 
-      if(!vtex_segment.equals("")){
+      if (!vtex_segment.equals("")) {
          BasicClientCookie cookie = new BasicClientCookie("vtex_segment", vtex_segment);
          cookie.setDomain(getHomePage().replace("https://", "").replace("/", ""));
          cookie.setPath("/");
@@ -154,7 +154,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
 
    protected abstract String getLocation();
 
-   protected String getVtexSegment(){
+   protected String getVtexSegment() {
       return "";
    }
 
@@ -210,7 +210,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
     *
     * @return
     */
-   private JSONObject fetchSearchApi() {
+   protected JSONObject fetchSearchApi() {
       JSONObject searchApi;
       StringBuilder url = new StringBuilder();
       url.append(getHomePage() + "_v/segment/graphql/v1?");
@@ -256,7 +256,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       return searchApi;
    }
 
-   private String createVariablesBase64() {
+   protected String createVariablesBase64() {
       JSONObject search = new JSONObject();
       search.put("hideUnavailableItems", false);
       search.put("skusFilter", "ALL_AVAILABLE");
