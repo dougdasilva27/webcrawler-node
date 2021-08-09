@@ -1,11 +1,13 @@
 package br.com.lett.crawlernode.crawlers.corecontent.guatemala;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.HttpGenericException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -17,6 +19,9 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.HttpStatusException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +81,7 @@ public class GuatemalaCemacoCrawler extends Crawler {
             String name = json.optString("Name");
             List<String> images = getImages(json);
             String primaryImage = !images.isEmpty() ? images.remove(0) : null;
-            String description = JSONUtils.getValueRecursive(json, "0.x_caracteristicasHtml", String.class);
+            String description = scrapDescription(json);
             boolean available = json.optBoolean("Availability");
             Offers offers = available ? scrapOffers(json) : new Offers();
 
@@ -115,6 +120,33 @@ public class GuatemalaCemacoCrawler extends Crawler {
       }
 
       return listImages;
+   }
+
+   private String scrapDescription(JSONObject json) throws HttpGenericException, HttpStatusException {
+      String description = JSONUtils.getValueRecursive(json, "0.x_caracteristicasHtml", String.class);
+
+      if(description == null){
+         Request request = Request.RequestBuilder.create()
+            .setUrl(this.session.getOriginalURL())
+            .build();
+
+         Response response = this.dataFetcher.get(session, request);
+
+         if(response.getLastStatusCode() == 200){
+            Document doc = Jsoup.parse(response.getBody());
+
+            if(doc != null){
+               description = doc.selectFirst("tr.even").html();
+            }else{
+               throw new HttpGenericException("Description page null!");
+            }
+         }else{
+            throw new HttpStatusException("Failed to get description page", response.getLastStatusCode(), this.session.getOriginalURL());
+         }
+
+      }
+
+      return description;
    }
 
 
