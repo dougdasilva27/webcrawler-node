@@ -60,7 +60,7 @@ public class DynamicDataFetcher {
          ChromeOptions chromeOptions = new ChromeOptions();
          chromeOptions.setProxy(proxySel);
          chromeOptions.setHeadless(true);
-         chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+         //chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
 
          chromeOptions.setCapability("browserName", "chrome");
          chromeOptions.addArguments("--user-agent=" + userAgent);
