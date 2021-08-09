@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.HttpGenericException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -18,6 +19,7 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -120,7 +122,7 @@ public class GuatemalaCemacoCrawler extends Crawler {
       return listImages;
    }
 
-   private String scrapDescription(JSONObject json) {
+   private String scrapDescription(JSONObject json) throws HttpGenericException, HttpStatusException {
       String description = JSONUtils.getValueRecursive(json, "0.x_caracteristicasHtml", String.class);
 
       if(description == null){
@@ -129,8 +131,19 @@ public class GuatemalaCemacoCrawler extends Crawler {
             .build();
 
          Response response = this.dataFetcher.get(session, request);
-         Document doc = Jsoup.parse(response.getBody());
-         description = doc.selectFirst("tr.even").html();
+
+         if(response.getLastStatusCode() == 200){
+            Document doc = Jsoup.parse(response.getBody());
+
+            if(doc != null){
+               description = doc.selectFirst("tr.even").html();
+            }else{
+               throw new HttpGenericException("Description page null!");
+            }
+         }else{
+            throw new HttpStatusException("Failed to get description page", response.getLastStatusCode(), this.session.getOriginalURL());
+         }
+
       }
 
       return description;
