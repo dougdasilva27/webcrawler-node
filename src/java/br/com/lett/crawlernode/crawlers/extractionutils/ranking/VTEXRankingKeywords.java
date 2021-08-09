@@ -200,7 +200,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   private void setTotalProducts(JSONObject data) {
+   protected void setTotalProducts(JSONObject data) {
       this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "recordsFiltered", 0);
       this.log("Total da busca: " + this.totalProducts);
    }
