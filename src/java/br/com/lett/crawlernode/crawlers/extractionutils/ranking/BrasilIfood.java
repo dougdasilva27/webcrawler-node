@@ -18,13 +18,13 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       super.fetchMode = FetchMode.FETCHER;
    }
 
-   protected String region = session.getOptions().getString("region");
    protected String storeName = session.getOptions().getString("store_name");
    protected String storeId = session.getOptions().getString("store_id");
+   protected String geolocation = session.getOptions().getString("geolocation");
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?latitude=-23.522002&longitude=-46.651801&channel=IFOOD&term="
+      String url = "https://marketplace.ifood.com.br/v2/search/catalog-items?" + geolocation + "&channel=IFOOD&term="
          + this.keywordEncoded + "&size=36&page=" + (this.currentPage - 1) + "&item_from_merchant_ids=" + storeId;
       JSONObject apiJson = fetch(url);
 
@@ -75,5 +75,9 @@ public class BrasilIfood extends CrawlerRankingKeywords {
       return JSONUtils.stringToJson(content);
    }
 
+   @Override
+   protected boolean hasNextPage() {
+      return true;
+   }
 }
 
