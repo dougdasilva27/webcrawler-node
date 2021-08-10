@@ -7,147 +7,144 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.Pair;
-import models.Marketplace;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
 
 public class BelohorizonteBhvidaCrawler extends Crawler {
 
-  public BelohorizonteBhvidaCrawler(Session session) {
-    super(session);
-  }
+   public BelohorizonteBhvidaCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      if (isProductPage(doc)) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=application/ld+json]", null, null, false, false);
 
-      String internalId = crawlInternalId(doc);
-      String internalPid = crawlInternalPid(doc);
-      boolean available = crawlAvailability(doc);
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#produtoID", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#produtoCodigo", "value");
+         String name = json.optString("name");
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "div.bread-crumb a", true);
+         String description = crawlDescription(doc);
+         String primaryImage = json.optString("image");
 
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#detalhes-mini > ul > li h1", true);
-      Float price = available ? CrawlerUtils.scrapSimplePriceFloat(doc, ".preco strong", true) : null;
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".produtos a:not(:first-child)");
+         boolean available = JSONUtils.getValueRecursive(json, "offers.offers.0.availability", String.class).contains("InStock");
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
-      Prices prices = crawlPrices(price, doc);
-      String description = crawlDescription(doc);
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".image-main", Arrays.asList("src"), "https:", "www.bhvida.com/");
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategories(categories)
+            .setPrimaryImage(primaryImage)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-          .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+         products.add(product);
 
-      products.add(product);
-
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
-
-    return products;
-
-  }
-
-  private String crawlDescription(Document doc) {
-    List<String> selectors = new ArrayList<>();
-    selectors.add(".barra.especificacao");
-    selectors.add("#detalhes-mini.descricao");
-    selectors.add("#detalhes-mini > ul > li p");
-
-    return CrawlerUtils.scrapSimpleDescription(doc, selectors);
-  }
-
-  private boolean isProductPage(Element doc) {
-    return !doc.select(".det_carrinho").isEmpty();
-  }
-
-  private String crawlInternalPid(Element doc) {
-    String internalPid = null;
-
-    Element searchedId = doc.selectFirst("#detalhes-mini > ul > li:last-child");
-    if (searchedId != null) {
-      internalPid = searchedId.ownText();
-    }
-
-    return internalPid;
-  }
-
-  private String crawlInternalId(Element doc) {
-    String internalId = null;
-
-    Element searchedId = doc.selectFirst("#frmcarrinho #codigo");
-
-    if (searchedId != null) {
-      internalId = searchedId.val().trim();
-    } else {
-      searchedId = doc.selectFirst(".aviseme button");
-      if (searchedId != null) {
-        String input = searchedId.attr("onclick");
-
-        if (input.contains("'")) {
-          internalId = input.substring(input.indexOf("'") + 1, input.lastIndexOf("'"));
-
-        }
-
-      }
-    }
-
-    return internalId;
-  }
-
-  private boolean crawlAvailability(Element doc) {
-    return !doc.select("#b_estq").isEmpty();
-  }
-
-  /**
-   * In the time when this crawler was made, this market hasn't installments informations
-   * 
-   * @param doc
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Float price, Element doc) {
-    Prices prices = new Prices();
-    Element offer = doc.selectFirst(".preco .oferta");
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
-      Map<Integer, Float> installmentPriceMap = new HashMap<>();
-
-      installmentPriceMap.put(1, price);
-
-      Elements elements = doc.select(".parcelamento ul > li");
-
-      for (Element element : elements) {
-        Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(null, element, true);
-
-        if (!pair.isAnyValueNull()) {
-          installmentPriceMapShop.put(pair.getFirst(), pair.getSecond());
-        }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      if (offer != null) {
-        prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, ".preco .oferta", false));
+      return products;
+
+   }
+
+   private String crawlDescription(Document doc) {
+      List<String> selectors = new ArrayList<>();
+      selectors.add("p.det-previa");
+      selectors.add("div.produto-det-atributos");
+      selectors.add("section.produtos-det-descricao div.container div.t-left");
+
+      return CrawlerUtils.scrapSimpleDescription(doc, selectors);
+   }
+
+   private boolean isProductPage(Element doc) {
+      return !doc.select(".produtos-det-info").isEmpty();
+   }
+
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      List<String> sales = new ArrayList<>();
+
+      Pricing pricing = scrapPricing(doc);
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName("bh vida belo horizonte")
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.det-preco > strong > small > b", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.det-preco > strong", null, true, ',', session);
+
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
+      Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
+
+      Element priceElement = doc.selectFirst("div.det-preco");
+
+      if(priceElement.html().contains("no cart")){
+         Double cardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.det-preco > strong > span > b", null, true, ',', session);
+
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(cardPrice)
+            .build());
+      }else{
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
-      if (crawlAvailability(doc)) {
-        prices.setBankTicketPrice(price);
-        prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
+      for (String brand : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(brand)
+            .setIsShopCard(false)
+            .setInstallments(installments)
+            .build());
       }
 
-    }
-
-    return prices;
-  }
+      return creditCards;
+   }
 }
