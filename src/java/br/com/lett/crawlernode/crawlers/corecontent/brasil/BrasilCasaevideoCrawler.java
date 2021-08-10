@@ -7,11 +7,12 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import models.Marketplace;
 import models.RatingsReviews;
 import models.prices.Prices;
@@ -23,102 +24,29 @@ import org.jsoup.nodes.Element;
 /**
  * @author Gabriel Dornelas
  */
-public class BrasilCasaevideoCrawler extends Crawler {
+public class BrasilCasaevideoCrawler extends VTEXOldScraper {
 
    private static final String HOME_PAGE = "https://www.casaevideo.com.br/";
-   private static final String MAIN_SELLER_NAME_LOWER = "casa & vídeo";
+   private static final String MAIN_SELLER_NAME = "Casa & Vídeo";
 
    public BrasilCasaevideoCrawler(Session session) {
       super(session);
    }
 
    @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   protected String getHomePage() {
+      return HOME_PAGE;
    }
-
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
-      List<Product> products = new ArrayList<>();
+   protected List<String> getMainSellersNames() {
+      return Collections.singletonList(MAIN_SELLER_NAME);
+   }
 
-      if (isProductPage(doc)) {
-         VTEXCrawlersUtils vtexUtil = new VTEXCrawlersUtils(session, MAIN_SELLER_NAME_LOWER, HOME_PAGE, cookies, dataFetcher);
-
-         JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
-
-         String internalPid = vtexUtil.crawlInternalPid(skuJson);
-         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb li:not(:first-child) > a");
-         String description = crawlDescription(doc);
-
-         // sku data in json
-         JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
-
-         // ean data in json
-         JSONArray arrayEans = CrawlerUtils.scrapEanFromVTEX(doc);
-
-         for (int i = 0; i < arraySkus.length(); i++) {
-            JSONObject jsonSku = arraySkus.getJSONObject(i);
-
-            String internalId = vtexUtil.crawlInternalId(jsonSku);
-            JSONObject apiJSON = vtexUtil.crawlApi(internalId);
-            String name = vtexUtil.crawlName(jsonSku, skuJson, "");
-            Map<String, Prices> marketplaceMap = vtexUtil.crawlMarketplace(apiJSON, internalId, true);
-            Marketplace marketplace = vtexUtil.assembleMarketplaceFromMap(marketplaceMap);
-            boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER);
-            String primaryImage = vtexUtil.crawlPrimaryImage(apiJSON);
-            String secondaryImages = vtexUtil.crawlSecondaryImages(apiJSON);
-            Prices prices = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-            Float price = vtexUtil.crawlMainPagePrice(prices);
-            Integer stock = vtexUtil.crawlStock(apiJSON);
-            String ean = i < arrayEans.length() ? arrayEans.getString(i) : null;
-            RatingsReviews ratingReview = scrapRating(internalId, doc);
-            List<String> eans = new ArrayList<>();
-            eans.add(ean);
-
-            // Creating the product
-            Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-                  .setStock(stock).setMarketplace(marketplace).setEans(eans).setRatingReviews(ratingReview).build();
-
-            products.add(product);
-         }
-
-      } else {
-         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-      }
-
-      return products;
+   @Override
+   protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
+      return null;
    }
 
 
-   private boolean isProductPage(Document document) {
-      return document.selectFirst(".productName") != null;
-   }
-
-   private String crawlDescription(Document document) {
-      String description = "";
-
-      Element descElement = document.select(".productDescription").first();
-
-      if (descElement != null) {
-         description = description + descElement.html();
-      }
-
-      Element spec = document.select("#specification").first();
-
-      if (spec != null) {
-         description += spec.outerHtml();
-      }
-
-      return description;
-   }
-
-   private RatingsReviews scrapRating(String internalId, Document doc) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "74662", logger);
-      return trustVox.extractRatingAndReviewsForVtex(doc, dataFetcher).getRatingReviews(internalId);
-   }
 }
