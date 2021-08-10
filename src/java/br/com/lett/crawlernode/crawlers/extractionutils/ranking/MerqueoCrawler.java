@@ -95,9 +95,6 @@ public class MerqueoCrawler extends CrawlerRankingKeywords {
          }
       }
 
-      //https://merqueo.com.br/sao-paulo/merqueo-sao-paulo/cafe-achocolatado-e-cha/achocolatado-em-po/achocolatado-po-nestle-nescau-200-g
-      //https://merqueo.com.br/sao-paulo/                  cafe-achocolatado-e-cha/achocolatado-em-po/achocolatado-po-nestle-nescau-200-g
-
       return productUrl;
    }
 

@@ -68,7 +68,6 @@ public class MerqueoCrawler extends Crawler {
             .setName(name)
             .setOffers(offers)
             .setPrimaryImage(primaryImage)
-            //  .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setStock(stock)
             .build();
