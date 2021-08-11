@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -14,6 +15,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -56,7 +58,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
             Collections.singletonList("src"), "https", "images.madeiramadeira.com.br",
             primaryImage);
 
-         //  RatingsReviews ratingsReviews = scrapRating(internalId, doc);
+         RatingsReviews ratingsReviews = scrapRating(internalId, doc);
          String description = CrawlerUtils.scrapSimpleDescription(doc,
             Collections.singletonList(".tab__content"));
 
@@ -77,7 +79,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(secondaryImages)
             .setDescription(description)
-            //  .setRatingReviews(ratingsReviews)
+            .setRatingReviews(ratingsReviews)
             .build();
 
          products.add(product);
@@ -147,6 +149,7 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(JSONObject offer) throws MalformedPricingException {
+
       JSONObject price = offer.optJSONObject("price");
 
       Double priceFrom = price.optDouble("fake");
@@ -213,11 +216,11 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
       return doc.select(".section product__header").isEmpty();
    }
 
-   /*
+
    private RatingsReviews scrapRating(String internalId, Document doc) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "85050", logger);
       return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 
-    */
+
 }
