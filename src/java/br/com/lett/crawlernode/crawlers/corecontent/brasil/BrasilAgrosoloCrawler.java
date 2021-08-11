@@ -130,7 +130,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "price", true);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.fbits-preco .precoDe", null, true, ',', session);
 
-      CreditCards creditCards = scrapCreditCards(doc);
+      CreditCards creditCards = scrapCreditCards(doc,spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
@@ -143,9 +143,9 @@ public class BrasilAgrosoloCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      Installments installments = scrapInstallments(doc);
+      Installments installments = scrapInstallments(doc,spotlightPrice);
 
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -160,23 +160,30 @@ public class BrasilAgrosoloCrawler extends Crawler {
       return creditCards;
    }
 
-   private Installments scrapInstallments(Document doc) throws MalformedPricingException {
+   private Installments scrapInstallments(Document doc, Double spotlightPrice) throws MalformedPricingException {
       Installments installments = new Installments();
 
       Elements installmentsEl = doc.select("div.details-content > p");
 
-      for(Element el : installmentsEl){
-         Elements results = el.select("b");
+      if(!installmentsEl.isEmpty()) {
+         for (Element el : installmentsEl) {
+            Elements results = el.select("b");
 
-         if(results.size() == 2){
-            int installmentNumber = Integer.parseInt(results.get(0).html());
-            Double installmentPrice = MathUtils.parseDoubleWithComma(results.get(1).html());
+            if (results.size() == 2) {
+               int installmentNumber = Integer.parseInt(results.get(0).html());
+               Double installmentPrice = MathUtils.parseDoubleWithComma(results.get(1).html());
 
-            installments.add(Installment.InstallmentBuilder.create()
-               .setInstallmentNumber(installmentNumber)
-               .setInstallmentPrice(installmentPrice)
-               .build());
+               installments.add(Installment.InstallmentBuilder.create()
+                  .setInstallmentNumber(installmentNumber)
+                  .setInstallmentPrice(installmentPrice)
+                  .build());
+            }
          }
+      }else {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       return installments;
