@@ -19,7 +19,7 @@ public class GuatemalaPaizCrawler extends VTEXRankingKeywords {
    private static final Integer API_VERSION = 1;
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
-   private String keySHA256 = "eeddbccca8cbf6427cf8d80f72dc3e6382ab18134075e43bae71a406e62c3613";
+   private String keySHA256 = "4136d62c555a4b2e1ba9a484a16390d6a6035f51760d5726f436380fa290d0cc";
 
 
    public GuatemalaPaizCrawler(Session session) {
