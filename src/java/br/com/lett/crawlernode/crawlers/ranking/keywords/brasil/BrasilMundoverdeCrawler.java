@@ -118,55 +118,6 @@ public class BrasilMundoverdeCrawler extends VTEXRankingKeywords {
 
       return searchApi;
    }
-//   public BrasilMundoverdeCrawler(Session session) {
-//      super(session);
-//   }
-//
-//   @Override
-//   protected void extractProductsFromCurrentPage() {
-//
-//      this.pageSize = 12;
-//
-//      this.log("Página " + this.currentPage);
-//
-//      String url = "https://www.mundoverde.com.br/" + this.keywordEncoded + "?map=ft&page=" + this.currentPage;
-//      this.log("Link onde são feitos os crawlers: " + url);
-//
-//      this.currentDoc = fetchDocument(url);
-//
-//      Elements products = this.currentDoc.select("div.vtex-search-result-3-x-galleryItem");
-//
-//      if (!products.isEmpty()) {
-//         if (this.totalProducts == 0) {
-//            setTotalProducts();
-//         }
-//
-//         if (products.size() >= 1) {
-//            for (Element e : products) {
-//
-//               String urlProduct = CrawlerUtils.scrapUrl(e, "a", "href", "https://", "www.mundoverde.com.br");
-//
-//               saveDataProduct(null, null, urlProduct);
-//
-//               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + null + " - Url: " + urlProduct);
-//               if (this.arrayProducts.size() == productsLimit) break;
-//
-//            }
-//         } else {
-//            this.result = false;
-//            this.log("Keyword sem resultado!");
-//         }
-//
-//         this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-//
-//      }
-//   }
-//
-//   @Override
-//   protected void setTotalProducts() {
-//      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".vtex-search-result-3-x-totalProducts--layout span", null, null, false, false, 0);
-//      this.log("Total de produtos: " + this.totalProducts);
-//   }
 }
 
 
