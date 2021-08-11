@@ -1,8 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -22,7 +26,7 @@ public class BrasilMundoverdeCrawler extends CrawlerRankingKeywords {
       String url = "https://www.mundoverde.com.br/" + this.keywordEncoded + "?page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = fetchDocument(url);
+      this.currentDoc = fetch(url);
 
       Elements products = this.currentDoc.select(".vtex-product-summary-2-x-container");
 
@@ -50,6 +54,13 @@ public class BrasilMundoverdeCrawler extends CrawlerRankingKeywords {
          this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
 
       }
+   }
+
+   private Document fetch(String url) {
+      webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+      webdriver.waitLoad(5000);
+      Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
+      return doc;
    }
 
    @Override
