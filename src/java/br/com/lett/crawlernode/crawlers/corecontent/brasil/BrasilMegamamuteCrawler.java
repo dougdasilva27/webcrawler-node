@@ -41,7 +41,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       // Creating the product
-      String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, " small.sku", true).replaceAll("[0-9]", "");
+      String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, " small.sku", true).replaceAll("[^0-9]", "");
       String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, " div[data-widget-pid]", "data-widget-pid");
       String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true);
       List<String> images = srapImages(doc);
