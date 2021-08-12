@@ -8,7 +8,6 @@ import br.com.lett.crawlernode.core.models.Product
 import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
 import br.com.lett.crawlernode.util.*
 import models.Offer
 import models.Offers
@@ -30,8 +29,20 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
       var token: String = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjdXN0b21lcklkIjoyOTIyNjAsImRldmljZVVVSUQiOiIzYTc1YjdkNy1mMDhmLTQ4ZmEtOGM5Mi04OTliZjNkZmE1Y2IiLCJpYXQiOjE2MjQ2MjMzODl9.KXv2rXCKSkwERiGywoP6sI5HB_mSgp_sdsjN79qq338";
    }
 
-   private val login: String = "kennedybarcelos@lett.digital"
-   private val password: String = "K99168938690"
+   //kennedybarcelos@lett.digital
+   //K99168938690
+
+   private val password = getPassword()
+   private val login = getLogin()
+
+   protected fun getPassword(): String?{
+      return session.options.optString("password");
+   }
+
+   protected fun getLogin(): String?{
+      return session.options.optString("login");
+   }
+
 
    override fun fetch(): JSONObject? {
       val name = productIdByURL().toLowerCase()
@@ -43,18 +54,17 @@ class BrasilShopperCrawler(session: Session) : Crawler(session) {
 
    private fun uptadeToken() {
       try {
-
          webdriver = DynamicDataFetcher.fetchPageWebdriver("https://shopper.com.br", ProxyCollection.BUY_HAPROXY, session)
 
-
          log("waiting home page")
-
          webdriver.waitForElement("button.login", 30)
 
+         log("clicking on login button")
          webdriver.clickOnElementViaJavascript("button.login", 5000)
 
          webdriver.waitForElement(".access-login input[name=email]", 30)
 
+         log("inserting credentials")
          webdriver.sendToInput(".access-login input[name=email]", login, 2000)
 
          webdriver.sendToInput(".access-login input[name=senha]", password, 2000)
