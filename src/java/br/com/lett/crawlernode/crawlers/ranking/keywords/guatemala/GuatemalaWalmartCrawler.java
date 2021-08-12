@@ -7,13 +7,16 @@ import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import com.amazonaws.internal.config.HostRegexToRegionMappingJsonHelper;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Base64;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
 
@@ -23,9 +26,11 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
+
    @Override
    protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
-      JSONObject searchResult = fetchSearchApi();
+      Document doc = fetchDocument(HOME_PAGE + this.keywordEncoded);
+      JSONObject searchResult = fetchSearchApi(doc);
 
       if (searchResult != null && searchResult.has("products")) {
 
@@ -36,7 +41,7 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
          for (Object object : searchResult.optJSONArray("products")) {
             JSONObject products = (JSONObject) object;
 
-            String internalId = JSONUtils.getValueRecursive(products,"items.0.itemId", String.class);
+            String internalId = JSONUtils.getValueRecursive(products, "items.0.itemId", String.class);
             String internalPid = products.optString("productId");
             String url = HOME_PAGE + products.optString("linkText") + "/p";
 
@@ -52,17 +57,17 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
    }
 
 
-
-   private JSONObject fetchSearchApi() {
+   private JSONObject fetchSearchApi(Document doc) {
       JSONObject searchApi = new JSONObject();
       StringBuilder url = new StringBuilder();
+      String sha256Hash = getSha256Hash(doc);
       url.append(HOME_PAGE + "_v/segment/graphql/v1?");
 
       JSONObject extensions = new JSONObject();
       JSONObject persistedQuery = new JSONObject();
 
       persistedQuery.put("version", "1");
-      persistedQuery.put("sha256Hash", "eeddbccca8cbf6427cf8d80f72dc3e6382ab18134075e43bae71a406e62c3613");
+      persistedQuery.put("sha256Hash", sha256Hash);
       persistedQuery.put("sender", "vtex.store-resources@0.x");
       persistedQuery.put("provider", "vtex.search-graphql@0.x");
 
@@ -120,7 +125,7 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
 
       selectedFacets.put(obj);
 
-      search.put("selectedFacets",selectedFacets);
+      search.put("selectedFacets", selectedFacets);
       search.put("fullText", this.keywordEncoded);
       search.put("facetsBehavior", "Static");
       search.put("categoryTreeBehavior", "default");
@@ -129,5 +134,51 @@ public class GuatemalaWalmartCrawler extends CrawlerRankingKeywords {
       return Base64.getEncoder().encodeToString(search.toString().getBytes());
    }
 
+   private String getScript(Element element) {
+      String script = null;
+      Pattern pattern = Pattern.compile("\\<script>(.*)<\\/script>");
+      Matcher matcher = pattern.matcher(element.toString());
+      if (matcher.find()) {
+         script = matcher.group(1);
+      }
+      return script;
+   }
+
+
+   private String getSha256Hash(Document doc) {
+      Element el = doc.selectFirst("template[data-varname='__STATE__']");
+      String sha256Hash = null;
+
+      String script = getScript(el);
+      if (script != null && !script.isEmpty()) {
+         JSONObject jsonObject = CrawlerUtils.stringToJson(script);
+
+         for (String key : jsonObject.keySet()) {
+            String firstIndexString = "@runtimeMeta(";
+            String keyIdentifier = "$ROOT_QUERY.productSearch";
+
+            if (key.contains(firstIndexString) && key.contains(keyIdentifier) && key.endsWith(")")) {
+               int x = key.indexOf(firstIndexString) + firstIndexString.length();
+               int y = key.indexOf(')', x);
+
+               JSONObject hashJson = CrawlerUtils.stringToJson(key.substring(x, y).replace("\\\"", "\""));
+
+               if (hashJson.has("hash") && !hashJson.isNull("hash")) {
+                  sha256Hash = hashJson.get("hash").toString();
+               }
+
+               break;
+            }
+
+         }
+      }
+
+      if (sha256Hash == null) {
+         sha256Hash = "4136d62c555a4b2e1ba9a484a16390d6a6035f51760d5726f436380fa290d0cc";
+      }
+
+      return sha256Hash;
+
+   }
 
 }
