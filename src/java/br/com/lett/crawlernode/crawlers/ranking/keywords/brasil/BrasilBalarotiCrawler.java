@@ -1,90 +1,64 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilBalarotiCrawler extends CrawlerRankingKeywords {
 
-  public BrasilBalarotiCrawler(Session session) {
-    super(session);
-  }
+   public BrasilBalarotiCrawler(Session session) {
+      super(session);
+   }
 
-  private boolean hasNextPage = true;
+   private boolean hasNextPage = true;
 
-  @Override
-  public void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 16;
-    int productsCount = this.arrayProducts.size();
+   @Override
+   public void extractProductsFromCurrentPage() {
 
-    String url = "https://www.balaroti.com.br/api/catalog_system/pub/products/search/" + this.keywordWithoutAccents.replace(" ", "%20")
-        + "?map=ft&_from=" + productsCount + "&_to=" + (productsCount + 49);
+      this.pageSize = 16;
 
-    this.log("Página " + this.currentPage);
-    JSONArray products = new JSONArray();
+      String url = "https://busca.balaroti.com.br/busca?q=" + this.keywordEncoded;
 
-    try {
-      products = new JSONArray(fetchGETString(url, null));
-    } catch (JSONException e) {
-      this.logError(CommonMethods.getStackTrace(e));
-    }
+      this.log("Página " + this.currentPage);
 
-    int pageSize = products.length();
+      Document doc = fetchDocument(url);
 
-    if (pageSize < 50) {
-      this.hasNextPage = false;
-    }
+      Elements products = doc.select(".neemu-products-container li");
 
-    if (products.length() > 0) {
-      for (int i = 0; i < products.length(); i++) {
-        JSONObject product = products.getJSONObject(i);
+      if (products.size() > 0) {
+         for (Element product : products) {
 
-        String productUrl = crawlProductUrl(product);
-        String internalPid = crawlInternalPid(product);
+            String productUrl = "https:" + CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "a", "href");
 
-        saveDataProduct(null, internalPid, productUrl);
+            String internalPid = crawlInternalPid(productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            saveDataProduct(null, internalPid, productUrl);
 
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    return this.hasNextPage;
-  }
-
-  private String crawlInternalPid(JSONObject product) {
-    String internalPid = null;
-
-    if (product.has("productId")) {
-      internalPid = product.getString("productId");
-    }
-
-    return internalPid;
-  }
-
-  private String crawlProductUrl(JSONObject product) {
-    String urlProduct = null;
-
-    if (product.has("link")) {
-      urlProduct = product.getString("link");
-    }
-
-    return urlProduct;
-  }
+   private String crawlInternalPid(String productUrl) {
+      Pattern p = Pattern.compile("-([0-9]*)\\/p");
+      Matcher m = p.matcher(productUrl);
+      if (m.find()) {
+         return m.group(1);
+      }
+      return null;
+   }
 }
