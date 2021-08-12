@@ -9,7 +9,6 @@ import br.com.lett.crawlernode.core.models.RequestMethod
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.util.*
-import models.AdvancedRatingReview
 import models.Offer
 import models.Offers
 import models.RatingsReviews
@@ -18,11 +17,8 @@ import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.select.Elements
 import java.net.URL
 import java.time.LocalDate
-import java.util.HashMap
-import kotlin.math.roundToInt
 
 class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
@@ -148,7 +144,11 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
 
       val average = MathUtils.parseDoubleWithComma(s.toString())
 
-      val count = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating span:not(.material-icons)", false, 0);
+      var count = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating span:not(.material-icons)", false, 0);
+
+      if (average == 0.0) {
+         count = 0
+      }
 
       rating.setAverageOverallRating(average)
       rating.setTotalRating(count);
