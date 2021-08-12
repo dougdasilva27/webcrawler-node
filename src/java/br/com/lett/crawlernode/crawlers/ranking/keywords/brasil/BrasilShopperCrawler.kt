@@ -24,9 +24,18 @@ import java.net.URLEncoder
  */
 class BrasilShopperCrawler(session: Session) : CrawlerRankingKeywords(session) {
 
-   private val login: String = "kennedybarcelos@lett.digital"
-   private val password: String = "K99168938690"
    private var token: String = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjdXN0b21lcklkIjoyOTIyNjAsImRldmljZVVVSUQiOiIzYTc1YjdkNy1mMDhmLTQ4ZmEtOGM5Mi04OTliZjNkZmE1Y2IiLCJpYXQiOjE2MjQ2MjMzODl9.KXv2rXCKSkwERiGywoP6sI5HB_mSgp_sdsjN79qq338";
+   private val password = getPassword()
+   private val login = getLogin()
+
+   protected fun getPassword(): String?{
+      return session.options.optString("password");
+   }
+
+   protected fun getLogin(): String?{
+      return session.options.optString("login");
+   }
+
 
    override fun processBeforeFetch() {
       try {

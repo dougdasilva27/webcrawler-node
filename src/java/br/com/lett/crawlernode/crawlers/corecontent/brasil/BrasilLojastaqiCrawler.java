@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -19,14 +20,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.BankSlip;
 import models.pricing.CreditCard;
 import models.pricing.CreditCards;
 import models.pricing.Installment;
 import models.pricing.Installments;
 import models.pricing.Pricing;
+import org.apache.avro.data.Json;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -100,6 +105,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
          String stock = JSONUtils.getValueRecursive(stockInfo, "items.0.stockStatus", String.class);
          boolean available = stock != null ? !stock.contains("OUT_OF_STOCK") : null;
          Offers offers = available ? scrapOffers(dataJson) : new Offers();
+         RatingsReviews ratingsReviews = scrapRatingsReviews(internalId);
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -110,6 +116,7 @@ public class BrasilLojastaqiCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setSecondaryImages(images)
             .setDescription(description)
+            .setRatingReviews(ratingsReviews)
             .setOffers(offers)
             .build();
 
@@ -120,6 +127,66 @@ public class BrasilLojastaqiCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private RatingsReviews scrapRatingsReviews(String internalId) {
+
+      Map<String,String> headers = new HashMap<>();
+      headers.put("content-type","application/json; charset=UTF-8");
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl("https://www.taqi.com.br/ccstorex/custom/v1/hervalApiCalls/getData")
+         .setPayload("{\"url\":\"/Produtos/"+ internalId +"/avaliacoes\",\"data\":{},\"method\":\"GET\"}")
+         .setHeaders(headers)
+         .build();
+      Response response = new JsoupDataFetcher().post(session,request);
+      JSONArray data = JSONUtils.stringToJsonArray(response.getBody());
+
+      RatingsReviews ratingsReviews = new RatingsReviews();
+
+      AdvancedRatingReview advancedRatingReview = scrapAdvancedRatingReview(data);
+
+      ratingsReviews.setDate(session.getDate());
+      ratingsReviews.setTotalRating(data.length());
+      ratingsReviews.setAverageOverallRating(CrawlerUtils.extractRatingAverageFromAdvancedRatingReview(advancedRatingReview));
+      ratingsReviews.setTotalWrittenReviews(data.length());
+      ratingsReviews.setAdvancedRatingReview(advancedRatingReview);
+
+
+
+      return ratingsReviews;
+
+
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONArray data) {
+      AdvancedRatingReview advancedRatingReview = new AdvancedRatingReview();
+      int[] notas = {0,0,0,0,0};
+      for (Object o : data) {
+         JSONObject obj = (JSONObject) o;
+
+
+         switch (obj.optInt("nota")){
+            case 1:
+               notas[0]++;
+            case 2:
+               notas[1]++;
+            case 3:
+               notas[2]++;
+            case 4:
+               notas[3]++;
+            case 5:
+               notas[4]++;
+         }
+      }
+
+      advancedRatingReview.setTotalStar1( notas[0]);
+      advancedRatingReview.setTotalStar2( notas[1]);
+      advancedRatingReview.setTotalStar3( notas[2]);
+      advancedRatingReview.setTotalStar4( notas[3]);
+      advancedRatingReview.setTotalStar5( notas[4]);
+
+      return advancedRatingReview;
    }
 
    private Offers scrapOffers(Object jsonObject) throws OfferException, MalformedPricingException {
