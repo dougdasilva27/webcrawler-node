@@ -11,7 +11,6 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -22,7 +21,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -66,7 +64,7 @@ public class BrasilQualidocCrawler extends Crawler {
       if (jsonProduct.has("id")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = jsonProduct.optString("id");
+         String internalPid = jsonProduct.optString("id");
          String name = jsonProduct.optString("displayName");
          CategoryCollection categories = scrapCategories(jsonProduct);
          List<String> images = scrapImages(jsonProduct);
@@ -79,8 +77,8 @@ public class BrasilQualidocCrawler extends Crawler {
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
-            .setInternalId(internalId)
-            .setInternalPid(internalId)
+            .setInternalId(internalPid)
+            .setInternalPid(internalPid)
             .setName(name)
             .setCategories(categories)
             .setPrimaryImage(primaryImage)
@@ -99,6 +97,14 @@ public class BrasilQualidocCrawler extends Crawler {
 
    protected CategoryCollection scrapCategories(JSONObject json) {
       CategoryCollection categories = new CategoryCollection();
+
+      JSONArray categoriesArray = json.optJSONArray("parentCategories");
+
+      for (Object o : categoriesArray) {
+         JSONObject categorie = (JSONObject) o;
+
+         categories.add(categorie.optString("displayName"));
+      }
 
       return categories;
    }
@@ -141,7 +147,7 @@ public class BrasilQualidocCrawler extends Crawler {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
 
-      Pricing pricing = scrapPricing(json, jsonOffers);
+      Pricing pricing = scrapPricing(jsonOffers);
 
       if(!json.optString("x_valorDeCashback").equals("")) {
          sales.add(json.optString("x_valorDeCashback") + " on cashback");
@@ -164,7 +170,7 @@ public class BrasilQualidocCrawler extends Crawler {
 
    }
 
-   private Pricing scrapPricing(JSONObject json, JSONObject jsonOffers) throws MalformedPricingException {
+   private Pricing scrapPricing(JSONObject jsonOffers) throws MalformedPricingException {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(jsonOffers, "salePrice", false);
       Double priceFrom = JSONUtils.getDoubleValueFromJSON(jsonOffers, "price", false);
 
@@ -201,13 +207,6 @@ public class BrasilQualidocCrawler extends Crawler {
       }
 
       return creditCards;
-   }
-
-   private String scrapSales(JSONObject json){
-      //Cashback sale
-      String sale = json.optString("x_valorDeCashback") + " on cashback";
-
-      return sale;
    }
 
 }
