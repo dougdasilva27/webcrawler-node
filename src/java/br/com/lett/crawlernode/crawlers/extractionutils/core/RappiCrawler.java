@@ -1,21 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.math.BigDecimal;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.sql.SQLOutput;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
-
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
-import br.com.lett.crawlernode.exceptions.MalformedUrlException;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
@@ -24,10 +8,12 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.exceptions.MalformedUrlException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import models.Offer;
 import models.Offer.OfferBuilder;
@@ -38,6 +24,14 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.regex.Pattern;
 
 
 //essa classe não deve ser criada na scraper class
@@ -50,8 +44,17 @@ public abstract class RappiCrawler extends Crawler {
       this.config.setFetcher(FetchMode.APACHE);
    }
 
-   protected String getStoreId(){
+   protected String getStoreId() {
       return session.getOptions().optString("storeId");
+   }
+
+   protected String storeId() {
+      if(session.getOptions().optBoolean("newUnification", false)){
+         return session.getOptions().optString("storeId");
+      }
+      else {
+         return getStoreId();
+      }
    }
 
    abstract protected String getHomeDomain();
@@ -62,14 +65,14 @@ public abstract class RappiCrawler extends Crawler {
 
    abstract protected String getHomeCountry();
 
-   protected boolean newUnification = session.getOptions().optBoolean("newUnification",false);
+   protected boolean newUnification = session.getOptions().optBoolean("newUnification", false);
 
 
    @Override
    protected JSONObject fetch() {
       JSONObject productsInfo = new JSONObject();
 
-      String storeId = getStoreId();
+      String storeId = storeId();
 
       String productUrl = session.getOriginalURL();
 
@@ -304,7 +307,7 @@ public abstract class RappiCrawler extends Crawler {
 
    protected boolean isProductPage(JSONObject jsonSku) {
       if (newUnification) {
-         return jsonSku.length() > 0 && session.getOriginalURL().contains(getStoreId());
+         return jsonSku.length() > 0 && session.getOriginalURL().contains(storeId());
       } else {
          return jsonSku.length() > 0;
       }
