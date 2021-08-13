@@ -9,11 +9,13 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
+import br.com.lett.crawlernode.exceptions.ApiResponseException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import lombok.SneakyThrows;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -54,28 +56,37 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       JSONObject rating = fetchRatingApi(skuInternalPid);
 
-      JSONObject data = rating.optJSONObject("data");
+      if (!rating.has("errors")) {
+         JSONObject data = rating.optJSONObject("data");
 
-      if (data != null) {
+         if (data != null) {
 
-         JSONObject product = data.optJSONObject("product");
+            JSONObject product = data.optJSONObject("product");
 
-         if (product != null) {
+            if (product != null) {
 
-            JSONObject ratingInfo = product.optJSONObject("rating");
+               JSONObject ratingInfo = product.optJSONObject("rating");
 
-            if (ratingInfo != null) {
-               ratingReviews.setTotalWrittenReviews(ratingInfo.optInt("reviews", 0));
-               ratingReviews.setTotalRating(ratingInfo.optInt("reviews", 0));
-               ratingReviews.setAverageOverallRating(ratingInfo.optDouble("average", 0d));
-            } else {
-               ratingReviews.setTotalWrittenReviews(0);
-               ratingReviews.setTotalRating(0);
-               ratingReviews.setAverageOverallRating(0.0);
+               if (ratingInfo != null) {
+                  ratingReviews.setTotalWrittenReviews(ratingInfo.optInt("reviews", 0));
+                  ratingReviews.setTotalRating(ratingInfo.optInt("reviews", 0));
+                  ratingReviews.setAverageOverallRating(ratingInfo.optDouble("average", 0d));
+               } else {
+                  ratingReviews.setTotalWrittenReviews(0);
+                  ratingReviews.setTotalRating(0);
+                  ratingReviews.setAverageOverallRating(0.0);
+               }
             }
          }
-      }
+      }else{
+         String error = rating.optString("errors");
 
+         try {
+            throw new ApiResponseException(error);
+         } catch (ApiResponseException e) {
+            e.printStackTrace();
+         }
+      }
       return ratingReviews;
    }
 
@@ -113,6 +124,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url.toString())
+         .setProxyservice(
+            Arrays.asList(
+                  ProxyCollection.BUY_HAPROXY,
+                  ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
          .build();
 
       //For some reason, the Jsoup data fetcher stop working for this request.
@@ -123,7 +138,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
-      JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid, arrayPosition);
+      JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller, internalPid, arrayPosition);
       setOffersForMainPageSeller(offers, offersJson, internalId);
    }
 
@@ -132,12 +147,12 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
       Offers offers = new Offers();
 
-         String offersPageUrl = "https://www.americanas.com.br/parceiros/"+ internalPid +"?productSku=" + internalId;
+      String offersPageUrl = "https://www.americanas.com.br/parceiros/" + internalPid + "?productSku=" + internalId;
 
-         Document sellersDoc = acessOffersPage(offersPageUrl);
-         Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
+      Document sellersDoc = acessOffersPage(offersPageUrl);
+      Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
 
-         if (sellersFromHTML.isEmpty()){
+      if (sellersFromHTML.isEmpty()) {
                /*
                caso sellersFromHTML seja vazio significa que fomos bloqueados
                durante a tentativa de capturar as informações na pagina de sellers
@@ -145,11 +160,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
                Nesse caso devemos capturar apenas as informações da pagina principal.
                */
 
-            scrapAndSetInfoForMainPage(doc,offers,internalId,internalPid, arrayPosition);
-         } else {
+         scrapAndSetInfoForMainPage(doc, offers, internalId, internalPid, arrayPosition);
+      } else {
 
-            setOffersForSellersPage(offers, sellersFromHTML);
-         }
+         setOffersForSellersPage(offers, sellersFromHTML);
+      }
 
       return offers;
    }
@@ -178,7 +193,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
             ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
 
 
-
          content = new FetcherDataFetcher().get(session, request).getBody();
       }
 
@@ -186,7 +200,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    }
 
 
-   private void setOffersForMainPageSeller (Offers offers ,JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
+   private void setOffersForMainPageSeller(Offers offers, JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       boolean twoPositions = false;
 
@@ -228,15 +242,15 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private void setOffersForSellersPage(Offers offers, Elements sellers) throws MalformedPricingException, OfferException {
 
-      if(sellers.size() > 0){
+      if (sellers.size() > 0) {
 
-         for(int i = 0; i < sellers.size(); i++){
+         for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
             boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo,".seller-card__SellerInfo-pf2gd6-2  p:nth-child(2)",false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo,".seller-card__ButtonBox-pf2gd6-4 a","href");
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".seller-card__SellerInfo-pf2gd6-2  p:nth-child(2)", false);
+            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonBox-pf2gd6-4 a", "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
-            Integer mainPagePosition = i == 0 ? 1: null;
+            Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
@@ -255,10 +269,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       }
    }
 
-   private String scrapSellerIdFromURL(String rawSellerId){
+   private String scrapSellerIdFromURL(String rawSellerId) {
       String sellerId = "";
-      if(rawSellerId != null){
-         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]","").trim();
+      if (rawSellerId != null) {
+         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]", "").trim();
       }
       return sellerId;
    }
@@ -266,10 +280,10 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    private Pricing scrapPricingForOffersPage(Element sellerInfo)
       throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPrice-sc-1jvw02c-2",null,false,',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo,".src__BestPrice-sc-1jvw02c-5",null,false,',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPrice-sc-1jvw02c-2", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-1jvw02c-5", null, false, ',', session);
       BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo,spotlightPrice);
+      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
