@@ -150,7 +150,7 @@ public abstract class BrasilVilanova extends Crawler {
             String internalPid = jsonProduct.optString("productID");
             List<String> eans = singletonList(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".variacao-container", "data-produtoean"));
             CategoryCollection categories = scrapCategories(jsonProduct);
-            String description = CrawlerUtils.scrapElementsDescription(doc, singletonList("#info-abas-mobile"));
+            String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList(".tab-content"));
             //cannot find any secondary image
             Elements variations = doc.select(".product-details-body  .owl-item.active");
 
