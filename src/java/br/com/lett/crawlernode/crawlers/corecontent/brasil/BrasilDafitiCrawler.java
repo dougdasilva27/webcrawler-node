@@ -126,7 +126,7 @@ public class BrasilDafitiCrawler extends Crawler {
                int stock = Integer.parseInt(sizes.getJSONObject(i).get("stock").toString());
                boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) && stock > 0;
 
-               Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
+                Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
                Prices prices = available ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
                stock = available ? stock : 0;
                Float price = crawlPrice(prices);
@@ -177,7 +177,7 @@ public class BrasilDafitiCrawler extends Crawler {
       Map<String, Prices> marketplace = new HashMap<>();
 
       String sellerName = MAIN_SELLER_NAME_LOWER;
-      Element sellerNameElement = doc.select(".product-seller-name strong").first();
+      Element sellerNameElement = doc.select(".product-seller-name-link").first();
 
       if (sellerNameElement != null) {
          sellerName = sellerNameElement.ownText().toLowerCase();
