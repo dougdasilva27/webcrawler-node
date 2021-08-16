@@ -36,7 +36,7 @@ public abstract class BrasilVilanova extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "button.btn-primary", "data-codigoproduto");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "button.btn-primary", "id");
             String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "p.product-name > a", "href");
 
             saveDataProduct(null, internalPid, productUrl);
