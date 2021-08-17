@@ -127,11 +127,11 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor.com-precoDe", null, false, ',', session);
 
-      if (priceFrom == null) {
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#fbits-div-preco-off input", "value", false, ',', session);
+      Double spotlightPrice = calculatePriceSquareMeter(doc);
+
+      if(spotlightPrice == 0d){
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".fbits-preco .precoPor",null,false,',',session);
       }
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
@@ -139,7 +139,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bank, null);
 
       return Pricing.PricingBuilder.create()
-         .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
@@ -201,5 +200,36 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       return installments;
    }
 
+   private double calculatePriceSquareMeter(Document doc){
+      double spotilightPrice = 0D;
 
+
+      Double boxPriceSquareMeter = MathUtils.parseDoubleWithComma(scrapPriceBoxFromDescription(doc));
+      Double boxPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#fbits-div-preco-off input", "value", false, ',', session);
+
+      if (boxPrice != null && boxPriceSquareMeter != null){
+         spotilightPrice = MathUtils.normalizeTwoDecimalPlaces(boxPrice / boxPriceSquareMeter);
+         double fivePerCent = 0.05 * spotilightPrice;
+         spotilightPrice = spotilightPrice - fivePerCent;
+      }
+
+      return spotilightPrice;
+   }
+
+
+   private String scrapPriceBoxFromDescription(Document doc){
+
+      String priceBox = "";
+
+      Elements elements = doc.select(".paddingbox p");
+
+      for(Element e: elements){
+         String element = e.toString().toLowerCase().replace(" ", "");
+         if( e != null && element.contains("m²/caixa:")){
+            priceBox = e.text();
+            break;
+         }
+      }
+      return priceBox;
+   }
 }
