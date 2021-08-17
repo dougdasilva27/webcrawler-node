@@ -133,7 +133,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       return productUrl;
    }
 
-   public JSONObject fetchProductsFromAPI(String storeId) {
+   protected JSONObject fetchProductsFromAPI(String storeId) {
       int startPage;
 
       if (currentPage == 1) {
