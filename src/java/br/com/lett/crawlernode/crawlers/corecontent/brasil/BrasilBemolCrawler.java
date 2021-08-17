@@ -13,17 +13,15 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import br.com.lett.crawlernode.util.Pair;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
+
+import java.util.*;
+
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.*;
 import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,6 +32,9 @@ import org.jsoup.select.Elements;
 public class BrasilBemolCrawler extends Crawler {
 
    private static final String HOME_PAGE = "http://www.bemol.com.br/";
+   private static final String SELLER_FULL_NAME = "bemol";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilBemolCrawler(Session session) {
       super(session);
@@ -56,9 +57,8 @@ public class BrasilBemolCrawler extends Crawler {
          String internalId = crawlInternalId(doc);
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".reference [itemprop=productID]", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".information .name", true);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc, ".buy-box .sale-price", null, false, ',', session);
-         Prices prices = crawlPrices(price, internalId, doc);
          boolean available = doc.selectFirst(".wd-buy-button  > div:not([style$=none])") != null;
+         Offers offers = available? scrapOffers(doc) : new Offers();
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrum-product li:not(.first) a span");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".wd-product-media-selector .image.selected img, .wd-product-media-selector .image:not(.selected) img",
                Arrays.asList("data-image-large", "data-small", "data-image-big", "src"), "https:", "d3ddx6b2p2pevg.cloudfront.net");
@@ -78,9 +78,7 @@ public class BrasilBemolCrawler extends Crawler {
                .setInternalId(internalId)
                .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
+               .setOffers(offers)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
@@ -88,7 +86,6 @@ public class BrasilBemolCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setRatingReviews(ratingsReviews)
-               .setMarketplace(new Marketplace())
                .build();
 
          products.add(product);
@@ -100,6 +97,84 @@ public class BrasilBemolCrawler extends Crawler {
       return products;
 
    }
+
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing( doc);
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .build());
+
+      return offers;
+
+   }
+
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice =  CrawlerUtils.scrapDoublePriceFromHtml(doc, ".buy-box .sale-price", null, false, ',', session);
+      Double priceFrom =  CrawlerUtils.scrapDoublePriceFromHtml(doc, ".list-price", null, false, ',', session);
+
+      CreditCards creditCards = scrapCreditCards(doc,spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = scrapInstallments(doc);
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      Element installmentsCard = doc.selectFirst(".parcel-total");
+
+      if (installmentsCard != null) {
+         String installmentString = installmentsCard.text().replaceAll("[^0-9]", "").trim();
+         Integer installment = !installmentString.isEmpty() ? Integer.parseInt(installmentString) : null;
+         Double value = CrawlerUtils.scrapDoublePriceFromHtml(doc,"parcel-value",null,true,',',session);
+
+         if (value != null && installment != null) {
+
+            installments.add(Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(value)
+               .build());
+         }
+      }
+
+      return installments;
+   }
+
+
 
    private boolean isProductPage(Document doc) {
       return !doc.select("input[name=ProductID]").isEmpty();
@@ -316,4 +391,5 @@ public class BrasilBemolCrawler extends Crawler {
 
       return totalRating;
    }
+
 }
