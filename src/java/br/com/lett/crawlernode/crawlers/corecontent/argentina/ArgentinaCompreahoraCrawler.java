@@ -1,21 +1,18 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.pricing.*;
+import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
 
@@ -31,9 +28,9 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      Map<String,String> headers = new HashMap<>();
-      headers.put("x-requested-with","XMLHttpRequest");
-      headers.put("content-type","application/x-www-form-urlencoded; charset=UTF-8");
+      Map<String, String> headers = new HashMap<>();
+      headers.put("x-requested-with", "XMLHttpRequest");
+      headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
 
 
       String payload = "username=federico.serrano%40scmalaga.com.ar" +
@@ -47,7 +44,7 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      Response response = this.dataFetcher.post(session,request);
+      Response response = this.dataFetcher.post(session, request);
 
       this.cookies = response.getCookies();
    }
@@ -55,15 +52,15 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
    @Override
    public List<Product> extractInformation(Document document) throws Exception {
       List<Product> products = new ArrayList<>();
-      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document,".pdp-item","data-product-id");
+      String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, ".pdp-item", "data-product-id");
       String internalPid = internalId;
-      String name = CrawlerUtils.scrapStringSimpleInfo(document,".base",true);
+      String name = CrawlerUtils.scrapStringSimpleInfo(document, ".base", true);
       JSONArray imagesArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(document);
       String primaryImage = CrawlerUtils.scrapPrimaryImageMagento(imagesArray);
-      String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(imagesArray,primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".data.item.content .value",".data.item.content .additional-composition-wrapper"));
+      String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(imagesArray, primaryImage);
+      String description = CrawlerUtils.scrapSimpleDescription(document, Arrays.asList(".data.item.content .value", ".data.item.content .additional-composition-wrapper"));
       boolean available = document.selectFirst(".stock.available") != null;
-      Offers offers = available? scrapOffers(document) : new Offers();
+      Offers offers = available ? scrapOffers(document) : new Offers();
 
       products.add(ProductBuilder.create()
          .setUrl(session.getOriginalURL())
@@ -97,8 +94,12 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document document) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document,".special-price .price",null,true,',',session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document,".old-price .price",null,true,',',session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(document, ".old-price .price", null, true, ',', session);
+      Double spotlightPrice;
+      if (priceFrom != null)
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".special-price .price", null, true, ',', session);
+      else
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(document, ".product-info-price .price", null, true, ',', session);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
