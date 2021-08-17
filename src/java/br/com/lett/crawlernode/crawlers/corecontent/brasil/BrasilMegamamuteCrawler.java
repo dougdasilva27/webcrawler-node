@@ -104,8 +104,8 @@ public class BrasilMegamamuteCrawler extends Crawler {
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      int installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".list-price span", true);
-      Double installmentValue = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".list-price span", null, true, ',', session);
+      int installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".buy .priceContainer  .parcels", true,0);
+      Double installmentValue = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".parcel-value", null, true, ',', session);
 
 
       Installments installments = new Installments();
