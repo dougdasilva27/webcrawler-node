@@ -21,7 +21,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
 
    private final String PRODUCTS_API_URL = "https://services." + getApiDomain() + "/api/cpgs/search/v2/store/";
    protected String PRODUCT_BASE_URL = "https://www." + getProductDomain() + "/product/";
-   private final String STORE_ID = getStoreId();
+   private final String STORE_ID = storeId();
 
    protected boolean newUnification = session.getOptions().optBoolean("newUnification",false);
 
@@ -41,6 +41,17 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
    protected abstract String getApiDomain();
 
    protected abstract String getProductDomain();
+
+   protected String storeId() {
+      if(session.getOptions().optBoolean("newUnification", false)){
+         return session.getOptions().optString("storeId");
+      }
+      else {
+         return getStoreId();
+      }
+   }
+
+
 
    @Override
    public void extractProductsFromCurrentPage() {
@@ -122,7 +133,7 @@ public abstract class RappiCrawlerRanking extends CrawlerRankingKeywords {
       return productUrl;
    }
 
-   private JSONObject fetchProductsFromAPI(String storeId) {
+   protected JSONObject fetchProductsFromAPI(String storeId) {
       int startPage;
 
       if (currentPage == 1) {
