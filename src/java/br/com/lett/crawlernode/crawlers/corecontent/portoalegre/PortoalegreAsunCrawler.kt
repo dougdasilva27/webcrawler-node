@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.models.ProductBuilder
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.Crawler
 import br.com.lett.crawlernode.crawlers.corecontent.brasil.BrasilMartinsCrawler
+import br.com.lett.crawlernode.exceptions.AuthenticationException
 import br.com.lett.crawlernode.util.CommonMethods
 import br.com.lett.crawlernode.util.CrawlerUtils
 import br.com.lett.crawlernode.util.Logging
@@ -47,8 +48,13 @@ class PortoalegreAsunCrawler constructor(session: Session?) : Crawler(session) {
          webdriver.clickOnElementViaJavascript(delivery)
          webdriver.waitLoad(5000)
          Logging.printLogDebug(logger, session, "awaiting product page")
-         return  Jsoup.parse(webdriver.currentPageSource)
 
+         val doc = Jsoup.parse(webdriver.currentPageSource)
+         if(doc.selectFirst("div.pLocModal") != null){
+            throw AuthenticationException("Failed to set location")
+         }
+
+         return doc
       } catch (e: Exception) {
          Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e))
       }
@@ -62,7 +68,7 @@ class PortoalegreAsunCrawler constructor(session: Session?) : Crawler(session) {
    override fun extractInformation(document: Document?): MutableList<Product> {
       val products: MutableList<Product> = ArrayList()
 
-      if (true) {
+      if (isProductPage(document)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + session.originalURL)
          val internalId: String = CrawlerUtils.scrapStringSimpleInfo(document, ".stock", true)?.replace("[^0-9]".toRegex(), "")!!.trim();
          val internalPid: String = internalId
@@ -95,6 +101,10 @@ class PortoalegreAsunCrawler constructor(session: Session?) : Crawler(session) {
       return products
 
 
+   }
+
+   private fun isProductPage(doc: Document?): Boolean {
+      return doc?.selectFirst("div[itemscope=itemscope] > div.details") != null;
    }
 
    private fun crawlImages(document: Document?): MutableList<String> {
