@@ -2,20 +2,18 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.B2WCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.SaopauloB2WCrawlersUtils;
-import br.com.lett.crawlernode.exceptions.ApiResponseException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.JSONUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import lombok.SneakyThrows;
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
@@ -27,8 +25,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,87 +50,77 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    @Override
    protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
-      JSONObject rating = fetchRatingApi(skuInternalPid);
+      JSONObject product = JSONUtils.getValueRecursive(frontPageJson,"pages.undefined.queries.productReviews.result.product",JSONObject.class);
+      JSONObject reviews = product != null ? product.optJSONObject("reviews"): null;
+      System.err.println(product);
+      System.err.println(reviews);
 
-      if (!rating.has("errors")) {
-         JSONObject data = rating.optJSONObject("data");
+      if(reviews != null) {
 
-         if (data != null) {
+         JSONObject rating = product.optJSONObject("rating");
 
-            JSONObject product = data.optJSONObject("product");
-
-            if (product != null) {
-
-               JSONObject ratingInfo = product.optJSONObject("rating");
-
-               if (ratingInfo != null) {
-                  ratingReviews.setTotalWrittenReviews(ratingInfo.optInt("reviews", 0));
-                  ratingReviews.setTotalRating(ratingInfo.optInt("reviews", 0));
-                  ratingReviews.setAverageOverallRating(ratingInfo.optDouble("average", 0d));
-               } else {
-                  ratingReviews.setTotalWrittenReviews(0);
-                  ratingReviews.setTotalRating(0);
-                  ratingReviews.setAverageOverallRating(0.0);
-               }
-            }
-         }
-      }else{
-         String error = rating.optString("errors");
-
-         try {
-            throw new ApiResponseException(error);
-         } catch (ApiResponseException e) {
-            e.printStackTrace();
+         if(rating != null) {
+            ratingReviews.setTotalWrittenReviews(rating.optInt("reviews"));
+            ratingReviews.setTotalRating(rating.optInt("reviews"));
+            ratingReviews.setAverageOverallRating(rating.optDouble("average"));
+            ratingReviews.setAdvancedRatingReview(scrapAdvancedRatingReview(reviews));
          }
       }
+
       return ratingReviews;
    }
 
-   private JSONObject fetchRatingApi(String internalId) {
-      StringBuilder url = new StringBuilder();
-      url.append("https://catalogo-bff-v2-americanas.b2w.io/graphql?");
 
-      JSONObject variables = new JSONObject();
-      JSONObject extensions = new JSONObject();
-      JSONObject persistedQuery = new JSONObject();
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
 
-      variables.put("productId", internalId);
-      variables.put("offset", 5);
-      variables.put("filters", "null");
-      variables.put("sort", "Helpfulness:desc");
 
-      persistedQuery.put("version", RATING_API_VERSION);
-      persistedQuery.put("sha256Hash", KEY_SHA_256);
+      JSONArray ratingDistribution = reviews.optJSONArray("ratingDistribution");
 
-      extensions.put("persistedQuery", persistedQuery);
+      if(ratingDistribution != null) {
+         for (Object o : ratingDistribution) {
 
-      StringBuilder payload = new StringBuilder();
-      payload.append("operationName=productReviews");
-      payload.append("&device=desktop");
-      payload.append("&oneDayDelivery=undefined");
-      payload.append("&opn=undefined");
+            JSONObject ratingDistributionObject = (JSONObject) o;
 
-      try {
-         payload.append("&variables=" + URLEncoder.encode(variables.toString(), "UTF-8"));
-         payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
-      } catch (UnsupportedEncodingException e) {
-         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
+            int ratingValue = ratingDistributionObject.optInt("ratingValue");
+            int ratingCount = ratingDistributionObject.optInt("count");
+
+            switch (ratingValue) {
+               case 5:
+                  star5 = ratingCount;
+                  break;
+               case 4:
+                  star4 = ratingCount;
+                  break;
+               case 3:
+                  star3 = ratingCount;
+                  break;
+               case 2:
+                  star2 = ratingCount;
+                  break;
+               case 1:
+                  star1 = ratingCount;
+                  break;
+               default:
+                  break;
+            }
+         }
       }
-      url.append(payload.toString());
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(url.toString())
-         .setProxyservice(
-            Arrays.asList(
-                  ProxyCollection.BUY_HAPROXY,
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY))
+      return new AdvancedRatingReview.Builder()
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
          .build();
 
-      //For some reason, the Jsoup data fetcher stop working for this request.
-      Response response = new ApacheDataFetcher().get(session, request);
-
-      return CrawlerUtils.stringToJson(response.getBody());
    }
+
 
    private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
