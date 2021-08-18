@@ -54,15 +54,17 @@ public class SaopauloTendadriveCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
+      JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
+      JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
 
-      if (doc.selectFirst(".box-product .title") != null) {
 
-         JSONObject jsonObject = JSONUtils.stringToJson(doc.selectFirst("#__NEXT_DATA__").data());
-         JSONObject skuJson = (JSONObject) jsonObject.optQuery("/props/pageProps/product");
+      if (skuJson != null && !skuJson.isEmpty()) {
+
 
          String description = scrapDescription(skuJson);
 
          String internalId = skuJson.optString("sku");
+         String internalPid = skuJson.optString("id");
          String name = skuJson.optString("name");
          List<String> images = scrapImages(skuJson);
          String primaryImage = !images.isEmpty() ? images.remove(0) : null;
@@ -72,17 +74,18 @@ public class SaopauloTendadriveCrawler extends Crawler {
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
 
          Product product =
-                 ProductBuilder.create()
-                         .setUrl(session.getOriginalURL())
-                         .setOffers(offers)
-                         .setInternalId(internalId)
-                         .setName(name)
-                         .setPrimaryImage(primaryImage)
-                         .setSecondaryImages(secondaryImages)
-                         .setDescription(description)
-                         .setStock(stock)
-                         .setRatingReviews(ratingsReviews)
-                         .build();
+            ProductBuilder.create()
+               .setUrl(session.getOriginalURL())
+               .setOffers(offers)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
+               .setDescription(description)
+               .setStock(stock)
+               .setRatingReviews(ratingsReviews)
+               .build();
 
          products.add(product);
 
@@ -120,37 +123,37 @@ public class SaopauloTendadriveCrawler extends Crawler {
    }
 
    private Offers scrapOffers(JSONObject skuJson)
-           throws MalformedPricingException, OfferException {
+      throws MalformedPricingException, OfferException {
       Offers offers = new Offers();
       Double price = skuJson.optDouble("price");
       CreditCards creditCards = new CreditCards();
 
       Installments installments = new Installments();
       installments.add(InstallmentBuilder.create()
-              .setInstallmentNumber(1)
-              .setInstallmentPrice(price)
-              .build());
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(price)
+         .build());
 
       creditCards.add(CreditCardBuilder.create()
-              .setIsShopCard(false)
-              .setBrand(Card.VISA.toString())
-              .setInstallments(installments)
-              .build());
+         .setIsShopCard(false)
+         .setBrand(Card.VISA.toString())
+         .setInstallments(installments)
+         .build());
 
 //tenda-atacado-sao-paulo---av-guarapiranga
       offers.add(
-              OfferBuilder.create()
-                      .setSellerFullName(SELLER_NAME)
-                      .setIsBuybox(false)
-                      .setPricing(
-                              Pricing.PricingBuilder.create()
-                                      .setSpotlightPrice(price)
-                                      .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
-                                      .setCreditCards(creditCards)
-                                      .build())
-                      .setIsMainRetailer(true)
-                      .setUseSlugNameAsInternalSellerId(true)
-                      .build());
+         OfferBuilder.create()
+            .setSellerFullName(SELLER_NAME)
+            .setIsBuybox(false)
+            .setPricing(
+               Pricing.PricingBuilder.create()
+                  .setSpotlightPrice(price)
+                  .setBankSlip(BankSlipBuilder.create().setFinalPrice(price).build())
+                  .setCreditCards(creditCards)
+                  .build())
+            .setIsMainRetailer(true)
+            .setUseSlugNameAsInternalSellerId(true)
+            .build());
 
       return offers;
    }
