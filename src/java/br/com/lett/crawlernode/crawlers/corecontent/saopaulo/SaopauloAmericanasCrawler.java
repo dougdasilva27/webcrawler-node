@@ -52,8 +52,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       RatingsReviews ratingReviews = new RatingsReviews();
       JSONObject product = JSONUtils.getValueRecursive(frontPageJson,"pages.undefined.queries.productReviews.result.product",JSONObject.class);
       JSONObject reviews = product != null ? product.optJSONObject("reviews"): null;
-      System.err.println(product);
-      System.err.println(reviews);
+
 
       if(reviews != null) {
 
