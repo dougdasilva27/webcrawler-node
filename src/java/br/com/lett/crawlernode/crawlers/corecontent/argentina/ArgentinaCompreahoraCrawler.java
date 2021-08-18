@@ -12,6 +12,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.pricing.BankSlip;
 import models.pricing.Pricing;
 import org.json.JSONArray;
 import org.jsoup.nodes.Document;
@@ -103,6 +104,9 @@ public class ArgentinaCompreahoraCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
+         .setBankSlip(BankSlip.BankSlipBuilder.create()
+            .setFinalPrice(spotlightPrice)
+            .build())
          .setSpotlightPrice(spotlightPrice)
          .build();
    }
