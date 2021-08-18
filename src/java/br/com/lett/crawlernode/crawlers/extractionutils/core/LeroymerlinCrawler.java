@@ -9,38 +9,35 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import models.Marketplace;
+import br.com.lett.crawlernode.util.*;
+
+import java.util.*;
+
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 /**
  * Date: 12/10/2018
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class LeroymerlinCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.leroymerlin.com.br";
+   protected static String REGION;
 
    public LeroymerlinCrawler(Session session) {
       super(session);
    }
-
 
    @Override
    public boolean shouldVisit() {
@@ -59,17 +56,14 @@ public class LeroymerlinCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[data-product-code]", "data-product-code");
          String internalPid = scrapInternalPid(doc);
          String name = crawlName(doc);
-         Float price = crawlPrice(doc);
-         Prices prices = crawlPrices(price, doc);
-         boolean available = crawlAvailability(doc);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumb-item:not(:first-child) a .name", false);
          List<String> images = crawlImages(doc);
          String primaryImage = images.isEmpty() ? null : images.get(0);
-         String secondaryImages = crawlSecondaryImages(images);
-         String description =
-                 CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service)",
-                     "[name=descricao-do-produto]", ".product-info-details"));
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service)", "[name=descricao-do-produto]", ".product-info-details"));
          Integer stock = null;
+
+         boolean available = crawlAvailability(doc);
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
          RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
          ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
@@ -77,23 +71,20 @@ public class LeroymerlinCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(session.getOriginalURL())
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setMarketplace(new Marketplace())
-               .setRatingReviews(ratingReviews)
-               .build();
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
+            .setDescription(description)
+            .setStock(stock)
+            .setOffers(offers)
+            .setRatingReviews(ratingReviews)
+            .build();
 
          products.add(product);
 
@@ -204,17 +195,6 @@ public class LeroymerlinCrawler extends Crawler {
       return name;
    }
 
-   private Float crawlPrice(Document document) {
-      Float price = null;
-
-      Elements salePriceElement = document.select(".product-price-tag .to-price .price-integer, .product-price-tag .to-price .price-decimal");
-      if (!salePriceElement.isEmpty()) {
-         price = MathUtils.parseFloatWithComma(salePriceElement.text());
-      }
-
-      return price;
-   }
-
    private List<String> crawlImages(Document doc) {
       List<String> images = new ArrayList<>();
 
@@ -231,7 +211,7 @@ public class LeroymerlinCrawler extends Crawler {
             }
 
             if (imageJson.has("shouldLoadImageZoom") && imageJson.getBoolean("shouldLoadImageZoom") && imageJson.has("zoomUrl")
-                  && !imageJson.get("zoomUrl").toString().trim().isEmpty()) {
+               && !imageJson.get("zoomUrl").toString().trim().isEmpty()) {
                images.add(imageJson.get("zoomUrl").toString());
             } else if (imageJson.has("url") && !imageJson.get("url").toString().trim().isEmpty()) {
                images.add(imageJson.get("url").toString());
@@ -244,79 +224,112 @@ public class LeroymerlinCrawler extends Crawler {
       return images;
    }
 
-   private String crawlSecondaryImages(List<String> images) {
-      String secondaryImages = null;
-
-      if (!images.isEmpty()) {
-         JSONArray secondaryImagesArray = new JSONArray(images);
-         secondaryImagesArray.remove(0);
-
-         if (secondaryImagesArray.length() > 0) {
-            secondaryImages = secondaryImagesArray.toString();
-         }
-      }
-
-      return secondaryImages;
-   }
-
    private boolean crawlAvailability(Document doc) {
       return !doc.select(".product-purchase-buttons .buy-button[data-button=ecommerce]:not(.disabled), "
-            + ".product-purchase-buttons .buy-button[data-button=pickupInStore]:not([disabled])").isEmpty();
+         + ".product-purchase-buttons .buy-button[data-button=pickupInStore]:not([disabled])").isEmpty();
    }
 
-   /**
-    * In the time when this crawler was made, this market hasn't bank ticket informations
-    * 
-    * @param doc
-    * @param price
-    * @return
-    */
-   private Prices crawlPrices(Float price, Document doc) {
-      Prices prices = new Prices();
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      List<String> sales = new ArrayList<>();
 
-      if (price != null) {
-         Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-         installmentPriceMap.put(1, price);
+      Pricing pricing = scrapPricing(doc);
 
-         Element pricesElements = doc.selectFirst(".product-price-tag > div");
-         if (pricesElements != null) {
+      String sellerNameLower = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-shop-name").toLowerCase(Locale.ROOT);
 
-            if (pricesElements.hasAttr("data-from-price-integers") && pricesElements.hasAttr("data-from-price-decimals")) {
-               String integers = pricesElements.attr("data-from-price-integers").trim();
-               String decimals = pricesElements.attr("data-from-price-decimals").trim();
+      boolean isMainRetailer = sellerNameLower.contains("leroy");
+      String sellerFullname = isMainRetailer ? "leroy merlin " + REGION : sellerNameLower;
 
-               if (!integers.isEmpty()) {
-                  StringBuilder str = new StringBuilder();
-                  str.append(integers.replace(".", ""));
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(sellerFullname)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(isMainRetailer)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-                  if (!decimals.isEmpty()) {
-                     str.append(".");
-                     str.append(decimals);
-                  }
+      return offers;
+   }
 
-                  prices.setPriceFrom(Double.parseDouble(str.toString()));
-               }
-            }
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      String spotlightPriceStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-to-price-integers");
+      spotlightPriceStr += "." + CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-to-price-decimals");
+      String priceFromStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-from-price-integers");
+      priceFromStr += "." + CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-from-price-decimals");
 
-            if (pricesElements.hasAttr("data-branded-installments-amount") && pricesElements.hasAttr("data-branded-installments-value")) {
-               String installment = pricesElements.attr("data-branded-installments-amount").trim();
-               String value = pricesElements.attr("data-branded-installments-value").trim();
+      Double spotlightPrice = MathUtils.parseDoubleWithDot(spotlightPriceStr);
+      Double priceFrom = null;
 
-               if (!installment.isEmpty() && !value.isEmpty()) {
-                  installmentPriceMap.put(Integer.parseInt(installment), MathUtils.parseFloatWithComma(value));
-               }
-            }
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.ELO.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
+      if(!priceFromStr.contains("null")){
+         priceFrom = MathUtils.parseDoubleWithDot(priceFromStr);
       }
 
-      return prices;
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(spotlightPrice)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
    }
 
+   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+      Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString(), Card.SHOP_CARD.toString());
+
+      Installments installments = scrapInstallments(doc);
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(1)
+         .setInstallmentPrice(spotlightPrice)
+         .build());
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
+
+   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+      Installments installments = new Installments();
+
+      String jsonPrices = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div [data-postal-code]", "data-skus");
+      JSONArray jsonArr = CrawlerUtils.stringToJsonArray(jsonPrices);
+
+      if (!jsonArr.isEmpty()) {
+         JSONObject json = jsonArr.optJSONObject(0);
+
+         if(json.has("installmentsAmount")){
+            Integer installment = json.optInt("installmentsAmount");
+            String value = json.optString("installmentsValue");
+
+            installments.add(Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(installment)
+               .setInstallmentPrice(MathUtils.parseDoubleWithComma(value))
+               .build());
+         }
+
+         if (json.has("brandedInstallmentsAmount")) {
+            Integer brandedInstallment = json.optInt("brandedInstallmentsAmount");
+            String brandedValue = json.optString("brandedInstallmentsValue");
+
+            installments.add(Installment.InstallmentBuilder.create()
+               .setInstallmentNumber(brandedInstallment)
+               .setInstallmentPrice(MathUtils.parseDoubleWithComma(brandedValue))
+               .build());
+         }
+      }
+
+      return installments;
+   }
 }

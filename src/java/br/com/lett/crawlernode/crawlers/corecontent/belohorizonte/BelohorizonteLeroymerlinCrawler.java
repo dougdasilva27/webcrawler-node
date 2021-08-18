@@ -19,10 +19,9 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.LeroymerlinCrawler;
  */
 public class BelohorizonteLeroymerlinCrawler extends LeroymerlinCrawler {
 
-  private static final String REGION = "belo_horizonte";
-
   public BelohorizonteLeroymerlinCrawler(Session session) {
     super(session);
+     REGION = "belo_horizonte";
   }
 
   @Override
