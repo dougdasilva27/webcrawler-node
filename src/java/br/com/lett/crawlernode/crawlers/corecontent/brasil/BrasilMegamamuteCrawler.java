@@ -40,27 +40,28 @@ public class BrasilMegamamuteCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
-      // Creating the product
-      String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, " small.sku", true).replaceAll("[^0-9]", "");
-      String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, " div[data-widget-pid]", "data-widget-pid");
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true);
-      List<String> images = srapImages(doc);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wd-descriptions-text"));
-      Offers offers = scrapOffers(doc);
+      if (doc.selectFirst("small.sku") != null) {
+         // Creating the product
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, " small.sku", true).replaceAll("[^0-9]", "");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, " div[data-widget-pid]", "data-widget-pid");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.name", true);
+         List<String> images = srapImages(doc);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".wd-descriptions-text"));
+         Offers offers = scrapOffers(doc);
 
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
-         .setInternalId(internalId)
-         .setInternalPid(internalPid)
-         .setName(name)
-         .setPrimaryImage(images.remove(0))
-         .setSecondaryImages(images)
-         .setDescription(description)
-         .setOffers(offers)
-         .build();
+         Product product = ProductBuilder.create().setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrimaryImage(images.remove(0))
+            .setSecondaryImages(images)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
 
-      products.add(product);
-
+         products.add(product);
+      }
       return products;
    }
 
@@ -89,12 +90,17 @@ public class BrasilMegamamuteCrawler extends Crawler {
 
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".sale-price span", null, true, ',', session);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".list-price span", null, true, ',', session);
+      Double boleto = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".instant-price", null, true, ',', session);
+
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
          .setSpotlightPrice(spotlightPrice)
+         .setBankSlip(BankSlip.BankSlipBuilder.create()
+            .setFinalPrice(boleto)
+            .build())
          .setCreditCards(creditCards)
          .build();
 
@@ -104,7 +110,7 @@ public class BrasilMegamamuteCrawler extends Crawler {
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
 
-      int installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".buy .priceContainer  .parcels", true,0);
+      int installment = CrawlerUtils.scrapIntegerFromHtml(doc, ".buy .priceContainer  .parcels", true, 0);
       Double installmentValue = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".parcel-value", null, true, ',', session);
 
 
