@@ -15,6 +15,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,12 +24,15 @@ import org.jsoup.select.Elements;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChileSantaisabelapoquindoCrawler extends Crawler {
 
    public ChileSantaisabelapoquindoCrawler(Session session) {
       super(session);
    }
+
    private static final String SELLER_FULL_NAME = "Santa Isabel";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
@@ -43,18 +47,17 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
 
       JSONObject json = scrapJSOMFromHTML(doc);
 
-      if(!json.isEmpty()){
+      if (!json.isEmpty()) {
 
          String internalId = json.optString("sku");
          String internalPid = internalId;
          String name = json.optString("name");
-         //CategoryCollection categories = crawlCategories(doc);
-         String primaryImage = json.optString("image");
-         //String secondaryImages = crawlSecondaryImages(doc);
+         List<String> images = getImages(doc);
+         String primaryImage = !images.isEmpty() ? images.remove(0) : json.optString("image");
          String description = json.optString("description");
          Integer stock = null;
-         boolean availableToBuy = JSONUtils.getValueRecursive(json,"offers.availability", String.class).contains("InStock");
-         Offers offers = availableToBuy? scrapOffer(json): new Offers();
+         boolean availableToBuy = JSONUtils.getValueRecursive(json, "offers.availability", String.class).contains("InStock");
+         Offers offers = availableToBuy ? scrapOffer(json) : new Offers();
 
          // Creating the product
          Product product = ProductBuilder.create()
@@ -63,6 +66,7 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
             .setDescription(description)
             .setStock(stock)
             .setOffers(offers)
@@ -71,20 +75,52 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
          products.add(product);
 
 
-      }else {
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
       return products;
 
    }
 
-   private JSONObject scrapJSOMFromHTML(Document doc){
+   private String selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
+
+      String object = null;
+      Elements scripts = doc.select(cssElement);
+
+      for (Element e : scripts) {
+         String script = e.html();
+
+         if (script.contains(token) && (finalIndex == null || script.contains(finalIndex))) {
+            object = script.replace(token, "").replace("\\", "");
+            break;
+         }
+      }
+
+      return object;
+   }
+
+   private List<String> getImages(Document doc) {
+      List<String> imageList = new ArrayList<>();
+      String infoProduct = selectJsonFromHtml(doc, "script", "window.__renderData = ", ";");
+
+      if (infoProduct != null) {
+         Pattern pattern = Pattern.compile("imageUrl\":\"(.+?)\",\"imageTag");
+         Matcher matcher = pattern.matcher(infoProduct);
+         while (matcher.find()) {
+            imageList.add(matcher.group(1));
+         }
+      }
+      return imageList;
+   }
+
+
+   private JSONObject scrapJSOMFromHTML(Document doc) {
       JSONObject json = new JSONObject();
       Elements scripts = doc.select("script[type=\"application/ld+json\"]");
 
-      for(Element s : scripts){
+      for (Element s : scripts) {
          String script = s.html();
-         if(script.contains("Product")){
+         if (script.contains("Product")) {
             json = CrawlerUtils.stringToJson(script);
          }
       }
@@ -113,9 +149,9 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
 
 
    private Pricing scrapPricing(JSONObject json) throws MalformedPricingException {
-      String rawPrice = JSONUtils.getValueRecursive(json,"offers.price", String.class);
+      String rawPrice = JSONUtils.getValueRecursive(json, "offers.price", String.class);
 
-      Double spotlightPrice = rawPrice != null ? MathUtils.parseDoubleWithComma(rawPrice): null;
+      Double spotlightPrice = rawPrice != null ? MathUtils.parseDoubleWithComma(rawPrice) : null;
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
