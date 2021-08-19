@@ -87,7 +87,6 @@ public class LeroymerlinCrawler extends Crawler {
             .build();
 
          products.add(product);
-
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -233,40 +232,48 @@ public class LeroymerlinCrawler extends Crawler {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
 
-      Pricing pricing = scrapPricing(doc);
+      String jsonOffers = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div [data-product-buybox]", "data-skus");
 
-      String sellerNameLower = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-shop-name").toLowerCase(Locale.ROOT);
+      if (jsonOffers != null || !jsonOffers.equals("")) {
+         JSONArray arrayOffers = CrawlerUtils.stringToJsonArray(jsonOffers);
 
-      boolean isMainRetailer = sellerNameLower.contains("leroy");
-      String sellerFullname = isMainRetailer ? "leroy merlin " + REGION : sellerNameLower;
+         for (Object o : arrayOffers) {
+            JSONObject offerJson = (JSONObject) o;
+            Pricing pricing = scrapPricing(doc, offerJson);
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(sellerFullname)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(isMainRetailer)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
+            String sellerNameLower = JSONUtils.getValueRecursive(offerJson, "shop.name", String.class);
 
+            boolean isMainRetailer = sellerNameLower.contains("leroy");
+            String sellerFullname = isMainRetailer ? "leroy merlin " + REGION : sellerNameLower;
+
+            offers.add(Offer.OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(sellerFullname)
+               .setMainPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(isMainRetailer)
+               .setPricing(pricing)
+               .setSales(sales)
+               .build());
+         }
+      }
       return offers;
    }
 
-   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      String spotlightPriceStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-to-price-integers");
-      spotlightPriceStr += "." + CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-to-price-decimals");
-      String priceFromStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-from-price-integers");
-      priceFromStr += "." + CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.price-tag-wrapper", "data-from-price-decimals");
+   private Pricing scrapPricing(Document doc, JSONObject json) throws MalformedPricingException {
+      String spotlightPriceStr = JSONUtils.getValueRecursive(json, "price.to.integers", String.class);
+      spotlightPriceStr += "," + JSONUtils.getValueRecursive(json, "price.to.decimals", String.class);
+      String priceFromStr = JSONUtils.getValueRecursive(json, "price.from.integers", String.class);
+      priceFromStr += "," + JSONUtils.getValueRecursive(json, "price.from.decimals", String.class);
 
-      Double spotlightPrice = MathUtils.parseDoubleWithDot(spotlightPriceStr);
+      Double spotlightPrice = MathUtils.parseDoubleWithComma(spotlightPriceStr);
       Double priceFrom = null;
 
       if (!priceFromStr.contains("null")) {
-         priceFrom = MathUtils.parseDoubleWithDot(priceFromStr);
+         priceFrom = MathUtils.parseDoubleWithComma(priceFromStr);
       }
 
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(json, spotlightPrice);
       BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
@@ -279,11 +286,11 @@ public class LeroymerlinCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(JSONObject json, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(), Card.DINERS.toString(), Card.SHOP_CARD.toString());
 
-      Installments installments = scrapInstallments(doc);
+      Installments installments = scrapInstallments(json);
 
       if (installments.getInstallments() == null) {
          installments.add(Installment.InstallmentBuilder.create()
@@ -303,36 +310,27 @@ public class LeroymerlinCrawler extends Crawler {
       return creditCards;
    }
 
-   public Installments scrapInstallments(Document doc) throws MalformedPricingException {
+   public Installments scrapInstallments(JSONObject json) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      String jsonPrices = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div [data-postal-code]", "data-skus");
+      if (json.has("installmentsAmount")) {
+         Integer installment = json.optInt("installmentsAmount");
+         String value = json.optString("installmentsValue");
 
-      if (jsonPrices != null || !jsonPrices.equals("")) {
-         JSONArray jsonArr = CrawlerUtils.stringToJsonArray(jsonPrices);
-         if (!jsonArr.isEmpty()) {
-            JSONObject json = jsonArr.optJSONObject(0);
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(installment)
+            .setInstallmentPrice(MathUtils.parseDoubleWithComma(value))
+            .build());
+      }
 
-            if (json.has("installmentsAmount")) {
-               Integer installment = json.optInt("installmentsAmount");
-               String value = json.optString("installmentsValue");
+      if (json.has("brandedInstallmentsAmount")) {
+         Integer brandedInstallment = json.optInt("brandedInstallmentsAmount");
+         String brandedValue = json.optString("brandedInstallmentsValue");
 
-               installments.add(Installment.InstallmentBuilder.create()
-                  .setInstallmentNumber(installment)
-                  .setInstallmentPrice(MathUtils.parseDoubleWithComma(value))
-                  .build());
-            }
-
-            if (json.has("brandedInstallmentsAmount")) {
-               Integer brandedInstallment = json.optInt("brandedInstallmentsAmount");
-               String brandedValue = json.optString("brandedInstallmentsValue");
-
-               installments.add(Installment.InstallmentBuilder.create()
-                  .setInstallmentNumber(brandedInstallment)
-                  .setInstallmentPrice(MathUtils.parseDoubleWithComma(brandedValue))
-                  .build());
-            }
-         }
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(brandedInstallment)
+            .setInstallmentPrice(MathUtils.parseDoubleWithComma(brandedValue))
+            .build());
       }
 
       return installments;
