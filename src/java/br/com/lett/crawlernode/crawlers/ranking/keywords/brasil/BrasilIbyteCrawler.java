@@ -34,10 +34,11 @@ public class BrasilIbyteCrawler extends CrawlerRankingKeywords {
             String internalPid = object.optString("ItemGroupId");
             String internalId = object.optString("PorductId");
             String urlProduct = object.optString("Id");
+            String completeUrl = CrawlerUtils.completeUrl(urlProduct,"https","");
 
-            saveDataProduct(internalId, internalPid, urlProduct);
+            saveDataProduct(internalId, internalPid, completeUrl);
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + completeUrl);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
