@@ -19,10 +19,9 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.LeroymerlinCrawler;
  */
 public class RiodejaneiroLeroymerlinCrawler extends LeroymerlinCrawler {
 
-  private static final String REGION = "rio_de_janeiro";
-
   public RiodejaneiroLeroymerlinCrawler(Session session) {
     super(session);
+     REGION = "rio_de_janeiro";
   }
 
   @Override

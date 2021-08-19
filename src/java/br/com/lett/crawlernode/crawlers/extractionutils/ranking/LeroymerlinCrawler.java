@@ -1,5 +1,11 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import org.apache.http.cookie.Cookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -7,117 +13,138 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class LeroymerlinCrawler extends CrawlerRankingKeywords {
 
-  public LeroymerlinCrawler(Session session) {
-    super(session);
-  }
+   public LeroymerlinCrawler(Session session) {
+      super(session);
+   }
 
-  private String nextUrl;
-  protected String region;
+   private String nextUrl;
+   protected String region;
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    // número de produtos por página do market
-    this.pageSize = 40;
+   @Override
+   protected Document fetchDocument(String url, List<Cookie> cookies) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36");
+      headers.put("authority", "www.leroymerlin.com.br");
 
-    this.log("Página " + this.currentPage);
-
-    if (this.currentPage == 1) {
-      String url = "https://www.leroymerlin.com.br/search?term=" + this.keywordEncoded + "&region=" + this.region;
-      this.log("Link onde são feitos os crawlers: " + url);
-
-      this.currentDoc = fetchDocument(url, null);
-
-      this.nextUrl = getNextUrl(url);
-      if (!url.equals(this.nextUrl)) {
-        this.currentDoc = fetchDocument(this.nextUrl);
+      this.currentDoc = new Document(url);
+      if (this.currentPage == 1) {
+         this.session.setOriginalURL(url);
       }
 
-    } else {
-      String url;
-      if (this.nextUrl.contains("?")) {
-        url = this.nextUrl + "&page=" + this.currentPage;
+      Request request = Request.RequestBuilder.create()
+         .setCookies(cookies)
+         .setUrl(url)
+         .setHeaders(headers)
+         .build();
+      Response response = dataFetcher.get(session, request);
+
+      return Jsoup.parse(response.getBody());
+   }
+
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      // número de produtos por página do market
+      this.pageSize = 40;
+
+      this.log("Página " + this.currentPage);
+
+      if (this.currentPage == 1) {
+         String url = "https://www.leroymerlin.com.br/search?term=" + this.keywordEncoded + "&region=" + this.region;
+         this.log("Link onde são feitos os crawlers: " + url);
+
+         this.currentDoc = fetchDocument(url, null);
+         this.nextUrl = getNextUrl(url);
       } else {
-        url = this.nextUrl + "?page=" + this.currentPage;
+         String url;
+         if (this.nextUrl.contains("?")) {
+            url = this.nextUrl + "&page=" + this.currentPage;
+         } else {
+            url = this.nextUrl + "?page=" + this.currentPage;
+         }
+
+         if (!url.contains("region")) {
+            url += "&region=" + this.region;
+         }
+
+         // chama função de pegar o html
+         this.currentDoc = fetchDocument(url, null);
+         this.log("Link onde são feitos os crawlers: " + url);
       }
 
-      if (!url.contains("region")) {
-        url += "&region=" + this.region;
+      Elements products = this.currentDoc.select(".product-col .product-thumb .caption > a:first-child");
+
+      // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
+      if (!products.isEmpty()) {
+         for (Element e : products) {
+            String productUrl = e.attr("href");
+            String internalId = crawlInternalId(productUrl);
+
+            saveDataProduct(internalId, null, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit) {
+               break;
+            }
+
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      // chama função de pegar o html
-      this.currentDoc = fetchDocument(url, null);
-      this.log("Link onde são feitos os crawlers: " + url);
-    }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-    Elements products = this.currentDoc.select(".product-col .product-thumb .caption > a:first-child");
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select("a.pagination-item").isEmpty()
+         && this.currentDoc.select("a.pagination-item.disabled > i.glyph-arrow-right").isEmpty();
+   }
 
-    // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-    if (!products.isEmpty()) {
-      for (Element e : products) {
-        String productUrl = e.attr("href");
-        String internalId = crawlInternalId(productUrl);
+   private String crawlInternalId(String url) {
+      String internalId = null;
 
-        saveDataProduct(internalId, null, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit) {
-          break;
-        }
-
+      if (url.contains("?")) {
+         url = url.split("\\?")[0];
       }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
 
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    return !this.currentDoc.select("a.pagination-item").isEmpty()
-        && this.currentDoc.select("a.pagination-item.disabled > i.glyph-arrow-right").isEmpty();
-  }
-
-  private String crawlInternalId(String url) {
-    String internalId = null;
-
-    if (url.contains("?")) {
-      url = url.split("\\?")[0];
-    }
-
-    if (url.contains("_")) {
-      internalId = CommonMethods.getLast(url.split("_"));
-    }
-
-    return internalId;
-  }
-
-  private String getNextUrl(String url) {
-    String newUrl = url;
-
-    if (!this.currentDoc.select(".content-header .expandable-description").isEmpty()) {
-      Elements categories = this.currentDoc.select("div.categories-col a");
-
-      for (Element e : categories) {
-        String title = e.attr("title").toLowerCase();
-        String categoryUrl = e.attr("href");
-
-        if (title.contains("ver todos")) {
-          newUrl = categoryUrl;
-          break;
-        }
+      if (url.contains("_")) {
+         internalId = CommonMethods.getLast(url.split("_"));
       }
-    } else {
-      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
 
-      if (redirectUrl != null) {
-        newUrl = redirectUrl;
+      return internalId;
+   }
+
+   private String getNextUrl(String url) {
+      String newUrl = url;
+
+      if (!this.currentDoc.select(".content-header .expandable-description").isEmpty()) {
+         Elements categories = this.currentDoc.select("div.categories-col a");
+
+         for (Element e : categories) {
+            String title = e.attr("title").toLowerCase();
+            String categoryUrl = e.attr("href");
+
+            if (title.contains("ver todos")) {
+               newUrl = categoryUrl;
+               break;
+            }
+         }
+      } else {
+         String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
+
+         if (redirectUrl != null) {
+            newUrl = redirectUrl;
+         }
       }
-    }
 
-    return newUrl;
-  }
+      return newUrl;
+   }
 }
