@@ -62,41 +62,31 @@ public class LeroymerlinCrawler extends Crawler {
          String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-header .product-text-description > div:first-child:not(.customer-service)", "[name=descricao-do-produto]", ".product-info-details"));
          Integer stock = null;
 
-         String jsonOffers = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div [data-product-buybox]", "data-skus");
+         boolean available = crawlAvailability(doc);
+         Offers offers = available ? scrapOffers(doc) : new Offers();
 
-         if (jsonOffers != null || !jsonOffers.equals("")) {
-            JSONArray arrayOffers = CrawlerUtils.stringToJsonArray(jsonOffers);
+         RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
+         ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
+         RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
 
-            for (Object o : arrayOffers) {
-               JSONObject offer = (JSONObject) o;
+         // Creating the product
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(images)
+            .setDescription(description)
+            .setStock(stock)
+            .setOffers(offers)
+            .setRatingReviews(ratingReviews)
+            .build();
 
-               boolean available = crawlAvailability(doc);
-               Offers offers = available ? scrapOffers(doc, offer) : new Offers();
-
-               RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
-               ratingReviewsCollection.addRatingReviews(crawlRating(doc, internalId));
-               RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
-
-               // Creating the product
-               Product product = ProductBuilder.create()
-                  .setUrl(session.getOriginalURL())
-                  .setInternalId(internalId)
-                  .setInternalPid(internalPid)
-                  .setName(name)
-                  .setCategory1(categories.getCategory(0))
-                  .setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2))
-                  .setPrimaryImage(primaryImage)
-                  .setSecondaryImages(images)
-                  .setDescription(description)
-                  .setStock(stock)
-                  .setOffers(offers)
-                  .setRatingReviews(ratingReviews)
-                  .build();
-
-               products.add(product);
-            }
-         }
+         products.add(product);
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -238,27 +228,35 @@ public class LeroymerlinCrawler extends Crawler {
          + ".product-purchase-buttons .buy-button[data-button=pickupInStore]:not([disabled])").isEmpty();
    }
 
-   private Offers scrapOffers(Document doc, JSONObject json) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
 
-      Pricing pricing = scrapPricing(doc, json);
+      String jsonOffers = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div [data-product-buybox]", "data-skus");
 
-      String sellerNameLower = JSONUtils.getValueRecursive(json, "shop.name", String.class);
+      if (jsonOffers != null || !jsonOffers.equals("")) {
+         JSONArray arrayOffers = CrawlerUtils.stringToJsonArray(jsonOffers);
 
-      boolean isMainRetailer = sellerNameLower.contains("leroy");
-      String sellerFullname = isMainRetailer ? "leroy merlin " + REGION : sellerNameLower;
+         for (Object o : arrayOffers) {
+            JSONObject offerJson = (JSONObject) o;
+            Pricing pricing = scrapPricing(doc, offerJson);
 
-      offers.add(Offer.OfferBuilder.create()
-         .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName(sellerFullname)
-         .setMainPagePosition(1)
-         .setIsBuybox(false)
-         .setIsMainRetailer(isMainRetailer)
-         .setPricing(pricing)
-         .setSales(sales)
-         .build());
+            String sellerNameLower = JSONUtils.getValueRecursive(offerJson, "shop.name", String.class);
 
+            boolean isMainRetailer = sellerNameLower.contains("leroy");
+            String sellerFullname = isMainRetailer ? "leroy merlin " + REGION : sellerNameLower;
+
+            offers.add(Offer.OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(sellerFullname)
+               .setMainPagePosition(1)
+               .setIsBuybox(false)
+               .setIsMainRetailer(isMainRetailer)
+               .setPricing(pricing)
+               .setSales(sales)
+               .build());
+         }
+      }
       return offers;
    }
 
@@ -266,7 +264,7 @@ public class LeroymerlinCrawler extends Crawler {
       String spotlightPriceStr = JSONUtils.getValueRecursive(json, "price.to.integers", String.class);
       spotlightPriceStr += "," + JSONUtils.getValueRecursive(json, "price.to.decimals", String.class);
       String priceFromStr = JSONUtils.getValueRecursive(json, "price.from.integers", String.class);
-      priceFromStr += "." + JSONUtils.getValueRecursive(json, "price.from.decimals", String.class);
+      priceFromStr += "," + JSONUtils.getValueRecursive(json, "price.from.decimals", String.class);
 
       Double spotlightPrice = MathUtils.parseDoubleWithComma(spotlightPriceStr);
       Double priceFrom = null;
