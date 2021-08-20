@@ -111,8 +111,9 @@ public class B2WCrawler extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR,
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             )
@@ -128,7 +129,9 @@ public class B2WCrawler extends Crawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
+            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
+            ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
          content = new FetcherDataFetcher().get(session, request).getBody();
