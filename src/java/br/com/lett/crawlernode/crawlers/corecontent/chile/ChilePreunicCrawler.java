@@ -6,16 +6,13 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -41,7 +38,7 @@ public class ChilePreunicCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "span#product__sku", true).replace("SKU: ", "");
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h3.product__title", true);
+         String name = scrapNameWithBrand(doc);
          String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div#main-image img", "src");
          List<String> secondaryImages = scrapImages(doc);
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList("div.description-tabs"));
@@ -74,6 +71,18 @@ public class ChilePreunicCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private String scrapNameWithBrand(Document doc){
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h3.product__title", true);
+      String brand = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-info .product__brand", true);
+
+      if ( name != null && brand != null){
+         return name + " - " + brand;
+      }
+
+      return name;
+
    }
 
    private boolean isProductPage(Document doc) {
