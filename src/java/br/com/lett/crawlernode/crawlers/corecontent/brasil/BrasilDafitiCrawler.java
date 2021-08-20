@@ -3,17 +3,21 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
+import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
 import models.RatingsReviews;
-import models.Seller;
-import models.Util;
-import models.prices.Prices;
+import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -21,14 +25,16 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
+import java.util.Set;
 
 public class BrasilDafitiCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.dafiti.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "dafiti";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public BrasilDafitiCrawler(Session session) {
       super(session);
@@ -52,22 +58,8 @@ public class BrasilDafitiCrawler extends Crawler {
          // Nome
          Elements elementPreName = doc.select("h1.product-name");
          String preName = elementPreName.text().replace("'", "").replace("’", "").trim();
+         CategoryCollection categoryCollection = CrawlerUtils.crawlCategories(doc, "ul.breadcrumb2", true);
 
-         // Categorias
-         Elements elementCategories = doc.select("ul.breadcrumb2").first().select("li");
-         String category1 = null;
-         String category2 = null;
-         String category3 = null;
-
-         if (elementCategories.size() > 1) {
-            category1 = elementCategories.get(1).text();
-         }
-         if (elementCategories.size() > 2) {
-            category2 = elementCategories.get(2).text();
-         }
-         if (elementCategories.size() > 3) {
-            category3 = elementCategories.get(3).text();
-         }
 
          // Imagem primária e imagens secundárias
          Elements elementPrimaryImage = doc.select(".gallery-thumbs ul.carousel-items").select("a");
@@ -122,33 +114,22 @@ public class BrasilDafitiCrawler extends Crawler {
                // Nome - pré-nome pego anteriormente, acrescido do tamanho do sapato
                String name = preName + " (tamanho " + sizes.getJSONObject(i).getString("name") + ")";
 
-               Map<String, Prices> marketplaceMap = crawlMarketplace(doc, json);
-               int stock = Integer.parseInt(sizes.getJSONObject(i).get("stock").toString());
-               boolean available = marketplaceMap.containsKey(MAIN_SELLER_NAME_LOWER) && stock > 0;
-
-                Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap);
-               Prices prices = available ? marketplaceMap.get(MAIN_SELLER_NAME_LOWER) : new Prices();
-               stock = available ? stock : 0;
-               Float price = crawlPrice(prices);
                RatingsReviews ratingReviews = scrapRatingReviews(doc);
 
-               Product product = new Product();
-               product.setUrl(this.session.getOriginalURL());
-               product.setInternalId(internalId);
-               product.setInternalPid(internalPid);
-               product.setName(name);
-               product.setPrice(price);
-               product.setCategory1(category1);
-               product.setCategory2(category2);
-               product.setCategory3(category3);
-               product.setPrimaryImage(primaryImage);
-               product.setSecondaryImages(secondaryImages);
-               product.setDescription(description);
-               product.setStock(stock);
-               product.setMarketplace(marketplace);
-               product.setAvailable(available);
-               product.setRatingReviews(ratingReviews);
-               product.setPrices(prices);
+               Offers offers = scrapOffers(doc, json);
+
+               Product product = ProductBuilder.create()
+                  .setUrl(this.session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setCategories(categoryCollection)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(secondaryImages)
+                  .setDescription(description)
+                  .setOffers(offers)
+                  .setRatingReviews(ratingReviews)
+                  .build();
 
                products.add(product);
 
@@ -164,17 +145,9 @@ public class BrasilDafitiCrawler extends Crawler {
       return products;
    }
 
-   /***********
-    * Product page identification *
-    ***********/
-
-   private boolean isProductPage(Document document) {
-      return (document.select(".container.product-page").first() != null);
-   }
-
-
-   private Map<String, Prices> crawlMarketplace(Document doc, JSONObject json) {
-      Map<String, Prices> marketplace = new HashMap<>();
+   private Offers scrapOffers(Document doc, JSONObject json) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc, json);
 
       String sellerName = MAIN_SELLER_NAME_LOWER;
       Element sellerNameElement = doc.select(".product-seller-name-link").first();
@@ -183,72 +156,75 @@ public class BrasilDafitiCrawler extends Crawler {
          sellerName = sellerNameElement.ownText().toLowerCase();
       }
 
-      marketplace.put(sellerName, crawlPrices(doc, json));
 
-      return marketplace;
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(sellerName)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(sellerName.toLowerCase(Locale.ROOT).equals(MAIN_SELLER_NAME_LOWER))
+         .setPricing(pricing)
+         .build());
+
+      return offers;
+
    }
 
-   private Prices crawlPrices(Document doc, JSONObject skuJson) {
-      Prices prices = new Prices();
+   /***********
+    * Product page identification *
+    ***********/
+
+   private boolean isProductPage(Document document) {
+      return (document.select(".container.product-page").first() != null);
+   }
+
+   private Pricing scrapPricing(Document doc, JSONObject skuJson) throws MalformedPricingException {
+
+      Pricing pricing = null;
 
       Element priceElement = doc.select(".catalog-detail-price-value").first();
 
       if (priceElement != null) {
-         Float price = MathUtils.parseFloatWithComma(priceElement.ownText());
-         prices.setBankTicketPrice(price);
-
-         Map<Integer, Float> mapInstallments = new HashMap<>();
-         mapInstallments.put(1, price);
-
-
-         if (skuJson.has("installments")) {
-            JSONObject installments = skuJson.getJSONObject("installments");
-
-            if (installments.has("count") && installments.has("value")) {
-               String installment = installments.get("count").toString().replaceAll("[^0-9]", "").trim();
-               Float priceInstallment = MathUtils.parseFloatWithComma(installments.get("value").toString());
-
-               if (!installment.isEmpty() && priceInstallment != null) {
-                  mapInstallments.put(Integer.parseInt(installment), priceInstallment);
-               }
-            }
-
-         }
-
-         prices.insertCardInstallment(Card.VISA.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.MASTERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.AMEX.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.DINERS.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.HIPERCARD.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.ELO.toString(), mapInstallments);
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), mapInstallments);
+         Double price = MathUtils.parseDoubleWithComma(priceElement.ownText());
+         CreditCards creditCards = scrapCard(doc, skuJson);
+         pricing = Pricing.PricingBuilder.create()
+            .setSpotlightPrice(price)
+            .setCreditCards(creditCards)
+            .build();
       }
 
-      return prices;
+      return pricing;
    }
 
-   private Marketplace assembleMarketplaceFromMap(Map<String, Prices> marketplaceMap) {
-      Marketplace marketplace = new Marketplace();
+   private CreditCards scrapCard(Document doc, JSONObject skuJson) throws MalformedPricingException {
 
-      for (String seller : marketplaceMap.keySet()) {
-         if (!seller.equalsIgnoreCase(MAIN_SELLER_NAME_LOWER)) {
-            Prices prices = marketplaceMap.get(seller);
+      CreditCards creditCards = new CreditCards();
+      Installments installments = new Installments();
 
-            JSONObject sellerJSON = new JSONObject();
-            sellerJSON.put("name", seller);
-            sellerJSON.put("price", crawlPrice(prices));
-            sellerJSON.put("prices", prices.toJSON());
+      if (skuJson.has("installments")) {
+         JSONObject installmentsObj = skuJson.getJSONObject("installments");
 
-            try {
-               Seller s = new Seller(sellerJSON);
-               marketplace.add(s);
-            } catch (Exception e) {
-               Logging.printLogError(logger, session, Util.getStackTraceString(e));
+         if (installmentsObj.has("count") && installmentsObj.has("value")) {
+            String installment = installmentsObj.get("count").toString().replaceAll("[^0-9]", "").trim();
+            Double priceInstallment = MathUtils.parseDoubleWithComma(installmentsObj.get("value").toString());
+
+            if (!installment.isEmpty() && priceInstallment != null) {
+               installments.add(Installment.InstallmentBuilder.create()
+                  .setInstallmentNumber(Integer.parseInt(installment))
+                  .setInstallmentPrice(priceInstallment)
+                  .build());
             }
          }
-      }
 
-      return marketplace;
+         for (String card : cards) {
+            creditCards.add(CreditCard.CreditCardBuilder.create()
+               .setBrand(card)
+               .setInstallments(installments)
+               .setIsShopCard(false)
+               .build());
+         }
+      }
+      return creditCards;
    }
 
    private RatingsReviews scrapRatingReviews(Document doc) {
@@ -272,11 +248,9 @@ public class BrasilDafitiCrawler extends Crawler {
          int a = total.indexOf("com") + 4;
          int b = total.indexOf("avaliações") - 1;
          if (a < b) totalComments = MathUtils.parseInt(total.substring(a, b));
-      }else{
+      } else {
          totalComments = CrawlerUtils.scrapIntegerFromHtml(doc, ".ratings-reviews-component.hide-mobile.clearflix h2", true, 0);
       }
-
-
       return totalComments;
    }
 
@@ -287,20 +261,6 @@ public class BrasilDafitiCrawler extends Crawler {
       if (avgr != null) {
          avg = MathUtils.parseDoubleWithDot(avgr.substring(avgr.indexOf("nota") + 5, avgr.indexOf("de") - 1));
       }
-
       return avg;
-   }
-
-
-
-   private Float crawlPrice(Prices prices) {
-      Float price = null;
-
-      if (!prices.isEmpty() && prices.getCardPaymentOptions(Card.VISA.toString()).containsKey(1)) {
-         Double priceDouble = prices.getCardPaymentOptions(Card.VISA.toString()).get(1);
-         price = priceDouble.floatValue();
-      }
-
-      return price;
    }
 }
