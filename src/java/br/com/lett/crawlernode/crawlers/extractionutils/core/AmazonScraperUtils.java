@@ -99,6 +99,7 @@ public class AmazonScraperUtils {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.BUY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setFetcheroptions(FetcherOptionsBuilder.create()
