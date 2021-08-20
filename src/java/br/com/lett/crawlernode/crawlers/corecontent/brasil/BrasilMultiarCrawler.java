@@ -12,15 +12,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCr
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.Seller;
-import models.Util;
+import models.*;
 import models.prices.Prices;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,10 +21,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 /*********************************************************************************************************************************************
  * Crawling notes (12/07/2016):
- * 
+ *
  * 1) For this crawler, we have one url per each sku 2) There is no stock information for skus in
  * this ecommerce by the time this crawler was made 3) There is no marketplace in this ecommerce by
  * the time this crawler was made 4) The sku page identification is done simply looking for an
@@ -45,7 +42,7 @@ import org.jsoup.select.Elements;
  * informations about the sku, only the availability is crawled this way in this website. 8) All the
  * images are .png 9) We have one method for each type of information for a sku (please carry on
  * with this pattern).
- * 
+ *
  * Examples: ex1 (available):
  * http://www.multiar.com.br/condicionador-de-ar-split-consul-frio-9-000-btu-h-2001105/p ex2
  * (unavailable):
@@ -80,7 +77,6 @@ public class BrasilMultiarCrawler extends Crawler {
          JSONObject skuJson = CrawlerUtils.crawlSkuJsonVTEX(doc, session);
          String internalPid = crawlInternalPid(skuJson);
          CategoryCollection categories = crawlCategories(doc);
-         String description = crawlDescription(doc);
 
          // sku data in json
          JSONArray arraySkus = skuJson != null && skuJson.has("skus") ? skuJson.getJSONArray("skus") : new JSONArray();
@@ -89,6 +85,7 @@ public class BrasilMultiarCrawler extends Crawler {
             JSONObject jsonSku = arraySkus.getJSONObject(i);
 
             String internalId = crawlInternalId(jsonSku);
+            String description = crawlDescription(internalId);
             String name = crawlName(jsonSku, skuJson);
             Map<String, Float> marketplaceMap = crawlMarketplace(jsonSku);
             Marketplace marketplace = assembleMarketplaceFromMap(marketplaceMap, internalId, jsonSku, doc);
@@ -105,9 +102,9 @@ public class BrasilMultiarCrawler extends Crawler {
 
             // Creating the product
             Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-                  .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-                  .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-                  .setStock(stock).setMarketplace(marketplace).setRatingReviews(ratingReviews).build();
+               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+               .setStock(stock).setMarketplace(marketplace).setRatingReviews(ratingReviews).build();
 
             products.add(product);
          }
@@ -171,7 +168,7 @@ public class BrasilMultiarCrawler extends Crawler {
 
    /**
     * Price "de"
-    * 
+    *
     * @param jsonSku
     * @return
     */
@@ -249,7 +246,7 @@ public class BrasilMultiarCrawler extends Crawler {
 
    /**
     * Get the image url and change it size
-    * 
+    *
     * @param url
     * @return
     */
@@ -313,26 +310,28 @@ public class BrasilMultiarCrawler extends Crawler {
       return categories;
    }
 
-   private String crawlDescription(Document doc) {
-      StringBuilder description = new StringBuilder();
+   private JSONObject getJsonDescription(String internalId) {
+      String url = "https://www.leverosintegra.com.br/map/api/GetItemData/" + internalId;
 
-      Element caracteristicas = doc.select("#caracteristicas").first();
-      if (caracteristicas != null) {
-         description.append(caracteristicas.html());
-      }
+      Request request = RequestBuilder.create().setUrl(url).build();
 
-      Element shortDescription = doc.select(".productDescription").first();
-      if (shortDescription != null) {
-         description.append(shortDescription.html());
-      }
+      String content = this.dataFetcher.get(session, request).getBody();
 
-      return description.toString();
+      return CrawlerUtils.stringToJson(content);
+   }
+
+   private String crawlDescription(String internalId) {
+
+      JSONObject jsonObject = getJsonDescription(internalId);
+
+
+      return jsonObject.optString("ProductDescription");
    }
 
    /**
     * To crawl this prices is accessed a api Is removed all accents for crawl price 1x like this: Visa
     * à vista R$ 1.790,00
-    * 
+    *
     * @param internalId
     * @param price
     * @return
