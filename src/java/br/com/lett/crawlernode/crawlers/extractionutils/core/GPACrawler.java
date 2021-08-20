@@ -9,7 +9,10 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.*;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -101,19 +104,13 @@ public class GPACrawler extends Crawler {
 
       String productUrl = session.getOriginalURL();
       JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
-
       if (jsonSku.has("id")) {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         JSONObject data = JSONUtils.getValueRecursive(jsonSku, "sellInfos.0", JSONObject.class);
-
          String internalId = crawlInternalId(jsonSku);
          String internalPid = crawlInternalPid(jsonSku);
          CategoryCollection categories = crawlCategories(jsonSku);
-         boolean available = data != null && crawlAvailability(data);
-         Offers offers = available ? scrapOffers(data) : new Offers();
-
          String primaryImage = crawlPrimaryImage(jsonSku);
          String name = crawlName(jsonSku);
          RatingsReviews ratingsReviews = session.getMarket().getName().contains("extramarketplace")? extractRatingAndReviews(internalId):null;
@@ -138,6 +135,8 @@ public class GPACrawler extends Crawler {
          }
 
          description.append(scrapLaminaHtml(internalId));
+
+         Offers offers =  scrapOffers(jsonSku);
 
          Product product =
             ProductBuilder.create()
@@ -388,25 +387,33 @@ public class GPACrawler extends Crawler {
          .split("/")[0];
    }
 
-   private Offers scrapOffers(JSONObject data) throws OfferException, MalformedPricingException {
+   private Offers scrapOffers(JSONObject jsonSku) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
+
+      JSONArray data = JSONUtils.getValueRecursive(jsonSku, "sellInfos", JSONArray.class);
+
       if (data != null) {
-         Pricing pricing = scrapPricing(data);
-         String sales = CrawlerUtils.calculateSales(pricing);
-         String sellerName = JSONUtils.getStringValue(data, "name");
-         boolean isMainRetailersMainRetailer = data.optString("sellType", "").equals("1P");
+         for(Object o: data) {
+            JSONObject sellerinfo = (JSONObject) o;
+            Pricing pricing = scrapPricing(sellerinfo);
+            String sales = CrawlerUtils.calculateSales(pricing);
+            String sellerName = JSONUtils.getStringValue(sellerinfo, "name");
+            boolean isMainRetailersMainRetailer = sellerinfo.optString("sellType", "").equals("1P");
 
 
-         offers.add(Offer.OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(sellerName)
-            .setSales(Collections.singletonList(sales))
-            .setMainPagePosition(1)
-            .setSellersPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(isMainRetailersMainRetailer)
-            .setPricing(pricing)
-            .build());
+            Offer offer = Offer.OfferBuilder.create()
+               .setUseSlugNameAsInternalSellerId(true)
+               .setSellerFullName(sellerName)
+               .setSales(Collections.singletonList(sales))
+               .setMainPagePosition(1)
+               .setSellersPagePosition(1)
+               .setIsBuybox(true)
+               .setIsMainRetailer(isMainRetailersMainRetailer)
+               .setPricing(pricing)
+               .build();
+
+            offers.add(offer);
+         }
       }
 
       return offers;
@@ -419,7 +426,7 @@ public class GPACrawler extends Crawler {
       if (data.has("productPromotions")) {
          JSONArray promotions = data.optJSONArray("productPromotions");
          for (Object e : promotions) {
-            if (e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 51241) {
+            if (e instanceof JSONObject && ((JSONObject) e).optInt("ruleId") == 57169) {
                spotlightPrice = ((JSONObject) e).optDouble("unitPrice");
                priceFrom = data.optDouble("currentPrice");
             }
