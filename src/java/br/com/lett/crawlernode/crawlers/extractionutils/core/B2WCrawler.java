@@ -111,6 +111,7 @@ public class B2WCrawler extends Crawler {
                .build()
          ).setProxyservice(
             Arrays.asList(
+               ProxyCollection.LUMINATI_RESIDENTIAL_BR,
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
