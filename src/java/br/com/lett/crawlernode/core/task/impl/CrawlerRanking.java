@@ -104,8 +104,8 @@ public abstract class CrawlerRanking extends Task {
       this.rankType = rankType;
 
       if (session instanceof RankingDiscoverSession) {
-         productsLimit = 2000;
-         pageLimit = 250;
+         productsLimit = 1000;
+         pageLimit = 125;
       } else if (session instanceof RankingSession || session instanceof TestRankingSession) {
          productsLimit = 300;
          pageLimit = 35;
