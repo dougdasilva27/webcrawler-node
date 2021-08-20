@@ -1,82 +1,87 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilHavanCrawler extends CrawlerRankingKeywords {
 
-	public BrasilHavanCrawler(Session session) {
-		super(session);
-	}
+   public BrasilHavanCrawler(Session session) {
+      super(session);
+   }
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
+   @Override
+   protected void extractProductsFromCurrentPage() {
 
-		this.pageSize = 24;
-			
-		this.log("Página "+ this.currentPage);
-		
-		String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
-		
+      this.pageSize = 24;
 
-		String url = "https://www.havan.com.br/catalogsearch/result//index/?p="+ this.currentPage+ "&q="+key;
-		this.log("Link onde são feitos os crawlers: "+url);	
-			
+      this.log("Página " + this.currentPage);
 
-		this.currentDoc = fetchDocument(url);
-		
-		Elements products =  this.currentDoc.select(".product .product-item-info");
-		
+      JSONObject jsonObject = fetchApi();
 
-		if(products.size() >= 1) {
+      JSONArray productsArr = jsonObject != null ? jsonObject.optJSONArray("products") : null;
 
-			if(this.totalProducts == 0) {
-				setTotalProducts();
-			}
-			
-			for(Element e: products) {
 
-				String internalPid 	= CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product div", "value");
-				String productUrl  = CrawlerUtils.scrapUrl(e, ".hover-itens .more-info", "href", "https:", "www.havan.com.br");
-				
-				saveDataProduct(null, internalPid, productUrl);
-				
-				this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-				if(this.arrayProducts.size() == productsLimit) {
-					break;
-				}
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+      if (productsArr != null && !productsArr.isEmpty()) {
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
+         if (this.totalProducts == 0) {
+            setTotalProducts(jsonObject);
+         }
 
-	@Override
-	protected boolean hasNextPage() {
-		//tem próxima página
-		return this.arrayProducts.size() < this.totalProducts;
+         for (Object o : productsArr) {
 
-	}
-	
-	@Override
-	protected void setTotalProducts() {
-		Element totalElement = this.currentDoc.select(".toolbar-amount .toolbar-number:last-child").first();
-		
-		if(totalElement != null) { 	
-			try	{				
-				this.totalProducts = Integer.parseInt(totalElement.text().trim());
-			} catch(Exception e) {
-				this.logError(CommonMethods.getStackTraceString(e));
-			}
-			
-			this.log("Total da busca: "+this.totalProducts);
-		}
-	}
+            if (o instanceof JSONObject) {
+               JSONObject product = (JSONObject) o;
+
+               String internalPid = product.optString("iId");
+               String internalId = product.optString("id");
+               String partUrl = product.optString("url");
+               String productUrl = partUrl != null ? "https:" + partUrl : null;
+
+               saveDataProduct(internalId, internalPid, productUrl);
+
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               if (this.arrayProducts.size() == productsLimit) {
+                  break;
+               }
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
+
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+
+   private JSONObject fetchApi() {
+      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=havan&page=" + this.currentPage + "&resultsPerPage=36&terms=" + this.keywordEncoded + "&sortBy=relevance";
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Origin", "https://www.havan.com.br/");
+
+      Request request = Request.RequestBuilder.create()
+         .setHeaders(headers)
+         .setUrl(url)
+         .build();
+
+      String response = dataFetcher.get(session, request).getBody();
+      return CrawlerUtils.stringToJson(response);
+   }
+
+   protected void setTotalProducts(JSONObject jsonObject) {
+
+      this.totalProducts = jsonObject.optInt("pagination");
+
+
+      this.log("Total da busca: " + this.totalProducts);
+   }
+
 }
