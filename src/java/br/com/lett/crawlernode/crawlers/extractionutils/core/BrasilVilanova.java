@@ -63,7 +63,7 @@ public abstract class BrasilVilanova extends Crawler {
       try {
          Logging.printLogDebug(logger, session, "Fetching page with webdriver...");
 
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
          doc = Jsoup.parse(webdriver.getCurrentPageSource());
          webdriver.waitLoad(10000);
 
