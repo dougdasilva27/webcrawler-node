@@ -30,12 +30,11 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
       super(session);
    }
 
-   private final String homePage = getHomePage();
+   protected final String homePage = getHomePage();
 
    protected abstract String getHomePage();
 
-   private Document fetchPage() {
-
+   protected Document fetchPage() {
       String keyword = this.keywordWithoutAccents.replace(" ", "-");
 
       String url = homePage + "busca/" + keyword + "?limit=24&offset=" + (this.currentPage - 1) * pageSize;
@@ -51,7 +50,6 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
                .build()
          ).setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
             )
@@ -67,7 +65,6 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
             ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
