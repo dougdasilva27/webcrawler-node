@@ -1,20 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -28,12 +14,20 @@ import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.*;
 
 /**
  * Date: 08/08/2017
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
@@ -53,18 +47,9 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setCookies(cookies)
-            .setFetcheroptions(
-                  FetcherOptionsBuilder.create()
-                        .mustUseMovingAverage(false)
-                        .mustRetrieveStatistics(true)
-                        .build())
-            .setProxyservice(Arrays.asList(
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.LUMINATI_SERVER_BR,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR))
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -85,10 +70,10 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
          boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#thumbs-produto div a", Arrays.asList("data-image"), "https",
-               "www.drogarianovaesperanca.com.br/");
+            "www.drogarianovaesperanca.com.br/");
          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc,
-               "#thumbs-produto div a",
-               Arrays.asList("data-image"), "https", "www.drogarianovaesperanca.com.br/", primaryImage);
+            "#thumbs-produto div a",
+            Arrays.asList("data-image"), "https", "www.drogarianovaesperanca.com.br/", primaryImage);
          String description = crawlDescription(doc);
          Integer stock = null;
          Marketplace marketplace = crawlMarketplace();
@@ -99,9 +84,9 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).setEans(eans).build();
 
          products.add(product);
 
@@ -145,7 +130,7 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
 
    /**
     * In the time when this crawler was made, this market hasn't secondary Images
-    * 
+    *
     * @param doc
     * @return
     */
@@ -199,7 +184,6 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
    }
 
    /**
-    * 
     * @param doc
     * @param price
     * @return
@@ -226,11 +210,11 @@ public class BrasilDrogarianovaesperancaCrawler extends Crawler {
          headers.put(HttpHeaders.CONTENT_TYPE, "application/json");
 
          Request request = RequestBuilder.create()
-               .setUrl(pricesUrl)
-               .setCookies(this.cookies)
-               .setHeaders(headers)
-               .setPayload(payloadJson.toString())
-               .build();
+            .setUrl(pricesUrl)
+            .setCookies(this.cookies)
+            .setHeaders(headers)
+            .setPayload(payloadJson.toString())
+            .build();
 
          JSONObject pricesJson = CrawlerUtils.stringToJson(this.dataFetcher.post(session, request).getBody());
 
