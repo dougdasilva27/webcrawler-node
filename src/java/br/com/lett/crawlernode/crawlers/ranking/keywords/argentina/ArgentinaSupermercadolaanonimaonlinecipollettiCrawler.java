@@ -1,12 +1,12 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -18,7 +18,10 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
    private List<Cookie> cookies = new ArrayList<>();
 
    public ArgentinaSupermercadolaanonimaonlinecipollettiCrawler(Session session) {
+
       super(session);
+      super.fetchMode = FetchMode.FETCHER;
+
    }
 
    @Override
@@ -43,9 +46,10 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
 
       this.log("Página " + this.currentPage);
 
-      String url = "http://supermercado.laanonimaonline.com/buscar?pag=" + this.currentPage + "&clave=" + this.keywordWithoutAccents.replace(" ", "%20");
-      this.log("Link onde são feitos os crawlers: " + url);
+      String url = "https://supermercado.laanonimaonline.com/buscar?pag=" + this.currentPage + "&clave=" + this.keywordWithoutAccents.replace(" ", "%20");
+      System.err.println(url);
 
+      this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url, cookies);
       Elements products = this.currentDoc.select(".caja1.producto > div");
 
@@ -97,7 +101,7 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
    private String crawlProductUrl(Element e) {
 
       String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e,".titulo_puntos a","href");
-      String productUrl = CrawlerUtils.completeUrl(url,"https:","www.supermercado.laanonimaonline.com");
+      String productUrl = CrawlerUtils.completeUrl(url,"https:","supermercado.laanonimaonline.com");
 
       return productUrl;
    }
