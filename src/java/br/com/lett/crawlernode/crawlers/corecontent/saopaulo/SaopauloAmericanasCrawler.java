@@ -154,16 +154,13 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       return offers;
    }
 
-   private Document acessOffersPage(String offersPageURL) {
+   protected Document acessOffersPage(String offersPageURL) {
       Request request = Request.RequestBuilder.create().setUrl(offersPageURL).setProxyservice(
          Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.LUMINATI_RESIDENTIAL_BR,
             ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-
-
          )
       ).build();
       Response response = this.dataFetcher.get(session, request);
