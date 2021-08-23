@@ -47,7 +47,6 @@ public class ArgentinaSupermercadolaanonimaonlinecipollettiCrawler extends Crawl
       this.log("Página " + this.currentPage);
 
       String url = "https://supermercado.laanonimaonline.com/buscar?pag=" + this.currentPage + "&clave=" + this.keywordWithoutAccents.replace(" ", "%20");
-      System.err.println(url);
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url, cookies);
