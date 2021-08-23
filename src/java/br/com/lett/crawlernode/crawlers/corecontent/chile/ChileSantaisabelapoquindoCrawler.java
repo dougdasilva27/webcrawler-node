@@ -49,9 +49,11 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
 
       if (!json.isEmpty()) {
 
+         System.err.println(json);
+
          String internalId = json.optString("sku");
          String internalPid = internalId;
-         String name = json.optString("name");
+         String name = scrapNameWithBrand(json);
          List<String> images = getImages(doc);
          String primaryImage = !images.isEmpty() ? images.remove(0) : json.optString("image");
          String description = json.optString("description");
@@ -80,6 +82,20 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
       }
       return products;
 
+   }
+
+   private String scrapNameWithBrand (JSONObject json){
+      String name = json.optString("name");
+
+      JSONObject o = json.optJSONObject("brand");
+      if(o != null){
+         String brand = o.optString("name");
+
+         if (name != null && brand != null){
+            return name + " - " + brand;
+         }
+      }
+      return name;
    }
 
    private String selectJsonFromHtml(Document doc, String cssElement, String token, String finalIndex) throws JSONException, ArrayIndexOutOfBoundsException, IllegalArgumentException {
