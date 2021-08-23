@@ -49,8 +49,6 @@ public class ChileSantaisabelapoquindoCrawler extends Crawler {
 
       if (!json.isEmpty()) {
 
-         System.err.println(json);
-
          String internalId = json.optString("sku");
          String internalPid = internalId;
          String name = scrapNameWithBrand(json);
