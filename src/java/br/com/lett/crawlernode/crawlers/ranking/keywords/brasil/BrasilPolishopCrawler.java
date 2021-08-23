@@ -1,60 +1,133 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.VTEXRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 
-public class BrasilPolishopCrawler extends CrawlerRankingKeywords {
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Base64;
+
+public class BrasilPolishopCrawler extends VTEXRankingKeywords {
+
+   private static final Integer API_VERSION = 1;
+   private static final String SENDER = "vtex.store-resources@0.x";
+   private static final String PROVIDER = "vtex.search-graphql@0.x";
+   private String keySHA256 = "4136d62c555a4b2e1ba9a484a16390d6a6035f51760d5726f436380fa290d0cc";
+
 
    public BrasilPolishopCrawler(Session session) {
       super(session);
    }
 
+   protected String fetchPage(String url) {
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .build();
+
+      return this.dataFetcher.get(session, request).getBody();
+   }
+
+
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected String getHomePage() {
+      return session.getOptions().getString("homePage");
+   }
 
-      this.log("Página " + this.currentPage);
+   @Override
+   protected String getLocation() {
+      return "";
+   }
 
-      String key = this.keywordWithoutAccents.replaceAll(" ", "%20");
+   @Override
+   protected String getVtexSegment() {
+      return session.getOptions().getString("vtex_segment");
+   }
 
-      String url = "https://www.polishop.com.br/" + key + "?_q=" + key + "&map=ft&page=" + this.currentPage;
+   @Override
+   protected String createVariablesBase64() {
+      JSONObject search = new JSONObject();
+      search.put("hideUnavailableItems", false);
+      search.put("skusFilter", "ALL_AVAILABLE");
+      search.put("simulationBehavior", "default");
+      search.put("installmentCriteria", "MAX_WITH_INTEREST");
+      search.put("productOriginVtex", true);
+      search.put("map", "ft");
+      search.put("query", keywordEncoded);
+      search.put("orderBy", "");
+      search.put("from", this.arrayProducts.size());
+      search.put("to", this.arrayProducts.size() + (this.pageSize - 1));
 
-      this.log("Link onde são feitos os crawlers: " + url);
+      JSONArray selectedFacets = new JSONArray();
+      JSONObject obj = new JSONObject();
+      obj.put("key", "ft");
+      obj.put("value", this.keywordEncoded);
 
-      this.currentDoc = fetchDocument(url);
-      JSONArray productsJson = scrapProductsArray(currentDoc);
+      selectedFacets.put(obj);
 
-      if (!productsJson.isEmpty()) {
-         if (this.totalProducts == 0) setTotalProducts();
-         for (Object e : productsJson) {
-            if (e instanceof JSONObject) {
+      search.put("selectedFacets", selectedFacets);
+      search.put("fullText", this.location);
+      search.put("operator", JSONObject.NULL);
+      search.put("fuzzy", JSONObject.NULL);
+      search.put("facetsBehavior", "Static");
+      search.put("categoryTreeBehavior", "default");
+      search.put("withFacets", false);
 
-               String productUrl = ((JSONObject) e).optString("url") + "/p";
-               saveDataProduct(null, null, productUrl);
-               this.log("Position: " + this.position + " - Url: " + productUrl);
-            }
-         }
+      return Base64.getEncoder().encodeToString(search.toString().getBytes());
+   }
+
+   @Override
+   protected JSONObject fetchSearchApi() {
+      JSONObject searchApi;
+      StringBuilder url = new StringBuilder();
+      url.append(getHomePage() + "_v/segment/graphql/v1?");
+
+      JSONObject extensions = new JSONObject();
+      JSONObject persistedQuery = new JSONObject();
+
+      persistedQuery.put("version", API_VERSION);
+      persistedQuery.put("sha256Hash", this.keySHA256);
+      persistedQuery.put("sender", SENDER);
+      persistedQuery.put("provider", PROVIDER);
+
+      extensions.put("variables", createVariablesBase64());
+      extensions.put("persistedQuery", persistedQuery);
+
+      StringBuilder payload = new StringBuilder();
+      payload.append("workspace=master");
+      payload.append("&maxAge=short");
+      payload.append("&appsEtag=remove");
+      payload.append("&domain=store");
+      payload.append("&locale=pt-BR");
+      payload.append("&operationName=productSearchV3");
+      try {
+         payload.append("&variables=" + URLEncoder.encode("{}", "UTF-8"));
+         payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
-      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-   }
+      url.append(payload.toString());
 
-   @Override
-   protected boolean hasNextPage() {
-      return (!this.currentDoc.select(".vtex-search-result-3-x-galleryItem").isEmpty()) && (this.arrayProducts.size() < this.totalProducts);
-   }
+      log("Link onde são feitos os crawlers:" + url);
 
-   @Override
-   protected void setTotalProducts() {
-      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(currentDoc, ".vtex-search-result-3-x-totalProducts--layout > span", false, 0);
-      this.log("Total da busca: " + this.totalProducts);
-   }
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url.toString())
+         .setCookies(cookies)
+         .setPayload(payload.toString())
+         .build();
 
-   private JSONArray scrapProductsArray(Document doc) {
-      JSONObject dataJson = CrawlerUtils.selectJsonFromHtml(doc, ".vtex-store__template script[type=\"application/ld+json\"]", null, null, false, true);
-      return JSONUtils.getJSONArrayValue(dataJson, "itemListElement");
+      JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+
+      searchApi = JSONUtils.getValueRecursive(response, "data.productSearch", JSONObject.class, new JSONObject());
+
+      return searchApi;
    }
 }
