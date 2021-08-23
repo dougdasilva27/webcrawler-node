@@ -50,7 +50,8 @@ class SaopauloPanvelCrawler(session: Session) : Crawler(session) {
          val primaryImage = (jsonImages.removeFirst() as JSONObject).optString("url")
          val secondaryImages = jsonImages.map { (it as JSONObject).optString("url") }
          val name = json.optString("name")
-         val offers = scrapOffers(json)
+         val isAvailable = doc.select(".text-unavailable-item").isEmpty()
+         val offers = if (isAvailable) scrapOffers(json) else Offers()
          val rating = scrapRating(doc)
 
          val product = ProductBuilder.create()
