@@ -232,16 +232,16 @@ public class LeroymerlinCrawler extends Crawler {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
 
-      String jsonOffers = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div [data-product-buybox]", "data-skus");
+      String jsonOffers = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div[data-postal-code]", "data-skus");
 
-      if (jsonOffers != null || !jsonOffers.equals("")) {
+      if (jsonOffers != null && !jsonOffers.equals("")) {
          JSONArray arrayOffers = CrawlerUtils.stringToJsonArray(jsonOffers);
 
          for (Object o : arrayOffers) {
             JSONObject offerJson = (JSONObject) o;
             Pricing pricing = scrapPricing(doc, offerJson);
 
-            String sellerNameLower = JSONUtils.getValueRecursive(offerJson, "shop.name", String.class);
+            String sellerNameLower = JSONUtils.getValueRecursive(offerJson, "shop.name", String.class).toLowerCase(Locale.ROOT);
 
             boolean isMainRetailer = sellerNameLower.contains("leroy");
             String sellerFullname = isMainRetailer ? "leroy merlin " + REGION : sellerNameLower;
@@ -292,7 +292,7 @@ public class LeroymerlinCrawler extends Crawler {
 
       Installments installments = scrapInstallments(json);
 
-      if (installments.getInstallments() == null) {
+      if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
             .setInstallmentPrice(spotlightPrice)
