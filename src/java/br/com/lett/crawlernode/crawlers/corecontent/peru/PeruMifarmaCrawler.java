@@ -36,8 +36,6 @@ public class PeruMifarmaCrawler extends Crawler {
 
    @Override
    protected Object fetch() {
-      Map<String, String> headers = new HashMap<>();
-      headers.put("drugstore-stock", DRUGSTORE_STOCK);
 
       String internalId = CommonMethods.getLast(session.getOriginalURL().split("/"));
 
@@ -46,7 +44,6 @@ public class PeruMifarmaCrawler extends Crawler {
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setHeaders(headers)
          .build();
 
       Response apiResponse = this.dataFetcher.get(session, request);
