@@ -10,11 +10,11 @@ public class BrasilMartinsmondelezCrawler extends BrasilMartinsCrawler {
 
   @Override
   protected String getPassword() {
-    return "monica08";
+    return "luz3001";
   }
 
   @Override
   protected String getLogin() {
-    return "erika.rosa@mdlz.com";
+    return "patriciaf3001@gmail.com";
   }
 }
