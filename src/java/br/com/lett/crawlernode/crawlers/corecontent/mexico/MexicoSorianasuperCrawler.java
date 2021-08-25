@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -10,6 +11,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -19,6 +21,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.WebDriverException;
 
 import java.util.*;
 
@@ -39,43 +42,30 @@ public class MexicoSorianasuperCrawler extends Crawler {
 
    public MexicoSorianasuperCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
-   @Override protected Object fetch() {
+   @Override
+   protected Document fetch() {
+      return webdriverRequest(session.getOriginalURL());
+   }
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("cookie",
-         "ASP.NET_SessionId=0wp2ktrgbecpwtdsjlbglupi;" +
-            " NumTipServProduccion=NumTipServ=1;" +
-            " NumTdaProduccion=NumTda=51;" +
-            " NombreTiendaProduccion=NombreTienda=Las Palmas;" +
-            " _ga=GA1.3.1791614647.1599660498;" +
-            " _gid=GA1.3.1529849727.1599660498;" +
-            " _fbp=fb.1.1599660500363.329928573;" +
-            " _hjTLDTest=1;" +
-            " _hjid=6e343037-4ee8-48c7-9e49-a5abf1093868;" +
-            " _hjAbsoluteSessionInProgress=0;" +
-            " isPushNotificationClient=false;" +
-            " ak_bmsc=FAA16663A66E0F5F168113993D59768DC99443049A7200009203595FB4A02F38~plGlmlEPwo2uZmAnc8Kp1S6r7J4PHxeo8fZdsQyCxivkFnMy79uYhX4zzeFQV048EejNofGCvAxkXTf8Z/8d+wAoaMTIKGbfONX4oDIb3l8TF6ru4GRIHlSBX10QbXry+VoT0ohgwdcN43IW8H6fsFrRvs8iHglOLvpPPGLQW36txg6tWUEmvlRHUGwT08cA7E+09H/bjRmYu5yMNt9C/d4XnKybwohteUITk0tF7VYbE=;" +
-            " BIGipServerPh2uQ04SKDHu6Ndp9q1iLA=704843948.47873.0000;" +
-            " TS01f618f3=015c364ca02d8099276b3f5afc64ddce99835feebe09798e997d7e5f2f3e064bc458956f7a8024c5c7bef5aef3c8c5e1825a688f596271691c4ea69ba5e55f1e03869e2788e5b2a0c3acaa36568db10fa6806b23d7e1d2ce06ccd55f493807f5709d58f7d1c7510e701f2e14311745805e6a7cd229;" +
-            " _dc_gtm_UA-4339337-8=1; RT=\"z=1&dm=superentucasa.soriana.com&si=a71g0751lcn&ss=kevmm7fo&sl=b&tt=vbv&obo=5&rl=1&ld=yq4h&r=503a27d1844e119d78b20a710d16ee86&ul=yq4j&hd=yqjy\";" +
-            " bm_sv=83F1A0443FAF4034DEBFCBA5C91D4923~4vx6pm1K1rTO/t3qGX1g+0erqSZu9BKrnZLLoggVwXIzN4SlVhWbvQlybvwQ6MdAg9B9Rv+H39SBkkg064JEEUH2WbJ84dRP1X4bJK+mhjIQBkbK3vN1e5J3xNFNzcf6fDEgiNXeEGrzi9/NWD73AB9HRgNUOJYdlTB/HZtHFyY=");
+   private Document webdriverRequest(String url) {
+      Document doc;
 
-      Request request = RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_MX
-            )
-         )
-         .setCookies(cookies)
-         .build();
+      try {
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         if (webdriver != null) {
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+         } else {
+            throw new WebDriverException("Failed to instantiate webdriver");
+         }
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+         throw e;
+      }
 
-      Document response = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
-
-      return response;
+      return doc;
    }
 
 
