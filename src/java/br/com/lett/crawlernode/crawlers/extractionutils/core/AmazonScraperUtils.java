@@ -74,6 +74,7 @@ public class AmazonScraperUtils {
          request.setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
                ProxyCollection.INFATICA_RESIDENTIAL_BR,
                ProxyCollection.NETNUT_RESIDENTIAL_BR)).setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
