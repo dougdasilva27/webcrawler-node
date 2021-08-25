@@ -118,7 +118,7 @@ public class AmazonScraperUtils {
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.BUY,
-               ProxyCollection.BONANZA_BELGIUM_HAPROXY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
