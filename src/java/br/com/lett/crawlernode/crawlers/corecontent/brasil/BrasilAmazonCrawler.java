@@ -77,14 +77,16 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("cache-control", "max-age=0");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
 
+      // o buy não é uma opção aqui, porque às vezes ele retorna uma página de validação de caracteres
       Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL())
          .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.BUY,
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR)).build();
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
+            )).build();
 
       String content = this.dataFetcher.get(session, request).getBody();
 
@@ -273,6 +275,36 @@ public class BrasilAmazonCrawler extends Crawler {
       Offers offers = new Offers();
       int pos = 1;
 
+      Elements buyBox = doc.select(".a-box.mbc-offer-row.pa_mbc_on_amazon_offer");
+
+      if (buyBox != null && !buyBox.isEmpty()) {
+         for (Element oferta : buyBox) {
+
+            String name = CrawlerUtils.scrapStringSimpleInfo(oferta, ".a-size-small.mbcMerchantName", true);
+
+            Pricing pricing = scrapSellersPagePricingInBuyBox(oferta);
+            String sellerUrl = CrawlerUtils.scrapUrl(oferta, ".a-size-small.a-link-normal:first-child", "href", "https", HOST);
+
+            String sellerId = scrapSellerIdByUrl(sellerUrl);
+            boolean isMainRetailer = name.equalsIgnoreCase(SELLER_NAME) || name.equalsIgnoreCase(SELLER_NAME_2) || name.equalsIgnoreCase(SELLER_NAME_3);
+
+            if (sellerId == null) {
+               sellerId = CommonMethods.toSlug(SELLER_NAME);
+            }
+
+            offers.add(OfferBuilder.create()
+               .setInternalSellerId(sellerId)
+               .setSellerFullName(name)
+               .setSellersPagePosition(pos)
+               .setIsBuybox(false)
+               .setIsMainRetailer(isMainRetailer)
+               .setPricing(pricing)
+               .build());
+
+            pos++;
+         }
+      }
+
 
       if (mainPageOffer != null) {
          mainPageOffer.setSellersPagePosition(pos);
@@ -316,6 +348,20 @@ public class BrasilAmazonCrawler extends Crawler {
 
    private Pricing scrapSellersPagePricing(Element doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price span", null, false, ',', session);
+      if (spotlightPrice == null) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price .a-offscreen", null, false, ',', session);
+      }
+      CreditCards creditCards = scrapCreditCardsFromSellersPage(doc, spotlightPrice);
+
+      return PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(BankSlipBuilder.create().setFinalPrice(spotlightPrice).setOnPageDiscount(0d).build())
+         .build();
+   }
+
+   private Pricing scrapSellersPagePricingInBuyBox(Element doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-size-medium.a-color-price", null, false, ',', session);
       if (spotlightPrice == null) {
          spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".a-price .a-offscreen", null, false, ',', session);
       }
@@ -473,12 +519,13 @@ public class BrasilAmazonCrawler extends Crawler {
       String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=dp_aod_NEW_mbc?asin=" + internalId + "&m=&qid=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=&pc=dp";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("referer", session.getOriginalURL());
+
       headers.put("authority", "www.amazon.com.br");
       headers.put("upgrade-insecure-requests", "1");
       headers.put("service-worker-navigation-preload", "true");
-      headers.put("rrt", "200");
+      headers.put("rrt", "50");
       headers.put("cache-control", "max-age=0");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
 
       int maxAttempt = 3;
@@ -501,10 +548,15 @@ public class BrasilAmazonCrawler extends Crawler {
    private List<Document> fetchDocumentsOffers(Document doc, String internalId) {
       List<Document> docs = new ArrayList<>();
 
-      Element marketplaceUrl = doc.selectFirst("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
+      Element marketplaceUrl = doc.selectFirst(".a-section.olp-link-widget");
 
       if (marketplaceUrl == null) {
-         marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
+         Elements buyBox = doc.select("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
+         if (buyBox != null && !buyBox.isEmpty()){
+            return docs;
+         } else {
+            marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
+         }
       }
 
       if (marketplaceUrl == null) {
