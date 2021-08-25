@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
@@ -62,6 +63,9 @@ public class CostaricaAutomercadoCrawler extends Crawler {
       Matcher matcher = pattern.matcher(session.getOriginalURL());
       if (matcher.find()) {
          internalId = matcher.group(1);
+      }
+      if (internalId == null){
+         return CommonMethods.getLast(session.getOriginalURL().split("id/"));
       }
       return internalId;
 
