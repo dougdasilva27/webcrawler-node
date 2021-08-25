@@ -25,7 +25,7 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       // monta a url com a keyword e a página
-      String url = "https://api.sempreemcasa.com.br/products?page=" + this.currentPage + "&limit=24&text=" + this.keywordEncoded;
+      String url = "https://api.sempreemcasa.com.br/products?page=" + this.currentPage + "&limit=24&text=" + this.keywordEncoded+"&latitude=-23.5489&longitude=-46.6388";
       this.log("Link onde são feitos os crawlers: " + url);
 
       JSONObject json = fetchApi(url);
