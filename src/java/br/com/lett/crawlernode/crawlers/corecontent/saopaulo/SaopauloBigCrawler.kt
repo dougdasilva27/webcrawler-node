@@ -2,11 +2,11 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo
 
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper
-import br.com.lett.crawlernode.util.CrawlerUtils
 import models.RatingsReviews
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.json.JSONObject
 import org.jsoup.nodes.Document
+import java.util.regex.Pattern
 
 class SaopauloBigCrawler(session: Session) : VTEXOldScraper(session) {
    override fun handleCookiesBeforeFetch() {
@@ -27,13 +27,16 @@ class SaopauloBigCrawler(session: Session) : VTEXOldScraper(session) {
       return null
    }
 
-
    override fun scrapInternalpid(doc: Document?): String? {
-      val productJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", null, "}", true, true)
       var internalPid: String? = null
-      if (productJson.has("mpn")) {
-         internalPid = productJson.optString("mpn")
+      val pattern = Pattern.compile("id\":\"(.[0-9]*)\",\"slug")
+      val matcher = pattern.matcher(doc.toString())
+      if (matcher.find()) {
+         internalPid = matcher.group(1)
+
       }
+
       return internalPid
    }
+
 }
