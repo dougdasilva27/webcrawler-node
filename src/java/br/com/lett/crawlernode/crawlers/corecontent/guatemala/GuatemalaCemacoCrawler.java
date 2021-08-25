@@ -136,7 +136,7 @@ public class GuatemalaCemacoCrawler extends Crawler {
             Document doc = Jsoup.parse(response.getBody());
 
             if(doc != null){
-               description = doc.selectFirst("tr.even").html();
+               description = doc.selectFirst("div#caracteristicas").html();
             }else{
                throw new HttpGenericException("Description page null!");
             }
