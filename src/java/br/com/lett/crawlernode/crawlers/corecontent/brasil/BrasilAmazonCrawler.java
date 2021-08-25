@@ -83,8 +83,8 @@ public class BrasilAmazonCrawler extends Crawler {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.NETNUT_RESIDENTIAL_ES,
                ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES,
                ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY
             )).build();
 
@@ -548,13 +548,15 @@ public class BrasilAmazonCrawler extends Crawler {
    private List<Document> fetchDocumentsOffers(Document doc, String internalId) {
       List<Document> docs = new ArrayList<>();
 
-      Element marketplaceUrl = null;
-      Element buyBox = doc.selectFirst("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
+      Element marketplaceUrl = doc.selectFirst(".a-section.olp-link-widget");
 
-      if (buyBox != null) {
-         return docs;
-      } else {
-         marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
+      if (marketplaceUrl == null) {
+         Elements buyBox = doc.select("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
+         if (buyBox != null && !buyBox.isEmpty()){
+            return docs;
+         } else {
+            marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
+         }
       }
 
       if (marketplaceUrl == null) {
