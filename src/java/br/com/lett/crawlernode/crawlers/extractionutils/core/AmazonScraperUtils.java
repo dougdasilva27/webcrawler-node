@@ -1,18 +1,5 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.http.cookie.Cookie;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.slf4j.Logger;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
@@ -25,6 +12,19 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import org.apache.http.cookie.Cookie;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AmazonScraperUtils {
 
@@ -42,16 +42,24 @@ public class AmazonScraperUtils {
    }
 
    public Request getRequestCookies(String url, List<Cookie> cookies, DataFetcher dataFetcher) {
+
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept-Encoding", "no");
+      headers.put("authority", "www.amazon.com.br");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("service-worker-navigation-preload", "true");
+      headers.put("rrt", "200");
+      headers.put("cache-control", "max-age=0");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+
       RequestBuilder request = RequestBuilder.create()
          .setUrl(url)
-         .setCookies(cookies);
+         .setCookies(cookies)
+         .setHeaders(headers);
 
       if (dataFetcher instanceof FetcherDataFetcher) {
-         Map<String, String> headers = new HashMap<>();
-         headers.put("Accept-Encoding", "no");
 
          request = request
-            .setHeaders(headers)
             .setProxyservice(
                Arrays.asList(
                   ProxyCollection.INFATICA_RESIDENTIAL_BR,
@@ -62,7 +70,12 @@ public class AmazonScraperUtils {
                .setForbiddenCssSelector("#captchacharacters")
                .build());
       } else {
-         request.setFetcheroptions(FetcherOptionsBuilder.create()
+
+         request.setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR)).setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .setForbiddenCssSelector("#captchacharacters").build());
       }
@@ -76,16 +89,22 @@ public class AmazonScraperUtils {
 
    /**
     * Fetch html from amazon
-    *
     */
    public String fetchPage(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
       return fetchResponse(url, headers, cookies, dataFetcher).getBody();
    }
 
    private Response fetchResponse(String url, Map<String, String> headers, List<Cookie> cookies, DataFetcher dataFetcher) {
+
       Request requestApache = RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setFetcheroptions(FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
@@ -98,9 +117,8 @@ public class AmazonScraperUtils {
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.BUY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setFetcheroptions(FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
@@ -129,10 +147,9 @@ public class AmazonScraperUtils {
    }
 
    /**
-    *
-    * @param images - array present on html
-    * @param doc - html
-    * @param host - host of image url ex: www.amazon.com or www.amazon.com.br or www.amazon.com.mx
+    * @param images   - array present on html
+    * @param doc      - html
+    * @param host     - host of image url ex: www.amazon.com or www.amazon.com.br or www.amazon.com.mx
     * @param protocol - http or https
     * @return
     */
@@ -167,9 +184,8 @@ public class AmazonScraperUtils {
 
 
    /**
-    *
-    * @param images - array present on html
-    * @param host - host of image url ex: www.amazon.com or www.amazon.com.br or www.amazon.com.mx
+    * @param images   - array present on html
+    * @param host     - host of image url ex: www.amazon.com or www.amazon.com.br or www.amazon.com.mx
     * @param protocol - http or https
     * @return
     */
@@ -248,10 +264,10 @@ public class AmazonScraperUtils {
       for (Element e : scripts) {
          // This json can be broken, we need to remove additional ','
          String script = e.html()
-               .replace(" ", "")
-               .replaceAll("\n", "")
-               .replace(",}", "}")
-               .replace(",]", "]");
+            .replace(" ", "")
+            .replaceAll("\n", "")
+            .replace(",}", "}")
+            .replace(",]", "]");
 
          if (script.contains(firstIndex) && script.contains(lastIndex) && (script.contains(idColorImages) || script.contains(idNormalImages))) {
             String json = CrawlerUtils.extractSpecificStringFromScript(script, firstIndex, false, lastIndex, false);
