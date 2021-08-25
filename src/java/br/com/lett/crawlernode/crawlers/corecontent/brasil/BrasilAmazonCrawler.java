@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
@@ -48,7 +49,6 @@ public class BrasilAmazonCrawler extends Crawler {
    private static final String SELLER_NAME_2 = "amazon.com";
    private static final String SELLER_NAME_3 = "Amazon";
 
-
    private static final String IMAGES_HOST = "images-na.ssl-images-amazon.com";
    private static final String IMAGES_PROTOCOL = "https";
 
@@ -64,6 +64,32 @@ public class BrasilAmazonCrawler extends Crawler {
    @Override
    public void handleCookiesBeforeFetch() {
       this.cookies = amazonScraperUtils.handleCookiesBeforeFetch(HOME_PAGE, cookies, dataFetcher);
+   }
+
+   @Override
+   protected Document fetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept-Encoding", "no");
+      headers.put("authority", "www.amazon.com.br");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("service-worker-navigation-preload", "true");
+      headers.put("rrt", "200");
+      headers.put("cache-control", "max-age=0");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+
+      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY,
+               ProxyCollection.INFATICA_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR)).build();
+
+      String content = this.dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(content);
+
    }
 
    @Override
@@ -441,15 +467,19 @@ public class BrasilAmazonCrawler extends Crawler {
       return name;
    }
 
-   private Document fetchDocumentsOffersRequest(int page, String internalId) {
+   private Document fetchDocumentsOffersRequest(String internalId) {
       Document doc;
-      String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pageno=" + page;
+      // "https://www.amazon.com.br/gp/aod/ajax/ref=aod_page_" + page + "?asin=" + internalId + "&pageno=" + page;
+      String urlMarketPlace = "https://www.amazon.com.br/gp/aod/ajax/ref=dp_aod_NEW_mbc?asin=" + internalId + "&m=&qid=&smid=&sourcecustomerorglistid=&sourcecustomerorglistitemid=&sr=&pc=dp";
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("upgrade-insecure-requests", "1");
       headers.put("referer", session.getOriginalURL());
-
-
+      headers.put("authority", "www.amazon.com.br");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("service-worker-navigation-preload", "true");
+      headers.put("rrt", "200");
+      headers.put("cache-control", "max-age=0");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
 
       int maxAttempt = 3;
       int attempt = 1;
@@ -473,8 +503,6 @@ public class BrasilAmazonCrawler extends Crawler {
 
       Element marketplaceUrl = doc.selectFirst("#moreBuyingChoices_feature_div .a-box.a-text-center h5 span");
 
-      int page = 1;
-
       if (marketplaceUrl == null) {
          marketplaceUrl = doc.selectFirst(".a-section.a-spacing-base span .a-declarative a");
       }
@@ -489,15 +517,14 @@ public class BrasilAmazonCrawler extends Crawler {
 
       if (marketplaceUrl != null) {
 
-         Document docMarketplace = fetchDocumentsOffersRequest(page, internalId);
+         Document docMarketplace = fetchDocumentsOffersRequest(internalId);
          docs.add(docMarketplace);
 
          int totalOffers = CrawlerUtils.scrapIntegerFromHtml(docMarketplace, "#aod-filter-offer-count-string", false);
          Elements offers = docMarketplace.select("#aod-offer");
 
          if (totalOffers != offers.size()) {
-            page++;
-            docMarketplace = fetchDocumentsOffersRequest(page, internalId);
+            docMarketplace = fetchDocumentsOffersRequest(internalId);
             docs.add(docMarketplace);
          }
       }
