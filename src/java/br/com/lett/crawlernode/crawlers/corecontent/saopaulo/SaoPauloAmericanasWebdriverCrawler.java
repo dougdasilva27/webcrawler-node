@@ -19,15 +19,15 @@ public class SaoPauloAmericanasWebdriverCrawler extends SaopauloAmericanasCrawle
       super(session);
    }
 
-   @Override
-   protected Document fetch() {
+   private Document webdriverRequest(String url) {
       Document doc;
 
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.BUY_HAPROXY, session);
 
          if (webdriver != null) {
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            webdriver.terminate();
          } else {
             throw new WebDriverException("Failed to instantiate webdriver");
          }
@@ -40,23 +40,13 @@ public class SaoPauloAmericanasWebdriverCrawler extends SaopauloAmericanasCrawle
    }
 
    @Override
+   protected Document fetch() {
+      return webdriverRequest(session.getOriginalURL());
+   }
+
+   @Override
    protected Document acessOffersPage(String offersPageURL) {
-      Document doc;
-
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(offersPageURL, ProxyCollection.BUY_HAPROXY, session);
-
-         if (webdriver != null) {
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-         } else {
-            throw new WebDriverException("Failed to instantiate webdriver");
-         }
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         throw e;
-      }
-
-      return doc;
+      return webdriverRequest(offersPageURL);
    }
 
    @Override
@@ -70,7 +60,7 @@ public class SaoPauloAmericanasWebdriverCrawler extends SaopauloAmericanasCrawle
          Element iframe = datasheet.selectFirst("iframe");
 
          if (iframe != null) {
-            Document docDescriptionFrame = acessOffersPage(iframe.attr("src"));
+            Document docDescriptionFrame = webdriverRequest(iframe.attr("src"));
             if (docDescriptionFrame != null) {
                description.append(docDescriptionFrame.html());
             }
@@ -89,7 +79,7 @@ public class SaoPauloAmericanasWebdriverCrawler extends SaopauloAmericanasCrawle
 
          if (desc2 != null && !alreadyCapturedHtmlSlide) {
             String urlDesc2 = homePage + "product-description/acom/" + internalPid;
-            Document docDescriptionFrame = acessOffersPage(urlDesc2);
+            Document docDescriptionFrame = webdriverRequest(urlDesc2);
             if (docDescriptionFrame != null) {
                description.append(docDescriptionFrame.html());
             }
