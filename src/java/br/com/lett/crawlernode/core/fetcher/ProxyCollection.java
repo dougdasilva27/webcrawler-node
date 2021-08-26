@@ -1,19 +1,18 @@
 package br.com.lett.crawlernode.core.fetcher;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import br.com.lett.crawlernode.core.session.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.lett.crawlernode.core.fetcher.models.LettProxy;
+import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.database.DatabaseDataFetcher;
 import br.com.lett.crawlernode.database.DatabaseManager;
 import br.com.lett.crawlernode.util.Interval;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 
 public class ProxyCollection {
@@ -40,6 +39,12 @@ public class ProxyCollection {
    public static final String BR_OXYLABS = "br-oxylabs";
    public static final String BE_OXYLABS = "oxylabs_server_be";
    public static final String NO_PROXY = "no_proxy";
+   public static final String NETNUT_RESIDENTIAL_CO_HAPROXY = "netnut_residential_co_haproxy";
+   public static final String NETNUT_RESIDENTIAL_CH_HAPROXY = "netnut_residential_cl_haproxy";
+   public static final String NETNUT_RESIDENTIAL_AR_HAPROXY = "netnut_residential_ar_haproxy";
+   public static final String NETNUT_RESIDENTIAL_ANY_HAPROXY = "netnut_residential_any_haproxy";
+
+
 
    // EQI PROXIES
    public static final String INFATICA_RESIDENTIAL_BR_EQI = "infatica_residential_br_eqi";
