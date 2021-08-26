@@ -20,6 +20,8 @@ import models.pricing.*;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CostaricaAutomercadoCrawler extends Crawler {
 
@@ -56,8 +58,17 @@ public class CostaricaAutomercadoCrawler extends Crawler {
    }
 
    private String getProductId() {
+      String internalId = null;
+      Pattern pattern = Pattern.compile("id\\/(.*)\\?");
+      Matcher matcher = pattern.matcher(session.getOriginalURL());
+      if (matcher.find()) {
+         internalId = matcher.group(1);
+      }
+      if (internalId == null){
+         return CommonMethods.getLast(session.getOriginalURL().split("id/"));
+      }
+      return internalId;
 
-      return CommonMethods.getLast(session.getOriginalURL().split("id/"));
    }
 
    @Override
@@ -106,7 +117,7 @@ public class CostaricaAutomercadoCrawler extends Crawler {
          }
       } else {
          name = data.optString("presentation");
-         if (name != null){
+         if (name != null) {
             buildName.append(name);
          }
       }
