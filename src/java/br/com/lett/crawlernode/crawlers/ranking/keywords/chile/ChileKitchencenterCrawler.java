@@ -1,11 +1,18 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.chile;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import org.apache.http.cookie.Cookie;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+
+import java.util.List;
 
 public class ChileKitchencenterCrawler extends CrawlerRankingKeywords {
 
@@ -14,15 +21,27 @@ public class ChileKitchencenterCrawler extends CrawlerRankingKeywords {
   }
 
   @Override
+   protected Document fetchDocument(String url) {
+      this.currentDoc = new Document(url);
+
+      Request request = Request.RequestBuilder.create().setUrl(url).build();
+      Response response = dataFetcher.get(session, request);
+
+      String content = response.getBody().replace("\\","");
+
+      return Jsoup.parse(content);
+   }
+
+  @Override
   protected void extractProductsFromCurrentPage() {
     this.pageSize = 12;
     this.log("Página " + this.currentPage);
 
-    String url = "https://www.kitchencenter.cl/products?keywords=" + this.keywordWithoutAccents.replace(" ", "%20") + "&page=" + this.currentPage;
-
+    String url = "https://kitchencenter.hawksearch.com/sites/kitchencenter//?searchInput=" + this.keywordWithoutAccents.replace(" ", "%20") + "&pg=" + this.currentPage + "&ajax=1&json=1&hawkcustom=undefined";
     this.log("Link onde são feitos os crawlers: " + url);
     this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select("#products div[id]");
+
+    Elements products = this.currentDoc.select(".card-title");
 
     if (!products.isEmpty()) {
       if (this.totalProducts == 0) {
@@ -30,8 +49,9 @@ public class ChileKitchencenterCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalPid = CommonMethods.getLast(e.attr("id").split("_"));
-        String productUrl = crawlProductUrl(e);
+         String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href");
+
+         String internalPid = CommonMethods.getLast(productUrl.split("="));
 
         saveDataProduct(null, internalPid, productUrl);
 
@@ -48,33 +68,8 @@ public class ChileKitchencenterCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-
-  @Override
-  protected void setTotalProducts() {
-    int total = 0;
-    Elements stars = this.currentDoc.select("#filter-stars .list-group-item > span");
-    for (Element e : stars) {
-      String text = e.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        total += Integer.parseInt(text);
-      }
-    }
-
-    if (total > 0) {
-      this.totalProducts = total;
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlProductUrl(Element e) {
-    String url = null;
-
-    Element eUrl = e.selectFirst("a[itemprop=url]");
-    if (eUrl != null) {
-      url = CrawlerUtils.sanitizeUrl(eUrl, "href", "https:", "www.kitchencenter.cl");
-    }
-
-    return url;
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return true;
+   }
 }
