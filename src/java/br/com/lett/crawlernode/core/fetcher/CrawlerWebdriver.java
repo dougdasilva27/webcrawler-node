@@ -88,10 +88,16 @@ public class CrawlerWebdriver {
       }
    }
 
-   public void waitPageLoad(long timeOutInSeconds){
-      Wait<WebDriver> wait = new WebDriverWait(driver,timeOutInSeconds);
-      wait.until( (ExpectedCondition<Boolean>) wd ->
-         ((JavascriptExecutor) wd).executeScript("return document.readyState").equals("complete"));
+   public void waitPageLoad(long timeOutInSeconds) {
+
+      try {
+         Wait<WebDriver> wait = new WebDriverWait(driver, timeOutInSeconds);
+         wait.until((ExpectedCondition<Boolean>) wd ->
+            ((JavascriptExecutor) wd).executeScript("return document.readyState").equals("complete"));
+      } catch (Exception e) {
+         Logging.printLogInfo(logger, "Timeout no carregamento da página após " + timeOutInSeconds + " segundos");
+      }
+
    }
 
    public WebElement executeJavascript(String javascript) {
