@@ -10,7 +10,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +86,12 @@ public class CrawlerWebdriver {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
          Thread.currentThread().interrupt();
       }
+   }
+
+   public void waitPageLoad(long timeOutInSeconds){
+      Wait<WebDriver> wait = new WebDriverWait(driver,timeOutInSeconds);
+      wait.until( (ExpectedCondition<Boolean>) wd ->
+         ((JavascriptExecutor) wd).executeScript("return document.readyState").equals("complete"));
    }
 
    public WebElement executeJavascript(String javascript) {
