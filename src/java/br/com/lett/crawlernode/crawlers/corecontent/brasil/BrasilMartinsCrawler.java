@@ -66,7 +66,7 @@ public class BrasilMartinsCrawler extends Crawler {
          return super.fetch();
       }
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
          Logging.printLogDebug(logger, session, "awaiting product page without login");
 
@@ -94,7 +94,7 @@ public class BrasilMartinsCrawler extends Crawler {
          webdriver.clickOnElementViaJavascript(login);
 
          Logging.printLogDebug(logger, session, "awaiting product page");
-         webdriver.waitLoad(10000);
+         waitForElement(webdriver.driver, ".qdValue");
 
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -113,6 +113,8 @@ public class BrasilMartinsCrawler extends Crawler {
       WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
+
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
