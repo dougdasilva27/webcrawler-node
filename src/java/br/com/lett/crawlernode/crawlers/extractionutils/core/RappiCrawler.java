@@ -96,7 +96,7 @@ public abstract class RappiCrawler extends Crawler {
       if (productId != null && storeId != null) {
          String token = fetchToken();
 
-         JSONObject data = JSONUtils.stringToJson(fetchProduct(productId, storeId, token));
+         JSONObject data = fetchProduct(productId, storeId, token);
 
          JSONArray components = JSONUtils.getValueRecursive(data, "data.components", JSONArray.class);
 
@@ -126,8 +126,8 @@ public abstract class RappiCrawler extends Crawler {
       }
    }
 
-   protected String fetchProduct(String productId, String storeId, String token) {
-      String url = "https://services." + getHomeDomain() + "/api/dynamic/context/content";
+   protected JSONObject fetchProduct(String productId, String storeId, String token){
+      String url = "https://services." + getHomeDomain() + "/api/ms/web-proxy/dynamic-list/cpgs";
 
       Map<String, String> headers = new HashMap<>();
       headers.put("accept", "application/json, text/plain, */*");
@@ -136,7 +136,11 @@ public abstract class RappiCrawler extends Crawler {
       headers.put("content-type", "application/json");
       headers.put("authorization", token);
 
-      String payload = "{\"state\":{\"product_id\":\"" + productId + "\"},\"limit\":100,\"offset\":0,\"context\":\"product_detail\",\"stores\":[" + storeId + "]}";
+      String productFriendlyUrl = storeId+"_"+productId;
+
+      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"0\",\"lng\":\"0\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\""+productFriendlyUrl+"\"}}";
+
+
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -144,7 +148,12 @@ public abstract class RappiCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      return this.dataFetcher.post(session, request).getBody();
+      String body = this.dataFetcher.post(session, request).getBody();
+
+      JSONObject jsonObject = CrawlerUtils.stringToJSONObject(body);
+
+      return jsonObject.optJSONObject("dynamic_list_response");
+
    }
 
    protected String fetchToken() {
@@ -364,7 +373,7 @@ public abstract class RappiCrawler extends Crawler {
    }
 
    protected boolean crawlAvailability(JSONObject json) {
-      return json.has("is_available") && json.getBoolean("is_available");
+      return json.has("in_stock") && json.getBoolean("in_stock");
    }
 
    protected String crawlPrimaryImage(JSONObject json) {
