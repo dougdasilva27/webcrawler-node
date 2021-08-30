@@ -22,7 +22,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class BrasilAgrosoloCrawler extends Crawler {
 
@@ -85,11 +88,11 @@ public class BrasilAgrosoloCrawler extends Crawler {
       return doc.selectFirst("div.content.produto") != null;
    }
 
-   private String scrapInternalPid(){
+   private String scrapInternalPid() {
       String internalPid = "";
       String[] splitUrl = session.getOriginalURL().split("-");
 
-      if(splitUrl.length > 0){
+      if (splitUrl.length > 0) {
          return CommonMethods.getLast(splitUrl);
       }
 
@@ -111,7 +114,10 @@ public class BrasilAgrosoloCrawler extends Crawler {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc, json);
       List<String> sales = new ArrayList<>();
-      sales.add(CrawlerUtils.calculateSales(pricing));
+      String calculateSales = CrawlerUtils.calculateSales(pricing);
+      if (calculateSales != null) {
+         sales.add(calculateSales);
+      }
 
       offers.add(Offer.OfferBuilder.create()
          .setMainPagePosition(1)
@@ -130,7 +136,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(json, "price", true);
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.fbits-preco .precoDe", null, true, ',', session);
 
-      CreditCards creditCards = scrapCreditCards(doc,spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
          .setFinalPrice(spotlightPrice)
          .build();
@@ -145,7 +151,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
    private CreditCards scrapCreditCards(Document doc, Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-      Installments installments = scrapInstallments(doc,spotlightPrice);
+      Installments installments = scrapInstallments(doc, spotlightPrice);
 
       Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
@@ -165,7 +171,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
 
       Elements installmentsEl = doc.select("div.details-content > p");
 
-      if(!installmentsEl.isEmpty()) {
+      if (!installmentsEl.isEmpty()) {
          for (Element el : installmentsEl) {
             Elements results = el.select("b");
 
@@ -179,7 +185,7 @@ public class BrasilAgrosoloCrawler extends Crawler {
                   .build());
             }
          }
-      }else {
+      } else {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
             .setInstallmentPrice(spotlightPrice)
