@@ -5,7 +5,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.core.MexicoSamsclubCrawl
 
 public class MexicoSamsclublaestanciaguadalajaraCrawler extends MexicoSamsclubCrawler {
 
-   private static final String STORE_ID = "0000006296";
+   private static final String STORE_ID = "0000006395";
 
    public MexicoSamsclublaestanciaguadalajaraCrawler(Session session) {
       super(session);
