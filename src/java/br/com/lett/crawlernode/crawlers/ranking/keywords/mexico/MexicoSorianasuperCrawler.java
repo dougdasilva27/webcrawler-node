@@ -86,7 +86,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
 
-      return this.currentPage != pages;
+      return this.currentPage < pages;
 
    }
 
