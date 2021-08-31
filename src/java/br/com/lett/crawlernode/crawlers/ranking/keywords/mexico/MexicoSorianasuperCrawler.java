@@ -22,6 +22,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
    }
 
    private static final String PROTOCOL = "https://";
+   private static int pages = 0;
    private static final String DOMAIN = "superentucasa.soriana.com/Default.aspx";
 
 
@@ -57,6 +58,10 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
       Elements products = this.currentDoc.select(".product-item");
 
       if (!products.isEmpty()) {
+         if (pages == 0){
+            Elements pagination = this.currentDoc.select(".pagination li a");
+            pages = pagination.size();
+         }
 
          for (Element e : products) {
 
@@ -80,7 +85,9 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return true;
+
+      return this.currentPage != pages;
+
    }
 
    private String crawlInternalId(Element e) {
