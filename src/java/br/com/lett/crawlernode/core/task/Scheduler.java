@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.aws.sqs.QueueHandler;
 import br.com.lett.crawlernode.aws.sqs.QueueService;
 import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.ScraperInformation;
@@ -62,7 +63,11 @@ public class Scheduler {
 
                // send the batch
                SendMessageBatchResult result;
-               result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
+               if(session instanceof SeedCrawlerSession){
+                  result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString(), entries);
+               }else{
+                  result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
+               }
 
                // get send request results
                result.getSuccessful();
