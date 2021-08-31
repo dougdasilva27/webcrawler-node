@@ -14,8 +14,13 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 
 public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
 
+   protected String lat;
+   protected String longi;
+
    public BrasilSempreemcasaCrawler(Session session) {
       super(session);
+      lat = session.getOptions().optString("latitude");
+      longi = session.getOptions().optString("longitude");
    }
 
    @Override
@@ -25,7 +30,7 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
       this.log("Página " + this.currentPage);
 
       // monta a url com a keyword e a página
-      String url = "https://api.sempreemcasa.com.br/products?page=" + this.currentPage + "&limit=24&text=" + this.keywordEncoded+"&latitude=-23.5489&longitude=-46.6388";
+      String url = "https://api.sempreemcasa.com.br/products?page=" + this.currentPage + "&limit=24&text=" + this.keywordEncoded+"&latitude=" + lat + "&longitude=" + longi;
       this.log("Link onde são feitos os crawlers: " + url);
 
       JSONObject json = fetchApi(url);
