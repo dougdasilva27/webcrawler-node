@@ -79,7 +79,11 @@ public class Scheduler {
             Logging.printLogDebug(LOGGER, session, "Sending remaining batch of " + entries.size() + " messages...");
 
             SendMessageBatchResult result = null;
-            result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
+            if(session instanceof SeedCrawlerSession){
+               result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString(), entries);
+            }else{
+               result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
+            }
 
             result.getSuccessful();
 
