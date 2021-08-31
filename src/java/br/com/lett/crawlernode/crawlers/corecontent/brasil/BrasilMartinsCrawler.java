@@ -70,30 +70,35 @@ public class BrasilMartinsCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "awaiting product page without login");
 
-         webdriver.mouseOver("#go-login");
+         waitForElement(webdriver.driver, "#lgpdMdAccept #lgpdAcceptButton");
+         WebElement acceptCookie = webdriver.driver.findElement(By.cssSelector("#lgpdMdAccept #lgpdAcceptButton"));
+         webdriver.clickOnElementViaJavascript(acceptCookie);
 
+         webdriver.mouseOver("#go-login");
          waitForElement(webdriver.driver, "#j_username");
          WebElement email = webdriver.driver.findElement(By.cssSelector("#j_username"));
          email.sendKeys(login);
 
-         webdriver.waitLoad(2000);
-         waitForElement(webdriver.driver, "#selectCNPJ");
-         WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#selectCNPJ"));
-         webdriver.clickOnElementViaJavascript(cnpj);
-
-         webdriver.waitLoad(2000);
          waitForElement(webdriver.driver, "#j_password");
          WebElement pass = webdriver.driver.findElement(By.cssSelector("#j_password"));
          pass.sendKeys(password);
 
+         webdriver.waitLoad(10000);
+         waitForElement(webdriver.driver, "#selectCNPJ");
+         WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#selectCNPJ"));
+         webdriver.clickOnElementViaJavascript(cnpj);
+         webdriver.waitLoad(4000);
+
+
          Logging.printLogDebug(logger, session, "awaiting login button");
          webdriver.waitLoad(2000);
 
-         waitForElement(webdriver.driver, ".pt-btn-login");
-         WebElement login = webdriver.driver.findElement(By.cssSelector(".pt-btn-login"));
+         WebElement login = webdriver.driver.findElement(By.cssSelector("#loginTopo-grecaptcha button.pt-btn-login"));
          webdriver.clickOnElementViaJavascript(login);
 
+         webdriver.waitLoad(2000);
          Logging.printLogDebug(logger, session, "awaiting product page");
+
          waitForElement(webdriver.driver, ".qdValue");
 
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
@@ -113,7 +118,6 @@ public class BrasilMartinsCrawler extends Crawler {
       WebDriverWait wait = new WebDriverWait(driver, 20);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
-
 
 
    @Override
