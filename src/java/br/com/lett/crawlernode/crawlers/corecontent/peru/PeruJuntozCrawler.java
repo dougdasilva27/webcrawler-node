@@ -169,7 +169,7 @@ public class PeruJuntozCrawler extends Crawler {
       Pricing pricing = scrapPricing(jsonObject);
       sales.add(CrawlerUtils.calculateSales(pricing));
 
-      boolean isMainSeller = jsonObject.optString("StoreName").toLowerCase(Locale.ROOT).equals("juntoz");
+      boolean isMainSeller = jsonObject.optString("StoreName").toLowerCase(Locale.ROOT).contains("juntoz");
       String sellerName = jsonObject.optString("StoreName");
 
       offers.add(Offer.OfferBuilder.create()
