@@ -44,7 +44,7 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
             JSONObject product = (JSONObject) e;
 
             String internalPid = product.optString("ambev_product_code");
-            String productUrl = "https://sempreemcasa.com.br/produtos/" + product.optString("slug");
+            String productUrl = "https://sempreemcasa.com.br/produtos/" + product.optString("slug") + "?latitude=" + lat + "&longitude=" + longi;
 
             saveDataProduct(null, internalPid, productUrl);
 
