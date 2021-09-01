@@ -29,7 +29,7 @@ public abstract class ArgentinaCarrefoursuper extends CarrefourCrawler {
 
    @Override
    protected String getHomePage() {
-      return "https://supermercado.carrefour.com.ar/";
+      return "https://carrefour.com.ar/";
    }
 
    @Override

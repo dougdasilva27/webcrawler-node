@@ -19,7 +19,7 @@ import java.util.Map;
 
 public abstract class ArgentinaCarrefoursuper extends CrawlerRankingKeywords {
 
-   private static final String HOME_PAGE = "https://supermercado.carrefour.com.ar/";
+   private static final String HOME_PAGE = "https://carrefour.com.ar/";
 
    public ArgentinaCarrefoursuper(Session session) {
       super(session);
