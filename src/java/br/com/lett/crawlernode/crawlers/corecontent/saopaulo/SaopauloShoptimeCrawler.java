@@ -45,32 +45,6 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
-      Request request;
-
-      if (dataFetcher instanceof FetcherDataFetcher) {
-         request = Request.RequestBuilder.create().setUrl(HOME_PAGE)
-            .setCookies(cookies)
-            .setProxyservice(
-               Arrays.asList(
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                  ProxyCollection.BUY
-               )
-            ).mustSendContentEncoding(false)
-            .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
-               .setForbiddenCssSelector("#px-captcha")
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true).build())
-            .build();
-      } else {
-         request = Request.RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
-      }
-
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.shoptime.com.br", "/", null, session, dataFetcher);
-   }
-
-   @Override
    protected Offers scrapOffers(Document doc, String internalId, String internalPid, int arrayPosition) throws MalformedPricingException, OfferException {
 
       Offers offers = new Offers();
@@ -221,7 +195,7 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
 
    @Override
    public void setHeaders() {
-      super.headers.put("authority", "www.americanas.com.br");
+      super.headers.put("host", "www.shoptime.com.br");
       super.headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
       super.headers.put("sec-ch-ua-mobile", "?0");
       super.headers.put("upgrade-insecure-requests", "1");

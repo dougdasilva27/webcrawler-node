@@ -57,7 +57,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       JSONObject product = JSONUtils.getValueRecursive(frontPageJson,"pages.undefined.queries.productReviews.result.product",JSONObject.class);
       JSONObject reviews = product != null ? product.optJSONObject("reviews"): null;
 
-
       if(reviews != null) {
 
          JSONObject rating = product.optJSONObject("rating");
@@ -328,7 +327,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          && statusCode != 404)) {
          request.setProxyServices(Arrays.asList(
             ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.BUY,
             ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
          content = new FetcherDataFetcher().get(session, request).getBody();
