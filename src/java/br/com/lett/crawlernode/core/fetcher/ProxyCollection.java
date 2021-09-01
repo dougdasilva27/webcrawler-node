@@ -39,10 +39,18 @@ public class ProxyCollection {
    public static final String BR_OXYLABS = "br-oxylabs";
    public static final String BE_OXYLABS = "oxylabs_server_be";
    public static final String NO_PROXY = "no_proxy";
+
+   public static final String NETNUT_RESIDENTIAL_UK = "netnut_residential_uk";
+   public static final String NETNUT_RESIDENTIAL_US= "netnut_residential_us";
+   public static final String NETNUT_RESIDENTIAL_PT = "netnut_residential_pt";
+
    public static final String NETNUT_RESIDENTIAL_CO_HAPROXY = "netnut_residential_co_haproxy";
-   public static final String NETNUT_RESIDENTIAL_CH_HAPROXY = "netnut_residential_cl_haproxy";
+   public static final String NETNUT_RESIDENTIAL_MX_HAPROXY = "netnut_residential_cl_haproxy";
    public static final String NETNUT_RESIDENTIAL_AR_HAPROXY = "netnut_residential_ar_haproxy";
    public static final String NETNUT_RESIDENTIAL_ANY_HAPROXY = "netnut_residential_any_haproxy";
+   public static final String NETNUT_RESIDENTIAL_DE_HAPROXY = "netnut_residential_uk_haproxy";
+   public static final String NETNUT_RESIDENTIAL_US_HAPROXY = "netnut_residential_us_haproxy";
+   public static final String NETNUT_RESIDENTIAL_PT_HAPROXY = "netnut_residential_pt_haproxy";
 
 
 
