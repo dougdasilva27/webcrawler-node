@@ -64,10 +64,10 @@ public class Scheduler {
                // send the batch
                SendMessageBatchResult result;
                if(session instanceof SeedCrawlerSession){
-                  Logging.printLogDebug(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString());
+                  Logging.printLogInfo(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString());
                   result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString(), entries);
                }else{
-                  Logging.printLogDebug(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD.toString());
+                  Logging.printLogInfo(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD.toString());
                   result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
                }
 
@@ -82,10 +82,10 @@ public class Scheduler {
 
             SendMessageBatchResult result = null;
             if(session instanceof SeedCrawlerSession){
-               Logging.printLogDebug(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString());
+               Logging.printLogInfo(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString());
                result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD_SEED.toString(), entries);
             }else{
-               Logging.printLogDebug(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD.toString());
+               Logging.printLogInfo(LOGGER, session, "Sending to queue: " + QueueName.PRODUCT_IMAGE_DOWNLOAD.toString());
                result = QueueService.sendBatchMessages(queueHandler.getSqs(), QueueName.PRODUCT_IMAGE_DOWNLOAD.toString(), entries);
             }
 
