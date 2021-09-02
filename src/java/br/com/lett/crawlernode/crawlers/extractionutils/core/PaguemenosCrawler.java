@@ -5,18 +5,15 @@ import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import models.AdvancedRatingReview;
 import models.RatingsReviews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.*;
 
 public class PaguemenosCrawler extends VTEXNewScraper {
 
@@ -68,7 +65,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
       if (jsonRating != null) {
          JSONObject data = jsonRating.has("data") ? jsonRating.optJSONObject("data") : new JSONObject();
-         JSONObject productReviews = data.has("productReviews") ? data.optJSONObject("productReviews") : new JSONObject();
+         JSONObject productReviews = data.has("productSummary") ? data.optJSONObject("productSummary") : new JSONObject();
          element = productReviews.has("Element") ? productReviews.optJSONObject("Element") : new JSONObject();
       }
 
@@ -90,27 +87,26 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
       if (reviews != null) {
 
-         JSONObject ratingHistogram = reviews.has("RatingHistogram") ? reviews.optJSONObject("RatingHistogram") : new JSONObject();
-         JSONArray ratingList = ratingHistogram.has("RatingList") ? ratingHistogram.optJSONArray("RatingList") : new JSONArray();
+         JSONArray ratingList = reviews.has("TopOpinions") ? reviews.optJSONArray("TopOpinions") : new JSONArray();
 
          if (ratingList != null) {
 
             for (int i = 0; i < ratingList.length(); i++) {
                switch (i) {
                   case 0:
-                     advancedRatingReview.setTotalStar5(((JSONObject) ratingList.get(i)).optInt("Total", 0));
+                     advancedRatingReview.setTotalStar5(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
                      break;
                   case 1:
-                     advancedRatingReview.setTotalStar4(((JSONObject) ratingList.get(i)).optInt("Total", 0));
+                     advancedRatingReview.setTotalStar4(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
                      break;
                   case 2:
-                     advancedRatingReview.setTotalStar3(((JSONObject) ratingList.get(i)).optInt("Total", 0));
+                     advancedRatingReview.setTotalStar3(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
                      break;
                   case 3:
-                     advancedRatingReview.setTotalStar2(((JSONObject) ratingList.get(i)).optInt("Total", 0));
+                     advancedRatingReview.setTotalStar2(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
                      break;
                   case 4:
-                     advancedRatingReview.setTotalStar1(((JSONObject) ratingList.get(i)).optInt("Total", 0));
+                     advancedRatingReview.setTotalStar1(((JSONObject) ratingList.get(i)).optInt("Rate", 0));
                      break;
                   default:
                }
@@ -123,7 +119,7 @@ public class PaguemenosCrawler extends VTEXNewScraper {
 
    private String createVariablesBase64(String internalId) {
       JSONObject variables = new JSONObject();
-      variables.put("productId",internalId);
+      variables.put("productId", internalId);
       variables.put("page", 1);
       variables.put("count", 5);
       variables.put("orderBy", 0);
@@ -135,9 +131,9 @@ public class PaguemenosCrawler extends VTEXNewScraper {
    private JSONObject crawlPageRatings(String internalId) throws UnsupportedEncodingException {
 
       String query = "{\"persistedQuery\":" +
-                       "{\"version\":1,\"sha256Hash\":\"b2f2e216d6fadc25b01d0386b44fd8ebc55fa10b984439b6143d7aa5860bf86e\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
-                        "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
-                        "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
+         "{\"version\":1,\"sha256Hash\":\"4f721042cb5512f59c6aa3030e4a52e79ae1329a53747a6a3bcbff4c66d79f3f\",\"sender\":\"yourviews.yourviewsreviews@0.x\"," +
+         "\"provider\":\"yourviews.yourviewsreviews@0.x\"}," +
+         "\"variables\":\"" + createVariablesBase64(internalId) + "\"}";
 
       String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
