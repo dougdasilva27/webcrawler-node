@@ -50,8 +50,9 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
       this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
+      String keyword = this.keywordEncoded.replace(" ","+");
 
-      String url = "https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + this.keywordEncoded + "&pmin=0.01&start=" + (this.currentPage - 1) * 12 + "&sz=12&selectedUrl=https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + this.keywordEncoded + "&pmin=0%2e01&start=" + (this.currentPage - 1) * 12 + "&sz=12";
+      String url = "https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + keyword + "&pmin=0.01&start=" + (this.currentPage - 1) * 12 + "&sz=12&selectedUrl=https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + keyword + "&pmin=0%2e01&start=" + (this.currentPage - 1) * 12 + "&sz=12";
       this.log("Link onde são feitos os crawlers: " + url);
 
       this.currentDoc = fetchDocument(url);
