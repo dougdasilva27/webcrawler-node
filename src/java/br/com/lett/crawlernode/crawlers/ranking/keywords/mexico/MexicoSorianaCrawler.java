@@ -1,48 +1,72 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
 
    public MexicoSorianaCrawler(Session session) {
       super(session);
+      fetchMode = FetchMode.FETCHER;
+   }
+
+   @Override
+   protected void processBeforeFetch() {
+      super.processBeforeFetch();
+      Request request = Request.RequestBuilder.create().setUrl("https://www.soriana.com/").build();
+      Response response = this.dataFetcher.get(session, request);
+
+      this.cookies = response.getCookies();
+   }
+
+   @Override
+   protected Document fetchDocument(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Accept-Encoding","gzip, deflate, br");
+      headers.put("Accept","*/*");
+      headers.put("cookie",CommonMethods.cookiesToString(this.cookies));
+
+      Request request = Request.RequestBuilder.create().setUrl(url).setHeaders(headers).build();
+
+      String content = this.dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(content);
    }
 
    @Override
    protected void extractProductsFromCurrentPage() {
-      //número de produtos por página do market
-      this.pageSize = 20;
+      this.pageSize = 12;
 
       this.log("Página " + this.currentPage);
 
-      //monta a url com a keyword e a página
-      // primeira página começa em 0 e assim vai.
-
-      String url = "https://www.soriana.com/soriana/es/search?q=" + this.keywordEncoded + "&page=" + (this.currentPage - 1);
+      String url = "https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + this.keywordEncoded + "&pmin=0.01&start=" + (this.currentPage - 1) * 12 + "&sz=12&selectedUrl=https://www.soriana.com/on/demandware.store/Sites-Soriana-Site/default/Search-UpdateGrid?q=" + this.keywordEncoded + "&pmin=0%2e01&start=" + (this.currentPage - 1) * 12 + "&sz=12";
       this.log("Link onde são feitos os crawlers: " + url);
 
-      //chama função de pegar a url
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select(".product-item");
+      Elements products = this.currentDoc.select(".product-tile--wrapper.d-flex");
 
-      //se obter 1 ou mais links de produtos e essa página tiver resultado faça:
       if (products.size() >= 1) {
-         //se o total de busca não foi setado ainda, chama a função para setar
          if (this.totalProducts == 0) {
             setTotalProducts();
          }
 
          for (Element e : products) {
 
-            // InternalId
-            String internalId = crawlInternalId(e);
-
-            // Url do produto
-            String productUrl = crawlProductUrl(e);
+            String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product", "data-pid");
+            String productUrl = CrawlerUtils.scrapUrl(e, ".image-container a", "href", "https", "www.soriana.com");
 
             saveDataProduct(internalId, null, productUrl);
 
@@ -61,49 +85,8 @@ public class MexicoSorianaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected boolean hasNextPage() {
-      return this.currentDoc.selectFirst(".pagination-next.disabled") == null;
+      return true;
 
    }
 
-   @Override
-   protected void setTotalProducts() {
-      Element totalElement = this.currentDoc.select(".results h1").first();
-
-      if (totalElement != null) {
-         try {
-            this.totalProducts = Integer.parseInt(totalElement.text().replaceAll(this.keywordWithoutAccents, "").replaceAll("[^0-9]", "").trim());
-         } catch (Exception e) {
-            this.logError(e.getMessage());
-         }
-
-         this.log("Total da busca: " + this.totalProducts);
-      }
-   }
-
-   private String crawlInternalId(Element e) {
-      String internalId = null;
-      Element id = e.select("input[name=productCodePost]").first();
-
-      if (id != null) {
-         internalId = id.attr("value");
-      }
-
-      return internalId;
-   }
-
-
-   private String crawlProductUrl(Element e) {
-      String urlProduct = null;
-      Element urlElement = e.select(" > a").first();
-
-      if (urlElement != null) {
-         urlProduct = urlElement.attr("href");
-
-         if (!urlProduct.startsWith("https://www.soriana.com")) {
-            urlProduct = "https://www.soriana.com" + urlProduct;
-         }
-      }
-
-      return urlProduct;
-   }
 }
