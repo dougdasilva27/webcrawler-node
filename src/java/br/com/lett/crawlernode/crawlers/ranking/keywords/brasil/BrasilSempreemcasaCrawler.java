@@ -19,6 +19,7 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
 
    public BrasilSempreemcasaCrawler(Session session) {
       super(session);
+      this.dataFetcher = new JsoupDataFetcher();
       lat = session.getOptions().optString("latitude");
       longi = session.getOptions().optString("longitude");
    }
@@ -43,7 +44,7 @@ public class BrasilSempreemcasaCrawler extends CrawlerRankingKeywords {
          for (Object e : products) {
             JSONObject product = (JSONObject) e;
 
-            String internalPid = product.optString("ambev_product_code");
+            String internalPid = product.optString("id");
             String productUrl = "https://sempreemcasa.com.br/produtos/" + product.optString("slug") + "?latitude=" + lat + "&longitude=" + longi;
 
             saveDataProduct(null, internalPid, productUrl);
