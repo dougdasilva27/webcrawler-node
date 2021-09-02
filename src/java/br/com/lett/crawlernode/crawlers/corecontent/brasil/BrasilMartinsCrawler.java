@@ -39,6 +39,7 @@ public class BrasilMartinsCrawler extends Crawler {
 
    public BrasilMartinsCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    private String password = getPassword();
@@ -94,7 +95,7 @@ public class BrasilMartinsCrawler extends Crawler {
          WebElement login = webdriver.driver.findElement(By.cssSelector("#btn-login"));
          webdriver.clickOnElementViaJavascript(login);
 
-         webdriver.waitLoad(4000);
+         webdriver.waitLoad(6000);
          Logging.printLogInfo(logger, session, "awaiting product page");
 
          waitForElement(webdriver.driver, ".qdValue");
