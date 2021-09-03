@@ -106,9 +106,11 @@ public class PanamaSuperxtraCrawler extends Crawler {
 
       JSONArray categoriesArray = json.optJSONArray("categories");
 
-      for (Object o : categoriesArray) {
-         JSONObject category = (JSONObject) o;
-         categories.add(category.optString("name"));
+      if(categoriesArray != null){
+         for (Object o : categoriesArray) {
+            JSONObject category = (JSONObject) o;
+            categories.add(category.optString("name"));
+         }
       }
 
       return categories;
@@ -117,8 +119,11 @@ public class PanamaSuperxtraCrawler extends Crawler {
    protected List<String> scrapImages(JSONObject json) {
       List<String> images = new ArrayList<>();
 
-      JSONArray categoriesArray = json.optJSONArray("photosUrls");
-      categoriesArray.forEach(x -> images.add(x.toString()));
+      JSONArray imagesArray = json.optJSONArray("photosUrls");
+
+      if(imagesArray != null){
+         imagesArray.forEach(x -> images.add(x.toString()));
+      }
 
       return images;
    }
