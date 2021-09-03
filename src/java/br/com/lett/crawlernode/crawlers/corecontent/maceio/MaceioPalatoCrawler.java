@@ -58,7 +58,6 @@ public class MaceioPalatoCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
-            //  .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .build();
