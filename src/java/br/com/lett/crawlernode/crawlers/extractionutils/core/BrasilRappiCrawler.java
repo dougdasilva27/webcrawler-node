@@ -24,7 +24,7 @@ public class BrasilRappiCrawler extends RappiCrawler {
 
    @Override
    protected String getUrlPrefix() {
-      return "produto/";
+      return "producto/";
    }
 
    @Override

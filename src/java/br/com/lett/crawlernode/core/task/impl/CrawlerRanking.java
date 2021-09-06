@@ -6,10 +6,7 @@ import br.com.lett.crawlernode.core.fetcher.CrawlerWebdriver;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.methods.JavanetDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.*;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -243,6 +240,8 @@ public abstract class CrawlerRanking extends Task {
          dataFetcher = new JavanetDataFetcher();
       } else if (this.fetchMode == FetchMode.FETCHER) {
          dataFetcher = new FetcherDataFetcher();
+      } else if (this.fetchMode == FetchMode.JSOUP) {
+         dataFetcher = new JsoupDataFetcher();
       }
    }
 

@@ -7,6 +7,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -130,9 +131,11 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
       Double spotlightPrice = calculatePriceSquareMeter(doc);
 
-      if(spotlightPrice == 0d){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc,".fbits-preco .precoPor",null,false,',',session);
+      if (spotlightPrice == 0d) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoPor", null, false, ',', session);
       }
+
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
 
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
       Double bank = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoPreco-boleto .precoParcela .fbits-parcela", null, false, ',', session);
@@ -140,6 +143,7 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
          .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
@@ -200,14 +204,21 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       return installments;
    }
 
-   private double calculatePriceSquareMeter(Document doc){
+   private double calculatePriceSquareMeter(Document doc) {
       double spotilightPrice = 0D;
+      Double boxPriceSquareMeter;
 
+      String squareMeter = scrapPriceBoxFromDescription(doc);
+      if (squareMeter.contains(",")) {
+         boxPriceSquareMeter = MathUtils.parseDoubleWithComma(squareMeter);
 
-      Double boxPriceSquareMeter = MathUtils.parseDoubleWithComma(scrapPriceBoxFromDescription(doc));
-      Double boxPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "#fbits-div-preco-off input", "value", false, ',', session);
+      } else {
+         boxPriceSquareMeter = MathUtils.parseDoubleWithDot(squareMeter);
+      }
 
-      if (boxPrice != null && boxPriceSquareMeter != null){
+      Double boxPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".precosDiv .precoPor", null, true, ',', session);
+
+      if (boxPrice != null && boxPriceSquareMeter != null) {
          spotilightPrice = MathUtils.normalizeTwoDecimalPlaces(boxPrice / boxPriceSquareMeter);
          double fivePerCent = 0.05 * spotilightPrice;
          spotilightPrice = spotilightPrice - fivePerCent;
@@ -217,16 +228,20 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
 
-   private String scrapPriceBoxFromDescription(Document doc){
+   private String scrapPriceBoxFromDescription(Document doc) {
 
       String priceBox = "";
 
-      Elements elements = doc.select(".paddingbox p");
+      Elements elements = doc.select("#conteudo-0 .paddingbox ul li");
+      if (elements.isEmpty()) {
+         elements = doc.select(".paddingbox p");
+      }
 
-      for(Element e: elements){
+      for (Element e : elements) {
          String element = e.toString().toLowerCase().replace(" ", "");
-         if( e != null && element.contains("m²/caixa:")){
-            priceBox = e.text();
+         if (!element.isEmpty() && element.contains("m2/caixa:") || element.contains("m2porcaixa:") || element.contains("m²porcaixa") || element.contains("m²/caixa")) {
+            priceBox = CommonMethods.getLast(e.text().split(":"));
+
             break;
          }
       }

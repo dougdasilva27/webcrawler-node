@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.B2WScriptPageCrawlerRanking;
 import org.jsoup.Jsoup;
@@ -14,6 +15,7 @@ public class SaopauloAmericanasCrawler extends B2WScriptPageCrawlerRanking {
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
+      super.fetchMode = FetchMode.JSOUP;
    }
 
    @Override
@@ -39,6 +41,7 @@ public class SaopauloAmericanasCrawler extends B2WScriptPageCrawlerRanking {
       headers.put("sec-fetch-mode", "navigate");
       headers.put("sec-fetch-user", "?1");
       headers.put("sec-fetch-dest", "document");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36");
       headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
 
       return Jsoup.parse(br.com.lett.crawlernode.crawlers.corecontent.saopaulo.SaopauloAmericanasCrawler.fetchPage(url,this.dataFetcher,this.cookies,headers,session));

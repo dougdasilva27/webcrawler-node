@@ -68,36 +68,35 @@ public class BrasilMartinsCrawler extends Crawler {
       try {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
 
-         Logging.printLogDebug(logger, session, "awaiting product page without login");
+         Logging.printLogInfo(logger, session, "awaiting product page without login");
 
-         waitForElement(webdriver.driver, "#lgpdMdAccept #lgpdAcceptButton");
-         WebElement acceptCookie = webdriver.driver.findElement(By.cssSelector("#lgpdMdAccept #lgpdAcceptButton"));
-         webdriver.clickOnElementViaJavascript(acceptCookie);
+         webdriver.waitLoad(10000);
+         WebElement buyButtom = webdriver.driver.findElement(By.cssSelector("#btnBuyProd"));
+         webdriver.clickOnElementViaJavascript(buyButtom);
 
-         webdriver.mouseOver("#go-login");
-         waitForElement(webdriver.driver, "#j_username");
-         WebElement email = webdriver.driver.findElement(By.cssSelector("#j_username"));
+         waitForElement(webdriver.driver, "#js_username_login");
+         WebElement email = webdriver.driver.findElement(By.cssSelector("#js_username_login"));
          email.sendKeys(login);
 
          waitForElement(webdriver.driver, "#j_password");
          WebElement pass = webdriver.driver.findElement(By.cssSelector("#j_password"));
          pass.sendKeys(password);
 
-         webdriver.waitLoad(10000);
-         waitForElement(webdriver.driver, "#selectCNPJ");
-         WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#selectCNPJ"));
+
+         waitForElement(webdriver.driver, "#jsSelectCNPJ");
+         WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#jsSelectCNPJ"));
          webdriver.clickOnElementViaJavascript(cnpj);
          webdriver.waitLoad(4000);
 
 
-         Logging.printLogDebug(logger, session, "awaiting login button");
+         Logging.printLogInfo(logger, session, "awaiting login button");
          webdriver.waitLoad(2000);
 
-         WebElement login = webdriver.driver.findElement(By.cssSelector("#loginTopo-grecaptcha button.pt-btn-login"));
+         WebElement login = webdriver.driver.findElement(By.cssSelector("#btn-login"));
          webdriver.clickOnElementViaJavascript(login);
 
-         webdriver.waitLoad(2000);
-         Logging.printLogDebug(logger, session, "awaiting product page");
+         webdriver.waitLoad(6000);
+         Logging.printLogInfo(logger, session, "awaiting product page");
 
          waitForElement(webdriver.driver, ".qdValue");
 
@@ -109,15 +108,21 @@ public class BrasilMartinsCrawler extends Crawler {
 
          return doc;
       } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+         Logging.printLogInfo(logger, session, CommonMethods.getStackTrace(e));
          return super.fetch();
       }
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 20);
+      WebDriverWait wait = new WebDriverWait(driver, 30);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
+
+   public static void waitForElementPrice(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 60);
+      wait.until(ExpectedConditions.elementToBeSelected(By.cssSelector(cssSelector)));
+   }
+
 
 
    @Override
@@ -126,7 +131,7 @@ public class BrasilMartinsCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         Logging.printLogDebug(
+         Logging.printLogInfo(
             logger, session, "Product page identified: " + session.getOriginalURL());
 
          String internalId = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "input#id", "value").split("_"));

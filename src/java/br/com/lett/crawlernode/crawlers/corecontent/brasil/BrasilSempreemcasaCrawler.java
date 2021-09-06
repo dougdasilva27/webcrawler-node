@@ -1,11 +1,14 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -16,43 +19,62 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
 
 import java.util.*;
 
 public class BrasilSempreemcasaCrawler extends Crawler {
 
-   private static final String SELLER_FULL_NAME = "Sempre em casa brasil";
+   private static final String SELLER_FULL_NAME = "sempre em casa";
+   protected String lat;
+   protected String longi;
+
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
    public BrasilSempreemcasaCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.JSOUP);
+      lat = session.getOptions().optString("latitude");
+      longi = session.getOptions().optString("longitude");
    }
 
    @Override
-   public List<Product> extractInformation(Document doc) throws Exception {
-      super.extractInformation(doc);
+   protected JSONObject fetch() {
+      String productSlug = CommonMethods.getLast(session.getOriginalURL().split("/"));
+
+      if(!productSlug.contains("latitude") && !productSlug.contains("longitude")){
+         productSlug += "?latitude=" + lat + "&longitude=" + longi;
+      }
+      String url = "https://api.sempreemcasa.com.br/products/" + productSlug;
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .build();
+
+      Response response = this.dataFetcher.get(session, request);
+      return JSONUtils.stringToJson(response.getBody());
+   }
+
+   @Override
+   public List<Product> extractInformation(JSONObject json) throws Exception {
+      super.extractInformation(json);
       List<Product> products = new ArrayList<>();
 
-      JSONObject productInfo = CrawlerUtils.selectJsonFromHtml(doc, "#__NEXT_DATA__", null, null, false, false);
-      JSONObject data = JSONUtils.getValueRecursive(productInfo, "props.pageProps.data", JSONObject.class);
-
-      if (Objects.nonNull(data) && !data.isEmpty()) {
+      if (json.has("id")) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalPid = data.optString("ambev_product_code");
-         String primaryImage = data.optString("image");
-         String name = data.optString("name");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".title__unities"));
-         JSONArray variations = data.optJSONArray("packs");
+         String internalPid = json.optString("id");
+         String primaryImage = json.optString("image");
+         String name = json.optString("name");
+         String description = json.optString("description");
+         JSONArray variations = json.optJSONArray("packs");
 
          for (Object o : variations) {
             JSONObject variation = (JSONObject) o;
 
             String internalId = internalPid + "-" + variation.optString("id");
-            int qtd = variation.optInt("unities");
+            int qtd = variation.optInt("quantity");
             String variationName = name + " - " + qtd;
 
             Offers offer = scrapOffer(variation);
@@ -72,10 +94,10 @@ public class BrasilSempreemcasaCrawler extends Crawler {
          }
 
          //Capturing the unit price if it's in the page
-         if(doc.selectFirst("div.card__unit") != null){
+         if(!variations.isEmpty()){
             String internalId = internalPid + "-1";
             String variationName = name + " - unidade";
-            Offers offer = scrapUnitOffer(doc);
+            Offers offer = scrapUnitOffer(json);
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -98,10 +120,10 @@ public class BrasilSempreemcasaCrawler extends Crawler {
    }
 
    private Offers scrapOffer(JSONObject json) throws OfferException, MalformedPricingException {
-
       Offers offers = new Offers();
-      Pricing pricing = scrapPricing(json);
       List<String> sales = new ArrayList<>();
+
+      Pricing pricing = scrapPricing(json);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -153,11 +175,11 @@ public class BrasilSempreemcasaCrawler extends Crawler {
       return creditCards;
    }
 
-   private Offers scrapUnitOffer(Document doc) throws OfferException, MalformedPricingException {
+   private Offers scrapUnitOffer(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       List<String> sales = new ArrayList<>();
 
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.card__unit", null, false, ',', session);
+      Double spotlightPrice = JSONUtils.getValueRecursive(json, "packs.0.current_unity_price", Double.class);
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
       Pricing pricing = Pricing.PricingBuilder.create()
          .setPriceFrom(null)

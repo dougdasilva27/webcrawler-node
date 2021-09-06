@@ -1,15 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder
 import br.com.lett.crawlernode.core.fetcher.models.Request
 import br.com.lett.crawlernode.core.session.Session
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords
-import br.com.lett.crawlernode.util.CrawlerUtils
-import br.com.lett.crawlernode.util.JSONUtils
 import br.com.lett.crawlernode.util.toJson
-import com.google.gson.JsonObject
 import org.json.JSONObject
 
 class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session) {
@@ -35,12 +31,6 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
                .mustUseMovingAverage(false)
                .mustRetrieveStatistics(true)
                .build()
-         ).setProxyservice(
-            listOf(
-               ProxyCollection.INFATICA_RESIDENTIAL_BR,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR,
-               ProxyCollection.NO_PROXY
-            )
          ).build()
 
       return dataFetcher.get(session, request)?.body?.toJson()
@@ -48,7 +38,8 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
 
    override fun extractProductsFromCurrentPage() {
 
-      val url = "https://recs.richrelevance.com/rrserver/api/find/v1/e20fd45b1e19a8c6?lang=pt&log=true&facetDepth=5&placement=search_page.find&query=$keywordEncoded&rows=${pageSize}&start=${(currentPage-1)*pageSize}"
+      val url =
+         "https://recs.richrelevance.com/rrserver/api/find/v1/e20fd45b1e19a8c6?lang=pt&log=true&facetDepth=5&placement=search_page.find&query=$keywordEncoded&rows=${pageSize}&start=${(currentPage - 1) * pageSize}"
 
       val jsonApi = fetchJSONObject(url)
       val placement = jsonApi?.optJSONArray("placements")?.optJSONObject(0)
@@ -67,8 +58,7 @@ class BrasilRiachueloCrawler(session: Session) : CrawlerRankingKeywords(session)
                   saveDataProduct(internalId.toString(), null, urlProduct, position)
                }
                position++
-            }
-            else {
+            } else {
                log("internal xxxxxx - url $urlProduct")
                saveDataProduct(null, null, urlProduct)
             }
