@@ -160,7 +160,6 @@ public abstract class BrasilVilanova extends Crawler {
                String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(variation, ".item", Arrays.asList("data-foto"), "https", "www.vilanova.com.br");
 
                boolean isAvailable = doc.selectFirst(".product-details-footer  .btn.btn-primary.btn-comprar-produto") != null;
-               ;
                Offers offers = isAvailable ? scrapOffers(variation) : new Offers();
 
                Product product = ProductBuilder.create()
@@ -187,7 +186,7 @@ public abstract class BrasilVilanova extends Crawler {
    }
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".price").isEmpty();
+      return !doc.select("div.product-row").isEmpty();
    }
 
    private String getName(Document document, Element variation) {
