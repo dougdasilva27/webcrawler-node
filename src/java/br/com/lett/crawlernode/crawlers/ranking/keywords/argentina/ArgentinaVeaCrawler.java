@@ -1,155 +1,156 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.http.HttpHeaders;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
+
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.ApiResponseException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 public class ArgentinaVeaCrawler extends CrawlerRankingKeywords {
 
+   private static final Integer API_VERSION = 1;
+   private static final String SENDER = "vtex.store-resources@0.x";
+   private static final String PROVIDER = "vtex.search-graphql@0.x";
+   private String keySHA256 = "e1d5228ca8b18d1f83b777d849747a7f55c9597f670f20c8557d2b0428bf6be7";
+
    public ArgentinaVeaCrawler(Session session) {
       super(session);
-      super.fetchMode = FetchMode.FETCHER;
    }
 
-   private static final String HOME_PAGE = "https://www.veadigital.com.ar/";
-
-   @Override
-   protected void processBeforeFetch() {
-      BasicClientCookie cookie = new BasicClientCookie("noLocalizar", "true");
-      cookie.setDomain("www.veadigital.com.ar");
-      cookie.setPath("/");
-      this.cookies.add(cookie);
-
-      this.cookies.addAll(CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE + "Comprar/Home.aspx", null, "www.veadigital.com.ar", "/", cookies, session, new HashMap<>(), dataFetcher));
+   protected String getHomePage() {
+      return session.getOptions().getString("homePage");
    }
 
-   @Override
-   protected void extractProductsFromCurrentPage() {
-      this.log("Página " + this.currentPage);
+   protected String getVtexSegment() {
+      return session.getOptions().getString("vtex_segment");
+   }
 
-      JSONObject jsonSearch = crawlProductsApi(CommonMethods.encondeStringURLToISO8859(this.location, logger, session));
-      JSONArray products = new JSONArray();
+   protected String createVariablesBase64() {
+      JSONObject search = new JSONObject();
+      JSONObject facets = new JSONObject();
+      JSONArray facetsArray = new JSONArray();
+      facets.put("key", "ft");
+      facets.put("value", this.keywordEncoded);
+      facetsArray.put(facets);
+      search.put("hideUnavailableItems", true);
+      search.put("skusFilter", "ALL");
+      search.put("simulationBehavior", "default");
+      search.put("installmentCriteria", "MAX_WITHOUT_INTEREST");
+      search.put("productOriginVtex", false);
+      search.put("map", "ft");
+      search.put("query", keywordEncoded);
+      search.put("orderBy", "");
+      search.put("from", this.arrayProducts.size());
+      search.put("to", this.arrayProducts.size() + (this.pageSize - 1));
+      search.put("selectedFacets", facetsArray);
+      search.put("categoryTreeBehavior", "default");
+      search.put("fullText", this.keywordEncoded);
+      search.put("facetsBehavior", "Static");
+      search.put("withFacets", false);
 
-      if (jsonSearch.has("ResultadosBusquedaLevex")) {
-         products = jsonSearch.getJSONArray("ResultadosBusquedaLevex");
+      return Base64.getEncoder().encodeToString(search.toString().getBytes());
+   }
+
+   protected JSONObject fetchSearchApi() {
+      JSONObject searchApi = new JSONObject();
+      StringBuilder url = new StringBuilder();
+      url.append(getHomePage() + "_v/segment/graphql/v1?");
+
+      JSONObject extensions = new JSONObject();
+      JSONObject persistedQuery = new JSONObject();
+
+      persistedQuery.put("version", API_VERSION);
+      persistedQuery.put("sha256Hash", this.keySHA256);
+      persistedQuery.put("sender", SENDER);
+      persistedQuery.put("provider", PROVIDER);
+
+      extensions.put("variables", createVariablesBase64());
+      extensions.put("persistedQuery", persistedQuery);
+
+      StringBuilder payload = new StringBuilder();
+      payload.append("workspace=master");
+      payload.append("&maxAge=short");
+      payload.append("&appsEtag=remove");
+      payload.append("&domain=store");
+      payload.append("&locale=es-AR");
+      payload.append("&operationName=productSearchV3");
+      payload.append("&variables=" + URLEncoder.encode("{}", StandardCharsets.UTF_8));
+      payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), StandardCharsets.UTF_8));
+      url.append(payload);
+
+      log("Link onde são feitos os crawlers:" + url);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url.toString())
+         .setCookies(cookies)
+         .setPayload(payload.toString())
+         .build();
+
+      JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      try {
+         if (!response.has("errors")) {
+            searchApi = JSONUtils.getValueRecursive(response, "data.productSearch", JSONObject.class, new JSONObject());
+         } else {
+            throw new ApiResponseException(response.toString());
+         }
+      } catch (Exception ex) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(ex));
       }
 
-      // se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-      if (products.length() >= 1) {
-         // se o total de busca não foi setado ainda, chama a função para setar
+      return searchApi;
+   }
+
+
+   protected void extractProductsFromCurrentPage() {
+      this.log("Página " + this.currentPage);
+      this.pageSize = 20;
+
+      JSONObject searchApi = fetchSearchApi();
+      JSONArray products = JSONUtils.getJSONArrayValue(searchApi, "products");
+
+      if (products.length() > 0) {
+
          if (this.totalProducts == 0) {
-            this.totalProducts = products.length();
+            setTotalProducts(searchApi);
          }
 
-         for (int i = 0; i < products.length(); i++) {
-            JSONObject product = products.getJSONObject(i);
+         for (Object object : products) {
+            JSONObject product = (JSONObject) object;
+            String productUrl = CrawlerUtils.completeUrl(product.optString("linkText") + "/p", "https",
+               getHomePage().replace("https://", "").replace("/", ""));
+            String internalPid = product.optString("productId");
+            String internalId = JSONUtils.getValueRecursive(product, "items.0.itemId", String.class);
 
-            // InternalPid
-            String internalPid = crawlInternalPid(product);
+            saveDataProduct(internalId, internalPid, productUrl);
 
-            // InternalId
-            String internalId = crawlInternalId(product);
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
-            // Url do produto
-            String urlProduct = crawlProductUrl(product);
-
-            saveDataProduct(internalId, internalPid, urlProduct);
-
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
-
          }
+
       } else {
          this.result = false;
          this.log("Keyword sem resultado!");
       }
 
-      // número de produtos por página do market
-      this.pageSize = this.totalProducts;
-
       this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
    }
 
-   @Override
-   protected boolean hasNextPage() {
-      // Nesse market não existe proximas páginas
-      return false;
+   protected void setTotalProducts(JSONObject data) {
+      this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "recordsFiltered", 0);
+      this.log("Total da busca: " + this.totalProducts);
    }
 
-   private String crawlInternalId(JSONObject product) {
-      String internalId = null;
-
-      if (product.has("IdArticulo") && !product.isNull("IdArticulo")) {
-         internalId = product.getString("IdArticulo");
-      }
-
-      return internalId;
-   }
-
-   private String crawlInternalPid(JSONObject product) {
-      String internalPid = null;
-
-      return internalPid;
-   }
-
-   private String crawlProductUrl(JSONObject product) {
-      String productUrl = null;
-
-      if (product.has("DescripcionArticulo") && !product.isNull("DescripcionArticulo")) {
-         String name = product.getString("DescripcionArticulo");
-
-         productUrl = "https://www.veadigital.com.ar/Comprar/Home.aspx?#_atCategory=false&_atGrilla=true&_query=" + CommonMethods.encondeStringURLToISO8859(name, logger, session);
-      }
-
-      return productUrl;
-   }
-
-   /**
-    * Crawl api of search when probably has only one product
-    * 
-    * @param url
-    * @return
-    */
-   private JSONObject crawlProductsApi(String keyword) {
-      JSONObject json = new JSONObject();
-
-      Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8");
-
-      String urlSearch = "https://www.veadigital.com.ar/Comprar/HomeService.aspx/ObtenerArticulosPorDescripcionMarcaFamiliaLevex";
-      String payload = "{IdMenu:\"\",textoBusqueda:\"" + keyword + "\"," + " producto:\"\", marca:\"\", pager:\"\", ordenamiento:0, precioDesde:\"\", precioHasta:\"\"}";
-
-      this.log("Payload: " + payload);
-      this.log("Cookies: " + this.cookies);
-
-      String jsonString = fetchStringPOST(urlSearch, payload, headers, this.cookies);
-
-      if (jsonString != null && jsonString.startsWith("{")) {
-         json = parseJsonLevex(new JSONObject(jsonString));
-      }
-
-      return json;
-   }
-
-   private JSONObject parseJsonLevex(JSONObject json) {
-      JSONObject jsonD = new JSONObject();
-
-      if (json.has("d")) {
-         String dParser = JSONObject.stringToValue(json.getString("d")).toString();
-         jsonD = new JSONObject(dParser);
-      }
-
-      return jsonD;
-   }
 }
