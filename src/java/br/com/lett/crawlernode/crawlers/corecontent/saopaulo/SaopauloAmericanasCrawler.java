@@ -57,17 +57,17 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    @Override
    public void setHeaders() {
-      super.headers.put("authority", "www.americanas.com.br");
-      super.headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
+//      super.headers.put("authority", "www.americanas.com.br");
+      super.headers.put("sec-ch-ua", "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"");
       super.headers.put("sec-ch-ua-mobile", "?0");
       super.headers.put("upgrade-insecure-requests", "1");
       super.headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      super.headers.put("sec-fetch-site", "none");
-      super.headers.put("sec-fetch-mode", "navigate");
-      super.headers.put("sec-fetch-user", "?1");
-      super.headers.put("sec-fetch-dest", "document");
-      super.headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36");
-      super.headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+//      super.headers.put("sec-fetch-site", "none");
+//      super.headers.put("sec-fetch-mode", "navigate");
+//      super.headers.put("sec-fetch-user", "?1");
+//      super.headers.put("sec-fetch-dest", "document");
+      super.headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36");
+//      super.headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
    }
 
    public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
