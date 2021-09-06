@@ -20,7 +20,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    private static final Integer API_VERSION = 1;
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
-   private String keySHA256 = "e1d5228ca8b18d1f83b777d849747a7f55c9597f670f20c8557d2b0428bf6be7";
+   private static final String keySHA256 = "e1d5228ca8b18d1f83b777d849747a7f55c9597f670f20c8557d2b0428bf6be7";
 
    public ColombiaExitoCrawler(Session session) {
       super(session);
@@ -42,13 +42,14 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
       search.put("installmentCriteria", "MAX_WITHOUT_INTEREST");
       search.put("productOriginVtex", false);
       search.put("map", "ft");
-      search.put("query", keywordEncoded);
+      search.put("query", this.keywordWithoutAccents.replace(" ", "%20"));
       search.put("orderBy", "OrderByScoreDESC");
-      search.put("from", 0);
-      search.put("to", 21);
+      search.put("from", arrayProducts.size());
+      search.put("to", arrayProducts.size() + 20);
       search.put("facetsBehavior", "dynamic");
       search.put("categoryTreeBehavior", "default");
       search.put("withFacets", false);
+      search.put("fullText", this.keywordWithoutAccents);
 
       return Base64.getEncoder().encodeToString(search.toString().getBytes());
    }
@@ -62,7 +63,7 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
       JSONObject persistedQuery = new JSONObject();
 
       persistedQuery.put("version", API_VERSION);
-      persistedQuery.put("sha256Hash", this.keySHA256);
+      persistedQuery.put("sha256Hash", keySHA256);
       persistedQuery.put("sender", SENDER);
       persistedQuery.put("provider", PROVIDER);
 
@@ -143,5 +144,10 @@ public class ColombiaExitoCrawler extends CrawlerRankingKeywords {
    protected void setTotalProducts(JSONObject data) {
       this.totalProducts = CrawlerUtils.getIntegerValueFromJSON(data, "total", 0);
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+   @Override
+   protected boolean hasNextPage(){
+      return true;
    }
 }
