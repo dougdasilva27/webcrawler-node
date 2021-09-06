@@ -1,161 +1,136 @@
 package br.com.lett.crawlernode.crawlers.corecontent.argentina;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.Marketplace;
-import models.prices.Prices;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.jsoup.nodes.Document;
 
-/**
- * Date: 10/10/2018
- * 
- * @author Gabriel Dornelas
- *
- */
+import java.util.*;
+
+
 public class ArgentinaRodoCrawler extends Crawler {
 
-  private static final String HOME_PAGE = "http://www.rodo.com.ar/";
+   private static final String HOME_PAGE = "http://www.rodo.com.ar/";
 
-  public ArgentinaRodoCrawler(Session session) {
-    super(session);
-  }
+   public ArgentinaRodoCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public boolean shouldVisit() {
-    String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-  }
+   private static final String SELLER_FULL_NAME = "rodo";
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    super.extractInformation(doc);
-    List<Product> products = new ArrayList<>();
+   @Override
+   public boolean shouldVisit() {
+      String href = this.session.getOriginalURL().toLowerCase();
+      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
+   }
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-      String internalId = crawlInternalId(doc);
-      String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
-      Float price = CrawlerUtils.scrapSimplePriceFloat(doc, "#product-price-" + internalId, false);
-      Prices prices = crawlPrices(doc, price);
-      boolean available = !doc.select(".product-shop .availability.in-stock").isEmpty();
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(.home) > a");
-      String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image #image", Arrays.asList("src"), "http:", "www.rodo.com.ar");
-      String secondaryImages = crawlSecondaryImages(doc, primaryImage);
-      String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-collateral"));
+   @Override
+   public List<Product> extractInformation(Document doc) throws Exception {
+      super.extractInformation(doc);
+      List<Product> products = new ArrayList<>();
 
-      // Creating the product
-      Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setName(name).setPrice(price)
-          .setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-          .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-          .setMarketplace(new Marketplace()).build();
+      if (isProductPage(doc)) {
 
-      products.add(product);
+         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "tbody tr:last-child .data", true);
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
+         boolean available = !doc.select(".add-to-cart-buttons").isEmpty();
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".product-image-gallery img", Arrays.asList("src"), "https", "rodo.com.ar");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".more-views li:not(:first-child) img", Collections.singletonList("src"), "https", "rodo.com.ar", primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-collateral.desc-producto"));
+         Offers offers = available ? scrapOffer(doc) : new Offers();
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
+         // Creating the product
+         Product product = ProductBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setInternalId(internalId)
+            .setInternalPid(internalId)
+            .setName(name)
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setOffers(offers)
+            .build();
 
-    return products;
+         products.add(product);
 
-  }
 
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".product-name").isEmpty();
-  }
-
-  private static String crawlInternalId(Document doc) {
-    String internalId = null;
-
-    Element infoElement = doc.selectFirst("input[name=product]");
-    if (infoElement != null) {
-      internalId = infoElement.val();
-    }
-
-    return internalId;
-  }
-
-  private String crawlSecondaryImages(Document doc, String primaryImage) {
-    String secondaryImages = null;
-    JSONArray secondaryImagesArray = new JSONArray();
-
-    Elements imagesElement = doc.select(".more-views li img");
-
-    for (Element e : imagesElement) {
-      String image = e.attr("src").replace("thumbnail/56x", "image").replace("/thumbnail/", "/image/").trim();
-
-      if (!image.equalsIgnoreCase(primaryImage)) {
-        secondaryImagesArray.put(image);
-      }
-    }
-
-    if (secondaryImagesArray.length() > 0) {
-      secondaryImages = secondaryImagesArray.toString();
-    }
-
-    return secondaryImages;
-  }
-
-  /**
-   * In the time when this crawler was made, this market hasn't installments informations
-   * 
-   * @param doc
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Document doc, Float price) {
-    Prices prices = new Prices();
-
-    Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-    installmentPriceMap.put(1, price);
-
-    Element priceFrom = doc.selectFirst(".product-shop .old-price .price");
-    if (priceFrom != null) {
-      prices.setPriceFrom(MathUtils.parseDoubleWithComma(priceFrom.ownText()));
-    }
-
-    JSONObject installmentsJson = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.dataBankingJson=", ";", true, false);
-
-    if (installmentsJson.has("15")) {
-      JSONObject credcard = installmentsJson.getJSONObject("15");
-
-      JSONObject installments = new JSONObject();
-      if (credcard.has("998")) {
-        installments = credcard.getJSONObject("998");
-      } else if (credcard.has("-1")) {
-        installments = credcard.getJSONObject("-1");
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-      for (String installmentNumber : installments.keySet()) {
-        JSONObject parcel = installments.getJSONObject(installmentNumber);
+      return products;
+   }
 
-        Float value = CrawlerUtils.getFloatValueFromJSON(parcel, "monto_cuota");
-        String text = installmentNumber.replaceAll("[^0-9]", "");
-        if (value != null && !text.isEmpty()) {
-          installmentPriceMap.put(Integer.parseInt(text), MathUtils.normalizeTwoDecimalPlaces(value));
-        }
+   private boolean isProductPage(Document document) {
+      return document.selectFirst(".product-view") != null;
+   }
+
+   private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(doc);
+      List<String> sales = new ArrayList<>();
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_FULL_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+
+   }
+
+   private Pricing scrapPricing(Document doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".price-info .price", null, false, ',', session);
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
-    }
 
-    prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
 
-    return prices;
-  }
+      return creditCards;
+   }
 
 }
