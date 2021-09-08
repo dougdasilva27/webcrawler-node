@@ -56,12 +56,11 @@ public class BrasilTanakaoCrawler extends Crawler {
          JSONObject variationsInfoJson =
             CrawlerUtils.selectJsonFromHtml(
                doc, " script[type=\"text/javascript\"]", "AmConfigurableData(", ");", false, true);
-
          String internalId =
             CrawlerUtils.scrapStringSimpleInfoByAttribute(
                doc, ".product-view [name=\"product\"]", "value");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name > h1", true);
-         Offers offers = doc.selectFirst(".availability.in-stock") != null ? scrapOffers(doc) : null;
+         Offers offers = doc.selectFirst(".view-cart") != null ? scrapOffers(doc) : null;
          CategoryCollection categories =
             CrawlerUtils.crawlCategories(doc, ".inner-breadcrumbs div ul li a", true);
          String primaryImage =
@@ -276,13 +275,13 @@ public class BrasilTanakaoCrawler extends Crawler {
       return new Offers(offerList);
    }
 
-   private List<String> scrapSecondaryImages(Document doc){
+   private List<String> scrapSecondaryImages(Document doc) {
       List<String> secondaryImages = new ArrayList<>();
 
       Elements images = doc.select(".product-image-thumbs li a img");
 
-      for(Element e: images){
-         if(images.indexOf(e) != 0){
+      for (Element e : images) {
+         if (images.indexOf(e) != 0) {
             secondaryImages.add(CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, null, "src"));
          }
       }
