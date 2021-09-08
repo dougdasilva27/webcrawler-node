@@ -53,7 +53,7 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = fetchDocument(url);
 
-      Elements products = this.currentDoc.select("#item-list .item-card");
+      Elements products = this.currentDoc.select("#item-list .wrapper a");
 
       if (!products.isEmpty()) {
          if (this.totalProducts == 0) {
@@ -62,7 +62,7 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
 
          for (Element e : products) {
             String internalPid = e.attr("parent-sku");
-            String productUrl = crawlProductUrl(e);
+            String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "href"), "https","");
 
             saveDataProduct(null, internalPid, productUrl);
 
@@ -100,15 +100,5 @@ public class BrasilZattiniCrawler extends CrawlerRankingKeywords {
       }
    }
 
-   private String crawlProductUrl(Element e) {
-      String productUrl = null;
 
-      Element url = e.selectFirst("a");
-
-      if (url != null) {
-         productUrl = CrawlerUtils.sanitizeUrl(url, Arrays.asList("href"), "https", HOME_PAGE);
-      }
-
-      return productUrl;
-   }
 }
