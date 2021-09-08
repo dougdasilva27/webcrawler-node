@@ -1,28 +1,26 @@
 
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXScraper;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXNewScraper;
+import br.com.lett.crawlernode.exceptions.ApiResponseException;
+import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import org.json.JSONArray;
+import br.com.lett.crawlernode.util.Logging;
+import models.RatingsReviews;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXCrawlersUtils;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXOldScraper;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.MathUtils;
-import models.RatingsReviews;
-import models.pricing.Pricing;
 
-public class BrasilConsulCrawler extends VTEXOldScraper {
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+
+public class BrasilConsulCrawler extends VTEXNewScraper {
 
    private static final String HOME_PAGE = "https://loja.consul.com.br/";
    private static final List<String> SELLERS = Arrays.asList("Whirlpool", "Consul", "Brastemp");
@@ -32,10 +30,18 @@ public class BrasilConsulCrawler extends VTEXOldScraper {
    }
 
    @Override
+   public void handleCookiesBeforeFetch() {
+      String vtex_segment = session.getOptions().optString("vtex_segment");
+      BasicClientCookie cookie = new BasicClientCookie("vtex_segment", vtex_segment);
+      this.cookies.add(cookie);
+   }
+
+   @Override
    public boolean shouldVisit() {
       String href = session.getOriginalURL().toLowerCase();
       return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
    }
+
 
    @Override
    protected String getHomePage() {
@@ -47,161 +53,68 @@ public class BrasilConsulCrawler extends VTEXOldScraper {
       return SELLERS;
    }
 
-   @Override
-   protected String scrapInternalpid(Document doc){
-      String internalPid = "";
-
-      JSONObject json = CrawlerUtils.selectJsonFromHtml(doc, "script[type=application/ld+json]", null, null, true, false);
-
-      if(json != null && !json.isEmpty()){
-         internalPid = json.optString("sku");
-      }
-
-      return internalPid;
-   }
-
-   @Override
-   protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      JSONObject productApi = new JSONObject();
-
-      String url = homePage + "api/catalog_system/pub/products/search?fq=skuId:" + internalPid + "&_from=0&_to=";
-
-      Request request = Request.RequestBuilder.create().setUrl(url).setCookies(cookies).build();
-      JSONArray array = CrawlerUtils.stringToJsonArray(this.dataFetcher.get(session, request).getBody());
-
-      if (!array.isEmpty()) {
-         productApi = array.optJSONObject(0) == null ? new JSONObject() : array.optJSONObject(0);
-      }
-
-      return productApi;
-   }
-
-   @Override
-   protected List<String> scrapSales(Document doc, JSONObject offerJson, String internalId, String internalPid, Pricing pricing) {
-      String sale = CrawlerUtils.scrapStringSimpleInfo(doc, ".product__flags .price-flag", true);
-      return sale != null && !sale.isEmpty() ? Arrays.asList(sale) : new ArrayList<>();
-   }
-
-
-   @Override
-   protected Double scrapSpotlightPrice(Document doc, String internalId, Double principalPrice, JSONObject comertial, JSONObject discountsJson) {
-      Double spotlightPrice = super.scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
-      Double maxDiscount = 0d;
-      if (discountsJson != null && discountsJson.length() > 0) {
-         for (String key : discountsJson.keySet()) {
-            JSONObject paymentEffect = discountsJson.optJSONObject(key);
-            Double discount = paymentEffect.optDouble("discount");
-
-            if (discount > maxDiscount) {
-               maxDiscount = discount;
-            }
-         }
-      }
-
-      if (maxDiscount > 0d) {
-         spotlightPrice = MathUtils.normalizeTwoDecimalPlaces(spotlightPrice - (spotlightPrice * maxDiscount));
-      }
-
-      return spotlightPrice;
-   }
-
-
-   @Override
-   protected String scrapDescription(Document doc, JSONObject productJson) {
-      StringBuilder description = new StringBuilder();
-
-      if (productJson.has("description")) {
-         description.append("<div>");
-         description.append(sanitizeDescription(productJson.get("description")));
-         description.append("</div>");
-      }
-
-      List<String> specs = new ArrayList<>();
-
-      if (productJson.has("Caracteristícas Técnicas")) {
-         JSONArray keys = productJson.getJSONArray("Caracteristícas Técnicas");
-         for (Object o : keys) {
-            if (!o.toString().equalsIgnoreCase("Informações para Instalação") && !o.toString().equalsIgnoreCase("Portfólio")) {
-               specs.add(o.toString());
-            }
-         }
-      }
-
-      List<Integer> modules = Arrays.asList(1, 2, 3, 4);
-
-
-      for (int i : modules) {
-         if (productJson.has("Texto modulo 0" + i)) {
-            description.append("<div>");
-
-            if (productJson.has("Título modulo 0" + i)) {
-               description.append("<h4>");
-               description.append(productJson.get("Título modulo 0" + i).toString().replace("[\"", "").replace("\"]", ""));
-               description.append("</h4>");
-            }
-
-            description.append(sanitizeDescription(productJson.get("Texto modulo 0" + i)));
-            description.append("</div>");
-         }
-      }
-
-      for (String spec : specs) {
-         if (productJson.has(spec)) {
-
-            String label = spec;
-
-            if (spec.equals("Tipo do produto")) {
-               label = "Tipo";
-            } else if (spec.equalsIgnoreCase("Garantia do Fornecedor (mês)")) {
-               label = "Garantia";
-            } else if (spec.equalsIgnoreCase("Mais Informações")) {
-               label = "Informações";
-            }
-
-            description.append("<div>");
-            description.append("<h4>").append(label).append("</h4>");
-            description.append(VTEXCrawlersUtils.sanitizeDescription(productJson.get(spec)) + (label.equals("Garantia") ? " meses" : ""));
-            description.append("</div>");
-         }
-      }
-
-      Element manual = doc.selectFirst(".value-field.Manual-do-Produto");
-      if (manual != null) {
-
-         description
-               .append("<a href=\"" + manual.ownText() + "\" title=\"Baixar manual\" class=\"details__manual\" target=\"_blank\">Baixar manual</a>");
-      }
-
-      if (productJson.has("RealHeight")) {
-         description.append("<table cellspacing=\"0\" class=\"Height\">\n").append("<tbody>").append("<tr>").append("<th>Largura").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealHeight").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-               .append("</table>");
-      }
-
-      if (productJson.has("RealWidth")) {
-         description.append("<table cellspacing=\"0\" class=\"Width\">\n").append("<tbody>").append("<tr>").append("<th>Altura").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealWidth").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-               .append("</table>");
-      }
-
-      if (productJson.has("RealLength")) {
-         description.append("<table cellspacing=\"0\" class=\"Length\">\n").append("<tbody>").append("<tr>").append("<th>Profundidade").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealLength").toString().replace(".0", "") + " cm").append("</td>").append("</tbody>")
-               .append("</table>");
-      }
-
-      if (productJson.has("RealWeightKg")) {
-         description.append("<table cellspacing=\"0\" class=\"WeightKg\">\n").append("<tbody>").append("<tr>").append("<th>Peso").append("</th>")
-               .append("<td>").append("\n" + productJson.get("RealWeightKg").toString().replace(".0", "") + " kg").append("</td>").append("</tbody>")
-               .append("</table>");
-      }
-
-      return description.toString();
-   }
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject apiJson) {
-      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "3531", logger);
-      return trustVox.extractRatingAndReviewsForVtex(doc, dataFetcher).getRatingReviews(internalId);
+
+      JSONObject apiTrustVox = fetchSearchApiTrustVoxVtex(internalPid);
+      RatingsReviews ratingsReviews = new RatingsReviews();
+      if (!apiTrustVox.isEmpty()) {
+
+         ratingsReviews.setInternalId(internalId);
+         ratingsReviews.setAverageOverallRating(apiTrustVox.optDouble("average"));
+         ratingsReviews.setTotalRating(apiTrustVox.optInt("count"));
+      }
+
+      return ratingsReviews;
    }
+
+
+   protected JSONObject fetchSearchApiTrustVoxVtex(String internalPid) {
+      JSONObject searchApi = new JSONObject();
+      JSONObject productId = new JSONObject();
+      productId.put("productId", internalPid);
+      StringBuilder url = new StringBuilder();
+      url.append(HOME_PAGE + "_v/segment/graphql/v1?");
+
+      JSONObject extensions = new JSONObject();
+      JSONObject persistedQuery = new JSONObject();
+
+      persistedQuery.put("version", "1");
+      persistedQuery.put("sha256Hash", "9230c4c255f4e6696f429eb410a88439ddf45a97e6dd2a208d4afc79d9fdb77d");
+      persistedQuery.put("sender", "consul.trustvox@0.x");
+      persistedQuery.put("provider", "consul.store-graphql@0.x");
+
+      extensions.put("variables", Base64.getEncoder().encodeToString(productId.toString().getBytes()));
+      extensions.put("persistedQuery", persistedQuery);
+
+      StringBuilder payload = new StringBuilder();
+      payload.append("workspace=master");
+      payload.append("&maxAge=short");
+      payload.append("&appsEtag=remove");
+      payload.append("&domain=store");
+      payload.append("&locale=pt-BR");
+      payload.append("&operationName=productRatingCount");
+      payload.append("&variables=" + URLEncoder.encode("{}", StandardCharsets.UTF_8));
+      payload.append("&extensions=" + URLEncoder.encode(extensions.toString(), StandardCharsets.UTF_8));
+      url.append(payload);
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url.toString())
+         .build();
+
+      JSONObject response = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      try {
+         if (!response.has("errors")) {
+            searchApi = JSONUtils.getValueRecursive(response, "data.productRatingCount.products_rates.0", JSONObject.class, new JSONObject());
+         } else {
+            throw new ApiResponseException(response.toString());
+         }
+      } catch (Exception ex) {
+         Logging.printLogError(logger, session, CommonMethods.getStackTrace(ex));
+      }
+
+      return searchApi;
+   }
+
 }
