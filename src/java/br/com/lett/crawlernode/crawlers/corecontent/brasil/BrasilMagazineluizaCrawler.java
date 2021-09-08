@@ -43,7 +43,6 @@ import java.util.*;
 
 public class BrasilMagazineluizaCrawler extends Crawler {
 
-   private static final String HOME_PAGE = "https://www.magazineluiza.com.br/";
    private static final String SELLER_NAME = "magalu";
    private static final String SELLER_NAME_1 = "magazine luiza";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -60,6 +59,11 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       Request request = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR
+         ))
          .setHeaders(headers)
          .build();
 
@@ -231,7 +235,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
     * Product page identification *
     *******************************/
    private boolean isProductPage(Document doc) {
-      return doc.select(".js-header-product").first() != null;
+      return doc.select("div.wrapper-product__content").first() != null;
    }
 
    /**
