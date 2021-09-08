@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -8,251 +9,276 @@ import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.prices.Prices;
+import br.com.lett.crawlernode.util.MathUtils;
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.Offer;
+import models.Offers;
+import models.pricing.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BrasilMultilojaCrawler extends Crawler {
 
-  private static final String PROTOCOL = "https";
-  private static final String HOST = "www.multiloja.com.br";
-  private static final String HOME_PAGE = PROTOCOL + "://" + HOST;
+   protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString());
 
-  public BrasilMultilojaCrawler(Session session) {
-    super(session);
-  }
+   private static final String SELLER_NAME = "Multiloja";
 
-  @Override
-  public boolean shouldVisit() {
-    String href = session.getOriginalURL().toLowerCase();
-    return !FILTERS.matcher(href).matches() && href.startsWith(HOME_PAGE);
-  }
+   public BrasilMultilojaCrawler(Session session) {
+      super(session);
+   }
 
-  @Override
-  public List<Product> extractInformation(Document doc) throws Exception {
-    List<Product> products = new ArrayList<>();
+   @Override
+   protected JSONObject fetch() {
+      JSONObject jsonObject = new JSONObject();
+      String id = getProductPid();
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Authorization", "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkV2ZXJ0b24iLCJhZG1pbiI6dHJ1ZSwianRpIjoiN2M0Y2FiOTc0MDcyMTRkODAyNWQ5MzFkNTY4MThlYmI1MDQ5OWFmOWVmMGMyNjM3NGI3ZTRlNWU3ZmRjNDVkYiIsImlhdCI6MTYxNjQ0NTI3OSwiZXhwIjoxNzczNjkzMjc5LCJlbWFpbCI6ImV2ZXJ0b25AcHJlY29kZS5jb20uYnIiLCJlbXByZXNhIjoiUHJlY29kZSIsInNjaGVtYSI6Ik11bHRpbG9qYSIsImlkU2NoZW1hIjo3LCJpZFNlbGxlciI6NCwiaWRVc2VyIjoxfQ==.cpC5OeaTtyTjHzNJ2r+JtKWjQ5Q8rgyZ/uPdNxZm0HY=");
+      String API = "https://www.allfront.com.br/api/product/" + id;
 
-    if (isProductPage(doc)) {
-      Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+      Request request = Request.RequestBuilder.create()
+         .setUrl(API)
+         .setHeaders(headers)
+         .build();
+      String content = this.dataFetcher
+         .get(session, request)
+         .getBody();
 
-      JSONObject jsonInfo = CrawlerUtils.selectJsonFromHtml(doc, "script[type=\"application/ld+json\"]", "", null, false, false);
 
-      String internalPid = jsonInfo.has("sku") ? jsonInfo.get("sku").toString() : null;
-      String name = jsonInfo.has("name") ? jsonInfo.get("name").toString() : null;
-      Float price = crawlPrice(jsonInfo);
-      Prices prices = crawlPrices(price, doc);
-      CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "#brd-crumbs li:not(:first-child) > a");
-      String description = crawlDescription(doc);
-      String primaryImageMain = CrawlerUtils.scrapSimplePrimaryImage(doc, ".zoomprincipal img", Arrays.asList("src"), PROTOCOL, HOST);
-      String secondaryImagesMain =
-          CrawlerUtils.scrapSimpleSecondaryImages(doc, ".conteudopreco .FotoMenor a", Arrays.asList("href"), PROTOCOL, HOST, primaryImageMain);
-      List<String> eans = scrapEans(jsonInfo);
+      JSONArray jsonArray = CrawlerUtils.stringToJsonArray(content);
+      if (jsonArray != null && !jsonArray.isEmpty()) {
+         jsonObject = (JSONObject) jsonArray.get(0);
 
-      Map<String, String> skus = scrapVariations(doc);
-      if (skus.isEmpty()) {
-        boolean available = crawlAvailability(jsonInfo);
+      }
 
-        // Creating the product
-        Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalPid).setInternalPid(internalPid).setName(name)
-                .setEans(eans).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0))
-                .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImageMain)
-                .setSecondaryImages(secondaryImagesMain).setDescription(description).setMarketplace(new Marketplace()).setRatingReviews(new RatingsReviews())
-                .build();
+      return jsonObject;
 
-        products.add(product);
-      } else {
-        for (Entry<String, String> entry : skus.entrySet()) {
-          String variationId = entry.getKey();
-          String variationName = entry.getValue() != null ? (name + " " + entry.getValue()).trim() : name;
-          String internalId = internalPid + "-" + variationId;
-          String primaryImage =
-              CrawlerUtils.scrapSimplePrimaryImage(doc, ".conteudopreco div[id~=" + entry.getKey() + "] > a", Arrays.asList("href"), PROTOCOL, HOST);
+   }
 
-          if (primaryImage == null) {
-            primaryImage = primaryImageMain;
-          }
 
-          String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".conteudopreco div[id~=" + entry.getKey() + "] .FotoMenor a",
-              Arrays.asList("href"), PROTOCOL, HOST, primaryImage);
+   private String getProductPid() {
+      String url = null;
+      Pattern pattern = Pattern.compile("\\/(.[0-9]*)\\/");
+      Matcher matcher = pattern.matcher(session.getOriginalURL());
+      if (matcher.find()) {
+         url = matcher.group(1);
+      }
+      return url;
+   }
 
-          if (secondaryImages == null) {
-            secondaryImages = secondaryImagesMain;
-          }
+   @Override
+   public List<Product> extractInformation(JSONObject json) throws Exception {
+      super.extractInformation(json);
+      List<Product> products = new ArrayList<>();
 
-          boolean available = crawlAvailabilityVariation(doc, variationId);
+      if (json != null && !json.isEmpty()) {
+         Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
+         String internalPid = getProductPid();
+         String description = json.optString("descricao_geral");
+         CategoryCollection categoryCollection = getCategories(json);
 
-          // Creating the product
-          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid)
-                  .setName(variationName).setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setEans(eans)
-                  .setCategory2(categories.getCategory(1)).setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage)
-                  .setSecondaryImages(secondaryImages).setDescription(description).setMarketplace(new Marketplace()).setRatingReviews(new RatingsReviews())
+         JSONArray variations = JSONUtils.getValueRecursive(json, "sellers.0.gradeSeller", JSONArray.class);
+         for (Object variation : variations) {
+            if (variation instanceof JSONObject) {
+               JSONObject productInfo = (JSONObject) variation;
+               String internalId = productInfo.optString("sku");
+               Integer identifierImage = productInfo.optInt("idGradeX");
+
+               String name = getName(json, identifierImage);
+               List<String> images = getImage(json, identifierImage);
+               String primaryImage = !images.isEmpty() ? images.remove(0) : null;
+               int stock = productInfo.optInt("disponivel");
+               boolean available = stock > 0;
+               Offers offers = available ? scrapOffers(productInfo) : new Offers();
+
+               // Creating the productInfo
+               Product product = ProductBuilder.create()
+                  .setUrl(session.getOriginalURL())
+                  .setInternalId(internalId)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPrimaryImage(primaryImage)
+                  .setSecondaryImages(images)
+                  .setDescription(description)
+                  .setCategories(categoryCollection)
+                  .setOffers(offers)
                   .build();
 
-          products.add(product);
-        }
+               products.add(product);
+            }
+         }
+      } else {
+         Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
-    } else {
-      Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
-    }
+      return products;
+   }
 
-    return products;
+   private Offers scrapOffers(JSONObject product) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      Pricing pricing = scrapPricing(product);
+      List<String> sales = scrapSales(product);
 
-  }
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(SELLER_NAME)
+         .setIsBuybox(false)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
-  private boolean isProductPage(Document doc) {
-    return !doc.select(".conteudopreco").isEmpty();
-  }
+      return offers;
 
-  private List<String> scrapEans(JSONObject json) {
-    List<String> eans = new ArrayList<>();
+   }
 
-    if (json.has("mpn")) {
-      eans = Arrays.asList(json.getString("mpn").split(","));
-    }
+   private List<String> scrapSales(JSONObject product) {
+      List<String> sales = new ArrayList<>();
 
-    return eans;
-  }
+      String salesOnJson = product.optString("boletoPercentual");
+      sales.add(salesOnJson);
+      return sales;
+   }
 
-  private Float crawlPrice(JSONObject json) {
-    Float price = null;
+   private CategoryCollection getCategories(JSONObject jsonObject) {
+      CategoryCollection categoryCollection = new CategoryCollection();
+      String firstCategorie = jsonObject.optString("categoria");
+      String subCategorie = jsonObject.optString("subcategoria");
+      String terCategorie = jsonObject.optString("tercategoria");
 
-    if (json.has("offers")) {
-      JSONObject value = json.getJSONObject("offers");
-      if (value.has("@type") && value.getString("@type").equalsIgnoreCase("offer")) {
-        price = value.getFloat("price");
+      if (firstCategorie != null && !firstCategorie.isEmpty()) {
+         categoryCollection.add(firstCategorie);
       }
-    }
-
-    return price;
-  }
-
-  private boolean crawlAvailability(JSONObject json) {
-    boolean availability = false;
-
-    if (json.has("offers")) {
-      JSONObject value = json.getJSONObject("offers");
-      if (value.has("@type") && value.getString("@type").equalsIgnoreCase("offer") && value.has("availability")) {
-        availability = value.get("availability").toString().equalsIgnoreCase("in stock");
+      if (subCategorie != null && !subCategorie.isEmpty()) {
+         categoryCollection.add(subCategorie);
       }
-    }
-
-    return availability;
-  }
-
-  private String crawlDescription(Document document) {
-    StringBuilder description = new StringBuilder();
-    Element shortDescription = document.selectFirst(".conteudopreco > .InfoProd");
-
-    if (shortDescription != null) {
-      shortDescription.select("> .InfoProd").remove();
-      shortDescription.select("> .InfoProd2").remove();
-      description.append(shortDescription.html());
-    }
-
-    return description.toString();
-  }
-
-  /**
-   * There is no bankSlip price.
-   * 
-   * Some cases has this: 6 x $259.83
-   * 
-   * Only card that was found in this market was the market's own
-   * 
-   * @param doc
-   * @param price
-   * @return
-   */
-  private Prices crawlPrices(Float price, Document doc) {
-    Prices prices = new Prices();
-
-    if (price != null) {
-      Map<Integer, Float> installmentPriceMap = new TreeMap<>();
-      installmentPriceMap.put(1, price);
-      prices.setBankTicketPrice(CrawlerUtils.scrapFloatPriceFromHtml(doc, "#navpa .Menupa .bcaa b", null, true, ',', session));
-
-      Elements parcels = doc.select("#navpa .Menupa .med > p.p1b");
-      Elements parcelsValues = doc.select("#navpa .Menupa .med > p.p2b");
-
-      if (parcels.size() == parcelsValues.size()) {
-        for (int i = 0; i < parcels.size(); i++) {
-          Integer parcel = CrawlerUtils.scrapIntegerFromHtml(parcels.get(i), null, true, null);
-          Float value = CrawlerUtils.scrapFloatPriceFromHtml(parcelsValues.get(i), null, null, true, ',', session);
-
-          if (parcel != null && value != null) {
-            installmentPriceMap.put(parcel, value);
-          }
-        }
+      if (terCategorie != null && !terCategorie.isEmpty()) {
+         categoryCollection.add(terCategorie);
       }
 
-      if (prices.getBankTicketPrice() == null) {
-        prices.setBankTicketPrice(price);
+      return categoryCollection;
+   }
+
+
+   private String getName(JSONObject dataJson, Integer identifier) {
+      StringBuilder stringBuilder = new StringBuilder();
+      String color = getColor(dataJson, identifier);
+      String name = dataJson.optString("nome");
+
+      if (name != null && !name.isEmpty()) {
+         stringBuilder.append(name);
+         if (color != null && !color.isEmpty()) {
+            stringBuilder.append(" - ").append(color);
+         }
       }
 
-      prices.insertCardInstallment(Card.HIPERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.VISA.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.MASTERCARD.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.AMEX.toString(), installmentPriceMap);
-      prices.insertCardInstallment(Card.DINERS.toString(), installmentPriceMap);
-    }
 
-    return prices;
-  }
+      return stringBuilder.toString();
 
-  /**
-   * Scrap variatons from html and returns a map with key internalId and value variationName
-   * 
-   * @param doc
-   * @return
-   */
-  private Map<String, String> scrapVariations(Document doc) {
-    Map<String, String> skus = new HashMap<>();
+   }
 
-    Elements variations = doc.select(".conteudopreco .ciq > div > div[id]");
-    for (Element e : variations) {
-      skus.put(e.id(), CrawlerUtils.scrapStringSimpleInfo(e, "a > span", true));
-    }
+   private String getColor(JSONObject dataJson, Integer identifier) {
+      JSONArray variations = dataJson.optJSONArray("gradeX");
+      String color = null;
 
-    Elements variationsSpecial = doc.select(".conteudopreco .ciq select > option[class]");
-    for (Element e : variationsSpecial) {
-      skus.put(e.val(), e.ownText());
-    }
+      if (variations != null) {
+         for (Object variation : variations) {
+            if (variation instanceof JSONObject && ((JSONObject) variation).has("idGradeX")) {
+               JSONObject gradeVariation = ((JSONObject) variation);
+               Integer codeGrade = gradeVariation.optInt("idGradeX");
+               if (codeGrade.equals(identifier)) {
+                  color = gradeVariation.optString("descricao");
+                  break;
 
-    return skus;
-  }
-
-  private boolean crawlAvailabilityVariation(Document doc, String id) {
-    boolean availability = false;
-    String token = "if(a.value == \"" + id + "\")";
-    String token2 = "document.getelementbyid('estoque').innerhtml = '";
-
-    Elements scripts = doc.select(".conteudo > div > script");
-    for (Element e : scripts) {
-      String html = e.outerHtml().toLowerCase();
-
-      if (html.contains(token) && html.contains(token2)) {
-        int x = html.indexOf(token) + token.length();
-        int y = html.indexOf("';", x);
-
-        String function = html.substring(x, y);
-
-        Element script = Jsoup.parse(function.substring(function.indexOf("= '") + 3).trim());
-        availability = !script.select("input").isEmpty();
-
-        break;
+               }
+            }
+         }
       }
-    }
+      return color;
+   }
 
-    return availability;
-  }
+   private List<String> getImage(JSONObject dataJson, Integer identifier) {
+      List<String> imageList = new ArrayList<>();
+      String image;
+      JSONArray variationsImages = dataJson.optJSONArray("images");
+
+      if (variationsImages != null) {
+         for (Object variation : variationsImages) {
+            if (variation instanceof JSONObject && ((JSONObject) variation).has("idGradeX")) {
+               JSONObject gradeVariation = ((JSONObject) variation);
+               Integer codeGrade = gradeVariation.optInt("idGradeX");
+               if (codeGrade.equals(identifier)) {
+                  image = gradeVariation.optString("images");
+                  if (image != null && !image.isEmpty()) {
+                     imageList.add(image);
+                  }
+               }
+            }
+
+         }
+      }
+      return imageList;
+
+   }
+
+
+   private Pricing scrapPricing(JSONObject product) throws MalformedPricingException {
+
+      Double priceFrom = JSONUtils.getValueRecursive(product, "0.listPrices.real", Double.class);
+      Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(product, "preco", true);
+      Double bankSlipValue = JSONUtils.getDoubleValueFromJSON(product, "boletoValor", true);
+      CreditCards creditCards = scrapCreditCards(product);
+      BankSlip bankSlip = BankSlip.BankSlipBuilder.create()
+         .setFinalPrice(bankSlipValue)
+         .build();
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankSlip)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(JSONObject product) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      JSONArray installmentsArray = product.optJSONArray("parcelamento");
+      Installments installments = new Installments();
+      if (installmentsArray != null) {
+         for (Object obj : installmentsArray) {
+            if (obj instanceof JSONObject) {
+               JSONObject installmentsJson = (JSONObject) obj;
+               String numberInstallmentStr = installmentsJson.optString("parcela");
+               Integer numberInstallment = numberInstallmentStr != null ? Integer.valueOf(numberInstallmentStr.replace("x", "")) : null;
+               String valueStr = installmentsJson.optString("valor_total");
+               String valueInstallmentStr = installmentsJson.optString("valor");
+               Double valueInstallment = MathUtils.parseDoubleWithComma(valueInstallmentStr);
+               Double value = valueStr != null ? MathUtils.parseDoubleWithComma(valueStr) : null;
+               installments.add(Installment.InstallmentBuilder.create()
+                  .setInstallmentNumber(numberInstallment)
+                  .setFinalPrice(value)
+                  .setInstallmentPrice(valueInstallment)
+                  .build());
+
+            }
+         }
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+      return creditCards;
+   }
 }
