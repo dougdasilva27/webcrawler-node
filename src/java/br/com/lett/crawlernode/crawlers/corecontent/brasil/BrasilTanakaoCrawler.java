@@ -56,8 +56,6 @@ public class BrasilTanakaoCrawler extends Crawler {
          JSONObject variationsInfoJson =
             CrawlerUtils.selectJsonFromHtml(
                doc, " script[type=\"text/javascript\"]", "AmConfigurableData(", ");", false, true);
-         //JSONObject availabilityJson = CrawlerUtils.selectJsonFromHtml(doc, "script[type='application/ld+json']", "", null, false, false );
-
          String internalId =
             CrawlerUtils.scrapStringSimpleInfoByAttribute(
                doc, ".product-view [name=\"product\"]", "value");
