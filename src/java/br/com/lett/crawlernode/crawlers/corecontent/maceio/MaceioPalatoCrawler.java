@@ -1,4 +1,4 @@
-package br.com.lett.crawlernode.crawlers.corecontent.brasil;
+package br.com.lett.crawlernode.crawlers.corecontent.maceio;
 
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.Product;
@@ -14,20 +14,18 @@ import models.Offer;
 import models.Offers;
 import models.pricing.*;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.util.*;
 
+public class MaceioPalatoCrawler extends Crawler {
 
-public class BrasilCentralarCrawler extends Crawler {
-
-   private static final String HOME_PAGE = "https://www.centralar.com.br/";
-   private static final String SELLER_FULL_NAME = "Centralar";
+   private static final String HOME_PAGE = "https://loja.palato.com.br/";
+   private static final String SELLER_FULL_NAME = "Palato";
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
 
-   public BrasilCentralarCrawler(Session session) {
+   public MaceioPalatoCrawler(Session session) {
       super(session);
    }
 
@@ -45,13 +43,12 @@ public class BrasilCentralarCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
-         String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".code-product-lbl  .code", true);
-         String internalPid = internalId;
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-details.page-title .name", true);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".carousel.image-gallery__image.js-gallery-image .item img", Collections.singletonList("data-src"), "https", "centralar.com.br");
-         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".carousel.image-gallery__image.js-gallery-image .item:not(:first-child) img", Collections.singletonList("data-src"), "https", "centralar.com.br", primaryImage);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".product-classifications", ".tab-details"));
-         boolean availableToBuy = !doc.select("#addToCartButton").isEmpty();
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-options input[name='id']", "value");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-options input[name='sku']", "value");
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h3.font-weight-bold", true);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".sp-wrap img", Collections.singletonList("src"), "https", "loja.palato.com.br/");
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList(".produto-informacoes"));
+         boolean availableToBuy = !doc.select(".col-xl-6 .add-to-cart ").isEmpty();
          Offers offers = availableToBuy ? scrapOffer(doc) : new Offers();
 
          // Creating the product
@@ -61,7 +58,6 @@ public class BrasilCentralarCrawler extends Crawler {
             .setInternalPid(internalPid)
             .setName(name)
             .setPrimaryImage(primaryImage)
-            .setSecondaryImages(secondaryImages)
             .setDescription(description)
             .setOffers(offers)
             .build();
@@ -78,13 +74,13 @@ public class BrasilCentralarCrawler extends Crawler {
 
 
    private boolean isProductPage(Document doc) {
-      return !doc.select(".tabs.js-tabs.tabs-responsive").isEmpty();
+      return !doc.select(".produto-informacoes").isEmpty();
    }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
       Pricing pricing = scrapPricing(doc);
-      List<String> sales = scrapSales(doc);
+      List<String> sales = scrapSales(pricing);
 
       offers.add(Offer.OfferBuilder.create()
          .setUseSlugNameAsInternalSellerId(true)
@@ -100,23 +96,22 @@ public class BrasilCentralarCrawler extends Crawler {
 
    }
 
-   private List<String> scrapSales(Document doc) {
+   private List<String> scrapSales(Pricing pricing) {
       List<String> sales = new ArrayList<>();
 
-      Element salesOneElement = doc.selectFirst(".first_price_discount_container");
-      String firstSales = salesOneElement != null ? salesOneElement.text() : null;
+      String sale = CrawlerUtils.calculateSales(pricing);
 
-      if (firstSales != null && !firstSales.isEmpty()) {
-         sales.add(firstSales);
+      if (sale != null) {
+         sales.add(sale);
       }
 
       return sales;
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".product-details p", null, true, ',', session);
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".values-price strike", null, true, ',', session);
-      CreditCards creditCards = scrapCreditCards(doc);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".h3.green", null, true, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".size-2.mb-0.font-weight-normal.sale", null, true, ',', session);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -126,16 +121,14 @@ public class BrasilCentralarCrawler extends Crawler {
    }
 
 
-   private CreditCards scrapCreditCards(Document doc) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
-
-      Double cardPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".values-price span, tabs.js-tabs.tabs-responsive", null, true, ',', session);
 
       Installments installments = new Installments();
       if (installments.getInstallments().isEmpty()) {
          installments.add(Installment.InstallmentBuilder.create()
             .setInstallmentNumber(1)
-            .setInstallmentPrice(cardPrice)
+            .setInstallmentPrice(spotlightPrice)
             .build());
       }
 
@@ -149,6 +142,5 @@ public class BrasilCentralarCrawler extends Crawler {
 
       return creditCards;
    }
-
 
 }

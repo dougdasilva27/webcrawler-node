@@ -2,7 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
@@ -18,6 +20,7 @@ import models.Offer;
 import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
+import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -27,6 +30,7 @@ import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SaopauloAmericanasCrawler extends B2WCrawler {
@@ -46,13 +50,73 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       super.config.setFetcher(FetchMode.JSOUP);
    }
 
+   @Override
+   protected Document fetch() {
+      return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
+   }
+
+   @Override
+   public void setHeaders() {
+//      super.headers.put("authority", "www.americanas.com.br");
+      super.headers.put("sec-ch-ua", "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"");
+      super.headers.put("sec-ch-ua-mobile", "?0");
+      super.headers.put("upgrade-insecure-requests", "1");
+      super.headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
+//      super.headers.put("sec-fetch-site", "none");
+//      super.headers.put("sec-fetch-mode", "navigate");
+//      super.headers.put("sec-fetch-user", "?1");
+//      super.headers.put("sec-fetch-dest", "document");
+      super.headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36");
+//      super.headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+   }
+
+   public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setSendUserAgent(false)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         )
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
+            )
+         )
+         .build();
+
+      Response response = df.get(session,request);
+      String content = response.getBody();
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+         request.setProxyServices(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR));
+
+         content = new FetcherDataFetcher().get(session, request).getBody();
+      }
+
+      return content;
+   }
 
    @Override
    protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
       JSONObject product = JSONUtils.getValueRecursive(frontPageJson,"pages.undefined.queries.productReviews.result.product",JSONObject.class);
       JSONObject reviews = product != null ? product.optJSONObject("reviews"): null;
-
 
       if(reviews != null) {
 
@@ -71,12 +135,11 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
 
    private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject reviews) {
-      Integer star1 = 0;
-      Integer star2 = 0;
-      Integer star3 = 0;
-      Integer star4 = 0;
-      Integer star5 = 0;
-
+      int star1 = 0;
+      int star2 = 0;
+      int star3 = 0;
+      int star4 = 0;
+      int star5 = 0;
 
       JSONArray ratingDistribution = reviews.optJSONArray("ratingDistribution");
 
@@ -117,9 +180,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          .totalStar4(star4)
          .totalStar5(star5)
          .build();
-
    }
-
 
    private void scrapAndSetInfoForMainPage(Document doc, Offers offers, String internalId, String internalPid, int arrayPosition) throws OfferException, MalformedPricingException {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", null, false, true);
@@ -155,38 +216,12 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    }
 
    protected Document acessOffersPage(String offersPageURL) {
-      Request request = Request.RequestBuilder.create().setUrl(offersPageURL).setProxyservice(
-         Arrays.asList(
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         )
-      ).build();
-      Response response = this.dataFetcher.get(session, request);
-      String content = response.getBody();
-
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-         request.setProxyServices(Arrays.asList(
-            ProxyCollection.LUMINATI_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
-
-
-         content = new FetcherDataFetcher().get(session, request).getBody();
-      }
-
-      return Jsoup.parse(content);
+      return Jsoup.parse(fetchPage(offersPageURL,this.dataFetcher,cookies,headers,session));
    }
 
 
    private void setOffersForMainPageSeller(Offers offers, JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
-      boolean twoPositions = false;
 
       if (offersJson.has(internalId)) {
          JSONArray sellerInfo = offersJson.getJSONArray(internalId);
@@ -203,7 +238,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
                if (i > 0 && name.equalsIgnoreCase("b2w")) {
                   sellersPagePosition = 1;
-                  twoPositions = true;
                }
                Pricing pricing = scrapPricing(info, i, internalSellerId, mapOfSellerIdAndPrice, false);
 

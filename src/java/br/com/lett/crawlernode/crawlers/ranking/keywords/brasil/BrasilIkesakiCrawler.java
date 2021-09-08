@@ -2,13 +2,14 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
 
@@ -21,19 +22,14 @@ public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
       this.pageSize = 48;
       this.log("Página " + this.currentPage);
 
-      JSONObject json = fetchApi();
-      JSONArray products = json.optJSONArray("products");
+      Document document = fetch();
+      Elements products = document.select(".venus li[layout]");
 
       if (products != null && !products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts(json);
-         }
+         for (Element product : products) {
 
-         for (Object element : products) {
-            JSONObject product = (JSONObject) element;
-
-            String internalPid = product.optString("id");
-            String productUrl = "https:" + product.optString("url");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product,"[data-id]","data-id");
+            String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product,"a","href");
 
             saveDataProduct(null, internalPid, productUrl);
 
@@ -56,19 +52,16 @@ public class BrasilIkesakiCrawler extends CrawlerRankingKeywords {
       this.log("Total da busca: " + this.totalProducts);
    }
 
-   private JSONObject fetchApi() {
-      String url = "https://api.linximpulse.com/engage/search/v3/search?apiKey=ikesaki&page=" + this.currentPage + "&resultsPerPage=48&terms=" + this.keywordEncoded;
+   private Document fetch() {
+      String url = "https://www.ikesaki.com.br/"+this.keywordEncoded+"#" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Origin", "https://www.ikesaki.com.br");
 
       Request request = Request.RequestBuilder.create()
-         .setHeaders(headers)
          .setUrl(url)
          .build();
 
       String response = dataFetcher.get(session, request).getBody();
-      return CrawlerUtils.stringToJson(response);
+      return Jsoup.parse(response);
    }
 }

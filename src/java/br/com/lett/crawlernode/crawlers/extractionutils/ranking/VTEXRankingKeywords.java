@@ -36,7 +36,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
    private static final String SENDER = "vtex.store-resources@0.x";
    private static final String PROVIDER = "vtex.search-graphql@0.x";
 
-   private String keySHA256 = "7ebc11bc7b0b6a33043102ea1f0a454d556efb88153a3ab7800a979d069ce789";
+   protected String keySHA256 = "7ebc11bc7b0b6a33043102ea1f0a454d556efb88153a3ab7800a979d069ce789";
    private String vtex_segment = getVtexSegment();
 
    @Override
@@ -114,13 +114,14 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
          .append("?page=")
          .append(this.currentPage);
 
+
       String apiUrl = searchPage.toString().replace("+", "%20");
 
 
       return Jsoup.parse(fetchPage(apiUrl));
    }
 
-   private void scrapHashCode() {
+   protected void scrapHashCode() {
       JSONObject runtimeJson = new JSONObject();
 
       Element nonFormattedJson = this.currentDoc.selectFirst("template[data-varname=__STATE__] script");
@@ -231,7 +232,8 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       payload.append("&maxAge=short");
       payload.append("&appsEtag=remove");
       payload.append("&domain=store");
-      payload.append("&locale=pt-BR");
+      payload.append("&locale=");
+      payload.append(getUrlLocate());
       payload.append("&operationName=productSearchV3");
       try {
          payload.append("&variables=" + URLEncoder.encode("{}", "UTF-8"));
@@ -242,6 +244,7 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       url.append(payload.toString());
 
       log("Link onde são feitos os crawlers:" + url);
+
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url.toString())
@@ -254,6 +257,10 @@ public abstract class VTEXRankingKeywords extends CrawlerRankingKeywords {
       searchApi = JSONUtils.getValueRecursive(response, "data.productSearch", JSONObject.class, new JSONObject());
 
       return searchApi;
+   }
+
+   protected String getUrlLocate(){
+      return "pt-BR";
    }
 
    protected String createVariablesBase64() {

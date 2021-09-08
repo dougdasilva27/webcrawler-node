@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -17,6 +18,7 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
+import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -24,10 +26,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class SaopauloShoptimeCrawler extends B2WCrawler {
 
@@ -43,32 +42,6 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       super.sellerNameLowerFromHTML = MAIN_SELLER_NAME_LOWER_FROM_HTML;
       super.config.setFetcher(FetchMode.JSOUP);
       super.homePage = HOME_PAGE;
-   }
-
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Request request;
-
-      if (dataFetcher instanceof FetcherDataFetcher) {
-         request = Request.RequestBuilder.create().setUrl(HOME_PAGE)
-            .setCookies(cookies)
-            .setProxyservice(
-               Arrays.asList(
-                  ProxyCollection.INFATICA_RESIDENTIAL_BR,
-                  ProxyCollection.NETNUT_RESIDENTIAL_BR,
-                  ProxyCollection.BUY
-               )
-            ).mustSendContentEncoding(false)
-            .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
-               .setForbiddenCssSelector("#px-captcha")
-               .mustUseMovingAverage(false)
-               .mustRetrieveStatistics(true).build())
-            .build();
-      } else {
-         request = Request.RequestBuilder.create().setUrl(HOME_PAGE).setCookies(cookies).build();
-      }
-
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(request, "www.shoptime.com.br", "/", null, session, dataFetcher);
    }
 
    @Override
@@ -94,32 +67,8 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       return offers;
    }
 
-   private Document acessOffersPage(String offersPageURL) {
-      Request request = Request.RequestBuilder.create().setUrl(offersPageURL).setProxyservice(
-         Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY
-         )
-      ).build();
-      Response response = this.dataFetcher.get(session, request);
-      String content = response.getBody();
-
-      int statusCode = response.getLastStatusCode();
-
-      if ((Integer.toString(statusCode).charAt(0) != '2' &&
-         Integer.toString(statusCode).charAt(0) != '3'
-         && statusCode != 404)) {
-         request.setProxyServices(Arrays.asList(
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
-            ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY));
-
-         content = new FetcherDataFetcher().get(session, request).getBody();
-      }
-
-      return Jsoup.parse(content);
+   protected Document acessOffersPage(String offersPageURL) {
+      return Jsoup.parse(fetchPage(offersPageURL,this.dataFetcher,cookies,headers,session));
    }
 
 
@@ -238,4 +187,23 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       return creditCards;
    }
 
+   @Override
+   protected Document fetch() {
+      setHeaders();
+      return Jsoup.parse(SaopauloAmericanasCrawler.fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
+   }
+
+   @Override
+   public void setHeaders() {
+      super.headers.put("host", "www.shoptime.com.br");
+      super.headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
+      super.headers.put("sec-ch-ua-mobile", "?0");
+      super.headers.put("upgrade-insecure-requests", "1");
+      super.headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      super.headers.put("sec-fetch-site", "none");
+      super.headers.put("sec-fetch-mode", "navigate");
+      super.headers.put("sec-fetch-user", "?1");
+      super.headers.put("sec-fetch-dest", "document");
+      super.headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+   }
 }

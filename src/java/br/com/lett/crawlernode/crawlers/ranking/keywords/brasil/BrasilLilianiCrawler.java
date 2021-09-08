@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -14,36 +17,36 @@ public class BrasilLilianiCrawler extends CrawlerRankingKeywords {
   @Override
   protected void extractProductsFromCurrentPage() {
     // número de produtos por página do market
-    this.pageSize = 20;
+    this.pageSize = 12;
 
     this.log("Página " + this.currentPage);
 
     // monta a url com a keyword e a página
-    String url = "https://busca.liliani.com.br/" + this.keywordWithoutAccents.replace(" ", "%20") + "?pagina=" + this.currentPage;
+    String url = "https://search.smarthint.co/v1/Search/GetPrimarySearch?shcode=SH-275477&term="  + this.keywordEncoded + "&from=" + (this.currentPage -1) * 12 + "&size=12&searchSort=0";
     this.log("Link onde são feitos os crawlers: " + url);
-
+//https://search.smarthint.co/v1/Search/GetPrimarySearch?shcode=SH-275477&term=geladeira&from=24&size=12&searchSort=0
     // chama função de pegar o html
-    this.currentDoc = fetchDocument(url);
+    JSONObject json = fetchJSONObject(url);
 
-    Elements products = this.currentDoc.select("#listProduct .hproduct");
+     JSONArray products = json.optJSONArray("Products");
 
     if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProductsCarrefour();
-      }
 
-      for (Element e : products) {
-        String internalPid = e.attr("data-item-id");
-        String productUrl = crawlProductUrl(e);
+      for (Object o : products) {
+         if (o instanceof JSONObject){
+            JSONObject product = (JSONObject) o;
 
-        saveDataProduct(null, internalPid, productUrl);
+        String internalId = product.optString("ProductId");
+        String productUrl = CrawlerUtils.completeUrl(product.optString("Link"), "https", "wwww.liliani.com.br");
 
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+        saveDataProduct(internalId, null, productUrl);
+
+        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit) {
           break;
         }
 
-      }
+      }}
     } else {
       this.result = false;
       this.log("Keyword sem resultado!");
@@ -52,33 +55,8 @@ public class BrasilLilianiCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  protected void setTotalProductsCarrefour() {
-    Element totalElement = this.currentDoc.select(".resumo-resultado strong").first();
-
-    if (totalElement != null) {
-      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
-
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element url = e.select("a.link.url").first();
-
-    if (url != null) {
-      productUrl = url.attr("href");
-
-      if (!productUrl.startsWith("http")) {
-        productUrl = ("https://www.liliani.com.br/" + productUrl).replace("br//", "br/");
-      }
-    }
-
-    return productUrl;
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return true;
+   }
 }

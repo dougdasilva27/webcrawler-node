@@ -22,6 +22,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
    }
 
    private static final String PROTOCOL = "https://";
+   private static int pages = 0;
    private static final String DOMAIN = "superentucasa.soriana.com/Default.aspx";
 
 
@@ -32,6 +33,7 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
          webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
          if (webdriver != null) {
             doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            webdriver.terminate();
          } else {
             throw new WebDriverException("Failed to instantiate webdriver");
          }
@@ -44,12 +46,11 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
    }
 
 
-
    @Override
    protected void extractProductsFromCurrentPage() {
       this.log("Página " + this.currentPage);
 
-      String url = "https://superentucasa.soriana.com/Default.aspx?p=13365&Txt_Bsq_Descripcion="+this.keywordWithoutAccents+"&Paginacion=" + this.currentPage;
+      String url = "https://superentucasa.soriana.com/Default.aspx?p=13365&Txt_Bsq_Descripcion=" + this.keywordWithoutAccents.replace(" ", "%20") + "&Paginacion=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
       this.currentDoc = webdriverRequest(url);
@@ -57,8 +58,9 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
       Elements products = this.currentDoc.select(".product-item");
 
       if (!products.isEmpty()) {
-         if (this.totalProducts == 0) {
-            setTotalProducts();
+         if (pages == 0){
+            Elements pagination = this.currentDoc.select(".pagination li a");
+            pages = pagination.size();
          }
 
          for (Element e : products) {
@@ -84,7 +86,8 @@ public class MexicoSorianasuperCrawler extends CrawlerRankingKeywords {
    @Override
    protected boolean hasNextPage() {
 
-      return currentDoc.selectFirst(".pagination .active .numeros .numeros") != null;
+      return this.currentPage < pages;
+
    }
 
    private String crawlInternalId(Element e) {

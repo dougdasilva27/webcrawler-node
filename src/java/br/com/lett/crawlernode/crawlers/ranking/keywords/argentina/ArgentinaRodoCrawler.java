@@ -1,111 +1,62 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.argentina;
 
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class ArgentinaRodoCrawler extends CrawlerRankingKeywords {
 
-  public ArgentinaRodoCrawler(Session session) {
-    super(session);
-  }
+   public ArgentinaRodoCrawler(Session session) {
+      super(session);
+   }
 
-  private String categoryUrl;
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 16;
+      this.log("Página " + this.currentPage);
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.pageSize = 9;
-    this.log("Página " + this.currentPage);
+      String url = "https://rodo.com.ar/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
 
-    String url = "http://www.rodo.com.ar/catalogsearch/result/index/?limit=30&p=" + this.currentPage + "&q=" + this.keywordEncoded;
+      this.log("Link onde são feitos os crawlers: " + url);
+      this.currentDoc = fetchDocument(url);
+      Elements products = this.currentDoc.select(".products-grid.products-grid--max-3-col li");
 
-    if (this.currentPage > 1 && this.categoryUrl != null) {
-      url = this.categoryUrl + "?p=" + this.currentPage;
-    }
+      if (!products.isEmpty()) {
+         if (this.totalProducts == 0) {
+            setTotalProducts();
+         }
 
-    this.log("Link onde são feitos os crawlers: " + url);
-    this.currentDoc = fetchDocument(url);
-    Elements products = this.currentDoc.select(".products-grid .item");
+         for (Element e : products) {
+            String internalId = crawlInternalId(e);
+            String productUrl = CrawlerUtils.scrapUrl(e, ".item.last a", "href", "https", "www.rodo.com.ar");
 
-    if (this.currentPage == 1) {
-      String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
+            saveDataProduct(internalId, null, productUrl);
 
-      if (!url.equals(redirectUrl)) {
-        this.categoryUrl = redirectUrl;
-      }
-    }
+            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
 
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
-      }
-
-      for (Element e : products) {
-        String internalId = crawlInternalId(e);
-        String productUrl = crawlProductUrl(e);
-
-        saveDataProduct(internalId, null, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
-
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = this.currentDoc.selectFirst(".amount");
-
-    if (totalElement != null) {
-      String text = totalElement.text().toLowerCase();
-
-      if (text.contains("de")) {
-        text = CommonMethods.getLast(text.split("de")).replaceAll("[^0-9]", "").trim();
+         }
       } else {
-        text = text.replaceAll("[^0-9]", "").trim();
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-      this.log("Total da busca: " + this.totalProducts);
-    }
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return !this.currentDoc.select(".next.i-next").isEmpty();
+   }
 
-  private String crawlInternalId(Element e) {
-    String internalId = null;
+   private String crawlInternalId(Element e) {
 
-    Element img = e.selectFirst(".price-box span[id]");
-    if (img != null) {
-      String text = img.attr("id");
+      String url = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, ".product-image img", "id");
+      return CommonMethods.getLast(url.split("-"));
+   }
 
-      if (text.contains("-")) {
-        internalId = CommonMethods.getLast(text.split("-"));
-      }
-    }
-
-    return internalId;
-  }
-
-  private String crawlProductUrl(Element e) {
-    String productUrl = null;
-
-    Element urlElement = e.selectFirst(".product-name a");
-    if (urlElement != null) {
-      productUrl = CrawlerUtils.sanitizeUrl(urlElement, "href", "http:", "www.rodo.com.ar");
-    }
-
-    return productUrl;
-  }
 }

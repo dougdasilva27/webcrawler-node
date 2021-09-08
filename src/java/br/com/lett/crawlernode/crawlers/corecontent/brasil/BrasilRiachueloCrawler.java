@@ -1,7 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions.FetcherOptionsBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -17,25 +16,17 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import models.Offer;
 import models.Offer.OfferBuilder;
 import models.Offers;
-import models.pricing.*;
 import models.pricing.BankSlip.BankSlipBuilder;
-import models.pricing.Installment.InstallmentBuilder;
+import models.pricing.*;
 import models.pricing.Pricing.PricingBuilder;
-import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class BrasilRiachueloCrawler extends Crawler {
 
@@ -50,7 +41,7 @@ public class BrasilRiachueloCrawler extends Crawler {
 
    public BrasilRiachueloCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.JSOUP);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
@@ -74,9 +65,6 @@ public class BrasilRiachueloCrawler extends Crawler {
          .setIgnoreStatusCode(false)
          .mustSendContentEncoding(false)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
          .setFetcheroptions(
             FetcherOptionsBuilder.create()
                .mustUseMovingAverage(false)
@@ -106,9 +94,7 @@ public class BrasilRiachueloCrawler extends Crawler {
          .setIgnoreStatusCode(false)
          .mustSendContentEncoding(false)
          .setHeaders(headers)
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.INFATICA_RESIDENTIAL_BR,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR))
+
          .build();
       String jsonStr = this.dataFetcher.get(session, request).getBody();
 
@@ -165,7 +151,7 @@ public class BrasilRiachueloCrawler extends Crawler {
                for (String variationName : variations.keySet()) {
 
                   if (!variationName.equals("default")) {
-                     String variationNameProduct = name +  (variationName.contains(":RCHLO") ? " - " + variationName.replace(":RCHLO", "") : "");
+                     String variationNameProduct = name + (variationName.contains(":RCHLO") ? " - " + variationName.replace(":RCHLO", "") : "");
                      String internalId = JSONUtils.getValueRecursive(variations, variationName + ".sku", String.class);
                      boolean isAvailable = !jsonVariations.optBoolean("soldOut");
 
@@ -237,11 +223,11 @@ public class BrasilRiachueloCrawler extends Crawler {
       return offers;
    }
 
-   private Pricing scrapPricing(JSONObject json, String variationName) throws MalformedPricingException{
+   private Pricing scrapPricing(JSONObject json, String variationName) throws MalformedPricingException {
       Double spotLightPrice = JSONUtils.getValueRecursive(json, variationName + ".price.final", Double.class);
       Double priceFrom = JSONUtils.getValueRecursive(json, variationName + ".price.regular", Double.class);
 
-      if(priceFrom != null && priceFrom.equals(spotLightPrice)){
+      if (priceFrom != null && priceFrom.equals(spotLightPrice)) {
          priceFrom = null;
       }
 
@@ -266,7 +252,7 @@ public class BrasilRiachueloCrawler extends Crawler {
          for (Object o : installmentsArr) {
             JSONObject installmentsJson = (JSONObject) o;
 
-            if(installmentsJson.optString("type").equals("rchloCreditCard")){
+            if (installmentsJson.optString("type").equals("rchloCreditCard")) {
                Installments shopCardInstallments = new Installments();
                shopCardInstallments.add(Installment.InstallmentBuilder.create()
                   .setInstallmentNumber(installmentsJson.optInt("installments"))
@@ -278,7 +264,7 @@ public class BrasilRiachueloCrawler extends Crawler {
                   .setInstallments(shopCardInstallments)
                   .setIsShopCard(true)
                   .build());
-            }else{
+            } else {
                installments.add(
                   Installment.InstallmentBuilder.create()
                      .setInstallmentNumber(installmentsJson.optInt("installments"))

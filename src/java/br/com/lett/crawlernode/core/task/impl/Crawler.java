@@ -13,6 +13,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.RequestMethod;
 import br.com.lett.crawlernode.core.models.Parser;
+import br.com.lett.crawlernode.core.models.SkuStatus;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.*;
@@ -67,6 +68,8 @@ import static br.com.lett.crawlernode.core.fetcher.models.Response.*;
 public abstract class Crawler extends Task {
 
    protected static final Logger logger = LoggerFactory.getLogger(Crawler.class);
+
+   private SkuStatus skuStatus = SkuStatus.VOID;
 
    protected static final Pattern FILTERS = Pattern.compile(".*(\\.(css|js|bmp|gif|jpe?g" + "|png|ico|tiff?|mid|mp2|mp3|mp4"
       + "|wav|avi|mov|mpeg|ram|m4v|pdf" + "|rm|smil|wmv|swf|wma|zip|rar|gz))(\\?.*)?$");
@@ -240,6 +243,8 @@ public abstract class Crawler extends Task {
          printCrawledInformation(product);
       }
 
+      setSkuStatus(filter(products,session.getInternalId()));
+
       // insights session
       // there is only one product that will be selected
       // by it's internalId, passed by the crawler session
@@ -286,6 +291,7 @@ public abstract class Crawler extends Task {
       // after active void analysis we have the resultant
       // product after the extra extraction attempts
       // if the resultant product is not void, the we will process it
+      setSkuStatus(activeVoidResultProduct);
       if (!activeVoidResultProduct.isVoid() && session instanceof InsightsCrawlerSession) {
          processProduct(activeVoidResultProduct);
       }
@@ -721,6 +727,18 @@ public abstract class Crawler extends Task {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()), "END");
+      Logging.logInfo(logger, session, new JSONObject().put("elapsed_time", System.currentTimeMillis() - session.getStartTime()).put("product_status",skuStatus.toString()), "END");
+   }
+
+   private void setSkuStatus(Product product){
+      if (product.isVoid()) {
+         skuStatus = SkuStatus.VOID;
+      } else if (product.getAvailable()) {
+         skuStatus = SkuStatus.AVAILABLE;
+      } else if (product.getMarketplace() != null && product.getMarketplace().size() > 0) {
+         skuStatus = SkuStatus.MARKETPLACE_ONLY;
+      } else {
+         skuStatus =SkuStatus.UNAVAILABLE;
+      }
    }
 }

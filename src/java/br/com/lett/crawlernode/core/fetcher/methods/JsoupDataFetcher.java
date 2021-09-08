@@ -16,6 +16,8 @@ import java.util.Map.Entry;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
+
+import org.apache.http.HttpHeaders;
 import org.json.JSONObject;
 import org.jsoup.Connection.Method;
 import org.jsoup.Jsoup;
@@ -95,6 +97,7 @@ public class JsoupDataFetcher implements DataFetcher {
 
       String randUserAgent =
             headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
+      headers.put(FetchUtilities.USER_AGENT, randUserAgent);
 
       int attemptsNumber = proxies.isEmpty() ? 2 : proxies.size();
 

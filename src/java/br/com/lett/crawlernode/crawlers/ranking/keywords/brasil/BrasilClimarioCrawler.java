@@ -1,88 +1,84 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class BrasilClimarioCrawler extends CrawlerRankingKeywords {
 
-	public BrasilClimarioCrawler(Session session) {
-		super(session);
-	}
+   protected String searchPageUrl;
 
-	@Override
-	protected void extractProductsFromCurrentPage() {
-		//número de produtos por página do market
-		this.pageSize = 18;
+   public BrasilClimarioCrawler(Session session) {
+      super(session);
+   }
 
-		this.log("Página "+ this.currentPage);
-		
-		//monta a url com a keyword e a página
-		String url = "http://www.climario.com.br/buscapagina?ft="+ this.keywordEncoded +"&PS=18&sl=9e5e0cbc-9822-4c83-a25d-a99036df38b7&cc=18&sm=0&PageNumber="+ this.currentPage;
-		this.log("Link onde são feitos os crawlers: "+url);			
-		
-		//chama função de pegar a url
-		this.currentDoc = fetchDocument(url);
-		
-		Elements products = this.currentDoc.select(".vitrine li[layout]");
-		
-		//se obter 1 ou mais links de produtos e essa página tiver resultado faça:
-		if(products.size() >= 1) {
-			for(Element e: products) {
-				// InternalPid
-				String internalPid 	= crawlInternalPid(e);
-				
-				// InternalId
-				String internalId 	= crawlInternalId(e);
-				
-				// Url do produto
-				String urlProduct = crawlProductUrl(e);
-				
-				saveDataProduct(internalId, internalPid, urlProduct);
-				
-				this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
-				if(this.arrayProducts.size() == productsLimit) break;
-			}
-		} else {
-			this.result = false;
-			this.log("Keyword sem resultado!");
-		}
+   private String getNextPageUrl() {
+      String url = "";
+      Pattern regexAppToken = Pattern.compile(".load\\('(/buscapagina\\?.*?)'");
 
-		this.log("Finalizando Crawler de produtos da página "+this.currentPage+" - até agora "+this.arrayProducts.size()+" produtos crawleados");
-	}
-	
-	@Override
-	protected boolean hasNextPage() {
-		return true;
-	}
+      Matcher matcher = regexAppToken.matcher(this.currentDoc.toString());
 
-	private String crawlInternalId(Element e){
-		String internalId = null;
-		
-		return internalId;
-	}
-	
-	private String crawlInternalPid(Element e){
-		String internalPid = null;
-		Element pid = e.select(".compare-product-checkbox").first();
-		
-		if(pid != null){
-			internalPid = pid.attr("rel");
-		}
-		
-		return internalPid;
-	}
-	
-	private String crawlProductUrl(Element e){
-		String urlProduct = null;
-		Element eUrl = e.select("a[title]:not([class])").first();
-		
-		if(eUrl != null){
-			urlProduct = eUrl.attr("href");
-		}
-		
-		return urlProduct;
-	}
+      if (matcher.find()) {
+         url = matcher.group(1);
+      }
+
+      return url;
+   }
+
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 18;
+      this.log("Página " + this.currentPage);
+
+      String url = "";
+      if (this.currentPage == 1) {
+         url = "https://www.climario.com.br/" + this.keywordEncoded + "?&utmi_pc=BuscaFullTex";
+         this.currentDoc = fetchDocument(url);
+         searchPageUrl = getNextPageUrl();
+      } else {
+         url = "https://www.climario.com.br" + searchPageUrl + this.currentPage;
+         this.currentDoc = fetchDocument(url);
+      }
+
+
+      this.log("Link onde são feitos os crawlers: " + url);
+      Elements products = this.currentDoc.select(".vitrine li[layout]");
+
+      if (!products.isEmpty()) {
+         for (Element e : products) {
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "div.yv-review-quickreview", "value");
+            String urlProduct = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a.product-image", "href");
+
+            //For some reason, the first product is not present in the page and has no id
+            if (internalPid != null) {
+               saveDataProduct(null, internalPid, urlProduct);
+
+               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
+               if (this.arrayProducts.size() == productsLimit) break;
+            }
+         }
+      } else {
+         this.result = false;
+         this.log("Keyword sem resultado!");
+      }
+
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
+
+   @Override
+   protected boolean hasNextPage() {
+      return true;
+   }
 }
