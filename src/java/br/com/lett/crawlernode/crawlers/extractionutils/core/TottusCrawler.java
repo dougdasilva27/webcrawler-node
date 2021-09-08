@@ -49,7 +49,7 @@ public abstract class TottusCrawler extends Crawler {
 
          Logging.printLogDebug(logger, session, "Product page identified: " + session.getOriginalURL());
 
-         String name = doc.selectFirst("h1.title").text() + " " + doc.selectFirst("h2.brand").text();
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc,"h1.title",true)  + " " + CrawlerUtils.scrapStringSimpleInfo(doc,".subtitle-container",true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".Breadcrumbs .link.small");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".GalleryImg", Collections.singletonList("src"), "http://",
             homePage);
