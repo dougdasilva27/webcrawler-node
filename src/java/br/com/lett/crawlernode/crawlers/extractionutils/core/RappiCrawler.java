@@ -138,7 +138,7 @@ public abstract class RappiCrawler extends Crawler {
 
       String productFriendlyUrl = storeId+"_"+productId;
 
-      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"0\",\"lng\":\"0\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\""+productFriendlyUrl+"\"}}";
+      String payload = "{\"dynamic_list_request\":{\"context\":\"product_detail\",\"state\":{\"lat\":\"1\",\"lng\":\"1\"},\"limit\":100,\"offset\":0},\"dynamic_list_endpoint\":\"context/content\",\"proxy_input\":{\"product_friendly_url\":\""+productFriendlyUrl+"\"}}";
 
 
 
