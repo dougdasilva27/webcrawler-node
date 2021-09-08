@@ -30,6 +30,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class BrasilMartinsCrawler extends Crawler {
 
@@ -66,36 +67,39 @@ public class BrasilMartinsCrawler extends Crawler {
          return super.fetch();
       }
       try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
          Logging.printLogInfo(logger, session, "awaiting product page without login");
 
-         webdriver.waitLoad(10000);
+         webdriver.waitLoad(2000);
+
          WebElement buyButtom = webdriver.driver.findElement(By.cssSelector("#btnBuyProd"));
          webdriver.clickOnElementViaJavascript(buyButtom);
+
+         webdriver.driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
 
          waitForElement(webdriver.driver, "#js_username_login");
          WebElement email = webdriver.driver.findElement(By.cssSelector("#js_username_login"));
          email.sendKeys(login);
 
-         waitForElement(webdriver.driver, "#j_password");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector("#j_password"));
-         pass.sendKeys(password);
-
+         webdriver.waitLoad(4000);
 
          waitForElement(webdriver.driver, "#jsSelectCNPJ");
          WebElement cnpj = webdriver.driver.findElement(By.cssSelector("#jsSelectCNPJ"));
          webdriver.clickOnElementViaJavascript(cnpj);
          webdriver.waitLoad(4000);
 
+         waitForElement(webdriver.driver, ".form-group.c-login__group #j_password");
+         WebElement pass  = webdriver.driver.findElement(By.cssSelector(".form-group.c-login__group #j_password"));
+         pass.sendKeys(password);
 
          Logging.printLogInfo(logger, session, "awaiting login button");
-         webdriver.waitLoad(2000);
+         webdriver.waitLoad(6000);
 
          WebElement login = webdriver.driver.findElement(By.cssSelector("#btn-login"));
          webdriver.clickOnElementViaJavascript(login);
 
-         webdriver.waitLoad(6000);
+         webdriver.driver.manage().timeouts().pageLoadTimeout(20, TimeUnit.SECONDS);
          Logging.printLogInfo(logger, session, "awaiting product page");
 
          waitForElement(webdriver.driver, ".qdValue");
@@ -114,15 +118,9 @@ public class BrasilMartinsCrawler extends Crawler {
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 30);
+      WebDriverWait wait = new WebDriverWait(driver, 40);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
-
-   public static void waitForElementPrice(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 60);
-      wait.until(ExpectedConditions.elementToBeSelected(By.cssSelector(cssSelector)));
-   }
-
 
 
    @Override
