@@ -24,9 +24,8 @@ import java.util.*;
 
 /**
  * Date: 29/08/2017
- * 
- * @author Gabriel Dornelas
  *
+ * @author Gabriel Dornelas
  */
 public class BrasilDrogariapovaoCrawler extends Crawler {
 
@@ -37,13 +36,6 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
       super.config.setFetcher(FetchMode.APACHE);
    }
 
-   @Override
-   public void handleCookiesBeforeFetch() {
-      Logging.printLogDebug(logger, session, "Adding cookie...");
-
-      this.cookies = CrawlerUtils.fetchCookiesFromAPage(HOME_PAGE, Arrays.asList("PHPSESSID"), "www.drogariaspovao.com.br", "/", cookies, session, null,
-            dataFetcher);
-   }
 
    @Override
    protected Document fetch() {
@@ -58,11 +50,13 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
          Map<String, String> headers = new HashMap<>();
          headers.put("Content-Type", "application/x-www-form-urlencoded");
+         headers.put("Cookie", "PHPSESSID=sfd0t7ld4l6sm36a1hvkftfnn4;"); //expiration 08/09/2022
 
          Request request = RequestBuilder.create().setUrl("https://www.drogariaspovao.com.br/ct/atende_geral.php").setCookies(cookies).setHeaders(
-               headers)
-               .setPayload(payload).build();
-         JSONArray infos = CrawlerUtils.stringToJsonArray(this.dataFetcher.post(session, request).getBody());
+            headers)
+            .setPayload(payload).build();
+         String content = this.dataFetcher.post(session, request).getBody();
+         JSONArray infos = CrawlerUtils.stringToJsonArray(content);
 
          if (infos.length() > 6) {
             JSONArray productInfo = infos.getJSONArray(6); // 6º position of array has product info
@@ -109,9 +103,9 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
          // Creating the product
          Product product = ProductBuilder.create().setUrl(session.getOriginalURL()).setInternalId(internalId).setInternalPid(internalPid).setName(name)
-               .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
-               .setStock(stock).setMarketplace(marketplace).build();
+            .setPrice(price).setPrices(prices).setAvailable(available).setCategory1(categories.getCategory(0)).setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2)).setPrimaryImage(primaryImage).setSecondaryImages(secondaryImages).setDescription(description)
+            .setStock(stock).setMarketplace(marketplace).build();
 
          products.add(product);
 
@@ -190,7 +184,7 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
    /**
     * No momento que o crawler foi feito não achei produto com imagens secundárias
-    * 
+    *
     * @param doc
     * @return
     */
@@ -237,7 +231,6 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
    }
 
    /**
-    * 
     * @param doc
     * @param price
     * @return
