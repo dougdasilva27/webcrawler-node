@@ -364,7 +364,7 @@ public class BrasilPetloveCrawler extends Crawler {
 
 
    private Pricing scrapPricing(JSONObject skuJson) throws MalformedPricingException {
-      Double priceFrom = JSONUtils.getDoubleValueFromJSON(skuJson, "list_price", false);
+      Double priceFrom = JSONUtils.getDoubleValueFromJSON(skuJson, "list_price", true);
       Double spotlightPrice = JSONUtils.getDoubleValueFromJSON(skuJson, "display_price", false);
       CreditCards creditCards = scrapCreditCards(skuJson, spotlightPrice);
       BankSlip bankSlip = BankSlipBuilder.create()
