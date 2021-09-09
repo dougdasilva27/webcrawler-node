@@ -55,21 +55,39 @@ public class BrasilMagazineluizaCrawler extends Crawler {
    @Override
    protected Document fetch() {
       Map<String, String> headers = new HashMap<>();
+      Document doc = new Document(session.getOriginalURL());
+      int attempts = 0;
+
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
 
-      Request request = Request.RequestBuilder.create()
-         .setUrl(session.getOriginalURL())
-         .setProxyservice(Arrays.asList(
-            ProxyCollection.LUMINATI_SERVER_BR_HAPROXY,
-            ProxyCollection.BUY_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR
-         ))
-         .setHeaders(headers)
-         .build();
+      while (!isProductPage(doc)){
+         Request request = Request.RequestBuilder.create()
+            .setUrl(session.getOriginalURL())
+            .setProxyservice(Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+            ))
+            .setHeaders(headers)
+            .build();
 
-      Response response = this.dataFetcher.get(session, request);
+         Response response = this.dataFetcher.get(session, request);
+         doc = Jsoup.parse(response.getBody());
+         attempts++;
 
-      return Jsoup.parse(response.getBody());
+         if(attempts == 5){
+            if(isBlockedPage(doc)){
+               Logging.printLogInfo(logger, session, "Blocked after 5 retries.");
+            }
+            break;
+         }
+      }
+
+      return doc;
+   }
+
+   private boolean isBlockedPage(Document doc) {
+      return doc.toString().contains("We are sorry");
    }
 
    @Override
