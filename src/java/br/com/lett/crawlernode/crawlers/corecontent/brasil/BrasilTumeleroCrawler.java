@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXScraper;
 import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -44,6 +44,7 @@ public class BrasilTumeleroCrawler extends VTEXScraper {
 
    @Override
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
-      return null;
+      TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "73909", logger);
+      return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
    }
 }
