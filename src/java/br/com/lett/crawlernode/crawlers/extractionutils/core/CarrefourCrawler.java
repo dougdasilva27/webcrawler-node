@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.lett.crawlernode.core.models.Product;
+import br.com.lett.crawlernode.core.models.ProductBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -132,7 +134,11 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
    @Override
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
-      JSONObject productApi = new JSONObject();
+      JSONObject productApi;
+
+      if (session.getOriginalURL().contains("supermercado.carrefour.com.ar")){
+         session.setOriginalURL(session.getOriginalURL().replace("supermercado","www"));
+      }
 
       String path = session.getOriginalURL().replace(homePage, "").toLowerCase();
 
@@ -151,6 +157,7 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
 
       return productApi;
    }
+
 
    @Override
    protected List<String> getMainSellersNames() {
