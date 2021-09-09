@@ -99,10 +99,10 @@ public class BrasilMartinsCrawler extends Crawler {
          WebElement login = webdriver.driver.findElement(By.cssSelector("#btn-login"));
          webdriver.clickOnElementViaJavascript(login);
 
-         webdriver.driver.manage().timeouts().pageLoadTimeout(20, TimeUnit.SECONDS);
+         webdriver.driver.manage().timeouts().pageLoadTimeout(22, TimeUnit.SECONDS);
          Logging.printLogInfo(logger, session, "awaiting product page");
 
-         waitForElement(webdriver.driver, ".qdValue");
+         waitForElement(webdriver.driver, ".qdForm");
 
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
 
@@ -118,7 +118,7 @@ public class BrasilMartinsCrawler extends Crawler {
    }
 
    public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 40);
+      WebDriverWait wait = new WebDriverWait(driver, 70);
       wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
    }
 
