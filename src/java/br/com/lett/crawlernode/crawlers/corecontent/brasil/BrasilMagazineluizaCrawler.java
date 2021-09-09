@@ -60,7 +60,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
 
-      while (!isProductPage(doc)){
+      do {
          Request request = Request.RequestBuilder.create()
             .setUrl(session.getOriginalURL())
             .setProxyservice(Arrays.asList(
@@ -75,13 +75,14 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          doc = Jsoup.parse(response.getBody());
          attempts++;
 
-         if(attempts == 5){
-            if(isBlockedPage(doc)){
+         if (attempts == 3) {
+            if (isBlockedPage(doc)) {
                Logging.printLogInfo(logger, session, "Blocked after 5 retries.");
             }
             break;
          }
       }
+      while(isBlockedPage(doc));
 
       return doc;
    }
