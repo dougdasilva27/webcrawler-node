@@ -2,6 +2,19 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.cookie.Cookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import br.com.lett.crawlernode.core.session.Session;
@@ -10,108 +23,68 @@ import br.com.lett.crawlernode.util.CommonMethods;
 
 public class BrasilCentauroCrawler extends CrawlerRankingKeywords {
 
-  public BrasilCentauroCrawler(Session session) {
-    super(session);
-  }
+   public BrasilCentauroCrawler(Session session) {
+      super(session);
+   }
 
-  private boolean isCategory;
-  private String urlCategory;
+   private String nextPageurl = "";
+   private JSONObject json;
 
-  @Override
-  protected void extractProductsFromCurrentPage() {
-    this.log("Página " + this.currentPage);
+   //This token is hardcoded because contains information about location and store id.
+   private static final String BEARER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImZyb250LWVuZCBjZW50YXVybyIsIm5iZiI6MTU4OTkxOTgxMywiZXhwIjoxOTA1NDUyNjEzLCJpYXQiOjE1ODk5MTk4MTN9.YeCTBYcWozaQb4MnILtfeKTeyCwApNgLSOfGeVVM8D0";
 
-    String url =
-        "https://esportes.centauro.com.br/search?p=Q&lbc=centauro&uid=305597365&ts=custom&w=" + this.keywordWithoutAccents.replace(" ", "%20")
-            + "&srt=" + this.arrayProducts.size() + "&isort=globalpop&method=and&view=grid&sli_jump=1&af=";
+   protected JSONObject fetchJson(String url) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("authorization", "Bearer " + BEARER_TOKEN);
 
-    if (this.currentPage > 1 && isCategory) {
-      String token = CommonMethods.getLast(this.urlCategory.split("/"));
-      url = this.urlCategory.replace(token, "") + this.arrayProducts.size();
-    }
+      Request request = Request.RequestBuilder.create()
+         .setHeaders(headers)
+         .setUrl(url)
+         .build();
+      Response response = this.dataFetcher.get(session, request);
 
-    this.log("Link onde são feitos os crawlers: " + url);
+      return CrawlerUtils.stringToJson(response.getBody());
+   }
 
-    this.currentDoc = fetchDocument(url);
+   @Override
+   protected void extractProductsFromCurrentPage() {
+      this.pageSize = 40;
+      this.log("Página " + this.currentPage);
 
-    Elements products = this.currentDoc.select(".sli_grid_container[data-sku] > div");
+      String url = "https://gateway.plataforma.centauro.com.br/yantar/api/search?term=" + this.keywordEncoded
+         + "&resultsPerPage=40&page=" + this.currentPage + "&sorting=relevance&scoringProfile=scoreByRelevance&restrictSearch=true&multiFilters=true";
 
-    if (this.currentPage == 1) {
-      String redirectUrl = this.session.getRedirectedToURL(url);
-      if (redirectUrl != null && !redirectUrl.equals(url)) {
-        isCategory = true;
-        this.urlCategory = redirectUrl;
+      this.log("Link onde são feitos os crawlers: " + url);
+
+      json = fetchJson(url);
+      JSONArray products = json.optJSONArray("products");
+
+      if (!products.isEmpty()) {
+         if (this.currentPage == 1) {
+            this.totalProducts = json.optInt("size");
+         }
+
+         for (Object o : products) {
+            JSONObject product = (JSONObject) o;
+            String internalPid = product.optString("id");
+            String productUrl = product.optString("url").replace("//", "");
+
+            saveDataProduct(null, internalPid, productUrl);
+
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            if (this.arrayProducts.size() == productsLimit)
+               break;
+         }
       } else {
-        isCategory = false;
-      }
-    }
-
-    this.pageSize = 48;
-
-    if (!products.isEmpty()) {
-      if (this.totalProducts == 0) {
-        setTotalProducts();
+         this.result = false;
+         this.log("Keyword sem resultado!");
       }
 
-      for (Element e : products) {
-        String internalPid = e.attr("data-product-id");
-        String productUrl = crawlProductUrl(e);
+      this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
+   }
 
-        saveDataProduct(null, internalPid, productUrl);
-
-        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
-        if (this.arrayProducts.size() == productsLimit)
-          break;
-      }
-    } else {
-      this.result = false;
-      this.log("Keyword sem resultado!");
-    }
-
-    this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
-
-  }
-
-  @Override
-  protected boolean hasNextPage() {
-    return !this.currentDoc.select(".control-next").isEmpty();
-  }
-
-  @Override
-  protected void setTotalProducts() {
-    Element totalElement = null;
-    totalElement = this.currentDoc.select(".sli_bct_total_records").first();
-
-    if (totalElement != null) {
-      String text = totalElement.ownText().replaceAll("[^0-9]", "").trim();
-
-      if (!text.isEmpty()) {
-        this.totalProducts = Integer.parseInt(text);
-      }
-    }
-    this.log("Total da busca: " + this.totalProducts);
-  }
-
-  private String crawlProductUrl(Element e) {
-    String urlProduct = e.attr("data-url");
-
-    if (urlProduct.contains("search")) {
-      String[] tokens = urlProduct.split("&");
-
-      for (String token : tokens) {
-        if (token.startsWith("url=")) {
-          String encodedUrl = token.replace("url=", "");
-
-          try {
-            urlProduct = URLDecoder.decode(encodedUrl, "UTF-8");
-          } catch (UnsupportedEncodingException ex) {
-            this.logError("Error on decode url.", ex);
-          }
-          break;
-        }
-      }
-    }
-
-    return urlProduct;
-  }
+   @Override
+   protected boolean hasNextPage() {
+      return JSONUtils.getValueRecursive(json, "pagination.next", String.class) != null;
+   }
 }
