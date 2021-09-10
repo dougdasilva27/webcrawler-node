@@ -7,7 +7,7 @@ import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public abstract class BrasilVilanova extends CrawlerRankingKeywords {
+public class BrasilVilanova extends CrawlerRankingKeywords {
 
    public BrasilVilanova(Session session) {
       super(session);

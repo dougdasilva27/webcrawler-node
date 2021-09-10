@@ -36,7 +36,7 @@ import java.util.Set;
 
 import static java.util.Collections.singletonList;
 
-public abstract class BrasilVilanova extends Crawler {
+public class BrasilVilanova extends Crawler {
 
    public static final String HOME_PAGE = "https://www.vilanova.com.br/";
    private static final String IMAGES_HOST = "i2-vilanova.a8e.net.br";
@@ -49,11 +49,19 @@ public abstract class BrasilVilanova extends Crawler {
       super.config.setFetcher(FetchMode.WEBDRIVER);
    }
 
-   public abstract String getCnpj();
+   public String getCnpj() {
+      return session.getOptions().optString("cnpj");
+   }
 
-   public abstract String getPassword();
+   public String getPassword() {
+      return session.getOptions().optString("password");
 
-   public abstract String getSellerFullname();
+   }
+
+   public String getSellerFullname() {
+      return session.getOptions().optString("seller");
+
+   }
 
    @Override
    protected Object fetch() {
