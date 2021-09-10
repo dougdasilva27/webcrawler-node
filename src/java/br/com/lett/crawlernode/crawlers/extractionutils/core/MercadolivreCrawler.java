@@ -219,11 +219,23 @@ public class MercadolivreCrawler extends Crawler {
 
                products.add(product);
             } else {
+               String urlToCaptureVariations = "https://produto.mercadolivre.com.br";
 
+               if (session.getOriginalURL().contains("com.ar")){
+                  urlToCaptureVariations = "https://www.mercadolibre.com.ar";
+               } else if (session.getOriginalURL().contains("com.mx")) {
+                  urlToCaptureVariations = "https://www.mercadolibre.com.mx";
+               } else if (session.getOriginalURL().contains("com.cl")) {
+                  urlToCaptureVariations = "https://www.mercadolibre.com.cl";
+               } else if (session.getOriginalURL().contains("com.co")) {
+                  urlToCaptureVariations = "https://www.mercadolibre.com.co";
+               }
+
+               String finalUrlToCaptureVariations = urlToCaptureVariations;
                doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").parallelStream()
                      .map(element -> {
                         Request request = RequestBuilder.create()
-                              .setUrl("https://produto.mercadolivre.com.br" + element.attr("href"))
+                              .setUrl(finalUrlToCaptureVariations + element.attr("href"))
                               .setCookies(cookies)
                               .build();
                         return new Pair<>(dataFetcher.get(session, request).getBody(), element.attr("title"));
