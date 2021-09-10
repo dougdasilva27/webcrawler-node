@@ -105,6 +105,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          )
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
@@ -121,7 +122,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
 
-         System.err.println(request.getHeaders().get("user-agent"));
+
          request.setHeaders(getHeaders());
          content = new FetcherDataFetcher().get(session, request).getBody();
       }
