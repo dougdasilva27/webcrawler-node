@@ -13,7 +13,7 @@ import java.util.List;
 
 public class BrasilTumeleroCrawler extends VTEXScraper {
 
-   private static final String HOME_PAGE = "https://tumelero.com.br/";
+   private static final String HOME_PAGE = "https://www.tumelero.com.br/";
    private static final String SELLER_NAME = "tumelero";
 
    public BrasilTumeleroCrawler(Session session) {
