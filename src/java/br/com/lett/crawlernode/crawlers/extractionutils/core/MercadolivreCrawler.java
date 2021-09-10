@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.http.HttpHeaders;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -219,11 +222,32 @@ public class MercadolivreCrawler extends Crawler {
 
                products.add(product);
             } else {
+               String urlToCaptureVariations;
+
+               String slug = getCountry();
+
+               switch (slug) {
+                  case ("ar"):
+                     urlToCaptureVariations = "https://www.mercadolibre.com.ar";
+                  break;
+                  case ("mx"):
+                     urlToCaptureVariations = "https://www.mercadolibre.com.mx";
+                     break;
+                  case ("cl"):
+                     urlToCaptureVariations = "https://www.mercadolibre.com.cl";
+                     break;
+                  case ("co"):
+                     urlToCaptureVariations = "https://www.mercadolibre.com.co";
+                     break;
+                  default:
+                     urlToCaptureVariations = "https://produto.mercadolivre.com.br";
+
+               }
 
                doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").parallelStream()
                      .map(element -> {
                         Request request = RequestBuilder.create()
-                              .setUrl("https://produto.mercadolivre.com.br" + element.attr("href"))
+                              .setUrl(urlToCaptureVariations + element.attr("href"))
                               .setCookies(cookies)
                               .build();
                         return new Pair<>(dataFetcher.get(session, request).getBody(), element.attr("title"));
@@ -250,6 +274,16 @@ public class MercadolivreCrawler extends Crawler {
       return !doc.select("h1.ui-pdp-title").isEmpty();
    }
 
+
+   private String getCountry() {
+      String slug = null;
+      Pattern pattern = Pattern.compile("com.([a-z]*)");
+      Matcher matcher = pattern.matcher(session.getOriginalURL());
+      if (matcher.find()) {
+         slug = matcher.group(1);
+      }
+      return slug;
+   }
 
    private boolean isProductPage(Document doc) {
       return !doc.select(".vip-nav-bounds .layout-main").isEmpty();
