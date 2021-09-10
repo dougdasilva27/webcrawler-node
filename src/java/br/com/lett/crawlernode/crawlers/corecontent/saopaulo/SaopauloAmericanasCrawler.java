@@ -28,10 +28,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SaopauloAmericanasCrawler extends B2WCrawler {
 
@@ -40,6 +37,18 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    private static final String MAIN_SELLER_NAME_LOWER_FROM_HTML = "Americanas";
    private static final int RATING_API_VERSION = 1;
    private static final String KEY_SHA_256 = "291cd512e18fb8148bb39aa57d389741fd588346b0fd8ce2260a21c3a34b6598";
+
+   private static final List<String> UserAgent = Arrays.asList(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (iPad; CPU OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (iPod; CPU iPhone OS 14_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/93.0.4577.39 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-A205U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-A102U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 10; LM-Q710(FGN)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.62 Mobile Safari/537.36"
+   );
 
    public SaopauloAmericanasCrawler(Session session) {
       super(session);
@@ -55,26 +64,37 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       return Jsoup.parse(fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
    }
 
-   @Override
-   public void setHeaders() {
+
+
+
+   public static Map<String, String> getHeaders() {
+      Random random = new Random();
+
+      Map<String, String> headers = new HashMap<>();
+
 //      super.headers.put("authority", "www.americanas.com.br");
-      super.headers.put("sec-ch-ua", "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"");
-      super.headers.put("sec-ch-ua-mobile", "?0");
-      super.headers.put("upgrade-insecure-requests", "1");
-      super.headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
-//      super.headers.put("sec-fetch-site", "none");
-//      super.headers.put("sec-fetch-mode", "navigate");
-//      super.headers.put("sec-fetch-user", "?1");
-//      super.headers.put("sec-fetch-dest", "document");
-      super.headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36");
-//      super.headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+      headers.put("sec-ch-ua", "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"");
+      headers.put("sec-ch-ua-mobile", "?0");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
+//      headers.put("sec-fetch-site", "none");
+//      headers.put("sec-fetch-mode", "navigate");
+//      headers.put("sec-fetch-user", "?1");
+//      headers.put("sec-fetch-dest", "document");
+      headers.put("user-agent", UserAgent.get(random.nextInt(UserAgent.size())));
+//      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+
+      return headers;
    }
 
    public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
+
+      Map<String,String> headersAmericanas = getHeaders();
+
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
          .setCookies(cookies)
-         .setHeaders(headers)
+         .setHeaders(headersAmericanas)
          .setSendUserAgent(false)
          .setFetcheroptions(
             FetcherOptions.FetcherOptionsBuilder.create()
@@ -85,6 +105,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          )
          .setProxyservice(
             Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY
@@ -100,12 +121,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       if ((Integer.toString(statusCode).charAt(0) != '2' &&
          Integer.toString(statusCode).charAt(0) != '3'
          && statusCode != 404)) {
-         request.setProxyServices(Arrays.asList(
-            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY,
-            ProxyCollection.NETNUT_RESIDENTIAL_BR));
 
+
+         request.setHeaders(getHeaders());
          content = new FetcherDataFetcher().get(session, request).getBody();
       }
 
