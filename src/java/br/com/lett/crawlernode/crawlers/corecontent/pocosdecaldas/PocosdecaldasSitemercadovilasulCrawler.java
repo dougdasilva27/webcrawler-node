@@ -2,6 +2,9 @@ package br.com.lett.crawlernode.crawlers.corecontent.pocosdecaldas;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.BrasilSitemercadoCrawler;
@@ -13,6 +16,7 @@ public class PocosdecaldasSitemercadovilasulCrawler extends BrasilSitemercadoCra
 
    public PocosdecaldasSitemercadovilasulCrawler(Session session) {
       super(session);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
    public static final String HOME_PAGE = "http://www.vilasul.com.br/";
