@@ -9,6 +9,7 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
+import br.com.lett.crawlernode.util.Pair;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
@@ -54,7 +55,7 @@ public class BrasilBreedsCrawler extends Crawler {
             Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
 
             String internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "tr .data", false);
-            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,".installment-options.modal.fade", "data-id");
+            String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".installment-options.modal.fade", "data-id");
             String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-name h1", true);
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs ul li a", true);
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".easyzoom a img", Arrays.asList("src"), "https:", HOME_PAGE);
@@ -198,19 +199,12 @@ public class BrasilBreedsCrawler extends Crawler {
    public Installments scrapInstallments(Element doc) throws MalformedPricingException {
       Installments installments = new Installments();
 
-      Integer installment;
-      Double value;
+      Pair<Integer, Float> installmentsPair = CrawlerUtils.crawlSimpleInstallment(".modal-body .installment-option", doc, true, "x de r$ ", " ", true, ',');
 
-      Elements elements = doc.select(".modal-body .installment-option");
+      Integer installment = installmentsPair.getFirst();
+      Double value = installmentsPair.getSecond() != null ? installmentsPair.getSecond().doubleValue() : null;
 
-      for (Element e : elements) {
-
-         String installmentString = e != null ? e.attr("data-installment").replaceAll("[^0-9]", "").trim() : null;
-         installment = installmentString != null ? Integer.parseInt(installmentString) : null;
-
-         String valueString = e != null ? e.selectFirst(".installment-value").text() : null;
-         value = valueString != null ? MathUtils.parseDoubleWithComma(valueString) : null;
-
+      if(installment != null && value != null){
          installments.add(InstallmentBuilder.create()
             .setInstallmentNumber(installment)
             .setInstallmentPrice(value)
