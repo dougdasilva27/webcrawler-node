@@ -1,18 +1,11 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
-import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,9 +35,11 @@ public class BrasilClimarioCrawler extends CrawlerRankingKeywords {
       this.pageSize = 18;
       this.log("Página " + this.currentPage);
 
+      String keyword = this.keywordEncoded.replace("+", "%20");
+
       String url = "";
       if (this.currentPage == 1) {
-         url = "https://www.climario.com.br/" + this.keywordEncoded + "?&utmi_pc=BuscaFullTex";
+         url = "https://www.climario.com.br/" + keyword + "?&utmi_pc=BuscaFullText";
          this.currentDoc = fetchDocument(url);
          searchPageUrl = getNextPageUrl();
       } else {
