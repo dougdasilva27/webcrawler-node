@@ -156,26 +156,14 @@ public class BrasilThebeautyboxCrawler extends Crawler {
    private RatingsReviews scrapRating(Document doc, String internalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
 
-      Elements jsonElements = doc.select("script[type=application/ld+json]");
-
-      if (jsonElements != null && !jsonElements.isEmpty()) {
-         JSONObject json = new JSONObject();
-
-         for (Element e : jsonElements) {
-            if (e.html().contains("\"@type\":\"Product\"")) {
-               json = CrawlerUtils.stringToJson(e.html());
-               break;
-            }
-         }
-
-         Integer totalRatings = JSONUtils.getValueRecursive(json, "aggregateRating.reviewCount", Integer.class);
-         Double avgRating = JSONUtils.getValueRecursive(json, "aggregateRating.ratingValue", Double.class);
+         Integer totalRatings = CrawlerUtils.scrapIntegerFromHtml(doc, ".rating-count", true, 0);
+         Double avgRating = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".rating-value-container", null, true, '.', session);
 
          ratingReviews.setAdvancedRatingReview(scrapAdvancedRating(internalPid));
          ratingReviews.setTotalRating(totalRatings);
          ratingReviews.setAverageOverallRating(avgRating);
          ratingReviews.setTotalWrittenReviews(totalRatings);
-      }
+
 
       return ratingReviews;
    }

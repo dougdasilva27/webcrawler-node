@@ -77,7 +77,7 @@ public class BrasilMultilojaCrawler extends CrawlerRankingKeywords {
       String url = null;
       String link = product.optString("link");
       if (link != null && !link.isEmpty()) {
-         url = "https://www.estudionetshop.com.br/" + link;
+         url = "https://www.multiloja.com.br/" + link;
       }
 
       return url;
