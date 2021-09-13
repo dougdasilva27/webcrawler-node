@@ -8,28 +8,29 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-
-import java.util.*;
-
+import models.AdvancedRatingReview;
 import models.Offer;
 import models.Offers;
-import models.pricing.BankSlip;
-import models.pricing.CreditCard;
-import models.pricing.CreditCards;
-import models.pricing.Installment;
-import models.pricing.Installments;
-import models.pricing.Pricing;
+import models.RatingsReviews;
+import models.pricing.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * date: 05/09/2018
@@ -44,6 +45,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
    private static final String HOME_PAGE = "https://www.sephora.com.br/";
    private static final String MAIN_SELLER_NAME_LOWER = "sephora";
+
 
    public BrasilSephoraCrawler(Session session) {
       super(session);
@@ -76,6 +78,7 @@ public class BrasilSephoraCrawler extends Crawler {
 
             boolean isAvailable = variantProductPage.select(".not-available-msg").isEmpty();
             Offers offers = isAvailable ? scrapOffers(variantProductPage) : new Offers();
+            RatingsReviews ratingsReviews = crawlRatingReviews(internalPid);
 
             Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
@@ -87,6 +90,7 @@ public class BrasilSephoraCrawler extends Crawler {
                .setSecondaryImages(secondaryImages)
                .setDescription(description)
                .setOffers(offers)
+               .setRatingReviews(ratingsReviews)
                .build();
 
             products.add(product);
@@ -177,13 +181,13 @@ public class BrasilSephoraCrawler extends Crawler {
             .build());
 
       }
-         for (Card card : cards) {
-            creditCards.add(CreditCard.CreditCardBuilder.create()
-               .setBrand(card.toString())
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
-         }
+      for (Card card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card.toString())
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
 
       return creditCards;
    }
@@ -233,5 +237,139 @@ public class BrasilSephoraCrawler extends Crawler {
       String response = this.dataFetcher.get(session, request).getBody();
 
       return Jsoup.parse(response);
+   }
+
+   private RatingsReviews crawlRatingReviews(String partnerId) {
+      RatingsReviews ratingReviews = new RatingsReviews();
+
+      ratingReviews.setDate(session.getDate());
+
+      final String bazaarVoicePassKey = "caE4uptBcLh9IQxL7yvSpi2JFuIYLMs7ruBRlxIezCrzM";
+      String endpointRequest = assembleBazaarVoiceEndpointRequest(partnerId, bazaarVoicePassKey, 0, 50);
+
+      Request request = Request.RequestBuilder.create().setUrl(endpointRequest).setCookies(cookies).build();
+      JSONObject ratingReviewsEndpointResponse = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
+      JSONObject reviewStatistics = getReviewStatisticsJSON(ratingReviewsEndpointResponse, partnerId);
+      AdvancedRatingReview advRating = scrapAdvancedRatingReview(reviewStatistics);
+      Integer total = getTotalReviewCount(ratingReviewsEndpointResponse);
+
+      ratingReviews.setTotalRating(total);
+      ratingReviews.setTotalWrittenReviews(total);
+      ratingReviews.setAverageOverallRating(getAverageOverallRating(reviewStatistics));
+      ratingReviews.setAdvancedRatingReview(advRating);
+
+      return ratingReviews;
+   }
+
+   private AdvancedRatingReview scrapAdvancedRatingReview(JSONObject JsonRating) {
+      Integer star1 = 0;
+      Integer star2 = 0;
+      Integer star3 = 0;
+      Integer star4 = 0;
+      Integer star5 = 0;
+
+
+      if (JsonRating.has("RatingDistribution")) {
+         JSONArray ratingDistribution = JsonRating.optJSONArray("RatingDistribution");
+
+         for (int i = 0; i < ratingDistribution.length(); i++) {
+            JSONObject rV = ratingDistribution.optJSONObject(i);
+
+
+            int val1 = rV.optInt("RatingValue");
+            int val2 = rV.optInt("Count");
+
+            switch (val1) {
+               case 5:
+                  star5 = val2;
+                  break;
+               case 4:
+                  star4 = val2;
+                  break;
+               case 3:
+                  star3 = val2;
+                  break;
+               case 2:
+                  star2 = val2;
+                  break;
+               case 1:
+                  star1 = val2;
+                  break;
+               default:
+                  break;
+            }
+         }
+
+      }
+
+
+      return new AdvancedRatingReview.Builder()
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
+   }
+
+   private Integer getTotalReviewCount(JSONObject reviewStatistics) {
+      Integer totalReviewCount = 0;
+
+      JSONArray results = JSONUtils.getJSONArrayValue(reviewStatistics, "Results");
+      for (Object result : results) {
+         JSONObject resultObject = (JSONObject) result;
+
+         String locale = JSONUtils.getStringValue(resultObject, "ContentLocale");
+         if (locale != null && locale.equalsIgnoreCase("pt_BR")) { // this happen because fastshop only show reviews from brasil
+            totalReviewCount++;
+         }
+      }
+
+      return totalReviewCount;
+   }
+
+   private Double getAverageOverallRating(JSONObject reviewStatistics) {
+      Double avgOverallRating = 0d;
+      if (reviewStatistics.has("AverageOverallRating")) {
+         avgOverallRating = reviewStatistics.optDouble("AverageOverallRating");
+      }
+      return avgOverallRating;
+   }
+
+   private String assembleBazaarVoiceEndpointRequest(String skuInternalPid, String bazaarVoiceEnpointPassKey, Integer offset, Integer limit) {
+
+      StringBuilder request = new StringBuilder();
+
+      request.append("http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5");
+      request.append("&passkey=" + bazaarVoiceEnpointPassKey);
+      request.append("&Offset=" + offset);
+      request.append("&Limit=" + limit);
+      request.append("&Sort=SubmissionTime:desc");
+      request.append("&Filter=ProductId:" + skuInternalPid);
+      request.append("&Include=Products");
+      request.append("&Stats=Reviews");
+
+      return request.toString();
+   }
+
+
+   private JSONObject getReviewStatisticsJSON(JSONObject ratingReviewsEndpointResponse, String skuInternalPid) {
+      if (ratingReviewsEndpointResponse.has("Includes")) {
+         JSONObject includes = ratingReviewsEndpointResponse.optJSONObject("Includes");
+
+         if (includes.has("Products")) {
+            JSONObject products = includes.optJSONObject("Products");
+
+            if (products.has(skuInternalPid)) {
+               JSONObject product = products.optJSONObject(skuInternalPid);
+
+               if (product.has("ReviewStatistics")) {
+                  return product.optJSONObject("ReviewStatistics");
+               }
+            }
+         }
+      }
+
+      return new JSONObject();
    }
 }
