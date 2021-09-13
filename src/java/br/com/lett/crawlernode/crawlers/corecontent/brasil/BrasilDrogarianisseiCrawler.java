@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
@@ -14,6 +13,7 @@ import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
+import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
@@ -62,6 +62,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
 
          JSONObject json = accesAPIOffers(internalId);
          Offers offers = scrapOffers(json);
+         RatingsReviews ratingsReviews = getRatingsReviews(doc);
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -74,6 +75,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
             .setPrimaryImage(primaryImage)
             .setDescription(description)
             .setOffers(offers)
+            .setRatingReviews(ratingsReviews)
             .build();
 
          products.add(product);
@@ -212,6 +214,24 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
       }
 
       return jsonObject;
+   }
+
+    /*
+In this store, grades are given with a double value, e.g: 4.5 instead of 5 or 4.
+Therefore, the crawler structure, by accepting only integer values, which is common on most sites, will not be captured the advanced rating.
+  */
+
+   private RatingsReviews getRatingsReviews(Document doc) {
+      RatingsReviews ratingsReviews = new RatingsReviews();
+      ratingsReviews.setDate(session.getDate());
+
+      Integer reviews = CrawlerUtils.scrapIntegerFromHtml(doc, ".text-muted.font-xl", true, 0);
+      ratingsReviews.setTotalWrittenReviews(reviews);
+      ratingsReviews.setTotalRating(reviews);
+      ratingsReviews.setAverageOverallRating(CrawlerUtils.scrapDoublePriceFromHtml(doc, ".avaliacao-produto .rating-produto", null, true, ',', session));
+
+      return ratingsReviews;
+
    }
 
 

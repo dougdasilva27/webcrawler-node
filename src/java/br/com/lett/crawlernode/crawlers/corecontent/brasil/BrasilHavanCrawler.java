@@ -8,6 +8,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -18,6 +19,7 @@ import models.Offers;
 import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
@@ -52,14 +54,12 @@ public class BrasilHavanCrawler extends Crawler {
       if (isProductPage(doc)) {
 
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-add-form form", "data-product-sku");
-         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc ,".price-box.price-final_price", "data-product-id");
+         String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".price-box.price-final_price", "data-product-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".page-title .base", false);
          boolean available = doc.selectFirst("#product-addtocart-button") != null;
 
-         JSONArray imageArray = CrawlerUtils.crawlArrayImagesFromScriptMagento(doc);
-         System.err.println(imageArray);
-         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc,".fotorama__stage .fotorama__stage__frame", Arrays.asList("href"),  "https", "https://www.havan.com.br/");
-         String secondaryImages = CrawlerUtils.scrapSecondaryImagesMagento(imageArray, primaryImage);
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".fotorama__stage .fotorama__stage__frame", Arrays.asList("href"), "https", "https://www.havan.com.br/");
+         List<String> secondaryImages = getSecondaryImages(doc);
          RatingsReviews ratingReviews = scrapRatingReviews(doc, internalPid);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".bread-crumb > ul li a");
          String description =
@@ -98,6 +98,28 @@ public class BrasilHavanCrawler extends Crawler {
       return document.selectFirst(".column.main") != null;
    }
 
+   private List<String> getSecondaryImages(Document doc) {
+      List<String> images = new ArrayList<>();
+      String script = CrawlerUtils.scrapScriptFromHtml(doc, ".product.media script[type=\"text/x-magento-init\"]");
+      JSONArray jsonArray = script != null ? CrawlerUtils.stringToJsonArray(script) : null;
+      JSONArray dataImage = jsonArray != null ? JSONUtils.getValueRecursive(jsonArray, "0.[data-gallery-role=gallery-placeholder].Hibrido_FastProductImages/js/gallery/custom_gallery.data", JSONArray.class) : new JSONArray();
+
+      int n = 0;
+      for (Object o : dataImage) {
+         if (o instanceof JSONObject) {
+            JSONObject jsonWithImages = (JSONObject) o;
+            String image = jsonWithImages.optString("img").replace("/", "");
+            if (n != 0) {
+               images.add(image);
+            }
+         }
+         n++;
+      }
+
+      return images;
+
+
+   }
 
    private Offers scrapOffer(Document doc) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
@@ -161,7 +183,7 @@ public class BrasilHavanCrawler extends Crawler {
       return creditCards;
    }
 
-   private RatingsReviews scrapRatingReviews(Document doc ,String internalPid) {
+   private RatingsReviews scrapRatingReviews(Document doc, String internalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
       ratingReviews.setDate(session.getDate());
 
