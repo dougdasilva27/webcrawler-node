@@ -53,7 +53,7 @@ public class Vipcommerce extends Crawler {
    }
 
    protected String getLocateCode() {
-      return "1";
+      return session.getOptions().optString("locate","1");
    }
 
 

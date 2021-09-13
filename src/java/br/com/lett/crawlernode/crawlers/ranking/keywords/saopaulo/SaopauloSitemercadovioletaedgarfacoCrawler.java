@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
+import br.com.lett.crawlernode.crawlers.extractionutils.core.Vipcommerce;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.VipcommerceRanking;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BrasilSitemercadoCrawler;
@@ -7,26 +9,21 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.BrasilSitemercad
 /**
  * @author gabriel date: 2019-09-24
  */
-public class SaopauloSitemercadovioletaedgarfacoCrawler extends BrasilSitemercadoCrawler {
+public class SaopauloSitemercadovioletaedgarfacoCrawler extends VipcommerceRanking {
 
    public SaopauloSitemercadovioletaedgarfacoCrawler(Session session) {
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://supermercadovioleta.com.br/";
-
-   @Override
-   protected String getLoadPayload() {
-      JSONObject payload = new JSONObject();
-
-      payload.put("lojaUrl", "sao-paulo-loja-edgar-faco-vila-palmeiras-av-general-edgar-faco");
-      payload.put("redeUrl", "violeta");
-
-      return payload.toString();
+   protected String getSellerFullName(){
+      return "supermerca do violeta";
    }
 
-   @Override
-   protected String getHomePage() {
-      return HOME_PAGE;
+   protected String getDomain(){
+      return "violetaexpress.com.br";
    }
+
+
+
+
 }
