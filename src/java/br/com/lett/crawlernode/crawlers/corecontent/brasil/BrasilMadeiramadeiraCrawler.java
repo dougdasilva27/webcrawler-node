@@ -54,13 +54,13 @@ public class BrasilMadeiramadeiraCrawler extends Crawler {
                "src"),
             "https",
             "images.madeiramadeira.com.br");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "ul.media-gallery__list li img",
+         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".media-gallery__thumbs-box.helper--is-hidden-mobile .media-gallery__thumbs li img",
             Collections.singletonList("src"), "https", "images.madeiramadeira.com.br",
             primaryImage);
 
          RatingsReviews ratingsReviews = scrapRating(internalId, doc);
          String description = CrawlerUtils.scrapSimpleDescription(doc,
-            Collections.singletonList(".tab__content"));
+            Collections.singletonList(".product-tabs.tab .tab__content"));
 
          String availableEl = doc.selectFirst("#product-buy-button") != null ? doc.selectFirst("#product-buy-button").toString() : "";
          Offers offers = availableEl.contains("Comprar")? scrapOffers(doc) : new Offers();

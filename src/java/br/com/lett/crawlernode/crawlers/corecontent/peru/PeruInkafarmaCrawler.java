@@ -1,14 +1,5 @@
 package br.com.lett.crawlernode.crawlers.corecontent.peru;
 
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
@@ -24,6 +15,16 @@ import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
 import models.Marketplace;
 import models.prices.Prices;
+import org.apache.http.HttpHeaders;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class PeruInkafarmaCrawler extends Crawler {
 
@@ -44,10 +45,10 @@ public class PeruInkafarmaCrawler extends Crawler {
          headersToken.put(HttpHeaders.CONTENT_TYPE, "application/json");
 
          Request requestToken = RequestBuilder.create()
-               .setUrl("https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=" + GOOGLE_KEY)
-               .setPayload("{\"returnSecureToken\":true}")
-               .setHeaders(headersToken)
-               .build();
+            .setUrl("https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=" + GOOGLE_KEY)
+            .setPayload("{\"returnSecureToken\":true}")
+            .setHeaders(headersToken)
+            .build();
 
          Response response = this.dataFetcher.post(session, requestToken);
          JSONObject apiTokenJson = JSONUtils.stringToJson(response.getBody());
@@ -60,10 +61,10 @@ public class PeruInkafarmaCrawler extends Crawler {
             headers.put(HttpHeaders.REFERER, session.getOriginalURL());
 
             Request request = RequestBuilder.create()
-                  .setUrl("https://qurswintke.execute-api.us-west-2.amazonaws.com/PROD/product/" + parameterSku)
-                  .setHeaders(headers)
-                  .mustSendContentEncoding(false)
-                  .build();
+               .setUrl("https://qurswintke.execute-api.us-west-2.amazonaws.com/PROD/product/" + parameterSku)
+               .setHeaders(headers)
+               .mustSendContentEncoding(false)
+               .build();
 
             String responseBody = this.dataFetcher.get(session, request).getBody();
             skuJson = JSONUtils.stringToJson(Normalizer.normalize(responseBody, Normalizer.Form.NFD));
@@ -104,28 +105,30 @@ public class PeruInkafarmaCrawler extends Crawler {
          Float price = available ? JSONUtils.getFloatValueFromJSON(jsonSku, "price", true) : null;
          Prices prices = crawlPrices(price);
          String description = crawlDescription(jsonSku);
-         String primaryImage = crawlPrimaryImage(jsonSku);
-         String secondaryImages = null; // at the time this crawlers was made, there are no secondary images
+         JSONArray images = JSONUtils.getJSONArrayValue(jsonSku, "imageList");
+
+         String primaryImage = crawlPrimaryImage(images);
+         List<String> secondaryImages = !images.isEmpty() ? crawlSecondaryImages(images) : null;
          CategoryCollection categories = new CategoryCollection();
 
          // Creating the product
          Product product = ProductBuilder.create()
-               .setUrl(newUrl)
-               .setInternalId(internalId)
-               .setInternalPid(internalPid)
-               .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
-               .setCategory1(categories.getCategory(0))
-               .setCategory2(categories.getCategory(1))
-               .setCategory3(categories.getCategory(2))
-               .setPrimaryImage(primaryImage)
-               .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setStock(stock)
-               .setMarketplace(new Marketplace())
-               .build();
+            .setUrl(newUrl)
+            .setInternalId(internalId)
+            .setInternalPid(internalPid)
+            .setName(name)
+            .setPrice(price)
+            .setPrices(prices)
+            .setAvailable(available)
+            .setCategory1(categories.getCategory(0))
+            .setCategory2(categories.getCategory(1))
+            .setCategory3(categories.getCategory(2))
+            .setPrimaryImage(primaryImage)
+            .setSecondaryImages(secondaryImages)
+            .setDescription(description)
+            .setStock(stock)
+            .setMarketplace(new Marketplace())
+            .build();
 
          products.add(product);
       } else {
@@ -145,10 +148,9 @@ public class PeruInkafarmaCrawler extends Crawler {
       return newUrl;
    }
 
-   private String crawlPrimaryImage(JSONObject json) {
+   private String crawlPrimaryImage(JSONArray images) {
       String primaryImage = null;
 
-      JSONArray images = JSONUtils.getJSONArrayValue(json, "imageList");
       for (Object o : images) {
          if (o instanceof JSONObject) {
             JSONObject imageJson = (JSONObject) o;
@@ -170,6 +172,17 @@ public class PeruInkafarmaCrawler extends Crawler {
 
       return primaryImage;
    }
+
+   private List<String> crawlSecondaryImages(JSONArray images) {
+      List<String> secondaryImages = new ArrayList<>();
+      JSONObject jsonObject = images.getJSONObject(0);
+      JSONArray imagesArr = jsonObject.optJSONArray("thumbnails");
+      if (imagesArr != null) {
+         imagesArr.forEach(image -> secondaryImages.add((String) image));
+      }
+      return secondaryImages;
+   }
+
 
    private String crawlDescription(JSONObject json) {
       StringBuilder description = new StringBuilder();
@@ -199,7 +212,7 @@ public class PeruInkafarmaCrawler extends Crawler {
 
    /**
     * In this site has no information of installments
-    * 
+    *
     * @param price
     * @return
     */

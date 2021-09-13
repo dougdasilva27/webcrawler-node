@@ -11,6 +11,7 @@ import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
+import models.DateConstants;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
@@ -19,6 +20,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ArgentinaMasfarmaciasCrawler extends Crawler {
 
@@ -43,7 +46,7 @@ public class ArgentinaMasfarmaciasCrawler extends Crawler {
          String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".aws-container", "data-page-id");
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product_title.entry-title", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".woocommerce-breadcrumb a:not(:first-child)");
-         String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[property=og:image]", "content");
+         String primaryImage = crawlPrimaryImage(doc);
          //site hasn't secondary images
          String description = CrawlerUtils.scrapSimpleDescription(doc, Collections.singletonList(".elementor-tabs-content-wrapper"));
          boolean available = crawlAvailability(doc);
@@ -83,6 +86,18 @@ public class ArgentinaMasfarmaciasCrawler extends Crawler {
          }
       }
       return false;
+   }
+
+   private String crawlPrimaryImage(Document doc){
+      Element element = doc.selectFirst("#elementor-frontend-inline-css");
+         String url = null;
+         Pattern pattern = Pattern.compile("image:url\\(\\\"(.*)\"\\);}");
+         Matcher matcher = pattern.matcher(element.toString());
+         if (matcher.find()) {
+            url = matcher.group(1);
+         }
+         return url;
+
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {

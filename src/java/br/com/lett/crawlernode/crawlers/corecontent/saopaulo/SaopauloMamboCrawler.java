@@ -100,7 +100,7 @@ public class SaopauloMamboCrawler extends Crawler {
          //in this website, we dont have a unavailable product page. Even if the product is unavailable, the page is the same - 04/05/2021
          boolean available = true;
          String primaryImage = crawlPrimaryImage(json);
-         List<String> secondaryImages = crawlSecondaryImages(json);
+         List<String> secondaryImages = crawlSecondaryImages(json, primaryImage);
 
          Offers offers = available ? scrapOffers(json) : new Offers();
          String description = crawlDescription(json);
@@ -147,7 +147,7 @@ public class SaopauloMamboCrawler extends Crawler {
       return primaryImage;
    }
 
-   private List<String> crawlSecondaryImages(JSONObject json) {
+   private List<String> crawlSecondaryImages(JSONObject json, String primaryImage) {
       List<String> secondaryImagesArray = new ArrayList<>();
       JSONArray images = new JSONArray();
 
@@ -161,6 +161,12 @@ public class SaopauloMamboCrawler extends Crawler {
          images = json.getJSONArray("smallImageURLs");
       } else if (verifyImagesArray(json, "thumbImageURLs")) {
          images = json.getJSONArray("thumbImageURLs");
+      }
+
+      String a = CommonMethods.getLast(primaryImage.split("file/"));
+
+      if (images.length() > 0){
+        images.remove(0);
       }
 
       images.forEach(image ->
