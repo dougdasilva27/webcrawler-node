@@ -18,24 +18,25 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
 
   @Override
   protected void extractProductsFromCurrentPage() {
-    String url = "https://www.princesadonorteonline.com.br/catalogsearch/result/index/?p=" + this.currentPage + "&q=" + this.keywordEncoded;
+    String url = "https://www.princesadonorteonline.com.br/catalogsearch/result?p="+this.currentPage+"&q="+keywordEncoded;
+    //https://www.princesadonorteonline.com.br/catalogsearch/result/?q=Esmalte
 
     this.pageSize = 9;
     this.log("Página " + this.currentPage);
 
     Document doc = fetchDocument(url);
-    Elements products = doc.select(".category-products .products-grid.row .item");
+    Elements products = doc.select("ol.products li");
 
     if (!products.isEmpty()) {
-      if (totalProducts == 0) {
-        setTotalProducts(doc);
-      }
+       if(totalProducts==0){
+          setTotalProducts(doc);
+       }
 
       for (Element product : products) {
 
-        String internalPid = scrapInternalPid(product);
-        String internalId = null;
-        String productUrl = scrapProductUrl(product);
+        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(product,"div[data-product-id]","data-product-id");
+        String internalId = internalPid;
+        String productUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product,"a","href");
 
         saveDataProduct(internalId, internalPid, productUrl);
 
@@ -53,36 +54,8 @@ public class BrasilPrincesadonorteCrawler extends CrawlerRankingKeywords {
     this.log("Finalizando Crawler de produtos da página " + this.currentPage + " - até agora " + this.arrayProducts.size() + " produtos crawleados");
   }
 
-  private String scrapInternalPid(Element product) {
-    Element ancorElement = product.selectFirst(".view-detail");
-
-    String internalPid = null;
-    if (ancorElement != null) {
-      internalPid = ancorElement.attr("id").replaceAll("[^0-9]", "");
-    }
-
-    if (internalPid == null) {
-      internalPid = CommonMethods.getLast(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "[id^=product-price-]", "id").split("-"));
-    }
-
-    return internalPid;
-  }
-
-
-  private String scrapProductUrl(Element product) {
-    String productUrl = null;
-    Element ancorElement = product.selectFirst(".product-name a");
-
-    if (ancorElement != null) {
-      productUrl = ancorElement.attr("href");
-    }
-
-    return productUrl;
-  }
-
-  private void setTotalProducts(Document doc) {
-    this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, ".amount", "de", true, 0);
-    this.log("Total da busca: " + this.totalProducts);
-  }
-
+   private void setTotalProducts(Document doc) {
+      this.totalProducts = CrawlerUtils.scrapIntegerFromHtml(doc, "#toolbar-amount > span:last-child", true, 0);
+      this.log("Total da busca: " + this.totalProducts);
+   }
 }
