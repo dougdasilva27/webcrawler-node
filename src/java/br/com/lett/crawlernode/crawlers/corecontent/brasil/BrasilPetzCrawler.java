@@ -1,17 +1,16 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 
-import br.com.lett.crawlernode.aws.s3.S3Service;
 import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.FetchMode;
-import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -55,40 +54,9 @@ public class BrasilPetzCrawler extends Crawler {
 
    public BrasilPetzCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.WEBDRIVER);
+//      super.config.setFetcher(FetchMode.WEBDRIVER);
    }
 
-   @Override
-   protected Object fetch() {
-      Document doc = new Document("");
-      this.webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
-
-      if (this.webdriver != null) {
-         doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-
-         Element script = doc.select("head script").last();
-         Element robots = doc.select("meta[name=robots]").first();
-
-         if (script != null && robots != null) {
-            String eval = script.html().trim();
-
-            if (!eval.isEmpty()) {
-               Logging.printLogDebug(logger, session, "Execution of incapsula js script...");
-               this.webdriver.executeJavascript(eval);
-            }
-         }
-
-         String requestHash = FetchUtilities.generateRequestHash(session);
-         this.webdriver.waitLoad(12000);
-
-         doc = Jsoup.parse(this.webdriver.getCurrentPageSource());
-
-         // saving request content result on Amazon
-         S3Service.saveResponseContent(session, requestHash, doc.toString());
-      }
-
-      return doc;
-   }
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
@@ -116,7 +84,7 @@ public class BrasilPetzCrawler extends Crawler {
                   products.add(p);
                } else {
                   String url = (HOME_PAGE + e.attr("data-urlvariacao")).replace("br//", "br/");
-                  Document docVariation = DynamicDataFetcher.fetchPage(this.webdriver, url, session);
+                  Document docVariation = fetchPage(url);
 
                   Product p = crawlProduct(docVariation, nameVariation);
                   p.setInternalPid(internalPid);
@@ -143,6 +111,13 @@ public class BrasilPetzCrawler extends Crawler {
       }
 
       return products;
+   }
+
+   private Document fetchPage(String url) {
+      Request request = Request.RequestBuilder.create().setCookies(cookies).setUrl(url).build();
+      Response response = dataFetcher.get(session, request);
+
+      return Jsoup.parse(response.getBody());
    }
 
    private Product crawlProduct(Document doc, String nameVariation) throws Exception {
