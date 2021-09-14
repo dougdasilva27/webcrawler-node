@@ -34,11 +34,11 @@ $ sudo su
 # apt-get remove eclipse eclipse-platform
 ```
 
-3 - Install a Java 1.8 JDK:
+3 - Install a Java 11 JDK:
 
 ```bash
 # apt-get update
-# apt-get install openjdk-8-jdk
+# apt-get install openjdk-11-jdk
 ```
 
 4 - Install Maven:
