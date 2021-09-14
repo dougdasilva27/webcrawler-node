@@ -91,7 +91,7 @@ public class MercadolivreCrawler extends Crawler {
    @Override
    protected Object fetch() {
       Map<String, String> headers = new HashMap<>();
-      headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgentWithoutChrome());
+      headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
 
       Request request = RequestBuilder.create()
             .setUrl(session.getOriginalURL())
