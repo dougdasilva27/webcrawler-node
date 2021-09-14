@@ -27,7 +27,7 @@ public class BrasilPetzCrawler extends CrawlerRankingKeywords {
       String url = "https://www.petz.com.br/busca?q=" + this.keywordEncoded + "&page=" + this.currentPage;
       this.log("Link onde são feitos os crawlers: " + url);
 
-      this.currentDoc = fetchDocumentWithWebDriver(url, 10000, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+      this.currentDoc = fetchDocument(url);
 
       Elements products = this.currentDoc.select(".liProduct .petzProduct");
 
