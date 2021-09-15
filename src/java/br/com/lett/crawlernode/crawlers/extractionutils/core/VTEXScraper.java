@@ -196,7 +196,7 @@ public abstract class VTEXScraper extends Crawler {
       return images;
    }
 
-   private void scrapSecondaryImages(List<String> images) {
+   protected void scrapSecondaryImages(List<String> images) {
       if (!images.isEmpty()) {
          images.remove(0);
       }
