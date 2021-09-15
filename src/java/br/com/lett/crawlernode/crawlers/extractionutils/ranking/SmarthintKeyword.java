@@ -12,7 +12,7 @@ import java.io.UnsupportedEncodingException;
 public class SmarthintKeyword extends CrawlerRankingKeywords {
 
    private final String SH_key = session.getOptions().optString("SH_KEY");
-
+   private final String version = session.getOptions().optString("version", "v5");
 
 
    public SmarthintKeyword(Session session) {
@@ -31,12 +31,12 @@ public class SmarthintKeyword extends CrawlerRankingKeywords {
          for (Object o : products) {
             JSONObject product = (JSONObject) o;
 
-            String productUrl = CrawlerUtils.completeUrl(product.optString("Id"),"https","");
+            String productUrl = CrawlerUtils.completeUrl(product.optString("Id"), "https", "");
             String internalId = product.optString("ProductId");
             String internalPid = product.optString("ItemGroupId");
 
             saveDataProduct(internalId, internalPid, productUrl);
-            log("position: "+this.position+" internalId: "+internalId +" internalPid: "+internalPid +" url: "+ productUrl);
+            log("position: " + this.position + " internalId: " + internalId + " internalPid: " + internalPid + " url: " + productUrl);
 
          }
 
@@ -55,7 +55,7 @@ public class SmarthintKeyword extends CrawlerRankingKeywords {
 
    private JSONObject fetchApi() {
       Request request = Request.RequestBuilder.create()
-         .setUrl("https://search.smarthint.co/v5/Search/GetPrimarySearch?shcode="+ SH_key +"&term=" + this.keywordEncoded + "&from=" + (this.currentPage - 1) * this.pageSize + "&size=" + this.currentPage * this.pageSize + "&searchSort=0")
+         .setUrl("https://search.smarthint.co/" + version + "/Search/GetPrimarySearch?shcode=" + SH_key + "&term=" + this.keywordEncoded + "&from=" + (this.currentPage - 1) * this.pageSize + "&size=" + this.currentPage * this.pageSize + "&searchSort=0")
          .build();
 
       return CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
