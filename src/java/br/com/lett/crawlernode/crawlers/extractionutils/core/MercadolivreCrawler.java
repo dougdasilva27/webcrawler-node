@@ -277,10 +277,10 @@ public class MercadolivreCrawler extends Crawler {
    private String getCountry() {
 
       String regex;
-      if (session.getOriginalURL().contains("mercadolibre")){
-         regex = "mercadolibre.([a-z]*)\\/";
+      if (session.getOriginalURL().contains("mercadolibre.com")){
+         regex =  "com.([a-z]*)\\/";
       } else{
-         regex = "com.([a-z]*)\\/";
+         regex = "mercadolibre.([a-z]*)\\/";
       }
 
       String slug = null;
