@@ -230,13 +230,13 @@ public class MercadolivreCrawler extends Crawler {
                      urlToCaptureVariations = "https://articulo.mercadolibre.com.ar";
                   break;
                   case ("mx"):
-                     urlToCaptureVariations = "https://www.mercadolibre.com.mx";
+                     urlToCaptureVariations = "https://articulo.mercadolibre.com.mx";
                      break;
                   case ("cl"):
                      urlToCaptureVariations = "https://articulo.mercadolibre.cl";
                      break;
                   case ("co"):
-                     urlToCaptureVariations = "https://www.mercadolibre.com.co";
+                     urlToCaptureVariations = "https://articulo.mercadolibre.com.co";
                      break;
                   default:
                      urlToCaptureVariations = "https://produto.mercadolivre.com.br";
