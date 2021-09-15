@@ -25,4 +25,10 @@ class CampinagrandeRedebellaCrawler(session: Session) : VTEXNewScraper(session) 
       return null
    }
 
+   override fun scrapSecondaryImages(images: MutableList<String>?) {
+      if (!images!!.isEmpty()) {
+            images.clear()
+      }
+   }
+
 }
