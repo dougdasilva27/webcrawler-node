@@ -20,10 +20,7 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ArgentinaMillanCrawler extends Crawler {
 
@@ -52,7 +49,7 @@ public class ArgentinaMillanCrawler extends Crawler {
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ol.breadcrumb > li", true);
             String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.product-img img.img-fluid", "src");
             String ean = productJson.optString("reference").trim();
-
+            List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".product-thumb .thumb", Arrays.asList("data-src"), "https","atomoconviene.com/atomo-ecommerce", primaryImage);
             String stockStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.product-quantities span", "data-stock");
             int stock = stockStr != null ? Integer.parseInt(stockStr) : 0;
             Offers offers = stock > 0 ? scrapOffers(productJson) : new Offers();
@@ -64,6 +61,7 @@ public class ArgentinaMillanCrawler extends Crawler {
                .setName(name)
                .setCategories(categories)
                .setPrimaryImage(primaryImage)
+               .setSecondaryImages(secondaryImages)
                .setStock(stock)
                .setOffers(offers)
                .setEans(Collections.singletonList(ean))
