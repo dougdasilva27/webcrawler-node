@@ -22,7 +22,7 @@ import java.util.Map;
 public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
    private static final String HOME_PAGE = "https://www.zonasul.com.br/";
-   private static final String COOKIES = "azion_balancer=B; vtex_session=eyJhbGciOiJFUzI1NiIsImtpZCI6IjA5RDFDRDUwRDM5RjVFREVCQzU0ODc0RUEyQkQ3RkZEQzIxNzVEQUQiLCJ0eXAiOiJqd3QifQ.eyJhY2NvdW50LmlkIjoiMmIyYjYxMTktNjM0Zi00ZjRiLWJmYzQtMmE0Y2Y5YzdiNTEzIiwiaWQiOiIyNWNmYTIwZS1mNjQ1LTQ5NGEtYTgyMC1iZTdmMzBhM2Q3ZDMiLCJ2ZXJzaW9uIjoyLCJzdWIiOiJzZXNzaW9uIiwiYWNjb3VudCI6InNlc3Npb24iLCJleHAiOjE2MTA0NzUwNjMsImlhdCI6MTYwOTc4Mzg2MywiaXNzIjoidG9rZW4tZW1pdHRlciIsImp0aSI6IjQyOWQzNGViLTg0YTUtNGQyZC1iZWFiLTNmMWRmNTYyY2ZmZSJ9.tAaLBagIcJP7FTQZc6QnYSIo60jgRpiVjPtobRYgxiZrNWtJ2kJn3mily06ZGxEhUFsI0uPv2993eoAA3ehD2A";
+   private static final String COOKIES = "azion_balancer=B; vtex_session=eyJhbGciOiJFUzI1NiIsImtpZCI6IkFDNzMyNDJCNzc0QzJBODY1MzU3QUU0QkU0OUE2RTQzRjlENUZFOTciLCJ0eXAiOiJqd3QifQ.eyJhY2NvdW50LmlkIjoiMmIyYjYxMTktNjM0Zi00ZjRiLWJmYzQtMmE0Y2Y5YzdiNTEzIiwiaWQiOiI0ZWViYmMwZS01OWNlLTRlOWYtYmMzNy0yYzRlYTE1MmMwYWEiLCJ2ZXJzaW9uIjoyLCJzdWIiOiJzZXNzaW9uIiwiYWNjb3VudCI6InNlc3Npb24iLCJleHAiOjE2MzI0MjE1MzksImlhdCI6MTYzMTczMDMzOSwiaXNzIjoidG9rZW4tZW1pdHRlciIsImp0aSI6IjExMmRhN2UyLWFkNDQtNDliZS05ZTc0LTE4YmZjNDZiYzBiNyJ9.G79fsWeSgad2HpPsoMT5HFTwKPIBYnqVuKlgC4yONMUeTa2HGiZjCCyOmENgGcEs5xFSOdZH9kaCqvpGoa_FHA";
    //This is not the best way to set cookies but it was the only way found when this crawler was created
 
   public RiodejaneiroZonasulCrawler(Session session) {
@@ -113,37 +113,32 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
          }
       }
       if (hash == null) {
-         hash = "2da1e09e3e9fb5f2e1ad240b91afa44914933ec59f8ab99cc52d0be296923299";
+         hash = "e1d5228ca8b18d1f83b777d849747a7f55c9597f670f20c8557d2b0428bf6be7";
       }
       return hash;
    }
 
    private String createVariablesBase64() {
       JSONObject search = new JSONObject();
-      search.put("hideUnavailableItems", false);
-      search.put("skusFilter", "ALL");
+      search.put("hideUnavailableItems",true);
+      search.put("skusFilter", "ALL_AVAILABLE");
       search.put("simulationBehavior", "default");
       search.put("installmentCriteria", "MAX_WITHOUT_INTEREST");
       search.put("productOriginVtex", true);
-      search.put("map", "ft");
+      search.put("map", "productClusterIds");
       search.put("query", keywordEncoded);
-      search.put("orderBy", "");
+      search.put("orderBy", "OrderByTopSaleDESC");
       search.put("from", this.arrayProducts.size());
       search.put("to", this.arrayProducts.size() + (this.pageSize - 1));
 
       JSONArray selectedFacets = new JSONArray();
       JSONObject obj = new JSONObject();
-      obj.put("key", "ft");
+      obj.put("key", "productClusterIds");
       obj.put("value", this.keywordEncoded);
 
       selectedFacets.put(obj);
 
-      search.put("selectedFacets", selectedFacets);
-      search.put("fullText", this.location);
-      search.put("operator", "and");
-      search.put("fuzzy", "0");
       search.put("facetsBehavior", "Static");
-      search.put("searchState", JSONObject.NULL);
       search.put("withFacets", false);
 
       return Base64.getEncoder().encodeToString(search.toString().getBytes());
@@ -155,17 +150,16 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
       StringBuilder url = new StringBuilder();
       url.append(HOME_PAGE + "_v/segment/graphql/v1?")
          .append("workspace=master")
-         .append("&maxAge=medium")
+         .append("&maxAge=short")
          .append("&appsEtag=remove")
          .append("&domain=store")
          .append("&locale=pt-BR")
-         .append("&operationName=productSearchV3")
-         .append("&variables=%7B%7D");
+         .append("&operationName=productSearchV3");
 
       JSONObject extensions = new JSONObject();
       JSONObject persistedQuery = new JSONObject();
 
-      persistedQuery.put("version", "1");
+      persistedQuery.put("version", 1);
       persistedQuery.put("sha256Hash", fetchSHA256Key(response));
 
       persistedQuery.put("sender", "vtex.store-resources@0.x");
@@ -182,14 +176,14 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
          Logging.printLogError(logger, session, CommonMethods.getStackTrace(e));
       }
 
-      url.append(payload.toString());
+      url.append(payload);
 
       this.log("Link onde são feitos os crawlers: " + url);
 
       Map<String,String> headers = new HashMap<>();
       headers.put("cookie", COOKIES);
 
-      Request request = RequestBuilder.create().setUrl(url.toString()).setCookies(cookies).setHeaders(headers).build();
+      Request request = RequestBuilder.create().setUrl(url.toString()).build();
       JSONObject resp = CrawlerUtils.stringToJson(this.dataFetcher.get(session, request).getBody());
 
       if (resp.has("data")) {
@@ -204,3 +198,4 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
    }
 
 }
+
