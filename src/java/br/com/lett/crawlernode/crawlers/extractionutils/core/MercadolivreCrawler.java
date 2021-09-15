@@ -217,8 +217,7 @@ public class MercadolivreCrawler extends Crawler {
          Product product = meli.extractInformation(doc, null);
 
          if (product != null) {
-            if (doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").isEmpty() || !doc.select("input[name=variation]").isEmpty()
-                  || session.getOriginalURL().contains("www.mercadolivre.com.br")) {
+            if (doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").isEmpty()) {
 
                products.add(product);
             } else {
@@ -228,13 +227,13 @@ public class MercadolivreCrawler extends Crawler {
 
                switch (slug) {
                   case ("ar"):
-                     urlToCaptureVariations = "https://www.mercadolibre.com.ar";
+                     urlToCaptureVariations = "https://articulo.mercadolibre.com.ar";
                   break;
                   case ("mx"):
                      urlToCaptureVariations = "https://www.mercadolibre.com.mx";
                      break;
                   case ("cl"):
-                     urlToCaptureVariations = "https://www.mercadolibre.com.cl";
+                     urlToCaptureVariations = "https://articulo.mercadolibre.cl";
                      break;
                   case ("co"):
                      urlToCaptureVariations = "https://www.mercadolibre.com.co";
@@ -276,8 +275,16 @@ public class MercadolivreCrawler extends Crawler {
 
 
    private String getCountry() {
+
+      String regex;
+      if (session.getOriginalURL().contains("mercadolibre")){
+         regex = "mercadolibre.([a-z]*)\\/";
+      } else{
+         regex = "com.([a-z]*)\\/";
+      }
+
       String slug = null;
-      Pattern pattern = Pattern.compile("com.([a-z]*)");
+      Pattern pattern = Pattern.compile(regex);
       Matcher matcher = pattern.matcher(session.getOriginalURL());
       if (matcher.find()) {
          slug = matcher.group(1);
