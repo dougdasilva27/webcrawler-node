@@ -20,6 +20,8 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    protected String storeShort;
    protected String cep;
    protected String homePageHttps;
+   private final int chooseStoreIdArrayPosition = getChooseStoreIdArrayPosition();
+
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
@@ -27,6 +29,11 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
       super(session);
       inferFields();
    }
+
+   public int getChooseStoreIdArrayPosition() {
+      return 0;
+   }
+
 
    private void fetchStoreId() {
       Request request = RequestBuilder.create()

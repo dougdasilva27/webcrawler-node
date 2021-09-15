@@ -42,11 +42,15 @@ public class GPACrawler extends Crawler {
    protected String storeId;
    protected String store;
    protected String cep;
+   private final String chooseStoreIdArrayPosition = getChooseStoreIdArrayPosition();
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
+   public String getChooseStoreIdArrayPosition() {
+      return "0";
+   }
 
    public GPACrawler(Session session) {
       super(session);
@@ -81,7 +85,7 @@ public class GPACrawler extends Crawler {
 
       String response = this.dataFetcher.get(session, request).getBody();
       JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
-      this.storeId = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes.0.storeid", Integer.class).toString();
+      this.storeId = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes." + chooseStoreIdArrayPosition + ".storeid", Integer.class).toString();
    }
 
    /**
