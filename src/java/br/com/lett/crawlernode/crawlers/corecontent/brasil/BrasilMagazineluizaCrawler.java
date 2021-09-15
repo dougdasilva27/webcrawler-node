@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -50,6 +51,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
    public BrasilMagazineluizaCrawler(Session session) {
       super(session);
+//      this.config.setFetcher(FetchMode.FETCHER);
    }
 
    @Override
@@ -64,8 +66,8 @@ public class BrasilMagazineluizaCrawler extends Crawler {
          Request request = Request.RequestBuilder.create()
             .setUrl(session.getOriginalURL())
             .setProxyservice(Arrays.asList(
-               ProxyCollection.BUY_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_BR,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
             ))
             .setHeaders(headers)
@@ -77,7 +79,7 @@ public class BrasilMagazineluizaCrawler extends Crawler {
 
          if (attempts == 3) {
             if (isBlockedPage(doc)) {
-               Logging.printLogInfo(logger, session, "Blocked after 5 retries.");
+               Logging.printLogInfo(logger, session, "Blocked after 3 retries.");
             }
             break;
          }
