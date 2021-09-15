@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
@@ -12,10 +15,9 @@ import br.com.lett.crawlernode.util.MathUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+
 import models.Offer;
 import models.Offers;
 import models.pricing.BankSlip;
@@ -29,12 +31,32 @@ import org.jsoup.nodes.Element;
 
 public class BrasilExtrabomCrawler extends Crawler {
 
+   private static final String API = "https://www.extrabom.com.br/carrinho/verificarCepDepositoType/";
    private static final String SELLER_FULL_NAME = "Extrabom";
+   private String cep = this.session.getOptions().optString("cep");
+
    protected Set<String> cards = Sets.newHashSet(Card.ELO.toString(), Card.VISA.toString(), Card.MASTERCARD.toString(), Card.AMEX.toString(), Card.HIPERCARD.toString(),
       Card.DINERS.toString());
 
    public BrasilExtrabomCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.FETCHER);
+   }
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("content-type", "application/x-www-form-urlencoded");
+      String payload = "cep=" + cep;
+
+      Request request = Request.RequestBuilder.create()
+         .setUrl(API)
+         .setHeaders(headers)
+         .setPayload(payload)
+         .build();
+
+      Response response = dataFetcher.post(session, request);
+      this.cookies = response.getCookies();
    }
 
    @Override
