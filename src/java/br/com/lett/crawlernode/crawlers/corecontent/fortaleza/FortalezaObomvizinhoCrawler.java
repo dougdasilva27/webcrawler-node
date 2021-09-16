@@ -2,7 +2,6 @@ package br.com.lett.crawlernode.crawlers.corecontent.fortaleza;
 
 import java.util.*;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -38,8 +37,8 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
 
    private static final String SELLER_FULL_NAME = "obomvizinho";
 
-   // 121 -> CEP = 60840285
-   private static final String storeId = "121";
+   // 34 -> CEP = 60840285
+   private static final String storeId = "34";
 
    static public String getStoreId() {
       return storeId;
