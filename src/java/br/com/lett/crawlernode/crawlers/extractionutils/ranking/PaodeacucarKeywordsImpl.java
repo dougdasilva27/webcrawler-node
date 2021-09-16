@@ -14,12 +14,8 @@ public class PaodeacucarKeywordsImpl extends GPAKeywordsCrawler {
    }
 
    @Override
-   public int getChooseStoreIdArrayPosition() {
-      JSONObject options = session.getOptions();
-      if (options.has("choose_store_position")) {
-         return options.optInt("choose_store_position");
-      } else {
-         return 0;
-      }
+   public String getStoreName() {
+      return session.getOptions().optString("storeName");
    }
+
 }

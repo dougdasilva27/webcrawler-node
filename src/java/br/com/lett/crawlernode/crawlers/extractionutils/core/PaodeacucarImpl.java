@@ -15,12 +15,7 @@ public class PaodeacucarImpl extends GPACrawler {
    }
 
    @Override
-   public String getChooseStoreIdArrayPosition() {
-      JSONObject options = session.getOptions();
-      if (options.has("choose_store_position")) {
-         return options.optString("choose_store_position");
-      } else {
-         return "0";
-      }
+   public String getStoreName() {
+      return session.getOptions().optString("storeName");
    }
 }

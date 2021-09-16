@@ -8,19 +8,14 @@ public class ExtraImplKeywords extends GPAKeywordsCrawler {
 
    public ExtraImplKeywords(Session session) {
       super(session);
-      this.store = "extra";
+      this.store = "deliveryextra";
       this.storeShort = "ex";
       this.homePageHttps = "https://www.clubeextra.com.br/";
       this.cep = session.getOptions().getString("cep");
    }
 
    @Override
-   public int getChooseStoreIdArrayPosition() {
-      JSONObject options = session.getOptions();
-      if (options.has("choose_store_position")) {
-         return options.optInt("choose_store_position");
-      } else {
-         return 0;
-      }
+   public String getStoreName() {
+      return session.getOptions().optString("storeName");
    }
 }
