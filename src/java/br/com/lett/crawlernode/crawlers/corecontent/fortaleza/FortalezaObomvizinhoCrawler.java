@@ -38,9 +38,9 @@ public class FortalezaObomvizinhoCrawler extends Crawler {
    private static final String SELLER_FULL_NAME = "obomvizinho";
 
    // 34 -> CEP = 60840285
-   private static final String storeId = "34";
+   private final String storeId = session.getOptions().optString("storeId");
 
-   static public String getStoreId() {
+   public String getStoreId() {
       return storeId;
    }
 

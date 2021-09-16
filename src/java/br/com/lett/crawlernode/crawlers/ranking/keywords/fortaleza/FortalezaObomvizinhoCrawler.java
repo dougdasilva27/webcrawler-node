@@ -18,8 +18,10 @@ public class FortalezaObomvizinhoCrawler extends CrawlerRankingKeywords {
       super(session);
    }
 
-   String getStoreId() {
-      return br.com.lett.crawlernode.crawlers.corecontent.fortaleza.FortalezaObomvizinhoCrawler.getStoreId();
+   private final String storeId = session.getOptions().optString("storeId");
+
+   public String getStoreId() {
+      return storeId;
    }
 
    public Map<String, String> getHeaders() {
