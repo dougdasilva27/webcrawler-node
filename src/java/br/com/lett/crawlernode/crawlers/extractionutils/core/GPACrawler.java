@@ -50,7 +50,7 @@ public class GPACrawler extends Crawler {
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
    public String getStoreName() {
-      return "CD";
+      return null;
 
    }
 
@@ -91,9 +91,13 @@ public class GPACrawler extends Crawler {
             JSONArray jsonArrayDeliveryTypes = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes", JSONArray.class);
             for (Object object : jsonArrayDeliveryTypes) {
                JSONObject deliveryType = (JSONObject) object;
-               if (deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
+               if (storeName != null && deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
                   this.storeId = deliveryType.optString("storeid");
                   break;
+               }  else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
+                  this.storeId = deliveryType.optString("storeid");
+                  break;
+
                }
 
             }

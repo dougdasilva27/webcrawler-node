@@ -30,7 +30,7 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    }
 
    public String getStoreName() {
-      return "CD";
+      return null;
 
    }
 
@@ -50,9 +50,12 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
             if (deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
                this.storeId = deliveryType.optString("storeid");
                break;
+            }  else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
+               this.storeId = deliveryType.optString("storeid");
+               break;
             }
 
-         }
+            }
 
       }
    }
@@ -206,9 +209,3 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
       return searchApi;
    }
 }
-
-
-//https://deliveryextra.resultspage.com/search?p=Q&ts=json-full&lot=json&w=seara&cnt=12&ref=www.clubeextra.com.br&ua=Mozilla%2F5.0%20(X11%3B%20Linux%20x86_64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F93.0.4577.82%20Safari%2F537.36&ep.selected_store=683
-//https://deliveryextra.resultspage.com/search?p=Q&ts=json-full&lot=json&w=seara_&cnt=12&ref=www.clubeextra.com.br&ua=Mozilla%2F5.0%20(X11%3B%20Linux%20x86_64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F93.0.4577.82%20Safari%2F537.36&ep.selected_store=683
-//https://extra.resultspage.com/search?af=&cnt=36&isort=&lot=json&p=Q&ref=www.extra.com.br&srt=0&ts=json-full&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36&w=seara&ep.selected_store=683
-//https://deliveryextra.resultspage.com/search?af=&cnt=36&isort=&lot=json&p=Q&ref=www.deliveryextra.com.br&srt=0&ts=json-full&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36&w=seara&ep.selected_store=241
