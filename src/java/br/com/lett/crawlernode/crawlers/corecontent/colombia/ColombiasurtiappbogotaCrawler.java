@@ -57,11 +57,16 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
       headers.put(Header.CONTENT_TYPE,"application/x-www-form-urlencoded");
       headers.put("Cookie", CommonMethods.cookiesToString(responseCookies.getCookies()));
 
+      String payload = "email=" +
+         session.getOptions().optString("email", "") +
+         "&password=" +
+         session.getOptions().optString("password", "");
+
 
       Request requestLogin = Request.RequestBuilder.create()
          .setUrl("https://tienda.surtiapp.com.co/Security/Login?handler=Authenticate")
          .setHeaders(headers)
-         .setPayload("email=1130409480&password=Lett12345.")
+         .setPayload(payload)
          .build();
 
     new JsoupDataFetcher().post(session,requestLogin);
