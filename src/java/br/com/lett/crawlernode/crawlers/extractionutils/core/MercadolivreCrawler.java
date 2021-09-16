@@ -1,42 +1,15 @@
 
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.http.HttpHeaders;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import com.google.common.collect.Sets;
 import br.com.lett.crawlernode.core.fetcher.FetchUtilities;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.models.Card;
-import br.com.lett.crawlernode.core.models.CategoryCollection;
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
-import br.com.lett.crawlernode.core.models.RatingReviewsCollection;
+import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
-import br.com.lett.crawlernode.util.CommonMethods;
-import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-import br.com.lett.crawlernode.util.Pair;
+import br.com.lett.crawlernode.util.*;
+import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.AdvancedRatingReview;
@@ -52,6 +25,23 @@ import models.pricing.Installment.InstallmentBuilder;
 import models.pricing.Installments;
 import models.pricing.Pricing;
 import models.pricing.Pricing.PricingBuilder;
+import org.apache.http.HttpHeaders;
+import org.bson.internal.Base64;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Date: 08/10/2018
@@ -94,10 +84,10 @@ public class MercadolivreCrawler extends Crawler {
       headers.put(HttpHeaders.USER_AGENT, FetchUtilities.randUserAgent());
 
       Request request = RequestBuilder.create()
-            .setUrl(session.getOriginalURL())
-            .setCookies(cookies)
-            .setHeaders(headers)
-            .build();
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .build();
 
       return Jsoup.parse(this.dataFetcher.get(session, request).getBody());
    }
@@ -146,19 +136,19 @@ public class MercadolivreCrawler extends Crawler {
 
                   // Creating the product
                   Product product = ProductBuilder.create()
-                        .setUrl(session.getOriginalURL())
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setCategory1(categories.getCategory(0))
-                        .setCategory2(categories.getCategory(1))
-                        .setCategory3(categories.getCategory(2))
-                        .setPrimaryImage(primaryImage)
-                        .setSecondaryImages(secondaryImages)
-                        .setDescription(description)
-                        .setRatingReviews(ratingReviews)
-                        .setOffers(offers)
-                        .build();
+                     .setUrl(session.getOriginalURL())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage)
+                     .setSecondaryImages(secondaryImages)
+                     .setDescription(description)
+                     .setRatingReviews(ratingReviews)
+                     .setOffers(offers)
+                     .build();
 
                   products.add(product);
                }
@@ -176,36 +166,36 @@ public class MercadolivreCrawler extends Crawler {
 
                   String name = crawlName(docVariation);
                   String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(docVariation, "figure.gallery-image-container a", Arrays.asList("href"), "https:",
-                        "http2.mlstatic.com");
+                     "http2.mlstatic.com");
                   String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(docVariation, "figure.gallery-image-container a", Arrays.asList("href"),
-                        "https:", "http2.mlstatic.com", primaryImage);
+                     "https:", "http2.mlstatic.com", primaryImage);
                   String description =
-                        CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
+                     CrawlerUtils.scrapSimpleDescription(docVariation, Arrays.asList(".vip-section-specs", ".section-specs", ".item-description"));
 
                   RatingReviewsCollection ratingReviewsCollection = new RatingReviewsCollection();
                   ratingReviewsCollection.addRatingReviews(crawlRating(docVariation, internalPid, internalId));
                   RatingsReviews ratingReviews = ratingReviewsCollection.getRatingReviews(internalId);
                   boolean availableToBuy = !docVariation.select(".item-actions [value=\"Comprar agora\"]").isEmpty()
-                        || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
-                        || !docVariation.select(".item-actions [value~=Comprar]").isEmpty()
-                        || !docVariation.select(".ui-pdp-actions__container .andes-button__content").isEmpty();
+                     || !docVariation.select(".item-actions [value=\"Comprar ahora\"]").isEmpty()
+                     || !docVariation.select(".item-actions [value~=Comprar]").isEmpty()
+                     || !docVariation.select(".ui-pdp-actions__container .andes-button__content").isEmpty();
                   Offers offers = availableToBuy ? scrapOffers(docVariation) : new Offers();
 
                   // Creating the product
                   Product product = ProductBuilder.create()
-                        .setUrl(entry.getKey())
-                        .setInternalId(internalId)
-                        .setInternalPid(internalPid)
-                        .setName(name)
-                        .setCategory1(categories.getCategory(0))
-                        .setCategory2(categories.getCategory(1))
-                        .setCategory3(categories.getCategory(2))
-                        .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
-                        .setSecondaryImages(secondaryImages != null ? secondaryImages.replace(".webp", ".jpg") : null)
-                        .setDescription(description)
-                        .setRatingReviews(ratingReviews)
-                        .setOffers(offers)
-                        .build();
+                     .setUrl(entry.getKey())
+                     .setInternalId(internalId)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setCategory1(categories.getCategory(0))
+                     .setCategory2(categories.getCategory(1))
+                     .setCategory3(categories.getCategory(2))
+                     .setPrimaryImage(primaryImage != null ? primaryImage.replace(".webp", ".jpg") : null)
+                     .setSecondaryImages(secondaryImages != null ? secondaryImages.replace(".webp", ".jpg") : null)
+                     .setDescription(description)
+                     .setRatingReviews(ratingReviews)
+                     .setOffers(offers)
+                     .build();
 
                   products.add(product);
                }
@@ -215,9 +205,16 @@ public class MercadolivreCrawler extends Crawler {
       } else if (isProductPageNewSite(doc)) {
          MercadolivreNewCrawler meli = new MercadolivreNewCrawler(session, dataFetcher, mainSellerNameLower, allow3PSellers, logger, sellerVariations);
          Product product = meli.extractInformation(doc, null);
+         Elements squareVariation = doc.select(".ui-pdp-variations .ui-pdp-variations__picker a");
+         Elements dropdownVariation = doc.select(".andes-dropdown__popover ul li");
 
+        /*
+        There are two ways to capture variations
+https://articulo.mercadolibre.cl/MLC-599227007-1-acondicionador-herbal-essences-coleccion-completa-_JM?attributes=RXNlbmNpYQ%3D%3D%3AQWxvZSAmIE1hbmdv&quantity=1
+https://articulo.mercadolibre.cl/MLC-599229057-pack-6-shampoo-herbal-essences-coleccion-completa-_JM?searchVariation=80283561021#searchVariation=80283561021&position=3&search_layout=grid&type=item&tracking_id=e803c413-b044-485f-9df8-0e3f148927ce
+         */
          if (product != null) {
-            if (doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").isEmpty()) {
+            if (squareVariation.isEmpty() && dropdownVariation.isEmpty()) {
 
                products.add(product);
             } else {
@@ -228,7 +225,7 @@ public class MercadolivreCrawler extends Crawler {
                switch (slug) {
                   case ("ar"):
                      urlToCaptureVariations = "https://articulo.mercadolibre.com.ar";
-                  break;
+                     break;
                   case ("mx"):
                      urlToCaptureVariations = "https://articulo.mercadolibre.com.mx";
                      break;
@@ -243,12 +240,14 @@ public class MercadolivreCrawler extends Crawler {
 
                }
 
-               doc.select(".ui-pdp-variations .ui-pdp-variations__picker a").parallelStream()
+               if (!squareVariation.isEmpty()) {
+
+                  squareVariation.parallelStream()
                      .map(element -> {
                         Request request = RequestBuilder.create()
-                              .setUrl(urlToCaptureVariations + element.attr("href"))
-                              .setCookies(cookies)
-                              .build();
+                           .setUrl(urlToCaptureVariations + element.attr("href"))
+                           .setCookies(cookies)
+                           .build();
                         return new Pair<>(dataFetcher.get(session, request).getBody(), element.attr("title"));
                      })
                      .forEach(responsePair -> {
@@ -262,6 +261,38 @@ public class MercadolivreCrawler extends Crawler {
                            throw new IllegalStateException(e);
                         }
                      });
+
+               } else if (!dropdownVariation.isEmpty()) {
+
+                  String titleProduct = CrawlerUtils.scrapStringSimpleInfo(doc, ".ui-pdp-variations__picker p", true);
+
+                  if (titleProduct != null) {
+                     dropdownVariation.parallelStream()
+                        .map(element -> {
+                           Request request = null;
+                           try {
+                              request = RequestBuilder.create()
+                                 .setUrl(session.getOriginalURL().split("=")[0] + "=" + getParamsUrlVariations(element, titleProduct))
+                                 .setCookies(cookies)
+                                 .build();
+                           } catch (UnsupportedEncodingException e) {
+                              e.printStackTrace();
+                           }
+                           return new Pair<>(dataFetcher.get(session, request).getBody(), element.attr("title"));
+                        })
+                        .forEach(responsePair -> {
+                           try {
+                              Product p = meli.extractInformation(Jsoup.parse(responsePair.getFirst()), product.getRatingReviews());
+
+                              if (p != null) {
+                                 products.add(p);
+                              }
+                           } catch (OfferException | MalformedPricingException | MalformedProductException e) {
+                              throw new IllegalStateException(e);
+                           }
+                        });
+                  }
+               }
             }
          }
       }
@@ -273,13 +304,22 @@ public class MercadolivreCrawler extends Crawler {
       return !doc.select("h1.ui-pdp-title").isEmpty();
    }
 
+   private String getParamsUrlVariations(Element element, String tittleProduct) throws UnsupportedEncodingException {
+      String nameProduct = CrawlerUtils.scrapStringSimpleInfo(element, ".ui-pdp-dropdown-selector__item--label", true);
+      String encodedParams = null;
+      if (nameProduct != null) {
+         encodedParams = URLEncoder.encode(Base64.encode(tittleProduct.replace(":", "").getBytes(StandardCharsets.UTF_8)) + ":" + Base64.encode(nameProduct.getBytes(StandardCharsets.UTF_8)), "UTF-8");
+      }
+
+      return encodedParams;
+   }
 
    private String getCountry() {
 
       String regex;
-      if (session.getOriginalURL().contains("mercadolibre.com") || session.getOriginalURL().contains("mercadolivre")){
-         regex =  "com.([a-z]*)\\/";
-      } else{
+      if (session.getOriginalURL().contains("mercadolibre.com") || session.getOriginalURL().contains("mercadolivre")) {
+         regex = "com.([a-z]*)\\/";
+      } else {
          regex = "mercadolibre.([a-z]*)\\/";
       }
 
@@ -344,7 +384,7 @@ public class MercadolivreCrawler extends Crawler {
       for (Element e : colors) {
          String dataValue = e.attr("data-value");
          String url =
-               originalUrl + (originalUrl.contains("?") ? "&" : "?") + "attribute=COLOR_SECONDARY_COLOR%7C" + dataValue + "&quantity=1&noIndex=true";
+            originalUrl + (originalUrl.contains("?") ? "&" : "?") + "attribute=COLOR_SECONDARY_COLOR%7C" + dataValue + "&quantity=1&noIndex=true";
          Request request = RequestBuilder.create().setUrl(url).setCookies(cookies).build();
          Document docColor = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
          variations.putAll(getSizeVariationsHmtls(docColor, url));
@@ -420,14 +460,14 @@ public class MercadolivreCrawler extends Crawler {
 
 
       offers.add(OfferBuilder.create()
-            .setUseSlugNameAsInternalSellerId(true)
-            .setSellerFullName(sellerFullName)
-            .setMainPagePosition(1)
-            .setIsBuybox(false)
-            .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
-            .setPricing(pricing)
-            .setSales(sales)
-            .build());
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(sellerFullName)
+         .setMainPagePosition(1)
+         .setIsBuybox(false)
+         .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerFullName))
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
 
       scrapSellersPage(offers, doc);
 
@@ -444,9 +484,9 @@ public class MercadolivreCrawler extends Crawler {
 
          do {
             Request request = RequestBuilder.create()
-                  .setUrl(nextUrl)
-                  .setCookies(cookies)
-                  .build();
+               .setUrl(nextUrl)
+               .setCookies(cookies)
+               .build();
 
             Document sellersHtml = Jsoup.parse(this.dataFetcher.get(session, request).getBody());
             nextUrl = CrawlerUtils.scrapUrl(sellersHtml, ".andes-pagination__button--next:not(.andes-pagination__button--disabled) a", "href", "https", "www.mercadolivre.com.br");
@@ -466,14 +506,14 @@ public class MercadolivreCrawler extends Crawler {
                      List<String> sales = scrapSales(doc);
 
                      offers.add(OfferBuilder.create()
-                           .setUseSlugNameAsInternalSellerId(true)
-                           .setSellerFullName(sellerName)
-                           .setSellersPagePosition(sellersPagePosition)
-                           .setIsBuybox(true)
-                           .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerName))
-                           .setPricing(pricing)
-                           .setSales(sales)
-                           .build());
+                        .setUseSlugNameAsInternalSellerId(true)
+                        .setSellerFullName(sellerName)
+                        .setSellersPagePosition(sellersPagePosition)
+                        .setIsBuybox(true)
+                        .setIsMainRetailer(mainSellerNameLower.equalsIgnoreCase(sellerName))
+                        .setPricing(pricing)
+                        .setSales(sales)
+                        .build());
                   }
 
                   sellersPagePosition++;
@@ -525,15 +565,15 @@ public class MercadolivreCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".ui-pdp-price__second-line .price-tag-fraction", null, false, ',', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice, true);
       BankSlip bankTicket = BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
+         .setFinalPrice(spotlightPrice)
+         .build();
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankTicket)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankTicket)
+         .build();
    }
 
 
@@ -542,15 +582,15 @@ public class MercadolivreCrawler extends Crawler {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".item-price span.price-tag:not(.price-tag__del) .price-tag-symbol", "content", false, '.', session);
       CreditCards creditCards = scrapCreditCards(doc, spotlightPrice, false);
       BankSlip bankTicket = BankSlipBuilder.create()
-            .setFinalPrice(spotlightPrice)
-            .build();
+         .setFinalPrice(spotlightPrice)
+         .build();
 
       return PricingBuilder.create()
-            .setPriceFrom(priceFrom)
-            .setSpotlightPrice(spotlightPrice)
-            .setCreditCards(creditCards)
-            .setBankSlip(bankTicket)
-            .build();
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .setBankSlip(bankTicket)
+         .build();
    }
 
 
@@ -560,17 +600,17 @@ public class MercadolivreCrawler extends Crawler {
       Installments installments = sellersPage ? scrapInstallmentsSellersPage(doc) : scrapInstallments(doc);
       if (installments.getInstallments().isEmpty()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(1)
-               .setInstallmentPrice(spotlightPrice)
-               .build());
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
       }
 
       for (String card : cards) {
          creditCards.add(CreditCardBuilder.create()
-               .setBrand(card)
-               .setInstallments(installments)
-               .setIsShopCard(false)
-               .build());
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
       }
 
       return creditCards;
@@ -603,9 +643,9 @@ public class MercadolivreCrawler extends Crawler {
 
 
       installments.add(InstallmentBuilder.create()
-            .setInstallmentNumber(installment)
-            .setInstallmentPrice(value)
-            .build());
+         .setInstallmentNumber(installment)
+         .setInstallmentPrice(value)
+         .build());
 
       return installments;
    }
@@ -616,9 +656,9 @@ public class MercadolivreCrawler extends Crawler {
       Pair<Integer, Float> pair = CrawlerUtils.crawlSimpleInstallment(".ui-pdp-payment--md .ui-pdp-media__title", doc, false);
       if (!pair.isAnyValueNull()) {
          installments.add(InstallmentBuilder.create()
-               .setInstallmentNumber(pair.getFirst())
-               .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
-               .build());
+            .setInstallmentNumber(pair.getFirst())
+            .setInstallmentPrice(MathUtils.normalizeTwoDecimalPlaces(((Float) pair.getSecond()).doubleValue()))
+            .build());
       }
 
       return installments;
@@ -685,13 +725,13 @@ public class MercadolivreCrawler extends Crawler {
 
       StringBuilder url = new StringBuilder();
       url.append("https://produto.mercadolivre.com.br/noindex/catalog/reviews/")
-            .append(internalPid)
-            .append("?noIndex=true")
-            .append("&itemId=" + internalPid)
-            .append("&contextual=true")
-            .append("&access=view_all")
-            .append("&quantity=1")
-            .append("&variation=" + internalId.replace(internalPid + "-", ""));
+         .append(internalPid)
+         .append("?noIndex=true")
+         .append("&itemId=" + internalPid)
+         .append("&contextual=true")
+         .append("&access=view_all")
+         .append("&quantity=1")
+         .append("&variation=" + internalId.replace(internalPid + "-", ""));
 
       Map<String, String> headers = new HashMap<>();
       headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36");
@@ -760,11 +800,11 @@ public class MercadolivreCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 }
