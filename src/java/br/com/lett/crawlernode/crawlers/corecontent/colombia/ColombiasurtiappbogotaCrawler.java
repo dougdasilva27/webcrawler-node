@@ -1,5 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.colombia;
 
+import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -7,6 +9,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -18,6 +21,7 @@ import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import software.amazon.awssdk.http.Header;
 
 import java.util.*;
 
@@ -31,13 +35,57 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
 
    }
 
+
+   @Override
+   public void handleCookiesBeforeFetch() {
+      Request requestCookies = Request.RequestBuilder.create()
+         .setUrl("https://tienda.surtiapp.com.co/Security/Login")
+         .build();
+
+      Response responseCookies = dataFetcher.get(session, requestCookies);
+
+      this.cookies.addAll(responseCookies.getCookies());
+
+
+      Document document = Jsoup.parse(responseCookies.getBody());
+
+      String requestVerificationToken = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=\"__RequestVerificationToken\"]", "value");
+
+      Map<String, String> headers = new HashMap<>();
+
+      headers.put("RequestVerificationToken",requestVerificationToken);
+      headers.put(Header.CONTENT_TYPE,"application/x-www-form-urlencoded");
+      headers.put("Cookie", CommonMethods.cookiesToString(responseCookies.getCookies()));
+
+      String payload = "email=" +
+         session.getOptions().optString("email", "") +
+         "&password=" +
+         session.getOptions().optString("password", "");
+
+
+      Request requestLogin = Request.RequestBuilder.create()
+         .setUrl("https://tienda.surtiapp.com.co/Security/Login?handler=Authenticate")
+         .setHeaders(headers)
+         .setPayload(payload)
+         .build();
+
+    new JsoupDataFetcher().post(session,requestLogin);
+
+
+
+
+   }
+
    @Override
    protected Object fetch() {
 
       Map<String, String> headers = new HashMap<>();
-      headers.put("Cookie", session.getOptions().optString("cookie"));
-      Request request = Request.RequestBuilder.create().setHeaders(headers).setUrl(session.getOriginalURL()).build();
-      Response response = dataFetcher.get(session, request);
+      headers.put("Cookie", CommonMethods.cookiesToString(this.cookies));
+      Request request = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setHeaders(headers)
+         .build();
+      Response response = new JsoupDataFetcher().get(session, request);
 
       String html = response.getBody();
 
@@ -79,8 +127,9 @@ public class ColombiasurtiappbogotaCrawler extends Crawler {
                .setOffers(offers)
                .build();
 
-         products.add(product);
-      } }else {
+            products.add(product);
+         }
+      } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
 
