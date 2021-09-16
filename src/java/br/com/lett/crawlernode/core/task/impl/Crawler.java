@@ -363,9 +363,14 @@ public abstract class Crawler extends Task {
       session.setOriginalURL(url);
 
       try {
+         Response response;
          Object obj;
-         if (cacheConfig.isActive()) {
-            obj = fetchWithCacheCookie();
+
+         Parser parser = this.config.getParser();
+
+         if (parser != Parser.NONE) {
+            response = fetchResponse();
+            obj = parser.parse(response.getBody());
          } else {
             obj = fetch();
          }

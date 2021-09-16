@@ -1,6 +1,8 @@
 package br.com.lett.crawlernode.core.task.config;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.models.Parser;
+
 import java.util.List;
 
 public class Config {
@@ -20,6 +22,8 @@ public class Config {
    * fetching will be passed to the crawler extraction method.
    */
   protected FetchMode fetcher;
+
+  private Parser parser = Parser.NONE;
 
   public Config() {
     super();
@@ -48,5 +52,13 @@ public class Config {
   public int getConnectionAttempts() {
     return this.connectionAttempts;
   }
+
+   public Parser getParser() {
+      return parser;
+   }
+
+   public void setParser(Parser parser) {
+      this.parser = parser;
+   }
 
 }
