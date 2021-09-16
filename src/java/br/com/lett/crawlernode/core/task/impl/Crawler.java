@@ -419,14 +419,15 @@ public abstract class Crawler extends Task {
 
    /**
     * Request the sku URL and parse to a DOM format. This method uses the preferred fetcher according to the crawler configuration. If the fetcher is static, then we use de StaticDataFetcher,
-    * otherwise we use the DynamicDataFetcher.
-    * <p>
-    * Subclasses can override this method for crawl another apis and pages. In Princesadonorte the product page has nothing, but we need the url for crawl this market api.
-    * <p>
-    * Return only {@link Document}
+    *Subclasses can override this method for crawl another apis and pages. In Princesadonorte the product page has nothing, but we need the url for crawl this market api.
+    * This method is no longer acceptable to fetch page.
+    * <p> Use {@link Crawler#fetchResponse()} instead.
     *
-    * @return Parsed HTML in form of a Document.
+    * @return computed time
+    *
+    * @deprecated (this method does not allow control over the status of requests, forRemoval)
     */
+   @Deprecated(forRemoval=true)
    protected Object fetch() {
       String html = "";
       if (config.getFetcher() == FetchMode.WEBDRIVER) {
@@ -446,6 +447,8 @@ public abstract class Crawler extends Task {
 
    /**
     * fetch doc as in {@link Crawler#fetch()}, but returns response instead of the body.
+    * <h3>Use <em>{@link CrawlerConfig#setParser(Parser)}</em> inside the construct method to set an especific parser</h3>
+    * @return the response returned for the request
     */
    protected Response fetchResponse() {
       Response resp = null;
