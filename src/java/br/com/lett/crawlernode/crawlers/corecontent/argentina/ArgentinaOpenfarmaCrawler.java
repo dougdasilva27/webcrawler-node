@@ -68,9 +68,9 @@ public class ArgentinaOpenfarmaCrawler extends Crawler {
                   String grammage = CrawlerUtils.scrapStringSimpleInfo(e, "a", false);
                   String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "a", "data-variant-id");
                   String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoom .item img",
-                     Arrays.asList("src"), "https://", HOME_PAGE);
+                     Arrays.asList("src"), "https:", HOME_PAGE);
                   String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#zoom .slider-for .item:not(.default-image) img",
-                     Arrays.asList("src"), "https://", HOME_PAGE, primaryImage);
+                     Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
                   boolean availableToBuy = doc.selectFirst(".row .btn-submit") != null;
                   Offers offers = availableToBuy ? offers(doc, e) : new Offers();
 
@@ -92,9 +92,9 @@ public class ArgentinaOpenfarmaCrawler extends Crawler {
          } else {
 
             String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#zoom .item img",
-               Arrays.asList("src"), "https://", HOME_PAGE);
+               Arrays.asList("src"), "https:", HOME_PAGE);
             String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, "#zoom .slider-for .item:not(.default-image) img",
-               Arrays.asList("src"), "https://", HOME_PAGE, primaryImage);
+               Arrays.asList("src"), "https:", HOME_PAGE, primaryImage);
             boolean availableToBuy = doc.selectFirst(".row .btn-submit") != null;
             Offers offers = availableToBuy ? offers(doc, null) : new Offers();
 
