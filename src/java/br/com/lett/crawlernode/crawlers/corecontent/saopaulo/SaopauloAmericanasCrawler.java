@@ -65,8 +65,6 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    }
 
 
-
-
    public static Map<String, String> getHeaders() {
       Random random = new Random();
 
@@ -89,7 +87,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    public static String fetchPage(String url, DataFetcher df, List<Cookie> cookies, Map<String, String> headers, Session session) {
 
-      Map<String,String> headersAmericanas = getHeaders();
+      Map<String, String> headersAmericanas = getHeaders();
 
       Request request = Request.RequestBuilder.create()
          .setUrl(url)
@@ -113,7 +111,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          )
          .build();
 
-      Response response = df.get(session,request);
+      Response response = df.get(session, request);
       String content = response.getBody();
 
       int statusCode = response.getLastStatusCode();
@@ -133,14 +131,14 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    @Override
    protected RatingsReviews crawlRatingReviews(JSONObject frontPageJson, String skuInternalPid) {
       RatingsReviews ratingReviews = new RatingsReviews();
-      JSONObject product = JSONUtils.getValueRecursive(frontPageJson,"pages.undefined.queries.productReviews.result.product",JSONObject.class);
-      JSONObject reviews = product != null ? product.optJSONObject("reviews"): null;
+      JSONObject product = JSONUtils.getValueRecursive(frontPageJson, "pages.undefined.queries.productReviews.result.product", JSONObject.class);
+      JSONObject reviews = product != null ? product.optJSONObject("reviews") : null;
 
-      if(reviews != null) {
+      if (reviews != null) {
 
          JSONObject rating = product.optJSONObject("rating");
 
-         if(rating != null) {
+         if (rating != null) {
             ratingReviews.setTotalWrittenReviews(rating.optInt("reviews"));
             ratingReviews.setTotalRating(rating.optInt("reviews"));
             ratingReviews.setAverageOverallRating(rating.optDouble("average"));
@@ -161,7 +159,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
       JSONArray ratingDistribution = reviews.optJSONArray("ratingDistribution");
 
-      if(ratingDistribution != null) {
+      if (ratingDistribution != null) {
          for (Object o : ratingDistribution) {
 
             JSONObject ratingDistributionObject = (JSONObject) o;
@@ -214,27 +212,29 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       String offersPageUrl = "https://www.americanas.com.br/parceiros/" + internalPid + "?productSku=" + internalId;
 
       Document sellersDoc = acessOffersPage(offersPageUrl);
-      Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
+      Elements sellersFromHTML = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
 
-      if (sellersFromHTML.isEmpty()) {
+      if (!sellersFromHTML.isEmpty()) {
                /*
                caso sellersFromHTML seja vazio significa que fomos bloqueados
                durante a tentativa de capturar as informações na pagina de sellers
                ou que o produto em questão não possui pagina de sellers.
                Nesse caso devemos capturar apenas as informações da pagina principal.
                */
+         setOffersForSellersPage(offers, sellersFromHTML);
 
-         scrapAndSetInfoForMainPage(doc, offers, internalId, internalPid, arrayPosition);
+
       } else {
 
-         setOffersForSellersPage(offers, sellersFromHTML);
+         scrapAndSetInfoForMainPage(doc, offers, internalId, internalPid, arrayPosition);
+
       }
 
       return offers;
    }
 
    protected Document acessOffersPage(String offersPageURL) {
-      return Jsoup.parse(fetchPage(offersPageURL,this.dataFetcher,cookies,headers,session));
+      return Jsoup.parse(fetchPage(offersPageURL, this.dataFetcher, cookies, headers, session));
    }
 
 
@@ -283,8 +283,8 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
             boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".seller-card__SellerInfo-pf2gd6-2  p:nth-child(2)", false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonBox-pf2gd6-4 a", "href");
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)", true);
+            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonContainer-nrtn3f-6 a", "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
             Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
@@ -304,6 +304,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          }
       }
    }
+
 
    private String scrapSellerIdFromURL(String rawSellerId) {
       String sellerId = "";
