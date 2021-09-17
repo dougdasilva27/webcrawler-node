@@ -1,17 +1,16 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.models;
 
-import java.util.Date;
-import java.util.Optional;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
-import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Date;
 
 public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    private String keyword = this.keywordEncoded;
@@ -20,6 +19,8 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    protected String storeShort;
    protected String cep;
    protected String homePageHttps;
+   private final String storeName = getStoreName();
+
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
@@ -28,30 +29,34 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
       inferFields();
    }
 
+   public String getStoreName() {
+      return null;
+
+   }
+
+
    private void fetchStoreId() {
       Request request = RequestBuilder.create()
-            .setUrl(END_POINT_REQUEST + this.storeShort + "/delivery/options?zipCode=" + this.cep.replace("-", ""))
-            .setCookies(cookies)
-            .build();
+         .setUrl(END_POINT_REQUEST + this.storeShort + "/delivery/options?zipCode=" + this.cep.replace("-", ""))
+         .setCookies(cookies)
+         .build();
 
-      Response response = this.dataFetcher.get(session, request);
-
-      JSONObject jsonObjectGPA = JSONUtils.stringToJson(response.getBody());
-      Optional<JSONObject> optionalJson = Optional.of(jsonObjectGPA);
-      if (jsonObjectGPA.optJSONObject("content") != null) {
-         JSONArray jsonDeliveryTypes = optionalJson
-               .map(x -> x.optJSONObject("content"))
-               .map(x -> x.optJSONArray("deliveryTypes")).get();
-         if (jsonDeliveryTypes.optJSONObject(0) != null) {
-            this.storeId = jsonDeliveryTypes.optJSONObject(0).optString("storeid");
-         }
-         for (Object object : jsonDeliveryTypes) {
+      String response = this.dataFetcher.get(session, request).getBody();
+      JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
+      if (jsonObjectGPA != null) {
+         JSONArray jsonArrayDeliveryTypes = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes", JSONArray.class);
+         for (Object object : jsonArrayDeliveryTypes) {
             JSONObject deliveryType = (JSONObject) object;
-            if (deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
+            if (deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
+               this.storeId = deliveryType.optString("storeid");
+               break;
+            }  else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
                this.storeId = deliveryType.optString("storeid");
                break;
             }
-         }
+
+            }
+
       }
    }
 
@@ -172,11 +177,11 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    private JSONObject crawlSearchApi() {
       StringBuilder aux = new StringBuilder();
       aux.append("https://").append(this.store).append(".resultspage.com/search?af=&cnt=36")
-            .append("&isort=&lot=json&p=Q&")
-            .append("ref=www.").append(this.store).append(".com.br&srt=").append(this.arrayProducts.size())
-            .append("&ts=json-full")
-            .append("&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36")
-            .append("&w=").append(this.keyword);
+         .append("&isort=&lot=json&p=Q&")
+         .append("ref=www.").append(this.store).append(".com.br&srt=").append(this.arrayProducts.size())
+         .append("&ts=json-full")
+         .append("&ua=Mozilla%2F5.0+(X11;+Linux+x86_64)+AppleWebKit%2F537.36+(KHTML,+like+Gecko)+Chrome%2F62.0.3202.62+Safari%2F537.36")
+         .append("&w=").append(this.keyword);
 
       if (this.storeId != null) {
          aux.append("&ep.selected_store=").append(this.storeId);

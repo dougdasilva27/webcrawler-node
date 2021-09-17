@@ -42,11 +42,17 @@ public class GPACrawler extends Crawler {
    protected String storeId;
    protected String store;
    protected String cep;
+   private final String storeName = getStoreName();
+
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
+   public String getStoreName() {
+      return null;
+
+   }
 
    public GPACrawler(Session session) {
       super(session);
@@ -81,7 +87,21 @@ public class GPACrawler extends Crawler {
 
       String response = this.dataFetcher.get(session, request).getBody();
       JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
-      this.storeId = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes.0.storeid", Integer.class).toString();
+         if (jsonObjectGPA != null) {
+            JSONArray jsonArrayDeliveryTypes = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes", JSONArray.class);
+            for (Object object : jsonArrayDeliveryTypes) {
+               JSONObject deliveryType = (JSONObject) object;
+               if (storeName != null && deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
+                  this.storeId = deliveryType.optString("storeid");
+                  break;
+               }  else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
+                  this.storeId = deliveryType.optString("storeid");
+                  break;
+
+               }
+
+            }
+      }
    }
 
    /**

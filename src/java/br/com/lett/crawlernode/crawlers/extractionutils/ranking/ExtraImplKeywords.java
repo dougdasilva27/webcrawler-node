@@ -4,12 +4,13 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.models.GPAKeywordsCrawler;
 import org.json.JSONObject;
 
-public class PaodeacucarKeywordsImpl extends GPAKeywordsCrawler {
-   public PaodeacucarKeywordsImpl(Session session) {
+public class ExtraImplKeywords extends GPAKeywordsCrawler {
+
+   public ExtraImplKeywords(Session session) {
       super(session);
-      this.store = "paodeacucar";
-      this.storeShort = "pa";
-      this.homePageHttps = "https://www.paodeacucar.com/";
+      this.store = "deliveryextra";
+      this.storeShort = "ex";
+      this.homePageHttps = "https://www.clubeextra.com.br/";
       this.cep = session.getOptions().getString("cep");
    }
 
@@ -17,5 +18,4 @@ public class PaodeacucarKeywordsImpl extends GPAKeywordsCrawler {
    public String getStoreName() {
       return session.getOptions().optString("storeName");
    }
-
 }
