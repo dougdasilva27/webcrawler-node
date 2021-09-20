@@ -212,20 +212,24 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       String offersPageUrl = "https://www.americanas.com.br/parceiros/" + internalPid + "?productSku=" + internalId;
 
       Document sellersDoc = acessOffersPage(offersPageUrl);
-      Elements sellersFromHTML = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
+      Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
+      Elements sellersFromHTMLOtherWay = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
 
       if (!sellersFromHTML.isEmpty()) {
-               /*
+
+         setOffersForSellersPage(offers, sellersFromHTML);
+      }
+         if (!sellersFromHTMLOtherWay.isEmpty()) {
+
+            setOffersForSellersPage(offers, sellersFromHTMLOtherWay);
+
+      } else {
+        /*
                caso sellersFromHTML seja vazio significa que fomos bloqueados
                durante a tentativa de capturar as informações na pagina de sellers
                ou que o produto em questão não possui pagina de sellers.
                Nesse caso devemos capturar apenas as informações da pagina principal.
                */
-         setOffersForSellersPage(offers, sellersFromHTML);
-
-
-      } else {
-
          scrapAndSetInfoForMainPage(doc, offers, internalId, internalPid, arrayPosition);
 
       }
@@ -283,16 +287,16 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
             boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)", true);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonContainer-nrtn3f-6 a", "href");
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)", false);
+            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonBox-pf2gd6-4 a", "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
             Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
             Offer offer = Offer.OfferBuilder.create()
-               .setInternalSellerId(sellerId)
-               .setSellerFullName(sellerName)
+               .setInternalSellerId(sellerId != null ? sellerId : CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonContainer-nrtn3f-6 a", "href"))
+               .setSellerFullName(sellerName != null ? sellerName : CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)", true))
                .setMainPagePosition(mainPagePosition)
                .setSellersPagePosition(sellersPagePosition)
                .setPricing(pricing)
