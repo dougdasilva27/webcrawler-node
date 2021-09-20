@@ -219,9 +219,9 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
          setOffersForSellersPage(offers, sellersFromHTML);
       }
-         if (!sellersFromHTMLOtherWay.isEmpty()) {
+      if (!sellersFromHTMLOtherWay.isEmpty()) {
 
-            setOffersForSellersPage(offers, sellersFromHTMLOtherWay);
+         setOffersForSellersPage(offers, sellersFromHTMLOtherWay);
 
       } else {
         /*
@@ -282,21 +282,30 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
    private void setOffersForSellersPage(Offers offers, Elements sellers) throws MalformedPricingException, OfferException {
 
+      String selectorSellerName;
+      String selectorSellerId;
+      if (sellers.hasClass(".seller-card__SellerInfo-pf2gd6-2")) {
+         selectorSellerName = ".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)";
+         selectorSellerId = ".seller-card__ButtonBox-pf2gd6-4 a";
+      } else {
+         selectorSellerName = ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)";
+         selectorSellerId = ".seller-card__ButtonContainer-nrtn3f-6 a";
+      }
       if (sellers.size() > 0) {
 
          for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
             boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)", false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonBox-pf2gd6-4 a", "href");
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, selectorSellerName, false);
+            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, selectorSellerId, "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
             Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
             Offer offer = Offer.OfferBuilder.create()
-               .setInternalSellerId(sellerId != null ? sellerId : CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonContainer-nrtn3f-6 a", "href"))
-               .setSellerFullName(sellerName != null ? sellerName : CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)", true))
+               .setInternalSellerId(sellerId)
+               .setSellerFullName(sellerName)
                .setMainPagePosition(mainPagePosition)
                .setSellersPagePosition(sellersPagePosition)
                .setPricing(pricing)
