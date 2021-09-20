@@ -9,6 +9,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
 
@@ -66,10 +68,23 @@ public abstract class FalabellaCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void setTotalProducts() {
-      String reslt = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, ".total-results span", true);
+      String result = CrawlerUtils.scrapStringSimpleInfo(this.currentDoc, "#search_numResults", true);
 
-      this.totalProducts = MathUtils.parseInt(reslt);
+      String total = getTotal(result);
+
+      this.totalProducts = total != null ? Integer.parseInt(total) : 0;
       this.log("Total da busca: " + this.totalProducts);
+   }
+
+
+   private String getTotal(String result) {
+      String total = null;
+      Pattern pattern = Pattern.compile("\\de([0-9]*)\\resultados");
+      Matcher matcher = pattern.matcher(result);
+      if (matcher.find()) {
+         total = matcher.group(1);
+      }
+      return total;
    }
 
    private String crawlProductUrl(Element e) {
