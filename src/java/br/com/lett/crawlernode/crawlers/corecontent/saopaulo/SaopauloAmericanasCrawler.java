@@ -222,8 +222,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          listSelectors.put("selectorSellerId",".seller-card__ButtonBox-pf2gd6-4 a");
 
          setOffersForSellersPage(offers, sellersFromHTML, listSelectors);
-      }
-      if (!sellersFromHTMLOtherWay.isEmpty()) {
+      } else if (!sellersFromHTMLOtherWay.isEmpty()) {
 
          listSelectors.put("selectorSellerName",".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)");
          listSelectors.put("selectorSellerId",".seller-card__ButtonContainer-nrtn3f-6 a");
