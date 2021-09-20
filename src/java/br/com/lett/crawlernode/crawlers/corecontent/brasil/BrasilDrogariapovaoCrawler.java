@@ -33,7 +33,7 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
    public BrasilDrogariapovaoCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.APACHE);
+      super.config.setFetcher(FetchMode.FETCHER);
    }
 
 
@@ -50,7 +50,7 @@ public class BrasilDrogariapovaoCrawler extends Crawler {
 
          Map<String, String> headers = new HashMap<>();
          headers.put("Content-Type", "application/x-www-form-urlencoded");
-         headers.put("Cookie", "PHPSESSID=sfd0t7ld4l6sm36a1hvkftfnn4;"); //expiration 08/09/2022
+         headers.put("Cookie", "PHPSESSID=f693e0p81thv6jovev2g4djes1;"); //expiration 08/09/2022
 
          Request request = RequestBuilder.create().setUrl("https://www.drogariaspovao.com.br/ct/atende_geral.php").setCookies(cookies).setHeaders(
             headers)

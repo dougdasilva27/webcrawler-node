@@ -103,7 +103,7 @@ public class BrasilDrogariapovaoCrawler extends CrawlerRankingKeywords {
       Map<String, String> headers = new HashMap<>();
       headers.put(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
       headers.put(HttpHeaders.REFERER, HOME_PAGE + "index.php");
-      headers.put("Cookie", "PHPSESSID=t9bcbm9tiati3oun9dslrjbsn3;"); //expiration 08/09/2022
+      headers.put("Cookie", "PHPSESSID=f693e0p81thv6jovev2g4djes1;"); //expiration 08/09/2022
 
 
       Request request = RequestBuilder.create().setUrl("https://www.drogariaspovao.com.br/ct/atende_geral.php").setHeaders(
