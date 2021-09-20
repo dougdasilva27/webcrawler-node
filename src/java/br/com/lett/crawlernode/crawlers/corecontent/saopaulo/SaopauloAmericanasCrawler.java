@@ -214,14 +214,21 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
       Document sellersDoc = acessOffersPage(offersPageUrl);
       Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
       Elements sellersFromHTMLOtherWay = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
+      Map<String, String> listSelectors = new HashMap<>();
 
       if (!sellersFromHTML.isEmpty()) {
 
-         setOffersForSellersPage(offers, sellersFromHTML);
+         listSelectors.put("selectorSellerName",".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)");
+         listSelectors.put("selectorSellerId",".seller-card__ButtonBox-pf2gd6-4 a");
+
+         setOffersForSellersPage(offers, sellersFromHTML, listSelectors);
       }
       if (!sellersFromHTMLOtherWay.isEmpty()) {
 
-         setOffersForSellersPage(offers, sellersFromHTMLOtherWay);
+         listSelectors.put("selectorSellerName",".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)");
+         listSelectors.put("selectorSellerId",".seller-card__ButtonContainer-nrtn3f-6 a");
+
+         setOffersForSellersPage(offers, sellersFromHTMLOtherWay, listSelectors);
 
       } else {
         /*
@@ -280,24 +287,15 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
    }
 
 
-   private void setOffersForSellersPage(Offers offers, Elements sellers) throws MalformedPricingException, OfferException {
+   private void setOffersForSellersPage(Offers offers, Elements sellers, Map<String, String> listSelectors) throws MalformedPricingException, OfferException {
 
-      String selectorSellerName;
-      String selectorSellerId;
-      if (sellers.hasClass(".seller-card__SellerInfo-pf2gd6-2")) {
-         selectorSellerName = ".seller-card__SellerInfo-pf2gd6-2 p:nth-child(2)";
-         selectorSellerId = ".seller-card__ButtonBox-pf2gd6-4 a";
-      } else {
-         selectorSellerName = ".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)";
-         selectorSellerId = ".seller-card__ButtonContainer-nrtn3f-6 a";
-      }
       if (sellers.size() > 0) {
 
          for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
             boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, selectorSellerName, false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, selectorSellerId, "href");
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, listSelectors.get("selectorSellerName"), false);
+            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, listSelectors.get("selectorSellerId"), "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
             Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
