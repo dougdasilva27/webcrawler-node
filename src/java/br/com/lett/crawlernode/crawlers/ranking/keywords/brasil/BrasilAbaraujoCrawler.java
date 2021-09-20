@@ -5,7 +5,9 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
+/*
+  Crawler using scraper 5170
+ */
 public class BrasilAbaraujoCrawler extends CrawlerRankingKeywords {
 
    public BrasilAbaraujoCrawler(Session session) {

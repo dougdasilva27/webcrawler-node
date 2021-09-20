@@ -36,7 +36,7 @@ class BrasilAbaraujoCrawler(session: Session?) : Crawler(session) {
 
          val categories = CrawlerUtils.crawlCategories(doc, ".product-detail .breadcrumb .breadcrumb-item:not(:first-child):not(:last-child) a")
 
-         val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-detail .tray-hide span[itemprop=\"productID\"]", false)
+         val internalId = CrawlerUtils.scrapStringSimpleInfo(doc, "#product-reference", true)
 
          val primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".product-detail .produto-imagem img", "src")
          val secondaryImages = doc.select(".product-detail .produto-imagem-miniatura img").toSecondaryImagesBy("src", arrayOf(0))
