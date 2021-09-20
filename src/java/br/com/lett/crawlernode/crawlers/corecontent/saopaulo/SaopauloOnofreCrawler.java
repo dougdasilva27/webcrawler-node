@@ -173,7 +173,7 @@ public class SaopauloOnofreCrawler extends Crawler {
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.product-shop .price-box .old-price .price", null, true, ',', session);
 
       if(spotlightPrice == null){
-         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.product-shop .price-box .price", null, true, ',', session);
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.product-shop .price-box .regular-price", null, false, ',', session);
       } else if(spotlightPrice.equals(priceFrom)){
          priceFrom = null;
       }
