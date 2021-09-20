@@ -213,7 +213,7 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
 
       Document sellersDoc = acessOffersPage(offersPageUrl);
       Elements sellersFromHTML = sellersDoc.select(".src__Background-sc-1y5gtgz-1 .src__Card-sc-1y5gtgz-3 > div");
-      Elements sellersFromHTMLOtherWay = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
+      Elements sellersFromHTMLNewWay = sellersDoc.select(".src__OfferList-sc-3rb2gj-4 .src__Card-sc-3rb2gj-3");
       Map<String, String> listSelectors = new HashMap<>();
 
       if (!sellersFromHTML.isEmpty()) {
@@ -222,12 +222,12 @@ public class SaopauloAmericanasCrawler extends B2WCrawler {
          listSelectors.put("selectorSellerId",".seller-card__ButtonBox-pf2gd6-4 a");
 
          setOffersForSellersPage(offers, sellersFromHTML, listSelectors);
-      } else if (!sellersFromHTMLOtherWay.isEmpty()) {
+      } else if (!sellersFromHTMLNewWay.isEmpty()) {
 
          listSelectors.put("selectorSellerName",".sold-and-delivery__Seller-sc-1kx2hv4-1:nth-child(2)");
          listSelectors.put("selectorSellerId",".seller-card__ButtonContainer-nrtn3f-6 a");
 
-         setOffersForSellersPage(offers, sellersFromHTMLOtherWay, listSelectors);
+         setOffersForSellersPage(offers, sellersFromHTMLNewWay, listSelectors);
 
       } else {
         /*
