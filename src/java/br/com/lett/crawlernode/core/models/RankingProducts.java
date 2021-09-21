@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.core.models;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +11,19 @@ public class RankingProducts {
 	protected String internalPid;
 	protected int position;
 	protected String url;
+
+   //New fields that must captured in ranking
+   protected Boolean isSponsored = false;
+   protected Boolean isAvailable;
+   protected int priceInCents;
+   protected int marketId;
+   protected int pageNumber = 0;
+   protected String internalId;
+   protected String name;
+   protected String imageUrl;
+   protected String keyword;
+   protected Timestamp timestamp;
+
 	protected List<Long> processedIds = new ArrayList<>();
 	protected String screenshot;
 	
@@ -66,5 +80,84 @@ public class RankingProducts {
 	public void setScreenshot(String screenshot) {
 		this.screenshot = screenshot;
 	}
-	
+
+   public Boolean getIsSponsored() {
+      return isSponsored;
+   }
+
+   public void setIsSponsored(Boolean isSponsored) {
+      this.isSponsored = isSponsored;
+   }
+
+   public int getPriceInCents() {
+      return priceInCents;
+   }
+
+   public void setPriceInCents(int priceInCents) {
+      this.priceInCents = priceInCents;
+   }
+
+   public Boolean getIsAvailable() {
+      return isAvailable;
+   }
+
+   public void setIsAvailable(Boolean isAvailable) {
+      this.isAvailable = isAvailable;
+   }
+
+   public int getPageNumber() {
+      return pageNumber;
+   }
+
+   public void setPageNumber(int pageNumber) {
+      this.pageNumber = pageNumber;
+   }
+
+   public String getName() {
+      return name;
+   }
+
+   public void setName(String name) {
+      this.name = name;
+   }
+
+   public int getMarketId() {
+      return marketId;
+   }
+
+   public void setMarketId(int marketId) {
+      this.marketId = marketId;
+   }
+
+   public String getImageUrl() {
+      return imageUrl;
+   }
+
+   public void setImageUrl(String imageUrl) {
+      this.imageUrl = imageUrl;
+   }
+
+   public String getKeyword() {
+      return keyword;
+   }
+
+   public void setKeyword(String keyword) {
+      this.keyword = keyword;
+   }
+
+   public String getInternalId() {
+      return internalId;
+   }
+
+   public void setInternalId(String internalId) {
+      this.internalId = internalId;
+   }
+
+   public Timestamp getTimestamp() {
+      return timestamp;
+   }
+
+   public void setTimestamp(Timestamp timestamp) {
+      this.timestamp = timestamp;
+   }
 }
