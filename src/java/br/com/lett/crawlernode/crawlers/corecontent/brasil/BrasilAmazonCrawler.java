@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -71,39 +72,64 @@ public class BrasilAmazonCrawler extends Crawler {
    @Override
    protected Document fetch() {
       Map<String, String> headers = new HashMap<>();
-
-      headers.put("authority", "www.amazon.com.br");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36");
       headers.put("Accept-Encoding", "no");
-      headers.put("cookie", CommonMethods.cookiesToString(cookies));
+      headers.put("authority", "www.amazon.com.br");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
 
-      Request requestFetcher = Request.RequestBuilder.create()
+      Request requestApache = Request.RequestBuilder.create()
          .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
          .setHeaders(headers)
          .setProxyservice(
             Arrays.asList(
                ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
                ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
-               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY
-            ))
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
+         .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create().setForbiddenCssSelector("#captchacharacters").build())
+         .build();
+
+
+      Request requestFetcher = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .setHeaders(headers)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY))
          .setFetcheroptions(FetcherOptions.FetcherOptionsBuilder.create()
             .mustRetrieveStatistics(true)
             .mustUseMovingAverage(false)
             .setForbiddenCssSelector("#captchacharacters").build())
          .build();
 
-      Response response = new FetcherDataFetcher().get(session, requestFetcher);
+      Request request = dataFetcher instanceof FetcherDataFetcher ? requestFetcher : requestApache;
+
+      Response response = dataFetcher.get(session, request);
 
       int statusCode = response.getLastStatusCode();
 
-      //retry
-      if ((Integer.toString(statusCode).charAt(0) != '2' && Integer.toString(statusCode).charAt(0) != '3' && statusCode != 404)) {
-         response = new FetcherDataFetcher().get(session, requestFetcher);
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+
+         if (dataFetcher instanceof FetcherDataFetcher) {
+            response = new ApacheDataFetcher().get(session, requestApache);
+         } else {
+            response = new FetcherDataFetcher().get(session, requestFetcher);
+         }
       }
 
+
       String content = response.getBody();
+
       return Jsoup.parse(content);
+
    }
 
    @Override
