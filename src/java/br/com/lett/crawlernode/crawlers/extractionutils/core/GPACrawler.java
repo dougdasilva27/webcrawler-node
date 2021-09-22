@@ -97,9 +97,11 @@ public class GPACrawler extends Crawler {
                }  else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
                   this.storeId = deliveryType.optString("storeid");
                   break;
-
                }
+            }
 
+            if(storeId == null){
+               this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
             }
       }
    }
