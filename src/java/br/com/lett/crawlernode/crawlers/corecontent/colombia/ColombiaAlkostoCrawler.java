@@ -50,7 +50,7 @@ public class ColombiaAlkostoCrawler extends Crawler {
          String description = crawlDescription(doc);
 
          //The availability is defined by location. Without setting the location we cannot find the availability.
-         boolean available = doc.selectFirst("span.product-price-pickup")!=null; //I didn't find any product unavailable to test
+         boolean available = doc.selectFirst("span.product-price-pickup")!=null;
          Offers offers = available ? scrapOffers(doc) : new Offers();
          RatingsReviews ratingReviews = scrapRating(doc, internalId);
 
