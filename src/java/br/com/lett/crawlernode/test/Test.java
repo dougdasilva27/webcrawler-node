@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.test;
 
+import br.com.lett.crawlernode.core.models.Market;
 import br.com.lett.crawlernode.main.EnvironmentVariables;
 import io.github.cdimascio.dotenv.Dotenv;
-import lombok.val;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class Test {
@@ -33,7 +32,7 @@ public class Test {
       String maxProducts = dotenv.get("MAX_PRODUCTS");
       String corePollSize = dotenv.get("CORE_POOL_SIZE");
 
-      val market = TestUtils.fetchMarket(city != null ? city : "", marketName != null ? marketName : "", Long.parseLong(marketId != null ? marketId : "0"));
+      Market market = TestUtils.fetchMarket(city != null ? city : "", marketName != null ? marketName : "", Long.parseLong(marketId != null ? marketId : "0"));
 
 
       if (market != null) {
