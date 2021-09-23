@@ -19,6 +19,7 @@ import br.com.lett.crawlernode.core.session.ranking.*;
 import br.com.lett.crawlernode.core.task.Scheduler;
 import br.com.lett.crawlernode.core.task.base.Task;
 import br.com.lett.crawlernode.database.Persistence;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.main.ExecutionParameters;
 import br.com.lett.crawlernode.main.Main;
 import br.com.lett.crawlernode.util.CommonMethods;
@@ -279,7 +280,7 @@ public abstract class CrawlerRanking extends Task {
    }
 
    // função que extrai os produtos da página atual
-   protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException;
+   protected abstract void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException;
 
    /**
     * função que retorna se há ou não uma próxima página default: total de produtos maior que os
@@ -306,6 +307,7 @@ public abstract class CrawlerRanking extends Task {
     * @param internalId
     * @param pid
     * @param url
+    * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProducts)}
     */
    protected void saveDataProduct(String internalId, String pid, String url) {
       this.position++;
@@ -318,6 +320,7 @@ public abstract class CrawlerRanking extends Task {
     * @param internalId
     * @param pid
     * @param url
+    * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProducts)}
     */
    protected void saveDataProduct(String internalId, String pid, String url, int position) {
       RankingProducts rankingProducts = new RankingProducts();
@@ -380,6 +383,72 @@ public abstract class CrawlerRanking extends Task {
       }
 
       this.arrayProducts.add(rankingProducts);
+   }
+
+   /**
+    * Salva os dados do produto e chama a função que salva a url para mandar pra fila
+    *
+    * @param product
+    */
+   protected void saveDataProduct(RankingProducts product) {
+      product.setPosition(this.position++);
+      product.setPageNumber(this.currentPage);
+      product.setMarketId(session.getMarket().getId());
+
+      if (!screenshotsAddress.isEmpty()) {
+         switch (this.currentPage) {
+            case 1:
+               if (screenshotsAddress.containsKey(1)) {
+                  product.setScreenshot(screenshotsAddress.get(1));
+               }
+               break;
+
+            case 2:
+               if (screenshotsAddress.containsKey(2)) {
+                  product.setScreenshot(screenshotsAddress.get(2));
+               }
+               break;
+
+            default:
+               break;
+         }
+      }
+
+      if (!(session instanceof TestRankingSession) && !(session instanceof EqiRankingDiscoverKeywordsSession)) {
+         List<Processed> processeds = new ArrayList<>();
+         List<Long> processedIds = new ArrayList<>();
+
+         if (product.getInternalId() != null) {
+            processeds = Persistence.fetchProcessedIdsWithInternalId(product.getInternalId().trim(), this.marketId, session);
+         } else if (product.getInteranlPid() != null) {
+            processeds = Persistence.fetchProcessedIdsWithInternalPid(product.getInteranlPid(), this.marketId, session);
+         } else if (product.getUrl() != null) {
+            Logging.printLogWarn(logger, session, "Searching for processed with url and market.");
+            processedIds = Persistence.fetchProcessedIdsWithUrl(product.getUrl(), this.marketId, session);
+         }
+
+         if (!processeds.isEmpty()) {
+            for (Processed p : processeds) {
+               processedIds.add(p.getId());
+
+               if (p.isVoid() && product.getUrl() != null && !p.getUrl().equals(product.getUrl())) {
+                  saveProductUrlToQueue(product.getUrl());
+                  Logging.printLogWarn(logger, session, "Processed " + p.getId() + " with suspected of url change: " + product.getUrl());
+               }
+            }
+
+         } else if (product.getUrl() != null && processedIds.isEmpty()) {
+            saveProductUrlToQueue(product.getUrl());
+         }
+
+         product.setProcessedIds(processedIds);
+      }
+
+      if (product.getUrl() != null && session instanceof EqiRankingDiscoverKeywordsSession) {
+         saveProductUrlToQueue(product.getUrl());
+      }
+
+      this.arrayProducts.add(product);
    }
 
 

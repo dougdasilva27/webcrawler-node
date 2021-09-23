@@ -2,10 +2,14 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.models.RankingProducts;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
+import org.apache.kafka.common.protocol.types.Field;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,7 +32,7 @@ public class PeruJuntozCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       JSONObject json = fetchJSON();
 
       JSONArray results = json.optJSONArray("products");
@@ -44,8 +48,21 @@ public class PeruJuntozCrawler extends CrawlerRankingKeywords {
             String internalPid = product.optString("productId");
             String internalId = product.optString("sku");
             String productUrl = "https://juntoz.com/producto/" + product.optString("id");
+            String name = product.optString("name");
+            int price = product.optInt("specialPrice", 0);
+            boolean isAvailable = price != 0;
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            //New way to send products to save data product
+            RankingProducts productRanking = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setPriceInCents(price)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(productRanking);
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit)
                break;
