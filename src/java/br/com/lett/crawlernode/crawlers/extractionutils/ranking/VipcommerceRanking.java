@@ -24,8 +24,8 @@ public class VipcommerceRanking extends CrawlerRankingKeywords {
       return session.getOptions().optString("domain");
    }
 
-   protected String getLocateCode(){
-    return "1";
+   protected String getLocateCode() {
+      return session.getOptions().optString("locate","1");
    }
 
    public String getToken() {
