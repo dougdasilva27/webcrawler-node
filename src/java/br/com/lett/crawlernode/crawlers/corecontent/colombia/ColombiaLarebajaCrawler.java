@@ -9,20 +9,24 @@ import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.prices.Prices;
+
+import java.util.*;
+
+import com.google.common.collect.Sets;
+import exceptions.MalformedPricingException;
+import exceptions.OfferException;
+import models.*;
+import models.pricing.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class ColombiaLarebajaCrawler extends Crawler {
+
+   private static final String MAIN_SELLER_NAME = "la-rebaja-colombia";
+
+   protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
+      Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    public ColombiaLarebajaCrawler(Session session) {
       super(session);
@@ -35,40 +39,52 @@ public class ColombiaLarebajaCrawler extends Crawler {
 
       if (isProductPage(doc)) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String internalId = crawlInternalId(doc);
+         String internalPid = crawlInternalId(doc);
          String name = crawlName(doc);
-         Float price = CrawlerUtils.scrapFloatPriceFromHtml(doc,
-               ".pricened, div .fraccionado_columns td[valign=bottom]:not(.container_gray_fracc) .ahora, [id^=subtotal-producto-unidad-]",
-               null, false, ',', session);
-         boolean available = crawlAvailability(doc);
          CategoryCollection categories = crawlCategories(doc);
-         Prices prices = crawlPrices(price, doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#gallery img", Arrays.asList("src"), "https:", "www.larebajavirtual.com");
-         String secondaryImages = CrawlerUtils.scrapSimpleSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:",
-               "www.larebajavirtual.com", primaryImage);
-         String description = crawlDescription(doc);
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc, ".ad-thumb-list li a img", Arrays.asList("src"), "https:", "www.larebajavirtual.com", primaryImage);
          RatingsReviews ratingReviews = crawRating(doc);
 
-         // Creating the product
-         Product product = ProductBuilder.create()
+         Elements offersElement = doc.select("div.descripciones");
+         boolean hasMultipleOffers = false;
+
+         if (offersElement.size() > 1 && offersElement.hasClass("fraccionado_columns")) {
+            offersElement = offersElement.select("tr > td");
+            hasMultipleOffers = true;
+         }
+
+         for (Element sku : offersElement) {
+            String internalId = internalPid;
+
+            if (hasMultipleOffers) {
+               internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sku, "input.increment", "id").replace("cantidad-", "");
+               String variationName = CrawlerUtils.scrapStringSimpleInfo(sku, "div.sep-dashed label span", true);
+
+               if (variationName != null) {
+                  name += name.contains(variationName) ? "" : " - " + variationName;
+               }
+            }
+
+            Offers offers = scrapOffers(sku, hasMultipleOffers);
+
+            // Creating the product
+            Product product = ProductBuilder.create()
                .setUrl(session.getOriginalURL())
                .setInternalId(internalId)
+               .setInternalPid(internalPid)
                .setName(name)
-               .setPrice(price)
-               .setPrices(prices)
-               .setAvailable(available)
                .setCategory1(categories.getCategory(0))
                .setCategory2(categories.getCategory(1))
                .setCategory3(categories.getCategory(2))
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
-               .setDescription(description)
-               .setMarketplace(new Marketplace())
+               .setOffers(offers)
                .setRatingReviews(ratingReviews)
                .build();
 
-         products.add(product);
-
+            products.add(product);
+         }
       } else {
          Logging.printLogDebug(logger, session, "Not a product page " + this.session.getOriginalURL());
       }
@@ -83,32 +99,9 @@ public class ColombiaLarebajaCrawler extends Crawler {
 
       if (nameEl != null) {
          name = nameEl.ownText().trim();
-         Element subNameEl = nameEl.nextElementSibling();
-         if (subNameEl != null) {
-            String subName = subNameEl.text().trim();
-            if (subName.toUpperCase().contains(" X ")) {
-               name = name + " " + subName;
-            }
-         }
       }
       return name;
    }
-
-   private String crawlDescription(Document doc) {
-      Elements sections = doc.select("#main-content > section > .container");
-      String description = null;
-      for (Element element : sections) {
-         String token = CrawlerUtils.scrapStringSimpleInfo(element, "h4", true);
-         if (token != null && token.equalsIgnoreCase("Características")) {
-            description = element.html();
-            break;
-         }
-
-      }
-
-      return description;
-   }
-
 
    private boolean isProductPage(Document doc) {
       return !doc.select(".product_detail").isEmpty();
@@ -145,10 +138,6 @@ public class ColombiaLarebajaCrawler extends Crawler {
       return internalId;
    }
 
-   private boolean crawlAvailability(Document doc) {
-      return doc.select("btn btn-primary btn-block") != null;
-   }
-
    public static CategoryCollection crawlCategories(Document document) {
       CategoryCollection categories = new CategoryCollection();
       Elements elementCategories = document.select(".breadcrumb li + li");
@@ -164,36 +153,6 @@ public class ColombiaLarebajaCrawler extends Crawler {
 
       return categories;
    }
-
-   /**
-    * In the time when this crawler was made, this market hasn't installments informations
-    * 
-    * @param doc
-    * @param price
-    * @return
-    */
-
-
-   private Prices crawlPrices(Float price, Document doc) {
-      Prices prices = new Prices();
-      Map<Integer, Float> installmentPriceMapShop = new HashMap<>();
-      Element fractioned = doc.selectFirst("div .fraccionado_columns");
-
-      if (price != null) {
-         installmentPriceMapShop.put(1, price);
-         prices.insertCardInstallment(Card.SHOP_CARD.toString(), installmentPriceMapShop);
-         if (fractioned != null) {
-            prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(fractioned, "td[valign=bottom]:not(.container_gray_fracc) .strike", false));
-
-         } else {
-            prices.setPriceFrom(CrawlerUtils.scrapSimplePriceDouble(doc, "[valing=middle] .strike2", false));
-         }
-
-      }
-
-      return prices;
-   }
-
 
    private RatingsReviews crawRating(Document doc) {
       RatingsReviews ratingReviews = new RatingsReviews();
@@ -278,14 +237,89 @@ public class ColombiaLarebajaCrawler extends Crawler {
       }
 
       return new AdvancedRatingReview.Builder()
-            .totalStar1(star1)
-            .totalStar2(star2)
-            .totalStar3(star3)
-            .totalStar4(star4)
-            .totalStar5(star5)
-            .build();
+         .totalStar1(star1)
+         .totalStar2(star2)
+         .totalStar3(star3)
+         .totalStar4(star4)
+         .totalStar5(star5)
+         .build();
    }
 
+   private Offers scrapOffers(Element doc, boolean hasMultipleOffers) throws OfferException, MalformedPricingException {
+      Offers offers = new Offers();
+      List<String> sales = new ArrayList<>();
 
+      Pricing pricing = hasMultipleOffers ? scrapPricingMultipleOffers(doc) : scrapPricingDefault(doc);
+      sales.add(CrawlerUtils.calculateSales(pricing));
+
+      offers.add(Offer.OfferBuilder.create()
+         .setUseSlugNameAsInternalSellerId(true)
+         .setSellerFullName(MAIN_SELLER_NAME)
+         .setMainPagePosition(1)
+         .setIsBuybox(true)
+         .setIsMainRetailer(true)
+         .setPricing(pricing)
+         .setSales(sales)
+         .build());
+
+      return offers;
+   }
+
+   private Pricing scrapPricingMultipleOffers(Element doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.ahora", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.antes.strike", null, false, ',', session);
+
+      if (priceFrom != null && priceFrom.equals(spotlightPrice)) {
+         priceFrom = null;
+      }
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private Pricing scrapPricingDefault(Element doc) throws MalformedPricingException {
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.pricened", null, false, ',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, "span.strike2", null, false, ',', session);
+
+      if (spotlightPrice == null || spotlightPrice.equals(0d)) {
+         spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.subtotal", null, false, ',', session);
+         priceFrom = null;
+      }
+
+      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+
+      return Pricing.PricingBuilder.create()
+         .setPriceFrom(priceFrom)
+         .setSpotlightPrice(spotlightPrice)
+         .setCreditCards(creditCards)
+         .build();
+   }
+
+   private CreditCards scrapCreditCards(Double spotlightPrice) throws MalformedPricingException {
+      CreditCards creditCards = new CreditCards();
+
+      Installments installments = new Installments();
+      if (installments.getInstallments().isEmpty()) {
+         installments.add(Installment.InstallmentBuilder.create()
+            .setInstallmentNumber(1)
+            .setInstallmentPrice(spotlightPrice)
+            .build());
+      }
+
+      for (String card : cards) {
+         creditCards.add(CreditCard.CreditCardBuilder.create()
+            .setBrand(card)
+            .setInstallments(installments)
+            .setIsShopCard(false)
+            .build());
+      }
+
+      return creditCards;
+   }
 
 }
