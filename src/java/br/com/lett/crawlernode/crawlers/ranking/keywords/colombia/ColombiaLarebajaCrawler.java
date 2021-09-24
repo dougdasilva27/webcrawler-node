@@ -36,11 +36,11 @@ public class ColombiaLarebajaCrawler extends CrawlerRankingKeywords {
       }
 
       for (Element e : products) {
-        String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-producto]", "data-producto");
+        String internalPid = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "[data-producto]", "data-producto");
         String productUrl = CrawlerUtils.scrapUrl(e, ".img-list-products a", "href", "https:", "larebajavirtual.com");
-        saveDataProduct(internalId, null, productUrl);
+        saveDataProduct(null, internalPid, productUrl);
 
-        this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
+        this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
         if (this.arrayProducts.size() == productsLimit)
           break;
       }
