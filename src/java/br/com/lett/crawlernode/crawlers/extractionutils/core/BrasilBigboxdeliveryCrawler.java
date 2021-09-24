@@ -80,12 +80,13 @@ public class BrasilBigboxdeliveryCrawler extends Crawler {
       Request request = Request.RequestBuilder.create().setUrl(url).build();
       String response = this.dataFetcher.get(session,request).getBody();
       JSONObject json = CrawlerUtils.stringToJson(response);
-      System.err.println(json);
       JSONArray dataArr = json.optJSONArray("data");
 
-      for(Object o: dataArr){
-         if (o instanceof JSONObject){
-            prodcutInfo = (JSONObject) o;
+      if(dataArr != null) {
+         for (Object o : dataArr) {
+            if (o instanceof JSONObject) {
+               prodcutInfo = (JSONObject) o;
+            }
          }
       }
 
@@ -107,7 +108,7 @@ public class BrasilBigboxdeliveryCrawler extends Crawler {
 
       if ( images != null){
          for(int i = 0 ; i > images.length(); i++) {
-           images.remove(0);
+            images.remove(0);
          }
       }
       return secondaryImages;
@@ -116,22 +117,23 @@ public class BrasilBigboxdeliveryCrawler extends Crawler {
    private Offers scrapOffers(JSONArray prices) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
 
-      for(Object o: prices) {
-         JSONObject price = (JSONObject) o;
-         Pricing pricing = scrapPricing(price);
+      if(prices != null) {
+         for (Object o : prices) {
+            JSONObject price = (JSONObject) o;
+            Pricing pricing = scrapPricing(price);
 
-         if (pricing != null) {
-            offers.add(Offer.OfferBuilder.create()
-               .setUseSlugNameAsInternalSellerId(true)
-               .setSellerFullName(MAIN_SELLER_NAME)
-               .setSellersPagePosition(1)
-               .setIsBuybox(false)
-               .setIsMainRetailer(true)
-               .setPricing(pricing)
-               .build());
+            if (pricing != null) {
+               offers.add(Offer.OfferBuilder.create()
+                  .setUseSlugNameAsInternalSellerId(true)
+                  .setSellerFullName(MAIN_SELLER_NAME)
+                  .setSellersPagePosition(1)
+                  .setIsBuybox(false)
+                  .setIsMainRetailer(true)
+                  .setPricing(pricing)
+                  .build());
+            }
          }
       }
-
       return offers;
    }
 
