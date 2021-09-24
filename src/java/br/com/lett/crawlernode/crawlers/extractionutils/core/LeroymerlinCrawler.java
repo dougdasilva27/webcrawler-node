@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.models.Card;
@@ -37,13 +38,10 @@ public class LeroymerlinCrawler extends Crawler {
 
    public LeroymerlinCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.JAVANET);
    }
 
-   @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      return !FILTERS.matcher(href).matches() && (href.startsWith(HOME_PAGE));
-   }
+
 
    @Override
    public List<Product> extractInformation(Document doc) throws Exception {
