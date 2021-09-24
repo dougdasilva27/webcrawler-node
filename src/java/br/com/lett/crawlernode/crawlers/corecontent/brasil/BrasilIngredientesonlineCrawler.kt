@@ -36,7 +36,7 @@ class BrasilIngredientesonlineCrawler(session: Session) : Crawler(session) {
    }
 
    init {
-      config.fetcher = FetchMode.FETCHER
+      config.fetcher = FetchMode.APACHE
    }
 
    override fun fetch(): Any? {
