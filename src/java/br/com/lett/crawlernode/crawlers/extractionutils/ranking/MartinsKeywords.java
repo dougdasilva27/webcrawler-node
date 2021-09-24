@@ -12,7 +12,7 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-public abstract class MartinsKeywords extends CrawlerRankingKeywords {
+public class MartinsKeywords extends CrawlerRankingKeywords {
 
   public MartinsKeywords(Session session) {
     super(session);
@@ -21,9 +21,14 @@ public abstract class MartinsKeywords extends CrawlerRankingKeywords {
   protected String password = getPassword();
   protected String login = getLogin();
 
-  protected abstract String getPassword();
+  protected String getPassword(){
+     return session.getOptions().optString("pass");
+  }
 
-  protected abstract String getLogin();
+  protected String getLogin(){
+      return session.getOptions().optString("login");
+
+   }
 
   @Override
   protected void processBeforeFetch() {
