@@ -47,11 +47,11 @@ public class BrasilMartinsCrawler extends Crawler {
    private String login = getLogin();
 
    protected String getPassword() {
-      return null;
+      return session.getOptions().optString("pass");
    }
 
    protected String getLogin() {
-      return null;
+      return session.getOptions().optString("login");
    }
 
    @Override
@@ -90,7 +90,7 @@ public class BrasilMartinsCrawler extends Crawler {
          webdriver.waitLoad(4000);
 
          waitForElement(webdriver.driver, ".form-group.c-login__group #j_password");
-         WebElement pass  = webdriver.driver.findElement(By.cssSelector(".form-group.c-login__group #j_password"));
+         WebElement pass = webdriver.driver.findElement(By.cssSelector(".form-group.c-login__group #j_password"));
          pass.sendKeys(password);
 
          Logging.printLogInfo(logger, session, "awaiting login button");
@@ -105,7 +105,6 @@ public class BrasilMartinsCrawler extends Crawler {
          waitForElement(webdriver.driver, ".qdForm");
 
          Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
-
 
 
          if (!isProductPage(doc)) {
