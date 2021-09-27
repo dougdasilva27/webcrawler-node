@@ -16,7 +16,7 @@ public class DouradosSitemercadosupermercadoschamaCrawler extends BrasilSitemerc
       super(session);
    }
 
-   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoschama/dourados-dourados-vila-progresso-avenida-presidente-vargas";
+   public static final String HOME_PAGE = "https://www.sitemercado.com.br/supermercadoschama/dourados-dourados-vila-planalto-rua-hayel-bon-faker-3855";
 
    public static final int IDLOJA = 787;
    public static final int IDREDE = 706;
@@ -24,17 +24,6 @@ public class DouradosSitemercadosupermercadoschamaCrawler extends BrasilSitemerc
    @Override
    protected String getHomePage() {
       return HOME_PAGE;
-   }
-
-   @Override
-   protected String getLoadPayload() {
-      JSONObject payload = new JSONObject();
-      String[] split = HOME_PAGE.split("/");
-
-      payload.put("lojaUrl", CommonMethods.getLast(split));
-      payload.put("redeUrl", split[split.length - 2]);
-
-      return payload.toString();
    }
 
    @Override
