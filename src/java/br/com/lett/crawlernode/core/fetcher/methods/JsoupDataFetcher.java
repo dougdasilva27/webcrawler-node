@@ -68,17 +68,15 @@ public class JsoupDataFetcher implements DataFetcher {
       List<String> proxiesTemp = request.getProxyServices() != null ? new ArrayList<>(request.getProxyServices()) : new ArrayList<>();
       List<String> proxies = new ArrayList<>();
 
-      if (proxies != null && (session instanceof EqiCrawlerSession || session instanceof EqiRankingDiscoverKeywordsSession)) {
+      if (session instanceof EqiCrawlerSession || session instanceof EqiRankingDiscoverKeywordsSession) {
          for (String proxy : proxiesTemp) {
             proxies.add(proxy.toLowerCase().contains("infatica") ? ProxyCollection.INFATICA_RESIDENTIAL_BR_EQI : proxy);
          }
-      } else if (proxies != null) {
+      } else {
          for (String proxy : proxiesTemp) {
 
-            if (proxy.toLowerCase().contains("netnut_residential_br")) {
-               proxies.add(ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY);
-            } else if (proxy.toLowerCase().contains("netnut_residential_es")) {
-               proxies.add(ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY);
+            if (proxy.toLowerCase().contains("netnut_residential") && !proxy.toLowerCase().contains("haproxy")) {
+               proxies.add(proxy + "_haproxy");
             } else if (proxy.toLowerCase().contains("infatica")) {
                proxies.add(ProxyCollection.INFATICA_RESIDENTIAL_BR_HAPROXY);
             } else if (proxy.toLowerCase().contains("luminati_server")) {

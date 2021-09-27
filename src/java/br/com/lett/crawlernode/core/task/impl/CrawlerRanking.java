@@ -391,9 +391,12 @@ public abstract class CrawlerRanking extends Task {
     * @param product
     */
    protected void saveDataProduct(RankingProduct product) {
-      product.setPosition(this.position++);
+      this.position++;
+      product.setPosition(this.position);
       product.setPageNumber(this.currentPage);
       product.setMarketId(session.getMarket().getId());
+
+      this.log(product.toString());
 
       if (!screenshotsAddress.isEmpty()) {
          switch (this.currentPage) {

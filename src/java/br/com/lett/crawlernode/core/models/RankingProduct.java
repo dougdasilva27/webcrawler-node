@@ -15,7 +15,7 @@ public class RankingProduct {
    //New fields that must captured in ranking
    protected Boolean isSponsored = false;
    protected Boolean isAvailable;
-   protected int priceInCents;
+   protected Integer priceInCents;
    protected int marketId;
    protected int pageNumber = 0;
    protected String internalId;
@@ -92,7 +92,7 @@ public class RankingProduct {
       return priceInCents;
    }
 
-   public void setPriceInCents(int priceInCents) {
+   public void setPriceInCents(Integer priceInCents) {
       this.priceInCents = priceInCents;
    }
 
@@ -162,17 +162,15 @@ public class RankingProduct {
 
    @Override
    public String toString() {
-      return "RankingProduct{" +
-         "internalPid='" + internalPid + '\'' +
-         ", internalId='" + internalId + '\'' +
-         ", name='" + name + '\'' +
-         ", position=" + position +
-         ", url='" + url + '\'' +
+      return "Position " + position + " - " +
+         "internalPid=" + internalPid +
+         ", internalId=" + internalId +
+         ", name=" + name +
+         ", url=" + url +
          ", isSponsored=" + isSponsored +
          ", priceInCents=" + priceInCents +
          ", isAvailable=" + isAvailable +
          ", pageNumber=" + pageNumber +
-         ", imageUrl='" + imageUrl + '\'' +
-         '}';
+         ", imageUrl=" + imageUrl;
    }
 }
