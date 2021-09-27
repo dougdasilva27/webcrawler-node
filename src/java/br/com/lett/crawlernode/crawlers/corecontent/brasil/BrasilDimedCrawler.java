@@ -37,7 +37,7 @@ public class BrasilDimedCrawler extends Crawler {
 
    public BrasilDimedCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    private Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
@@ -56,7 +56,8 @@ public class BrasilDimedCrawler extends Crawler {
          .setPayload(payload)
          .build();
 
-      String urltoken = dataFetcher.post(session, requestValidate).getRedirectUrl();
+      Response responseCookie = dataFetcher.post(session, requestValidate);
+      String urltoken = responseCookie.getRedirectUrl();
 
       String cookieName = "jsessionid=";
       Integer index = urltoken != null ? urltoken.indexOf(cookieName) + cookieName.length() : null;
