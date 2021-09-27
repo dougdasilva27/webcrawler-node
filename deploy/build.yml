@@ -14,5 +14,5 @@ services:
     webcrawler:
         image: ${ECR_IMAGE_URL}
         build:
-            context: /deploy/
+            context: deploy/
             dockerfile: Dockerfile
