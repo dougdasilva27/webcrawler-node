@@ -8,25 +8,23 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.Logging;
-import br.com.lett.crawlernode.util.MathUtils;
-
-import java.util.*;
-
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
-import models.RatingsReviews;
 import models.pricing.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.nodes.Document;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 30/08/17
@@ -98,7 +96,7 @@ public class SaopauloMamboCrawler extends Crawler {
          String name = JSONUtils.getStringValue(json, "displayName");
 
          //in this website, we dont have a unavailable product page. Even if the product is unavailable, the page is the same - 04/05/2021
-         boolean available = true;
+         boolean available = getAvailability(json);
          String primaryImage = crawlPrimaryImage(json);
          List<String> secondaryImages = crawlSecondaryImages(json, primaryImage);
 
@@ -123,6 +121,13 @@ public class SaopauloMamboCrawler extends Crawler {
       }
 
       return products;
+   }
+
+
+   private boolean getAvailability(JSONObject json) {
+
+      JSONArray prices = json.optJSONArray("childSKUs");
+      return !prices.isEmpty();
    }
 
    private String crawlInternalPid(JSONObject json) {
@@ -165,8 +170,8 @@ public class SaopauloMamboCrawler extends Crawler {
 
       String a = CommonMethods.getLast(primaryImage.split("file/"));
 
-      if (images.length() > 0){
-        images.remove(0);
+      if (images.length() > 0) {
+         images.remove(0);
       }
 
       images.forEach(image ->
