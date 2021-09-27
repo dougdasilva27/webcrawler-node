@@ -56,7 +56,7 @@ public class BrasilBelezanawebCrawler extends Crawler {
 
    public BrasilBelezanawebCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.APACHE);
    }
 
    @Override
