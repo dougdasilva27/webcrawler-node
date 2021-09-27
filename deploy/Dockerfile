@@ -2,7 +2,7 @@ FROM adoptopenjdk/openjdk11:alpine-jre
 
 RUN apk add --no-cache chromium chromium-chromedriver
 
-COPY target/deployment/webcrawler.jar /app/webcrawler.jar
+COPY ../target/deployment/webcrawler.jar /app/webcrawler.jar
 
 WORKDIR /app
 
