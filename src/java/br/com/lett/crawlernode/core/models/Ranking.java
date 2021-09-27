@@ -7,7 +7,7 @@ import java.util.List;
 public class Ranking {
 
    protected int marketId;
-   protected List<RankingProducts> products = new ArrayList<>();
+   protected List<RankingProduct> products = new ArrayList<>();
    protected String location;
    protected String rankType;
    protected Timestamp date;
@@ -42,11 +42,11 @@ public class Ranking {
       this.rankType = rankType;
    }
 
-   public List<RankingProducts> getProducts() {
+   public List<RankingProduct> getProducts() {
       return products;
    }
 
-   public void setProducts(List<RankingProducts> products) {
+   public void setProducts(List<RankingProduct> products) {
       this.products = products;
    }
 

@@ -1,10 +1,9 @@
 package br.com.lett.crawlernode.test
 
 import br.com.lett.crawlernode.core.models.Market
-import br.com.lett.crawlernode.core.models.RankingProducts
+import br.com.lett.crawlernode.core.models.RankingProduct
 import br.com.lett.crawlernode.core.session.crawler.TestCrawlerSession
 import br.com.lett.crawlernode.core.task.impl.CrawlerRanking
-import br.com.lett.crawlernode.database.Persistence
 import br.com.lett.crawlernode.util.CommonMethods
 import org.json.JSONArray
 import org.json.JSONObject
@@ -19,7 +18,7 @@ class LocalDiscovery {
 
       val tasks = TestUtils.taskProcess(market, parameters = keywords, currentTest = TestType.KEYWORDS, productsLimit = maxProducts)
 
-      val products = mutableListOf<RankingProducts>()
+      val products = mutableListOf<RankingProduct>()
 
       for (task in tasks) {
          if (task is CrawlerRanking) {

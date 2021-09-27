@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.bson.Document;
 
-public class RankingProducts {
+public class RankingProduct {
 
 	protected String internalPid;
 	protected int position;
@@ -34,7 +34,6 @@ public class RankingProducts {
 			.append("position", this.position)
 			//.append("url", this.url)
 			.append("processed_ids", this.processedIds);
-		
 	}
 	
 	public String getInteranlPid() {
@@ -159,5 +158,21 @@ public class RankingProducts {
 
    public void setTimestamp(Timestamp timestamp) {
       this.timestamp = timestamp;
+   }
+
+   @Override
+   public String toString() {
+      return "RankingProduct{" +
+         "internalPid='" + internalPid + '\'' +
+         ", internalId='" + internalId + '\'' +
+         ", name='" + name + '\'' +
+         ", position=" + position +
+         ", url='" + url + '\'' +
+         ", isSponsored=" + isSponsored +
+         ", priceInCents=" + priceInCents +
+         ", isAvailable=" + isAvailable +
+         ", pageNumber=" + pageNumber +
+         ", imageUrl='" + imageUrl + '\'' +
+         '}';
    }
 }

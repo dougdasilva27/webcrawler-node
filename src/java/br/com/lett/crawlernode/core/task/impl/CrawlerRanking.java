@@ -11,7 +11,7 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Ranking;
-import br.com.lett.crawlernode.core.models.RankingProducts;
+import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingStatistics;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
@@ -59,7 +59,7 @@ public abstract class CrawlerRanking extends Task {
 
    private Logger logger;
 
-   protected List<RankingProducts> arrayProducts = new ArrayList<>();
+   protected List<RankingProduct> arrayProducts = new ArrayList<>();
 
    private Map<String, String> mapUrlMessageId = new HashMap<>();
 
@@ -90,7 +90,7 @@ public abstract class CrawlerRanking extends Task {
    // variável que identifica se há resultados na página
    protected boolean result;
 
-   public List<RankingProducts> getArrayProducts() {
+   public List<RankingProduct> getArrayProducts() {
       return arrayProducts;
    }
 
@@ -307,7 +307,7 @@ public abstract class CrawlerRanking extends Task {
     * @param internalId
     * @param pid
     * @param url
-    * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProducts)}
+    * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProduct)}
     */
    protected void saveDataProduct(String internalId, String pid, String url) {
       this.position++;
@@ -320,10 +320,10 @@ public abstract class CrawlerRanking extends Task {
     * @param internalId
     * @param pid
     * @param url
-    * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProducts)}
+    * @deprecated Novos campos devem ser capturados pelo ranking. Utilizar a função {@link #saveDataProduct(RankingProduct)}
     */
    protected void saveDataProduct(String internalId, String pid, String url, int position) {
-      RankingProducts rankingProducts = new RankingProducts();
+      RankingProduct rankingProducts = new RankingProduct();
 
       rankingProducts.setInteranlPid(pid);
       rankingProducts.setUrl(url);
@@ -390,7 +390,7 @@ public abstract class CrawlerRanking extends Task {
     *
     * @param product
     */
-   protected void saveDataProduct(RankingProducts product) {
+   protected void saveDataProduct(RankingProduct product) {
       product.setPosition(this.position++);
       product.setPageNumber(this.currentPage);
       product.setMarketId(session.getMarket().getId());
