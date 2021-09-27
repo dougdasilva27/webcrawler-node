@@ -1,15 +1,14 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.core;
 
-import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
-import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
-import br.com.lett.crawlernode.exceptions.AuthenticationException;
-import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
 import com.google.common.collect.Sets;
@@ -24,13 +23,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class MrestoqueunidasulCrawler extends Crawler {
 
@@ -41,6 +37,7 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
 
    public MrestoqueunidasulCrawler(Session session) {
       super(session);
+      config.setFetcher(FetchMode.FETCHER);
    }
 
    private final String password = getPassword();
@@ -50,56 +47,58 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
 
    protected abstract String getLogin();
 
-   @Override
-   public boolean shouldVisit() {
-      String href = session.getOriginalURL().toLowerCase();
-      String homePage = "https://www.mrestoque.com.br/";
-      return !FILTERS.matcher(href).matches() && (href.startsWith(homePage));
-   }
 
    @Override
    protected Object fetch() {
       if (login == null || password == null) {
          return super.fetch();
       }
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(session.getOriginalURL(), ProxyCollection.BUY_HAPROXY, session);
 
-         Logging.printLogDebug(logger, session, "waiting product page without login");
+      Map<String, String> headers = new HashMap<>();
 
-         waitForElement(webdriver.driver, ".btn-login");
-         WebElement clickLogin = webdriver.driver.findElement(By.cssSelector(".btn-login"));
-         webdriver.clickOnElementViaJavascript(clickLogin);
+      headers.put("content-type", "application/x-www-form-urlencoded");
+      headers.put("authority", "www.mrestoque.com.br");
 
-         waitForElement(webdriver.driver, "#username");
-         WebElement email = webdriver.driver.findElement(By.cssSelector("#username"));
-         email.sendKeys(login);
+      String payload = "username=" + getLogin() + "&password=" + getPassword();
 
-         waitForElement(webdriver.driver, "#password");
-         WebElement pass = webdriver.driver.findElement(By.cssSelector("#password"));
-         pass.sendKeys(password);
 
-         Logging.printLogDebug(logger, session, "awaiting login button");
-         webdriver.waitLoad(7000);
+      Request requestLogin = Request.RequestBuilder.create()
+         .setUrl("https://www.mrestoque.com.br/cliente/entrar")
+         .setHeaders(headers)
+         .setPayload(payload)
+         .setFollowRedirects(false)
+         .setCookies(cookies)
+         .build();
 
-         waitForElement(webdriver.driver, ".btn.btn-login-ajax");
-         WebElement finishLogin = webdriver.driver.findElement(By.cssSelector(".btn.btn-login-ajax"));
-         webdriver.clickOnElementViaJavascript(finishLogin);
+      Response responseLogin = this.dataFetcher.post(session, requestLogin);
+      this.cookies = responseLogin.getCookies();
 
-         Logging.printLogDebug(logger, session, "waiting product page");
-         webdriver.waitLoad(7000);
 
-         Document doc = Jsoup.parse(webdriver.getCurrentPageSource());
+      Request requestLogin2 = Request.RequestBuilder.create()
+         .setUrl("https://www.mrestoque.com.br" + responseLogin.getHeaders().get("location"))
+         .setFollowRedirects(false)
+         .setCookies(cookies)
+         .build();
 
-         if (doc.selectFirst("ul.errors") != null) {
-            throw new AuthenticationException("Failed to login - " + CrawlerUtils.scrapStringSimpleInfo(doc, "ul.errors", false));
-         }
+      Response responseLogin2 = this.dataFetcher.get(session, requestLogin2);
 
-         return doc;
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         return super.fetch();
-      }
+      Request requestLogin3 = Request.RequestBuilder.create()
+         .setUrl("https://www.mrestoque.com.br" + responseLogin2.getHeaders().get("location"))
+         .setFollowRedirects(false)
+         .setCookies(cookies)
+         .build();
+
+      Response responseLogin3 = this.dataFetcher.get(session, requestLogin3);
+
+      Request requestProduct = Request.RequestBuilder.create()
+         .setUrl(session.getOriginalURL())
+         .setCookies(cookies)
+         .build();
+
+      Response response = this.dataFetcher.get(session, requestProduct);
+
+      return Jsoup.parse(response.getBody());
+
    }
 
    //a.btn-login
@@ -117,13 +116,13 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
       if (isProductPage(doc)) {
          Logging.printLogDebug(
             logger, session, "Product page identified: " + session.getOriginalURL());
-         String internalId = CommonMethods.getLast(session.getOriginalURL().split("-"));
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[data-product]", "data-product");
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, ".infos .right .descricao", true);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".tt-product-name", true);
          CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs li:not(:nth-child(2)):not(:first-child) a");
 
          List<String> images = scrapImage(doc);
-         String primaryImage = !images.isEmpty()? images.remove(0) : null;
+         String primaryImage = !images.isEmpty() ? images.remove(0) : null;
 
          String description = scrapDescription(doc);
          boolean available = !doc.select(".add-to-cart").isEmpty();
@@ -179,15 +178,15 @@ public abstract class MrestoqueunidasulCrawler extends Crawler {
 
    }
 
-   private List<String> scrapImage(Document doc){
+   private List<String> scrapImage(Document doc) {
       List<String> images = new ArrayList<>();
       Elements imagesElements = doc.select(".product-images li");
       for (Element element : imagesElements) {
-         String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element,"img","src");
-         String url = CrawlerUtils.completeUrl(imageUrl,"https","www.mrestoque.com.br");
+         String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(element, "img", "src");
+         String url = CrawlerUtils.completeUrl(imageUrl, "https", "www.mrestoque.com.br");
          images.add(url);
       }
-    return images;
+      return images;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
