@@ -168,8 +168,6 @@ public class SaopauloMamboCrawler extends Crawler {
          images = json.getJSONArray("thumbImageURLs");
       }
 
-      String a = CommonMethods.getLast(primaryImage.split("file/"));
-
       if (images.length() > 0) {
          images.remove(0);
       }
@@ -196,8 +194,6 @@ public class SaopauloMamboCrawler extends Crawler {
 
    private Offers scrapOffers(JSONObject json) throws OfferException, MalformedPricingException {
       Offers offers = new Offers();
-
-
       Pricing pricing = crawlPricing(json);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
