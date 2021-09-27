@@ -35,19 +35,19 @@
 
     <build>
 
-        <sourceDirectory>../src/java</sourceDirectory>
+        <sourceDirectory>src/java</sourceDirectory>
 
         <resources>
             <!-- regular resource processsing for everything except logback.xml -->
             <resource>
-                <directory>../src/resources</directory>
+                <directory>src/resources</directory>
                 <excludes>
                     <exclude>logback.xml</exclude>
                 </excludes>
             </resource>
             <!-- resource processsing with a different output directory for logback.xml -->
             <resource>
-                <directory>../src/resources</directory>
+                <directory>src/resources</directory>
                 <includes>
                     <include>logback.xml</include>
                 </includes>
@@ -87,7 +87,7 @@
                         </goals>
                         <configuration>
                             <sourceDirs>
-                                <sourceDir>../src/java</sourceDir>
+                                <sourceDir>${project.basedir}/src/java</sourceDir>
                             </sourceDirs>
                         </configuration>
                     </execution>
@@ -115,7 +115,7 @@
                                     </excludes>
                                 </filter>
                             </filters>
-                            <outputDirectory>./target/deployment</outputDirectory>
+                            <outputDirectory>target/deployment</outputDirectory>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <transformers>
                                 <transformer
