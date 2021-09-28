@@ -80,6 +80,10 @@ public class JavanetDataFetcher implements DataFetcher {
                   headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
             String requestHash = FetchUtilities.generateRequestHash(session);
 
+            if(request.getCookies() != null && !request.getCookies().isEmpty()){
+               headers.put("Cookie",CommonMethods.cookiesToString(request.getCookies()));
+            }
+
             String content = "";
             Proxy proxy = null;
 
