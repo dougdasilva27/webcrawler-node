@@ -13,7 +13,7 @@ public class RankingProductBuilder {
    private Boolean isSponsored = false;
    private Boolean isAvailable;
    private int position;
-   private int priceInCents;
+   private Integer priceInCents;
    private int marketId;
    private int pageNumber = 0;
    private String url;
@@ -59,7 +59,7 @@ public class RankingProductBuilder {
       return this;
    }
 
-   public RankingProductBuilder setPriceInCents(int priceInCents) {
+   public RankingProductBuilder setPriceInCents(Integer priceInCents) {
       this.priceInCents = priceInCents;
       return this;
    }
@@ -94,8 +94,8 @@ public class RankingProductBuilder {
       return this;
    }
 
-   public RankingProducts build() throws MalformedProductException {
-      RankingProducts product = new RankingProducts();
+   public RankingProduct build() throws MalformedProductException {
+      RankingProduct product = new RankingProduct();
 
       product.setUrl(this.url);
       product.setInternalId(this.internalId);
@@ -123,17 +123,11 @@ public class RankingProductBuilder {
    }
 
    private void check() throws MalformedProductException {
-      if (this.internalId == null || this.internalId.isEmpty()) {
-         if (this.internalPid == null || this.internalPid.isEmpty()){
-            throw new MalformedProductException("Both id's can't be null or empty");
-         }
-      }
-
       if (this.url == null || this.url.isEmpty()) {
          throw new MalformedProductException("Product url can't be null");
       }
 
-      if (this.name == null || this.name.isEmpty()) {
+      if (this.name == null) {
          throw new MalformedProductException("Product name can't be null");
       }
 

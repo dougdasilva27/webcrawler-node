@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.bson.Document;
 
-public class RankingProducts {
+public class RankingProduct {
 
 	protected String internalPid;
 	protected int position;
@@ -15,7 +15,7 @@ public class RankingProducts {
    //New fields that must captured in ranking
    protected Boolean isSponsored = false;
    protected Boolean isAvailable;
-   protected int priceInCents;
+   protected Integer priceInCents;
    protected int marketId;
    protected int pageNumber = 0;
    protected String internalId;
@@ -34,7 +34,6 @@ public class RankingProducts {
 			.append("position", this.position)
 			//.append("url", this.url)
 			.append("processed_ids", this.processedIds);
-		
 	}
 	
 	public String getInteranlPid() {
@@ -93,7 +92,7 @@ public class RankingProducts {
       return priceInCents;
    }
 
-   public void setPriceInCents(int priceInCents) {
+   public void setPriceInCents(Integer priceInCents) {
       this.priceInCents = priceInCents;
    }
 
@@ -159,5 +158,19 @@ public class RankingProducts {
 
    public void setTimestamp(Timestamp timestamp) {
       this.timestamp = timestamp;
+   }
+
+   @Override
+   public String toString() {
+      return "Position " + position + " - " +
+         "internalPid=" + internalPid +
+         ", internalId=" + internalId +
+         ", name=" + name +
+         ", url=" + url +
+         ", isSponsored=" + isSponsored +
+         ", priceInCents=" + priceInCents +
+         ", isAvailable=" + isAvailable +
+         ", pageNumber=" + pageNumber +
+         ", imageUrl=" + imageUrl;
    }
 }

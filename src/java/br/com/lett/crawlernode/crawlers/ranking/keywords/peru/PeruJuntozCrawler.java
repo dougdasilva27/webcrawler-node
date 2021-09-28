@@ -3,13 +3,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.peru;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.core.models.RankingProducts;
+import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
-import br.com.lett.crawlernode.util.JSONUtils;
-import org.apache.kafka.common.protocol.types.Field;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -53,7 +51,7 @@ public class PeruJuntozCrawler extends CrawlerRankingKeywords {
             boolean isAvailable = price != 0;
 
             //New way to send products to save data product
-            RankingProducts productRanking = RankingProductBuilder.create()
+            RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(internalId)
                .setInternalPid(internalPid)

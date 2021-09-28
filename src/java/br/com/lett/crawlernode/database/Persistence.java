@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.database;
 
 import br.com.lett.crawlernode.core.models.Ranking;
-import br.com.lett.crawlernode.core.models.RankingProducts;
+import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.session.SessionError;
 import br.com.lett.crawlernode.core.session.crawler.SeedCrawlerSession;
@@ -790,9 +790,9 @@ public class Persistence {
 
          CrawlerRanking crawlerRanking = Tables.CRAWLER_RANKING;
 
-         List<RankingProducts> products = ranking.getProducts();
+         List<RankingProduct> products = ranking.getProducts();
 
-         for (RankingProducts rankingProducts : products) {
+         for (RankingProduct rankingProducts : products) {
             List<Long> processedIds = rankingProducts.getProcessedIds();
 
             for (Long processedId : processedIds) {
