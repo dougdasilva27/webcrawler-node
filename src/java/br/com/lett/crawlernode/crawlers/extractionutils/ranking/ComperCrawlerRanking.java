@@ -5,7 +5,7 @@ import java.util.Map;
 
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.core.models.RankingProducts;
+import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.JSONUtils;
 import br.com.lett.crawlernode.util.MathUtils;
@@ -93,7 +93,7 @@ public abstract class ComperCrawlerRanking extends CrawlerRankingKeywords {
             int price = priceStr != null ? MathUtils.parseInt(priceStr) : 0;
             boolean isAvailable = price != 0;
 
-            RankingProducts objProducts = RankingProductBuilder.create()
+            RankingProduct objProducts = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setImageUrl(imageUrl)
                .setName(name)
