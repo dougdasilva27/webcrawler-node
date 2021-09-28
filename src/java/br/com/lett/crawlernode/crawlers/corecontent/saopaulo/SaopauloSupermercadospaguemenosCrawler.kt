@@ -12,12 +12,15 @@ import models.Offer.OfferBuilder
 import models.Offers
 import models.RatingsReviews
 import models.pricing.Pricing.PricingBuilder
+import org.apache.http.impl.cookie.BasicClientCookie
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import java.util.*
 
 class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(session) {
+
+   private val zipCode: String = getZipCode()
 
    override fun fetch(): Document {
       val request = Request.RequestBuilder.create()
@@ -26,6 +29,19 @@ class SaopauloSupermercadospaguemenosCrawler(session: Session?) : Crawler(sessio
          .build()
 
       return dataFetcher.get(session, request).body.toDoc() ?: Document(session.originalURL)
+   }
+
+   fun getZipCode(): String {
+      return session.options.optString("zip_code")
+   }
+
+   override fun handleCookiesBeforeFetch() {
+      if(zipCode == ""){
+         val cookie = BasicClientCookie("zipcode", zipCode)
+         cookie.domain = "www.superpaguemenos.com.br"
+         cookie.path = "/"
+         cookies.add(cookie)
+      }
    }
 
    override fun extractInformation(document: Document): MutableList<Product> {
