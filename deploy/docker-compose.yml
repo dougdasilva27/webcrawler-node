@@ -12,7 +12,7 @@ services:
         volumes:
             - ~/.aws:/root/.aws:ro
         env_file:
-            - .env
+            - ../.env
 
     redis:
         container_name: redis
