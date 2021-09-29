@@ -6,11 +6,13 @@ import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
+import br.com.lett.crawlernode.util.CrawlerUtils;
 import models.RatingsReviews;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ public abstract class ComperCrawler extends VTEXOldScraper {
 
    public ComperCrawler(Session session) {
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -37,16 +39,16 @@ public abstract class ComperCrawler extends VTEXOldScraper {
    }
 
    @Override
-   public void handleCookiesBeforeFetch() {
-      Request request = RequestBuilder.create().setUrl(HOME_PAGE + "?sc=" + storeId).setCookies(cookies).build();
-      Response response = this.dataFetcher.get(session, request);
+   protected Object fetch(){
+      BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + getStoreId());
+      cookie.setDomain("www.comper.com.br");
+      cookie.setPath("/");
+      this.cookies.add(cookie);
 
-      for (Cookie cookieResponse : response.getCookies()) {
-         BasicClientCookie cookie = new BasicClientCookie(cookieResponse.getName(), cookieResponse.getValue());
-         cookie.setDomain("www.comper.com.br");
-         cookie.setPath("/");
-         this.cookies.add(cookie);
-      }
+      Request request = Request.RequestBuilder.create().setUrl(session.getOriginalURL()).setCookies(this.cookies).build();
+      String response = dataFetcher.get(session, request).getBody();
+
+      return Jsoup.parse(response);
    }
 
    @Override
