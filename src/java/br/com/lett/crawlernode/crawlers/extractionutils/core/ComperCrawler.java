@@ -40,7 +40,6 @@ public abstract class ComperCrawler extends VTEXOldScraper {
 
    @Override
    protected Object fetch(){
-
       BasicClientCookie cookie = new BasicClientCookie("VTEXSC", "sc=" + getStoreId());
       cookie.setDomain("www.comper.com.br");
       cookie.setPath("/");
@@ -51,7 +50,6 @@ public abstract class ComperCrawler extends VTEXOldScraper {
 
       return Jsoup.parse(response);
    }
-
 
    @Override
    protected String getHomePage() {
@@ -67,11 +65,6 @@ public abstract class ComperCrawler extends VTEXOldScraper {
    protected JSONObject crawlProductApi(String internalPid, String parameters) {
       return super.crawlProductApi(internalPid, "&sc=" + storeId);
    }
-
-//   @Override
-//   protected String scrapInternalpid(Document doc) {
-//      return CrawlerUtils.scrapStringSimpleInfo(doc, ".av-row.av-row-flex .skuReference", true);
-//   }
 
    @Override
    protected List<String> scrapImages(Document doc, JSONObject skuJson, String internalPid, String internalId) {
