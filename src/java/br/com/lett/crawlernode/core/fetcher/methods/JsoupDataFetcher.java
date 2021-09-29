@@ -93,6 +93,10 @@ public class JsoupDataFetcher implements DataFetcher {
          headers = new HashMap<>();
       }
 
+      if(request.getCookies() != null && !request.getCookies().isEmpty()){
+         headers.put("cookie",CommonMethods.cookiesToString(request.getCookies()));
+      }
+
       String randUserAgent =
             headers.containsKey(FetchUtilities.USER_AGENT) ? headers.get(FetchUtilities.USER_AGENT) : FetchUtilities.randUserAgent();
       headers.put(FetchUtilities.USER_AGENT, randUserAgent);
