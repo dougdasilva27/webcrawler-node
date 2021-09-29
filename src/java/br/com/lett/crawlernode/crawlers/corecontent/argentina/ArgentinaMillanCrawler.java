@@ -49,9 +49,10 @@ public class ArgentinaMillanCrawler extends Crawler {
             CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "ol.breadcrumb > li", true);
             String primaryImage = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.product-img img.img-fluid", "src");
             String ean = productJson.optString("reference").trim();
-            List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".product-thumb .thumb", Arrays.asList("data-src"), "https","atomoconviene.com/atomo-ecommerce", primaryImage);
+            List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".product-thumb:not(.slick-active) .thumb", Arrays.asList("data-src"), "https","atomoconviene.com/atomo-ecommerce", primaryImage);
             String stockStr = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "div.product-quantities span", "data-stock");
             int stock = stockStr != null ? Integer.parseInt(stockStr) : 0;
+            String description = CrawlerUtils.scrapSimpleDescription(doc, List.of(".product-information > .product-tabs"));
             Offers offers = stock > 0 ? scrapOffers(productJson) : new Offers();
 
             Product product = ProductBuilder.create()
@@ -63,6 +64,7 @@ public class ArgentinaMillanCrawler extends Crawler {
                .setPrimaryImage(primaryImage)
                .setSecondaryImages(secondaryImages)
                .setStock(stock)
+               .setDescription(description)
                .setOffers(offers)
                .setEans(Collections.singletonList(ean))
                .build();
