@@ -81,7 +81,7 @@ public class JavanetDataFetcher implements DataFetcher {
             String requestHash = FetchUtilities.generateRequestHash(session);
 
             if(request.getCookies() != null && !request.getCookies().isEmpty()){
-               headers.put("Cookie",CommonMethods.cookiesToString(request.getCookies()));
+               headers.put("cookie",CommonMethods.cookiesToString(request.getCookies()));
             }
 
             String content = "";
