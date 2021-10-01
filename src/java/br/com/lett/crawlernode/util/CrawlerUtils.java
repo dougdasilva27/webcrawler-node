@@ -1,30 +1,5 @@
 package br.com.lett.crawlernode.util;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
-
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
@@ -37,18 +12,34 @@ import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.YourreviewsRatingCrawler;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import exceptions.MalformedPricingException;
-import models.AdvancedRatingReview;
-import models.Marketplace;
-import models.RatingsReviews;
-import models.Seller;
-import models.Util;
+import models.*;
 import models.prices.Prices;
 import models.pricing.BankSlip;
 import models.pricing.BankSlip.BankSlipBuilder;
 import models.pricing.Pricing;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.Normalizer;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 
 public class CrawlerUtils {
@@ -259,6 +250,12 @@ public class CrawlerUtils {
       Float price = scrapFloatPriceFromHtml(doc, cssSelector, att, ownText, priceFormat, session);
       return price != null ? MathUtils.normalizeTwoDecimalPlaces(price.doubleValue()) : null;
    }
+
+   public static Integer scrapPriceInCentsFromHtml(Element doc, String cssSelector, String att, boolean ownText, char priceFormat, Session session ,Integer defaultValue) {
+      Double price = CrawlerUtils.scrapDoublePriceFromHtml(doc, cssSelector, att, ownText, priceFormat, session);
+      return price != null ? (int) (price * 100) :defaultValue;
+   }
+
 
    /**
     * Scrap simple price from html
@@ -2280,7 +2277,8 @@ public class CrawlerUtils {
 
          }
 
-      } return result;
+      }
+      return result;
    }
 
 

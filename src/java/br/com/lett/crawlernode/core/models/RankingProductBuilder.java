@@ -13,7 +13,7 @@ public class RankingProductBuilder {
    private Boolean isSponsored = false;
    private Boolean isAvailable;
    private int position;
-   private int priceInCents;
+   private Integer priceInCents;
    private int marketId;
    private int pageNumber = 0;
    private String url;
@@ -59,7 +59,7 @@ public class RankingProductBuilder {
       return this;
    }
 
-   public RankingProductBuilder setPriceInCents(int priceInCents) {
+   public RankingProductBuilder setPriceInCents(Integer priceInCents) {
       this.priceInCents = priceInCents;
       return this;
    }
