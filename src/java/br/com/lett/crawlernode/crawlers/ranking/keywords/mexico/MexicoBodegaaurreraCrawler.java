@@ -2,8 +2,11 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.mexico;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
@@ -16,9 +19,9 @@ public class MexicoBodegaaurreraCrawler extends CrawlerRankingKeywords {
    }
 
    private JSONObject fetchJSON() {
-      String url = "https://www.bodegaaurrera.com.mx/api/v2/page/search?Ntt=consola&size=48&page=" + (this.currentPage - 1) + "&siteId=bodega&featureFlags=EVG" + this.keywordEncoded;
+      String keyword = this.keywordEncoded.replace(" ", "+");
+      String url = "https://www.bodegaaurrera.com.mx/api/v2/page/search?Ntt=" + keyword + "&size=48&page=" + (this.currentPage - 1) + "&siteId=bodega";
       this.log("Link onde são feitos os crawlers: " + url);
-
       Request request = Request.RequestBuilder.create()
          .setCookies(cookies)
          .setUrl(url)
@@ -30,7 +33,7 @@ public class MexicoBodegaaurreraCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       JSONObject json = fetchJSON();
 
       JSONArray results = JSONUtils.getValueRecursive(json, "appendix.SearchResults.content", JSONArray.class);
@@ -46,8 +49,22 @@ public class MexicoBodegaaurreraCrawler extends CrawlerRankingKeywords {
 
                String internalPid = product.optString("id");
                String productUrl = "https://www.bodegaaurrera.com.mx" + product.optString("productSeoUrl");
+               String name = product.optString("skuDisplayName");
+               String imageUrl = CrawlerUtils.completeUrl(JSONUtils.getValueRecursive(product, "imageUrls.large", String.class), "https", "res.cloudinary.com/walmart-labs/image/upload/w_225,dpr_auto,f_auto,q_auto:good/mg");
+               int price = product.optInt("skuPrice");
+               boolean isAvailable = price != 0;
 
-               saveDataProduct(null, internalPid, productUrl);
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(null)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
+
+               saveDataProduct(productRanking);
                this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
                if (this.arrayProducts.size() == productsLimit)
                   break;
