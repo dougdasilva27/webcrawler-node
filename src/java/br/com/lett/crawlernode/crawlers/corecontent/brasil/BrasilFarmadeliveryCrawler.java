@@ -87,8 +87,7 @@ public class BrasilFarmadeliveryCrawler extends Crawler {
             internalPid = elementInternalPid.get(0).text().trim();
          }
 
-         Element elementName = doc.select(".product-name h1").first();
-         String name = elementName.text().replace("'", "").replace("’", "").trim();
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "div.title-new h1", true);
          Float price = crawlPrice(doc);
          boolean available = true;
          Element buttonUnavailable = doc.select("a.btn-esgotado").first();
