@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.equador;
 
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
-import br.com.lett.crawlernode.core.models.RankingProducts;
+import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
@@ -48,7 +48,7 @@ public class EquadorFrecuentoCrawler extends CrawlerRankingKeywords {
             Pid = id;
          }
 
-         RankingProducts rankingProducts = RankingProductBuilder.create()
+         RankingProduct rankingProducts = RankingProductBuilder.create()
             .setInternalId(id)
             .setInternalPid(Pid)
             .setName(CrawlerUtils.scrapStringSimpleInfo(element, ".product__list--name", true))
