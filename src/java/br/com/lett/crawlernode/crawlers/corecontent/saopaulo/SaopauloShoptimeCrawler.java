@@ -2,8 +2,8 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
-import br.com.lett.crawlernode.core.fetcher.methods.DataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
@@ -18,7 +18,6 @@ import exceptions.OfferException;
 import models.Offer;
 import models.Offers;
 import models.pricing.*;
-import org.apache.http.cookie.Cookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -26,7 +25,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SaopauloShoptimeCrawler extends B2WCrawler {
 
@@ -52,13 +54,13 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       JSONObject jsonSeller = CrawlerUtils.selectJsonFromHtml(doc, "script", "window.__PRELOADED_STATE__ =", ";", false, true);
 
       //offerId é responsavel por definir qual sellers vai aparecer na primeira posição da pagina de sellers.
-      String offerId = JSONUtils.getValueRecursive(jsonSeller,"entities.offers."+ internalPid+".0.id",String.class);
+      String offerId = JSONUtils.getValueRecursive(jsonSeller, "entities.offers." + internalPid + ".0.id", String.class);
       String offersPageUrl = "https://www.shoptime.com.br/parceiros/" + internalPid + "?offerId=" + offerId + "&productSku=" + internalId;
 
       Document offersDoc = acessOffersPage(offersPageUrl);
 
-      if(offersDoc.select(".src__Background-rlbmr6-1 .src__Card-rlbmr6-3 > div").isEmpty()){
-         JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller,internalPid,arrayPosition);
+      if (offersDoc.select(".src__Background-rlbmr6-1 .src__Card-rlbmr6-3 > div").isEmpty()) {
+         JSONObject offersJson = SaopauloB2WCrawlersUtils.newWayToExtractJsonOffers(jsonSeller, internalPid, arrayPosition);
          setOffersForMainPageSeller(offers, offersJson, internalId);
       } else {
          Elements offersFromHTML = offersDoc.select(".src__Background-rlbmr6-1 .src__Card-rlbmr6-3 > div");
@@ -68,11 +70,11 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
    }
 
    protected Document acessOffersPage(String offersPageURL) {
-      return Jsoup.parse(fetchPage(offersPageURL,this.dataFetcher,cookies,headers,session));
+      return Jsoup.parse(fetchPage(offersPageURL, session));
    }
 
 
-   private void setOffersForMainPageSeller (Offers offers ,JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
+   private void setOffersForMainPageSeller(Offers offers, JSONObject offersJson, String internalId) throws OfferException, MalformedPricingException {
       Map<String, Double> mapOfSellerIdAndPrice = new HashMap<>();
       boolean twoPositions = false;
 
@@ -114,15 +116,15 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
 
    private void setOffersForSellersPage(Offers offers, Elements sellers) throws MalformedPricingException, OfferException {
 
-      if(sellers.size() > 0){
+      if (sellers.size() > 0) {
 
-         for(int i = 0; i < sellers.size(); i++){
+         for (int i = 0; i < sellers.size(); i++) {
             Element sellerInfo = sellers.get(i);
             boolean isBuyBox = sellers.size() > 1;
-            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo,".seller-card__SellerInfo-sc-1752s9o-2  p:nth-child(2)",false);
-            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo,".seller-card__ButtonContainer-sc-1752s9o-5 a","href");
+            String sellerName = CrawlerUtils.scrapStringSimpleInfo(sellerInfo, ".seller-card__SellerInfo-sc-1752s9o-2  p:nth-child(2)", false);
+            String rawSellerId = CrawlerUtils.scrapStringSimpleInfoByAttribute(sellerInfo, ".seller-card__ButtonContainer-sc-1752s9o-5 a", "href");
             String sellerId = scrapSellerIdFromURL(rawSellerId);
-            Integer mainPagePosition = i == 0 ? 1: null;
+            Integer mainPagePosition = i == 0 ? 1 : null;
             Integer sellersPagePosition = i + 1;
             Pricing pricing = scrapPricingForOffersPage(sellerInfo);
 
@@ -141,10 +143,10 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
       }
    }
 
-   private String scrapSellerIdFromURL(String rawSellerId){
+   private String scrapSellerIdFromURL(String rawSellerId) {
       String sellerId = "";
-      if(rawSellerId != null){
-         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]","").trim();
+      if (rawSellerId != null) {
+         sellerId = CommonMethods.getLast(rawSellerId.split("sellerId")).replaceAll("[^0-9]", "").trim();
       }
       return sellerId;
    }
@@ -152,10 +154,10 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
    private Pricing scrapPricingForOffersPage(Element sellerInfo)
       throws MalformedPricingException {
 
-      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPrice-sc-17hp6jc-2",null,false,',', session);
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo,".src__BestPrice-sc-17hp6jc-5",null,false,',', session);
+      Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__ListPrice-sc-17hp6jc-2", null, false, ',', session);
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(sellerInfo, ".src__BestPrice-sc-17hp6jc-5", null, false, ',', session);
       BankSlip bt = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
-      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo,spotlightPrice);
+      CreditCards creditCards = scrapCreditCardsForSellersPage(sellerInfo, spotlightPrice);
 
       return Pricing.PricingBuilder.create()
          .setPriceFrom(priceFrom)
@@ -190,20 +192,62 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
    @Override
    protected Document fetch() {
       setHeaders();
-      return Jsoup.parse(SaopauloAmericanasCrawler.fetchPage(session.getOriginalURL(), this.dataFetcher, cookies, headers, session));
+
+      return Jsoup.parse(fetchPage(session.getOriginalURL(), session));
+
    }
 
-   @Override
-   public void setHeaders() {
-      super.headers.put("host", "www.shoptime.com.br");
-      super.headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
-      super.headers.put("sec-ch-ua-mobile", "?0");
-      super.headers.put("upgrade-insecure-requests", "1");
-      super.headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      super.headers.put("sec-fetch-site", "none");
-      super.headers.put("sec-fetch-mode", "navigate");
-      super.headers.put("sec-fetch-user", "?1");
-      super.headers.put("sec-fetch-dest", "document");
-      super.headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+
+   public static String fetchPage(String url, Session session) {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("host", "www.shoptime.com.br");
+      headers.put("sec-ch-ua", " \" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"");
+      headers.put("sec-ch-ua-mobile", "?0");
+      headers.put("upgrade-insecure-requests", "1");
+      headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8,application/signed-exchange;v=b3;q=0.9");
+      headers.put("sec-fetch-site", "none");
+      headers.put("sec-fetch-mode", "navigate");
+      headers.put("sec-fetch-user", "?1");
+      headers.put("sec-fetch-dest", "document");
+      headers.put("accept-language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6");
+      Request request = Request.RequestBuilder.create()
+         .setUrl(url)
+         .mustSendContentEncoding(false)
+         .setHeaders(headers)
+         .setFetcheroptions(
+            FetcherOptions.FetcherOptionsBuilder.create()
+               .mustUseMovingAverage(false)
+               .mustRetrieveStatistics(true)
+               .setForbiddenCssSelector("#px-captcha")
+               .build()
+         ).setProxyservice(
+            Arrays.asList(
+               ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY
+            )
+         ).build();
+
+
+      Response response = new JsoupDataFetcher().get(session, request);
+      String content = response.getBody();
+
+      int statusCode = response.getLastStatusCode();
+
+      if ((Integer.toString(statusCode).charAt(0) != '2' &&
+         Integer.toString(statusCode).charAt(0) != '3'
+         && statusCode != 404)) {
+         request.setProxyServices(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_ES_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_BR,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
+         ));
+
+         content = new FetcherDataFetcher().get(session, request).getBody();
+      }
+
+      return content;
    }
+
 }
