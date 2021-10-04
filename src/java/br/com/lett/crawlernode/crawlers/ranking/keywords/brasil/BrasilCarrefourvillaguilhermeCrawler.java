@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourMercadoRanking;
 
-public class BrasilCarrefourvillaguilhermeCrawler extends CarrefourCrawler {
+public class BrasilCarrefourvillaguilhermeCrawler extends CarrefourMercadoRanking {
 
    public BrasilCarrefourvillaguilhermeCrawler(Session session) {
       super(session);

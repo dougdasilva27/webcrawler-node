@@ -1,7 +1,7 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourMercadoRanking;
 
 /**
  * 18/04/2020
@@ -9,7 +9,7 @@ import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler
  * @author Fabrício
  *
  */
-public class SaopauloCarrefourmercadoCrawler extends CarrefourCrawler {
+public class SaopauloCarrefourmercadoCrawler extends CarrefourMercadoRanking {
 
    public SaopauloCarrefourmercadoCrawler(Session session) {
       super(session);

@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourMercadoRanking;
 
-public class BrasilCarrefourCrawler extends CarrefourCrawler {
+public class BrasilCarrefourCrawler extends CarrefourMercadoRanking {
 
    private static final String HOME_PAGE = "https://www.carrefour.com.br/";
 

@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.curitiba;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourMercadoRanking;
 
-public class CuritibaCarrefourruaprofessorpedroviriatoCrawler extends CarrefourCrawler {
+public class CuritibaCarrefourruaprofessorpedroviriatoCrawler extends CarrefourMercadoRanking {
    private static final String HOME_PAGE = br.com.lett.crawlernode.crawlers.corecontent.curitiba.CuritibaCarrefourruaprofessorpedroviriatoCrawler.HOME_PAGE;
 
    public CuritibaCarrefourruaprofessorpedroviriatoCrawler(Session session) {

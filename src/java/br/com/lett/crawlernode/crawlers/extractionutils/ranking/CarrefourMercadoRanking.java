@@ -27,9 +27,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
+public abstract class CarrefourMercadoRanking extends CrawlerRankingKeywords {
 
-   protected CarrefourCrawler(Session session) {
+   protected CarrefourMercadoRanking(Session session) {
       super(session);
       dataFetcher = new JsoupDataFetcher();
       this.pageSize = 12;
@@ -83,7 +83,7 @@ public abstract class CarrefourCrawler extends CrawlerRankingKeywords {
       url.append("&extensions=").append(URLEncoder.encode(extensions.toString(), StandardCharsets.UTF_8));
 
       JSONObject variables = new JSONObject();
-      variables.put("fullText", this.location);
+      variables.put("fullText", URLEncoder.encode(this.location, StandardCharsets.UTF_8));
       variables.put("sort", "");
       variables.put("from", this.arrayProducts.size());
       variables.put("to", this.arrayProducts.size() + this.pageSize);
