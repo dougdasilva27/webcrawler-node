@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.ribeiraopreto;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourMercadoRanking;
 
-public class RibeiraopretoCarrefouravenidacoronelfernandoCrawler extends CarrefourCrawler {
+public class RibeiraopretoCarrefouravenidacoronelfernandoCrawler extends CarrefourMercadoRanking {
 
    private static final String HOME_PAGE = br.com.lett.crawlernode.crawlers.corecontent.ribeiraopreto.RibeiraopretoCarrefouravenidacoronelfernandoCrawler.HOME_PAGE;
 

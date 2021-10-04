@@ -1,9 +1,9 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.session.Session;
-import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourCrawler;
+import br.com.lett.crawlernode.crawlers.extractionutils.ranking.CarrefourMercadoRanking;
 
-public class SaopauloCarrefourbutantaavenidadeputadojacobCrawler extends CarrefourCrawler {
+public class SaopauloCarrefourbutantaavenidadeputadojacobCrawler extends CarrefourMercadoRanking {
 
    public static final String HOME_PAGE = "https://mercado.carrefour.com.br/";
    public static final String CEP = "05512-390";
