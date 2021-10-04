@@ -1,5 +1,6 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.riodejaneiro;
 
+import br.com.lett.crawlernode.core.fetcher.DynamicDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.models.RankingProductBuilder;
@@ -8,10 +9,18 @@ import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.Logging;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
@@ -45,7 +54,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
          url = this.categoryUrl + "?page=" + this.currentPage;
       }
 
-      this.currentDoc = fetchDocumentWithWebDriver(url, 20000, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+      this.currentDoc = webdriverRequest(url);
 
       if (this.currentPage == 1) {
          String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
@@ -106,5 +115,33 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
    protected boolean hasNextPage() {
       return !this.currentDoc.select(".vtex-button__label.flex.items-center.justify-center.h-100.ph5").isEmpty();
    }
+
+
+   private Document webdriverRequest(String url) {
+      Document doc;
+
+      try {
+         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
+         if (webdriver != null) {
+            waitForElement(webdriver.driver, ".vtex-search-result-3-x-galleryItem.vtex-search-result-3-x-galleryItem--small.pa4");
+
+            doc = Jsoup.parse(webdriver.getCurrentPageSource());
+            webdriver.terminate();
+         } else {
+            throw new WebDriverException("Failed to instantiate webdriver");
+         }
+      } catch (Exception e) {
+         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
+         throw e;
+      }
+
+      return doc;
+   }
+
+   public static void waitForElement(WebDriver driver, String cssSelector) {
+      WebDriverWait wait = new WebDriverWait(driver, 70);
+      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
+   }
+
 }
 
