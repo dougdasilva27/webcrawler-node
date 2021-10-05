@@ -54,7 +54,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
          url = this.categoryUrl + "?page=" + this.currentPage;
       }
 
-      this.currentDoc = webdriverRequest(url);
+      this.currentDoc = fetchDocumentWithWebDriver(url, 20000, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
 
       if (this.currentPage == 1) {
          String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
@@ -115,32 +115,6 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
       return !this.currentDoc.select(".vtex-button__label.flex.items-center.justify-center.h-100.ph5").isEmpty();
    }
 
-
-   private Document webdriverRequest(String url) {
-      Document doc;
-
-      try {
-         webdriver = DynamicDataFetcher.fetchPageWebdriver(url, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY, session);
-         if (webdriver != null) {
-            waitForElement(webdriver.driver, ".vtex-search-result-3-x-galleryItem.vtex-search-result-3-x-galleryItem--small.pa4");
-
-            doc = Jsoup.parse(webdriver.getCurrentPageSource());
-            webdriver.terminate();
-         } else {
-            throw new WebDriverException("Failed to instantiate webdriver");
-         }
-      } catch (Exception e) {
-         Logging.printLogDebug(logger, session, CommonMethods.getStackTrace(e));
-         throw e;
-      }
-
-      return doc;
-   }
-
-   public static void waitForElement(WebDriver driver, String cssSelector) {
-      WebDriverWait wait = new WebDriverWait(driver, 70);
-      wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(cssSelector)));
-   }
 
 }
 
