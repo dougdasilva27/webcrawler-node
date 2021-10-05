@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.models.*;
 import br.com.lett.crawlernode.core.session.Session;
@@ -32,7 +33,7 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
    public BrasilDrogarianisseiCrawler(Session session) {
 
       super(session);
-      super.config.setFetcher(FetchMode.FETCHER);
+      super.config.setFetcher(FetchMode.JSOUP);
       cacheConfig.setRequest(Request.RequestBuilder.create()
          .setUrl(HOME_PAGE)
          .build());
@@ -195,6 +196,10 @@ public class BrasilDrogarianisseiCrawler extends Crawler {
          .setUrl(url)
          .setHeaders(headers)
          .setCookies(this.cookies)
+         .setProxyservice(Arrays.asList(
+            ProxyCollection.NETNUT_RESIDENTIAL_BR_HAPROXY,
+            ProxyCollection.BUY_HAPROXY,
+            ProxyCollection.NETNUT_RESIDENTIAL_MX_HAPROXY))
          .setPayload(payload)
          .build();
 
