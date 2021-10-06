@@ -160,13 +160,13 @@ public class B2WCrawler extends Crawler {
          String description = this.crawlDescription(apolloJson, doc, internalPid);
          RatingsReviews ratingReviews = crawlRatingReviews(frontPageJson, internalPid);
          List<String> eans = crawlEan(infoProductJson);
-
+         String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".product-title__Title-sc-1oqsqe9-0", true);
 
          JSONArray skuOptions = this.crawlSkuOptions(infoProductJson);
          for (int i = 0 ; i < skuOptions.length();  i ++) {
             JSONObject skuJson = skuOptions.optJSONObject(i);
             String internalId = skuJson.optString("id");
-            String name = skuJson.optString("name");
+             name = skuOptions.length() > 1 || name == null ? skuJson.optString("name") : name;
             Offers offers;
 
             if (!offersJSON.isEmpty()) {
@@ -202,6 +202,7 @@ public class B2WCrawler extends Crawler {
 
       return products;
    }
+
 
    private void setMainRetailer(Offers offers) {
       if (offers.containsSeller(MAIN_B2W_NAME_LOWER)) {
