@@ -127,8 +127,6 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-
-
       Double spotlightPrice = calculatePriceSquareMeter(doc);
 
       if (spotlightPrice == 0d) {
@@ -136,15 +134,11 @@ public class BrasilAbcdaconstrucaoCrawler extends Crawler {
       }
 
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".fbits-preco .precoDe", null, false, ',', session);
-
-      CreditCards creditCards = scrapCreditCards(doc, spotlightPrice);
-      Double bank = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".produtoPreco-boleto .precoParcela .fbits-parcela", null, false, ',', session);
-      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(bank, null);
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(spotlightPrice, null);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
          .setPriceFrom(priceFrom)
-         .setCreditCards(creditCards)
          .setBankSlip(bankSlip)
          .build();
 
