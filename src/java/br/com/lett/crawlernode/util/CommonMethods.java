@@ -543,6 +543,22 @@ public class CommonMethods {
       return scraperInformation;
    }
 
+   public static Integer doublePriceToIntegerPrice(Double price, Integer defaultValue) {
+      return price != null ? (int) (price * 100) :defaultValue;
+   }
+
+   public static Integer stringPriceToIntegerPrice(String priceStr, char decimalSeparator, Integer defaultValue) {
+      Double price = null;
+
+      if(decimalSeparator == '.'){
+         price = MathUtils.parseDoubleWithDot(priceStr);
+      }else {
+         price = MathUtils.parseDoubleWithComma(priceStr);
+      }
+
+      return doublePriceToIntegerPrice(price, defaultValue);
+   }
+
 
 
 
