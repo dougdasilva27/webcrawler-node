@@ -54,7 +54,7 @@ public abstract class VTEXOldScraper extends VTEXScraper {
    }
 
    @Override
-   protected String scrapInternalpid(Document doc) {
+   protected String scrapPidFromApi(Document doc) {
       JSONObject productJson = crawlSkuJsonVTEX(doc, session);
       String internalPid = null;
 

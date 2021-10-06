@@ -35,7 +35,7 @@ public class BrasilBrastempCrawler extends VTEXScraper {
    }
 
    @Override
-   protected String scrapInternalpid(Document doc) {
+   protected String scrapPidFromApi(Document doc) {
       String internalPid = null;
 
       JSONObject stateJson = CrawlerUtils.selectJsonFromHtml(doc, "template[data-varname=__STATE__]>script", null, null, true, true);

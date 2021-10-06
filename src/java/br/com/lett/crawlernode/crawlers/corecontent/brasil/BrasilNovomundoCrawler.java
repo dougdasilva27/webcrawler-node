@@ -47,7 +47,7 @@ public class BrasilNovomundoCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected String scrapInternalpid(Document doc) {
+   protected String scrapPidFromApi(Document doc) {
       JSONObject jsonObject = CrawlerUtils.selectJsonFromHtml(doc, "script", "vtex.events.addData(", ");", false, true);
       return jsonObject.optString("productId");
 

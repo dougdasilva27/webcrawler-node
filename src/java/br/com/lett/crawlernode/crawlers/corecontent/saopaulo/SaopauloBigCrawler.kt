@@ -27,7 +27,7 @@ class SaopauloBigCrawler(session: Session) : VTEXOldScraper(session) {
       return null
    }
 
-   override fun scrapInternalpid(doc: Document?): String? {
+   override fun scrapPidFromApi(doc: Document?): String? {
       var internalPid: String? = null
       val pattern = Pattern.compile("id\":\"(.[0-9]*)\",\"slug")
       val matcher = pattern.matcher(doc.toString())
