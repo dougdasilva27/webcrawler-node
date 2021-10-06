@@ -1,20 +1,59 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
+import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BrasilCaroneCrawler extends CrawlerRankingKeywords {
 
-   private static final String HOME_PAGE = "carone.com.br";
+   private static final String HOME_PAGE = "https://www.carone.com.br/";
+   private static final String API_LINK = "https://www.carone.com.br/carone/index/ajaxCheckPostcode/";
+   private final String cep = getCep();
 
    public BrasilCaroneCrawler(Session session) {
       super(session);
+   }
+
+   private String getCep(){
+      return session.getOptions().optString("cep");
+   }
+
+   @Override
+   public void processBeforeFetch() {
+
+      //If the market is Carone (id 1214): We don't need to set any location.
+      if (cep != null && !cep.equals("")) {
+         Request request = Request.RequestBuilder.create()
+            .setUrl(HOME_PAGE)
+            .build();
+         Response response = dataFetcher.get(session, request);
+         Document document = Jsoup.parse(response.getBody());
+         String key = CrawlerUtils.scrapStringSimpleInfoByAttribute(document, "input[name=form_key]", "value");
+
+         String payload = "form_key=" + key + "&postcode=" + cep;
+
+         Map<String, String> headers = new HashMap<>();
+         headers.put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+
+         Request requestApi = Request.RequestBuilder.create()
+            .setUrl(API_LINK)
+            .setPayload(payload)
+            .setHeaders(headers)
+            .build();
+
+         Response responseApi = dataFetcher.post(session, requestApi);
+         this.cookies.addAll(responseApi.getCookies());
+      }
    }
 
    @Override
