@@ -68,19 +68,22 @@ public abstract class ZedeliveryCrawler extends Crawler {
 
       ZedeliveryInfo zeDeliveryInfo = getZedeliveryInfo();
 
-      String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":{\"address\":{\"latitude\":" + zeDeliveryInfo.getLatitude()
-         + ",\"longitude\":" + zeDeliveryInfo.getLongitude() + ",\"zipcode\":null,\"street\":\"" + zeDeliveryInfo.getStreet() + "\""
-         + ",\"neighborhood\":\"" + zeDeliveryInfo.getNeighborhood() + "\",\"city\":\"" + zeDeliveryInfo.getCity() + "\","
-         + "\"province\":\"" + zeDeliveryInfo.getProvince() + "\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\","
-         + "\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},"
-         + "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption:"
-         + " $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n"
-         + "      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n"
-         + "          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n"
-         + "          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n"
-         + "          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n"
-         + "            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n"
-         + "        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+      String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":" +
+         "{\"address\":{\"latitude\":"+ zeDeliveryInfo.getLatitude() +",\"longitude\":"+ zeDeliveryInfo.getLongitude() +"," +
+         "\"zipcode\":\""+ zeDeliveryInfo.getZipcode() +"\",\"street\":\""+ zeDeliveryInfo.getStreet() +"\"," +
+         "\"neighborhood\":\""+ zeDeliveryInfo.getNeighborhood() +"\",\"city\":\""+ zeDeliveryInfo.getCity() +"\"," +
+         "\"province\":\""+ zeDeliveryInfo.getProvince() +"\",\"country\":\"BR\",\"number\":\"45\",\"referencePoint\":\"\"}," +
+         "\"deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false}," +
+         "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) " +
+         "{\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    " +
+         "messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n " +
+         "     id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n" +
+         "          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n " +
+         "         addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n " +
+         "       pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n " +
+         "           zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n " +
+         "           number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n " +
+         "       id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
@@ -238,6 +241,22 @@ public abstract class ZedeliveryCrawler extends Crawler {
       private String city;
       private String province;
 
+      public void setReferencePoint(String referencePoint) {
+         this.referencePoint = referencePoint;
+      }
+
+      public void setNumber(String number) {
+         this.number = number;
+      }
+
+      public void setZipcode(String zipcode) {
+         this.zipcode = zipcode;
+      }
+
+      private String referencePoint = "";
+      private String number = "100";
+      private String zipcode;
+
       public String getLongitude() {
          return longitude;
       }
@@ -260,6 +279,18 @@ public abstract class ZedeliveryCrawler extends Crawler {
 
       public String getProvince() {
          return province;
+      }
+
+      public String getZipcode() {
+         return zipcode;
+      }
+
+      public String getReferencePoint() {
+         return referencePoint;
+      }
+
+      public String getNumber() {
+         return number;
       }
 
       public void setLongitude(String longitude) {
@@ -294,6 +325,9 @@ public abstract class ZedeliveryCrawler extends Crawler {
       private String neighborhood = null;
       private String city = null;
       private String province = null;
+      private String referencePoint = "";
+      private String number = "100";
+      private String zipcode = null;
 
       public static ZedeliveryInfoBuilder create() {
          return new ZedeliveryInfoBuilder();
@@ -326,6 +360,21 @@ public abstract class ZedeliveryCrawler extends Crawler {
 
       public ZedeliveryInfoBuilder setProvince(String province) {
          this.province = province;
+         return this;
+      }
+
+      public ZedeliveryInfoBuilder setReferencePoint(String referencePoint) {
+         this.referencePoint = referencePoint;
+         return this;
+      }
+
+      public ZedeliveryInfoBuilder setNumber(String number) {
+         this.number = number;
+         return this;
+      }
+
+      public ZedeliveryInfoBuilder setZipCode(String zipcode) {
+         this.zipcode = zipcode;
          return this;
       }
 
