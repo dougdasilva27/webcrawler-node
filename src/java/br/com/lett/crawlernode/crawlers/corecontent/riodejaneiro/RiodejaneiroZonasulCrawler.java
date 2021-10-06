@@ -94,4 +94,10 @@ public class RiodejaneiroZonasulCrawler extends VTEXNewScraper {
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       return null;
    }
+
+   @Override
+   public String scrapInternalPid(Document doc, JSONObject jsonObject, String pidFromApi) {
+      return jsonObject.optString("productReference");   }
+
+
 }

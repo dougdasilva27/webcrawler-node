@@ -60,7 +60,7 @@ public abstract class VTEXNewScraper extends VTEXScraper {
    }
 
    @Override
-   protected String scrapInternalpid(Document doc) {
+   protected String scrapPidFromApi(Document doc) {
       String internalPid = null;
       Element elem = doc.selectFirst(".vtex-product-context-provider script");
       if (elem != null) {

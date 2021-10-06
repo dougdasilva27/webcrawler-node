@@ -50,7 +50,7 @@ public class CostaricaMaspormenosCrawler extends VTEXNewScraper {
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
-      String internalPid = scrapInternalpid(doc);
+      String internalPid = scrapPidFromApi(doc);
       String parameters = CommonMethods.getLast(session.getOriginalURL().split("cr/"));
 
       if (internalPid != null && isProductPage(doc)) {

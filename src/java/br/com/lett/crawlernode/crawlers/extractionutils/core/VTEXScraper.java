@@ -54,7 +54,7 @@ public abstract class VTEXScraper extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       List<Product> products = new ArrayList<>();
 
-      String internalPid = scrapInternalpid(doc);
+      String internalPid = scrapPidFromApi(doc);
 
       if (internalPid != null && isProductPage(doc)) {
          JSONObject productJson = crawlProductApi(internalPid, null);
@@ -88,15 +88,16 @@ public abstract class VTEXScraper extends Crawler {
       return true;
    }
 
-   protected Product extractProduct(Document doc, String internalPid, CategoryCollection categories, String description, JSONObject jsonSku, JSONObject productJson) throws Exception {
+   protected Product extractProduct(Document doc, String pidFromApi, CategoryCollection categories, String description, JSONObject jsonSku, JSONObject productJson) throws Exception {
       String internalId = jsonSku.optString("itemId", null);
       String name = scrapName(doc, productJson, jsonSku);
-      List<String> images = scrapImages(doc, jsonSku, internalPid, internalId);
+      List<String> images = scrapImages(doc, jsonSku, pidFromApi, internalId);
       String primaryImage = !images.isEmpty() ? images.get(0) : null;
       scrapSecondaryImages(images); // remove first position
-      Offers offers = scrapOffer(doc, jsonSku, internalId, internalPid);
-      RatingsReviews rating = scrapRating(internalId, internalPid, doc, jsonSku);
+      Offers offers = scrapOffer(doc, jsonSku, internalId, pidFromApi);
+      RatingsReviews rating = scrapRating(internalId, pidFromApi, doc, jsonSku);
       List<String> eans = jsonSku.has("ean") ? Arrays.asList(jsonSku.get("ean").toString()) : null;
+      String internalPid = scrapInternalPid(doc, productJson, pidFromApi);
 
       // Creating the product
       return ProductBuilder.create()
@@ -114,7 +115,11 @@ public abstract class VTEXScraper extends Crawler {
          .build();
    }
 
-   protected abstract String scrapInternalpid(Document doc);
+   public String scrapInternalPid(Document doc, JSONObject jsonObject, String pidFromApi){
+      return pidFromApi;
+   }
+
+   protected abstract String scrapPidFromApi(Document doc);
 
    protected String scrapName(Document doc, JSONObject productJson, JSONObject jsonSku) {
       if (jsonSku.has("nameComplete")) {

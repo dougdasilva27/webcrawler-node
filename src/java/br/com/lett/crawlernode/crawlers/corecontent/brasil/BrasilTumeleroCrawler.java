@@ -31,7 +31,7 @@ public class BrasilTumeleroCrawler extends VTEXScraper {
    }
 
    @Override
-   protected String scrapInternalpid(Document doc) {
+   protected String scrapPidFromApi(Document doc) {
       String internalPid = "";
       String[] urlArray = session.getOriginalURL().split("=");
 

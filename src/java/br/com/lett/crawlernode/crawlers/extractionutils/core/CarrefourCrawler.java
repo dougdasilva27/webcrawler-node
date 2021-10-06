@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import br.com.lett.crawlernode.core.models.Product;
-import br.com.lett.crawlernode.core.models.ProductBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -123,8 +121,8 @@ public abstract class CarrefourCrawler extends VTEXNewScraper {
    }
 
    @Override
-   protected String scrapInternalpid(Document doc) {
-      String internalPid = super.scrapInternalpid(doc);
+   protected String scrapPidFromApi(Document doc) {
+      String internalPid = super.scrapPidFromApi(doc);
       if (internalPid == null) {
          JSONObject json = crawlProductApi(internalPid, null);
          internalPid = json.optString("productId");

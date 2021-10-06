@@ -28,7 +28,7 @@ public class ArgentinaDiaCrawler extends VTEXScraper {
    }
 
    @Override
-   protected String scrapInternalpid(Document doc) {
+   protected String scrapPidFromApi(Document doc) {
          return CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "#___rc-p-id", "value");
    }
 

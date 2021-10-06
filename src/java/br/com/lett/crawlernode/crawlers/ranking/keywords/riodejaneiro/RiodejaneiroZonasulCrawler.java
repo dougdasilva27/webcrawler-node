@@ -54,7 +54,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
          url = this.categoryUrl + "?page=" + this.currentPage;
       }
 
-      this.currentDoc = fetchDocumentWithWebDriver(url, 20000, ProxyCollection.LUMINATI_SERVER_BR_HAPROXY);
+      this.currentDoc = fetchDocument(url);
 
       if (this.currentPage == 1) {
          String redirectUrl = CrawlerUtils.getRedirectedUrl(url, session);
@@ -64,7 +64,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
          }
       }
 
-      Elements products = this.currentDoc.select(".vtex-search-result-3-x-galleryItem.vtex-search-result-3-x-galleryItem--small.pa4");
+      Elements products = this.currentDoc.select(".vtex-search-result-3-x-galleryItem.vtex-search-result-3-x-galleryItem--normal.pa4");
       if (!products.isEmpty()) {
 
          if (this.totalProducts == 0) {
@@ -73,6 +73,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
          for (Element product : products) {
             String productUrl = CrawlerUtils.completeUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".vtex-product-summary-2-x-container.vtex-product-summary-2-x-containerNormal a", "href"), "https", "www.zonasul.com.br");
+            String internalPid = CommonMethods.getLast(productUrl.split("-")).replace("/p", "");
             String name = CrawlerUtils.scrapStringSimpleInfo(product, ".vtex-product-summary-2-x-productBrand.vtex-product-summary-2-x-brandName.t-body", true);
             String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(product, ".dib.relative.vtex-product-summary-2-x-imageContainer.vtex-product-summary-2-x-imageStackContainer img", "src");
             int price = CrawlerUtils.scrapIntegerFromHtml(product, ".vtex-difference__por", true, 0);
@@ -81,7 +82,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
             RankingProduct productRanking = RankingProductBuilder.create()
                .setUrl(productUrl)
                .setInternalId(null)
-               .setInternalPid(null)
+               .setInternalPid(internalPid)
                .setName(name)
                .setPriceInCents(price)
                .setAvailability(isAvailable)
@@ -90,7 +91,7 @@ public class RiodejaneiroZonasulCrawler extends CrawlerRankingKeywords {
 
             saveDataProduct(productRanking);
 
-            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + null + " - Url: " + productUrl);
+            this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
             if (this.arrayProducts.size() == productsLimit) {
                break;
