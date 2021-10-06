@@ -561,10 +561,13 @@ public class BrasilAmazonCrawler extends Crawler {
       headers.put("authority", "www.amazon.com.br");
       headers.put("upgrade-insecure-requests", "1");
       headers.put("service-worker-navigation-preload", "true");
-      headers.put("rrt", "50");
+      headers.put("rtt", "50");
       headers.put("cache-control", "max-age=0");
       headers.put("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36");
+      headers.put("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36");
+      headers.put("downlink", "10");
+      headers.put("ect", "4g");
+      headers.put("x-requested-with", "XMLHttpRequest");
 
       int maxAttempt = 3;
       int attempt = 1;
