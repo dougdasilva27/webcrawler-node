@@ -2,10 +2,14 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.models;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Request.RequestBuilder;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.core.models.RankingProduct;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -85,8 +89,7 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   public void extractProductsFromCurrentPage() {
-      // número de produtos por página do market
+   public void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 0;
 
       this.log("Página " + this.currentPage);
@@ -102,16 +105,28 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
          for (int i = 0; i < products.length(); i++) {
             JSONObject product = products.getJSONObject(i);
 
-            // Url do produto
             String productUrl = crawlProductUrl(product);
-
-            // InternalPid
             String internalPid = crawlInternalPid(product);
-
-            // InternalId
             String internalId = crawlInternalId(productUrl);
+            String imgUrl = crawlProductImgUrl(product);
+            String name  = crawlProductName(product);
+            Integer price  = crawlProductPrice(product);
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            RankingProduct rankingProducts = RankingProductBuilder.create()
+               .setInternalId(internalId)
+               .setInternalPid(internalPid)
+               .setName(name)
+               .setUrl(productUrl)
+               .setImageUrl(imgUrl)
+               .setPriceInCents(price)
+               .setAvailability(true)
+               .setIsSponsored(false)
+               .setKeyword(this.keywordEncoded)
+               .setPosition(this.position)
+               .setPageNumber(this.currentPage)
+               .build();
+
+            saveDataProduct(rankingProducts);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
 
@@ -152,6 +167,22 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
       return internalId;
    }
 
+   private Integer crawlProductPrice(JSONObject product) {
+      String priceStr = product.optString("price");
+      int price = priceStr != null ? MathUtils.parseInt(priceStr) : 0;
+      return price;
+   }
+
+   private Integer crawlProductMarketId(JSONObject product) {
+      Integer marketId = null;
+
+      if (product.has("market_id")) {
+         marketId = product.getInt("market_id");
+      }
+
+      return marketId;
+   }
+
    private String crawlInternalPid(JSONObject product) {
       String internalPid = null;
 
@@ -172,6 +203,25 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
       return urlProduct;
    }
 
+   private String crawlProductImgUrl(JSONObject product) {
+      String imgUrlProduct = null;
+
+      if (product.has("image_url")) {
+         imgUrlProduct = product.getString("image_url");
+      }
+
+      return imgUrlProduct;
+   }
+
+   private String crawlProductName(JSONObject product) {
+      String nameProduct = null;
+
+      if (product.has("title")) {
+         nameProduct = product.getString("title");
+      }
+
+      return nameProduct;
+   }
    private JSONObject crawlSearchApi() {
       StringBuilder aux = new StringBuilder();
       aux.append("https://").append(this.store).append(".resultspage.com/search?af=&cnt=36")
