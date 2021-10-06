@@ -39,7 +39,7 @@ import java.util.*;
 public class GPACrawler extends Crawler {
 
    protected String homePageHttps;
-   protected String storeId;
+   protected String storeId = getStoreId();
    protected String store;
    protected String cep;
    private final String storeName = getStoreName();
@@ -54,6 +54,10 @@ public class GPACrawler extends Crawler {
 
    }
 
+   public String getStoreId() {
+      return session.getOptions().optString("storeId");
+   }
+
    public GPACrawler(Session session) {
       super(session);
       inferFields();
@@ -62,14 +66,14 @@ public class GPACrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      if (this.cep != null) {
+      if (this.cep != null && storeId.isEmpty() || storeId == null ) {
          fetchStoreId();
-         BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", this.storeId);
-         cookie.setDomain(
-            homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
-         cookie.setPath("/");
-         this.cookies.add(cookie);
       }
+      BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", this.storeId);
+      cookie.setDomain(
+         homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
+      cookie.setPath("/");
+      this.cookies.add(cookie);
    }
 
    /**
@@ -89,20 +93,23 @@ public class GPACrawler extends Crawler {
       JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
          if (jsonObjectGPA != null) {
             JSONArray jsonArrayDeliveryTypes = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes", JSONArray.class);
-            for (Object object : jsonArrayDeliveryTypes) {
-               JSONObject deliveryType = (JSONObject) object;
-               if (storeName != null && deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
-                  this.storeId = deliveryType.optString("storeid");
-                  break;
-               }  else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
-                  this.storeId = deliveryType.optString("storeid");
-                  break;
-               }
-            }
+          if (jsonArrayDeliveryTypes != null) {
+             for (Object object : jsonArrayDeliveryTypes) {
+                JSONObject deliveryType = (JSONObject) object;
+                if (storeName != null && deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
+                   this.storeId = deliveryType.optString("storeid");
+                   break;
+                } else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
+                   this.storeId = deliveryType.optString("storeid");
+                   break;
+                }
+             }
 
-            if(storeId == null){
-               this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
-            }
+             if(storeId == null){
+                this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
+             }
+          }
+
       }
    }
 
@@ -125,6 +132,9 @@ public class GPACrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       String productUrl = session.getOriginalURL();
+
+
+
       JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
       if (jsonSku.has("id")) {
          Logging.printLogDebug(
