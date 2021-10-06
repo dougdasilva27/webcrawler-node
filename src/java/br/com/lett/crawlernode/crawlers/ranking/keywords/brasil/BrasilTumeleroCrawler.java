@@ -52,7 +52,7 @@ public class BrasilTumeleroCrawler extends CrawlerRankingKeywords {
          for (Object obj : products) {
             JSONObject product = (JSONObject) obj;
             String internalPid = product.optString("id");
-            String productUrl = product.optString("url");
+            String productUrl = CrawlerUtils.completeUrl(product.optString("url"), "https", "www.tumelero.com.br");
 
             saveDataProduct(null, internalPid, productUrl);
 
