@@ -4,7 +4,12 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.TrustvoxRatingCrawler;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.VTEXScraper;
 import br.com.lett.crawlernode.util.CommonMethods;
+import br.com.lett.crawlernode.util.CrawlerUtils;
+import exceptions.MalformedPricingException;
 import models.RatingsReviews;
+import models.pricing.BankSlip;
+import models.pricing.CreditCards;
+import models.pricing.Pricing;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 
@@ -46,5 +51,24 @@ public class BrasilTumeleroCrawler extends VTEXScraper {
    protected RatingsReviews scrapRating(String internalId, String internalPid, Document doc, JSONObject jsonSku) {
       TrustvoxRatingCrawler trustVox = new TrustvoxRatingCrawler(session, "73909", logger);
       return trustVox.extractRatingAndReviews(internalId, doc, dataFetcher);
+   }
+
+   @Override
+   protected Pricing scrapPricing(Document doc, String internalId, JSONObject comertial, JSONObject discountsJson) throws MalformedPricingException {
+      Double principalPrice = comertial.optDouble("Price");
+      Double priceFrom = comertial.optDouble("ListPrice");
+
+      BankSlip bankSlip = CrawlerUtils.setBankSlipOffers(principalPrice, 0d);
+
+      Double spotlightPrice = scrapSpotlightPrice(doc, internalId, principalPrice, comertial, discountsJson);
+      if (spotlightPrice != null && spotlightPrice.equals(priceFrom)) {
+         priceFrom = null;
+      }
+
+      return Pricing.PricingBuilder.create()
+         .setSpotlightPrice(spotlightPrice)
+         .setPriceFrom(priceFrom)
+         .setBankSlip(bankSlip)
+         .build();
    }
 }
