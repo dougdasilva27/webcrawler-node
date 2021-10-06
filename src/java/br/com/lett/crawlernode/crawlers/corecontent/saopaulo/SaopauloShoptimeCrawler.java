@@ -2,6 +2,7 @@ package br.com.lett.crawlernode.crawlers.corecontent.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
+import br.com.lett.crawlernode.core.fetcher.methods.ApacheDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.FetcherDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
@@ -229,7 +230,7 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
          ).build();
 
 
-      Response response = new JsoupDataFetcher().get(session, request);
+      Response response = new ApacheDataFetcher().get(session, request);
       String content = response.getBody();
 
       int statusCode = response.getLastStatusCode();
@@ -244,7 +245,7 @@ public class SaopauloShoptimeCrawler extends B2WCrawler {
             ProxyCollection.NETNUT_RESIDENTIAL_DE_HAPROXY
          ));
 
-         content = new FetcherDataFetcher().get(session, request).getBody();
+         content = new JsoupDataFetcher().get(session, request).getBody();
       }
 
       return content;
