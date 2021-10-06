@@ -104,10 +104,12 @@ public class GPACrawler extends Crawler {
                    break;
                 }
              }
+
+             if(storeId == null){
+                this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
+             }
           }
-            if(storeId == null){
-               this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
-            }
+
       }
    }
 
