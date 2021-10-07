@@ -43,7 +43,7 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
-         BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", this.storeId);
+         BasicClientCookie cookie = new BasicClientCookie("STORE_ID", this.storeId);
          cookie.setDomain(homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
          cookie.setPath("/");
          cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));

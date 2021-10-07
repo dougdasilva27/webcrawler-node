@@ -13,10 +13,4 @@ public class ExtraImpl extends GPACrawler {
       this.homePageHttps = "https://www.clubeextra.com.br/";
    }
 
-   @Override
-   public String getStoreId() {
-      return session.getOptions().optString("storeId");
-   }
-
-
 }

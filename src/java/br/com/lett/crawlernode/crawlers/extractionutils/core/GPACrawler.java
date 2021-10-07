@@ -61,7 +61,7 @@ public class GPACrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", this.storeId);
+      BasicClientCookie cookie = new BasicClientCookie("STORE_ID", this.storeId);
       cookie.setDomain(
          homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
       cookie.setPath("/");
