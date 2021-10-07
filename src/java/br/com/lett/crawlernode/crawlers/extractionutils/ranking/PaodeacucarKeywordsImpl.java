@@ -10,17 +10,6 @@ public class PaodeacucarKeywordsImpl extends GPAKeywordsCrawler {
       this.store = "paodeacucar";
       this.storeShort = "pa";
       this.homePageHttps = "https://www.paodeacucar.com/";
-      this.cep = session.getOptions().getString("cep");
-   }
-
-   @Override
-   public String getStoreName() {
-      return session.getOptions().optString("storeName");
-   }
-
-   @Override
-   public String getStoreId() {
-      return session.getOptions().optString("storeId");
    }
 
 
