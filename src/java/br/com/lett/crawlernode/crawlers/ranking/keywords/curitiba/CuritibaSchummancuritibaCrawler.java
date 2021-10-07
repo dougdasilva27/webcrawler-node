@@ -76,7 +76,6 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
 
                saveDataProduct(productRanking);
 
-               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + internalPid + " - Url: " + productUrl);
                if (this.arrayProducts.size() == productsLimit)
                   break;
 
