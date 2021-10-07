@@ -14,13 +14,12 @@ import java.util.Date;
 
 public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    private String keyword = this.keywordEncoded;
-   protected String storeId;
+   protected String storeId = getStoreId();
    protected String store;
    protected String storeShort;
    protected String cep;
    protected String homePageHttps;
    private final String storeName = getStoreName();
-
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
@@ -32,6 +31,11 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    public String getStoreName() {
       return null;
 
+   }
+
+   public String getStoreId() {
+
+      return session.getOptions().optString("storeId");
    }
 
 
@@ -54,6 +58,10 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
                this.storeId = deliveryType.optString("storeid");
                break;
             }
+         }
+
+         if (storeId == null || storeId.isEmpty()){
+            this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
          }
       }
    }

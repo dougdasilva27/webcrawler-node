@@ -18,4 +18,10 @@ public class ExtraImplKeywords extends GPAKeywordsCrawler {
    public String getStoreName() {
       return session.getOptions().optString("storeName");
    }
+
+   @Override
+   public String getStoreId() {
+      return session.getOptions().optString("storeId");
+   }
+
 }

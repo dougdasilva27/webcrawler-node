@@ -51,7 +51,6 @@ public class GPACrawler extends Crawler {
 
    public String getStoreName() {
       return null;
-
    }
 
    public String getStoreId() {
@@ -105,7 +104,7 @@ public class GPACrawler extends Crawler {
                 }
              }
 
-             if(storeId == null){
+             if (storeId == null || storeId.isEmpty()){
                 this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
              }
           }

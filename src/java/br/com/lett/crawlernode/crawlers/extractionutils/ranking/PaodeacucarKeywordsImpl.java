@@ -18,4 +18,10 @@ public class PaodeacucarKeywordsImpl extends GPAKeywordsCrawler {
       return session.getOptions().optString("storeName");
    }
 
+   @Override
+   public String getStoreId() {
+      return session.getOptions().optString("storeId");
+   }
+
+
 }
