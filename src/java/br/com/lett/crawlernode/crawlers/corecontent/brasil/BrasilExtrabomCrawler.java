@@ -1,6 +1,7 @@
 package br.com.lett.crawlernode.crawlers.corecontent.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
 import br.com.lett.crawlernode.core.models.Card;
@@ -40,7 +41,7 @@ public class BrasilExtrabomCrawler extends Crawler {
 
    public BrasilExtrabomCrawler(Session session) {
       super(session);
-      config.setFetcher(FetchMode.FETCHER);
+      config.setFetcher(FetchMode.JSOUP);
    }
 
    @Override
@@ -53,6 +54,11 @@ public class BrasilExtrabomCrawler extends Crawler {
          .setUrl(API)
          .setHeaders(headers)
          .setPayload(payload)
+         .setProxyservice(
+            Arrays.asList(
+               ProxyCollection.BUY_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_AR_HAPROXY,
+               ProxyCollection.NETNUT_RESIDENTIAL_CO_HAPROXY))
          .build();
 
       Response response = dataFetcher.post(session, request);
