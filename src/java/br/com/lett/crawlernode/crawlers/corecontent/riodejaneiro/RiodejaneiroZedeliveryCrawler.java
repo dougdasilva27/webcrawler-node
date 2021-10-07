@@ -9,15 +9,16 @@ public class RiodejaneiroZedeliveryCrawler extends ZedeliveryCrawler {
       super(session);
    }
 
-   private String longitude = "-43.47541510000001";
-   private String latitude = "-23.024845";
-   private String street = "Avenida Brigadeiro Faria Lima";
+   private String longitude = "-43.4748623";
+   private String latitude = "-23.0256221";
+   private String street = "Avenida Gilka Machado";
    private String neighborhood = "Recreio dos Bandeirantes";
    private String city = "Rio de Janeiro";
    private String province = "RJ";
+   private String zipCode = "22795-570";
 
    @Override
-   protected ZedeliveryInfo getZedeliveryInfo() {
+   public ZedeliveryInfo getZedeliveryInfo() {
       return ZedeliveryInfoBuilder.create()
             .setLongitude(longitude)
             .setLatitude(latitude)
@@ -25,6 +26,7 @@ public class RiodejaneiroZedeliveryCrawler extends ZedeliveryCrawler {
             .setStreet(street)
             .setCity(city)
             .setProvince(province)
+            .setZipCode(zipCode)
             .build();
    }
 

@@ -9,15 +9,16 @@ public class BrasilZedeliveryCrawler extends ZedeliveryCrawler {
       super(session);
    }
 
-   private String longitude = "-46.6931558";
-   private String latitude = "-23.5674273";
+   private String longitude = "-46.6942293";
+   private String latitude = "-23.5627391";
    private String street = "Avenida Brigadeiro Faria Lima";
    private String neighborhood = "Pinheiros";
-   private String city = "S\\u00e3o Paulo";
+   private String city = "São Paulo";
    private String province = "SP";
+   private String zipCode = "05426-100";
 
    @Override
-   protected ZedeliveryInfo getZedeliveryInfo() {
+   public ZedeliveryInfo getZedeliveryInfo() {
       return ZedeliveryInfoBuilder.create()
             .setLongitude(longitude)
             .setLatitude(latitude)
@@ -25,6 +26,7 @@ public class BrasilZedeliveryCrawler extends ZedeliveryCrawler {
             .setStreet(street)
             .setCity(city)
             .setProvince(province)
+            .setZipCode(zipCode)
             .build();
    }
 

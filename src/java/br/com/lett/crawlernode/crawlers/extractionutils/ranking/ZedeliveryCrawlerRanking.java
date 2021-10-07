@@ -3,6 +3,8 @@ package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import br.com.lett.crawlernode.crawlers.extractionutils.core.ZedeliveryCrawler;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
@@ -24,10 +26,6 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
    protected abstract ZedeliveryInfo getZedeliveryInfo();
 
-   /**
-    * Replicating the first api call of the web, that is used to validate the UUID Making a call
-    * sending an address: postal code 05426-100 Address is hard coded in payload
-    */
    private void validateUUID() {
       visitorId = UUID.randomUUID().toString();
 
@@ -37,19 +35,22 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
 
       ZedeliveryInfo zeDeliveryInfo = getZedeliveryInfo();
 
-      String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":{\"address\":{\"latitude\":" + zeDeliveryInfo.getLatitude()
-         + ",\"longitude\":" + zeDeliveryInfo.getLongitude() + ",\"zipcode\":null,\"street\":\"" + zeDeliveryInfo.getStreet() + "\""
-         + ",\"neighborhood\":\"" + zeDeliveryInfo.getNeighborhood() + "\",\"city\":\"" + zeDeliveryInfo.getCity() + "\","
-         + "\"province\":\"" + zeDeliveryInfo.getProvince() + "\",\"country\":\"BR\",\"number\":\"1\"},\"deliveryMethod\":\"DELIVERY\","
-         + "\"schedule\":\"NOW\"},\"forceOverrideProducts\":false},"
-         + "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) {\\n  manageCheckout(deliveryOption:"
-         + " $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    messages {\\n      category\\n      target\\n      key\\n      args\\n"
-         + "      message\\n    }\\n    checkout {\\n      id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n"
-         + "          zipcode\\n          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n"
-         + "          addressLine2\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n        pickupPoc {\\n          id\\n"
-         + "          tradingName\\n          address {\\n            latitude\\n            longitude\\n            zipcode\\n            country\\n"
-         + "            province\\n            city\\n            neighborhood\\n            street\\n            number\\n            addressLine2\\n          }\\n"
-         + "        }\\n      }\\n      paymentMethod {\\n        id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
+      String initPayload = "{\"operationName\":\"setDeliveryOption\",\"variables\":{\"deliveryOption\":" +
+         "{\"address\":{\"latitude\":"+ zeDeliveryInfo.getLatitude() +",\"longitude\":"+ zeDeliveryInfo.getLongitude() +"," +
+         "\"zipcode\":\""+ zeDeliveryInfo.getZipcode() +"\",\"street\":\""+ zeDeliveryInfo.getStreet() +"\"," +
+         "\"neighborhood\":\""+ zeDeliveryInfo.getNeighborhood() +"\",\"city\":\""+ zeDeliveryInfo.getCity() +"\"," +
+         "\"province\":\""+ zeDeliveryInfo.getProvince() +"\",\"country\":\"BR\",\"number\":\"45\",\"referencePoint\":\"\"}," +
+         "\"deliveryMethod\":\"DELIVERY\",\"schedule\":\"NOW\"},\"forceOverrideProducts\":false}," +
+         "\"query\":\"mutation setDeliveryOption($deliveryOption: DeliveryOptionInput, $forceOverrideProducts: Boolean) " +
+         "{\\n  manageCheckout(deliveryOption: $deliveryOption, forceOverrideProducts: $forceOverrideProducts) {\\n    " +
+         "messages {\\n      category\\n      target\\n      key\\n      args\\n      message\\n    }\\n    checkout {\\n " +
+         "     id\\n      deliveryOption {\\n        address {\\n          latitude\\n          longitude\\n          zipcode\\n" +
+         "          country\\n          province\\n          city\\n          neighborhood\\n          street\\n          number\\n " +
+         "         addressLine2\\n          referencePoint\\n        }\\n        deliveryMethod\\n        schedule\\n        scheduleDateTime\\n " +
+         "       pickupPoc {\\n          id\\n          tradingName\\n          address {\\n            latitude\\n            longitude\\n " +
+         "           zipcode\\n            country\\n            province\\n            city\\n            neighborhood\\n            street\\n " +
+         "           number\\n            addressLine2\\n            referencePoint\\n          }\\n        }\\n      }\\n      paymentMethod {\\n " +
+         "       id\\n        displayName\\n      }\\n    }\\n  }\\n}\\n\"}";
 
       Request request = Request.RequestBuilder.create().setUrl(API_URL)
          .setPayload(initPayload)
@@ -59,7 +60,6 @@ public abstract class ZedeliveryCrawlerRanking extends CrawlerRankingKeywords {
          .build();
       this.dataFetcher.post(session, request);
    }
-
 
    protected JSONObject fetch() {
       validateUUID();
