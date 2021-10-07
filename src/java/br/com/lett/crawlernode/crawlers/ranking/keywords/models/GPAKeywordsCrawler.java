@@ -14,48 +14,18 @@ import java.util.Date;
 
 public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
    private String keyword = this.keywordEncoded;
-   protected String storeId;
+   protected String storeId = getStoreId();
    protected String store;
    protected String storeShort;
-   protected String cep;
    protected String homePageHttps;
-   private final String storeName = getStoreName();
-
-
-   private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
    public GPAKeywordsCrawler(Session session) {
       super(session);
       inferFields();
    }
 
-   public String getStoreName() {
-      return null;
-
-   }
-
-
-   private void fetchStoreId() {
-      Request request = RequestBuilder.create()
-         .setUrl(END_POINT_REQUEST + this.storeShort + "/delivery/options?zipCode=" + this.cep.replace("-", ""))
-         .setCookies(cookies)
-         .build();
-
-      String response = this.dataFetcher.get(session, request).getBody();
-      JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
-      if (jsonObjectGPA != null) {
-         JSONArray jsonArrayDeliveryTypes = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes", JSONArray.class);
-         for (Object object : jsonArrayDeliveryTypes) {
-            JSONObject deliveryType = (JSONObject) object;
-            if (storeName != null && deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
-               this.storeId = deliveryType.optString("storeid");
-               break;
-            } else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
-               this.storeId = deliveryType.optString("storeid");
-               break;
-            }
-         }
-      }
+   public String getStoreId() {
+      return session.getOptions().optString("storeId");
    }
 
    private void inferFields() {
@@ -73,15 +43,12 @@ public class GPAKeywordsCrawler extends CrawlerRankingKeywords {
 
    @Override
    protected void processBeforeFetch() {
-      if (this.cep != null) {
-         fetchStoreId();
-         BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", this.storeId);
+         BasicClientCookie cookie = new BasicClientCookie("STORE_ID", this.storeId);
          cookie.setDomain(homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
          cookie.setPath("/");
          cookie.setExpiryDate(new Date(System.currentTimeMillis() + 604800000L + 604800000L));
-
          this.cookies.add(cookie);
-      }
+
    }
 
    @Override

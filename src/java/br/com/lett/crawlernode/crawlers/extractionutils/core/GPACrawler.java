@@ -41,18 +41,13 @@ public class GPACrawler extends Crawler {
    protected String homePageHttps;
    protected String storeId = getStoreId();
    protected String store;
-   protected String cep;
-   private final String storeName = getStoreName();
+
 
    protected Set<String> cards = Sets.newHashSet(Card.VISA.toString(), Card.MASTERCARD.toString(),
       Card.AURA.toString(), Card.DINERS.toString(), Card.HIPER.toString(), Card.AMEX.toString());
 
    private static final String END_POINT_REQUEST = "https://api.gpa.digital/";
 
-   public String getStoreName() {
-      return null;
-
-   }
 
    public String getStoreId() {
       return session.getOptions().optString("storeId");
@@ -66,52 +61,13 @@ public class GPACrawler extends Crawler {
 
    @Override
    public void handleCookiesBeforeFetch() {
-      if (this.cep != null && storeId.isEmpty() || storeId == null ) {
-         fetchStoreId();
-      }
-      BasicClientCookie cookie = new BasicClientCookie("ep.selected_store", this.storeId);
+      BasicClientCookie cookie = new BasicClientCookie("STORE_ID", this.storeId);
       cookie.setDomain(
          homePageHttps.substring(homePageHttps.indexOf("www"), homePageHttps.length() - 1));
       cookie.setPath("/");
       this.cookies.add(cookie);
    }
 
-   /**
-    * Given a CEP it send a request to an API then returns the id used by GPA.
-    */
-   private void fetchStoreId() {
-
-      String url = END_POINT_REQUEST + this.store + "/v2/delivery/ecom/" + this.cep.replace("-", "");
-
-      Request request =
-         RequestBuilder.create()
-            .setUrl(url)
-            .setCookies(cookies)
-            .build();
-
-      String response = this.dataFetcher.get(session, request).getBody();
-      JSONObject jsonObjectGPA = JSONUtils.stringToJson(response);
-         if (jsonObjectGPA != null) {
-            JSONArray jsonArrayDeliveryTypes = JSONUtils.getValueRecursive(jsonObjectGPA, "content.deliveryTypes", JSONArray.class);
-          if (jsonArrayDeliveryTypes != null) {
-             for (Object object : jsonArrayDeliveryTypes) {
-                JSONObject deliveryType = (JSONObject) object;
-                if (storeName != null && deliveryType.optString("storeName") != null && deliveryType.optString("storeName").contains(storeName)) {
-                   this.storeId = deliveryType.optString("storeid");
-                   break;
-                } else if (storeName == null && deliveryType.optString("name") != null && deliveryType.optString("name").contains("TRADICIONAL")) {
-                   this.storeId = deliveryType.optString("storeid");
-                   break;
-                }
-             }
-
-             if(storeId == null){
-                this.storeId = JSONUtils.getValueRecursive(jsonArrayDeliveryTypes, "0.storeid", Integer.class).toString();
-             }
-          }
-
-      }
-   }
 
    /**
     * Infers classes' fields by reflection
@@ -132,7 +88,6 @@ public class GPACrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       String productUrl = session.getOriginalURL();
-
 
 
       JSONObject jsonSku = crawlProductInformatioFromGPAApi(productUrl);
@@ -319,7 +274,7 @@ public class GPACrawler extends Crawler {
       if (this.storeId != null) {
          url += "&storeId=" + this.storeId;
       }
-
+      System.out.println(url);
       Request request = RequestBuilder.create()
          .setUrl(url).setCookies(cookies).build();
       String res = this.dataFetcher.get(session, request).getBody();

@@ -11,11 +11,6 @@ public class ExtraImplKeywords extends GPAKeywordsCrawler {
       this.store = "deliveryextra";
       this.storeShort = "ex";
       this.homePageHttps = "https://www.clubeextra.com.br/";
-      this.cep = session.getOptions().getString("cep");
    }
 
-   @Override
-   public String getStoreName() {
-      return session.getOptions().optString("storeName");
-   }
 }
