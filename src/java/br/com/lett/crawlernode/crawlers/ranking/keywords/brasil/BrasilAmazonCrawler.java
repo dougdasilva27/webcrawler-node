@@ -1,10 +1,17 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.brasil;
 
 import br.com.lett.crawlernode.core.fetcher.FetchMode;
+import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
 import br.com.lett.crawlernode.crawlers.extractionutils.core.AmazonScraperUtils;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
+import br.com.lett.crawlernode.util.MathUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -29,7 +36,7 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 20;
       this.log("Página " + this.currentPage);
 
@@ -48,14 +55,29 @@ public class BrasilAmazonCrawler extends CrawlerRankingKeywords {
          }
 
          for (Element e : products) {
-
             String internalPid = crawlInternalPid(e);
-            String internalId = internalPid;
-            String productUrl = crawlProductUrl(e);
 
-            saveDataProduct(internalId, internalPid, productUrl);
+            if (internalPid == null || !internalPid.equals("")) {
+               String internalId = internalPid;
+               String productUrl = crawlProductUrl(e);
+               String imageUrl = CrawlerUtils.scrapStringSimpleInfoByAttribute(e, "img.s-image", "src");
+               String name = CrawlerUtils.scrapStringSimpleInfo(e, "span.a-size-base-plus.a-color-base.a-text-normal", true);
+               Integer price = CrawlerUtils.scrapPriceInCentsFromHtml(e, "span.a-price-whole", null, true, ',', session, 0);
+               boolean isAvailable = price != 0;
 
-            this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+               RankingProduct objProducts = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setImageUrl(imageUrl)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setInternalId(internalId)
+                  .setAvailability(isAvailable)
+                  .build();
+
+               saveDataProduct(objProducts);
+
+               this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + productUrl);
+            }
             if (this.arrayProducts.size() == productsLimit) {
                break;
             }
