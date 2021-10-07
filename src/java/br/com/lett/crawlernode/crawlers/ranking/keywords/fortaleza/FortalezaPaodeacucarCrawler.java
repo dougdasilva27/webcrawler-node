@@ -4,7 +4,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.crawlers.ranking.keywords.models.GPAKeywordsCrawler;
 
 /*
-   This crawler is using scraper 5104
+   This crawler is using scraper 5105
  */
 
 public class FortalezaPaodeacucarCrawler extends GPAKeywordsCrawler {
