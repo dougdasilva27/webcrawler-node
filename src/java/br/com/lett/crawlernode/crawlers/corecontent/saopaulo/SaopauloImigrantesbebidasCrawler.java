@@ -6,6 +6,7 @@ import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import com.google.common.collect.Sets;
 import exceptions.MalformedPricingException;
@@ -15,7 +16,6 @@ import models.Offers;
 import models.pricing.*;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
@@ -37,9 +37,8 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       List<Product> products = new ArrayList<>();
 
       if (isProductPage(doc)) {
-         JSONObject productJson = CrawlerUtils.selectJsonFromHtml(doc, "head > script:nth-of-type(6)", null, "}", false, true);
 
-         String internalId = productJson.optString("sku");
+         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, ".productPage__info form > input[type=hidden]:nth-child(3)", "value");
          String internalPId = internalId;
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, ".productPage__name", true);
          List<String> images = scrapImages(doc);
@@ -47,8 +46,8 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
          String description = CrawlerUtils.scrapElementsDescription(doc, Collections.singletonList(".tabs"));
          boolean availability = doc.selectFirst(".out-of-stock") == null;
          Offers offers = availability ? scrapOffers(doc) : new Offers();
-         CategoryCollection categories = scrapCategories(productJson);
-         List<String> eans = scrapEans(productJson);
+         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, ".breadcrumbs__wrapper a:not(:last-child)", true);
+         List<String> eans = scrapEans(doc);
 
          Product product = ProductBuilder.create()
             .setUrl(session.getOriginalURL())
@@ -76,12 +75,12 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       return doc.selectFirst(".productPage") != null;
    }
 
-   private List<String> scrapImages (Document doc){
+   private List<String> scrapImages(Document doc) {
       List<String> imgList = new ArrayList<>();
 
       Elements el = doc.select("div.slider.productGallery__slider > picture");
 
-      if(el != null){
+      if (el != null) {
          el.forEach(img -> imgList.add("https://www.imigrantesbebidas.com.br" + img.attr("rel")));
       }
 
@@ -151,9 +150,14 @@ public class SaopauloImigrantesbebidasCrawler extends Crawler {
       return finalCategory;
    }
 
-   private List<String> scrapEans(JSONObject productJson) {
-      String key = getEansKey(productJson);
-      return key != null ? Collections.singletonList(productJson.optString(key)) : null;
+   private List<String> scrapEans(Document document) {
+      List<String> listEans = new ArrayList<>();
+      String element = CrawlerUtils.scrapStringSimpleInfo(document, "productPage__tabs__content__text", false);
+
+      if (element != null) {
+         listEans.add(CommonMethods.getLast(element.split("EAN:")));
+      }
+      return listEans;
    }
 
    private String getEansKey(JSONObject productJson) {
