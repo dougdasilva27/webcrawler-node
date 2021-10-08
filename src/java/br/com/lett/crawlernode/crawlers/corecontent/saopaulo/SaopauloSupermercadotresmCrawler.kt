@@ -98,16 +98,6 @@ class SaopauloSupermercadotresmCrawler(session: Session) : Crawler(session) {
          .build()
    }
 
-   private fun scrapPrice(doc: Document): Double {
-      var price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.col-md-5.col-xl-6.col-xxl-6 > h4 > span", null, false, ',', this.session)
-      if (price != null) {
-         price = CrawlerUtils.scrapDoublePriceFromHtml(doc, "div.col-md-5.col-xl-6.col-xxl-6 > h4 > span", null, false, ',', this.session)
-      }
-
-      return price
-
-   }
-
    private fun scrapCreditCards(spotlightPrice: Double): CreditCards {
       val creditCards = CreditCards()
       val installments = Installments()
