@@ -1,9 +1,14 @@
 package br.com.lett.crawlernode.crawlers.ranking.keywords.curitiba;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
+import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -33,7 +38,7 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 15;
       this.log("Página " + this.currentPage);
 
@@ -52,11 +57,25 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
                JSONObject product = (JSONObject) obj;
 
                String productUrl = getUrl(product);
-               String productPid = product.optString("id");
+               String internalPid = product.optString("id");
+               String name = product.optString("nome");
+               String imageUrl = JSONUtils.getValueRecursive(product, "images.0.images", String.class);
+               int price = CommonMethods.doublePriceToIntegerPrice(product.optDouble("preco"), 0);
+               boolean isAvailable = price != 0;
 
-               saveDataProduct(null, productPid, productUrl);
+               //New way to send products to save data product
+               RankingProduct productRanking = RankingProductBuilder.create()
+                  .setUrl(productUrl)
+                  .setInternalId(null)
+                  .setInternalPid(internalPid)
+                  .setName(name)
+                  .setPriceInCents(price)
+                  .setAvailability(isAvailable)
+                  .setImageUrl(imageUrl)
+                  .build();
 
-               this.log("Position: " + this.position + " - InternalId: " + null + " - InternalPid: " + productPid + " - Url: " + productUrl);
+               saveDataProduct(productRanking);
+
                if (this.arrayProducts.size() == productsLimit)
                   break;
 
@@ -74,11 +93,12 @@ public class CuritibaSchummancuritibaCrawler extends CrawlerRankingKeywords {
       String url = null;
       String link = product.optString("link");
       if (link != null && !link.isEmpty()) {
-         url = "https://www.estudionetshop.com.br/" + link;
+         url = "https://www.schumann.com.br/" + link;
       }
 
       return url;
    }
+
 
    protected void setTotalProducts(JSONObject searchedJson) {
       this.totalProducts = searchedJson.optInt("quantidade");
