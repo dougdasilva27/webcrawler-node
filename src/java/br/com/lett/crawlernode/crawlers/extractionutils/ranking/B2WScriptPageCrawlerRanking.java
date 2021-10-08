@@ -6,8 +6,12 @@ import br.com.lett.crawlernode.core.fetcher.methods.JsoupDataFetcher;
 import br.com.lett.crawlernode.core.fetcher.models.FetcherOptions;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
 import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.CrawlerRankingKeywords;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.JSONUtils;
 import org.json.JSONArray;
@@ -76,7 +80,7 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException {
+   protected void extractProductsFromCurrentPage() throws UnsupportedEncodingException, MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
@@ -100,14 +104,24 @@ public abstract class B2WScriptPageCrawlerRanking extends CrawlerRankingKeywords
                   String internalId = JSONUtils.getValueRecursive(productInfo, "offers.result.0.sku", String.class);
                   String internalPid = productInfo.optString("id");
                   String productUrl = homePage + "produto/" + internalPid;
+                  String name = productInfo.optString("name");
+                  String imageUrl = JSONUtils.getValueRecursive(productJson, "images.0.large", String.class);
+                  int price = CommonMethods.doublePriceToIntegerPrice(JSONUtils.getValueRecursive(productInfo, "offers.result.0.salesPrice", Double.class), 0);
+                  boolean isAvailable = price != 0;
 
-                  saveDataProduct(internalId, internalPid, productUrl);
+                  //New way to send products to save data product
+                  RankingProduct productRanking = RankingProductBuilder.create()
+                     .setUrl(productUrl)
+                     .setInternalId(internalId)
+                     .setInternalId(null)
+                     .setInternalPid(internalPid)
+                     .setName(name)
+                     .setPriceInCents(price)
+                     .setAvailability(isAvailable)
+                     .setImageUrl(imageUrl)
+                     .build();
 
-                  this.log(
-                     "Position: " + this.position +
-                        " - InternalId: " + internalId +
-                        " - InternalPid: " + internalPid +
-                        " - Url: " + productUrl);
+                  saveDataProduct(productRanking);
 
                   if (this.arrayProducts.size() == productsLimit) {
                      break;
