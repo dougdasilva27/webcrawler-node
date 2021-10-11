@@ -25,6 +25,7 @@ import java.util.*;
 public class MexicoCoppelCrawler extends Crawler {
 
    private static final String SELLER_NAME = "coppel";
+   private static String pageId;
 
    public MexicoCoppelCrawler(Session session) {
       super(session);
@@ -64,9 +65,8 @@ public class MexicoCoppelCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = getInternalId(doc); //TODO verificar formatação id PR-7257752
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#main_header_name", false);
-         String pageId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=pageId]", "content");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_longdescription_" + pageId)); //TODO: remover html tags e tornar pageId dinamico
-         System.out.println("description + " + description);
+         this.pageId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=pageId]", "content");
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_longdescription_" + this.pageId)); //TODO: remover html tags e tornar pageId dinamico
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productMainImage ", Arrays.asList("src"), "https", "");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,"[class=mz-lens] img", Arrays.asList("src"),"https", "padovani.vteximg.com.br", primaryImage);
          CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
@@ -143,7 +143,7 @@ public class MexicoCoppelCrawler extends Crawler {
       //TODO verificar formato do preço
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old_price", null, true, ',', session);
 
-      CreditCards creditCards = scrapCreditCards(spotlightPrice);
+      CreditCards creditCards = scrapCreditCards(spotlightPrice, doc);
 
       return Pricing.PricingBuilder.create()
          .setSpotlightPrice(spotlightPrice)
@@ -152,9 +152,14 @@ public class MexicoCoppelCrawler extends Crawler {
          .build();
    }
 
-   private CreditCards scrapCreditCards(Double price) throws MalformedPricingException {
+   private CreditCards scrapCreditCards(Double price, Document doc) throws MalformedPricingException {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
+
+      String installmentNumbers = CrawlerUtils.scrapStringSimpleInfo(doc, "#creditCoppelPrice_" + this.pageId, false);
+      String installmentPrice = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_credito", false);
+      System.out.println("installmentNumbers "+ installmentNumbers);
+      System.out.println("installmentPrice "+ installmentPrice);
 
       installments.add(Installment.InstallmentBuilder.create()//TODO verificar parcelas
          .setInstallmentNumber(1)
