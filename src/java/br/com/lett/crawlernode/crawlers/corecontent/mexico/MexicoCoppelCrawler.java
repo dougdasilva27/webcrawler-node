@@ -4,7 +4,6 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
-import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -65,7 +64,9 @@ public class MexicoCoppelCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
          String internalId = getInternalId(doc); //TODO verificar formatação id PR-7257752
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#main_header_name", false);
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_longdescription_1599029")); //TODO: remover html tags e tornar pageId dinamico
+         String pageId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=pageId]", "content");
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_longdescription_" + pageId)); //TODO: remover html tags e tornar pageId dinamico
+         System.out.println("description + " + description);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productMainImage ", Arrays.asList("src"), "https", "");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,"[class=mz-lens] img", Arrays.asList("src"),"https", "padovani.vteximg.com.br", primaryImage);
          CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
@@ -95,7 +96,13 @@ public class MexicoCoppelCrawler extends Crawler {
 
    public String getInternalId (Document doc) {
       String sku = CrawlerUtils.scrapStringSimpleInfo(doc, "#IntelligentOfferMainPartNumber", false);
-      return sku;
+      StringBuilder skuNumber = new StringBuilder(sku);
+
+      for (int i = 0; i < 3; i++) {
+         skuNumber = skuNumber.deleteCharAt(0);
+      }
+
+      return skuNumber.toString();
    }
 
    public static CategoryCollection getCategories(Document doc, String selector, String attr) {
@@ -118,7 +125,7 @@ public class MexicoCoppelCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
-      offers.add(new Offer.OfferBuilder()
+      offers.add(new Offer.OfferBuilder() //TODO atributos de offer???
          .setUseSlugNameAsInternalSellerId(true)
          .setSellerFullName("coppel")//TODO verificar se full name é slug
          .setMainPagePosition(1)
@@ -132,7 +139,8 @@ public class MexicoCoppelCrawler extends Crawler {
    }
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
-      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".unique_price", null, true, ',', session);//TODO formato do preço
+      Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".unique_price", null, true, ',', session);
+      //TODO verificar formato do preço
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old_price", null, true, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice);
