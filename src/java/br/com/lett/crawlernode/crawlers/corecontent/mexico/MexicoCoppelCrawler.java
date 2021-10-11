@@ -32,7 +32,7 @@ public class MexicoCoppelCrawler extends Crawler {
       super.config.setFetcher(FetchMode.APACHE);
    }
 
-   private static final List<String> cards = Arrays.asList("Coppel"); //TODO verificar se precisa adicionar na lista de cartões
+   private static final List<String> cards = Arrays.asList("Coppel"); //TODO precisa adicionar na lista de cartões
 
    @Override
    protected Document fetch() {
@@ -63,10 +63,11 @@ public class MexicoCoppelCrawler extends Crawler {
 
       if (doc.selectFirst("#main_header_name") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-         String internalId = getInternalId(doc); //TODO verificar formatação id PR-7257752
+         String internalId = getInternalId(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#main_header_name", false);
          this.pageId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=pageId]", "content");
-         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_longdescription_" + this.pageId)); //TODO: remover html tags e tornar pageId dinamico
+         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#product_longdescription_" + this.pageId)); //TODO: remover html tags
+         System.out.println("description" + description);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productMainImage ", Arrays.asList("src"), "https", "");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,"[class=mz-lens] img", Arrays.asList("src"),"https", "padovani.vteximg.com.br", primaryImage);
          CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
@@ -125,9 +126,9 @@ public class MexicoCoppelCrawler extends Crawler {
       Pricing pricing = scrapPricing(doc);
       List<String> sales = Collections.singletonList(CrawlerUtils.calculateSales(pricing));
 
-      offers.add(new Offer.OfferBuilder() //TODO atributos de offer???
+      offers.add(new Offer.OfferBuilder()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("coppel")//TODO verificar se full name é slug
+         .setSellerFullName("coppel")
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
@@ -140,7 +141,7 @@ public class MexicoCoppelCrawler extends Crawler {
 
    private Pricing scrapPricing(Document doc) throws MalformedPricingException {
       Double spotlightPrice = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".unique_price", null, true, ',', session);
-      //TODO verificar formato do preço
+
       Double priceFrom = CrawlerUtils.scrapDoublePriceFromHtml(doc, ".old_price", null, true, ',', session);
 
       CreditCards creditCards = scrapCreditCards(spotlightPrice, doc);
@@ -164,6 +165,7 @@ public class MexicoCoppelCrawler extends Crawler {
       installments.add(Installment.InstallmentBuilder.create()//TODO verificar parcelas
          .setInstallmentNumber(1)
          .setInstallmentPrice(price)
+         .setFinalPrice(price)
          .build());
 
       for (String card : cards) {
