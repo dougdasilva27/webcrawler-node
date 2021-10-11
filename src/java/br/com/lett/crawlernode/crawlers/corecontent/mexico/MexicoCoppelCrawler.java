@@ -14,6 +14,8 @@ import br.com.lett.crawlernode.util.Logging;
 import models.Offers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -52,19 +54,19 @@ public class MexicoCoppelCrawler extends Crawler {
    public List<Product> extractInformation(Document doc) throws Exception {
       super.extractInformation(doc);
       List<Product> products = new ArrayList<>();
-//      boolean isAvailable = price != 0;
+
       if (doc.selectFirst("#main_header_name") != null) {
          Logging.printLogDebug(logger, session, "Product page identified: " + this.session.getOriginalURL());
-//         String internalId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc,"#product_SKU_1599029","value");//tornar pageId dinâmico
+         String internalId = getInternalId(doc); //TODO verificar formatação id PR-7257752
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#main_header_name", false);
-//         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList());//product_longdescription_1599029
-//         CategoryCollection categories = CrawlerUtils.crawlCategories(doc, "."); //[name=keywords]
-//         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#image a #image-main", Arrays.asList("src"), "https", "padovani.vteximg.com.br");
-//         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,".thumbs li a img",Arrays.asList("src"),"https", "padovani.vteximg.com.br",   primaryImage);
+         String description = CrawlerUtils.scrapSimpleDescription(doc, Arrays.asList("#product_longdescription_1599029")); //TODO: remover html tags e tornar pageId dinamico
+         String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productMainImage ", Arrays.asList("src"), "https", "");
+         List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,"[class=mz-lens] img", Arrays.asList("src"),"https", "padovani.vteximg.com.br", primaryImage);
+         CategoryCollection categories = getCategories(doc, "[name=keywords]");
+         System.out.println("categories 0 " + categories.getCategory(0));
+         System.out.println("categories 1 " + categories.getCategory(1));
          boolean available = doc.selectFirst("[class=available]") != null;
-         Logging.printLogDebug(logger, session, "\nname   " + name);
-         Logging.printLogDebug(logger, session, "\navailable   " + available);
-//         Logging.printLogDebug(logger, session, "doc   " + doc);
+
 //         Offers offers = available ? new Offers() : new Offers();
 
 //         // Creating the product
@@ -87,5 +89,26 @@ public class MexicoCoppelCrawler extends Crawler {
          Logging.printLogDebug(logger, session, "Not a product page:   " + this.session.getOriginalURL());
       }
       return products;
+   }
+
+   public String getInternalId (Document doc) {
+      String sku = CrawlerUtils.scrapStringSimpleInfo(doc, "#IntelligentOfferMainPartNumber", false);
+      return sku;
+   }
+
+   public static CategoryCollection getCategories(Document doc, String selector) {
+      CategoryCollection categories = new CategoryCollection();
+      selector = selector.attr("content");
+      Elements elementCategories = doc.select(selector);
+      String categoriesString = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=keywords] ", "content");
+      System.out.println("categoriesString " + categoriesString);
+
+      for (String e : categoriesString) {
+         System.out.println("e " + e);
+
+         categories.add(e.replace(">", "").trim());
+      }
+
+      return categories;
    }
 }
