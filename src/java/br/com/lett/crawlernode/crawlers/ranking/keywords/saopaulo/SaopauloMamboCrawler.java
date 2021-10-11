@@ -2,6 +2,10 @@ package br.com.lett.crawlernode.crawlers.ranking.keywords.saopaulo;
 
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
+import br.com.lett.crawlernode.util.CommonMethods;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import br.com.lett.crawlernode.core.session.Session;
@@ -19,7 +23,7 @@ public class SaopauloMamboCrawler extends CrawlerRankingKeywords {
    }
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 12;
       this.log("Página " + this.currentPage);
 
@@ -39,8 +43,22 @@ public class SaopauloMamboCrawler extends CrawlerRankingKeywords {
 
             String internalId = jsonProduct.optString("id");
             String productUrl = jsonProduct.optString("url");
+            String imageUrl =  JSONUtils.getValueRecursive(jsonProduct, "images.default", String.class).replace("height=100&width=100", "height=200&width=200");
+            String name = jsonProduct.optString("name");
+            double doublePrice = JSONUtils.getValueRecursive(jsonProduct, "skus.0.properties.price", Double.class);
+            Integer price = CommonMethods.doublePriceToIntegerPrice(doublePrice, 0);
+            boolean isAvailable = JSONUtils.getValueRecursive(jsonProduct, "skus.0.properties.status", String.class).equals("AVAILABLE");
 
-            saveDataProduct(internalId, null, productUrl, this.position);
+            RankingProduct objProducts = RankingProductBuilder.create()
+               .setUrl(productUrl)
+               .setImageUrl(imageUrl)
+               .setName(name)
+               .setPriceInCents(price)
+               .setInternalId(internalId)
+               .setAvailability(isAvailable)
+               .build();
+
+            saveDataProduct(objProducts);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + null + " - Url: " + productUrl);
             if (this.arrayProducts.size() == productsLimit) {
