@@ -1,5 +1,8 @@
 package br.com.lett.crawlernode.crawlers.extractionutils.ranking;
 
+import br.com.lett.crawlernode.core.models.RankingProduct;
+import br.com.lett.crawlernode.core.models.RankingProductBuilder;
+import br.com.lett.crawlernode.exceptions.MalformedProductException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -18,18 +21,18 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
    protected abstract String getCityCode();
 
    @Override
-   protected void extractProductsFromCurrentPage() {
+   protected void extractProductsFromCurrentPage() throws MalformedProductException {
       this.pageSize = 24;
       this.log("Página " + this.currentPage);
 
       String url = "https://delivery.supermuffato.com.br/buscapagina?" +
-            "ft=" + this.keywordEncoded +
-            "&sc=" + getCityCode() +
-            "&PS=24" +
-            "&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9" +
-            "&cc=24" +
-            "&sm=0" +
-            "&PageNumber=" + this.currentPage;
+         "ft=" + this.keywordEncoded +
+         "&sc=" + getCityCode() +
+         "&PS=24" +
+         "&sl=d85149b5-097b-4910-90fd-fa2ce00fe7c9" +
+         "&cc=24" +
+         "&sm=0" +
+         "&PageNumber=" + this.currentPage;
 
       this.log("Link onde são feitos os crawlers: " + url);
 
@@ -49,7 +52,17 @@ public abstract class SupermuffatoDeliveryCrawler extends CrawlerRankingKeywords
             String internalPid = crawlInternalPid(productsIdList.get(index));
             String urlProduct = CrawlerUtils.scrapUrl(product, ".prd-list-item-desc > a", "href", "https", BASE_URL);
 
-            saveDataProduct(internalId, internalPid, urlProduct);
+            RankingProduct rankingProduct = RankingProductBuilder.create()
+               .setName(CrawlerUtils.scrapStringSimpleInfo(product, ".prd-list-item-name", true))
+               .setUrl(urlProduct)
+               .setInternalPid(internalPid)
+               .setImageUrl(CrawlerUtils.scrapStringSimpleInfoByAttribute(product, "li[layout] .prd-list-item-img img", "src"))
+               .setAvailability(true)
+               .setPriceInCents(CrawlerUtils.scrapPriceInCentsFromHtml(product, "prd-list-item-price-sell", null, true, ',', session,null))
+               .build();
+
+
+            saveDataProduct(rankingProduct);
 
             this.log("Position: " + this.position + " - InternalId: " + internalId + " - InternalPid: " + internalPid + " - Url: " + urlProduct);
             if (this.arrayProducts.size() == productsLimit) break;
