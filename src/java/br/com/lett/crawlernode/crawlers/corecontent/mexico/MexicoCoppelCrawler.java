@@ -103,14 +103,9 @@ public class MexicoCoppelCrawler extends Crawler {
 
    public String getDescription(Document doc, String selector) {
       String scrappedDescription = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#product_longdescription_" + this.pageId));
-      String divDescriptionName = "<div id=\"product_longdescription_" + this.pageId + "\">";
 
       return scrappedDescription
-         .replaceAll(divDescriptionName," ")
-         .replaceAll("<strong>"," ")
-         .replaceAll("</strong>"," ")
-         .replaceAll("<br>"," ")
-         .replaceAll("</div>"," ")
+         .replaceAll("<[^>]*>", "")
          .replaceAll("&nbsp;"," ");
    }
 
