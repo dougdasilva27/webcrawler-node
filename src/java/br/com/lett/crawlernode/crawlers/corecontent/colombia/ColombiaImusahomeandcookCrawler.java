@@ -40,7 +40,7 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
 
          String internalId = CommonMethods.getLast(session.getOriginalURL().split("-"));
          String internalPid = CrawlerUtils.scrapStringSimpleInfo(doc, "h4", false);
-         String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.titulo-producto", true);
+         String name = scrapNameAndBrand(doc);
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, ".imagen.hide-for-small-only img", Arrays.asList("src"), "http", "cdn.coordiutil.com");
          List<String> secondaryImage = CrawlerUtils.scrapSecondaryImages(doc, ".splide__slide.thumbnails img", Arrays.asList("src"), "https", "cdn.coordiutil.com", primaryImage);
          String description = CrawlerUtils.scrapStringSimpleInfo(doc, ".descripcion-corta", false);
@@ -69,6 +69,15 @@ public class ColombiaImusahomeandcookCrawler extends Crawler {
 
    private boolean isProductPage(Document doc) {
       return doc.selectFirst(".page_item") != null;
+   }
+
+   private String scrapNameAndBrand (Document doc){
+      String name = CrawlerUtils.scrapStringSimpleInfo(doc, "h1.titulo-producto", true);
+      String brand = CrawlerUtils.scrapStringSimpleInfo(doc,".row.precios a #texto-marca", true);
+      if (brand != null){
+         return name + " - " + brand;
+      }
+      return name;
    }
 
    private Offers scrapOffers(Document doc) throws OfferException, MalformedPricingException {
