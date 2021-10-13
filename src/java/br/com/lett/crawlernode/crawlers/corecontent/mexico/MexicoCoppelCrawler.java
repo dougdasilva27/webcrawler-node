@@ -4,6 +4,7 @@ import br.com.lett.crawlernode.core.fetcher.FetchMode;
 import br.com.lett.crawlernode.core.fetcher.ProxyCollection;
 import br.com.lett.crawlernode.core.fetcher.models.Request;
 import br.com.lett.crawlernode.core.fetcher.models.Response;
+import br.com.lett.crawlernode.core.models.Card;
 import br.com.lett.crawlernode.core.models.CategoryCollection;
 import br.com.lett.crawlernode.core.models.Product;
 import br.com.lett.crawlernode.core.models.ProductBuilder;
@@ -11,6 +12,7 @@ import br.com.lett.crawlernode.core.session.Session;
 import br.com.lett.crawlernode.core.task.impl.Crawler;
 import br.com.lett.crawlernode.util.CrawlerUtils;
 import br.com.lett.crawlernode.util.Logging;
+import br.com.lett.crawlernode.util.MathUtils;
 import exceptions.MalformedPricingException;
 import exceptions.OfferException;
 import models.Offer;
@@ -31,8 +33,7 @@ public class MexicoCoppelCrawler extends Crawler {
       super(session);
       super.config.setFetcher(FetchMode.APACHE);
    }
-
-   private static final List<String> cards = Arrays.asList("Coppel"); //TODO precisa adicionar na lista de cartões
+   private static final List<String> cards = Arrays.asList(Card.COPPEL.toString());
 
    @Override
    protected Document fetch() {
@@ -66,8 +67,7 @@ public class MexicoCoppelCrawler extends Crawler {
          String internalId = getInternalId(doc);
          String name = CrawlerUtils.scrapStringSimpleInfo(doc, "#main_header_name", false);
          this.pageId = CrawlerUtils.scrapStringSimpleInfoByAttribute(doc, "[name=pageId]", "content");
-         String description = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#product_longdescription_" + this.pageId)); //TODO: remover html tags
-         System.out.println("description" + description);
+         String description = getDescription(doc, "#product_longdescription_");
          String primaryImage = CrawlerUtils.scrapSimplePrimaryImage(doc, "#productMainImage ", Arrays.asList("src"), "https", "");
          List<String> secondaryImages = CrawlerUtils.scrapSecondaryImages(doc,"[class=mz-lens] img", Arrays.asList("src"),"https", "padovani.vteximg.com.br", primaryImage);
          CategoryCollection categories = getCategories(doc, "[name=keywords]", "content");
@@ -97,13 +97,21 @@ public class MexicoCoppelCrawler extends Crawler {
 
    public String getInternalId (Document doc) {
       String sku = CrawlerUtils.scrapStringSimpleInfo(doc, "#IntelligentOfferMainPartNumber", false);
-      StringBuilder skuNumber = new StringBuilder(sku);
 
-      for (int i = 0; i < 3; i++) {
-         skuNumber = skuNumber.deleteCharAt(0);
-      }
+      return sku.replaceAll("[^0-9]","");
+   }
 
-      return skuNumber.toString();
+   public String getDescription(Document doc, String selector) {
+      String scrappedDescription = CrawlerUtils.scrapElementsDescription(doc, Arrays.asList("#product_longdescription_" + this.pageId));
+      String divDescriptionName = "<div id=\"product_longdescription_" + this.pageId + "\">";
+
+      return scrappedDescription
+         .replaceAll(divDescriptionName," ")
+         .replaceAll("<strong>"," ")
+         .replaceAll("</strong>"," ")
+         .replaceAll("<br>"," ")
+         .replaceAll("</div>"," ")
+         .replaceAll("&nbsp;"," ");
    }
 
    public static CategoryCollection getCategories(Document doc, String selector, String attr) {
@@ -128,7 +136,7 @@ public class MexicoCoppelCrawler extends Crawler {
 
       offers.add(new Offer.OfferBuilder()
          .setUseSlugNameAsInternalSellerId(true)
-         .setSellerFullName("coppel")
+         .setSellerFullName(this.SELLER_NAME)
          .setMainPagePosition(1)
          .setIsBuybox(false)
          .setIsMainRetailer(true)
@@ -157,15 +165,20 @@ public class MexicoCoppelCrawler extends Crawler {
       CreditCards creditCards = new CreditCards();
       Installments installments = new Installments();
 
-      String installmentNumbers = CrawlerUtils.scrapStringSimpleInfo(doc, "#creditCoppelPrice_" + this.pageId, false);
-      String installmentPrice = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_credito", false);
-      System.out.println("installmentNumbers "+ installmentNumbers);
-      System.out.println("installmentPrice "+ installmentPrice);
+      String installmentPriceScrap = CrawlerUtils.scrapStringSimpleInfo(doc, "#creditCoppelPrice_" + this.pageId, false);
+      String installmentNumbers = CrawlerUtils.scrapStringSimpleInfo(doc, ".p_credito", false);
 
-      installments.add(Installment.InstallmentBuilder.create()//TODO verificar parcelas
-         .setInstallmentNumber(1)
+      ArrayList<String> installmentPriceList = new ArrayList<> (Arrays.asList(installmentPriceScrap.replaceAll("\\$","").split(" ")));
+      ArrayList<String> installmentList = new ArrayList<>(Arrays.asList(installmentNumbers.replaceAll("\\$","").replaceAll(",",".").replaceAll("\\(","").replaceAll("\\)","").split(" ")));
+
+      Integer installmentNumber = Integer.parseInt(installmentList.get(2));//TODO format prices
+      double finalPrice = Double.parseDouble(installmentList.get(0));
+      double installmentPrice = Double.parseDouble(installmentPriceList.get(0));
+
+      installments.add(Installment.InstallmentBuilder.create()
+         .setInstallmentNumber(installmentNumber)
          .setInstallmentPrice(price)
-         .setFinalPrice(price)
+         .setFinalPrice(finalPrice)
          .build());
 
       for (String card : cards) {
